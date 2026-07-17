@@ -41,7 +41,5 @@ public class Unidade implements Serializable {
     private String sigla;
     
     @OneToMany(mappedBy = "unidade", fetch = FetchType.LAZY)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private List<Laboratorio> laboratorios = new ArrayList<>();
 }
