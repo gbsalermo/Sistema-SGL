@@ -1,0 +1,197 @@
+@startuml Componentes_Arquitetura
+
+' ============================================
+' Diagrama de Componentes - Arquitetura
+' Projeto STOCK
+' ============================================
+
+skinparam component {
+    BackgroundColor<<frontend>> LightBlue
+    BackgroundColor<<backend>> LightGreen
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+skinparam package {
+    BackgroundColor<<presentation>> LightBlue
+    BackgroundColor<<business>> LightGreen
+    BackgroundColor<<data>> LightYellow
+}
+
+title Diagrama de Componentes - Arquitetura do Sistema
+
+' ============================================
+' Frontend
+' ============================================
+
+package "Frontend (Vue.js 3)" <<presentation>> {
+    [Componentes Vue] as VueComp
+    [Router] as VueRouter
+    [State Management] as VueState
+    [API Client\n(Axios)] as Axios
+    
+    component "Views" as Views {
+        [Login] as LoginView
+        [Dashboard] as DashView
+        [Pedidos] as PedidosView
+        [Estoque] as EstoqueView
+        [Relatórios] as RelatView
+        [Admin] as AdminView
+    }
+    
+    Views ..> VueComp
+    Views ..> VueRouter
+    Views ..> Axios
+}
+
+' ============================================
+' Backend
+' ============================================
+
+package "Backend (Spring Boot)" <<business>> {
+    
+    package "Camada de Controle" {
+        [AuthController] as AuthCtrl
+        [PedidoController] as PedidoCtrl
+        [ProdutoController] as ProdutoCtrl
+        [LaboratorioController] as LabCtrl
+        [UsuarioController] as UserCtrl
+        [RelatorioController] as RelatCtrl
+    }
+    
+    package "Camada de Serviço" {
+        [AuthService] as AuthSvc
+        [PedidoService] as PedidoSvc
+        [ProdutoService] as ProdutoSvc
+        [EstoqueService] as EstoqueSvc
+        [NotificacaoService] as NotifSvc
+        [RelatorioService] as RelatSvc
+    }
+    
+    package "Camada de Repositório" {
+        [PedidoRepository] as PedidoRepo
+        [ProdutoRepository] as ProdutoRepo
+        [LoteRepository] as LoteRepo
+        [UsuarioRepository] as UserRepo
+        [LaboratorioRepository] as LabRepo
+        [MovimentacaoRepository] as MovRepo
+    }
+    
+    package "Modelos de Domínio" {
+        [Pedido] as PedidoModel
+        [Produto] as ProdutoModel
+        [Lote] as LoteModel
+        [Usuario] as UserModel
+        [Laboratorio] as LabModel
+        [Movimentacao] as MovModel
+    }
+    
+    package "Utilitários" {
+        [JWT Token] as JWT
+        [Validador] as Validador
+        [Mapper] as Mapper
+    }
+}
+
+' ============================================
+' Banco de Dados
+' ============================================
+
+package "Banco de Dados" <<data>> {
+    database "PostgreSQL" as Postgres {
+        [unidade] as TUnidade
+        [laboratorio] as TLaboratorio
+        [usuario] as TUsuario
+        [produto] as TProduto
+        [lote] as TLote
+        [projeto] as TProjeto
+        [pedido] as TPedido
+        [item_pedido] as TItemPedido
+        [movimentacao] as TMovimentacao
+    }
+}
+
+' ============================================
+' Serviços Externos
+' ============================================
+
+package "Serviços Externos" <<external>> {
+    [Sentry\n(Monitoramento)] as Sentry
+    [Matomo\n(Analytics)] as Matomo
+}
+
+' ============================================
+' Conexões Frontend -> Backend
+' ============================================
+
+Axios --> AuthCtrl : HTTP
+Axios --> PedidoCtrl : HTTP
+Axios --> ProdutoCtrl : HTTP
+Axios --> LabCtrl : HTTP
+Axios --> UserCtrl : HTTP
+Axios --> RelatCtrl : HTTP
+
+' ============================================
+' Conexões Backend Internas
+' ============================================
+
+AuthCtrl --> AuthSvc
+PedidoCtrl --> PedidoSvc
+ProdutoCtrl --> ProdutoSvc
+LabCtrl --> LabCtrl
+UserCtrl --> UserCtrl
+RelatCtrl --> RelatSvc
+
+AuthSvc --> JWT
+PedidoSvc --> EstoqueSvc
+PedidoSvc --> NotifSvc
+ProdutoSvc --> EstoqueSvc
+RelatSvc --> PedidoRepo
+RelatSvc --> ProdutoRepo
+
+PedidoRepo --> Postgres
+ProdutoRepo --> Postgres
+LoteRepo --> Postgres
+UserRepo --> Postgres
+LabRepo --> Postgres
+MovRepo --> Postgres
+
+' ============================================
+' Conexões Backend -> Frontend
+' ============================================
+
+AuthCtrl --> JWT
+PedidoCtrl --> PedidoModel
+ProdutoCtrl --> ProdutoModel
+
+' ============================================
+' Conexões Externas
+' ============================================
+
+NotifSvc --> Sentry : Erros
+AuthSvc --> Matomo : Eventos
+
+' ============================================
+' Notas
+' ============================================
+
+note right of Views
+  <b>Interface do Usuário</b>
+  - Pesquisador: Apenas Pedidos
+  - Gestor: Tudo
+  - Admin: Configurações
+end note
+
+note bottom of Postgres
+  <b>Multi-tenant</b>
+  Todas as tabelas possuem
+  unidade_id para isolamento
+end note
+
+note left of JWT
+  <b>Autenticação</b>
+  Token JWT armazenado
+  no localStorage
+end note
+
+@enduml
