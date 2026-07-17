@@ -11,12 +11,25 @@ import com.sgl.repository.UnidadeRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@Service
+
+@Service 
 @RequiredArgsConstructor
 public class UnidadeService {
 
     private final UnidadeRepository unidadeRepository;
-
+    
+    //CREATE
+    @Transactional
+    public UnidadeDTO criar(UnidadeDTO dto){
+        Unidade unidade = new Unidade();
+        unidade.setNome(dto.getNome());
+        unidade.setSigla(dto.getSigla());
+        
+        Unidade salva = unidadeRepository.save(unidade);
+        return new UnidadeDTO(salva);
+    }
+    
+    //LISTAR TODOS
     @Transactional(readOnly = true)
     public List<UnidadeDTO> listarTodos(){
         return unidadeRepository.findAll()
@@ -25,6 +38,7 @@ public class UnidadeService {
         		.toList();
     }
 
+    //BUSCAR POR ID
     @Transactional(readOnly = true)
     public UnidadeDTO buscarPorId(Long id){
     	Unidade unidade = unidadeRepository.findById(id)
@@ -33,16 +47,8 @@ public class UnidadeService {
             return new UnidadeDTO(unidade);
     }
 
-    @Transactional
-    public UnidadeDTO salvar(UnidadeDTO dto){
-        Unidade unidade = new Unidade();
-        unidade.setNome(dto.getNome());
-        unidade.setSigla(dto.getSigla());
-        
-        Unidade salva = unidadeRepository.save(unidade);
-        return new UnidadeDTO(salva);
-    }
 
+    //ATUALIZAR
     @Transactional
     public UnidadeDTO atualizar(Long id, UnidadeDTO dto){
     	Unidade unidade = unidadeRepository.findById(id)
@@ -53,8 +59,9 @@ public class UnidadeService {
     	return new UnidadeDTO(atualizada);
     }
     
+    //DELETAR
     @Transactional
-    public void delete(Long id) {
+    public void deletar(Long id) {
     	try {
     		unidadeRepository.deleteById(id);
     	}

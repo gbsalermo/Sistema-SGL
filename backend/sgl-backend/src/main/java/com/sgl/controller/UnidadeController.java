@@ -36,8 +36,8 @@ public class UnidadeController {
 	}
 	
 	@PostMapping
-	public ResponseEntity<UnidadeDTO> salvar(@RequestBody UnidadeDTO dto){
-		UnidadeDTO novaUnidade = unidadeService.salvar(dto);
+	public ResponseEntity<UnidadeDTO> criar(@RequestBody UnidadeDTO dto){
+		UnidadeDTO novaUnidade = unidadeService.criar(dto);
 		return ResponseEntity.status(HttpStatus.CREATED).body(novaUnidade);
 	}
 	
@@ -48,7 +48,7 @@ public class UnidadeController {
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> deletar(@PathVariable Long id) {
-		unidadeService.delete(id);
+		unidadeService.deletar(id);
 		return ResponseEntity.noContent().build();
 	}
 }

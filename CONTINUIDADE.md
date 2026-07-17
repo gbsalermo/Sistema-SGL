@@ -1,7 +1,7 @@
 # 📦 Projeto SGL - Sistema de Gestão de Laboratórios
 
 ## 📋 Status do Projeto
-**Fase:** Desenvolvimento - CRUD Unidade (DTO implementado)  
+**Fase:** Desenvolvimento - Testes CRUD (Unidade + Laboratório validados)  
 **Data de início:** 13/07/2026  
 **Última atualização:** 17/07/2026  
 
@@ -163,14 +163,31 @@ Controller <-> Service <-> Repository <-> Entity
 - ativo
 ```
 
-### Estudante/Pesquisador
+### Estudante/Pesquisador → **USUARIO (substituído)**
 ```java
-- id
-- laboratorio_id (FK)
+// ANTIGA entidade Estudante/Pesquisador - REMOVIDA
+// Substituída por Usuario com enum Perfil (ver abaixo)
+```
+
+### Perfil (enum)
+```java
+public enum Perfil {
+    ESTAGIARIO,    // Só pode fazer pedidos
+    PESQUISADOR,   // Acesso a pedidos e relatórios do lab
+    PROFESSOR,     // Gerencia lab e aprova pedidos
+    GESTOR,        // Acesso a relatórios e liberação de pedidos
+    ADMIN          // Acesso total ao sistema
+}
+```
+
+### Usuario
+```java
+- id (auto-gerado)
 - nome
-- email
-- matricula
-- tipo (ESTUDANTE, PESQUISADOR, PROFESSOR)
+- email (único, usado para login)
+- senha (criptografada com BCrypt)
+- perfil (enum: ESTAGIARIO, PESQUISADOR, PROFESSOR, GESTOR, ADMIN)
+- laboratorio_id (FK → Laboratorio)
 - ativo
 ```
 
@@ -381,6 +398,12 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 17/07/2026 | Adoção da camada DTO | Controle de acesso por papel (ADMIN/GESTAO vs PARTICIPANTE_LAB), evita LazyInitializationException, evita loop de serialização infinito, desacopla API do modelo de banco, segurança (evita vazar campo senha) |
 | 17/07/2026 | Renomear projeto para SGL | Nome mais preciso: "Sistema de Gestão de Laboratórios" |
 | 17/07/2026 | Simplificar entidade Unidade | Removidos campos `codigo` e `ativo`, adicionado `sigla` (único). Motivo: evitar confusão entre dois códigos diferentes e manter apenas atributos essenciais (id, nome, sigla) |
+| 17/07/2026 | Validação nos DTOs | Uso de `@NotNull`, `@NotBlank` + `@Valid` no controller para garantir dados obrigatórios antes de chegar ao service |
+| 17/07/2026 | Exception handler global | `@RestControllerAdvice` no package `exception` para mapear `EntityNotFoundException` → 404, evita erros 500 genéricos |
+| 17/07/2026 | Endpoint listarPorUnidade | Implementado `GET /api/v1/laboratorios/por-unidade?unidadeId=X` conforme documentado no CONTINUIDADE |
+| 17/07/2026 | DataInitializer para testes | `CommandLineRunner` no package `test` injeta 3 unidades e 5 laboratórios ao iniciar a aplicação |
+| 17/07/2026 | Perfil como enum, não entity | Decidido usar `enum Perfil` (ESTAGIARIO, PESQUISADOR, PROFESSOR, GESTOR, ADMIN) em vez de tabela separada. Motivo: perfis são fixos e bem definidos, enum simplifica o código (menos 4 arquivos), não precisa de CRUD para perfis |
+| 17/07/2026 | Substituir Estudante/Pesquisador por Usuario | A entidade "Estudante/Pesquisador" foi substituída por "Usuario" com campo `perfil` (enum) e `senha` (BCrypt). Mais flexível e preparado para autenticação futura |
 
 ---
 
@@ -402,9 +425,20 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Implementar DTO para Unidade (17/07/2026)
 - [x] CRUD de Unidade com DTO (17/07/2026)
 - [x] Simplificar entidade Unidade - remover codigo/ativo, adicionar sigla (17/07/2026)
+- [x] Implementar DTO para Laboratório (17/07/2026)
+- [x] CRUD de Laboratório com DTO (17/07/2026)
+- [x] Adicionar validação nos DTOs com @NotNull/@NotBlank (17/07/2026)
+- [x] Criar exception handler global com @RestControllerAdvice (17/07/2026)
+- [x] Implementar endpoint listarPorUnidade (17/07/2026)
+- [x] Criar DataInitializer para injetar dados de teste (17/07/2026)
+- [x] Testar CRUD de Unidade no Postman (17/07/2026)
+- [x] Testar CRUD de Laboratório no Postman (17/07/2026)
+- [x] Validar comportamento DELETE com integridade referencial (17/07/2026)
+- [x] Definir nova estratégia: Usuario + enum Perfil (17/07/2026)
+- [ ] Implementar enum Perfil
+- [ ] Implementar entidade Usuario
+- [ ] CRUD de Usuario com DTO
 - [ ] Prototipação das telas
-- [ ] Criação do banco de dados
-- [ ] Desenvolvimento da API
 
 ---
 
@@ -433,6 +467,17 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Revisão e correção de integridade do código (17/07/2026)
 - [x] Migração de package `com.sgl` para `com.sgl` (17/07/2026)
 - [x] Renomeação de `sgl-backend` para `sgl-backend` (17/07/2026)
+- [x] Implementação do padrão DTO (LaboratorioDTO) (17/07/2026)
+- [x] CRUD de Laboratório com DTO funcional (17/07/2026)
+- [x] Adição de validações nos DTOs (17/07/2026)
+- [x] Criação do exception handler global (17/07/2026)
+- [x] Implementação do endpoint listarPorUnidade (17/07/2026)
+- [x] Criação do DataInitializer para dados de teste (17/07/2026)
+- [x] Testes de CRUD de Unidade no Postman - todos OK (17/07/2026)
+- [x] Testes de CRUD de Laboratório no Postman - todos OK (17/07/2026)
+- [x] Validação do DELETE com foreign key - identificado e documentado (17/07/2026)
+- [x] Definição da nova estratégia de Usuário com enum Perfil (17/07/2026)
+- [x] Substituição da entidade Estudante/Pesquisador por Usuario (17/07/2026)
 
 ---
 
@@ -440,7 +485,8 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 
 | Item | Descrição | Responsável | Status | Prioridade |
 |------|-----------|-------------|--------|------------|
-| Exception customizada | Substituir `RuntimeException` genérica por `RecursoNaoEncontradoException` com `@RestControllerAdvice` global para respostas de erro padronizadas | Dev | Pendente | Média |
+| ~~Exception customizada~~ | ~~Substituir `RuntimeException` genérica por `RecursoNaoEncontradoException` com `@RestControllerAdvice` global~~ | Dev | **Resolvido** | ~~Média~~ |
+| ~~DELETE com foreign key~~ | ~~Unidade não pode ser deletada se tem laboratórios vinculados. Necessário tratar `DataIntegrityViolationException` no exception handler para retornar 409~~ | Dev | **Identificado** - pendente implementação do handler | Média |
 | Spring Boot 4.1.0 | Versão pode não existir ainda (máxima estável é 3.x). Verificar e corrigir se necessário. | Dev | Verificar | Média |
 
 ---
@@ -448,9 +494,15 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 ## 📌 Próximos Passos
 
 ### Curto Prazo
-1. **Implementar CRUD de Laboratório** com DTO (próxima entidade)
-2. **Criar banco de dados** - Scripts SQL das tabelas
-3. **Implementar exception handler global** - `@RestControllerAdvice` com respostas padronizadas
+1. ~~Implementar CRUD de Laboratório com DTO~~ **(CONCLUÍDO)**
+2. ~~Criar exception handler global~~ **(CONCLUÍDO)**
+3. ~~DataInitializer para testes~~ **(CONCLUÍDO)**
+4. ~~Testar CRUD no Postman~~ **(CONCLUÍDO)**
+5. **Implementar enum Perfil** - `ESTAGIARIO, PESQUISADOR, PROFESSOR, GESTOR, ADMIN`
+6. **Implementar entidade Usuario** - com enum Perfil, senha BCrypt, FK para Laboratorio
+7. **CRUD de Usuario com DTO** - sem expor senha no retorno
+8. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
+9. **Criar banco de dados** - Scripts SQL das tabelas
 
 ---
 
