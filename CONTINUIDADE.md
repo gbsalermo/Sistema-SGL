@@ -156,10 +156,10 @@ Controller <-> Service <-> Repository <-> Entity
 ### Laboratório
 ```java
 - id
-- unidade_id (FK)
+- unidade (ManyToOne → Unidade)
 - nome
 - descricao
-- responsavel
+- responsavel (ManyToOne → Usuario)  // ID do responsável
 - ativo
 ```
 
@@ -172,11 +172,11 @@ Controller <-> Service <-> Repository <-> Entity
 ### Perfil (enum)
 ```java
 public enum Perfil {
-    ESTAGIARIO,    // Só pode fazer pedidos
+    ADMINISTRADOR, // Acesso total ao sistema
+    GESTOR,        // Gerencia lab e aprova pedidos
+    TECNICO,       // Técnico de laboratório
     PESQUISADOR,   // Acesso a pedidos e relatórios do lab
-    PROFESSOR,     // Gerencia lab e aprova pedidos
-    GESTOR,        // Acesso a relatórios e liberação de pedidos
-    ADMIN          // Acesso total ao sistema
+    ESTAGIARIO     // Só pode fazer pedidos
 }
 ```
 
@@ -404,6 +404,8 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 17/07/2026 | DataInitializer para testes | `CommandLineRunner` no package `test` injeta 3 unidades e 5 laboratórios ao iniciar a aplicação |
 | 17/07/2026 | Perfil como enum, não entity | Decidido usar `enum Perfil` (ESTAGIARIO, PESQUISADOR, PROFESSOR, GESTOR, ADMIN) em vez de tabela separada. Motivo: perfis são fixos e bem definidos, enum simplifica o código (menos 4 arquivos), não precisa de CRUD para perfis |
 | 17/07/2026 | Substituir Estudante/Pesquisador por Usuario | A entidade "Estudante/Pesquisador" foi substituída por "Usuario" com campo `perfil` (enum) e `senha` (BCrypt). Mais flexível e preparado para autenticação futura |
+| 20/07/2026 | Laboratorio.responsavel como Usuario | Campo `responsavel` alterado de `String` para `ManyToOne<Usuario>`. Permite vincular um usuário existente como responsável pelo laboratório |
+| 20/07/2026 | Correção do DataInitializer | Laboratórios criados primeiro com responsavel null, depois usuários criados, e por fim responsáveis atribuídos aos laboratórios |
 
 ---
 
@@ -435,9 +437,13 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Testar CRUD de Laboratório no Postman (17/07/2026)
 - [x] Validar comportamento DELETE com integridade referencial (17/07/2026)
 - [x] Definir nova estratégia: Usuario + enum Perfil (17/07/2026)
-- [ ] Implementar enum Perfil
-- [ ] Implementar entidade Usuario
-- [ ] CRUD de Usuario com DTO
+- [x] Implementar enum Perfil (17/07/2026)
+- [x] Implementar entidade Usuario (17/07/2026)
+- [x] UsuarioDTO (corrigido em 20/07/2026)
+- [x] UsuarioRepository (20/07/2026)
+- [x] UsuarioService (20/07/2026)
+- [x] UsuarioController (20/07/2026)
+- [x] Atualizar DataInitializer com usuarios de teste (20/07/2026)
 - [ ] Prototipação das telas
 
 ---
@@ -478,6 +484,53 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Validação do DELETE com foreign key - identificado e documentado (17/07/2026)
 - [x] Definição da nova estratégia de Usuário com enum Perfil (17/07/2026)
 - [x] Substituição da entidade Estudante/Pesquisador por Usuario (17/07/2026)
+- [x] Implementação do enum Perfil (17/07/2026)
+- [x] Implementação da entidade Usuario (17/07/2026)
+- [x] Criação do UsuarioDTO (parcial - ver pendências) (17/07/2026)
+- [x] Correção do UsuarioDTO (20/07/2026)
+- [x] Implementação do UsuarioRepository (20/07/2026)
+- [x] Implementação do UsuarioService (20/07/2026)
+- [x] Implementação do UsuarioController (20/07/2026)
+- [x] Atualização do DataInitializer com 5 usuários de teste (20/07/2026)
+- [x] Testes de CRUD de Usuário no Postman (20/07/2026)
+
+---
+
+## ✅ Pendências do UsuarioDTO (RESOLVIDO em 20/07/2026)
+
+| Item | Status | Descrição |
+|------|--------|-----------|
+| Construtor Entity→DTO | ✅ CORRIGIDO | Mapeia `id, nome, email, perfil, laboratorioId, ativo` |
+| Campo `senha` | ✅ CORRIGIDO | Senha não volta no construtor Entity→DTO |
+| Campo `unidadeId` | ✅ CORRIGIDO | Removido (unidade via laboratorio.unidade) |
+| Validação `email` | ✅ CORRIGIDO | `@NotBlank` + `@Email` |
+| Validação `senha` | ✅ CORRIGIDO | `@NotBlank` |
+| Validação `perfil` | ✅ CORRIGIDO | `@NotNull` |
+
+### Correções necessárias no UsuarioDTO
+
+```java
+// REMOVER campo:
+private Long unidadeId;  // ← remover (Usuario não tem unidade direta)
+
+// REMOVER do construtor:
+this.senha = entity.getSenha();  // ← senha nunca volta no DTO
+
+// ADICIONAR no construtor:
+this.perfil = entity.getPerfil();
+this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getId() : null;
+
+// ADICIONAR validações:
+@NotBlank(message = "email é obrigatório")
+@Email(message = "email inválido")
+private String email;
+
+@NotBlank(message = "senha é obrigatória")
+private String senha;
+
+@NotNull(message = "perfil é obrigatório")
+private Perfil perfil;
+```
 
 ---
 
@@ -498,11 +551,15 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 2. ~~Criar exception handler global~~ **(CONCLUÍDO)**
 3. ~~DataInitializer para testes~~ **(CONCLUÍDO)**
 4. ~~Testar CRUD no Postman~~ **(CONCLUÍDO)**
-5. **Implementar enum Perfil** - `ESTAGIARIO, PESQUISADOR, PROFESSOR, GESTOR, ADMIN`
-6. **Implementar entidade Usuario** - com enum Perfil, senha BCrypt, FK para Laboratorio
-7. **CRUD de Usuario com DTO** - sem expor senha no retorno
-8. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
-9. **Criar banco de dados** - Scripts SQL das tabelas
+5. ~~Implementar enum Perfil~~ **(CONCLUÍDO)**
+6. ~~Implementar entidade Usuario~~ **(CONCLUÍDO)**
+7. **Corrigir UsuarioDTO** - ver pendências na seção "Pendências do UsuarioDTO"
+8. **Criar UsuarioRepository**
+9. **Criar UsuarioService**
+10. **Criar UsuarioController**
+11. **Atualizar DataInitializer** - adicionar usuarios de teste
+12. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
+13. **Criar banco de dados** - Scripts SQL das tabelas
 
 ---
 
@@ -936,7 +993,7 @@ backend/sgl-backend/src/main/java/com/sgl/
 
 ---
 
-**IMPORTANTE:** Este guia é para você seguir passo a passo. Eu (Mimo) estou aqui apenas para orientar, documentar e fazer checkups. Você mesmo criará o código!
+**IMPORTANTE:** Este guia é para você seguir passo a passo. Eu (Mimo) estou aqui apenas para orientar, documentar e fazer checkups. Você mesmo criará o código! Mimo NÃO implementa código automaticamente - apenas quando solicitado explicitamente.
 
 ---
 
@@ -954,6 +1011,23 @@ backend/sgl-backend/src/main/java/com/sgl/
 
 ### Regra de Ouro
 > **Você cria o código. Eu oriento. Juntos garantimos a qualidade.**
+
+### ⚠️ REGRA FUNDAMENTAL - IMPLEMENTAÇÃO
+> **Toda e qualquer implementação de código (criar classes, métodos, funções, repositories, services, controllers, DTOs, etc.) DEVE ser feita por VOCÊ, o desenvolvedor.**
+>
+> **Mimo NÃO implementa código automaticamente.** Mimo apenas:
+> - Orienta e explica conceitos
+> - Fornece guias e documentação
+> - Documenta decisões e progresso
+> - Responde dúvidas técnicas
+> - Valida etapas concluídas
+>
+> **Exceção:** Mimo só implementa código quando você solicita **explicitamente** dizendo algo como:
+> - "Mimo, implemente isso para mim"
+> - "Crie o código disso"
+> - "Pode fazer essa implementação?"
+>
+> **Sem essa solicitação explícita, Mimo apenas orienta.**
 
 ### Médio Prazo
 5. **Implementar lógica de pedidos** - Fluxo de aprovação

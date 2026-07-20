@@ -1,0 +1,28 @@
+# MiMoCode
+.mimocode/
+
+# Node
+node_modules/
+package.json
+package-lock.json
+bun.lock
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local

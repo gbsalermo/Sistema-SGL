@@ -1,4 +1,4 @@
-# 📊 Diagrama UML - Projeto STOCK
+# 📊 Diagrama UML - Projeto SGL
 
 ## Diagrama de Classes
 
@@ -9,127 +9,117 @@ classDiagram
     class Unidade {
         +Long id
         +String nome
-        +String codigo
-        +String endereco
-        +String telefone
-        +String email
-        +Boolean ativo
-        +LocalDateTime dataCriacao
+        +String sigla
+        +List~Laboratorio~ laboratorios
     }
 
     class Laboratorio {
         +Long id
-        +Long unidade_id
+        +Unidade unidade
         +String nome
         +String descricao
-        +String responsavelNome
-        +String responsavelEmail
+        +Usuario responsavel
         +Boolean ativo
-        +LocalDateTime dataCriacao
     }
 
     class Usuario {
         +Long id
-        +Long unidade_id
-        +Long laboratorio_id
         +String nome
         +String email
-        +String senhaHash
-        +TipoUsuario tipo
+        +String senha
+        +Perfil perfil
+        +Laboratorio laboratorio
         +Boolean ativo
-        +LocalDateTime dataCriacao
     }
 
     class Produto {
         +Long id
-        +Long unidade_id
+        +Laboratorio laboratorio
         +String nome
         +String descricao
-        +String codigo
-        +CategoriaProduto categoria
+        +String codigoReferencia
         +Integer quantidadeAtual
         +Integer quantidadeMinima
         +String unidadeMedida
-        +String localizacao
+        +String localizacaoFisica
+        +Risco risco
+        +TipoRisco tipoRisco
+        +String descricaoRisco
+        +Boolean perecivel
+        +Integer diasValidade
+        +TipoPerecivel tipoPerecivel
+        +String condicoesArmazenamento
         +Boolean ativo
-        +LocalDateTime dataCriacao
+    }
+
+    class Pedido {
+        +Long id
+        +Usuario usuario
+        +Laboratorio laboratorio
+        +Projeto projeto
+        +LocalDateTime dataSolicitacao
+        +StatusPedido status
+        +String observacao
+        +String arquivoDocumento
+    }
+
+    class ItemPedido {
+        +Long id
+        +Pedido pedido
+        +Produto produto
+        +Integer quantidadeSolicitada
+        +Integer quantidadeAprovada
+    }
+
+    class Projeto {
+        +Long id
+        +Laboratorio laboratorio
+        +String nome
+        +String descricao
+        +LocalDate dataInicio
+        +LocalDate dataFim
+        +String responsavel
+        +Boolean ativo
+    }
+
+    class Documento {
+        +Long id
+        +Pedido pedido
+        +String nomeArquivo
+        +String caminho
+        +String tipo
+        +Long tamanho
+        +LocalDateTime dataUpload
+    }
+
+    class Movimentacao {
+        +Long id
+        +Produto produto
+        +TipoMovimentacao tipo
+        +Integer quantidade
+        +Pedido pedido
+        +Usuario usuario
+        +LocalDateTime dataMovimentacao
+        +String observacao
     }
 
     class Lote {
         +Long id
-        +Long produto_id
+        +Produto produto
         +String numeroLote
         +LocalDate dataFabricacao
         +LocalDate dataValidade
         +Integer quantidade
         +Boolean ativo
-        +LocalDateTime dataCriacao
     }
 
-    class Projeto {
-        +Long id
-        +Long unidade_id
-        +String nome
-        +String descricao
-        +String responsavel
-        +LocalDate dataInicio
-        +LocalDate dataFim
-        +Boolean ativo
-        +LocalDateTime dataCriacao
-    }
-
-    class Pedido {
-        +Long id
-        +Long unidade_id
-        +Long laboratorio_id
-        +Long usuario_id
-        +Long projeto_id
-        +LocalDateTime dataSolicitacao
-        +LocalDateTime dataAprovacao
-        +StatusPedido status
-        +String observacao
-        +String justificativa
-        +String arquivoDocumento
-        +LocalDateTime dataCriacao
-    }
-
-    class ItemPedido {
-        +Long id
-        +Long pedido_id
-        +Long produto_id
-        +Long lote_id
-        +Integer quantidadeSolicitada
-        +Integer quantidadeAprovada
-        +String observacao
-    }
-
-    class Movimentacao {
-        +Long id
-        +Long unidade_id
-        +Long produto_id
-        +Long lote_id
-        +TipoMovimentacao tipo
-        +Integer quantidade
-        +Long pedido_id
-        +Long usuario_id
-        +LocalDateTime dataMovimentacao
-        +String observacao
-    }
-
-    class TipoUsuario {
+    class Perfil {
         <<enumeration>>
-        PESQUISADOR
-        ESTUDANTE
-        ESTAGIARIO
+        ADMINISTRADOR
         GESTOR
-        ADMIN
-    }
-
-    class CategoriaProduto {
-        <<enumeration>>
-        PERECIVEL
-        PERMANENTE
-        CONSUMIVEL
+        TECNICO
+        PESQUISADOR
+        ESTAGIARIO
     }
 
     class StatusPedido {
@@ -139,6 +129,33 @@ classDiagram
         REJEITADO
         ENTREGUE
         CANCELADO
+    }
+
+    class Risco {
+        <<enumeration>>
+        NENHUM
+        BAIXO
+        MEDIO
+        ALTO
+    }
+
+    class TipoRisco {
+        <<enumeration>>
+        NENHUM
+        INFLAMAVEL
+        RADIOATIVO
+        TOXICO
+        CORROSIVO
+        BIOLOGICO
+    }
+
+    class TipoPerecivel {
+        <<enumeration>>
+        NENHUM
+        VEGETAL
+        ANIMAL
+        MICROBIANO
+        QUIMICO
     }
 
     class TipoMovimentacao {
@@ -152,12 +169,14 @@ classDiagram
     %% Relacionamentos
     Unidade "1" --> "*" Laboratorio : possui
     Unidade "1" --> "*" Usuario : possui
-    Unidade "1" --> "*" Produto : possui
-    Unidade "1" --> "*" Projeto : possui
 
     Laboratorio "1" --> "*" Usuario : abriga
+    Laboratorio "1" --> "0..1" Usuario : responsavel
     Laboratorio "1" --> "*" Pedido : recebe
+    Laboratorio "1" --> "*" Produto : contem
+    Laboratorio "1" --> "*" Projeto : contem
 
+    Usuario "1" --> "0..1" Laboratorio : vinculado a
     Usuario "1" --> "*" Pedido : realiza
     Usuario "1" --> "*" Movimentacao : registra
 
@@ -171,6 +190,7 @@ classDiagram
     Projeto "1" --> "*" Pedido : vinculado a
 
     Pedido "1" --> "*" ItemPedido : contem
+    Pedido "1" --> "*" Documento : possui
     Pedido "1" --> "*" Movimentacao : gera
 ```
 
@@ -182,10 +202,12 @@ classDiagram
 |----------------|---------------|-----------|
 | Unidade → Laboratório | 1:N | Uma unidade possui vários laboratórios |
 | Unidade → Usuário | 1:N | Uma unidade possui vários usuários |
-| Unidade → Produto | 1:N | Uma unidade possui vários produtos |
-| Unidade → Projeto | 1:N | Uma unidade possui vários projetos |
 | Laboratório → Usuário | 1:N | Um laboratório abriga vários usuários |
+| Laboratório → Usuário (responsável) | 1:0..1 | Um laboratório tem um responsável (Usuario) |
 | Laboratório → Pedido | 1:N | Um laboratório recebe vários pedidos |
+| Laboratório → Produto | 1:N | Um laboratório contém vários produtos |
+| Laboratório → Projeto | 1:N | Um laboratório contém vários projetos |
+| Usuário → Laboratório | N:1 | Um usuário está vinculado a um laboratório |
 | Usuário → Pedido | 1:N | Um usuário realiza vários pedidos |
 | Usuário → Movimentação | 1:N | Um usuário registra várias movimentações |
 | Produto → Lote | 1:N | Um produto pode ter vários lotes |
@@ -195,27 +217,21 @@ classDiagram
 | Lote → Movimentação | 1:N | Um lote pode ser movimentado várias vezes |
 | Projeto → Pedido | 1:N | Um projeto pode ter vários pedidos |
 | Pedido → ItemPedido | 1:N | Um pedido contém vários itens |
+| Pedido → Documento | 1:N | Um pedido pode ter vários documentos |
 | Pedido → Movimentação | 1:N | Um pedido gera várias movimentações |
 
 ---
 
 ## Enumerações
 
-### TipoUsuario
+### Perfil
 | Valor | Descrição |
 |-------|-----------|
+| ADMINISTRADOR | Administrador do sistema |
+| GESTOR | Gerente de laboratório |
+| TECNICO | Técnico de laboratório |
 | PESQUISADOR | Pesquisador do laboratório |
-| ESTUDANTE | Estudante vinculado ao laboratório |
 | ESTAGIARIO | Estagiário do laboratório |
-| GESTOR | Departamento de Gestão |
-| ADMIN | Administrador da Unidade |
-
-### CategoriaProduto
-| Valor | Descrição |
-|-------|-----------|
-| PERECIVEL | Produto com validade (usa lotes) |
-| PERMANENTE | Produto de uso contínuo |
-| CONSUMIVEL | Produto que acaba com o uso |
 
 ### StatusPedido
 | Valor | Descrição |
@@ -225,6 +241,33 @@ classDiagram
 | REJEITADO | Rejeitado pelo gestor |
 | ENTREGUE | Material entregue |
 | CANCELADO | Pedido cancelado |
+
+### Risco
+| Valor | Descrição |
+|-------|-----------|
+| NENHUM | Sem risco |
+| BAIXO | Risco mínimo |
+| MEDIO | Risco médio |
+| ALTO | Risco alto |
+
+### TipoRisco
+| Valor | Descrição |
+|-------|-----------|
+| NENHUM | Sem tipo de risco |
+| INFLAMAVEL | Material inflamável |
+| RADIOATIVO | Material radioativo |
+| TOXICO | Material tóxico |
+| CORROSIVO | Material corrosivo |
+| BIOLOGICO | Agente biológico |
+
+### TipoPerecivel
+| Valor | Descrição |
+|-------|-----------|
+| NENHUM | Não é perecível |
+| VEGETAL | Produto vegetal |
+| ANIMAL | Produto animal |
+| MICROBIANO | Microrganismo |
+| QUIMICO | Produto químico |
 
 ### TipoMovimentacao
 | Valor | Descrição |
@@ -301,38 +344,34 @@ flowchart TD
 
 ### Chaves Estrangeiras
 - `laboratorio.unidade_id` → `unidade.id`
-- `usuario.unidade_id` → `unidade.id`
-- `usuario.laboratorio_id` → `laboratorio.id`
-- `produto.unidade_id` → `unidade.id`
+- `laboratorio.responsavel_id` → `usuario.id` (nullable)
+- `usuario.laboratorio_id` → `laboratorio.id` (nullable)
+- `produto.laboratorio_id` → `laboratorio.id`
 - `lote.produto_id` → `produto.id`
-- `projeto.unidade_id` → `unidade.id`
-- `pedido.unidade_id` → `unidade.id`
-- `pedido.laboratorio_id` → `laboratorio.id`
+- `projeto.laboratorio_id` → `laboratorio.id`
 - `pedido.usuario_id` → `usuario.id`
+- `pedido.laboratorio_id` → `laboratorio.id`
 - `pedido.projeto_id` → `projeto.id` (nullable)
 - `item_pedido.pedido_id` → `pedido.id`
 - `item_pedido.produto_id` → `produto.id`
-- `item_pedido.lote_id` → `lote.id` (nullable)
-- `movimentacao.unidade_id` → `unidade.id`
+- `documento.pedido_id` → `pedido.id`
 - `movimentacao.produto_id` → `produto.id`
-- `movimentacao.lote_id` → `lote.id` (nullable)
 - `movimentacao.pedido_id` → `pedido.id` (nullable)
 - `movimentacao.usuario_id` → `usuario.id`
 
 ### Índices Recomendados
-- `unidade.codigo` (único)
+- `unidade.sigla` (único)
 - `laboratorio.unidade_id`
-- `usuario.unidade_id`
-- `usuario.email` (único por unidade)
-- `produto.unidade_id`
-- `produto.categoria`
+- `laboratorio.responsavel_id`
+- `usuario.email` (único)
+- `usuario.laboratorio_id`
+- `produto.laboratorio_id`
 - `lote.produto_id`
 - `lote.data_validade`
-- `pedido.unidade_id`
-- `pedido.laboratorio_id`
 - `pedido.usuario_id`
+- `pedido.laboratorio_id`
 - `pedido.status`
 - `pedido.data_solicitacao`
-- `movimentacao.unidade_id`
 - `movimentacao.produto_id`
+- `movimentacao.usuario_id`
 - `movimentacao.data_movimentacao`

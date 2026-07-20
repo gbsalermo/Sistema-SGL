@@ -23,7 +23,7 @@ public class LaboratorioDTO implements Serializable{
 	@NotBlank(message = "nome é obrigatório")
 	private String nome;
 	private String descricao;
-	private String responsavel;
+	private Long responsavel;
 	private boolean ativo;
 	
 	public LaboratorioDTO(Laboratorio entity) {
@@ -32,7 +32,7 @@ public class LaboratorioDTO implements Serializable{
 		this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getId() : null;
 		this.nome = entity.getNome();
 		this.descricao = entity.getDescricao();
-		this.responsavel = entity.getResponsavel();
+		this.responsavel = entity.getResponsavel() != null ? entity.getResponsavel().getId() : null;
 		this.ativo = entity.getAtivo();
 		
 	}
