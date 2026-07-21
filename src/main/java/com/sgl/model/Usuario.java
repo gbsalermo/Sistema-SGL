@@ -1,5 +1,7 @@
 package com.sgl.model;
 
+import com.sgl.model.enums.Perfil;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -40,6 +42,10 @@ public class Usuario {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private Perfil perfil;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unidade_id")
+    private Unidade unidade;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "laboratorio_id")
