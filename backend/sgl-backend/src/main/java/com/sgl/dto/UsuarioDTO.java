@@ -2,8 +2,8 @@ package com.sgl.dto;
 
 import java.io.Serializable;
 
-import com.sgl.model.Perfil;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.Perfil;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

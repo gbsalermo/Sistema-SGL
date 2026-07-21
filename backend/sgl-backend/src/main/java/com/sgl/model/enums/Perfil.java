@@ -1,4 +1,4 @@
-package com.sgl.model;
+package com.sgl.model.enums;
 
 public enum Perfil {
 	

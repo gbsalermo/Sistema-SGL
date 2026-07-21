@@ -1,9 +1,9 @@
 # 📦 Projeto SGL - Sistema de Gestão de Laboratórios
 
 ## 📋 Status do Projeto
-**Fase:** Desenvolvimento - Testes CRUD (Unidade + Laboratório validados)  
+**Fase:** Desenvolvimento - CRUD Produto implementado (pendente teste no Postman)  
 **Data de início:** 13/07/2026  
-**Última atualização:** 17/07/2026  
+**Última atualização:** 21/07/2026  
 
 ---
 
@@ -11,7 +11,8 @@
 
 **Nome do projeto:** SGL (Sistema de Gestão de Laboratórios)  
 **Tipo:** Sistema de Gestão de Laboratórios  
-**Objetivo:** Automatizar e centralizar o controle de materiais em laboratórios de pesquisa/ensino
+**Objetivo:** Automatizar e centralizar o controle de materiais em laboratórios de pesquisa/ensino  
+**Arquitetura de Estoque:** EstoqueCentral (estoque real - entrada/saída) + EstoqueLaboratorio (conferência/histórico)
 
 ---
 
@@ -26,6 +27,7 @@ Sistema completo para gestão de estoque de laboratórios, controlando entrada/s
 - **Hierarquia organizacional** - Respeita a estrutura: Unidade → Laboratório → Pesquisador
 - **Armazenamento de documentos** - Guarda pedidos, relatórios e comprovantes
 - **Base sólida para expansão** - API REST preparada para novas funcionalidades
+- **Estoque inteligente** - Controle centralizado + histórico por laboratório
 
 ### Hierarquia do Sistema
 ```
@@ -44,19 +46,46 @@ Sistema completo para gestão de estoque de laboratórios, controlando entrada/s
               ▼                               ▼
 ┌─────────────────────────┐       ┌─────────────────────────┐
 │   ESTUDANTE/PESQUISADOR │       │      PRODUTO/ITEM       │
-│    (Usuários do lab)    │       │    (Material em estoque) │
+│    (Usuários do lab)    │       │    (Catálogo central)   │
 └─────────────────────────┘       └─────────────────────────┘
               │                               │
               ▼                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                         PEDIDO                              │
-│  (Pesquisador solicita material do estoque do laboratório)  │
+│  (Pesquisador solicita material)                            │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    DOCUMENTOS                               │
 │      (Pedidos, relatórios, comprovantes armazenados)       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Fluxo de Estoque (Nova Arquitetura)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     ESTOQUE CENTRAL                         │
+│        (Quantidade total disponível para distribuição)      │
+│        Ex: 10 Álcool 70% disponíveis no total               │
+│        ↑↓ Entrada/Saída/Atualização                         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ Pedido aprovado
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         PEDIDO                              │
+│  (Pesquisador solicita material)                            │
+│  (Ao aprovar: baixa automática no EstoqueCentral)           │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ Material entregue
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│               ESTOQUE LABORATÓRIO (Conferência)             │
+│        (Apenas registrou: "lab recebeu X unidades")         │
+│        (Não tem entrada/saída - é só histórico)             │
+│        Ex: Lab1 recebeu 2 álcools em 21/07/2026             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -99,8 +128,10 @@ sgl/
 │   │       ├── service/        # Lógica de negócio
 │   │       ├── repository/     # Acesso a dados
 │   │       ├── model/          # Entidades JPA
+│   │       │   └── enums/      # Enums (NivelRisco, TipoRisco, etc)
 │   │       ├── dto/            # Data Transfer Objects (EM USO)
-│   │       └── config/         # Configurações
+│   │       ├── config/         # Configurações
+│   │       └── exception/      # Tratamento de exceções
 │   └── pom.xml
 │
 ├── frontend/                   # Vue.js
@@ -118,6 +149,33 @@ sgl/
 └── docker-compose.yml          # Orquestração (opcional)
 ```
 
+### Fluxo de Estoque (Nova Arquitetura)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     ESTOQUE CENTRAL                         │
+│        (Quantidade total disponível para distribuição)      │
+│        Ex: 10 Álcool 70% disponíveis no total               │
+│        ↑↓ Entrada/Saída/Atualização                         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ Pedido aprovado
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         PEDIDO                              │
+│  (Pesquisador solicita material)                            │
+│  (Ao aprovar: baixa automática no EstoqueCentral)           │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ Material entregue
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│               ESTOQUE LABORATÓRIO (Conferência)             │
+│        (Apenas registrou: "lab recebeu X unidades")         │
+│        (Não tem entrada/saída - é só histórico)             │
+│        Ex: Lab1 recebeu 2 álcools em 21/07/2026             │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## 🏛️ Padrões de Arquitetura
@@ -131,16 +189,39 @@ Controller <-> Service <-> Repository <-> Entity
 - A conversão `Entity -> DTO` acontece dentro do Service, via construtor no DTO (ex: `new UnidadeDTO(entity)`).
 - A conversão `DTO -> Entity` acontece dentro do Service antes de chamar `repository.save()`.
 
+### Fluxo de Estoque
+```
+┌─────────────────┐
+│  EstoqueCentral │ ← ÚNICO com entrada/saída
+└────────┬────────┘
+         │
+         │ Pedido aprovado
+         ▼
+┌─────────────────┐
+│     Pedido      │ ← Baixa automática no EstoqueCentral
+└────────┬────────┘
+         │
+         │ Material entregue
+         ▼
+┌─────────────────┐
+│EstoqueLaboratorio│ ← Apenas conferência/histórico
+└─────────────────┘
+```
+
 ### Regras de Relacionamento em DTOs
 - DTOs **não** replicam relacionamentos bidirecionais das Entities.
 - O sentido de exposição é sempre "de cima para baixo" (ex: `UnidadeDTO` pode eventualmente expor uma lista de `LaboratorioDTO`, mas `LaboratorioDTO` nunca traz `UnidadeDTO` completo — no máximo um campo `unidadeId`).
 - Campos de relacionamento em Entity devem ser marcados com `@ToString.Exclude` e `@EqualsAndHashCode.Exclude` (Lombok) para evitar recursão infinita.
+- **EstoqueLaboratorio** usa DTOs para expor `laboratorioId`, `produtoId` e `pedidoId`, não os objetos completos.
+- **EstoqueCentral** usa DTO para expor `produtoId`, não o objeto Produto completo.
 
 ### Convenções de Código
 - **Lombok:** `@Data`, `@NoArgsConstructor`, `@AllArgsConstructor` nas entidades e DTOs para reduzir boilerplate.
 - **Injeção de dependência:** via construtor com `@RequiredArgsConstructor` (sem uso de `@Autowired` em campo).
 - **Transacionalidade:** métodos de escrita (salvar, atualizar, deletar) usam `@Transactional`; métodos de leitura usam `@Transactional(readOnly = true)`.
 - **Campo `sigla`:** na entidade Unidade, identifica a instituição (ex: "IB", "IF", "IQ"). Deve ser único.
+- **EstoqueCentral:** cada produto tem UM registro (OneToOne com Produto). ÚNICO com entrada/saída.
+- **EstoqueLaboratorio:** apenas conferência/histórico (sem entrada/saída). Registra que o lab recebeu material.
 
 ---
 
@@ -191,15 +272,12 @@ public enum Perfil {
 - ativo
 ```
 
-### Produto/Item
+### Produto/Item (Catálogo Central)
 ```java
 - id
-- laboratorio_id (FK)
 - nome
 - descricao
 - codigo_referencia
-- quantidade_atual
-- quantidade_minima  ← Alerta quando atingir
 - unidade_medida
 - localizacao_fisica
 - ativo
@@ -212,6 +290,40 @@ public enum Perfil {
 - dias_validade (inteiro, opcional - para alertas de validade)
 - tipo_perecivel (enum: NENHUM, VEGETAL, ANIMAL, MICROBIANO, QUIMICO)
 - condicoes_armazenamento (texto livre, ex: "Armazenar em freezer -20°C")
+
+// IMPORTANTE: Produto NÃO tem laboratorio_id
+// Produto é um catálogo central - existe uma única vez
+// O estoque por laboratório é controlado pela entidade EstoqueLaboratorio
+```
+
+### EstoqueCentral (Estoque Total Disponível)
+```java
+- id
+- produto_id (FK → Produto)  // Único por produto
+- quantidade_atual           // Quantidade total disponível para distribuição
+- quantidade_minima          // Alerta quando atingir (estoque central baixo)
+- ativo
+
+// REGRA: Cada produto tem UM registro no EstoqueCentral
+// Exemplo: EstoqueCentral(produto_id=1, quantidade_atual=10)
+// Significa: temos 10 unidades do produto 1 disponíveis para distribuir
+```
+
+### EstoqueLaboratorio (Histórico/Conferência)
+```java
+- id
+- laboratorio_id (FK → Laboratorio)
+- produto_id (FK → Produto)
+- quantidade                  // Quantidade que este lab recebeu
+- data_recebimento            // Data em que o material chegou ao lab
+- pedido_id (FK → Pedido)     // Referência ao pedido que originou
+- ativo
+
+// IMPORTANTE: EstoqueLaboratorio é apenas para CONFERÊNCIA/HISTÓRICO
+// Ele NÃO tem entrada/saída/updates de estoque
+// Apenas registrou: "este lab recebeu X unidades do produto Y na data Z"
+// Para saber "quantos álcools foram pro lab1 este mês": WHERE laboratorio_id = X AND data_recebimento BETWEEN...
+// O estoque REAL fica apenas no EstoqueCentral
 ```
 
 ### Pedido
@@ -253,11 +365,11 @@ public enum Perfil {
 ### MVP (Mínimo Viável)
 
 #### Gestão de Estoque
-- [ ] Cadastro de produtos com quantidade mínima
-- [ ] Entrada de material (compra, doação, transferência)
-- [ ] Saída de material (pedido aprovado)
-- [ ] Alertas automáticos de estoque baixo
-- [ ] Consulta de estoque por laboratório
+- [ ] Cadastro de produtos no catálogo central (sem vinculação a lab)
+- [ ] Controle de estoque central (quantidade total disponível) - ÚNICO com entrada/saída
+- [ ] Distribuição de estoque para laboratórios (via pedido)
+- [ ] Consulta de histórico por laboratório (EstoqueLaboratorio)
+- [ ] Alertas automáticos de estoque baixo (apenas EstoqueCentral)
 - [ ] Classificação de risco dos produtos (Nenhum/Baixo/Médio/Alto)
 - [ ] Tipo de risco (Inflamável/Radioativo/Tóxico/Corrosivo/Biológico)
 - [ ] Cadastro de produtos perecíveis com controle de validade
@@ -272,8 +384,10 @@ public enum Perfil {
 
 #### Pedidos
 - [ ] Solicitação de material pelo pesquisador
+- [ ] Verificação de estoque disponível no EstoqueCentral
 - [ ] Aprovação/rejeição pelo responsável
-- [ ] Baixa automática no estoque
+- [ ] Baixa automática no EstoqueCentral ao aprovar
+- [ ] Criação de registro no EstoqueLaboratorio ao entregar
 - [ ] Histórico de pedidos
 
 #### Armazenamento de Documentos
@@ -328,6 +442,15 @@ public enum Perfil {
 3. **Produtos radioativos** podem exigir campos adicionais (atividade, data-calibração)
 4. **Relatório de risco** disponível para gestores (por lab, por tipo)
 
+### Regras de Negócio para Estoque
+1. **EstoqueCentral** é o ÚNICO que controla entrada/saída de materiais
+2. **EstoqueLaboratorio** é apenas para CONFERÊNCIA/HISTÓRICO (registrou que o lab recebeu)
+3. **Ao aprovar pedido**: baixa automática no EstoqueCentral
+4. **Ao entregar material**: cria registro no EstoqueLaboratorio (conferência)
+5. **Alertas**: estoque baixo apenas no EstoqueCentral
+6. **Consultas**: "quantos álcools foram pro lab1?" → WHERE laboratorio_id = X AND data_recebimento BETWEEN...
+7. **Diferença**: EstoqueCentral = estoque real | EstoqueLaboratorio = log/histórico
+
 ---
 
 ## 🔌 Endpoints da API (Exemplos)
@@ -350,16 +473,37 @@ PUT    /api/v1/laboratorios/{id}             - Atualizar laboratório
 GET    /api/v1/unidades/{id}/laboratorios    - Listar labs de uma unidade
 ```
 
-### Produtos
+### Produtos (Catálogo Central)
 ```
 GET    /api/v1/produtos                      - Listar produtos
 POST   /api/v1/produtos                      - Cadastrar produto
+GET    /api/v1/produtos/{id}                 - Buscar produto por ID
 PUT    /api/v1/produtos/{id}                 - Atualizar produto
-GET    /api/v1/laboratorios/{id}/produtos    - Produtos do laboratório
-GET    /api/v1/produtos/estoque-baixo        - Listar com estoque baixo
+DELETE /api/v1/produtos/{id}                 - Remover produto
 GET    /api/v1/produtos/risco/{nivel}        - Filtrar por nível de risco
 GET    /api/v1/produtos/pereciveis           - Listar perecíveis
 GET    /api/v1/produtos/validade-proxima     - Alertas de validade
+```
+
+### EstoqueCentral (Estoque Total)
+```
+GET    /api/v1/estoque-central               - Listar estoque central
+GET    /api/v1/estoque-central/{id}          - Buscar por ID
+GET    /api/v1/estoque-central/produto/{produtoId} - Estoque de um produto
+POST   /api/v1/estoque-central               - Cadastrar estoque central
+PUT    /api/v1/estoque-central/{id}          - Atualizar quantidade
+GET    /api/v1/estoque-central/estoque-baixo - Listar com estoque baixo
+```
+
+### EstoqueLaboratorio (Estoque por Lab)
+```
+GET    /api/v1/estoque-laboratorio                    - Listar todo estoque
+GET    /api/v1/estoque-laboratorio/{id}               - Buscar por ID
+GET    /api/v1/estoque-laboratorio/laboratorio/{labId} - Estoque de um lab
+GET    /api/v1/estoque-laboratorio/produto/{produtoId} - Onde está o produto
+POST   /api/v1/estoque-laboratorio                    - Cadastrar estoque lab
+PUT    /api/v1/estoque-laboratorio/{id}               - Atualizar quantidade
+GET    /api/v1/estoque-laboratorio/estoque-baixo      - Listar com estoque baixo
 ```
 
 ### Pedidos
@@ -406,6 +550,11 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 17/07/2026 | Substituir Estudante/Pesquisador por Usuario | A entidade "Estudante/Pesquisador" foi substituída por "Usuario" com campo `perfil` (enum) e `senha` (BCrypt). Mais flexível e preparado para autenticação futura |
 | 20/07/2026 | Laboratorio.responsavel como Usuario | Campo `responsavel` alterado de `String` para `ManyToOne<Usuario>`. Permite vincular um usuário existente como responsável pelo laboratório |
 | 20/07/2026 | Correção do DataInitializer | Laboratórios criados primeiro com responsavel null, depois usuários criados, e por fim responsáveis atribuídos aos laboratórios |
+| 20/07/2026 | Ordem de implementação: Enum primeiro | Para entidades que usam enums, criar os enums ANTES das entidades. Ex: Produto precisa de Risco, TipoRisco, TipoPerecivel antes de ser criado |
+| 21/07/2026 | Nova arquitetura de estoque | Removido `laboratorio_id` de Produto. Criadas entidades EstoqueCentral (estoque total disponível) e EstoqueLaboratorio (conferência/histórico). Motivo: Produto é catálogo central, não pertence a um lab específico. Estoque por lab é apenas log de conferência |
+| 21/07/2026 | EstoqueCentral como entidade separada | Cada produto tem UM registro no EstoqueCentral com a quantidade total disponível. É o ÚNICO que tem entrada/saída. Motivo: Controle centralizado do estoque |
+| 21/07/2026 | EstoqueLaboratorio é apenas conferência | EstoqueLaboratorio apenas registrou que o lab recebeu material (sem entrada/saída). Motivo: Histórico para consultas como "quantos álcools foram pro lab1 este mês?" |
+| 21/07/2026 | CRUD de Produto implementado | Entidade com 14 campos (nome, descricao, codigoReferencia, unidadeMedida, localizacaoFisica, risco, tipoRisco, descricaoRisco, perecivel, dataValidade, tipoPerecivel, condicoesArmazenamento, ativo). DTO com validações. Service com 8 métodos. Controller com 8 endpoints REST. 6 produtos de teste no DataInitializer |
 
 ---
 
@@ -444,7 +593,23 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] UsuarioService (20/07/2026)
 - [x] UsuarioController (20/07/2026)
 - [x] Atualizar DataInitializer com usuarios de teste (20/07/2026)
+- [x] Alterar Laboratorio.responsavel de String para Usuario (20/07/2026)
+- [x] Corrigir DataInitializer para usar Usuario como responsavel (20/07/2026)
+- [x] Atualizar diagrama UML (20/07/2026)
+- [x] Nova arquitetura de estoque: Produto sem laboratorio_id, EstoqueCentral e EstoqueLaboratorio (21/07/2026)
+- [x] Clarificação: EstoqueLaboratorio é apenas conferência/histórico (21/07/2026)
+- [x] Implementar CRUD de Produtos (catálogo central - sem laboratorio_id) (21/07/2026)
+- [x] Criar ProdutoController com endpoints REST (21/07/2026)
+- [x] Adicionar 6 produtos de teste no DataInitializer (21/07/2026)
+- [ ] Testar CRUD de Produtos no Postman
 - [ ] Prototipação das telas
+
+### Próximas Implementações (curto prazo)
+- [ ] Testar CRUD de Produtos no Postman
+- [ ] CRUD de EstoqueCentral (estoque total - ÚNICO com entrada/saída)
+- [ ] CRUD de EstoqueLaboratorio (apenas conferência/histórico)
+- [ ] CRUD de Pedidos (com baixa automática no EstoqueCentral)
+- [ ] Atualizar DataInitializer com estoque e pedidos de teste
 
 ---
 
@@ -493,6 +658,17 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Implementação do UsuarioController (20/07/2026)
 - [x] Atualização do DataInitializer com 5 usuários de teste (20/07/2026)
 - [x] Testes de CRUD de Usuário no Postman (20/07/2026)
+- [x] Definição da nova arquitetura de estoque (21/07/2026)
+- [x] Remoção de laboratorio_id de Produto (21/07/2026)
+- [x] Definição de EstoqueCentral como entidade separada (21/07/2026)
+- [x] Definição de EstoqueLaboratorio como conferência/histórico (21/07/2026)
+- [x] Clarificação: EstoqueLaboratorio é apenas log, não gestão de estoque (21/07/2026)
+- [x] Implementar ProdutoDTO com validações (21/07/2026)
+- [x] Implementar ProdutoRepository com queries customizadas (21/07/2026)
+- [x] Implementar ProdutoService com CRUD completo (21/07/2026)
+- [x] Implementar ProdutoController com endpoints REST (21/07/2026)
+- [x] Corrigir bug na rota /risco/{nivel} no ProdutoController (21/07/2026)
+- [x] Adicionar 6 produtos de teste no DataInitializer (21/07/2026)
 
 ---
 
@@ -541,6 +717,9 @@ private Perfil perfil;
 | ~~Exception customizada~~ | ~~Substituir `RuntimeException` genérica por `RecursoNaoEncontradoException` com `@RestControllerAdvice` global~~ | Dev | **Resolvido** | ~~Média~~ |
 | ~~DELETE com foreign key~~ | ~~Unidade não pode ser deletada se tem laboratórios vinculados. Necessário tratar `DataIntegrityViolationException` no exception handler para retornar 409~~ | Dev | **Identificado** - pendente implementação do handler | Média |
 | Spring Boot 4.1.0 | Versão pode não existir ainda (máxima estável é 3.x). Verificar e corrigir se necessário. | Dev | Verificar | Média |
+| EstoqueCentral | Implementar entidade para estoque total disponível (ÚNICO com entrada/saída) | Dev | Pendente | Alta |
+| EstoqueLaboratorio | Implementar entidade para conferência/histórico (sem entrada/saída) | Dev | Pendente | Alta |
+| Validação de estoque | Implementar regras de negócio para baixa automática no EstoqueCentral ao aprovar pedido | Dev | Pendente | Alta |
 
 ---
 
@@ -553,13 +732,300 @@ private Perfil perfil;
 4. ~~Testar CRUD no Postman~~ **(CONCLUÍDO)**
 5. ~~Implementar enum Perfil~~ **(CONCLUÍDO)**
 6. ~~Implementar entidade Usuario~~ **(CONCLUÍDO)**
-7. **Corrigir UsuarioDTO** - ver pendências na seção "Pendências do UsuarioDTO"
-8. **Criar UsuarioRepository**
-9. **Criar UsuarioService**
-10. **Criar UsuarioController**
-11. **Atualizar DataInitializer** - adicionar usuarios de teste
-12. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
-13. **Criar banco de dados** - Scripts SQL das tabelas
+7. ~~Corrigir UsuarioDTO~~ **(CONCLUÍDO)**
+8. ~~Criar UsuarioRepository~~ **(CONCLUÍDO)**
+9. ~~Criar UsuarioService~~ **(CONCLUÍDO)**
+10. ~~Criar UsuarioController~~ **(CONCLUÍDO)**
+11. ~~Atualizar DataInitializer com usuarios de teste~~ **(CONCLUÍDO)**
+12. ~~Alterar Laboratorio.responsavel para Usuario~~ **(CONCLUÍDO)**
+13. ~~Implementar CRUD de Produtos~~ **(CONCLUÍDO)**
+14. **Testar CRUD de Produtos no Postman**
+15. **Implementar CRUD de EstoqueCentral** (estoque total - ÚNICO com entrada/saída)
+16. **Implementar CRUD de EstoqueLaboratorio** (apenas conferência/histórico)
+17. **Implementar CRUD de Pedidos** (com baixa automática no EstoqueCentral)
+18. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
+19. **Criar banco de dados** - Scripts SQL das tabelas
+
+---
+
+## 📋 PASSO A PASSO - IMPLEMENTAÇÃO PRODUTO, ESTOQUE E PEDIDO
+
+### ORDEM CORRETA (Enum → Entidade → DTO → Repository → Service → Controller)
+
+---
+
+### PRODUTO (Catálogo Central - SEM laboratorio_id)
+
+#### Passo 1: Criar Enums
+- [x] Criar `model/enums/NivelRisco.java` (NENHUM, BAIXO, MEDIO, ALTO) ✅ JÁ EXISTE
+- [x] Criar `model/enums/TipoRisco.java` (NENHUM, INFLAMAVEL, RADIOATIVO, TOXICO, CORROSIVO, BIOLOGICO) ✅ JÁ EXISTE
+- [x] Criar `model/enums/TipoPerecivel.java` (NENHUM, VEGETAL, ANIMAL, MICROBIANO, QUIMICO) ✅ JÁ EXISTE
+
+#### Passo 2: Criar Entidade
+- [x] Criar `model/Produto.java` (usa os 3 enums acima, SEM laboratorio_id) ✅ CONCLUÍDO
+- [x] IMPORTANTE: Produto NÃO tem relationship com Laboratorio
+
+#### Passo 3: Criar DTO
+- [x] Criar `dto/ProdutoDTO.java` (SEM campo laboratorioId) ✅ CONCLUÍDO
+
+#### Passo 4: Criar Repository
+- [x] Criar `repository/ProdutoRepository.java` ✅ CONCLUÍDO
+
+#### Passo 5: Criar Service
+- [x] Criar `service/ProdutoService.java` (SEM validação de laboratorio) ✅ CONCLUÍDO
+
+#### Passo 6: Criar Controller
+- [x] Criar `controller/ProdutoController.java` ✅ CONCLUÍDO
+
+#### Passo 6.1: Adicionar dados de teste
+- [x] Adicionar 6 produtos de teste no DataInitializer ✅ CONCLUÍDO
+
+---
+
+### ESTOQUE CENTRAL (Estoque Total - ÚNICO com Entrada/Saída)
+
+#### Passo 7: Criar Entidade
+- [ ] Criar `model/EstoqueCentral.java` (produto_id único, quantidade_atual, quantidade_minima)
+
+#### Passo 8: Criar DTO
+- [ ] Criar `dto/EstoqueCentralDTO.java`
+
+#### Passo 9: Criar Repository
+- [ ] Criar `repository/EstoqueCentralRepository.java`
+
+#### Passo 10: Criar Service
+- [ ] Criar `service/EstoqueCentralService.java`
+
+#### Passo 11: Criar Controller
+- [ ] Criar `controller/EstoqueCentralController.java`
+
+---
+
+### ESTOQUE LABORATÓRIO (Apenas Conferência/Histórico)
+
+#### Passo 12: Criar Entidade
+- [ ] Criar `model/EstoqueLaboratorio.java` (laboratorio_id, produto_id, quantidade, dataRecebimento, pedido_id)
+
+#### Passo 13: Criar DTO
+- [ ] Criar `dto/EstoqueLaboratorioDTO.java`
+
+#### Passo 14: Criar Repository
+- [ ] Criar `repository/EstoqueLaboratorioRepository.java`
+
+#### Passo 15: Criar Service
+- [ ] Criar `service/EstoqueLaboratorioService.java`
+
+#### Passo 16: Criar Controller
+- [ ] Criar `controller/EstoqueLaboratorioController.java`
+
+---
+
+### PEDIDO (Com Baixa Automática no EstoqueCentral)
+
+#### Passo 17: Criar Enum
+- [ ] Criar `model/StatusPedido.java` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO)
+
+#### Passo 18: Criar Entidades
+- [ ] Criar `model/Pedido.java` (usa StatusPedido, Usuario, Laboratorio, Projeto)
+- [ ] Criar `model/ItemPedido.java` (usa Pedido, Produto)
+
+#### Passo 19: Criar DTOs
+- [ ] Criar `dto/PedidoDTO.java`
+- [ ] Criar `dto/ItemPedidoDTO.java`
+
+#### Passo 20: Criar Repositories
+- [ ] Criar `repository/PedidoRepository.java`
+- [ ] Criar `repository/ItemPedidoRepository.java`
+
+#### Passo 21: Criar Service
+- [ ] Criar `service/PedidoService.java`
+- [ ] IMPORTANTE: Ao aprovar pedido, baixar automaticamente do EstoqueCentral
+
+#### Passo 22: Criar Controller
+- [ ] Criar `controller/PedidoController.java`
+
+---
+
+### DATA INITIALIZER
+
+#### Passo 23: Atualizar DataInitializer
+- [ ] Adicionar produtos de teste no `DataInitializer.java`
+- [ ] Adicionar estoque central de teste
+- [ ] Adicionar pedidos de teste
+- [ ] Adicionar registros de conferência no EstoqueLaboratorio (após entregas)
+
+---
+
+## 📋 CÓDIGOS DE REFERÊNIA
+
+### Enums para Produto (já existem em model/enums/)
+
+#### NivelRisco.java ✅ JÁ EXISTE
+```java
+package com.sgl.model.enums;
+
+public enum NivelRisco {
+    NENHUM,
+    BAIXO,
+    MEDIO,
+    ALTO
+}
+```
+
+#### TipoRisco.java ✅ JÁ EXISTE
+```java
+package com.sgl.model.enums;
+
+public enum TipoRisco {
+    NENHUM,
+    INFLAMAVEL,
+    RADIOATIVO,
+    TOXICO,
+    CORROSIVO,
+    BIOLOGICO
+}
+```
+
+#### TipoPerecivel.java ✅ JÁ EXISTE
+```java
+package com.sgl.model.enums;
+
+public enum TipoPerecivel {
+    NENHUM,
+    VEGETAL,
+    ANIMAL,
+    MICROBIANO,
+    QUIMICO
+}
+```
+
+### Entidade Produto (Catálogo Central - SEM laboratorio_id)
+```java
+package com.sgl.model;
+
+// Campos:
+// id, nome, descricao, codigoReferencia,
+// unidadeMedida, localizacaoFisica,
+// risco (NivelRisco enum), tipoRisco (TipoRisco enum), descricaoRisco,
+// perecivel (Boolean), diasValidade, tipoPerecivel (TipoPerecivel enum),
+// condicoesArmazenamento, ativo
+
+// IMPORTANTE: NÃO tem laboratorio_id
+// Produto é catálogo central - existe uma única vez
+```
+
+### Entidade EstoqueCentral (Estoque Total - ÚNICO com Entrada/Saída)
+```java
+package com.sgl.model;
+
+// Campos:
+// id, produto (OneToOne → Produto), 
+// quantidadeAtual, quantidadeMinima, ativo
+
+// IMPORTANTE: EstoqueCentral é o ÚNICO que tem entrada/saída de estoque
+// Cada produto tem UM registro no EstoqueCentral
+// Controla a quantidade total disponível para distribuição
+// Quando aprovado pedido: baixa automática (quantidadeAtual -= quantidadeSolicitada)
+```
+
+### Entidade EstoqueLaboratorio (Apenas Conferência/Histórico)
+```java
+package com.sgl.model;
+
+// Campos:
+// id, laboratorio (ManyToOne → Laboratorio), 
+// produto (ManyToOne → Produto),
+// quantidade, dataRecebimento, pedido (ManyToOne → Pedido), ativo
+
+// IMPORTANTE: EstoqueLaboratorio é apenas para CONFERÊNCIA/HISTÓRICO
+// Ele NÃO tem entrada/saída/updates de estoque
+// Apenas registrou: "este lab recebeu X unidades do produto Y na data Z via pedido W"
+// Para saber "quantos álcools foram pro lab1 este mês": WHERE laboratorio_id = X AND data_recebimento BETWEEN...
+// O estoque REAL fica apenas no EstoqueCentral
+```
+
+### Enum para Pedido
+
+#### StatusPedido.java
+```java
+package com.sgl.model;
+
+public enum StatusPedido {
+    PENDENTE,
+    APROVADO,
+    REJEITADO,
+    ENTREGUE,
+    CANCELADO
+}
+```
+
+### Entidade Pedido
+```java
+package com.sgl.model;
+
+// Campos:
+// id, usuario (ManyToOne), laboratorio (ManyToOne),
+// projeto (ManyToOne, opcional), dataSolicitacao,
+// status (StatusPedido enum), observacao, arquivoDocumento
+```
+
+### Entidade ItemPedido
+```java
+package com.sgl.model;
+
+// Campos:
+// id, pedido (ManyToOne), produto (ManyToOne),
+// quantidadeSolicitada, quantidadeAprovada
+```
+
+---
+
+## 📋 ENDPOINTS PARA TESTAR
+
+### Produtos (Catálogo Central)
+```
+GET    /api/v1/produtos                      - Listar todos
+GET    /api/v1/produtos/{id}                 - Buscar por ID
+POST   /api/v1/produtos                      - Criar
+PUT    /api/v1/produtos/{id}                 - Atualizar
+DELETE /api/v1/produtos/{id}                 - Deletar
+GET    /api/v1/produtos/risco/{nivel}        - Listar por risco
+GET    /api/v1/produtos/pereciveis           - Listar perecíveis
+GET    /api/v1/produtos/validade-proxima     - Alertas de validade
+```
+
+### EstoqueCentral (Estoque Total - ÚNICO com Entrada/Saída)
+```
+GET    /api/v1/estoque-central               - Listar todo estoque
+GET    /api/v1/estoque-central/{id}          - Buscar por ID
+GET    /api/v1/estoque-central/produto/{produtoId} - Estoque de um produto
+POST   /api/v1/estoque-central               - Criar
+PUT    /api/v1/estoque-central/{id}          - Atualizar (entrada/saída)
+GET    /api/v1/estoque-central/estoque-baixo - Listar com estoque baixo
+```
+
+### EstoqueLaboratorio (Apenas Conferência/Histórico)
+```
+GET    /api/v1/estoque-laboratorio                    - Listar todo histórico
+GET    /api/v1/estoque-laboratorio/{id}               - Buscar por ID
+GET    /api/v1/estoque-laboratorio/laboratorio/{labId} - Histórico de um lab
+GET    /api/v1/estoque-laboratorio/produto/{produtoId} - Onde foi o produto
+GET    /api/v1/estoque-laboratorio/pedido/{pedidoId}   - Itens de um pedido
+POST   /api/v1/estoque-laboratorio                    - Criar registro (após entrega)
+```
+
+### Pedidos
+```
+GET    /api/v1/pedidos                       - Listar todos
+GET    /api/v1/pedidos/{id}                  - Buscar por ID
+GET    /api/v1/pedidos/por-usuario?usuarioId=X - Listar por usuário
+GET    /api/v1/pedidos/por-status?status=X   - Listar por status
+POST   /api/v1/pedidos                       - Criar
+PUT    /api/v1/pedidos/{id}/aprovar          - Aprovar
+PUT    /api/v1/pedidos/{id}/rejeitar         - Rejeitar
+PUT    /api/v1/pedidos/{id}/entregar         - Entregar
+DELETE /api/v1/pedidos/{id}                 - Deletar
+```
 
 ---
 
@@ -1048,6 +1514,7 @@ backend/sgl-backend/src/main/java/com/sgl/
 - [ ] Protótipo/Figma: [CRIAR]
 - [ ] Documentação da API (Swagger): [CRIAR]
 - [ ] Banco de dados: [CRIAR SCRIPTS]
+- [ ] Diagrama de Classes Atualizado: [CRIAR com EstoqueCentral e EstoqueLaboratorio (apenas conferência)]
 
 ---
 
@@ -1069,17 +1536,26 @@ backend/sgl-backend/src/main/java/com/sgl/
 
 ### Conceitos Importantes
 - **Multi-tenant:** Cada Unidade é um tenant separado
-- **Estoque mínimo:** Produto define quantidade mínima para alerta
-- **Fluxo de pedido:** Pesquisador solicita → Responsável aprova → Estoque baixa
+- **Estoque central:** Produto é catálogo central, estoque total fica em EstoqueCentral (ÚNICO com entrada/saída)
+- **Estoque laboratório:** Apenas conferência/histórico - registrou que o lab recebeu material (sem entrada/saída)
+- **Fluxo de pedido:** Pesquisador solicita → Verifica estoque central → Responsável aprova → Baixa no EstoqueCentral → Registro no EstoqueLaboratorio
 - **Armazenamento:** Documentos ficam vinculados aos pedidos
 - **Risco:** Classificação Nenhum/Baixo/Médio/Alto com tipo específico (radioativo, inflamável, etc)
 - **Perecibilidade:** Controle de validade para produtos biológicos, vegetais, animais
+
+### Diferença entre Estoque
+- **EstoqueCentral:** Controle real de estoque (entrada/saída/quantidade)
+- **EstoqueLaboratorio:** Apenas log/histórico (registrou que o lab recebeu)
+- **Consulta:** "quantos álcools foram pro lab1?" → WHERE laboratorio_id = X AND data_recebimento BETWEEN...
 
 ### Para Continuar o Projeto
 1. Ler este arquivo primeiro
 2. Seguir a ordem dos "Próximos Passos"
 3. Atualizar este arquivo com decisões e progresso
 4. Manter o checklist atualizado
+5. Implementar na ordem: Produto → EstoqueCentral → EstoqueLaboratorio → Pedido
+6. Lembrar: EstoqueLaboratorio é apenas conferência/histórico (sem entrada/saída)
+7. Lembrar: EstoqueCentral é o ÚNICO com controle de estoque (entrada/saída)
 
 ---
 
