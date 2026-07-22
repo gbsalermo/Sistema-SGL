@@ -450,6 +450,28 @@ public enum Perfil {
 5. **Alertas**: estoque baixo apenas no EstoqueCentral
 6. **Consultas**: "quantos álcools foram pro lab1?" → WHERE laboratorio_id = X AND data_recebimento BETWEEN...
 7. **Diferença**: EstoqueCentral = estoque real | EstoqueLaboratorio = log/histórico
+8. **Estoque nunca negativo** - lançar exceção se quantidade insuficiente
+9. **Cada produto tem UM registro** no EstoqueCentral (OneToOne + UNIQUE)
+
+### Regras de Negócio para Pedidos
+1. **Status inicial** = PENDENTE (sempre)
+2. **Só gestor/admin aprova/rejeita** - verificar perfil GESTOR/ADMINISTRADOR
+3. **Usuário deve pertencer ao laboratório** do pedido
+4. **Pelo menos 1 item** por pedido
+5. **quantidadeAprovada <= quantidadeSolicitada** - gestor pode aprovar menos
+6. **Ao aprovar**: baixa automática no EstoqueCentral (quantidadeAtual -= quantidadeAprovada)
+7. **Ao entregar**: cria registro no EstoqueLaboratorio para cada item aprovado
+8. **Ao cancelar com status APROVADO**: devolver estoque (quantidadeAtual += quantidadeAprovada)
+9. **Status só avança**: PENDENTE → APROVADO/REJEITADO → ENTREGUE/CANCELADO
+
+### Regras de Validação
+1. **Produto**: se perecivel=true, dataValidade obrigatória
+2. **Produto**: se risco=ALTO, descricaoRisco obrigatória
+3. **EstoqueCentral**: quantidadeAtual >= 0 sempre
+4. **EstoqueCentral**: não pode cadastrar se produto já tem estoque
+5. **Pedido**: não pode ser criado se produto não tem EstoqueCentral
+6. **Pedido**: não pode ser entregue se status != APROVADO
+7. **DELETE**: não deletar entidade pai se tem filhos → retornar 409
 
 ---
 
@@ -604,12 +626,94 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [ ] Testar CRUD de Produtos no Postman
 - [ ] Prototipação das telas
 
-### Próximas Implementações (curto prazo)
-- [ ] Testar CRUD de Produtos no Postman
-- [ ] CRUD de EstoqueCentral (estoque total - ÚNICO com entrada/saída)
-- [ ] CRUD de EstoqueLaboratorio (apenas conferência/histórico)
-- [ ] CRUD de Pedidos (com baixa automática no EstoqueCentral)
-- [ ] Atualizar DataInitializer com estoque e pedidos de teste
+---
+
+## 🗺️ ROADMAP COMPLETO - BACKEND ATÉ INÍCIO DO FRONTEND
+
+### ETAPA 1: CRUDs Básicos (CONCLUÍDO)
+- [x] Unidade (Entity, DTO, Repository, Service, Controller)
+- [x] Laboratório (Entity, DTO, Repository, Service, Controller)
+- [x] Usuário (Entity, DTO, Repository, Service, Controller)
+- [x] Produto (Entity, DTO, Repository, Service, Controller)
+- [x] DataInitializer com dados de teste
+- [x] Testes no Postman (Unidade, Laboratório, Usuário)
+
+### ETAPA 2: Estoque (PENDENTE)
+- [ ] **2.1** Testar CRUD de Produtos no Postman
+- [ ] **2.2** Criar Enum `StatusPedido` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO)
+- [ ] **2.3** Criar `EstoqueCentral` (Entity, DTO, Repository, Service, Controller)
+- [ ] **2.4** Criar `EstoqueLaboratorio` (Entity, DTO, Repository, Service, Controller)
+- [ ] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos)
+- [ ] **2.6** Testar CRUD EstoqueCentral no Postman
+  - [ ] Testar exclusão de produto que ainda possui estoque (deve retornar 409 Conflict)
+- [ ] **2.7** Testar CRUD EstoqueLaboratorio no Postman
+
+### ETAPA 3: Pedidos (PENDENTE)
+- [ ] **3.1** Criar `Pedido` (Entity, DTO, Repository, Service, Controller)
+- [ ] **3.2** Criar `ItemPedido` (Entity, DTO, Repository, Service)
+- [ ] **3.3** Implementar fluxo: Criar pedido (status = PENDENTE)
+- [ ] **3.4** Implementar fluxo: Aprovar pedido (baixa automática no EstoqueCentral)
+- [ ] **3.5** Implementar fluxo: Rejeitar pedido (com motivo)
+- [ ] **3.6** Implementar fluxo: Entregar pedido (cria EstoqueLaboratorio)
+- [ ] **3.7** Implementar fluxo: Cancelar pedido (devolve estoque se APROVADO)
+- [ ] **3.8** Atualizar DataInitializer com pedidos de teste
+- [ ] **3.9** Testar fluxo completo no Postman
+
+### ETAPA 4: Regras de Negócio (PENDENTE)
+- [ ] **4.1** Validação: Estoque nunca negativo
+- [ ] **4.2** Validação: Só gestor/admin aprova/rejeita pedidos
+- [ ] **4.3** Validação: Usuário pertence ao laboratório do pedido
+- [ ] **4.4** Validação: Produto deve ter registro no EstoqueCentral
+- [ ] **4.5** Validação: Status só avança (PENDENTE → APROVADO → ENTREGUE)
+- [ ] **4.6** Validação: Não deletar entidade pai com filhos (409)
+- [ ] **4.7** Validação: Se perecível = true, dataValidade obrigatória
+- [ ] **4.8** Validação: Se risco = ALTO, descricaoRisco obrigatória
+- [ ] **4.9** Relação: Unidade 1:N Laboratório 1:N Usuário
+- [ ] **4.10** Relação: Produto 1:1 EstoqueCentral
+- [ ] **4.11** Relação: Pedido 1:N ItemPedido N:1 Produto
+- [ ] **4.12** Relação: Pedido N:1 Usuário + Laboratório
+- [ ] **4.13** Relação: EstoqueLaboratorio N:1 Pedido + Laboratório + Produto
+- [ ] **4.14** Testar todas as validações no Postman
+
+### ETAPA 5: Segurança e Auth (PENDENTE)
+- [ ] **5.1** Spring Security configurado
+- [ ] **5.2** Login com JWT
+- [ ] **5.3** Logout
+- [ ] **5.4** Controle de acesso por perfil (ADMIN, GESTOR, TECNICO, PESQUISADOR, ESTAGIARIO)
+- [ ] **5.5** Rotas protegidas
+- [ ] **5.6** Senha criptografada (BCrypt)
+
+### ETAPA 6: Infraestrutura Backend (PENDENTE)
+- [ ] **6.1** Tratar DELETE com foreign key (DataIntegrityViolationException → 409)
+- [ ] **6.2** Exception handler global completo
+- [ ] **6.3** Scripts SQL para PostgreSQL
+- [ ] **6.4** Configurar application.properties para PostgreSQL (produção)
+- [ ] **6.5** Atualizar DataInitializer com TODOS os dados de teste
+
+### ETAPA 7: Validação Final Backend (PENDENTE)
+- [ ] **7.1** Testar CRUD completo: Unidade
+- [ ] **7.2** Testar CRUD completo: Laboratório
+- [ ] **7.3** Testar CRUD completo: Usuário
+- [ ] **7.4** Testar CRUD completo: Produto
+- [ ] **7.5** Testar CRUD completo: EstoqueCentral
+- [ ] **7.6** Testar CRUD completo: EstoqueLaboratorio
+- [ ] **7.7** Testar fluxo completo: Pedido (criar → aprovar → entregar)
+- [ ] **7.8** Testar cancelamento com devolução de estoque
+- [ ] **7.9** Testar todas as validações e regras de negócio
+- [ ] **7.10** Testar autenticação e autorização
+
+### ETAPA 8: INÍCIO DO FRONTEND (PENDENTE)
+- [ ] **8.1** Prototipação das telas
+- [ ] **8.2** Configurar projeto Vue.js
+- [ ] **8.3** Login
+- [ ] **8.4** Dashboard
+- [ ] **8.5** CRUD de Unidades
+- [ ] **8.6** CRUD de Laboratórios
+- [ ] **8.7** CRUD de Usuários
+- [ ] **8.8** CRUD de Produtos
+- [ ] **8.9** Gestão de Estoque Central
+- [ ] **8.10** Pedidos (criar, aprovar, rejeitar, entregar)
+- [ ] **8.11** Histórico de EstoqueLaboratorio
 
 ---
 

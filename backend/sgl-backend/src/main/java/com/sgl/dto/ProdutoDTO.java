@@ -32,7 +32,7 @@ public class ProdutoDTO implements Serializable {
 	@NotBlank(message = "Codigo de referência é obrigatório")
 	private String codigoReferencia;
 	
-	@NotBlank(message = "Informe a Unidade de medida")
+	@NotNull(message = "Informe a Unidade de medida")
 	private UnidadeMedida unidadeMedida;
 	
 	private String localizacaoFisica;

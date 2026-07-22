@@ -70,6 +70,11 @@ public class ProdutoController {
 		return ResponseEntity.ok(produtoService.buscarPorNome(nome));
 	}
 	
+	@GetMapping("/validade-proxima")
+	public ResponseEntity<List<ProdutoDTO>> listarValidadeProxima(@RequestParam(defaultValue = "30") int dias){
+			return ResponseEntity.ok(produtoService.listarValidadeProxima(dias));
+	}
+	
 	
 	
 }

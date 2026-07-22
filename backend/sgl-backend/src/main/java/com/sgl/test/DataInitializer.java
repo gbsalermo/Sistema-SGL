@@ -43,11 +43,11 @@ public class DataInitializer implements CommandLineRunner {
         Laboratorio lab5 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Analise Instrumental", "Lab de instrumentacao analitica", null, false));
 
         // Usuários
-        Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", "123456", Perfil.ADMINISTRADOR, null, true));
-        Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, lab1, true));
-        Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, lab2, true));
-        Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", "123456", Perfil.PESQUISADOR, lab3, true));
-        Usuario maria = usuarioRepository.save(new Usuario(null, "Maria Oliveira", "maria@iq.com", "123456", Perfil.ESTAGIARIO, lab4, true));
+        Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", "123456", Perfil.ADMINISTRADOR, u1, lab5, true));
+        Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, u3, lab1, true));
+        Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, u2, lab2, true));
+        Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", "123456", Perfil.PESQUISADOR, u1, lab3, true));
+        Usuario maria = usuarioRepository.save(new Usuario(null, "Maria Oliveira", "maria@iq.com", "123456", Perfil.ESTAGIARIO, u2, lab4, true));
 
         // Atualizar laboratórios com os responsáveis
         lab1.setResponsavel(carlos);
