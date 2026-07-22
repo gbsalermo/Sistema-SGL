@@ -46,7 +46,7 @@ public class EstoqueCentralController {
 	@GetMapping("/produto/{produtoId}")
 	public ResponseEntity<EstoqueCentralDTO>
 	buscarPorProdutoId(@PathVariable Long produtoId){
-		return ResponseEntity.ok(estoqueCentralService.buscarPorId(produtoId));
+		return ResponseEntity.ok(estoqueCentralService.buscarPorProdutoID(produtoId));
 	}
 	
 	@PutMapping("/{id}")
