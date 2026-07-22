@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -106,5 +107,16 @@ public class ProdutoService {
     		throw new EntityNotFoundException("Produto não encontrado com o id: " + id);
     	}
     	produtoRepository.deleteById(id);
+    }
+    
+    //Metodo para Listar validade Proxima
+    @Transactional(readOnly = true)
+    public List<ProdutoDTO> listarValidadeProxima(int dias){
+    	LocalDate dataAtual = LocalDate.now();
+    	LocalDate dataLimite = dataAtual.plusDays(dias);
+    	return produtoRepository.findPereciveisComValidadeProxima(dataAtual, dataLimite)
+    			.stream()
+    			.map(ProdutoDTO::new)
+    			.toList();
     }
 }
