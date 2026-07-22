@@ -577,6 +577,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 21/07/2026 | EstoqueCentral como entidade separada | Cada produto tem UM registro no EstoqueCentral com a quantidade total disponível. É o ÚNICO que tem entrada/saída. Motivo: Controle centralizado do estoque |
 | 21/07/2026 | EstoqueLaboratorio é apenas conferência | EstoqueLaboratorio apenas registrou que o lab recebeu material (sem entrada/saída). Motivo: Histórico para consultas como "quantos álcools foram pro lab1 este mês?" |
 | 21/07/2026 | CRUD de Produto implementado | Entidade com 14 campos (nome, descricao, codigoReferencia, unidadeMedida, localizacaoFisica, risco, tipoRisco, descricaoRisco, perecivel, dataValidade, tipoPerecivel, condicoesArmazenamento, ativo). DTO com validações. Service com 8 métodos. Controller com 8 endpoints REST. 6 produtos de teste no DataInitializer |
+| 22/07/2026 | Correção: Endpoint /validade-proxima | Durante testes do CRUD de Produtos, verificado que o endpoint GET /api/v1/produtos/validade-proxima estava documentado mas não implementado. Adicionado: query customizada no Repository, método no Service, endpoint no Controller |
 
 ---
 
@@ -623,7 +624,8 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Implementar CRUD de Produtos (catálogo central - sem laboratorio_id) (21/07/2026)
 - [x] Criar ProdutoController com endpoints REST (21/07/2026)
 - [x] Adicionar 6 produtos de teste no DataInitializer (21/07/2026)
-- [ ] Testar CRUD de Produtos no Postman
+- [x] Testar CRUD de Produtos no Postman (22/07/2026)
+- [x] Corrigir endpoint /validade-proxima (faltante durante testes) (22/07/2026)
 - [ ] Prototipação das telas
 
 ---
@@ -639,7 +641,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Testes no Postman (Unidade, Laboratório, Usuário)
 
 ### ETAPA 2: Estoque (PENDENTE)
-- [ ] **2.1** Testar CRUD de Produtos no Postman
+- [x] **2.1** Testar CRUD de Produtos no Postman (22/07/2026)
 - [ ] **2.2** Criar Enum `StatusPedido` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO)
 - [ ] **2.3** Criar `EstoqueCentral` (Entity, DTO, Repository, Service, Controller)
 - [ ] **2.4** Criar `EstoqueLaboratorio` (Entity, DTO, Repository, Service, Controller)
@@ -773,6 +775,46 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Implementar ProdutoController com endpoints REST (21/07/2026)
 - [x] Corrigir bug na rota /risco/{nivel} no ProdutoController (21/07/2026)
 - [x] Adicionar 6 produtos de teste no DataInitializer (21/07/2026)
+- [x] Testar CRUD de Produtos no Postman (22/07/2026)
+
+---
+
+## 🔧 Correções Encontradas durante Testes do Produto (22/07/2026)
+
+### 1. Endpoint `/validade-proxima` - Implementação Faltante
+
+**Problema:** Endpoint documentado na API mas não implementado no código.
+
+**Solução:** Implementação em 3 arquivos:
+
+**ProdutoRepository.java** - Query customizada:
+```java
+@Query("SELECT p FROM Produto p WHERE p.perecivel = true AND p.dataValidade BETWEEN :dataAtual AND :dataLimite")
+List<Produto> findPereciveisComValidadeProxima(@Param("dataAtual") LocalDate dataAtual, @Param("dataLimite") LocalDate dataLimite);
+```
+
+**ProdutoService.java** - Método:
+```java
+@Transactional(readOnly = true)
+public List<ProdutoDTO> listarValidadeProxima(int dias) {
+    LocalDate dataAtual = LocalDate.now();
+    LocalDate dataLimite = dataAtual.plusDays(dias);
+    return produtoRepository.findPereciveisComValidadeProxima(dataAtual, dataLimite)
+            .stream()
+            .map(ProdutoDTO::new)
+            .toList();
+}
+```
+
+**ProdutoController.java** - Endpoint:
+```java
+@GetMapping("/validade-proxima")
+public ResponseEntity<List<ProdutoDTO>> listarValidadeProxima(@RequestParam(defaultValue = "30") int dias) {
+    return ResponseEntity.ok(produtoService.listarValidadeProxima(dias));
+}
+```
+
+**Uso:** `GET /api/v1/produtos/validade-proxima?dias=30`
 
 ---
 
@@ -843,7 +885,7 @@ private Perfil perfil;
 11. ~~Atualizar DataInitializer com usuarios de teste~~ **(CONCLUÍDO)**
 12. ~~Alterar Laboratorio.responsavel para Usuario~~ **(CONCLUÍDO)**
 13. ~~Implementar CRUD de Produtos~~ **(CONCLUÍDO)**
-14. **Testar CRUD de Produtos no Postman**
+14. ~~Testar CRUD de Produtos no Postman~~ **(CONCLUÍDO - 22/07/2026)** - Encontrado e corrigido endpoint /validade-proxima
 15. **Implementar CRUD de EstoqueCentral** (estoque total - ÚNICO com entrada/saída)
 16. **Implementar CRUD de EstoqueLaboratorio** (apenas conferência/histórico)
 17. **Implementar CRUD de Pedidos** (com baixa automática no EstoqueCentral)
