@@ -88,5 +88,13 @@ public class EstoqueCentralService {
 				.map(EstoqueCentralDTO::new)
 				.toList();
 	}
+	
+	@Transactional
+	public void deletar(Long id) {
+	    if (!estoqueCentralRepository.existsById(id)) {
+	        throw new EntityNotFoundException("Estoque central não encontrado com id: " + id);
+	    }
+	    estoqueCentralRepository.deleteById(id);
+	}
 	}
 

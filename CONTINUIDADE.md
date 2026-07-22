@@ -578,6 +578,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 21/07/2026 | EstoqueLaboratorio é apenas conferência | EstoqueLaboratorio apenas registrou que o lab recebeu material (sem entrada/saída). Motivo: Histórico para consultas como "quantos álcools foram pro lab1 este mês?" |
 | 21/07/2026 | CRUD de Produto implementado | Entidade com 14 campos (nome, descricao, codigoReferencia, unidadeMedida, localizacaoFisica, risco, tipoRisco, descricaoRisco, perecivel, dataValidade, tipoPerecivel, condicoesArmazenamento, ativo). DTO com validações. Service com 8 métodos. Controller com 8 endpoints REST. 6 produtos de teste no DataInitializer |
 | 22/07/2026 | Correção: Endpoint /validade-proxima | Durante testes do CRUD de Produtos, verificado que o endpoint GET /api/v1/produtos/validade-proxima estava documentado mas não implementado. Adicionado: query customizada no Repository, método no Service, endpoint no Controller |
+| 22/07/2026 | Implementação de EstoqueCentral | Entity (OneToOne com Produto), DTO com validações, Repository com queries customizadas, Service com CRUD completo + listarEstoqueBaixo, Controller com 7 endpoints REST |
 
 ---
 
@@ -640,10 +641,10 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] DataInitializer com dados de teste
 - [x] Testes no Postman (Unidade, Laboratório, Usuário)
 
-### ETAPA 2: Estoque (PENDENTE)
+### ETAPA 2: Estoque (EM ANDAMENTO)
 - [x] **2.1** Testar CRUD de Produtos no Postman (22/07/2026)
-- [ ] **2.2** Criar Enum `StatusPedido` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO)
-- [ ] **2.3** Criar `EstoqueCentral` (Entity, DTO, Repository, Service, Controller)
+- [x] **2.2** Criar Enum `StatusPedido` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO) (22/07/2026)
+- [x] **2.3** Criar `EstoqueCentral` (Entity, DTO, Repository, Service, Controller) (22/07/2026)
 - [ ] **2.4** Criar `EstoqueLaboratorio` (Entity, DTO, Repository, Service, Controller)
 - [ ] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos)
 - [ ] **2.6** Testar CRUD EstoqueCentral no Postman
@@ -776,6 +777,8 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Corrigir bug na rota /risco/{nivel} no ProdutoController (21/07/2026)
 - [x] Adicionar 6 produtos de teste no DataInitializer (21/07/2026)
 - [x] Testar CRUD de Produtos no Postman (22/07/2026)
+- [x] Criar Enum StatusPedido (22/07/2026)
+- [x] Implementar EstoqueCentral (Entity, DTO, Repository, Service, Controller) (22/07/2026)
 
 ---
 
@@ -815,6 +818,37 @@ public ResponseEntity<List<ProdutoDTO>> listarValidadeProxima(@RequestParam(defa
 ```
 
 **Uso:** `GET /api/v1/produtos/validade-proxima?dias=30`
+
+---
+
+## 📦 Implementação EstoqueCentral (22/07/2026)
+
+### Arquivos criados
+
+| Arquivo | Caminho | Descrição |
+|---------|---------|-----------|
+| EstoqueCentral.java | `model/` | Entity com OneToOne com Produto |
+| EstoqueCentralDTO.java | `dto/` | DTO com validações |
+| EstoqueCentralRepository.java | `repository/` | Repository com queries customizadas |
+| EstoqueCentralService.java | `service/` | Service com CRUD completo |
+| EstoqueCentralController.java | `controller/` | Controller com 7 endpoints REST |
+
+### Endpoints disponíveis
+
+```
+POST   /api/v1/estoque-central              - Criar
+GET    /api/v1/estoque-central               - Listar todos
+GET    /api/v1/estoque-central/{id}          - Buscar por ID
+GET    /api/v1/estoque-central/produto/{id}  - Buscar por produto
+PUT    /api/v1/estoque-central/{id}          - Atualizar
+DELETE /api/v1/estoque-central/{id}          - Deletar
+GET    /api/v1/estoque-central/estoque-baixo - Listar estoque baixo
+```
+
+### Correções aplicadas durante implementação
+
+1. Adicionado método `deletar` no Service
+2. Corrigido `buscarPorProdutoId` no Controller (estava chamando `buscarPorId`)
 
 ---
 
@@ -886,8 +920,9 @@ private Perfil perfil;
 12. ~~Alterar Laboratorio.responsavel para Usuario~~ **(CONCLUÍDO)**
 13. ~~Implementar CRUD de Produtos~~ **(CONCLUÍDO)**
 14. ~~Testar CRUD de Produtos no Postman~~ **(CONCLUÍDO - 22/07/2026)** - Encontrado e corrigido endpoint /validade-proxima
-15. **Implementar CRUD de EstoqueCentral** (estoque total - ÚNICO com entrada/saída)
-16. **Implementar CRUD de EstoqueLaboratorio** (apenas conferência/histórico)
+15. ~~Implementar CRUD de EstoqueCentral~~ **(CONCLUÍDO - 22/07/2026)** - Entity, DTO, Repository, Service, Controller
+16. **Testar CRUD de EstoqueCentral no Postman**
+17. **Implementar CRUD de EstoqueLaboratorio** (apenas conferência/histórico)
 17. **Implementar CRUD de Pedidos** (com baixa automática no EstoqueCentral)
 18. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
 19. **Criar banco de dados** - Scripts SQL das tabelas
