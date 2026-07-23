@@ -36,8 +36,9 @@ public class ProdutoService {
 		produto.setDataValidade(dto.getDataValidade());
 		produto.setTipoPerecivel(dto.getTipoPerecivel());
 		produto.setCondicoesArmazenamento(dto.getCondicoesArmazenamento());
+		produto.setUnidadeArmazenamento(dto.getUnidadeArmazenamento());
 		produto.setAtivo(dto.isAtivo());
-		
+
 		Produto salvo = produtoRepository.save(produto);
 		return new ProdutoDTO(salvo);
 	}
@@ -96,6 +97,7 @@ public class ProdutoService {
         produto.setDataValidade(dto.getDataValidade());
         produto.setTipoPerecivel(dto.getTipoPerecivel());
         produto.setCondicoesArmazenamento(dto.getCondicoesArmazenamento());
+        produto.setUnidadeArmazenamento(dto.getUnidadeArmazenamento());
         produto.setAtivo(dto.isAtivo());
         Produto atualizado = produtoRepository.save(produto);
         return new ProdutoDTO(atualizado);

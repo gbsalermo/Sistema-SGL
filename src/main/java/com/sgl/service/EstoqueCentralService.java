@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.EstoqueCentralDTO;
+import com.sgl.dto.MovimentacaoEstoqueDTO;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Produto;
 import com.sgl.repository.EstoqueCentralRepository;
@@ -89,6 +90,34 @@ public class EstoqueCentralService {
 				.toList();
 	}
 	
+	@Transactional
+	public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
+		EstoqueCentral estoque = estoqueCentralRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado com id: " + id));
+
+		estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() + dto.getQuantidade());
+
+		EstoqueCentral atualizado = estoqueCentralRepository.save(estoque);
+		return new EstoqueCentralDTO(atualizado);
+	}
+
+	@Transactional
+	public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
+		EstoqueCentral estoque = estoqueCentralRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado com id: " + id));
+
+		int novaQuantidade = estoque.getQuantidadeAtual() - dto.getQuantidade();
+		if (novaQuantidade < 0) {
+			throw new IllegalArgumentException("Estoque insuficiente. Disponível: "
+					+ estoque.getQuantidadeAtual() + ", solicitado: " + dto.getQuantidade());
+		}
+
+		estoque.setQuantidadeAtual(novaQuantidade);
+
+		EstoqueCentral atualizado = estoqueCentralRepository.save(estoque);
+		return new EstoqueCentralDTO(atualizado);
+	}
+
 	@Transactional
 	public void deletar(Long id) {
 	    if (!estoqueCentralRepository.existsById(id)) {

@@ -71,7 +71,11 @@ public class Produto implements Serializable {
 	private TipoPerecivel tipoPerecivel;
 	
 	private String condicoesArmazenamento;
-	
+
+	// Ex: "frasco de 1L", "caixa com 100 unidades", "saco de 5kg"
+	// Contextualiza a quantidade: se quantidadeAtual=4 e unidadeArmazenamento="frasco de 1L", são 4 frascos
+	private String unidadeArmazenamento;
+
 	@Column(nullable = false)
 	private Boolean ativo = true;
 	

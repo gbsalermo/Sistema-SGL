@@ -3,6 +3,7 @@ package com.sgl.test;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
@@ -12,6 +13,7 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.UnidadeRepository;
@@ -27,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     private final LaboratorioRepository laboratorioRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
+    private final EstoqueCentralRepository estoqueCentralRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -74,6 +77,7 @@ public class DataInitializer implements CommandLineRunner {
                 .descricaoRisco("Inflamável - armazenar longe de chamas")
                 .perecivel(false)
                 .condicoesArmazenamento("Local ventilado, longe de fontes de calor")
+                .unidadeArmazenamento("frasco de 1L")
                 .ativo(true)
                 .build());
 
@@ -85,6 +89,7 @@ public class DataInitializer implements CommandLineRunner {
                 .localizacaoFisica("Armário B3 - Materiais descartáveis")
                 .risco(NivelRisco.NENHUM)
                 .perecivel(false)
+                .unidadeArmazenamento("caixa com 50 unidades")
                 .ativo(true)
                 .build());
 
@@ -101,6 +106,7 @@ public class DataInitializer implements CommandLineRunner {
                 .dataValidade(java.time.LocalDate.now().plusMonths(6))
                 .tipoPerecivel(TipoPerecivel.MICROBIANO)
                 .condicoesArmazenamento("Armazenar em geladeira 2-8°C")
+                .unidadeArmazenamento("frasco de 500mL")
                 .ativo(true)
                 .build());
 
@@ -115,6 +121,7 @@ public class DataInitializer implements CommandLineRunner {
                 .descricaoRisco("Tóxico e cancerígeno - usar capela")
                 .perecivel(false)
                 .condicoesArmazenamento("Armazenar em capela, temperatura ambiente")
+                .unidadeArmazenamento("frasco de 500mL")
                 .ativo(true)
                 .build());
 
@@ -126,6 +133,7 @@ public class DataInitializer implements CommandLineRunner {
                 .localizacaoFisica("Armário B1 - Material descartável")
                 .risco(NivelRisco.NENHUM)
                 .perecivel(false)
+                .unidadeArmazenamento("caixa com 1000 unidades")
                 .ativo(true)
                 .build());
 
@@ -140,10 +148,54 @@ public class DataInitializer implements CommandLineRunner {
                 .dataValidade(java.time.LocalDate.now().plusMonths(3))
                 .tipoPerecivel(TipoPerecivel.QUIMICO)
                 .condicoesArmazenamento("Armazenar em freezer -80°C")
+                .unidadeArmazenamento("kit com 50 reações")
+                .ativo(true)
+                .build());
+
+        // EstoqueCentral (estoque total disponível)
+        estoqueCentralRepository.save(EstoqueCentral.builder()
+                .produto(p1)
+                .quantidadeAtual(100)
+                .quantidadeMinima(20)
+                .ativo(true)
+                .build());
+
+        estoqueCentralRepository.save(EstoqueCentral.builder()
+                .produto(p2)
+                .quantidadeAtual(50)
+                .quantidadeMinima(10)
+                .ativo(true)
+                .build());
+
+        estoqueCentralRepository.save(EstoqueCentral.builder()
+                .produto(p3)
+                .quantidadeAtual(30)
+                .quantidadeMinima(5)
+                .ativo(true)
+                .build());
+
+        estoqueCentralRepository.save(EstoqueCentral.builder()
+                .produto(p4)
+                .quantidadeAtual(15)
+                .quantidadeMinima(5)
+                .ativo(true)
+                .build());
+
+        estoqueCentralRepository.save(EstoqueCentral.builder()
+                .produto(p5)
+                .quantidadeAtual(200)
+                .quantidadeMinima(30)
+                .ativo(true)
+                .build());
+
+        estoqueCentralRepository.save(EstoqueCentral.builder()
+                .produto(p6)
+                .quantidadeAtual(10)
+                .quantidadeMinima(3)
                 .ativo(true)
                 .build());
 
         System.out.println("=== Dados de teste injetados com sucesso! ===");
-        System.out.println("=== 3 Unidades, 5 Laboratórios, 5 Usuários, 6 Produtos ===");
+        System.out.println("=== 3 Unidades, 5 Laboratórios, 5 Usuários, 6 Produtos, 6 EstoqueCentral ===");
     }
 }

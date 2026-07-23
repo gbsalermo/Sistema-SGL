@@ -52,7 +52,9 @@ public class ProdutoDTO implements Serializable {
 	private LocalDate dataValidade;
 	
 	private String condicoesArmazenamento;
-	
+
+	private String unidadeArmazenamento;
+
 	private boolean ativo;
 	
 	public ProdutoDTO(Produto entity) {
@@ -69,6 +71,7 @@ public class ProdutoDTO implements Serializable {
 		this.tipoPerecivel = entity.getTipoPerecivel();
 		this.dataValidade = entity.getDataValidade();
 		this.condicoesArmazenamento = entity.getCondicoesArmazenamento();
+		this.unidadeArmazenamento = entity.getUnidadeArmazenamento();
 		this.ativo = entity.getAtivo();
 	}
 
