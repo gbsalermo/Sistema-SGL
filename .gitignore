@@ -26,3 +26,6 @@ logs/
 .env
 .env.local
 .env.*.local
+
+# Reference files
+*-referencia*

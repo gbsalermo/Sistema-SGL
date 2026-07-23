@@ -1,9 +1,9 @@
 # 📦 Projeto SGL - Sistema de Gestão de Laboratórios
 
 ## 📋 Status do Projeto
-**Fase:** Desenvolvimento - CRUD Produto implementado (pendente teste no Postman)  
+**Fase:** Desenvolvimento - EstoqueCentral CRUD + Entrada/Saída implementados e testados  
 **Data de início:** 13/07/2026  
-**Última atualização:** 21/07/2026  
+**Última atualização:** 23/07/2026  
 
 ---
 
@@ -280,6 +280,7 @@ public enum Perfil {
 - codigo_referencia
 - unidade_medida
 - localizacao_fisica
+- unidade_armazenamento  // Ex: "frasco de 1L", "caixa com 50 unidades"
 - ativo
 
 // Campos de risco e perecibilidade
@@ -294,6 +295,7 @@ public enum Perfil {
 // IMPORTANTE: Produto NÃO tem laboratorio_id
 // Produto é um catálogo central - existe uma única vez
 // O estoque por laboratório é controlado pela entidade EstoqueLaboratorio
+// unidade_armazenamento contextualiza a quantidade: se quantidadeAtual=4 e unidade_armazenamento="frasco de 1L", são 4 frascos
 ```
 
 ### EstoqueCentral (Estoque Total Disponível)
@@ -513,8 +515,18 @@ GET    /api/v1/estoque-central               - Listar estoque central
 GET    /api/v1/estoque-central/{id}          - Buscar por ID
 GET    /api/v1/estoque-central/produto/{produtoId} - Estoque de um produto
 POST   /api/v1/estoque-central               - Cadastrar estoque central
-PUT    /api/v1/estoque-central/{id}          - Atualizar quantidade
+PUT    /api/v1/estoque-central/{id}          - Atualizar quantidade (sobrescreve)
+PUT    /api/v1/estoque-central/{id}/entrada  - Entrada de estoque (soma quantidade)
+PUT    /api/v1/estoque-central/{id}/saida    - Saída de estoque (subtrai quantidade, valida >= 0)
+DELETE /api/v1/estoque-central/{id}          - Deletar estoque central
 GET    /api/v1/estoque-central/estoque-baixo - Listar com estoque baixo
+```
+
+### MovimentacaoEstoqueDTO (para entrada/saída)
+```json
+{
+    "quantidade": 50  // obrigatório, mínimo 1
+}
 ```
 
 ### EstoqueLaboratorio (Estoque por Lab)
@@ -579,6 +591,11 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 21/07/2026 | CRUD de Produto implementado | Entidade com 14 campos (nome, descricao, codigoReferencia, unidadeMedida, localizacaoFisica, risco, tipoRisco, descricaoRisco, perecivel, dataValidade, tipoPerecivel, condicoesArmazenamento, ativo). DTO com validações. Service com 8 métodos. Controller com 8 endpoints REST. 6 produtos de teste no DataInitializer |
 | 22/07/2026 | Correção: Endpoint /validade-proxima | Durante testes do CRUD de Produtos, verificado que o endpoint GET /api/v1/produtos/validade-proxima estava documentado mas não implementado. Adicionado: query customizada no Repository, método no Service, endpoint no Controller |
 | 22/07/2026 | Implementação de EstoqueCentral | Entity (OneToOne com Produto), DTO com validações, Repository com queries customizadas, Service com CRUD completo + listarEstoqueBaixo, Controller com 7 endpoints REST |
+| 23/07/2026 | Campo `unidadeArmazenamento` no Produto | Adicionado campo String para contextualizar a quantidade do estoque (ex: "frasco de 1L", "caixa com 50 unidades"). Motivo: sem esse campo, "quantidade: 4" não tem contexto - 4 o que? |
+| 23/07/2026 | `produtoUnidadeArmazenamento` no EstoqueCentralDTO | DTO de estoque agora expõe a unidade de armazenamento do produto para o frontend contextualizar a quantidade |
+| 23/07/2026 | Endpoints de Entrada/Saída no EstoqueCentral | Criados `PUT /{id}/entrada` e `PUT /{id}/saida` com lógica de soma/subtração. Saída valida estoque >= 0. Motivo: PUT genérico apenas sobrescrevia, sem histórico de movimentação |
+| 23/07/2026 | DTO MovimentacaoEstoqueDTO | DTO simples com campo `quantidade` (obrigatório, min 1) para os endpoints de entrada/saída |
+| 23/07/2026 | Testes de EstoqueCentral no Postman | Todos os endpoints testados com sucesso: CRUD, entrada, saída, estoque baixo, validação de estoque insuficiente |
 
 ---
 
@@ -627,6 +644,12 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Adicionar 6 produtos de teste no DataInitializer (21/07/2026)
 - [x] Testar CRUD de Produtos no Postman (22/07/2026)
 - [x] Corrigir endpoint /validade-proxima (faltante durante testes) (22/07/2026)
+- [x] Testar CRUD de EstoqueCentral no Postman (23/07/2026)
+- [x] Adicionar campo `unidadeArmazenamento` ao Produto (23/07/2026)
+- [x] Adicionar `produtoUnidadeArmazenamento` ao EstoqueCentralDTO (23/07/2026)
+- [x] Criar DTO MovimentacaoEstoqueDTO (23/07/2026)
+- [x] Implementar endpoints de Entrada/Saída no EstoqueCentral (23/07/2026)
+- [x] Atualizar DataInitializer com dados de estoque (6 produtos) (23/07/2026)
 - [ ] Prototipação das telas
 
 ---
@@ -645,10 +668,12 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] **2.1** Testar CRUD de Produtos no Postman (22/07/2026)
 - [x] **2.2** Criar Enum `StatusPedido` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO) (22/07/2026)
 - [x] **2.3** Criar `EstoqueCentral` (Entity, DTO, Repository, Service, Controller) (22/07/2026)
+- [x] **2.3.1** Adicionar campo `unidadeArmazenamento` ao Produto e `produtoUnidadeArmazenamento` ao EstoqueCentralDTO (23/07/2026)
+- [x] **2.3.2** Criar DTO `MovimentacaoEstoqueDTO` para entradas/saídas (23/07/2026)
+- [x] **2.3.3** Implementar endpoints `entrada` e `saida` no EstoqueCentral (23/07/2026)
+- [x] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos) (23/07/2026)
+- [x] **2.6** Testar CRUD EstoqueCentral no Postman (23/07/2026) - CRUD, entrada, saída, estoque baixo, validação estoque insuficiente
 - [ ] **2.4** Criar `EstoqueLaboratorio` (Entity, DTO, Repository, Service, Controller)
-- [ ] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos)
-- [ ] **2.6** Testar CRUD EstoqueCentral no Postman
-  - [ ] Testar exclusão de produto que ainda possui estoque (deve retornar 409 Conflict)
 - [ ] **2.7** Testar CRUD EstoqueLaboratorio no Postman
 
 ### ETAPA 3: Pedidos (PENDENTE)
@@ -897,7 +922,8 @@ private Perfil perfil;
 | ~~Exception customizada~~ | ~~Substituir `RuntimeException` genérica por `RecursoNaoEncontradoException` com `@RestControllerAdvice` global~~ | Dev | **Resolvido** | ~~Média~~ |
 | ~~DELETE com foreign key~~ | ~~Unidade não pode ser deletada se tem laboratórios vinculados. Necessário tratar `DataIntegrityViolationException` no exception handler para retornar 409~~ | Dev | **Identificado** - pendente implementação do handler | Média |
 | Spring Boot 4.1.0 | Versão pode não existir ainda (máxima estável é 3.x). Verificar e corrigir se necessário. | Dev | Verificar | Média |
-| EstoqueCentral | Implementar entidade para estoque total disponível (ÚNICO com entrada/saída) | Dev | Pendente | Alta |
+| ~~EstoqueCentral~~ | ~~Implementar entidade para estoque total disponível (ÚNICO com entrada/saída)~~ | Dev | **Concluído** | ~~Alta~~ |
+| Validação DELETE com filhos | Implementar verificação: não deletar Produto se tem EstoqueCentral, não deletar EstoqueCentral se tem Pedidos. Retornar 409 | Dev | Pendente | Média |
 | EstoqueLaboratorio | Implementar entidade para conferência/histórico (sem entrada/saída) | Dev | Pendente | Alta |
 | Validação de estoque | Implementar regras de negócio para baixa automática no EstoqueCentral ao aprovar pedido | Dev | Pendente | Alta |
 
@@ -921,11 +947,11 @@ private Perfil perfil;
 13. ~~Implementar CRUD de Produtos~~ **(CONCLUÍDO)**
 14. ~~Testar CRUD de Produtos no Postman~~ **(CONCLUÍDO - 22/07/2026)** - Encontrado e corrigido endpoint /validade-proxima
 15. ~~Implementar CRUD de EstoqueCentral~~ **(CONCLUÍDO - 22/07/2026)** - Entity, DTO, Repository, Service, Controller
-16. **Testar CRUD de EstoqueCentral no Postman**
+16. ~~Testar CRUD de EstoqueCentral no Postman~~ **(CONCLUÍDO - 23/07/2026)** - CRUD + entrada + saída + estoque baixo
 17. **Implementar CRUD de EstoqueLaboratorio** (apenas conferência/histórico)
-17. **Implementar CRUD de Pedidos** (com baixa automática no EstoqueCentral)
-18. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
-19. **Criar banco de dados** - Scripts SQL das tabelas
+18. **Implementar CRUD de Pedidos** (com baixa automática no EstoqueCentral)
+19. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
+20. **Criar banco de dados** - Scripts SQL das tabelas
 
 ---
 
@@ -966,19 +992,35 @@ private Perfil perfil;
 ### ESTOQUE CENTRAL (Estoque Total - ÚNICO com Entrada/Saída)
 
 #### Passo 7: Criar Entidade
-- [ ] Criar `model/EstoqueCentral.java` (produto_id único, quantidade_atual, quantidade_minima)
+- [x] Criar `model/EstoqueCentral.java` (produto_id único, quantidade_atual, quantidade_minima) ✅ CONCLUÍDO
 
 #### Passo 8: Criar DTO
-- [ ] Criar `dto/EstoqueCentralDTO.java`
+- [x] Criar `dto/EstoqueCentralDTO.java` ✅ CONCLUÍDO
 
 #### Passo 9: Criar Repository
-- [ ] Criar `repository/EstoqueCentralRepository.java`
+- [x] Criar `repository/EstoqueCentralRepository.java` ✅ CONCLUÍDO
 
 #### Passo 10: Criar Service
-- [ ] Criar `service/EstoqueCentralService.java`
+- [x] Criar `service/EstoqueCentralService.java` ✅ CONCLUÍDO
 
 #### Passo 11: Criar Controller
-- [ ] Criar `controller/EstoqueCentralController.java`
+- [x] Criar `controller/EstoqueCentralController.java` ✅ CONCLUÍDO
+
+#### Passo 11.1: Adicionar unidadeArmazenamento ao Produto
+- [x] Campo `unidadeArmazenamento` na Entity Produto ✅ CONCLUÍDO
+- [x] Campo no ProdutoDTO + construtor ✅ CONCLUÍDO
+- [x] Mapeamento no ProdutoService (criar e atualizar) ✅ CONCLUÍDO
+- [x] Campo `produtoUnidadeArmazenamento` no EstoqueCentralDTO ✅ CONCLUÍDO
+
+#### Passo 11.2: Endpoints de Entrada/Saída
+- [x] Criar `dto/MovimentacaoEstoqueDTO.java` ✅ CONCLUÍDO
+- [x] Implementar `entrada()` no EstoqueCentralService ✅ CONCLUÍDO
+- [x] Implementar `saida()` no EstoqueCentralService (valida estoque >= 0) ✅ CONCLUÍDO
+- [x] Adicionar endpoints no EstoqueCentralController ✅ CONCLUÍDO
+
+#### Passo 11.3: Dados de teste
+- [x] Adicionar 6 registros de EstoqueCentral no DataInitializer ✅ CONCLUÍDO
+- [x] Adicionar `unidadeArmazenamento` nos 6 produtos existentes ✅ CONCLUÍDO
 
 ---
 

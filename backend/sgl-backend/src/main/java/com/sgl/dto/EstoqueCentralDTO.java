@@ -22,6 +22,8 @@ public class EstoqueCentralDTO {
 	
 	private String produtoNome;
 
+	private String produtoUnidadeArmazenamento;
+
 	@NotNull(message = "quantidade atual é obrigatoria")
 	@Min(value = 0, message = "Quantidade atual não pode ser negativa")
 	private Integer quantidadeAtual;
@@ -40,6 +42,7 @@ public class EstoqueCentralDTO {
 		this.id = entity.getId();
 		this.produtoId = entity.getProduto().getId();
 		this.produtoNome = entity.getProduto().getNome();
+		this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
 		this.quantidadeAtual = entity.getQuantidadeAtual();
 		this.quantidadeMinima = entity.getQuantidadeMinima();
 		this.ativo = entity.getAtivo();
