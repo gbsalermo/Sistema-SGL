@@ -3,7 +3,19 @@
 ## 📋 Status do Projeto
 **Fase:** Desenvolvimento - EstoqueCentral CRUD + Entrada/Saída implementados e testados  
 **Data de início:** 13/07/2026  
-**Última atualização:** 23/07/2026  
+**Última atualização:** 24/07/2026  
+
+### 📍 Onde estamos agora
+- ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto
+- ✅ EstoqueCentral completo (Entity + DTO + Repository + Service + Controller)
+- ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md`
+- ⏳ **PRÓXIMO:** Implementar Projeto → ItemPedido → Pedido → EstoqueLaboratorio
+
+### 📌 Continuar a partir de:
+**Repositories** (depois de criar as Entities e DTOs)
+
+### 📂 Arquivo de referência
+Consultar `docs/codigos-referencia-pedidos.md` para todos os códigos necessários
 
 ---
 
@@ -596,6 +608,11 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 23/07/2026 | Endpoints de Entrada/Saída no EstoqueCentral | Criados `PUT /{id}/entrada` e `PUT /{id}/saida` com lógica de soma/subtração. Saída valida estoque >= 0. Motivo: PUT genérico apenas sobrescrevia, sem histórico de movimentação |
 | 23/07/2026 | DTO MovimentacaoEstoqueDTO | DTO simples com campo `quantidade` (obrigatório, min 1) para os endpoints de entrada/saída |
 | 23/07/2026 | Testes de EstoqueCentral no Postman | Todos os endpoints testados com sucesso: CRUD, entrada, saída, estoque baixo, validação de estoque insuficiente |
+| 24/07/2026 | Arquivo de referência para Pedidos | Criado `docs/codigos-referencia-pedidos.md` com códigos completos de Projeto, ItemPedido, Pedido, EstoqueLaboratorio e integração entre eles |
+| 24/07/2026 | Ordem correta de implementação | Definida ordem: Enums → Produto → EstoqueCentral → **Projeto** → ItemPedido → Pedido → EstoqueLaboratorio. Motivo: Pedido depende de Projeto (opcional) e ItemPedido |
+| 24/07/2026 | Projeto como entidade opcional no Pedido | Campo `projeto_id` no Pedido é nullable. Motivo: nem todo pedido está vinculado a um projeto |
+| 24/07/2026 | DataInicio/DataFim opcionais no Projeto | Campos `dataInicio` e `dataFim` no ProjetoDTO não são obrigatórios. Motivo: projeto pode começar sem data definida |
+| 24/07/2026 | EstoqueLaboratorio: correção pendente | Entity existente precisa de ajustes: adicionar `pedido_id` (FK), `ativo` (Boolean), corrigir `dataRecebimento` para `LocalDateTime` |
 
 ---
 
@@ -650,6 +667,8 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Criar DTO MovimentacaoEstoqueDTO (23/07/2026)
 - [x] Implementar endpoints de Entrada/Saída no EstoqueCentral (23/07/2026)
 - [x] Atualizar DataInitializer com dados de estoque (6 produtos) (23/07/2026)
+- [x] Criar arquivo de referência para Pedidos (docs/codigos-referencia-pedidos.md) (24/07/2026)
+- [x] Definir ordem correta: Projeto → ItemPedido → Pedido → EstoqueLaboratorio (24/07/2026)
 - [ ] Prototipação das telas
 
 ---
@@ -673,19 +692,36 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] **2.3.3** Implementar endpoints `entrada` e `saida` no EstoqueCentral (23/07/2026)
 - [x] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos) (23/07/2026)
 - [x] **2.6** Testar CRUD EstoqueCentral no Postman (23/07/2026) - CRUD, entrada, saída, estoque baixo, validação estoque insuficiente
-- [ ] **2.4** Criar `EstoqueLaboratorio` (Entity, DTO, Repository, Service, Controller)
+- [ ] **2.4** Corrigir `EstoqueLaboratorio.java` (adicionar pedido_id, ativo, LocalDateTime) - Entity já existe parcial
+- [ ] **2.4.1** Criar `EstoqueLaboratorioDTO.java`
+- [ ] **2.4.2** Criar `EstoqueLaboratorioRepository.java`
+- [ ] **2.4.3** Criar `EstoqueLaboratorioService.java`
+- [ ] **2.4.4** Criar `EstoqueLaboratorioController.java`
 - [ ] **2.7** Testar CRUD EstoqueLaboratorio no Postman
 
-### ETAPA 3: Pedidos (PENDENTE)
-- [ ] **3.1** Criar `Pedido` (Entity, DTO, Repository, Service, Controller)
-- [ ] **3.2** Criar `ItemPedido` (Entity, DTO, Repository, Service)
-- [ ] **3.3** Implementar fluxo: Criar pedido (status = PENDENTE)
-- [ ] **3.4** Implementar fluxo: Aprovar pedido (baixa automática no EstoqueCentral)
-- [ ] **3.5** Implementar fluxo: Rejeitar pedido (com motivo)
-- [ ] **3.6** Implementar fluxo: Entregar pedido (cria EstoqueLaboratorio)
-- [ ] **3.7** Implementar fluxo: Cancelar pedido (devolve estoque se APROVADO)
-- [ ] **3.8** Atualizar DataInitializer com pedidos de teste
-- [ ] **3.9** Testar fluxo completo no Postman
+### ETAPA 2.5: Projeto (PENDENTE - implementar ANTES de Pedido)
+- [ ] **2.5.1** Criar `Projeto.java` (Entity) -参照 docs/codigos-referencia-pedidos.md
+- [ ] **2.5.2** Criar `ProjetoDTO.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **2.5.3** Criar `ProjetoRepository.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **2.5.4** Criar `ProjetoService.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **2.5.5** Criar `ProjetoController.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **2.5.6** Atualizar DataInitializer com projetos de teste
+
+### ETAPA 2.6: ItemPedido (PENDENTE - implementar ANTES de Pedido)
+- [ ] **2.6.1** Criar `ItemPedido.java` (Entity) -参照 docs/codigos-referencia-pedidos.md
+
+### ETAPA 3: Pedidos (PENDENTE - implementar DEPOIS de Projeto e ItemPedido)
+> **📌 IMPORTANTE:** Consultar `docs/codigos-referencia-pedidos.md` para códigos completos
+- [ ] **3.1** Criar `Pedido.java` (Entity com List<ItemPedido> e optional Projeto) -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.2** Criar `ItemPedidoDTO.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.3** Criar `PedidoDTO.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.4** Criar `AprovarPedidoDTO.java` (com classe interna ItemAprovacaoDTO) -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.5** Criar `PedidoRepository.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.6** Criar `ItemPedidoRepository.java` -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.7** Criar `PedidoService.java` (com lógica de aprovação/entrega/cancelamento) -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.8** Criar `PedidoController.java` (10 endpoints) -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.9** Atualizar DataInitializer com pedidos de teste -参照 docs/codigos-referencia-pedidos.md
+- [ ] **3.10** Testar fluxo completo no Postman
 
 ### ETAPA 4: Regras de Negócio (PENDENTE)
 - [ ] **4.1** Validação: Estoque nunca negativo
@@ -931,7 +967,9 @@ private Perfil perfil;
 
 ## 📌 Próximos Passos
 
-### Curto Prazo
+> **📌 IMPORTANTE:** Consultar `docs/codigos-referencia-pedidos.md` para todos os códigos
+
+### Curto Prazo (implementar nesta ordem)
 1. ~~Implementar CRUD de Laboratório com DTO~~ **(CONCLUÍDO)**
 2. ~~Criar exception handler global~~ **(CONCLUÍDO)**
 3. ~~DataInitializer para testes~~ **(CONCLUÍDO)**
@@ -948,10 +986,19 @@ private Perfil perfil;
 14. ~~Testar CRUD de Produtos no Postman~~ **(CONCLUÍDO - 22/07/2026)** - Encontrado e corrigido endpoint /validade-proxima
 15. ~~Implementar CRUD de EstoqueCentral~~ **(CONCLUÍDO - 22/07/2026)** - Entity, DTO, Repository, Service, Controller
 16. ~~Testar CRUD de EstoqueCentral no Postman~~ **(CONCLUÍDO - 23/07/2026)** - CRUD + entrada + saída + estoque baixo
-17. **Implementar CRUD de EstoqueLaboratorio** (apenas conferência/histórico)
-18. **Implementar CRUD de Pedidos** (com baixa automática no EstoqueCentral)
-19. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
-20. **Criar banco de dados** - Scripts SQL das tabelas
+17. ~~Criar arquivo de referência para Pedidos~~ **(CONCLUÍDO - 24/07/2026)** - `docs/codigos-referencia-pedidos.md`
+18. **[1] Criar entity `Projeto.java`** -参照 reference (Entity + DTO + Repository + Service + Controller)
+19. **[2] Corrigir entity `EstoqueLaboratorio.java`** - adicionar pedido_id, ativo, LocalDateTime
+20. **[3] Criar entity `ItemPedido.java`** -参照 reference
+21. **[4] Criar entity `Pedido.java`** -参照 reference (com List<ItemPedido> e optional Projeto)
+22. **[5] Criar DTOs** -参照 reference (ItemPedidoDTO, PedidoDTO, AprovarPedidoDTO, EstoqueLaboratorioDTO, ProjetoDTO)
+23. **[6] Criar Repositories** -参照 reference (continuar a partir daqui)
+24. **[7] Criar Services** -参照 reference (PedidoService, EstoqueLaboratorioService, ProjetoService)
+25. **[8] Criar Controllers** -参照 reference (PedidoController, EstoqueLaboratorioController, ProjetoController)
+26. **[9] Atualizar DataInitializer** -参照 reference (projetos e pedidos de teste)
+27. **[10] Testar fluxo completo no Postman**
+28. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
+29. **Criar banco de dados** - Scripts SQL das tabelas
 
 ---
 
@@ -1024,22 +1071,57 @@ private Perfil perfil;
 
 ---
 
-### ESTOQUE LABORATÓRIO (Apenas Conferência/Histórico)
+### PROJETO (Implementar ANTES de Pedido) 🆕
+
+> **📌 Referência completa:** `docs/codigos-referencia-pedidos.md`
 
 #### Passo 12: Criar Entidade
-- [ ] Criar `model/EstoqueLaboratorio.java` (laboratorio_id, produto_id, quantidade, dataRecebimento, pedido_id)
+- [ ] Criar `model/Projeto.java` (laboratorio_id, nome, descricao, dataInicio, dataFim, responsavel, ativo)参照 reference
 
 #### Passo 13: Criar DTO
-- [ ] Criar `dto/EstoqueLaboratorioDTO.java`
+- [ ] Criar `dto/ProjetoDTO.java`参照 reference (dataInicio/dataFim opcionais)
 
 #### Passo 14: Criar Repository
-- [ ] Criar `repository/EstoqueLaboratorioRepository.java`
+- [ ] Criar `repository/ProjetoRepository.java`参照 reference
 
 #### Passo 15: Criar Service
-- [ ] Criar `service/EstoqueLaboratorioService.java`
+- [ ] Criar `service/ProjetoService.java`参照 reference
 
 #### Passo 16: Criar Controller
-- [ ] Criar `controller/EstoqueLaboratorioController.java`
+- [ ] Criar `controller/ProjetoController.java`参照 reference
+
+#### Passo 17: Adicionar dados de teste
+- [ ] Atualizar DataInitializer com projetos de teste参照 reference
+
+---
+
+### ITEM PEDIDO (Implementar ANTES de Pedido) 🆕
+
+> **📌 Referência completa:** `docs/codigos-referencia-pedidos.md`
+
+#### Passo 18: Criar Entidade
+- [ ] Criar `model/ItemPedido.java` (pedido_id, produto_id, quantidadeSolicitada, quantidadeAprovada)参照 reference
+
+---
+
+### ESTOQUE LABORATÓRIO (Apenas Conferência/Histórico)
+
+> **📌 Referência completa:** `docs/codigos-referencia-pedidos.md`
+
+#### Passo 12 (antigo): Corrigir Entidade Existente
+- [ ] Corrigir `model/EstoqueLaboratorio.java` - adicionar: pedido_id (FK), ativo (Boolean), corrigir dataRecebimento para LocalDateTime参照 reference
+
+#### Passo 13 (antigo): Criar DTO
+- [ ] Criar `dto/EstoqueLaboratorioDTO.java`参照 reference
+
+#### Passo 14 (antigo): Criar Repository
+- [ ] Criar `repository/EstoqueLaboratorioRepository.java`参照 reference
+
+#### Passo 15 (antigo): Criar Service
+- [ ] Criar `service/EstoqueLaboratorioService.java`参照 reference
+
+#### Passo 16 (antigo): Criar Controller
+- [ ] Criar `controller/EstoqueLaboratorioController.java`参照 reference
 
 ---
 
