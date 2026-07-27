@@ -1127,37 +1127,40 @@ private Perfil perfil;
 
 ### PEDIDO (Com Baixa Automática no EstoqueCentral)
 
-#### Passo 17: Criar Enum
-- [ ] Criar `model/StatusPedido.java` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO)
+> **📌 IMPORTANTE:** Implementar DEPOIS de Projeto e ItemPedido
+> **📌 Referência completa:** `docs/codigos-referencia-pedidos.md`
 
-#### Passo 18: Criar Entidades
-- [ ] Criar `model/Pedido.java` (usa StatusPedido, Usuario, Laboratorio, Projeto)
-- [ ] Criar `model/ItemPedido.java` (usa Pedido, Produto)
+#### Passo 19: Criar Enum
+- [x] Criar `model/enums/StatusPedido.java` (PENDENTE, APROVADO, REJEITADO, ENTREGUE, CANCELADO) ✅ JÁ EXISTE
 
-#### Passo 19: Criar DTOs
-- [ ] Criar `dto/PedidoDTO.java`
-- [ ] Criar `dto/ItemPedidoDTO.java`
+#### Passo 20: Criar Entidades
+- [ ] Criar `model/Pedido.java` (usa StatusPedido, Usuario, Laboratorio, Projeto opcional, List<ItemPedido>)参照 reference
+- [ ] Criar `model/ItemPedido.java` (usa Pedido, Produto) - ver seção ITEM PEDIDO acima
 
-#### Passo 20: Criar Repositories
-- [ ] Criar `repository/PedidoRepository.java`
-- [ ] Criar `repository/ItemPedidoRepository.java`
+#### Passo 21: Criar DTOs
+- [ ] Criar `dto/PedidoDTO.java`参照 reference
+- [ ] Criar `dto/ItemPedidoDTO.java`参照 reference
+- [ ] Criar `dto/AprovarPedidoDTO.java` (com classe interna ItemAprovacaoDTO)参照 reference
 
-#### Passo 21: Criar Service
-- [ ] Criar `service/PedidoService.java`
-- [ ] IMPORTANTE: Ao aprovar pedido, baixar automaticamente do EstoqueCentral
+#### Passo 22: Criar Repositories
+- [ ] Criar `repository/PedidoRepository.java`参照 reference
+- [ ] Criar `repository/ItemPedidoRepository.java`参照 reference
 
-#### Passo 22: Criar Controller
-- [ ] Criar `controller/PedidoController.java`
+#### Passo 23: Criar Service
+- [ ] Criar `service/PedidoService.java`参照 reference
+- [ ] IMPORTANTE: Ao aprovar pedido, baixar automaticamente do EstoqueCentral参照 reference
+
+#### Passo 24: Criar Controller
+- [ ] Criar `controller/PedidoController.java`参照 reference (10 endpoints)
 
 ---
 
 ### DATA INITIALIZER
 
-#### Passo 23: Atualizar DataInitializer
-- [ ] Adicionar produtos de teste no `DataInitializer.java`
-- [ ] Adicionar estoque central de teste
-- [ ] Adicionar pedidos de teste
-- [ ] Adicionar registros de conferência no EstoqueLaboratorio (após entregas)
+#### Passo 25: Atualizar DataInitializer
+- [ ] Adicionar projetos de teste no `DataInitializer.java`参照 reference
+- [ ] Adicionar pedidos de teste参照 reference
+- [ ] Adicionar registros de conferência no EstoqueLaboratorio (após entregas)参照 reference
 
 ---
 
