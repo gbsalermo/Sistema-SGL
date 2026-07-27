@@ -1,6 +1,7 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +61,7 @@ public class Pedido implements Serializable {
 	 
 	
 	@Column(nullable = false)
-	private LocalDateTime dataSolicitacao;
+	private LocalDate dataSolicitacao;
 	
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
