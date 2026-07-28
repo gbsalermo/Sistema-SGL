@@ -6,17 +6,19 @@
 **Última atualização:** 28/07/2026  
 
 ### 📍 Onde estamos agora
-- ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers implementados e testáveis)
+- ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers, Services, Repositories e DTOs implementados)
 - ✅ EstoqueCentral completo (Entity + DTO + Repository + Service + Controller)
-- ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md` (contém códigos para Projeto, ItemPedido, Pedido, EstoqueLaboratorio)
-- ✅ DataInitializer atualizado com Projetos e Pedidos de teste (2 Projetos, 2 Pedidos)
-- ⏳ **PRÓXIMO:** Implementar Projeto → ItemPedido → Pedido → EstoqueLaboratorio
+- ✅ ItemPedido e Pedido: entidades, DTOs, repositories, services e controllers implementados (ver DataInitializer)
+- ✅ EstoqueLaboratorio implementado (Entity + DTO + Repository + Service + Controller)
+- ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md`
+- ✅ DataInitializer atualizado com Projetos e Pedidos de teste
+- ⏳ **PRÓXIMO:** Revisar fluxos de Pedido (cancelamento/entrega), adicionar testes de integração e ajustar documentação
 
 ### 📌 Continuar a partir de:
-**Repositories** (depois de criar as Entities e DTOs)
+Revisar endpoints de Pedido (cancelar/entregar/aprovar/rejeitar), cobertura de testes e correções menores. Repositories, DTOs e entidades já estão implementados.
 
 ### 📂 Arquivo de referência
-Consultar `docs/codigos-referencia-pedidos.md` para todos os códigos necessários
+Consultar `docs/codigos-referencia-pedidos.md` para códigos e referências de implementação.
 
 ---
 
