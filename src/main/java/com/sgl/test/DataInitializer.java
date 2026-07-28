@@ -1,21 +1,42 @@
 package com.sgl.test;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import com.sgl.model.Pedido;
+import com.sgl.model.ItemPedido;
+import com.sgl.model.Projeto;
+import com.sgl.model.EstoqueLaboratorio;
+import com.sgl.model.enums.StatusPedido;
+import com.sgl.repository.PedidoRepository;
+import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.EstoqueLaboratorioRepository;
 import com.sgl.model.EstoqueCentral;
+import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
+import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstoqueCentralRepository;
+import com.sgl.repository.EstoqueLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -30,6 +51,9 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
+    private final PedidoRepository pedidoRepository;
+    private final ProjetoRepository projetoRepository;
+    private final EstoqueLaboratorioRepository estoqueLaboratorioRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -195,7 +219,72 @@ public class DataInitializer implements CommandLineRunner {
                 .ativo(true)
                 .build());
 
+     // Projetos
+        Projeto proj1 = projetoRepository.save(Projeto.builder()
+                .laboratorio(lab3)
+                .nome("Projeto de Óptica Avançada")
+                .descricao("Estudo de fenômenos ópticos em materiais nanoestruturados")
+                .dataInicio(java.time.LocalDate.now().minusMonths(3))
+                .responsavel("Dr. Joao Pereira")
+                .ativo(true)
+                .build());
+
+        Projeto proj2 = projetoRepository.save(Projeto.builder()
+                .laboratorio(lab4)
+                .nome("Síntese de Novos Compostos")
+                .descricao("Desenvolvimento de novos compostos orgânicos para catálise")
+                .dataInicio(java.time.LocalDate.now().minusMonths(1))
+                .responsavel("Maria Oliveira")
+                .ativo(true)
+                .build());
+
+        // Pedidos de teste
+        Pedido pedido1 = Pedido.builder()
+                .usuario(joao)
+                .laboratorio(lab3)
+                .projeto(proj1)
+                .dataSolicitacao(LocalDateTime.now().minusDays(2))
+                .status(StatusPedido.PENDENTE)
+                .observacao("Materiais para experimento de óptica")
+                .itens(new ArrayList<>())
+                .build();
+
+        ItemPedido item1 = ItemPedido.builder()
+                .pedido(pedido1)
+                .produto(p1)
+                .quantidadeSolicitada(5)
+                .build();
+        pedido1.getItens().add(item1);
+
+        ItemPedido item2 = ItemPedido.builder()
+                .pedido(pedido1)
+                .produto(p5)
+                .quantidadeSolicitada(2)
+                .build();
+        pedido1.getItens().add(item2);
+
+        pedidoRepository.save(pedido1);
+
+        Pedido pedido2 = Pedido.builder()
+                .usuario(maria)
+                .laboratorio(lab4)
+                .projeto(proj2)
+                .dataSolicitacao(LocalDateTime.now().minusDays(1))
+                .status(StatusPedido.PENDENTE)
+                .observacao("Formaldeído para síntese")
+                .itens(new ArrayList<>())
+                .build();
+
+        ItemPedido item3 = ItemPedido.builder()
+                .pedido(pedido2)
+                .produto(p4)
+                .quantidadeSolicitada(3)
+                .build();
+        pedido2.getItens().add(item3);
+
+        pedidoRepository.save(pedido2);
+
         System.out.println("=== Dados de teste injetados com sucesso! ===");
-        System.out.println("=== 3 Unidades, 5 Laboratórios, 5 Usuários, 6 Produtos, 6 EstoqueCentral ===");
+        System.out.println("=== 3 Unidades, 5 Labs, 5 Usuarios, 6 Produtos, 6 EstoqueCentral, 2 Projetos, 2 Pedidos ===");
     }
 }

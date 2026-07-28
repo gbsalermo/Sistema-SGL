@@ -13,7 +13,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 	
 	List<Pedido> findByUsuarioId(Long usuarioId);
 	
-	List<Pedido> findByLaboratorioid(Long laboratorioId);
+	List<Pedido> findByLaboratorioId(Long laboratorioId);
 	
 	List<Pedido> findByStatus(StatusPedido status);
 	
