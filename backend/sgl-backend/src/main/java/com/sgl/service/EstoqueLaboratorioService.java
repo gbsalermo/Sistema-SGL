@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -35,7 +36,7 @@ public class EstoqueLaboratorioService {
 	
 	@Transactional(readOnly = true)
 	public List<EstoqueLaboratorioDTO> listarPorLaboratorio(Long laboratorioId){
-		return estoqueLaboratorioRepository.findByLaboratorioid(laboratorioId)
+		return estoqueLaboratorioRepository.findByLaboratorioId(laboratorioId)
 				.stream()
 				.map(EstoqueLaboratorioDTO::new)
 				.toList();
@@ -51,14 +52,14 @@ public class EstoqueLaboratorioService {
 	
 	@Transactional(readOnly = true)
 	public List<EstoqueLaboratorioDTO> listarPorPedido(Long pedidoId){
-		return estoqueLaboratorioRepository.findByPedidoid(pedidoId)
+		return estoqueLaboratorioRepository.findByPedidoId(pedidoId)
 				.stream()
 				.map(EstoqueLaboratorioDTO::new)
 				.toList();
 	}
 	
 	@Transactional(readOnly = true)
-	public List<EstoqueLaboratorioDTO> listarPorPeriodo(Long laboratorioId, LocalDate dataInicio, LocalDate dataFim){
+	public List<EstoqueLaboratorioDTO> listarPorPeriodo(Long laboratorioId, LocalDateTime dataInicio, LocalDateTime dataFim){
 		return estoqueLaboratorioRepository.findByLaboratorioIdAndPeriodo(laboratorioId, dataInicio, dataFim)
 				.stream()
 				.map(EstoqueLaboratorioDTO::new)

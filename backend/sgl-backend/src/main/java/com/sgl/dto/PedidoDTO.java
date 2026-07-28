@@ -37,7 +37,7 @@ public class PedidoDTO {
 	
 	private LocalDateTime dataSolicitacao;
 	
-	@NotNull(message = "Status é obrigatório")
+	//@NotNull(message = "Status é obrigatório") - Verificar a necessidade de separar um dto para criação e outro de pedido pronto
 	private StatusPedido status;
 	
 	private String observacao;

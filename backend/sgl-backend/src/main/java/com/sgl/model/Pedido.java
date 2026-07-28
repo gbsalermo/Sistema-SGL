@@ -61,7 +61,7 @@ public class Pedido implements Serializable {
 	 
 	
 	@Column(nullable = false)
-	private LocalDate dataSolicitacao;
+	private LocalDateTime dataSolicitacao;
 	
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)

@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +53,7 @@ public class PedidoService {
 				.projeto(dto.getProjetoId() != null ?
 						projetoRepository.findById(dto.getProjetoId())
 								.orElseThrow(() -> new EntityNotFoundException("Projeto não encontrado com id: " + dto.getProjetoId())) : null)
-				.dataSolicitacao(LocalDate.now())
+				.dataSolicitacao(LocalDateTime.now())
 				.status(StatusPedido.PENDENTE)
 				.observacao(dto.getObservacao())
 				.arquivoDocumento(dto.getArquivoDocumento())
@@ -218,7 +219,7 @@ public class PedidoService {
 			for(ItemPedido item : pedido.getItens()) {
 				if(item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada() > 0) {
 					EstoqueCentral estoque = estoqueCentralRepository.findByProdutoId(item.getProduto().getId())
-							.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado para o produto: " + item.getPRoduto().getNome()));
+							.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado para o produto: " + item.getProduto().getNome()));
 					
 					estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() 
 							+ item.getQuantidadeAprovada());

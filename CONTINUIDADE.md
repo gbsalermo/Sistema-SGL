@@ -3,12 +3,13 @@
 ## 📋 Status do Projeto
 **Fase:** Desenvolvimento - EstoqueCentral CRUD + Entrada/Saída implementados e testados  
 **Data de início:** 13/07/2026  
-**Última atualização:** 24/07/2026  
+**Última atualização:** 28/07/2026  
 
 ### 📍 Onde estamos agora
-- ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto
+- ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers implementados e testáveis)
 - ✅ EstoqueCentral completo (Entity + DTO + Repository + Service + Controller)
-- ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md`
+- ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md` (contém códigos para Projeto, ItemPedido, Pedido, EstoqueLaboratorio)
+- ✅ DataInitializer atualizado com Projetos e Pedidos de teste (2 Projetos, 2 Pedidos)
 - ⏳ **PRÓXIMO:** Implementar Projeto → ItemPedido → Pedido → EstoqueLaboratorio
 
 ### 📌 Continuar a partir de:
@@ -1890,3 +1891,22 @@ backend/sgl-backend/src/main/java/com/sgl/
 ---
 
 **IMPORTANTE:** Este arquivo é o ponto de continuidade do projeto. Qualquer pessoa ou IA que pegar este projeto deve ler este arquivo primeiro para entender o contexto e continuar de onde paramos.
+
+## 🛠️ Problemas Identificados
+
+Nesta seção listam-se problemas, sugestões de investigação e o status de cada item (Pendente / Resolvido). Atualize conforme progresso.
+
+### Pendente
+- Verificação do DTOPedido (STATUS): revisar os campos expostos relacionados ao status do pedido. Possível necessidade de dividir o DTOPedido atual em dois:
+  - CreatePedidoDTO — campos necessários apenas para criação (usuarioId, laboratorioId, projetoId opcional, itens com produtoId e quantidadeSolicitada, observacao, arquivoDocumento opcional)
+  - PedidoDTO (leitura) — representação completa retornada pela API (id, usuarioId, laboratorioId, projetoId, dataSolicitacao, status, itens com quantidadeAprovada, observacao, arquivoDocumento, datas de aprovação/entrega)
+  Motivo: durante fluxo de aprovação/entrega, alguns campos (ex: quantidadeAprovada, status histórico, datas) devem ser controlados pelo backend e não enviados no payload de criação. Separar os DTOs evita confusão, validação excessiva e problemas de segurança.
+
+- Revisar nomenclaturas de métodos em Repositories (ex.: findByLaboratorioId) — já foram padronizadas, mas manter atenção em novos métodos gerados por nome.
+
+### Resolvido
+- Padronização de métodos findBy* com uso de Ids (ex.: findByLaboratorioId) — corrigido em repositories relevantes.
+- Correção de sintaxe no DataInitializer (proj2.descricao) — corrigido.
+
+
+
