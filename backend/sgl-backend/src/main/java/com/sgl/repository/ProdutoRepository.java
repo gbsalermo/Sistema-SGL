@@ -21,9 +21,9 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long>{
 	List<Produto> findByNomeContainingIgnoreCase(String nome);
 	
 	//Buscar produtos perecíveis com validade próxima
-	
 	@Query("SELECT p FROM Produto p WHERE p.perecivel = true AND p.dataValidade BETWEEN :dataAtual And :dataLimite")
 	List<Produto> findPereciveisComValidadeProxima(@Param("dataAtual")
 	LocalDate dataAtual, @Param("dataLimite") LocalDate dataLimite);
 
+	boolean existsByCodigoReferencia(String codigoReferencia);
 }

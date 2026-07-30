@@ -3,6 +3,7 @@ package com.sgl.dto;
 import java.time.LocalDate;
 
 import com.sgl.model.EstoqueLaboratorio;
+import com.sgl.model.HistoricoLaboratorio;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,7 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class EstoqueLaboratorioDTO {
+public class HistoricoLaboratorioDTO {
 	
 	private Long id;
 	
@@ -35,7 +36,7 @@ public class EstoqueLaboratorioDTO {
 	
 	private Boolean ativo;
 	
-	public EstoqueLaboratorioDTO(EstoqueLaboratorio entity) {
+	public HistoricoLaboratorioDTO(HistoricoLaboratorio entity) {
 		this.id = entity.getId();
 		this.laboratorioId = entity.getLaboratorio().getId();
 		this.laboratorioNome = entity.getLaboratorio().getNome();
@@ -44,7 +45,7 @@ public class EstoqueLaboratorioDTO {
 		this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
 		this.quantidade = entity.getQuantidade();
 		this.dataRecebimento = entity.getDataRecebimento();
-		this.pedidoId = entity.getPedido().getId();
+		this.pedidoId = entity.getPedido() != null ? entity.getPedido().getId() : null;
 		this.ativo = entity.getAtivo();
 		
 	}

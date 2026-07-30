@@ -13,8 +13,6 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
 	
 	Optional<EstoqueCentral> findByProdutoId(Long produtoId);
 	
-	List<EstoqueCentral> findByQuantidadeAtualLessThanEqual( Integer quantidade);
-	
 	List<EstoqueCentral> findByAtivoTrue();
 	
 

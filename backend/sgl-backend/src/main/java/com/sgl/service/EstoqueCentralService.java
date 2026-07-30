@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,25 +26,32 @@ public class EstoqueCentralService {
 	
 	@Transactional
 	public EstoqueCentralDTO criar(EstoqueCentralDTO dto) {
-		//Verificar se o produto já tem registro de estoque
-		if(estoqueCentralRepository.findByProdutoId(dto.getProdutoId()).isPresent()){
-				throw new RuntimeException("Já existe estoque central para o produto com id: " + dto.getProdutoId());		
-		}
-		
-		Produto produto = produtoRepository.findById(dto.getProdutoId())
-				.orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com id: "
-						+ dto.getProdutoNome()));
-		
-		EstoqueCentral estoque = EstoqueCentral.builder()
-				.produto(produto)
-				.quantidadeAtual(dto.getQuantidadeAtual())
-				.quantidadeMinima(dto.getQuantidadeMinima())
-				.ativo(dto.getAtivo() != null ? dto.getAtivo() : true)
-				.build();
-		
-		EstoqueCentral salvo = estoqueCentralRepository.save(estoque);
-		return new EstoqueCentralDTO(salvo);	
-		}
+
+	    if (estoqueCentralRepository.findByProdutoId(dto.getProdutoId()).isPresent()) {
+	        throw new RuntimeException(
+	                "Já existe estoque central para o produto com id: " + dto.getProdutoId());
+	    }
+
+	    Produto produto = produtoRepository.findById(dto.getProdutoId())
+	            .orElseThrow(() -> new EntityNotFoundException(
+	                    "Produto não encontrado com id: " + dto.getProdutoId()));
+
+	    EstoqueCentral estoque = EstoqueCentral.builder()
+	            .produto(produto)
+	            .quantidadeAtual(dto.getQuantidadeAtual())
+	            .quantidadeMinima(dto.getQuantidadeMinima())
+	            .ativo(dto.getAtivo() != null ? dto.getAtivo() : true)
+	            .build();
+
+	    try {
+	        EstoqueCentral salvo = estoqueCentralRepository.save(estoque);
+	        return new EstoqueCentralDTO(salvo);
+
+	    } catch (DataIntegrityViolationException e) {
+	        throw new RuntimeException(
+	                "Já existe um estoque cadastrado para esse produto.");
+	    }
+	}
 	
 	@Transactional(readOnly = true)
 	public List<EstoqueCentralDTO> listarTodos(){
@@ -72,7 +80,6 @@ public class EstoqueCentralService {
 		EstoqueCentral estoque = estoqueCentralRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado"));
 		
-				estoque.setQuantidadeAtual(dto.getQuantidadeAtual());
 				estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
 				estoque.setAtivo(dto.getAtivo());
 				
@@ -92,6 +99,11 @@ public class EstoqueCentralService {
 	
 	@Transactional
 	public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
+		
+		if (dto.getQuantidade() <= 0) {
+	        throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
+	    } 
+		
 		EstoqueCentral estoque = estoqueCentralRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado com id: " + id));
 
@@ -103,6 +115,10 @@ public class EstoqueCentralService {
 
 	@Transactional
 	public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
+		
+		 if (dto.getQuantidade() <= 0) {
+		        throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
+		    }
 		EstoqueCentral estoque = estoqueCentralRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado com id: " + id));
 

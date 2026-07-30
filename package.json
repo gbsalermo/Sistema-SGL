@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "pdfkit": "^0.19.1"
+  },
+  "dependencies": {
+    "@codeium/react-code-editor": "^1.0.12"
   }
 }

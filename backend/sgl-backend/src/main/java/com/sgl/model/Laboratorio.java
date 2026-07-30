@@ -1,4 +1,4 @@
-﻿package com.sgl.model;
+package com.sgl.model;
 
 import java.io.Serializable;
 
@@ -34,7 +34,7 @@ public class Laboratorio implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unidade_id")
+    @JoinColumn(name = "unidade_id", nullable = false)
     private Unidade unidade;
 
     @Column(nullable = false)
@@ -43,7 +43,7 @@ public class Laboratorio implements Serializable {
     private String descricao;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "responsavel_id")
+    @JoinColumn(name = "responsavel_id", nullable = false)
     private Usuario responsavel;
 
     @Column(nullable = false)

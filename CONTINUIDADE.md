@@ -1,21 +1,22 @@
-# 📦 Projeto SGL - Sistema de Gestão de Laboratórios
+# 📦 Projeto SGL - Sistema de Gestão de Laboratórios 
 
 ## 📋 Status do Projeto
-**Fase:** Desenvolvimento - EstoqueCentral CRUD + Entrada/Saída implementados e testados  
+**Fase:** Desenvolvimento - Projeto e Pedido/ItemPedido finalizados; HistoricoLaboratorio em ajuste  
 **Data de início:** 13/07/2026  
-**Última atualização:** 28/07/2026  
+**Última atualização:** 30/07/2026  
 
 ### 📍 Onde estamos agora
 - ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers, Services, Repositories e DTOs implementados)
 - ✅ EstoqueCentral completo (Entity + DTO + Repository + Service + Controller)
-- ✅ ItemPedido e Pedido: entidades, DTOs, repositories, services e controllers implementados (ver DataInitializer)
-- ✅ EstoqueLaboratorio implementado (Entity + DTO + Repository + Service + Controller)
+- ✅ Projeto finalizado (Entity + DTO + Repository + Service + Controller)
+- ✅ ItemPedido e Pedido finalizados (Entity + DTOs + Repository + Service + Controller, fluxo de aprovação/entrega/cancelamento incluído)
+- ⏳ HistoricoLaboratorio em ajuste (Entity existente sendo corrigida: adicionar `pedido_id`, `ativo`, `LocalDateTime`)
 - ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md`
 - ✅ DataInitializer atualizado com Projetos e Pedidos de teste
-- ⏳ **PRÓXIMO:** Revisar fluxos de Pedido (cancelamento/entrega), adicionar testes de integração e ajustar documentação
+- ⏳ **PRÓXIMO:** Finalizar HistoricoLaboratorio (correção de campos + DTO/Repository/Service/Controller) e seguir para Etapa 4 (Regras de Negócio)
 
 ### 📌 Continuar a partir de:
-Revisar endpoints de Pedido (cancelar/entregar/aprovar/rejeitar), cobertura de testes e correções menores. Repositories, DTOs e entidades já estão implementados.
+Corrigir e finalizar `HistoricoLaboratorio.java` e a stack em torno dele (DTO, Repository, Service, Controller), depois avançar para as validações de regras de negócio da Etapa 4. Projeto, ItemPedido e Pedido já estão implementados e finalizados.
 
 ### 📂 Arquivo de referência
 Consultar `docs/codigos-referencia-pedidos.md` para códigos e referências de implementação.
@@ -27,7 +28,7 @@ Consultar `docs/codigos-referencia-pedidos.md` para códigos e referências de i
 **Nome do projeto:** SGL (Sistema de Gestão de Laboratórios)  
 **Tipo:** Sistema de Gestão de Laboratórios  
 **Objetivo:** Automatizar e centralizar o controle de materiais em laboratórios de pesquisa/ensino  
-**Arquitetura de Estoque:** EstoqueCentral (estoque real - entrada/saída) + EstoqueLaboratorio (conferência/histórico)
+**Arquitetura de Estoque:** EstoqueCentral — estoque geral **por Unidade** (estoque real - entrada/saída, abastece pedidos de todos os laboratórios daquela unidade) + HistoricoLaboratorio (conferência/histórico por laboratório)
 
 ---
 
@@ -51,23 +52,24 @@ Sistema completo para gestão de estoque de laboratórios, controlando entrada/s
 │                    (Tenant/Instituição)                      │
 └─────────────────────────────────────────────────────────────┘
                               │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      LABORATÓRIO                            │
-│                  (Cada unidade tem N labs)                  │
-└─────────────────────────────────────────────────────────────┘
-                              │
               ┌───────────────┴───────────────┐
               ▼                               ▼
-┌─────────────────────────┐       ┌─────────────────────────┐
-│   ESTUDANTE/PESQUISADOR │       │      PRODUTO/ITEM       │
-│    (Usuários do lab)    │       │    (Catálogo central)   │
-└─────────────────────────┘       └─────────────────────────┘
-              │                               │
-              ▼                               ▼
+┌─────────────────────────┐       ┌─────────────────────────────┐
+│      LABORATÓRIO        │       │       ESTOQUE GERAL           │
+│ (Cada unidade tem N labs)│      │ (1 por Unidade - EstoqueCentral)│
+└─────────────────────────┘       │ Recebe os pedidos dos usuários │
+              │                   │ de TODOS os labs da unidade    │
+              ▼                   └─────────────────────────────┘
+┌─────────────────────────┐
+│   ESTUDANTE/PESQUISADOR │
+│    (Usuários do lab)    │
+└─────────────────────────┘
+              │
+              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                         PEDIDO                              │
-│  (Pesquisador solicita material)                            │
+│  (Pesquisador solicita material do Estoque Geral da Unidade)│
+│  (Opcionalmente marcado como pertencente a um Projeto do lab)│
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -77,27 +79,31 @@ Sistema completo para gestão de estoque de laboratórios, controlando entrada/s
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Nota:** o `PRODUTO` é um catálogo central (não pertence a laboratório nem a unidade), mas o **estoque** desse produto (`EstoqueCentral`) é controlado por Unidade — cada Unidade tem seu próprio estoque geral, que abastece os pedidos feitos por usuários de qualquer um dos laboratórios daquela unidade.
+
 ### Fluxo de Estoque (Nova Arquitetura)
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     ESTOQUE CENTRAL                         │
-│        (Quantidade total disponível para distribuição)      │
-│        Ex: 10 Álcool 70% disponíveis no total               │
+│              ESTOQUE CENTRAL (1 por Unidade)                │
+│        (Quantidade total disponível para distribuição       │
+│         entre TODOS os laboratórios daquela Unidade)        │
+│        Ex: 10 Álcool 70% disponíveis no total da Unidade    │
 │        ↑↓ Entrada/Saída/Atualização                         │
 └─────────────────────────────────────────────────────────────┘
                               │
-                              │ Pedido aprovado
+                              │ Pedido de um usuário de qualquer
+                              │ laboratório da Unidade, aprovado
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                         PEDIDO                              │
-│  (Pesquisador solicita material)                            │
+│  (Pesquisador solicita material do Estoque Geral da Unidade)│
 │  (Ao aprovar: baixa automática no EstoqueCentral)           │
 └─────────────────────────────────────────────────────────────┘
                               │
                               │ Material entregue
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│               ESTOQUE LABORATÓRIO (Conferência)             │
+│               HISTÓRICO LABORATÓRIO (Conferência)             │
 │        (Apenas registrou: "lab recebeu X unidades")         │
 │        (Não tem entrada/saída - é só histórico)             │
 │        Ex: Lab1 recebeu 2 álcools em 21/07/2026             │
@@ -164,33 +170,6 @@ sgl/
 └── docker-compose.yml          # Orquestração (opcional)
 ```
 
-### Fluxo de Estoque (Nova Arquitetura)
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     ESTOQUE CENTRAL                         │
-│        (Quantidade total disponível para distribuição)      │
-│        Ex: 10 Álcool 70% disponíveis no total               │
-│        ↑↓ Entrada/Saída/Atualização                         │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              │ Pedido aprovado
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                         PEDIDO                              │
-│  (Pesquisador solicita material)                            │
-│  (Ao aprovar: baixa automática no EstoqueCentral)           │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              │ Material entregue
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│               ESTOQUE LABORATÓRIO (Conferência)             │
-│        (Apenas registrou: "lab recebeu X unidades")         │
-│        (Não tem entrada/saída - é só histórico)             │
-│        Ex: Lab1 recebeu 2 álcools em 21/07/2026             │
-└─────────────────────────────────────────────────────────────┘
-```
-
 ---
 
 ## 🏛️ Padrões de Arquitetura
@@ -219,7 +198,7 @@ Controller <-> Service <-> Repository <-> Entity
          │ Material entregue
          ▼
 ┌─────────────────┐
-│EstoqueLaboratorio│ ← Apenas conferência/histórico
+│HistoricoLaboratorio│ ← Apenas conferência/histórico
 └─────────────────┘
 ```
 
@@ -227,7 +206,7 @@ Controller <-> Service <-> Repository <-> Entity
 - DTOs **não** replicam relacionamentos bidirecionais das Entities.
 - O sentido de exposição é sempre "de cima para baixo" (ex: `UnidadeDTO` pode eventualmente expor uma lista de `LaboratorioDTO`, mas `LaboratorioDTO` nunca traz `UnidadeDTO` completo — no máximo um campo `unidadeId`).
 - Campos de relacionamento em Entity devem ser marcados com `@ToString.Exclude` e `@EqualsAndHashCode.Exclude` (Lombok) para evitar recursão infinita.
-- **EstoqueLaboratorio** usa DTOs para expor `laboratorioId`, `produtoId` e `pedidoId`, não os objetos completos.
+- **HistoricoLaboratorio** usa DTOs para expor `laboratorioId`, `produtoId` e `pedidoId`, não os objetos completos.
 - **EstoqueCentral** usa DTO para expor `produtoId`, não o objeto Produto completo.
 
 ### Convenções de Código
@@ -236,7 +215,7 @@ Controller <-> Service <-> Repository <-> Entity
 - **Transacionalidade:** métodos de escrita (salvar, atualizar, deletar) usam `@Transactional`; métodos de leitura usam `@Transactional(readOnly = true)`.
 - **Campo `sigla`:** na entidade Unidade, identifica a instituição (ex: "IB", "IF", "IQ"). Deve ser único.
 - **EstoqueCentral:** cada produto tem UM registro (OneToOne com Produto). ÚNICO com entrada/saída.
-- **EstoqueLaboratorio:** apenas conferência/histórico (sem entrada/saída). Registra que o lab recebeu material.
+- **HistoricoLaboratorio:** apenas conferência/histórico (sem entrada/saída). Registra que o lab recebeu material.
 
 ---
 
@@ -309,7 +288,7 @@ public enum Perfil {
 
 // IMPORTANTE: Produto NÃO tem laboratorio_id
 // Produto é um catálogo central - existe uma única vez
-// O estoque por laboratório é controlado pela entidade EstoqueLaboratorio
+// O estoque por laboratório é controlado pela entidade HistoricoLaboratorio
 // unidade_armazenamento contextualiza a quantidade: se quantidadeAtual=4 e unidade_armazenamento="frasco de 1L", são 4 frascos
 ```
 
@@ -326,7 +305,7 @@ public enum Perfil {
 // Significa: temos 10 unidades do produto 1 disponíveis para distribuir
 ```
 
-### EstoqueLaboratorio (Histórico/Conferência)
+### HistoricoLaboratorio (Histórico/Conferência)
 ```java
 - id
 - laboratorio_id (FK → Laboratorio)
@@ -336,7 +315,7 @@ public enum Perfil {
 - pedido_id (FK → Pedido)     // Referência ao pedido que originou
 - ativo
 
-// IMPORTANTE: EstoqueLaboratorio é apenas para CONFERÊNCIA/HISTÓRICO
+// IMPORTANTE: HistoricoLaboratorio é apenas para CONFERÊNCIA/HISTÓRICO
 // Ele NÃO tem entrada/saída/updates de estoque
 // Apenas registrou: "este lab recebeu X unidades do produto Y na data Z"
 // Para saber "quantos álcools foram pro lab1 este mês": WHERE laboratorio_id = X AND data_recebimento BETWEEN...
@@ -374,6 +353,7 @@ public enum Perfil {
 - responsavel
 - ativo
 ```
+> **Papel do Projeto:** Projeto **não agrupa** os pedidos de um laboratório — é só uma informação opcional no Pedido, indicando se aquele pedido está vinculado a um projeto específico do laboratório ou não (`projeto_id` é nullable em Pedido).
 
 ---
 
@@ -385,7 +365,7 @@ public enum Perfil {
 - [ ] Cadastro de produtos no catálogo central (sem vinculação a lab)
 - [ ] Controle de estoque central (quantidade total disponível) - ÚNICO com entrada/saída
 - [ ] Distribuição de estoque para laboratórios (via pedido)
-- [ ] Consulta de histórico por laboratório (EstoqueLaboratorio)
+- [ ] Consulta de histórico por laboratório (HistoricoLaboratorio)
 - [ ] Alertas automáticos de estoque baixo (apenas EstoqueCentral)
 - [ ] Classificação de risco dos produtos (Nenhum/Baixo/Médio/Alto)
 - [ ] Tipo de risco (Inflamável/Radioativo/Tóxico/Corrosivo/Biológico)
@@ -404,7 +384,7 @@ public enum Perfil {
 - [ ] Verificação de estoque disponível no EstoqueCentral
 - [ ] Aprovação/rejeição pelo responsável
 - [ ] Baixa automática no EstoqueCentral ao aprovar
-- [ ] Criação de registro no EstoqueLaboratorio ao entregar
+- [ ] Criação de registro no HistoricoLaboratorio ao entregar
 - [ ] Histórico de pedidos
 
 #### Armazenamento de Documentos
@@ -461,12 +441,12 @@ public enum Perfil {
 
 ### Regras de Negócio para Estoque
 1. **EstoqueCentral** é o ÚNICO que controla entrada/saída de materiais
-2. **EstoqueLaboratorio** é apenas para CONFERÊNCIA/HISTÓRICO (registrou que o lab recebeu)
+2. **HistoricoLaboratorio** é apenas para CONFERÊNCIA/HISTÓRICO (registrou que o lab recebeu)
 3. **Ao aprovar pedido**: baixa automática no EstoqueCentral
-4. **Ao entregar material**: cria registro no EstoqueLaboratorio (conferência)
+4. **Ao entregar material**: cria registro no HistoricoLaboratorio (conferência)
 5. **Alertas**: estoque baixo apenas no EstoqueCentral
 6. **Consultas**: "quantos álcools foram pro lab1?" → WHERE laboratorio_id = X AND data_recebimento BETWEEN...
-7. **Diferença**: EstoqueCentral = estoque real | EstoqueLaboratorio = log/histórico
+7. **Diferença**: EstoqueCentral = estoque real | HistoricoLaboratorio = log/histórico
 8. **Estoque nunca negativo** - lançar exceção se quantidade insuficiente
 9. **Cada produto tem UM registro** no EstoqueCentral (OneToOne + UNIQUE)
 
@@ -477,7 +457,7 @@ public enum Perfil {
 4. **Pelo menos 1 item** por pedido
 5. **quantidadeAprovada <= quantidadeSolicitada** - gestor pode aprovar menos
 6. **Ao aprovar**: baixa automática no EstoqueCentral (quantidadeAtual -= quantidadeAprovada)
-7. **Ao entregar**: cria registro no EstoqueLaboratorio para cada item aprovado
+7. **Ao entregar**: cria registro no HistoricoLaboratorio para cada item aprovado
 8. **Ao cancelar com status APROVADO**: devolver estoque (quantidadeAtual += quantidadeAprovada)
 9. **Status só avança**: PENDENTE → APROVADO/REJEITADO → ENTREGUE/CANCELADO
 
@@ -544,15 +524,15 @@ GET    /api/v1/estoque-central/estoque-baixo - Listar com estoque baixo
 }
 ```
 
-### EstoqueLaboratorio (Estoque por Lab)
+### HistoricoLaboratorio (Estoque por Lab)
 ```
-GET    /api/v1/estoque-laboratorio                    - Listar todo estoque
-GET    /api/v1/estoque-laboratorio/{id}               - Buscar por ID
-GET    /api/v1/estoque-laboratorio/laboratorio/{labId} - Estoque de um lab
-GET    /api/v1/estoque-laboratorio/produto/{produtoId} - Onde está o produto
-POST   /api/v1/estoque-laboratorio                    - Cadastrar estoque lab
-PUT    /api/v1/estoque-laboratorio/{id}               - Atualizar quantidade
-GET    /api/v1/estoque-laboratorio/estoque-baixo      - Listar com estoque baixo
+GET    /api/v1/historico-laboratorio                    - Listar todo estoque
+GET    /api/v1/historico-laboratorio/{id}               - Buscar por ID
+GET    /api/v1/historico-laboratorio/laboratorio/{labId} - Estoque de um lab
+GET    /api/v1/historico-laboratorio/produto/{produtoId} - Onde está o produto
+POST   /api/v1/historico-laboratorio                    - Cadastrar estoque lab
+PUT    /api/v1/historico-laboratorio/{id}               - Atualizar quantidade
+GET    /api/v1/historico-laboratorio/estoque-baixo      - Listar com estoque baixo
 ```
 
 ### Pedidos
@@ -600,9 +580,9 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 20/07/2026 | Laboratorio.responsavel como Usuario | Campo `responsavel` alterado de `String` para `ManyToOne<Usuario>`. Permite vincular um usuário existente como responsável pelo laboratório |
 | 20/07/2026 | Correção do DataInitializer | Laboratórios criados primeiro com responsavel null, depois usuários criados, e por fim responsáveis atribuídos aos laboratórios |
 | 20/07/2026 | Ordem de implementação: Enum primeiro | Para entidades que usam enums, criar os enums ANTES das entidades. Ex: Produto precisa de Risco, TipoRisco, TipoPerecivel antes de ser criado |
-| 21/07/2026 | Nova arquitetura de estoque | Removido `laboratorio_id` de Produto. Criadas entidades EstoqueCentral (estoque total disponível) e EstoqueLaboratorio (conferência/histórico). Motivo: Produto é catálogo central, não pertence a um lab específico. Estoque por lab é apenas log de conferência |
+| 21/07/2026 | Nova arquitetura de estoque | Removido `laboratorio_id` de Produto. Criadas entidades EstoqueCentral (estoque total disponível) e HistoricoLaboratorio (conferência/histórico). Motivo: Produto é catálogo central, não pertence a um lab específico. Estoque por lab é apenas log de conferência |
 | 21/07/2026 | EstoqueCentral como entidade separada | Cada produto tem UM registro no EstoqueCentral com a quantidade total disponível. É o ÚNICO que tem entrada/saída. Motivo: Controle centralizado do estoque |
-| 21/07/2026 | EstoqueLaboratorio é apenas conferência | EstoqueLaboratorio apenas registrou que o lab recebeu material (sem entrada/saída). Motivo: Histórico para consultas como "quantos álcools foram pro lab1 este mês?" |
+| 21/07/2026 | HistoricoLaboratorio é apenas conferência | HistoricoLaboratorio apenas registrou que o lab recebeu material (sem entrada/saída). Motivo: Histórico para consultas como "quantos álcools foram pro lab1 este mês?" |
 | 21/07/2026 | CRUD de Produto implementado | Entidade com 14 campos (nome, descricao, codigoReferencia, unidadeMedida, localizacaoFisica, risco, tipoRisco, descricaoRisco, perecivel, dataValidade, tipoPerecivel, condicoesArmazenamento, ativo). DTO com validações. Service com 8 métodos. Controller com 8 endpoints REST. 6 produtos de teste no DataInitializer |
 | 22/07/2026 | Correção: Endpoint /validade-proxima | Durante testes do CRUD de Produtos, verificado que o endpoint GET /api/v1/produtos/validade-proxima estava documentado mas não implementado. Adicionado: query customizada no Repository, método no Service, endpoint no Controller |
 | 22/07/2026 | Implementação de EstoqueCentral | Entity (OneToOne com Produto), DTO com validações, Repository com queries customizadas, Service com CRUD completo + listarEstoqueBaixo, Controller com 7 endpoints REST |
@@ -611,11 +591,11 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 23/07/2026 | Endpoints de Entrada/Saída no EstoqueCentral | Criados `PUT /{id}/entrada` e `PUT /{id}/saida` com lógica de soma/subtração. Saída valida estoque >= 0. Motivo: PUT genérico apenas sobrescrevia, sem histórico de movimentação |
 | 23/07/2026 | DTO MovimentacaoEstoqueDTO | DTO simples com campo `quantidade` (obrigatório, min 1) para os endpoints de entrada/saída |
 | 23/07/2026 | Testes de EstoqueCentral no Postman | Todos os endpoints testados com sucesso: CRUD, entrada, saída, estoque baixo, validação de estoque insuficiente |
-| 24/07/2026 | Arquivo de referência para Pedidos | Criado `docs/codigos-referencia-pedidos.md` com códigos completos de Projeto, ItemPedido, Pedido, EstoqueLaboratorio e integração entre eles |
-| 24/07/2026 | Ordem correta de implementação | Definida ordem: Enums → Produto → EstoqueCentral → **Projeto** → ItemPedido → Pedido → EstoqueLaboratorio. Motivo: Pedido depende de Projeto (opcional) e ItemPedido |
+| 24/07/2026 | Arquivo de referência para Pedidos | Criado `docs/codigos-referencia-pedidos.md` com códigos completos de Projeto, ItemPedido, Pedido, HistoricoLaboratorio e integração entre eles |
+| 24/07/2026 | Ordem correta de implementação | Definida ordem: Enums → Produto → EstoqueCentral → **Projeto** → ItemPedido → Pedido → HistoricoLaboratorio. Motivo: Pedido depende de Projeto (opcional) e ItemPedido |
 | 24/07/2026 | Projeto como entidade opcional no Pedido | Campo `projeto_id` no Pedido é nullable. Motivo: nem todo pedido está vinculado a um projeto |
 | 24/07/2026 | DataInicio/DataFim opcionais no Projeto | Campos `dataInicio` e `dataFim` no ProjetoDTO não são obrigatórios. Motivo: projeto pode começar sem data definida |
-| 24/07/2026 | EstoqueLaboratorio: correção pendente | Entity existente precisa de ajustes: adicionar `pedido_id` (FK), `ativo` (Boolean), corrigir `dataRecebimento` para `LocalDateTime` |
+| 24/07/2026 | HistoricoLaboratorio: correção pendente | Entity existente precisa de ajustes: adicionar `pedido_id` (FK), `ativo` (Boolean), corrigir `dataRecebimento` para `LocalDateTime` |
 
 ---
 
@@ -657,8 +637,8 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Alterar Laboratorio.responsavel de String para Usuario (20/07/2026)
 - [x] Corrigir DataInitializer para usar Usuario como responsavel (20/07/2026)
 - [x] Atualizar diagrama UML (20/07/2026)
-- [x] Nova arquitetura de estoque: Produto sem laboratorio_id, EstoqueCentral e EstoqueLaboratorio (21/07/2026)
-- [x] Clarificação: EstoqueLaboratorio é apenas conferência/histórico (21/07/2026)
+- [x] Nova arquitetura de estoque: Produto sem laboratorio_id, EstoqueCentral e HistoricoLaboratorio (21/07/2026)
+- [x] Clarificação: HistoricoLaboratorio é apenas conferência/histórico (21/07/2026)
 - [x] Implementar CRUD de Produtos (catálogo central - sem laboratorio_id) (21/07/2026)
 - [x] Criar ProdutoController com endpoints REST (21/07/2026)
 - [x] Adicionar 6 produtos de teste no DataInitializer (21/07/2026)
@@ -671,7 +651,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Implementar endpoints de Entrada/Saída no EstoqueCentral (23/07/2026)
 - [x] Atualizar DataInitializer com dados de estoque (6 produtos) (23/07/2026)
 - [x] Criar arquivo de referência para Pedidos (docs/codigos-referencia-pedidos.md) (24/07/2026)
-- [x] Definir ordem correta: Projeto → ItemPedido → Pedido → EstoqueLaboratorio (24/07/2026)
+- [x] Definir ordem correta: Projeto → ItemPedido → Pedido → HistoricoLaboratorio (24/07/2026)
 - [ ] Prototipação das telas
 
 ---
@@ -695,36 +675,36 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] **2.3.3** Implementar endpoints `entrada` e `saida` no EstoqueCentral (23/07/2026)
 - [x] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos) (23/07/2026)
 - [x] **2.6** Testar CRUD EstoqueCentral no Postman (23/07/2026) - CRUD, entrada, saída, estoque baixo, validação estoque insuficiente
-- [ ] **2.4** Corrigir `EstoqueLaboratorio.java` (adicionar pedido_id, ativo, LocalDateTime) - Entity já existe parcial
-- [ ] **2.4.1** Criar `EstoqueLaboratorioDTO.java`
-- [ ] **2.4.2** Criar `EstoqueLaboratorioRepository.java`
-- [ ] **2.4.3** Criar `EstoqueLaboratorioService.java`
-- [ ] **2.4.4** Criar `EstoqueLaboratorioController.java`
-- [ ] **2.7** Testar CRUD EstoqueLaboratorio no Postman
+- [ ] **2.4** Corrigir `HistoricoLaboratorio.java` (adicionar pedido_id, ativo, LocalDateTime) - Entity já existe parcial
+- [ ] **2.4.1** Criar `HistoricoLaboratorioDTO.java`
+- [ ] **2.4.2** Criar `HistoricoLaboratorioRepository.java`
+- [ ] **2.4.3** Criar `HistoricoLaboratorioService.java`
+- [ ] **2.4.4** Criar `HistoricoLaboratorioController.java`
+- [ ] **2.7** Testar CRUD HistoricoLaboratorio no Postman
 
-### ETAPA 2.5: Projeto (PENDENTE - implementar ANTES de Pedido)
-- [ ] **2.5.1** Criar `Projeto.java` (Entity) -参照 docs/codigos-referencia-pedidos.md
-- [ ] **2.5.2** Criar `ProjetoDTO.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **2.5.3** Criar `ProjetoRepository.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **2.5.4** Criar `ProjetoService.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **2.5.5** Criar `ProjetoController.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **2.5.6** Atualizar DataInitializer com projetos de teste
+### ETAPA 2.5: Projeto (CONCLUÍDO)
+- [x] **2.5.1** Criar `Projeto.java` (Entity) -参照 docs/codigos-referencia-pedidos.md
+- [x] **2.5.2** Criar `ProjetoDTO.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **2.5.3** Criar `ProjetoRepository.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **2.5.4** Criar `ProjetoService.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **2.5.5** Criar `ProjetoController.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **2.5.6** Atualizar DataInitializer com projetos de teste
 
-### ETAPA 2.6: ItemPedido (PENDENTE - implementar ANTES de Pedido)
-- [ ] **2.6.1** Criar `ItemPedido.java` (Entity) -参照 docs/codigos-referencia-pedidos.md
+### ETAPA 2.6: ItemPedido (CONCLUÍDO)
+- [x] **2.6.1** Criar `ItemPedido.java` (Entity) -参照 docs/codigos-referencia-pedidos.md
 
-### ETAPA 3: Pedidos (PENDENTE - implementar DEPOIS de Projeto e ItemPedido)
+### ETAPA 3: Pedidos (CONCLUÍDO)
 > **📌 IMPORTANTE:** Consultar `docs/codigos-referencia-pedidos.md` para códigos completos
-- [ ] **3.1** Criar `Pedido.java` (Entity com List<ItemPedido> e optional Projeto) -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.2** Criar `ItemPedidoDTO.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.3** Criar `PedidoDTO.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.4** Criar `AprovarPedidoDTO.java` (com classe interna ItemAprovacaoDTO) -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.5** Criar `PedidoRepository.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.6** Criar `ItemPedidoRepository.java` -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.7** Criar `PedidoService.java` (com lógica de aprovação/entrega/cancelamento) -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.8** Criar `PedidoController.java` (10 endpoints) -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.9** Atualizar DataInitializer com pedidos de teste -参照 docs/codigos-referencia-pedidos.md
-- [ ] **3.10** Testar fluxo completo no Postman
+- [x] **3.1** Criar `Pedido.java` (Entity com List<ItemPedido> e optional Projeto) -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.2** Criar `ItemPedidoDTO.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.3** Criar `PedidoDTO.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.4** Criar `AprovarPedidoDTO.java` (com classe interna ItemAprovacaoDTO) -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.5** Criar `PedidoRepository.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.6** Criar `ItemPedidoRepository.java` -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.7** Criar `PedidoService.java` (com lógica de aprovação/entrega/cancelamento) -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.8** Criar `PedidoController.java` (10 endpoints) -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.9** Atualizar DataInitializer com pedidos de teste -参照 docs/codigos-referencia-pedidos.md
+- [x] **3.10** Testar fluxo completo no Postman
 
 ### ETAPA 4: Regras de Negócio (PENDENTE)
 - [ ] **4.1** Validação: Estoque nunca negativo
@@ -739,7 +719,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [ ] **4.10** Relação: Produto 1:1 EstoqueCentral
 - [ ] **4.11** Relação: Pedido 1:N ItemPedido N:1 Produto
 - [ ] **4.12** Relação: Pedido N:1 Usuário + Laboratório
-- [ ] **4.13** Relação: EstoqueLaboratorio N:1 Pedido + Laboratório + Produto
+- [ ] **4.13** Relação: HistoricoLaboratorio N:1 Pedido + Laboratório + Produto
 - [ ] **4.14** Testar todas as validações no Postman
 
 ### ETAPA 5: Segurança e Auth (PENDENTE)
@@ -763,7 +743,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [ ] **7.3** Testar CRUD completo: Usuário
 - [ ] **7.4** Testar CRUD completo: Produto
 - [ ] **7.5** Testar CRUD completo: EstoqueCentral
-- [ ] **7.6** Testar CRUD completo: EstoqueLaboratorio
+- [ ] **7.6** Testar CRUD completo: HistoricoLaboratorio
 - [ ] **7.7** Testar fluxo completo: Pedido (criar → aprovar → entregar)
 - [ ] **7.8** Testar cancelamento com devolução de estoque
 - [ ] **7.9** Testar todas as validações e regras de negócio
@@ -780,7 +760,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [ ] **8.8** CRUD de Produtos
 - [ ] **8.9** Gestão de Estoque Central
 - [ ] **8.10** Pedidos (criar, aprovar, rejeitar, entregar)
-- [ ] **8.11** Histórico de EstoqueLaboratorio
+- [ ] **8.11** Histórico de HistoricoLaboratorio
 
 ---
 
@@ -832,8 +812,8 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Definição da nova arquitetura de estoque (21/07/2026)
 - [x] Remoção de laboratorio_id de Produto (21/07/2026)
 - [x] Definição de EstoqueCentral como entidade separada (21/07/2026)
-- [x] Definição de EstoqueLaboratorio como conferência/histórico (21/07/2026)
-- [x] Clarificação: EstoqueLaboratorio é apenas log, não gestão de estoque (21/07/2026)
+- [x] Definição de HistoricoLaboratorio como conferência/histórico (21/07/2026)
+- [x] Clarificação: HistoricoLaboratorio é apenas log, não gestão de estoque (21/07/2026)
 - [x] Implementar ProdutoDTO com validações (21/07/2026)
 - [x] Implementar ProdutoRepository com queries customizadas (21/07/2026)
 - [x] Implementar ProdutoService com CRUD completo (21/07/2026)
@@ -963,7 +943,7 @@ private Perfil perfil;
 | Spring Boot 4.1.0 | Versão pode não existir ainda (máxima estável é 3.x). Verificar e corrigir se necessário. | Dev | Verificar | Média |
 | ~~EstoqueCentral~~ | ~~Implementar entidade para estoque total disponível (ÚNICO com entrada/saída)~~ | Dev | **Concluído** | ~~Alta~~ |
 | Validação DELETE com filhos | Implementar verificação: não deletar Produto se tem EstoqueCentral, não deletar EstoqueCentral se tem Pedidos. Retornar 409 | Dev | Pendente | Média |
-| EstoqueLaboratorio | Implementar entidade para conferência/histórico (sem entrada/saída) | Dev | Pendente | Alta |
+| HistoricoLaboratorio | Implementar entidade para conferência/histórico (sem entrada/saída) | Dev | Pendente | Alta |
 | Validação de estoque | Implementar regras de negócio para baixa automática no EstoqueCentral ao aprovar pedido | Dev | Pendente | Alta |
 
 ---
@@ -990,18 +970,17 @@ private Perfil perfil;
 15. ~~Implementar CRUD de EstoqueCentral~~ **(CONCLUÍDO - 22/07/2026)** - Entity, DTO, Repository, Service, Controller
 16. ~~Testar CRUD de EstoqueCentral no Postman~~ **(CONCLUÍDO - 23/07/2026)** - CRUD + entrada + saída + estoque baixo
 17. ~~Criar arquivo de referência para Pedidos~~ **(CONCLUÍDO - 24/07/2026)** - `docs/codigos-referencia-pedidos.md`
-18. **[1] Criar entity `Projeto.java`** -参照 reference (Entity + DTO + Repository + Service + Controller)
-19. **[2] Corrigir entity `EstoqueLaboratorio.java`** - adicionar pedido_id, ativo, LocalDateTime
-20. **[3] Criar entity `ItemPedido.java`** -参照 reference
-21. **[4] Criar entity `Pedido.java`** -参照 reference (com List<ItemPedido> e optional Projeto)
-22. **[5] Criar DTOs** -参照 reference (ItemPedidoDTO, PedidoDTO, AprovarPedidoDTO, EstoqueLaboratorioDTO, ProjetoDTO)
-23. **[6] Criar Repositories** -参照 reference (continuar a partir daqui)
-24. **[7] Criar Services** -参照 reference (PedidoService, EstoqueLaboratorioService, ProjetoService)
-25. **[8] Criar Controllers** -参照 reference (PedidoController, EstoqueLaboratorioController, ProjetoController)
-26. **[9] Atualizar DataInitializer** -参照 reference (projetos e pedidos de teste)
-27. **[10] Testar fluxo completo no Postman**
-28. **Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
-29. **Criar banco de dados** - Scripts SQL das tabelas
+18. ~~Criar entity `Projeto.java`~~ **(CONCLUÍDO)** - Entity + DTO + Repository + Service + Controller
+19. **[1] Corrigir entity `HistoricoLaboratorio.java`** - adicionar pedido_id, ativo, LocalDateTime
+20. ~~Criar entity `ItemPedido.java`~~ **(CONCLUÍDO)**
+21. ~~Criar entity `Pedido.java`~~ **(CONCLUÍDO)** - com List<ItemPedido> e optional Projeto
+22. ~~Criar DTOs~~ **(CONCLUÍDO)** - ItemPedidoDTO, PedidoDTO, AprovarPedidoDTO, ProjetoDTO
+23. **[2] Criar DTO/Repository/Service/Controller de `HistoricoLaboratorio`** -参照 reference
+24. ~~Criar Repositories, Services e Controllers de Pedido/Projeto~~ **(CONCLUÍDO)**
+25. ~~Atualizar DataInitializer~~ **(CONCLUÍDO)** - projetos e pedidos de teste
+26. ~~Testar fluxo completo de Pedido no Postman~~ **(CONCLUÍDO)**
+27. **[3] Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
+28. **[4] Criar banco de dados** - Scripts SQL das tabelas
 
 ---
 
@@ -1107,24 +1086,24 @@ private Perfil perfil;
 
 ---
 
-### ESTOQUE LABORATÓRIO (Apenas Conferência/Histórico)
+### HISTÓRICO LABORATÓRIO (Apenas Conferência/Histórico)
 
 > **📌 Referência completa:** `docs/codigos-referencia-pedidos.md`
 
 #### Passo 12 (antigo): Corrigir Entidade Existente
-- [ ] Corrigir `model/EstoqueLaboratorio.java` - adicionar: pedido_id (FK), ativo (Boolean), corrigir dataRecebimento para LocalDateTime参照 reference
+- [ ] Corrigir `model/HistoricoLaboratorio.java` - adicionar: pedido_id (FK), ativo (Boolean), corrigir dataRecebimento para LocalDateTime参照 reference
 
 #### Passo 13 (antigo): Criar DTO
-- [ ] Criar `dto/EstoqueLaboratorioDTO.java`参照 reference
+- [ ] Criar `dto/HistoricoLaboratorioDTO.java`参照 reference
 
 #### Passo 14 (antigo): Criar Repository
-- [ ] Criar `repository/EstoqueLaboratorioRepository.java`参照 reference
+- [ ] Criar `repository/HistoricoLaboratorioRepository.java`参照 reference
 
 #### Passo 15 (antigo): Criar Service
-- [ ] Criar `service/EstoqueLaboratorioService.java`参照 reference
+- [ ] Criar `service/HistoricoLaboratorioService.java`参照 reference
 
 #### Passo 16 (antigo): Criar Controller
-- [ ] Criar `controller/EstoqueLaboratorioController.java`参照 reference
+- [ ] Criar `controller/HistoricoLaboratorioController.java`参照 reference
 
 ---
 
@@ -1163,7 +1142,7 @@ private Perfil perfil;
 #### Passo 25: Atualizar DataInitializer
 - [ ] Adicionar projetos de teste no `DataInitializer.java`参照 reference
 - [ ] Adicionar pedidos de teste参照 reference
-- [ ] Adicionar registros de conferência no EstoqueLaboratorio (após entregas)参照 reference
+- [ ] Adicionar registros de conferência no HistoricoLaboratorio (após entregas)参照 reference
 
 ---
 
@@ -1239,7 +1218,7 @@ package com.sgl.model;
 // Quando aprovado pedido: baixa automática (quantidadeAtual -= quantidadeSolicitada)
 ```
 
-### Entidade EstoqueLaboratorio (Apenas Conferência/Histórico)
+### Entidade HistoricoLaboratorio (Apenas Conferência/Histórico)
 ```java
 package com.sgl.model;
 
@@ -1248,7 +1227,7 @@ package com.sgl.model;
 // produto (ManyToOne → Produto),
 // quantidade, dataRecebimento, pedido (ManyToOne → Pedido), ativo
 
-// IMPORTANTE: EstoqueLaboratorio é apenas para CONFERÊNCIA/HISTÓRICO
+// IMPORTANTE: HistoricoLaboratorio é apenas para CONFERÊNCIA/HISTÓRICO
 // Ele NÃO tem entrada/saída/updates de estoque
 // Apenas registrou: "este lab recebeu X unidades do produto Y na data Z via pedido W"
 // Para saber "quantos álcools foram pro lab1 este mês": WHERE laboratorio_id = X AND data_recebimento BETWEEN...
@@ -1315,14 +1294,14 @@ PUT    /api/v1/estoque-central/{id}          - Atualizar (entrada/saída)
 GET    /api/v1/estoque-central/estoque-baixo - Listar com estoque baixo
 ```
 
-### EstoqueLaboratorio (Apenas Conferência/Histórico)
+### HistoricoLaboratorio (Apenas Conferência/Histórico)
 ```
-GET    /api/v1/estoque-laboratorio                    - Listar todo histórico
-GET    /api/v1/estoque-laboratorio/{id}               - Buscar por ID
-GET    /api/v1/estoque-laboratorio/laboratorio/{labId} - Histórico de um lab
-GET    /api/v1/estoque-laboratorio/produto/{produtoId} - Onde foi o produto
-GET    /api/v1/estoque-laboratorio/pedido/{pedidoId}   - Itens de um pedido
-POST   /api/v1/estoque-laboratorio                    - Criar registro (após entrega)
+GET    /api/v1/historico-laboratorio                    - Listar todo histórico
+GET    /api/v1/historico-laboratorio/{id}               - Buscar por ID
+GET    /api/v1/historico-laboratorio/laboratorio/{labId} - Histórico de um lab
+GET    /api/v1/historico-laboratorio/produto/{produtoId} - Onde foi o produto
+GET    /api/v1/historico-laboratorio/pedido/{pedidoId}   - Itens de um pedido
+POST   /api/v1/historico-laboratorio                    - Criar registro (após entrega)
 ```
 
 ### Pedidos
@@ -1825,7 +1804,7 @@ backend/sgl-backend/src/main/java/com/sgl/
 - [ ] Protótipo/Figma: [CRIAR]
 - [ ] Documentação da API (Swagger): [CRIAR]
 - [ ] Banco de dados: [CRIAR SCRIPTS]
-- [ ] Diagrama de Classes Atualizado: [CRIAR com EstoqueCentral e EstoqueLaboratorio (apenas conferência)]
+- [ ] Diagrama de Classes Atualizado: [CRIAR com EstoqueCentral e HistoricoLaboratorio (apenas conferência)]
 
 ---
 
@@ -1849,14 +1828,14 @@ backend/sgl-backend/src/main/java/com/sgl/
 - **Multi-tenant:** Cada Unidade é um tenant separado
 - **Estoque central:** Produto é catálogo central, estoque total fica em EstoqueCentral (ÚNICO com entrada/saída)
 - **Estoque laboratório:** Apenas conferência/histórico - registrou que o lab recebeu material (sem entrada/saída)
-- **Fluxo de pedido:** Pesquisador solicita → Verifica estoque central → Responsável aprova → Baixa no EstoqueCentral → Registro no EstoqueLaboratorio
+- **Fluxo de pedido:** Pesquisador solicita → Verifica estoque central → Responsável aprova → Baixa no EstoqueCentral → Registro no HistoricoLaboratorio
 - **Armazenamento:** Documentos ficam vinculados aos pedidos
 - **Risco:** Classificação Nenhum/Baixo/Médio/Alto com tipo específico (radioativo, inflamável, etc)
 - **Perecibilidade:** Controle de validade para produtos biológicos, vegetais, animais
 
 ### Diferença entre Estoque
 - **EstoqueCentral:** Controle real de estoque (entrada/saída/quantidade)
-- **EstoqueLaboratorio:** Apenas log/histórico (registrou que o lab recebeu)
+- **HistoricoLaboratorio:** Apenas log/histórico (registrou que o lab recebeu)
 - **Consulta:** "quantos álcools foram pro lab1?" → WHERE laboratorio_id = X AND data_recebimento BETWEEN...
 
 ### Para Continuar o Projeto
@@ -1864,8 +1843,8 @@ backend/sgl-backend/src/main/java/com/sgl/
 2. Seguir a ordem dos "Próximos Passos"
 3. Atualizar este arquivo com decisões e progresso
 4. Manter o checklist atualizado
-5. Implementar na ordem: Produto → EstoqueCentral → EstoqueLaboratorio → Pedido
-6. Lembrar: EstoqueLaboratorio é apenas conferência/histórico (sem entrada/saída)
+5. Implementar na ordem: Produto → EstoqueCentral → HistoricoLaboratorio → Pedido
+6. Lembrar: HistoricoLaboratorio é apenas conferência/histórico (sem entrada/saída)
 7. Lembrar: EstoqueCentral é o ÚNICO com controle de estoque (entrada/saída)
 
 ---
