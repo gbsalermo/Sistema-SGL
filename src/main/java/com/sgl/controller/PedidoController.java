@@ -41,14 +41,17 @@ public class PedidoController {
 		return ResponseEntity.ok(pedidoService.listarTodos());
 	}
 	
+	
+	
+	@GetMapping("/por-usuario")
+	public ResponseEntity<List<PedidoDTO>> listarPorUsuario(@RequestParam Long usuarioId){
+		return ResponseEntity.ok(pedidoService.listarPorUsuario(usuarioId));
+	}
+	
+	
 	@GetMapping("/{id}")
 	public ResponseEntity<PedidoDTO> buscarPorId(@PathVariable Long id){
 		return ResponseEntity.ok(pedidoService.buscarPorId(id));
-	}
-	
-	@GetMapping("/por-usario")
-	public ResponseEntity<List<PedidoDTO>> listarPorUsuario(@RequestParam Long usuarioId){
-		return ResponseEntity.ok(pedidoService.listarPorUsuario(usuarioId));
 	}
 	
 	@GetMapping("/por-status")
@@ -73,7 +76,7 @@ public class PedidoController {
 	
 	@PutMapping("/{id}/cancelar")
 	public ResponseEntity<PedidoDTO> cancelar(@PathVariable Long id, @RequestParam(required = false) String observacao){
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.ok(pedidoService.cancelar(id, observacao));
 	}
 	
 	@DeleteMapping("/{id}")

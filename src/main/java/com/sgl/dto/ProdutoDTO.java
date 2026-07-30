@@ -55,7 +55,7 @@ public class ProdutoDTO implements Serializable {
 
 	private String unidadeArmazenamento;
 
-	private boolean ativo;
+	private Boolean ativo;
 	
 	public ProdutoDTO(Produto entity) {
 		this.id = entity.getId();
@@ -72,7 +72,7 @@ public class ProdutoDTO implements Serializable {
 		this.dataValidade = entity.getDataValidade();
 		this.condicoesArmazenamento = entity.getCondicoesArmazenamento();
 		this.unidadeArmazenamento = entity.getUnidadeArmazenamento();
-		this.ativo = entity.getAtivo();
+		this.ativo = entity.getAtivo() != null ? entity.getAtivo() : true;
 	}
 
 }

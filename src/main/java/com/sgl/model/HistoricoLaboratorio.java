@@ -20,13 +20,13 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table( name = "estoque_laboratorio")
+@Table( name = "historico_laboratorio")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EstoqueLaboratorio implements Serializable {
+public class HistoricoLaboratorio implements Serializable {
 	
 	public static final long serialVersionUID = 1L;
 	

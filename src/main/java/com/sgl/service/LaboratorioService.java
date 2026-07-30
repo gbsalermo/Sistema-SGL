@@ -41,7 +41,7 @@ public class LaboratorioService {
 			laboratorio.setResponsavel(responsavel);
 		}
 		
-		laboratorio.setAtivo(dto.isAtivo());
+		laboratorio.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 		laboratorio.setNome(dto.getNome());
 		laboratorio.setUnidade(unidade);
 		
@@ -84,12 +84,17 @@ public class LaboratorioService {
 		Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
 				.orElseThrow(() -> new EntityNotFoundException("Unidade não encontrada"));
 		
-		Usuario novoUsuario = usuarioRepository.findById(dto.getResponsavel())
-				.orElseThrow(() -> new EntityNotFoundException("Usuario Responsavel não encontrado"));
+		if(dto.getResponsavel() != null) {
+			Usuario responsavel = usuarioRepository.findById(dto.getResponsavel())
+					.orElseThrow(() -> new EntityNotFoundException("Usuario responsavel não encontrado"));
+			laboratorio.setResponsavel(responsavel);
+		}else {
+			
+			laboratorio.setResponsavel(null);
+		}
 		
 		laboratorio.setDescricao(dto.getDescricao());
-		laboratorio.setResponsavel(novoUsuario);
-		laboratorio.setAtivo(dto.isAtivo());
+		laboratorio.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 		laboratorio.setNome(dto.getNome());
 		laboratorio.setUnidade(unidade);
 		
@@ -98,15 +103,16 @@ public class LaboratorioService {
 		return new LaboratorioDTO(atualizado);
 	}
 	
-	//DELETE
+	//DELETE - Em vez de apagar o registro, apenas torno ele inativo principalmente por laboratorio ter usuarios/estoque/historico
 	@Transactional
 	public void deletar(Long id) {
-		try {
-			laboratorioRepository.deleteById(id);
-		}
-		catch(RuntimeException e) {
-				throw new EntityNotFoundException("Laboratorio não encontrada com esse id: " + id);
-		}
-	}
 
+	    Laboratorio laboratorio = laboratorioRepository.findById(id)
+	            .orElseThrow(() ->
+	                    new EntityNotFoundException("Laboratório não encontrado com id: " + id));
+
+	    laboratorio.setAtivo(false);
+
+	    laboratorioRepository.save(laboratorio);
+	}
 }

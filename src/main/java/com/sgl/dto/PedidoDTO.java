@@ -6,6 +6,7 @@ import java.util.List;
 import com.sgl.model.Pedido;
 import com.sgl.model.enums.StatusPedido;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -44,6 +45,7 @@ public class PedidoDTO {
 	
 	private String arquivoDocumento;
 	
+	@Valid
 	@NotEmpty(message = "Pedido deve ter pelo menos 1 item")
 	private List<ItemPedidoDTO> itens;
 	

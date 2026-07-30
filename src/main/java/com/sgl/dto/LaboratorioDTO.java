@@ -4,13 +4,15 @@ import java.io.Serializable;
 
 import com.sgl.model.Laboratorio;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class LaboratorioDTO implements Serializable{
@@ -24,7 +26,7 @@ public class LaboratorioDTO implements Serializable{
 	private String nome;
 	private String descricao;
 	private Long responsavel;
-	private boolean ativo;
+	private Boolean ativo;
 	
 	public LaboratorioDTO(Laboratorio entity) {
 		

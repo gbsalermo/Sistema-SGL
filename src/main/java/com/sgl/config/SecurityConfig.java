@@ -1,4 +1,4 @@
-﻿package com.sgl.config;
+package com.sgl.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

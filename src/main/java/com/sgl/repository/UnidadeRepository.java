@@ -1,4 +1,4 @@
-﻿package com.sgl.repository;
+package com.sgl.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
