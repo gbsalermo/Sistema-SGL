@@ -301,20 +301,4 @@ public class PedidoService {
 		Pedido atualizado = pedidoRepository.save(pedido);
 		return new PedidoDTO(atualizado);
 	}
-	
-	/*
-	 * @Transactional public void deletar(Long id) { Pedido pedido =
-	 * pedidoRepository.findById(id) .orElseThrow(() -> new
-	 * EntityNotFoundException("Pedido não encontrado com id: " + id));
-	 * 
-	 * if(pedido.getStatus() == StatusPedido.APROVADO) { throw new
-	 * IllegalArgumentException("Não é possivel deletar uma pedido APROVADO. Cancele-o primeiro."
-	 * ); } if(pedido.getStatus() == StatusPedido.ENTREGUE) { throw new
-	 * IllegalArgumentException("Não é possivel deletar um pedido ENTREGUE"); }
-	 * 
-	 * pedido.setStatus(StatusPedido.CANCELADO); Pedido atualizado =
-	 * pedidoRepository.save(pedido);
-	 * 
-	 * }
-	 */
 }
