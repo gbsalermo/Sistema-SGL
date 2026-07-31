@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;

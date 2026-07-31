@@ -1,24 +1,28 @@
 # 📦 Projeto SGL - Sistema de Gestão de Laboratórios 
 
 ## 📋 Status do Projeto
-**Fase:** Desenvolvimento - Projeto e Pedido/ItemPedido finalizados; HistoricoLaboratorio em ajuste  
+**Fase:** Desenvolvimento - CRUDs básicos e revisão estrutural concluídos; Etapa 4 pronta para iniciar  
 **Data de início:** 13/07/2026  
-**Última atualização:** 30/07/2026  
+**Última atualização:** 31/07/2026  
 
 ### 📍 Onde estamos agora
-- ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers, Services, Repositories e DTOs implementados)
+- ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers, Services, Repositories e DTOs implementados e revisados)
 - ✅ EstoqueCentral completo (Entity + DTO + Repository + Service + Controller)
 - ✅ Projeto finalizado (Entity + DTO + Repository + Service + Controller)
 - ✅ ItemPedido e Pedido finalizados (Entity + DTOs + Repository + Service + Controller, fluxo de aprovação/entrega/cancelamento incluído)
 - ⏳ HistoricoLaboratorio em ajuste (Entity existente sendo corrigida: adicionar `pedido_id`, `ativo`, `LocalDateTime`)
+- ✅ Revisão do CRUD de Unidade concluída (sigla única, `@Valid` no controller, delete ajustado)
+- ✅ Revisão do CRUD de Usuário concluída (email único no update, senha criptografada com BCrypt)
+- ✅ Revisão do CRUD de Projeto concluída (`preencherProjeto`, validação de datas e reaproveitamento no criar/atualizar)
+- ✅ Documentação de diagramas corrigida (`docs/diagramas` criada para o README renderizar)
 - ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md`
 - ✅ DataInitializer atualizado com Projetos e Pedidos de teste
-- ⏳ **PRÓXIMO:** Finalizar HistoricoLaboratorio (correção de campos + DTO/Repository/Service/Controller) e seguir para Etapa 4 (Regras de Negócio)
+- ⏳ **PRÓXIMO:** Iniciar Etapa 4 (Regras de Negócio) com as validações globais do backend
 
-- 🔎 **Em andamento (bloqueando próximas etapas):** Revisão completa do backend — revisão de métodos, classes, relacionamentos e boas práticas. Esta tarefa está em execução antes do início das Etapas 4-8.
+- 🔎 **Em andamento:** Etapa 4 — Regras de Negócio, validações e ajustes finos do backend.
 
 ### 📌 Continuar a partir de:
-Corrigir e finalizar `HistoricoLaboratorio.java` e a stack em torno dele (DTO, Repository, Service, Controller), depois avançar para as validações de regras de negócio da Etapa 4. Projeto, ItemPedido e Pedido já estão implementados e finalizados.
+Avançar para a Etapa 4: consolidar validações de negócio, padronizar exceções e fechar os últimos ajustes de integridade do backend. Projeto, ItemPedido e Pedido já estão implementados e revisados.
 
 ### 📂 Arquivo de referência
 Consultar `docs/codigos-referencia-pedidos.md` para códigos e referências de implementação.
@@ -598,6 +602,10 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 24/07/2026 | Projeto como entidade opcional no Pedido | Campo `projeto_id` no Pedido é nullable. Motivo: nem todo pedido está vinculado a um projeto |
 | 24/07/2026 | DataInicio/DataFim opcionais no Projeto | Campos `dataInicio` e `dataFim` no ProjetoDTO não são obrigatórios. Motivo: projeto pode começar sem data definida |
 | 24/07/2026 | HistoricoLaboratorio: correção pendente | Entity existente precisa de ajustes: adicionar `pedido_id` (FK), `ativo` (Boolean), corrigir `dataRecebimento` para `LocalDateTime` |
+| 31/07/2026 | Revisão do CRUD de Unidade | `@Valid` no controller, `existsBySigla*` no repository, sigla única no service e delete tratado com `EntityNotFoundException` |
+| 31/07/2026 | Revisão do CRUD de Usuário | `existsByEmailAndIdNot` no repository, email validado no update e senha criptografada com BCrypt |
+| 31/07/2026 | Revisão do CRUD de Projeto | `preencherProjeto()` reutilizado no criar/atualizar com validação de datas e tratamento de erro 400 |
+| 31/07/2026 | Correção da documentação de diagramas | Criada `docs/diagramas` para o README voltar a renderizar os PNGs do painel principal |
 
 ---
 
@@ -654,6 +662,10 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Atualizar DataInitializer com dados de estoque (6 produtos) (23/07/2026)
 - [x] Criar arquivo de referência para Pedidos (docs/codigos-referencia-pedidos.md) (24/07/2026)
 - [x] Definir ordem correta: Projeto → ItemPedido → Pedido → HistoricoLaboratorio (24/07/2026)
+- [x] Revisar CRUD de Unidade (31/07/2026)
+- [x] Revisar CRUD de Usuário (31/07/2026)
+- [x] Revisar CRUD de Projeto (31/07/2026)
+- [x] Corrigir documentação de diagramas para renderização no README (31/07/2026)
 - [ ] Prototipação das telas
 
 ---
@@ -708,7 +720,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] **3.9** Atualizar DataInitializer com pedidos de teste -参照 docs/codigos-referencia-pedidos.md
 - [x] **3.10** Testar fluxo completo no Postman
 
-### ETAPA 4: Regras de Negócio (PENDENTE)
+### ETAPA 4: Regras de Negócio (PRÓXIMA ETAPA)
 - [ ] **4.1** Validação: Estoque nunca negativo
 - [ ] **4.2** Validação: Só gestor/admin aprova/rejeita pedidos
 - [ ] **4.3** Validação: Usuário pertence ao laboratório do pedido
@@ -1848,6 +1860,7 @@ backend/sgl-backend/src/main/java/com/sgl/
 5. Implementar na ordem: Produto → EstoqueCentral → HistoricoLaboratorio → Pedido
 6. Lembrar: HistoricoLaboratorio é apenas conferência/histórico (sem entrada/saída)
 7. Lembrar: EstoqueCentral é o ÚNICO com controle de estoque (entrada/saída)
+8. Usar o simulador de terminal `com.sgl.console.SglFluxoTerminal` para testar o fluxo principal antes de evoluir para relatórios e telas
 
 ---
 
@@ -1890,6 +1903,3 @@ Nesta seção listam-se problemas, sugestões de investigação e o status de ca
 ### Resolvido
 - Padronização de métodos findBy* com uso de Ids (ex.: findByLaboratorioId) — corrigido em repositories relevantes.
 - Correção de sintaxe no DataInitializer (proj2.descricao) — corrigido.
-
-
-
