@@ -71,7 +71,7 @@ public class ProjetoService {
 		
 		projeto.setNome(dto.getNome());
 		projeto.setDescricao(dto.getDescricao());
-		projeto.setDataInicio(dto.getDataInicio());
+		projeto.setdataInicio(dto.getdataInicio());
 		projeto.setDataFim(dto.getDataFim());
 		projeto.setResponsavel(dto.getResponsavel());
 		projeto.setAtivo(dto.getAtivo());

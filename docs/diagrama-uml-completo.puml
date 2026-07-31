@@ -1,0 +1,174 @@
+@startuml
+title SGL — Diagrama UML Completo
+skinparam classAttributeIconSize 0
+\n' Entities
+class Unidade {
+  +Long id
+  +String nome
+  +String sigla
+}
+
+class Laboratorio {
+  +Long id
+  +String nome
+  +String descricao
+  +Boolean ativo
+}
+
+class Usuario {
+  +Long id
+  +String nome
+  +String email
+  +String senha
+  +Perfil perfil
+  +Boolean ativo
+}
+
+class Projeto {
+  +Long id
+  +String nome
+  +String descricao
+  +Boolean ativo
+}
+
+class Produto {
+  +Long id
+  +String nome
+  +String descricao
+  +String codigoReferencia
+  +UnidadeMedida unidadeMedida
+  +String localizacaoFisica
+  +NivelRisco risco
+  +TipoRisco tipoRisco
+  +String descricaoRisco
+  +Boolean perecivel
+  +TipoPerecivel tipoPerecivel
+  +LocalDate dataValidade
+  +String condicoesArmazenamento
+  +String unidadeArmazenamento
+  +Boolean ativo
+}
+
+class EstoqueCentral {
+  +Long id
+  +Integer quantidadeAtual
+  +Integer quantidadeMinima
+  +Boolean ativo
+}
+
+class Pedido {
+  +Long id
+  +LocalDateTime dataSolicitacao
+  +StatusPedido status
+  +String observacao
+  +String arquivoDocumento
+}
+
+class ItemPedido {
+  +Long id
+  +Integer quantidadeSolicitada
+  +Integer quantidadeAprovada
+}
+
+class HistoricoLaboratorio {
+  +Long id
+  +Integer quantidade
+  +LocalDate dataRecebimento
+  +Boolean ativo
+}
+
+class Lote {
+}
+
+' DTOs (simplified)
+class UsuarioDTO
+class UnidadeDTO
+class LaboratorioDTO
+class ProdutoDTO
+class EstoqueCentralDTO
+class PedidoDTO
+class ItemPedidoDTO
+class HistoricoLaboratorioDTO
+class ProjetoDTO
+
+' Enums
+enum Perfil {
+  ADMINISTRADOR
+  GESTOR
+  TECNICO
+  PESQUISADOR
+  ESTAGIARIO
+}
+
+enum StatusPedido {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  ENTREGUE
+  CANCELADO
+}
+
+enum UnidadeMedida {
+  ML
+  L
+  MG
+  G
+  KG
+  UNIDADE
+  CAIXA
+  FRASCO
+  AMPOLA
+  PAR
+  METRO
+  OUTRO
+}
+
+enum TipoPerecivel { NENHUM QUIMICO MICROBIANO VEGETAL ANIMAL }
+
+enum TipoRisco { NENHUM INFLAMAVEL RADIOATIVO TOXICO CORROSIVO BIOLOGICO }
+
+enum NivelRisco { NENHUM BAIXO MEDIO ALTO }
+
+' Relationships
+Unidade "1" -- "0..*" Laboratorio : "laboratorios"
+Laboratorio "*" --> "1" Unidade : "unidade"
+
+Usuario "*" --> "0..1" Unidade : "unidade"
+Usuario "*" --> "0..1" Laboratorio : "laboratorio"
+
+EstoqueCentral "1" o-- "1" Produto : "produto"
+
+Pedido "1" o-- "*" ItemPedido : "itens"
+ItemPedido "*" --> "1" Produto : "produto"
+ItemPedido "*" --> "1" Pedido : "pedido"
+
+Pedido "*" --> "1" Usuario : "usuario"
+Pedido "*" --> "1" Laboratorio : "laboratorio"
+Pedido "*" --> "0..1" Projeto : "projeto"
+
+HistoricoLaboratorio "*" --> "1" Laboratorio : "laboratorio"
+HistoricoLaboratorio "*" --> "1" Produto : "produto"
+HistoricoLaboratorio "*" --> "1" Pedido : "pedido"
+
+' DTO relations (mapping)
+UsuarioDTO ..> Usuario
+UnidadeDTO ..> Unidade
+LaboratorioDTO ..> Laboratorio
+ProdutoDTO ..> Produto
+EstoqueCentralDTO ..> EstoqueCentral
+PedidoDTO ..> Pedido
+ItemPedidoDTO ..> ItemPedido
+HistoricoLaboratorioDTO ..> HistoricoLaboratorio
+ProjetoDTO ..> Projeto
+
+note top of Pedido
+  Pedido contém itens (ItemPedido). Fluxo: PENDENTE → APROVADO/REJEITADO → ENTREGUE/CANCELADO
+end note
+
+note top of EstoqueCentral
+  EstoqueCentral é o único ponto de entrada/saída real por Produto (1:1)
+end note
+
+' Diagram footer
+footer Generated: Sistema-SGL — diagrama-uml-completo.puml
+@enduml
