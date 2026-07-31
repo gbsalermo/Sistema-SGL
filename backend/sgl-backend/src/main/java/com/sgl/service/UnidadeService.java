@@ -9,6 +9,7 @@ import com.sgl.dto.UnidadeDTO;
 import com.sgl.model.Unidade;
 import com.sgl.repository.UnidadeRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 
@@ -21,6 +22,14 @@ public class UnidadeService {
     //CREATE
     @Transactional
     public UnidadeDTO criar(UnidadeDTO dto){
+    	
+        if (unidadeRepository.existsBySigla(dto.getSigla())) {
+
+            throw new IllegalArgumentException(
+                "Já existe uma unidade com esta sigla.");
+
+        }
+        
         Unidade unidade = new Unidade();
         unidade.setNome(dto.getNome());
         unidade.setSigla(dto.getSigla());
@@ -51,8 +60,14 @@ public class UnidadeService {
     //ATUALIZAR
     @Transactional
     public UnidadeDTO atualizar(Long id, UnidadeDTO dto){
+    	
     	Unidade unidade = unidadeRepository.findById(id)
-    			.orElseThrow(() -> new RuntimeException("Unidade não encontrada com id " + id));
+    			.orElseThrow(() -> new EntityNotFoundException("Unidade não encontrada com id " + id));
+    	
+    	if (unidadeRepository.existsBySiglaAndIdNot(dto.getSigla(), id)) {
+    	    throw new IllegalArgumentException(
+    	            "Já existe uma unidade com esta sigla.");
+    	}
     	unidade.setNome(dto.getNome());
     	unidade.setSigla(dto.getSigla());
     	Unidade atualizada = unidadeRepository.save(unidade);
@@ -62,12 +77,13 @@ public class UnidadeService {
     //DELETAR
     @Transactional
     public void deletar(Long id) {
-    	try {
-    		unidadeRepository.deleteById(id);
-    	}
-    	catch(RuntimeException e) {
-    			throw new RuntimeException("Unidade não encontrada com id " + id);
+    	Unidade unidade = unidadeRepository.findById(id)
+    	        .orElseThrow(() ->
+    	            new EntityNotFoundException(
+    	                "Unidade não encontrada com id: " + id));
+
+    	unidadeRepository.delete(unidade);
     	}
     }
     
-}
+
