@@ -17,5 +17,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
 	
 	boolean existsByEmail(String email); //Verificar se existe usuario com esse email
 	
-
+	boolean existsByEmailAndIdNot(String email,Long id); //Papel parecido Com existsByEmail, mas aplicado para o metodo atualizar
 }
