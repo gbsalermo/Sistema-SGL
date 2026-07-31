@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.util.List;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +22,7 @@ public class UsuarioService {
 	
 	private final UsuarioRepository usuarioRepository;
 	private final LaboratorioRepository laboratorioRepository;
-	
+	private final BCryptPasswordEncoder passwordEncoder; //Para Criptografia da senha
 	
 	//Criar
 	@Transactional
@@ -35,7 +36,7 @@ public class UsuarioService {
 		Usuario usuario = new Usuario();
 		usuario.setNome(dto.getNome());
 		usuario.setEmail(dto.getEmail());
-		usuario.setSenha(dto.getSenha());
+		usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
 		usuario.setPerfil(dto.getPerfil());
 		usuario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 		
@@ -73,7 +74,7 @@ public class UsuarioService {
 	@Transactional(readOnly = true)
 	public UsuarioDTO buscarPorId(Long id) {
 		Usuario usuario = usuarioRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Usuario não encontrado com id: "));
+				.orElseThrow(() -> new EntityNotFoundException("Usuario não encontrado com id: " + id));
 		return new UsuarioDTO(usuario);
 	}
 	
@@ -84,14 +85,17 @@ public class UsuarioService {
 		Usuario usuario = usuarioRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com id"));
 		
+		if (usuarioRepository.existsByEmailAndIdNot(dto.getEmail(), id)) {
+	        throw new IllegalArgumentException(
+	                "Já existe um usuário com este email.");
+	    }
+		
 		usuario.setNome(dto.getNome());
 		usuario.setEmail(dto.getEmail());
 		usuario.setPerfil(dto.getPerfil());
 		usuario.setAtivo(dto.getAtivo());
+		usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
 		
-		if(dto.getSenha() != null && !dto.getSenha().isEmpty()) {
-			usuario.setSenha(dto.getSenha());
-		}
 		
 		if(dto.getLaboratorioId() != null) {
 			Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
@@ -109,11 +113,12 @@ public class UsuarioService {
 	//Deletar
 	@Transactional
 	public void deletar(Long id) {
-		try {
-			usuarioRepository.deleteById(id);
-		} catch (RuntimeException e) {
-			throw new EntityNotFoundException("Usuario não encontrado com id: " + id);
+		Usuario usuario = usuarioRepository.findById(id)
+		        .orElseThrow(() ->
+		            new EntityNotFoundException(
+		                "Usuário não encontrado"));
+
+		usuarioRepository.delete(usuario);
 		}
-	}
 
 }
