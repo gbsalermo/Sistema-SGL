@@ -6,21 +6,9 @@ import java.util.ArrayList;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import com.sgl.model.Pedido;
 import com.sgl.model.ItemPedido;
-import com.sgl.model.Projeto;
-import com.sgl.model.EstoqueLaboratorio;
-import com.sgl.model.enums.StatusPedido;
-import com.sgl.repository.PedidoRepository;
-import com.sgl.repository.ProjetoRepository;
-import com.sgl.repository.EstoqueLaboratorioRepository;
 import com.sgl.model.EstoqueCentral;
-import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
-import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;
@@ -32,7 +20,6 @@ import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstoqueCentralRepository;
-import com.sgl.repository.EstoqueLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
@@ -53,7 +40,6 @@ public class DataInitializer implements CommandLineRunner {
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
-    private final EstoqueLaboratorioRepository estoqueLaboratorioRepository;
 
     @Override
     public void run(String... args) throws Exception {

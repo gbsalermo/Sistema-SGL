@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sgl.dto.UnidadeDTO;
 import com.sgl.service.UnidadeService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -36,13 +37,13 @@ public class UnidadeController {
 	}
 	
 	@PostMapping
-	public ResponseEntity<UnidadeDTO> criar(@RequestBody UnidadeDTO dto){
+	public ResponseEntity<UnidadeDTO> criar(@Valid @RequestBody UnidadeDTO dto){
 		UnidadeDTO novaUnidade = unidadeService.criar(dto);
 		return ResponseEntity.status(HttpStatus.CREATED).body(novaUnidade);
 	}
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<UnidadeDTO> atualizar(@PathVariable Long id, @RequestBody UnidadeDTO dto){
+	public ResponseEntity<UnidadeDTO> atualizar(@PathVariable Long id, @Valid @RequestBody UnidadeDTO dto){
 		return ResponseEntity.ok(unidadeService.atualizar(id, dto));
 	}
 	

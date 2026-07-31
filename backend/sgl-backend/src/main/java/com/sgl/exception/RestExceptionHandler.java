@@ -22,4 +22,13 @@ public class RestExceptionHandler {
 				));
 	}
 
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex){
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+				"timestamp", LocalDateTime.now().toString(),
+				"status", 400,
+				"erro", ex.getMessage()
+				));
+	}
+
 }

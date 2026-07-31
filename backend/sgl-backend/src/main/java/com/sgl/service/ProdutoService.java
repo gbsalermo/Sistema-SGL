@@ -79,11 +79,14 @@ public class ProdutoService {
     }
     
     @Transactional
-    public void deletar(Long id, Produto produto) {
-    	if(!produtoRepository.existsById(id)) {
-    		throw new EntityNotFoundException("Produto não encontrado com o id: " + id);
-    	}
-    	produto.setAtivo(false);
+    public void deletar(Long id) {
+
+        Produto produto = produtoRepository.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Produto não encontrado com o id: " + id));
+
+        produto.setAtivo(false);
     }
     
     //Metodo para Listar validade Proxima
