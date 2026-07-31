@@ -1804,7 +1804,7 @@ backend/sgl-backend/src/main/java/com/sgl/
 - [ ] Protótipo/Figma: [CRIAR]
 - [ ] Documentação da API (Swagger): [CRIAR]
 - [ ] Banco de dados: [CRIAR SCRIPTS]
-- [ ] Diagrama de Classes Atualizado: [CRIAR com EstoqueCentral e HistoricoLaboratorio (apenas conferência)]
+- [x] Diagrama de Classes Atualizado: diagrama gerado e adicionado em docs/ (docs/diagrama-uml-completo.puml, docs/diagrama-uml-completo.png, docs/diagrama-uml-completo.svg) — revisar migração de dataRecebimento para LocalDateTime conforme anotado mais acima
 
 ---
 
