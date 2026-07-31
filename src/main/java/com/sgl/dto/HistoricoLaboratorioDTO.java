@@ -2,7 +2,6 @@ package com.sgl.dto;
 
 import java.time.LocalDate;
 
-import com.sgl.model.EstoqueLaboratorio;
 import com.sgl.model.HistoricoLaboratorio;
 
 import lombok.AllArgsConstructor;

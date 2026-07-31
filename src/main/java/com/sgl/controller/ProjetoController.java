@@ -60,4 +60,10 @@ public class ProjetoController {
 		projetoService.deletar(id);
 		return ResponseEntity.noContent().build();
 	}
+	
+	//LISTAR PROJETOS ATIVOS
+	@GetMapping("/ativos")
+	public ResponseEntity<List<ProjetoDTO>> listarAtivos() {
+	    return ResponseEntity.ok(projetoService.listarAtivos());
+	}
 }
