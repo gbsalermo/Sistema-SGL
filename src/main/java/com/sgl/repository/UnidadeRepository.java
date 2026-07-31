@@ -10,5 +10,9 @@ import com.sgl.model.Unidade;
 
 @Repository //Classe responsavel pela camada de persistÃªncia
 public interface  UnidadeRepository extends JpaRepository<Unidade, Long> {
+	
+	boolean existsBySigla(String sigla);
+	
+	boolean existsBySiglaAndIdNot(String sigla, Long id);
 }
 
