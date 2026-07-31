@@ -15,6 +15,8 @@
 - ✅ DataInitializer atualizado com Projetos e Pedidos de teste
 - ⏳ **PRÓXIMO:** Finalizar HistoricoLaboratorio (correção de campos + DTO/Repository/Service/Controller) e seguir para Etapa 4 (Regras de Negócio)
 
+- 🔎 **Em andamento (bloqueando próximas etapas):** Revisão completa do backend — revisão de métodos, classes, relacionamentos e boas práticas. Esta tarefa está em execução antes do início das Etapas 4-8.
+
 ### 📌 Continuar a partir de:
 Corrigir e finalizar `HistoricoLaboratorio.java` e a stack em torno dele (DTO, Repository, Service, Controller), depois avançar para as validações de regras de negócio da Etapa 4. Projeto, ItemPedido e Pedido já estão implementados e finalizados.
 
