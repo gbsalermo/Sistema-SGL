@@ -28,11 +28,11 @@ O projeto está na fase de **backend**, com o núcleo de estoque já implementad
 | EstoqueCentral (entrada/saída) | ✅ Concluído | Testado no Postman |
 | Projeto | ✅ Concluído | Entity + DTO + Repository + Service + Controller |
 | ItemPedido / Pedido | ✅ Concluído | Fluxo completo de aprovação/entrega/cancelamento implementado |
-| HistoricoLaboratorio (histórico) | ⏳ Em ajuste | Entity existente sendo corrigida (adicionar `pedido_id`, `ativo`, `LocalDateTime`) |
-| Autenticação (Spring Security + JWT) | ⏳ Pendente | Planejado para depois do HistoricoLaboratorio estar validado |
+| HistoricoLaboratorio (histórico) | ✅ Implementado | Entity + DTO + Repository + Service + Controller implementados; dataRecebimento atualmente usa LocalDate (considerar migração para LocalDateTime) |
+| Autenticação (Spring Security + JWT) | ⏳ Pendente | Planejado após validações e regras de negócio |
 | Frontend (Vue.js) | ⬜ Não iniciado | Prioridade é consolidar e testar o backend primeiro |
 
-**Próximo passo imediato:** finalizar `HistoricoLaboratorio` (correção de campos + DTO/Repository/Service/Controller) e avançar para as regras de negócio e validações finais (ver seção [Padrões de Arquitetura](#-padrões-de-arquitetura)).
+**Próximo passo imediato:** avançar para validações de regras de negócio e autenticação (Spring Security + JWT). Consulte [CONTINUIDADE.md](docs/CONTINUIDADE.md) para detalhes.
 
 Todas as decisões técnicas, correções aplicadas e o roadmap completo, etapa por etapa, estão documentados em [`CONTINUIDADE.md`](docs/CONTINUIDADE.md).
 

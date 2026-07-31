@@ -675,11 +675,11 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] **2.3.3** Implementar endpoints `entrada` e `saida` no EstoqueCentral (23/07/2026)
 - [x] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos) (23/07/2026)
 - [x] **2.6** Testar CRUD EstoqueCentral no Postman (23/07/2026) - CRUD, entrada, saída, estoque baixo, validação estoque insuficiente
-- [ ] **2.4** Corrigir `HistoricoLaboratorio.java` (adicionar pedido_id, ativo, LocalDateTime) - Entity já existe parcial
-- [ ] **2.4.1** Criar `HistoricoLaboratorioDTO.java`
-- [ ] **2.4.2** Criar `HistoricoLaboratorioRepository.java`
-- [ ] **2.4.3** Criar `HistoricoLaboratorioService.java`
-- [ ] **2.4.4** Criar `HistoricoLaboratorioController.java`
+- [x] **2.4** Corrigir `HistoricoLaboratorio.java` (adicionar pedido_id, ativo) — parcial: dataRecebimento ainda é LocalDate (pendente migrar para LocalDateTime)
+- [x] **2.4.1** Criar `HistoricoLaboratorioDTO.java` (implementado)
+- [x] **2.4.2** Criar `HistoricoLaboratorioRepository.java` (implementado)
+- [x] **2.4.3** Criar `HistoricoLaboratorioService.java` (implementado)
+- [x] **2.4.4** Criar `HistoricoLaboratorioController.java` (implementado)
 - [ ] **2.7** Testar CRUD HistoricoLaboratorio no Postman
 
 ### ETAPA 2.5: Projeto (CONCLUÍDO)
@@ -1091,19 +1091,19 @@ private Perfil perfil;
 > **📌 Referência completa:** `docs/codigos-referencia-pedidos.md`
 
 #### Passo 12 (antigo): Corrigir Entidade Existente
-- [ ] Corrigir `model/HistoricoLaboratorio.java` - adicionar: pedido_id (FK), ativo (Boolean), corrigir dataRecebimento para LocalDateTime参照 reference
+- [x] Corrigir `model/HistoricoLaboratorio.java` - adicionados: pedido_id (FK), ativo (Boolean); pendente: ajustar dataRecebimento para LocalDateTime
 
 #### Passo 13 (antigo): Criar DTO
-- [ ] Criar `dto/HistoricoLaboratorioDTO.java`参照 reference
+- [x] Criar `dto/HistoricoLaboratorioDTO.java` (implementado)
 
 #### Passo 14 (antigo): Criar Repository
-- [ ] Criar `repository/HistoricoLaboratorioRepository.java`参照 reference
+- [x] Criar `repository/HistoricoLaboratorioRepository.java` (implementado)
 
 #### Passo 15 (antigo): Criar Service
-- [ ] Criar `service/HistoricoLaboratorioService.java`参照 reference
+- [x] Criar `service/HistoricoLaboratorioService.java` (implementado)
 
 #### Passo 16 (antigo): Criar Controller
-- [ ] Criar `controller/HistoricoLaboratorioController.java`参照 reference
+- [x] Criar `controller/HistoricoLaboratorioController.java` (implementado)
 
 ---
 
