@@ -63,4 +63,10 @@ public class EstagiarioController {
 		estagiarioService.deletar(id);
 		return ResponseEntity.noContent().build();
 	}
+	
+	//Encerrar estagio
+	@PutMapping("/{id}/encerrar")
+	public ResponseEntity<EstagiarioDTO> encerrarEstagio(@PathVariable Long id) {
+	    return ResponseEntity.ok(estagiarioService.encerrarEstagio(id));
+	}
 }

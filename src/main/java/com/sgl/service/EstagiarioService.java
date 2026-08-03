@@ -15,7 +15,9 @@ import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,26 +28,40 @@ public class EstagiarioService {
 	private final UsuarioRepository usuarioRepository;
 	private final LaboratorioRepository laboratorioRepository;
 
+	@PersistenceContext
+	private EntityManager entityManager;
+
 	@Transactional
 	public EstagiarioDTO criar(EstagiarioDTO dto) {
-		Usuario usuario = buscarUsuario(dto.getUsuarioId());
-		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
+	    Usuario usuario = buscarUsuario(dto.getUsuarioId());
+	    Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
 
-		if (estagiarioRepository.existsByUsuarioId(usuario.getId())) {
-			throw new IllegalArgumentException("Usuário já possui cadastro de estagiário.");
-		}
+	    if (estagiarioRepository.existsById(usuario.getId())) {
+	        throw new IllegalArgumentException("Usuário já possui cadastro de estagiário.");
+	    }
 
-		validarPerfilEstagiario(usuario);
+	    validarPerfilEstagiario(usuario);
+	    validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
 
-		Estagiario estagiario = Estagiario.builder()
-				.usuario(usuario)
-				.laboratorio(laboratorio)
-				.build();
+	    usuario.setLaboratorio(laboratorio); // se aplicável
+	    usuarioRepository.save(usuario);
 
-		preencherEstagiario(estagiario, dto);
+	    // INSERT direto na subtabela — evita o merge problemático
+	    entityManager.createNativeQuery(
+	        "INSERT INTO estagiario (id, data_inicio_estagio, data_fim_estagio, tipo_bolsa, observacao) " +
+	        "VALUES (:id, :dataInicio, :dataFim, :tipoBolsa, :observacao)")
+	        .setParameter("id", usuario.getId())
+	        .setParameter("dataInicio", dto.getDataInicioEstagio())
+	        .setParameter("dataFim", dto.getDataFimEstagio())
+	        .setParameter("tipoBolsa", dto.getTipoBolsa().name())
+	        .setParameter("observacao", dto.getObservacao())
+	        .executeUpdate();
 
-		Estagiario salvo = estagiarioRepository.save(estagiario);
-		return new EstagiarioDTO(salvo);
+	    entityManager.clear(); // limpa o contexto pra recarregar como Estagiario "de verdade"
+
+	    Estagiario salvo = estagiarioRepository.findById(usuario.getId())
+	        .orElseThrow(() -> new EntityNotFoundException("Erro ao criar estagiário"));
+	    return new EstagiarioDTO(salvo);
 	}
 
 	@Transactional(readOnly = true)
@@ -84,16 +100,14 @@ public class EstagiarioService {
 		Estagiario estagiario = estagiarioRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Estagiário não encontrado com id: " + id));
 
-		Usuario usuario = buscarUsuario(dto.getUsuarioId());
-		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
-
-		if (estagiarioRepository.existsByUsuarioIdAndIdNot(usuario.getId(), id)) {
-			throw new IllegalArgumentException("Usuário já está vinculado a outro cadastro de estagiário.");
+		if (!id.equals(dto.getUsuarioId())) {
+			throw new IllegalArgumentException("Não é permitido trocar o usuário vinculado do estagiário.");
 		}
 
-		validarPerfilEstagiario(usuario);
+		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
+		validarPerfilEstagiario(estagiario);
 
-		estagiario.setUsuario(usuario);
+		estagiario.setPerfil(Perfil.ESTAGIARIO);
 		estagiario.setLaboratorio(laboratorio);
 		preencherEstagiario(estagiario, dto);
 
@@ -106,6 +120,11 @@ public class EstagiarioService {
 		Estagiario estagiario = estagiarioRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Estagiário não encontrado com id: " + id));
 		estagiario.setAtivo(false);
+		
+		//Caso não seja informada a data de encessamento o sistema atualiza automaticamente
+		if (estagiario.getDataFimEstagio() == null) {
+		    estagiario.setDataFimEstagio(LocalDate.now());
+		}
 	}
 
 	private Usuario buscarUsuario(Long usuarioId) {
@@ -130,7 +149,6 @@ public class EstagiarioService {
 		estagiario.setDataInicioEstagio(dto.getDataInicioEstagio());
 		estagiario.setDataFimEstagio(dto.getDataFimEstagio());
 		estagiario.setTipoBolsa(dto.getTipoBolsa());
-		estagiario.setFuncao(dto.getFuncao());
 		estagiario.setObservacao(dto.getObservacao());
 		estagiario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 	}
@@ -140,4 +158,30 @@ public class EstagiarioService {
 			throw new IllegalArgumentException("Data de fim do estágio não pode ser menor que data de início.");
 		}
 	}
+	
+	//Encerrar Estagio
+	@Transactional
+	public EstagiarioDTO encerrarEstagio(Long id) {
+
+	    Estagiario estagiario = estagiarioRepository.findById(id)
+	            .orElseThrow(() ->
+	                    new EntityNotFoundException(
+	                            "Estagiário não encontrado com id: " + id));
+
+	    if (!estagiario.getAtivo()) {
+	        throw new IllegalArgumentException(
+	                "O estágio já está encerrado.");
+	    }
+
+	    estagiario.setAtivo(false);
+
+	    if (estagiario.getDataFimEstagio() == null) {
+	        estagiario.setDataFimEstagio(LocalDate.now());
+	    }
+
+	    Estagiario atualizado = estagiarioRepository.save(estagiario);
+
+	    return new EstagiarioDTO(atualizado);
+	}
+
 }

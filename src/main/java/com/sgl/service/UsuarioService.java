@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sgl.dto.UsuarioDTO;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.Perfil;
+import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -23,6 +25,7 @@ public class UsuarioService {
 	private final UsuarioRepository usuarioRepository;
 	private final LaboratorioRepository laboratorioRepository;
 	private final BCryptPasswordEncoder passwordEncoder; //Para Criptografia da senha
+	private final EstagiarioRepository estagiarioRepository;
 	
 	//Criar
 	@Transactional
@@ -89,6 +92,15 @@ public class UsuarioService {
 	        throw new IllegalArgumentException(
 	                "Já existe um usuário com este email.");
 	    }
+		
+		//Impede trocar de perfil enquanto estagio está ativo
+		if (usuario.getPerfil() == Perfil.ESTAGIARIO
+		        && dto.getPerfil() != Perfil.ESTAGIARIO
+		        && estagiarioRepository.existsByIdAndAtivoTrue(usuario.getId())) {
+
+		    throw new IllegalArgumentException(
+		        "Finalize o estágio antes de alterar o perfil do usuário.");
+		}
 		
 		usuario.setNome(dto.getNome());
 		usuario.setEmail(dto.getEmail());

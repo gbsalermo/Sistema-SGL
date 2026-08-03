@@ -43,7 +43,7 @@ public class Laboratorio implements Serializable {
     private String descricao;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "responsavel_id", nullable = false)
+    @JoinColumn(name = "responsavel_id")
     private Usuario responsavel;
 
     @Column(nullable = false)

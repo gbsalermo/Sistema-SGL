@@ -7,6 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import com.sgl.model.ItemPedido;
+import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Pedido;
@@ -19,7 +20,9 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
+import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.PedidoRepository;
@@ -41,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
+    private final EstagiarioRepository estagiarioRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -61,8 +65,22 @@ public class DataInitializer implements CommandLineRunner {
         Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, u3, lab1, true));
         Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, u2, lab2, true));
         Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", "123456", Perfil.PESQUISADOR, u1, lab3, true));
-        Usuario maria = usuarioRepository.save(new Usuario(null, "Maria Oliveira", "maria@iq.com", "123456", Perfil.ESTAGIARIO, u2, lab4, true));
-
+        
+        
+        Estagiario maria = new Estagiario();
+        maria.setNome("Maria Oliveira");
+        maria.setEmail("maria@iq.com");
+        maria.setSenha("123456");
+        maria.setPerfil(Perfil.ESTAGIARIO);
+        maria.setUnidade(u2);
+        maria.setLaboratorio(lab4);
+        maria.setAtivo(true);
+        maria.setDataInicioEstagio(java.time.LocalDate.now().minusMonths(2));
+        maria.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
+        maria.setObservacao("Cadastro inicial de estágio para testes");
+        maria = estagiarioRepository.save(maria); // um único save
+        
+        
         // Atualizar laboratórios com os responsáveis
         lab1.setResponsavel(carlos);
         lab2.setResponsavel(ana);
@@ -272,6 +290,6 @@ public class DataInitializer implements CommandLineRunner {
         pedidoRepository.save(pedido2);
 
         System.out.println("=== Dados de teste injetados com sucesso! ===");
-        System.out.println("=== 3 Unidades, 5 Labs, 5 Usuarios, 6 Produtos, 6 EstoqueCentral, 2 Projetos, 2 Pedidos ===");
+        System.out.println("=== 3 Unidades, 5 Labs, 5 Usuarios, 1 Estagiario, 6 Produtos, 6 EstoqueCentral, 2 Projetos, 2 Pedidos ===");
     }
 }
