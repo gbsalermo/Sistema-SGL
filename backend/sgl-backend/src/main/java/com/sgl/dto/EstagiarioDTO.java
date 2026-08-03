@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import com.sgl.model.Estagiario;
 import com.sgl.model.enums.TipoBolsa;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,23 +40,19 @@ public class EstagiarioDTO implements Serializable {
 	@NotNull(message = "Tipo de bolsa é obrigatório")
 	private TipoBolsa tipoBolsa;
 
-	@NotBlank(message = "Função é obrigatória")
-	private String funcao;
-
 	private String observacao;
 
 	private Boolean ativo = true;
 
 	public EstagiarioDTO(Estagiario entity) {
 		this.id = entity.getId();
-		this.usuarioId = entity.getUsuario().getId();
-		this.usuarioNome = entity.getUsuario().getNome();
-		this.laboratorioId = entity.getLaboratorio().getId();
-		this.laboratorioNome = entity.getLaboratorio().getNome();
+		this.usuarioId = entity.getId();
+		this.usuarioNome = entity.getNome();
+		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getId() : null;
+		this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
 		this.dataInicioEstagio = entity.getDataInicioEstagio();
 		this.dataFimEstagio = entity.getDataFimEstagio();
 		this.tipoBolsa = entity.getTipoBolsa();
-		this.funcao = entity.getFuncao();
 		this.observacao = entity.getObservacao();
 		this.ativo = entity.getAtivo();
 	}

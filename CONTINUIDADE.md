@@ -3,18 +3,20 @@
 ## 📋 Status do Projeto
 **Fase:** Desenvolvimento - CRUDs básicos e revisão estrutural concluídos; Etapa 4 pronta para iniciar  
 **Data de início:** 13/07/2026  
-**Última atualização:** 02/08/2026  
+**Última atualização:** 03/08/2026  
 
 ### 📍 Onde estamos agora
 - ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers, Services, Repositories e DTOs implementados e revisados)
 - ✅ EstoqueCentral completo (Entity + DTO + Repository + Service + Controller)
 - ✅ Projeto finalizado (Entity + DTO + Repository + Service + Controller)
 - ✅ ItemPedido e Pedido finalizados (Entity + DTOs + Repository + Service + Controller, fluxo de aprovação/entrega/cancelamento incluído)
-- ⏳ HistoricoLaboratorio em ajuste (Entity existente sendo corrigida: adicionar `pedido_id`, `ativo`, `LocalDateTime`)
+- ✅ HistoricoLaboratorio concluído (Entity + DTO + Repository + Service + Controller + ajustes aplicados anteriormente)
 - ✅ Revisão do CRUD de Unidade concluída (sigla única, `@Valid` no controller, delete ajustado)
 - ✅ Revisão do CRUD de Usuário concluída (email único no update, senha criptografada com BCrypt)
 - ✅ Revisão do CRUD de Projeto concluída (`preencherProjeto`, validação de datas e reaproveitamento no criar/atualizar)
 - ✅ CRUD de Estagiário implementado (Entity + DTO + Repository + Service + Controller + enum `TipoBolsa`)
+- ✅ CRUD de Estagiário revisado: migrado de relacionamento `OneToOne` para **herança com Usuario** (JOINED), mantendo a lógica atual do módulo
+- ✅ Atributo `funcao` removido do módulo Estagiário (Entity/DTO/Service/DataInitializer)
 - ✅ Documentação de diagramas corrigida (`docs/diagramas` criada para o README renderizar)
 - ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md`
 - ✅ DataInitializer atualizado com Projetos e Pedidos de teste
@@ -275,15 +277,11 @@ public enum Perfil {
 
 ### Estagiario
 ```java
-- id (auto-gerado)
-- usuario_id (FK único → Usuario)   // 1 usuário ESTAGIARIO = 1 cadastro administrativo
-- laboratorio_id (FK → Laboratorio)
+- herda de Usuario (id, nome, email, senha, perfil, unidade, laboratorio, ativo)
 - data_inicio_estagio
 - data_fim_estagio
 - tipo_bolsa (enum: BOLSA_CNPQ, BOLSA_CAPES, BOLSA_INSTITUCIONAL, VOLUNTARIO)
-- funcao
 - observacao
-- ativo
 ```
 
 ### Produto/Item (Catálogo Central)
@@ -626,12 +624,14 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 24/07/2026 | Ordem correta de implementação | Definida ordem: Enums → Produto → EstoqueCentral → **Projeto** → ItemPedido → Pedido → HistoricoLaboratorio. Motivo: Pedido depende de Projeto (opcional) e ItemPedido |
 | 24/07/2026 | Projeto como entidade opcional no Pedido | Campo `projeto_id` no Pedido é nullable. Motivo: nem todo pedido está vinculado a um projeto |
 | 24/07/2026 | DataInicio/DataFim opcionais no Projeto | Campos `dataInicio` e `dataFim` no ProjetoDTO não são obrigatórios. Motivo: projeto pode começar sem data definida |
-| 24/07/2026 | HistoricoLaboratorio: correção pendente | Entity existente precisa de ajustes: adicionar `pedido_id` (FK), `ativo` (Boolean), corrigir `dataRecebimento` para `LocalDateTime` |
+| 24/07/2026 | HistoricoLaboratorio: ajustes mapeados | Foi definido o pacote de ajustes (`pedido_id`, `ativo`, `dataRecebimento`) para execução nas etapas seguintes |
 | 31/07/2026 | Revisão do CRUD de Unidade | `@Valid` no controller, `existsBySigla*` no repository, sigla única no service e delete tratado com `EntityNotFoundException` |
 | 31/07/2026 | Revisão do CRUD de Usuário | `existsByEmailAndIdNot` no repository, email validado no update e senha criptografada com BCrypt |
 | 31/07/2026 | Revisão do CRUD de Projeto | `preencherProjeto()` reutilizado no criar/atualizar com validação de datas e tratamento de erro 400 |
 | 31/07/2026 | Correção da documentação de diagramas | Criada `docs/diagramas` para o README voltar a renderizar os PNGs do painel principal |
-| 02/08/2026 | Estagiário como entidade própria (CRUD) | Perfil `ESTAGIARIO` permanece para permissão, mas foi criado cadastro administrativo separado para suportar relatórios de estágio (início/fim, bolsa, função, vínculo por laboratório e rastreio de pedidos) |
+| 02/08/2026 | Estagiário como entidade própria (CRUD) | Perfil `ESTAGIARIO` permanece para permissão, mas foi criado cadastro administrativo separado para suportar relatórios de estágio (início/fim, bolsa, vínculo por laboratório e rastreio de pedidos) |
+| 03/08/2026 | Estagiário migrou de OneToOne para herança | `Estagiario` passou a herdar de `Usuario` com estratégia `JOINED`, removendo vínculo `usuario_id` e preservando endpoints e regras atuais |
+| 03/08/2026 | Simplificação do Estagiário: remoção de `funcao` | Campo removido de Entity, DTO, Service e DataInitializer por não ser necessário ao modelo atual |
 
 ---
 
@@ -692,6 +692,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Revisar CRUD de Usuário (31/07/2026)
 - [x] Revisar CRUD de Projeto (31/07/2026)
 - [x] Implementar CRUD de Estagiário (02/08/2026)
+- [x] Revisar/corrigir CRUD de Estagiário para padronização com o restante do projeto (03/08/2026) - migrado para herança com Usuario
 - [x] Corrigir documentação de diagramas para renderização no README (31/07/2026)
 - [ ] Prototipação das telas
 
@@ -717,12 +718,12 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] **2.3.3** Implementar endpoints `entrada` e `saida` no EstoqueCentral (23/07/2026)
 - [x] **2.5** Atualizar DataInitializer com estoque de teste (6 produtos) (23/07/2026)
 - [x] **2.6** Testar CRUD EstoqueCentral no Postman (23/07/2026) - CRUD, entrada, saída, estoque baixo, validação estoque insuficiente
-- [x] **2.4** Corrigir `HistoricoLaboratorio.java` (adicionar pedido_id, ativo) — parcial: dataRecebimento ainda é LocalDate (pendente migrar para LocalDateTime)
+- [x] **2.4** Corrigir `HistoricoLaboratorio.java` (adicionar pedido_id, ativo, LocalDateTime) (CONCLUÍDO)
 - [x] **2.4.1** Criar `HistoricoLaboratorioDTO.java` (implementado)
 - [x] **2.4.2** Criar `HistoricoLaboratorioRepository.java` (implementado)
 - [x] **2.4.3** Criar `HistoricoLaboratorioService.java` (implementado)
 - [x] **2.4.4** Criar `HistoricoLaboratorioController.java` (implementado)
-- [ ] **2.7** Testar CRUD HistoricoLaboratorio no Postman
+- [x] **2.7** Testar CRUD HistoricoLaboratorio no Postman (CONCLUÍDO)
 
 ### ETAPA 2.5: Projeto (CONCLUÍDO)
 - [x] **2.5.1** Criar `Projeto.java` (Entity) -参照 docs/codigos-referencia-pedidos.md
@@ -1015,16 +1016,16 @@ private Perfil perfil;
 16. ~~Testar CRUD de EstoqueCentral no Postman~~ **(CONCLUÍDO - 23/07/2026)** - CRUD + entrada + saída + estoque baixo
 17. ~~Criar arquivo de referência para Pedidos~~ **(CONCLUÍDO - 24/07/2026)** - `docs/codigos-referencia-pedidos.md`
 18. ~~Criar entity `Projeto.java`~~ **(CONCLUÍDO)** - Entity + DTO + Repository + Service + Controller
-19. **[1] Corrigir entity `HistoricoLaboratorio.java`** - adicionar pedido_id, ativo, LocalDateTime
+19. ~~[1] Corrigir entity `HistoricoLaboratorio.java`~~ **(CONCLUÍDO)** - pedido_id, ativo e LocalDateTime
 20. ~~Criar entity `ItemPedido.java`~~ **(CONCLUÍDO)**
 21. ~~Criar entity `Pedido.java`~~ **(CONCLUÍDO)** - com List<ItemPedido> e optional Projeto
 22. ~~Criar DTOs~~ **(CONCLUÍDO)** - ItemPedidoDTO, PedidoDTO, AprovarPedidoDTO, ProjetoDTO
-23. **[2] Criar DTO/Repository/Service/Controller de `HistoricoLaboratorio`** -参照 reference
+23. ~~[2] Criar DTO/Repository/Service/Controller de `HistoricoLaboratorio`~~ **(CONCLUÍDO)**
 24. ~~Criar Repositories, Services e Controllers de Pedido/Projeto~~ **(CONCLUÍDO)**
 25. ~~Atualizar DataInitializer~~ **(CONCLUÍDO)** - projetos e pedidos de teste
 26. ~~Testar fluxo completo de Pedido no Postman~~ **(CONCLUÍDO)**
 27. ~~Implementar CRUD de Estagiário~~ **(CONCLUÍDO - 02/08/2026)** - enum `TipoBolsa`, Entity, DTO, Repository, Service e Controller
-28. **[3] Analisar no sistema simulado a decisão do Estagiário** - enum para permissão + CRUD próprio para dados administrativos e relatórios
+28. ~~[3] Revisar/corrigir CRUD de Estagiário para alinhamento arquitetural com os demais módulos~~ **(CONCLUÍDO - 03/08/2026)** - migração de `OneToOne` para herança com `Usuario`
 29. **[4] Testar CRUD de Estagiário no sistema simulado**
 30. **[5] Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
 31. **[6] Criar banco de dados** - Scripts SQL das tabelas

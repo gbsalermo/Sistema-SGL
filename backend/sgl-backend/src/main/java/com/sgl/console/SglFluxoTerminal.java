@@ -11,6 +11,7 @@ import java.util.Scanner;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
@@ -24,6 +25,7 @@ public class SglFluxoTerminal {
     private final Map<Long, Produto> produtos = new LinkedHashMap<>();
     private final Map<Long, EstoqueCentral> estoques = new LinkedHashMap<>();
     private final Map<Long, Projeto> projetos = new LinkedHashMap<>();
+    private final Map<Long, Estagiario> estagiarios = new LinkedHashMap<>();
     private final Map<Long, Pedido> pedidos = new LinkedHashMap<>();
     private final List<HistoricoItem> historicos = new ArrayList<>();
 
@@ -57,6 +59,10 @@ public class SglFluxoTerminal {
                     case "9" -> aprovarPedido();
                     case "10" -> entregarPedido();
                     case "11" -> listarResumo();
+                    case "12" -> cadastrarEstagiario();
+                    case "13" -> atualizarEstagiario();
+                    case "14" -> encerrarEstagio();
+                    case "15" -> listarEstagiarios();
                     case "0" -> {
                         System.out.println("Encerrando simulador.");
                         return;
@@ -68,6 +74,16 @@ public class SglFluxoTerminal {
             }
 
             pause();
+        }
+    }
+
+    private LocalDate parseDataOpcional(String valor) {
+        return valor == null || valor.isBlank() ? null : LocalDate.parse(valor);
+    }
+
+    private void validarDatasEstagio(LocalDate dataInicio, LocalDate dataFim) {
+        if (dataFim != null && dataFim.isBefore(dataInicio)) {
+            throw new IllegalArgumentException("Data de fim do estagio nao pode ser menor que data de inicio.");
         }
     }
 
@@ -85,6 +101,10 @@ public class SglFluxoTerminal {
         System.out.println("9. Aprovar pedido");
         System.out.println("10. Entregar pedido");
         System.out.println("11. Listar resumo");
+        System.out.println("12. Cadastrar estagiario");
+        System.out.println("13. Atualizar estagiario");
+        System.out.println("14. Encerrar estagio");
+        System.out.println("15. Listar estagiarios");
         System.out.println("0. Sair");
         System.out.print("Opcao: ");
     }
@@ -96,6 +116,7 @@ public class SglFluxoTerminal {
         produtos.clear();
         estoques.clear();
         projetos.clear();
+        estagiarios.clear();
         pedidos.clear();
         historicos.clear();
 
@@ -107,6 +128,19 @@ public class SglFluxoTerminal {
 
         Usuario usuario = new Usuario(seqUsuario++, "Ana Pesquisadora", "ana@sgl.com", Perfil.PESQUISADOR, laboratorio.id);
         usuarios.put(usuario.id, usuario);
+
+        Usuario usuarioEstagiario = new Usuario(seqUsuario++, "Lucas Estagiario", "lucas@sgl.com", Perfil.ESTAGIARIO, laboratorio.id);
+        usuarios.put(usuarioEstagiario.id, usuarioEstagiario);
+
+        Estagiario estagiario = new Estagiario(
+                usuarioEstagiario,
+                laboratorio.id,
+                LocalDate.now().minusMonths(1),
+                null,
+                TipoBolsa.BOLSA_INSTITUCIONAL,
+                "Cadastro de estagiario para testes",
+                true);
+        estagiarios.put(estagiario.id, estagiario);
 
         Produto produto = new Produto(seqProduto++, "Alcool 70%", UnidadeMedida.L, NivelRisco.BAIXO, TipoRisco.INFLAMAVEL, false, null, null);
         produtos.put(produto.id, produto);
@@ -266,10 +300,98 @@ public class SglFluxoTerminal {
         System.out.println("Produtos: " + produtos.size());
         System.out.println("Estoques: " + estoques.size());
         System.out.println("Projetos: " + projetos.size());
+        System.out.println("Estagiarios: " + estagiarios.size());
         System.out.println("Pedidos: " + pedidos.size());
         System.out.println("Historicos: " + historicos.size());
         for (Pedido pedido : pedidos.values()) {
             System.out.println("- Pedido " + pedido.id + " | status=" + pedido.status + " | itens=" + pedido.itens.size());
+        }
+    }
+
+    private void cadastrarEstagiario() {
+        Usuario usuario = getUsuarioById(promptLong("Id do usuario (perfil ESTAGIARIO): "));
+        if (usuario.perfil != Perfil.ESTAGIARIO) {
+            throw new IllegalArgumentException("Usuario deve ter perfil ESTAGIARIO.");
+        }
+        if (estagiarios.containsKey(usuario.id)) {
+            throw new IllegalArgumentException("Usuario ja possui cadastro de estagiario.");
+        }
+
+        Laboratorio laboratorio = getLaboratorioById(promptLong("Id do laboratorio: "));
+        LocalDate dataInicio = LocalDate.parse(prompt("Data inicio estagio (yyyy-MM-dd): "));
+        LocalDate dataFim = parseDataOpcional(prompt("Data fim estagio (yyyy-MM-dd) - opcional: "));
+        validarDatasEstagio(dataInicio, dataFim);
+        TipoBolsa tipoBolsa = promptEnum("Tipo de bolsa", TipoBolsa.class);
+        String observacao = prompt("Observacao (opcional): ");
+
+        Estagiario estagiario = new Estagiario(
+                usuario,
+                laboratorio.id,
+                dataInicio,
+                dataFim,
+                tipoBolsa,
+                observacao,
+                true);
+        estagiarios.put(estagiario.id, estagiario);
+        System.out.println("Estagiario cadastrado com id " + estagiario.id);
+    }
+
+    private void atualizarEstagiario() {
+        Estagiario atual = getEstagiarioById(promptLong("Id do estagiario: "));
+        Laboratorio laboratorio = getLaboratorioById(promptLong("Id do laboratorio: "));
+        LocalDate dataInicio = LocalDate.parse(prompt("Data inicio estagio (yyyy-MM-dd): "));
+        LocalDate dataFim = parseDataOpcional(prompt("Data fim estagio (yyyy-MM-dd) - opcional: "));
+        validarDatasEstagio(dataInicio, dataFim);
+        TipoBolsa tipoBolsa = promptEnum("Tipo de bolsa", TipoBolsa.class);
+        String observacao = prompt("Observacao (opcional): ");
+
+        Estagiario atualizado = new Estagiario(
+                atual,
+                laboratorio.id,
+                dataInicio,
+                dataFim,
+                tipoBolsa,
+                observacao,
+                atual.ativo);
+        estagiarios.put(atualizado.id, atualizado);
+        System.out.println("Estagiario atualizado.");
+    }
+
+    private void encerrarEstagio() {
+        Estagiario atual = getEstagiarioById(promptLong("Id do estagiario: "));
+        if (!atual.ativo) {
+            throw new IllegalArgumentException("Estagio ja esta encerrado.");
+        }
+
+        LocalDate dataFim = atual.dataFimEstagio != null ? atual.dataFimEstagio : LocalDate.now();
+        Estagiario encerrado = new Estagiario(
+                atual,
+                atual.laboratorioId,
+                atual.dataInicioEstagio,
+                dataFim,
+                atual.tipoBolsa,
+                atual.observacao,
+                false);
+
+        estagiarios.put(encerrado.id, encerrado);
+        System.out.println("Estagio encerrado.");
+    }
+
+    private void listarEstagiarios() {
+        if (estagiarios.isEmpty()) {
+            System.out.println("Nenhum estagiario cadastrado.");
+            return;
+        }
+
+        System.out.println("=== ESTAGIARIOS ===");
+        for (Estagiario e : estagiarios.values()) {
+            System.out.println("- id=" + e.id
+                    + " | nome=" + e.nome
+                    + " | laboratorioId=" + e.laboratorioId
+                    + " | ativo=" + e.ativo
+                    + " | inicio=" + e.dataInicioEstagio
+                    + " | fim=" + e.dataFimEstagio
+                    + " | bolsa=" + e.tipoBolsa);
         }
     }
 
@@ -322,6 +444,14 @@ public class SglFluxoTerminal {
             throw new IllegalArgumentException("Pedido nao encontrado.");
         }
         return pedido;
+    }
+
+    private Estagiario getEstagiarioById(Long id) {
+        Estagiario estagiario = estagiarios.get(id);
+        if (estagiario == null) {
+            throw new IllegalArgumentException("Estagiario nao encontrado.");
+        }
+        return estagiario;
     }
 
     private EstoqueCentral getEstoqueByProdutoId(Long produtoId) {
@@ -396,7 +526,7 @@ public class SglFluxoTerminal {
         }
     }
 
-    private static final class Usuario {
+    private static class Usuario {
         final long id;
         final String nome;
         final String email;
@@ -409,6 +539,24 @@ public class SglFluxoTerminal {
             this.email = email;
             this.perfil = perfil;
             this.laboratorioId = laboratorioId;
+        }
+    }
+
+    private static final class Estagiario extends Usuario {
+        final LocalDate dataInicioEstagio;
+        final LocalDate dataFimEstagio;
+        final TipoBolsa tipoBolsa;
+        final String observacao;
+        final boolean ativo;
+
+        Estagiario(Usuario usuarioBase, long laboratorioId, LocalDate dataInicioEstagio, LocalDate dataFimEstagio,
+                TipoBolsa tipoBolsa, String observacao, boolean ativo) {
+            super(usuarioBase.id, usuarioBase.nome, usuarioBase.email, Perfil.ESTAGIARIO, laboratorioId);
+            this.dataInicioEstagio = dataInicioEstagio;
+            this.dataFimEstagio = dataFimEstagio;
+            this.tipoBolsa = tipoBolsa;
+            this.observacao = observacao;
+            this.ativo = ativo;
         }
     }
 
