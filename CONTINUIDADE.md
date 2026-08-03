@@ -3,7 +3,7 @@
 ## 📋 Status do Projeto
 **Fase:** Desenvolvimento - CRUDs básicos e revisão estrutural concluídos; Etapa 4 pronta para iniciar  
 **Data de início:** 13/07/2026  
-**Última atualização:** 31/07/2026  
+**Última atualização:** 02/08/2026  
 
 ### 📍 Onde estamos agora
 - ✅ CRUDs básicos: Unidade, Laboratório, Usuário, Produto (Controllers, Services, Repositories e DTOs implementados e revisados)
@@ -14,6 +14,7 @@
 - ✅ Revisão do CRUD de Unidade concluída (sigla única, `@Valid` no controller, delete ajustado)
 - ✅ Revisão do CRUD de Usuário concluída (email único no update, senha criptografada com BCrypt)
 - ✅ Revisão do CRUD de Projeto concluída (`preencherProjeto`, validação de datas e reaproveitamento no criar/atualizar)
+- ✅ CRUD de Estagiário implementado (Entity + DTO + Repository + Service + Controller + enum `TipoBolsa`)
 - ✅ Documentação de diagramas corrigida (`docs/diagramas` criada para o README renderizar)
 - ✅ Arquivo de referência criado: `docs/codigos-referencia-pedidos.md`
 - ✅ DataInitializer atualizado com Projetos e Pedidos de teste
@@ -269,6 +270,19 @@ public enum Perfil {
 - senha (criptografada com BCrypt)
 - perfil (enum: ESTAGIARIO, PESQUISADOR, PROFESSOR, GESTOR, ADMIN)
 - laboratorio_id (FK → Laboratorio)
+- ativo
+```
+
+### Estagiario
+```java
+- id (auto-gerado)
+- usuario_id (FK único → Usuario)   // 1 usuário ESTAGIARIO = 1 cadastro administrativo
+- laboratorio_id (FK → Laboratorio)
+- data_inicio_estagio
+- data_fim_estagio
+- tipo_bolsa (enum: BOLSA_CNPQ, BOLSA_CAPES, BOLSA_INSTITUCIONAL, VOLUNTARIO)
+- funcao
+- observacao
 - ativo
 ```
 
@@ -550,6 +564,17 @@ PUT    /api/v1/pedidos/{id}/rejeitar         - Rejeitar pedido
 PUT    /api/v1/pedidos/{id}/entregar         - Marcar como entregue
 ```
 
+### Estagiários
+```
+GET    /api/v1/estagiarios                   - Listar estagiários
+GET    /api/v1/estagiarios/{id}              - Buscar estagiário por ID
+GET    /api/v1/estagiarios/por-laboratorio   - Listar por laboratório
+GET    /api/v1/estagiarios/ativos            - Listar estagiários ativos
+POST   /api/v1/estagiarios                   - Criar estagiário
+PUT    /api/v1/estagiarios/{id}              - Atualizar estagiário
+DELETE /api/v1/estagiarios/{id}              - Inativar estagiário
+```
+
 ### Documentos
 ```
 POST   /api/v1/pedidos/{id}/documentos       - Upload documento
@@ -606,6 +631,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 | 31/07/2026 | Revisão do CRUD de Usuário | `existsByEmailAndIdNot` no repository, email validado no update e senha criptografada com BCrypt |
 | 31/07/2026 | Revisão do CRUD de Projeto | `preencherProjeto()` reutilizado no criar/atualizar com validação de datas e tratamento de erro 400 |
 | 31/07/2026 | Correção da documentação de diagramas | Criada `docs/diagramas` para o README voltar a renderizar os PNGs do painel principal |
+| 02/08/2026 | Estagiário como entidade própria (CRUD) | Perfil `ESTAGIARIO` permanece para permissão, mas foi criado cadastro administrativo separado para suportar relatórios de estágio (início/fim, bolsa, função, vínculo por laboratório e rastreio de pedidos) |
 
 ---
 
@@ -665,6 +691,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Revisar CRUD de Unidade (31/07/2026)
 - [x] Revisar CRUD de Usuário (31/07/2026)
 - [x] Revisar CRUD de Projeto (31/07/2026)
+- [x] Implementar CRUD de Estagiário (02/08/2026)
 - [x] Corrigir documentação de diagramas para renderização no README (31/07/2026)
 - [ ] Prototipação das telas
 
@@ -677,6 +704,7 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [x] Laboratório (Entity, DTO, Repository, Service, Controller)
 - [x] Usuário (Entity, DTO, Repository, Service, Controller)
 - [x] Produto (Entity, DTO, Repository, Service, Controller)
+- [x] Estagiário (Entity, DTO, Repository, Service, Controller)
 - [x] DataInitializer com dados de teste
 - [x] Testes no Postman (Unidade, Laboratório, Usuário)
 
@@ -752,16 +780,18 @@ GET    /api/v1/documentos/{id}/download      - Download documento
 - [ ] **6.5** Atualizar DataInitializer com TODOS os dados de teste
 
 ### ETAPA 7: Validação Final Backend (PENDENTE)
+- [ ] **7.0** Analisar no sistema simulado a decisão de modelagem do Estagiário (enum para permissão + CRUD próprio para dados administrativos e relatórios)
 - [ ] **7.1** Testar CRUD completo: Unidade
 - [ ] **7.2** Testar CRUD completo: Laboratório
 - [ ] **7.3** Testar CRUD completo: Usuário
-- [ ] **7.4** Testar CRUD completo: Produto
-- [ ] **7.5** Testar CRUD completo: EstoqueCentral
-- [ ] **7.6** Testar CRUD completo: HistoricoLaboratorio
-- [ ] **7.7** Testar fluxo completo: Pedido (criar → aprovar → entregar)
-- [ ] **7.8** Testar cancelamento com devolução de estoque
-- [ ] **7.9** Testar todas as validações e regras de negócio
-- [ ] **7.10** Testar autenticação e autorização
+- [ ] **7.4** Testar CRUD completo: Estagiário
+- [ ] **7.5** Testar CRUD completo: Produto
+- [ ] **7.6** Testar CRUD completo: EstoqueCentral
+- [ ] **7.7** Testar CRUD completo: HistoricoLaboratorio
+- [ ] **7.8** Testar fluxo completo: Pedido (criar → aprovar → entregar)
+- [ ] **7.9** Testar cancelamento com devolução de estoque
+- [ ] **7.10** Testar todas as validações e regras de negócio
+- [ ] **7.11** Testar autenticação e autorização
 
 ### ETAPA 8: INÍCIO DO FRONTEND (PENDENTE)
 - [ ] **8.1** Prototipação das telas
@@ -993,8 +1023,11 @@ private Perfil perfil;
 24. ~~Criar Repositories, Services e Controllers de Pedido/Projeto~~ **(CONCLUÍDO)**
 25. ~~Atualizar DataInitializer~~ **(CONCLUÍDO)** - projetos e pedidos de teste
 26. ~~Testar fluxo completo de Pedido no Postman~~ **(CONCLUÍDO)**
-27. **[3] Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
-28. **[4] Criar banco de dados** - Scripts SQL das tabelas
+27. ~~Implementar CRUD de Estagiário~~ **(CONCLUÍDO - 02/08/2026)** - enum `TipoBolsa`, Entity, DTO, Repository, Service e Controller
+28. **[3] Analisar no sistema simulado a decisão do Estagiário** - enum para permissão + CRUD próprio para dados administrativos e relatórios
+29. **[4] Testar CRUD de Estagiário no sistema simulado**
+30. **[5] Tratar DELETE com foreign key** - adicionar `DataIntegrityViolationException` no handler
+31. **[6] Criar banco de dados** - Scripts SQL das tabelas
 
 ---
 
