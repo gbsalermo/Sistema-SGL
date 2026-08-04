@@ -5,7 +5,7 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Início:** 13/07/2026  
 **Última atualização:** 04/08/2026  
-**Fase atual:** consolidação estrutural e regras de negócio do backend
+**Fase atual:** consolidação das regras de negócio do backend
 
 Este arquivo é a referência principal para continuar o desenvolvimento. O `README.md` apresenta a visão pública e resumida; este documento registra decisões, pendências técnicas e a ordem de execução.
 
@@ -17,15 +17,15 @@ O SGL automatiza e centraliza o controle de materiais em laboratórios de pesqui
 
 O sistema deve permitir:
 
-- cadastrar unidades, laboratórios, usuários e estagiários;
-- manter um catálogo central de produtos;
+- cadastrar Unidades, Laboratórios, Usuários e Estagiários;
+- manter um catálogo central de Produtos;
 - controlar separadamente o estoque de cada Unidade;
 - registrar entradas e saídas de materiais;
 - monitorar estoque mínimo para reposição;
-- criar, aprovar, rejeitar, entregar e cancelar pedidos;
-- vincular pedidos opcionalmente a projetos;
-- manter histórico do que foi entregue a cada laboratório;
-- controlar risco, perecibilidade e validade dos produtos;
+- criar, aprovar, rejeitar, entregar e cancelar Pedidos;
+- vincular Pedidos opcionalmente a Projetos;
+- manter histórico do que foi entregue a cada Laboratório;
+- controlar risco, perecibilidade e validade dos Produtos;
 - futuramente, autenticar usuários, armazenar documentos e oferecer uma interface Vue.js.
 
 ---
@@ -33,7 +33,7 @@ O sistema deve permitir:
 ## 🧭 Ordem oficial de desenvolvimento
 
 1. **Corrigir decisões estruturais contraditórias.**
-2. Consolidar regras de negócio.
+2. **Consolidar regras de negócio.**
 3. Padronizar exceções e respostas HTTP.
 4. Testar fluxos completos e falhas.
 5. Implementar autenticação e autorização.
@@ -42,44 +42,26 @@ O sistema deve permitir:
 
 ### Situação do item 1
 
-- [x] Definir oficialmente a arquitetura do EstoqueCentral por Unidade.
-- [ ] Migrar o código atual para a nova definição.
+- [x] Definir oficialmente a arquitetura do `EstoqueCentral` por Unidade.
+- [x] Migrar o código para a nova definição.
+- [x] Adaptar `EstoqueCentral`, DTO, Repository, Service e Controller.
+- [x] Adaptar aprovação e cancelamento de Pedido para `Unidade + Produto`.
+- [x] Atualizar o `DataInitializer`.
+- [x] Alinhar a Unidade dos Usuários à Unidade de seus Laboratórios nos dados de teste.
+- [x] Validar os principais fluxos pelo Postman.
 - [ ] Revisar diagramas UML e ER após a alteração do código.
-- [ ] Conferir enum `Perfil` diretamente no código e padronizar toda a documentação.
-- [ ] Revisar os demais trechos antigos que ainda possam descrever o Projeto como agrupador de pedidos.
+- [ ] Conferir o enum `Perfil` e padronizar a documentação.
+- [ ] Revisar trechos antigos que ainda possam descrever Projeto como agrupador de Pedidos.
+
+> O item 1 está funcionalmente concluído. Restam apenas revisão de diagramas e documentação complementar.
 
 ---
 
 # 1. Decisão estrutural: EstoqueCentral por Unidade
 
-## Problema encontrado
-
-A documentação apresentava duas ideias incompatíveis:
-
-1. cada Unidade possuir seu próprio estoque central;
-2. cada Produto possuir um único registro global em `EstoqueCentral`.
-
-O código atual segue a segunda interpretação, usando relação `OneToOne` entre `EstoqueCentral` e `Produto`, com `produto_id` único e sem vínculo com `Unidade`.
-
-Essa implementação não atende corretamente ao modelo multiunidade do SGL, pois faria todas as unidades compartilharem o mesmo saldo de produto.
-
-## Decisão aprovada em 04/08/2026
-
 Cada **Unidade possui seu próprio estoque central**.
 
-Conceitualmente:
-
-```text
-Unidade
-└── Estoque Central
-    ├── Produto A — quantidade atual e mínima
-    ├── Produto B — quantidade atual e mínima
-    └── Produto C — quantidade atual e mínima
-```
-
-No modelo relacional, `EstoqueCentral` representa o saldo de **um Produto dentro de uma Unidade específica**.
-
-Campos conceituais:
+No modelo relacional, `EstoqueCentral` representa o saldo de um Produto dentro de uma Unidade específica.
 
 ```text
 EstoqueCentral
@@ -91,26 +73,26 @@ EstoqueCentral
 - ativo
 ```
 
-A combinação abaixo deve ser única:
+A combinação abaixo é única:
 
 ```text
 Unidade + Produto
 ```
 
-Restrição esperada no banco:
+Restrição no banco:
 
 ```sql
 UNIQUE (unidade_id, produto_id)
 ```
 
-### Consequências
+Consequências:
 
-- O mesmo Produto pode existir no estoque de várias Unidades.
-- Uma Unidade não pode possuir dois registros de estoque para o mesmo Produto.
-- Produto continua sendo um catálogo central, sem saldo próprio.
-- Pedido consome apenas o estoque da Unidade à qual pertence o laboratório solicitante.
-- Cancelamento devolve a quantidade ao mesmo registro de estoque utilizado na aprovação.
-- Consultas de estoque baixo devem poder ser filtradas por Unidade.
+- o mesmo Produto pode existir no estoque de várias Unidades;
+- uma Unidade não pode possuir dois registros para o mesmo Produto;
+- Produto permanece como catálogo global, sem saldo próprio;
+- Pedido consome somente o estoque da Unidade do Laboratório solicitante;
+- cancelamento devolve a quantidade ao mesmo estoque usado na aprovação;
+- consultas de estoque baixo são filtradas por Unidade.
 
 Exemplo:
 
@@ -123,9 +105,14 @@ Produto: Álcool 70%
 
 ## Situação da implementação
 
-> ⚠️ **Decisão documentada, mas código ainda não migrado.**
-
-A implementação atual de `EstoqueCentral` ainda usa `@OneToOne` com `Produto` e não possui `Unidade`. A alteração do código ficará sob responsabilidade do desenvolvedor.
+- [x] `EstoqueCentral` possui relacionamento `ManyToOne` com `Unidade`.
+- [x] `EstoqueCentral` possui relacionamento `ManyToOne` com `Produto`.
+- [x] A unicidade é composta por `unidade_id` e `produto_id`.
+- [x] `EstoqueCentralDTO` possui `unidadeId`, nome e sigla da Unidade.
+- [x] Repository consulta por `Unidade + Produto`.
+- [x] Service e Controller oferecem consultas por Unidade.
+- [x] Pedido localiza o estoque pela Unidade do Laboratório.
+- [x] `DataInitializer` cria estoques válidos por Unidade.
 
 ---
 
@@ -133,23 +120,11 @@ A implementação atual de `EstoqueCentral` ainda usa `@OneToOne` com `Produto` 
 
 ## Entrada
 
-Entrada soma ao saldo atual:
-
 ```text
 quantidadeAtual = quantidadeAtual + quantidadeEntrada
 ```
 
-Exemplo:
-
-```text
-Saldo atual: 20
-Entrada: 10
-Novo saldo: 30
-```
-
-## Saída
-
-Saída subtrai do saldo atual:
+## Saída manual
 
 ```text
 quantidadeAtual = quantidadeAtual - quantidadeSaida
@@ -163,15 +138,48 @@ quantidadeAtual nunca pode ser negativa
 
 ## Quantidade mínima
 
-Cada registro de estoque possui uma quantidade mínima para reposição.
-
 Um item está com estoque baixo quando:
 
 ```text
 quantidadeAtual <= quantidadeMinima
 ```
 
-A consulta deve considerar a Unidade, evitando misturar alertas de instituições diferentes.
+A consulta considera a Unidade.
+
+## Baixa por Pedido
+
+A regra oficial atual é:
+
+```text
+PENDENTE
+→ APROVADO: reduz imediatamente o saldo disponível
+→ ENTREGUE: confirma a entrega e registra o histórico
+→ CANCELADO após aprovação: devolve a quantidade ao estoque
+```
+
+### Motivo da baixa na aprovação
+
+A aprovação compromete a quantidade para aquele Pedido. Se a baixa acontecesse apenas na entrega, dois Pedidos poderiam ser aprovados utilizando o mesmo saldo disponível.
+
+Exemplo:
+
+```text
+Saldo: 10
+Pedido A aprovado: 7
+Pedido B tenta aprovar: 5
+```
+
+Após a aprovação do Pedido A, o saldo disponível passa a ser 3. Assim, o Pedido B não pode ser aprovado com 5 unidades.
+
+### Regras obrigatórias
+
+- a aprovação reduz somente `quantidadeAprovada`;
+- a entrega não reduz o estoque novamente;
+- o cancelamento de Pedido `APROVADO` devolve `quantidadeAprovada`;
+- o cancelamento de Pedido `PENDENTE` não altera estoque;
+- Pedido `ENTREGUE` não pode ser cancelado pelo fluxo comum;
+- a aprovação deve permanecer `@Transactional`;
+- se qualquer item falhar, nenhuma baixa parcial deve permanecer.
 
 ---
 
@@ -183,45 +191,27 @@ A consulta deve considerar a Unidade, evitando misturar alertas de instituiçõe
 
 O Produto não pertence diretamente a uma Unidade ou Laboratório.
 
-Principais informações:
-
-- nome;
-- descrição;
-- código de referência;
-- unidade de medida;
-- unidade de armazenamento;
-- localização física;
-- risco e tipo de risco;
-- perecibilidade e validade;
-- condições de armazenamento;
-- estado ativo.
-
 ## EstoqueCentral
 
-É o saldo real de um Produto dentro de uma Unidade.
+É o saldo disponível de um Produto dentro de uma Unidade.
 
-É o único módulo responsável por:
+É responsável por:
 
 - entrada;
 - saída;
 - quantidade atual;
 - quantidade mínima;
-- baixa por aprovação de pedido;
-- devolução por cancelamento;
+- baixa na aprovação de Pedido;
+- devolução no cancelamento;
 - alerta de reposição.
 
 ## HistoricoLaboratorio
 
-`HistoricoLaboratorio` não é estoque disponível.
+`HistoricoLaboratorio` não representa estoque disponível.
 
-Ele registra somente que um laboratório recebeu determinado produto por meio de um pedido.
+Ele registra que um Laboratório recebeu determinado Produto por meio de um Pedido.
 
-```text
-Laboratório X recebeu 4 unidades do Produto Y
-na data Z, por meio do Pedido N.
-```
-
-Não deve possuir operações próprias de entrada, saída ou atualização de saldo.
+A entrega deve gerar o histórico, mas não realizar uma segunda baixa no `EstoqueCentral`.
 
 ---
 
@@ -230,7 +220,7 @@ Não deve possuir operações próprias de entrada, saída ou atualização de s
 ```text
 Pedido
 → Laboratório
-→ Unidade do laboratório
+→ Unidade do Laboratório
 → EstoqueCentral localizado por Unidade + Produto
 ```
 
@@ -238,15 +228,15 @@ Fluxo principal:
 
 1. usuário cria o Pedido;
 2. o Pedido possui pelo menos um ItemPedido;
-3. o Pedido pertence ao laboratório do usuário;
-4. Projeto é opcional e, quando informado, deve pertencer ao mesmo laboratório;
-5. status inicial é `PENDENTE`;
-6. gestor ou administrador aprova ou rejeita;
-7. na aprovação, a quantidade aprovada pode ser menor que a solicitada;
-8. o estoque é localizado pela combinação `Unidade + Produto`;
-9. aprovação reduz o estoque;
-10. entrega cria registros em `HistoricoLaboratorio`;
-11. cancelamento de pedido aprovado devolve o estoque.
+3. o Pedido pertence a um Laboratório;
+4. Projeto é opcional e, quando informado, deve pertencer ao mesmo Laboratório;
+5. o status inicial é `PENDENTE`;
+6. o Pedido pode ser aprovado ou rejeitado;
+7. a quantidade aprovada pode ser menor que a solicitada;
+8. o estoque é localizado por `Unidade + Produto`;
+9. a aprovação reduz imediatamente o estoque;
+10. a entrega cria o histórico do Laboratório;
+11. o cancelamento de Pedido aprovado devolve o estoque.
 
 Fluxo de status:
 
@@ -260,21 +250,51 @@ PENDENTE
 
 Regras importantes:
 
-- pedido de uma Unidade não pode consumir estoque de outra;
+- Pedido de uma Unidade não pode consumir estoque de outra;
 - quantidade aprovada não pode superar a solicitada;
 - estoque nunca pode ficar negativo;
 - aprovação deve ser transacional;
-- se qualquer item falhar, nenhuma baixa parcial deve permanecer;
-- apenas pedido aprovado pode ser entregue;
-- pedido entregue ou rejeitado não volta para estado anterior.
+- apenas Pedido aprovado pode ser entregue;
+- Pedido entregue ou rejeitado não volta ao estado anterior.
 
 ---
 
-# 5. Papel do Projeto
+# 5. Testes concluídos em 04/08/2026
+
+Os testes manuais pelo Postman foram concluídos com sucesso para os principais fluxos da migração.
+
+- [x] listar todos os estoques;
+- [x] listar estoque por Unidade;
+- [x] buscar estoque por `Unidade + Produto`;
+- [x] confirmar o mesmo Produto em Unidades diferentes com saldos independentes;
+- [x] criar estoque para Produto em outra Unidade;
+- [x] bloquear duplicidade da combinação `Unidade + Produto`;
+- [x] entrada manual;
+- [x] saída manual;
+- [x] bloquear saída maior que o saldo;
+- [x] consultar estoque baixo por Unidade;
+- [x] criar Pedido válido;
+- [x] bloquear Pedido com Produto sem estoque na Unidade do Laboratório;
+- [x] aprovar Pedido e reduzir o estoque;
+- [x] bloquear aprovação maior que a quantidade solicitada;
+- [x] bloquear aprovação com estoque insuficiente;
+- [x] cancelar Pedido aprovado e devolver a quantidade;
+- [x] entregar Pedido aprovado;
+- [x] bloquear cancelamento de Pedido entregue.
+
+Observação técnica identificada durante os testes:
+
+- `MovimentacaoEstoqueDTO` utiliza `quantidadeMovimentada`;
+- os métodos de entrada e saída devem utilizar `getQuantidadeMovimentada()`;
+- futuramente é recomendado criar um DTO menor específico para entrada e saída manual, evitando campos redundantes.
+
+---
+
+# 6. Papel do Projeto
 
 `Projeto` é um contexto opcional do Pedido.
 
-Ele não cria um estoque separado, não controla saldo e não é um agrupador obrigatório de pedidos.
+Ele não cria estoque separado, não controla saldo e não é um agrupador obrigatório de Pedidos.
 
 ```text
 Pedido pode possuir projetoId ou projetoId = null
@@ -284,113 +304,52 @@ Quando informado, o Projeto deve pertencer ao mesmo Laboratório do Pedido.
 
 ---
 
-# 6. Padrões arquiteturais
-
-## Camadas
+# 7. Padrões arquiteturais
 
 ```text
 Controller → DTO → Service → Repository → Entity → Banco
 ```
 
 - Controller recebe e devolve DTOs.
-- Service contém conversões e regras de negócio.
+- Service contém regras de negócio.
 - Repository trabalha somente com Entity.
 - Entity e Repository não conhecem DTO.
 - Relacionamentos são expostos nos DTOs principalmente por IDs.
 
-## Injeção de dependência
+Usar injeção por construtor com `@RequiredArgsConstructor`.
 
-Usar construtor com `@RequiredArgsConstructor`.
-
-Evitar injeção em campo com `@Autowired`.
-
-## Transações
+Transações:
 
 - escrita: `@Transactional`;
 - leitura: `@Transactional(readOnly = true)`.
 
-Operações compostas, principalmente aprovação, entrega e cancelamento de pedido, devem permanecer atômicas.
-
-## Validações
-
-DTO:
-
-- obrigatoriedade;
-- formato;
-- tamanho;
-- valores mínimos;
-- e-mail.
-
-Service:
-
-- existência de relacionamentos;
-- unicidade dependente do banco;
-- compatibilidade entre Unidade e Laboratório;
-- compatibilidade entre Laboratório e Projeto;
-- transições de status;
-- disponibilidade de estoque;
-- entidades ativas.
-
-## Exceções
-
-Existe tratamento global com `@RestControllerAdvice`. A padronização completa será executada no item 3 do roadmap.
+Operações compostas, principalmente aprovação, entrega e cancelamento, devem permanecer atômicas.
 
 ---
 
-# 7. Módulos implementados
+# 8. Próxima etapa — Consolidar regras de negócio
 
-- [x] Unidade.
-- [x] Laboratório.
-- [x] Usuário.
-- [x] Perfil como enum.
-- [x] Senha criptografada com BCrypt.
-- [x] Estagiário com herança de Usuario usando `JOINED`.
-- [x] Produto.
-- [x] EstoqueCentral na arquitetura antiga global por Produto.
-- [x] Entrada e saída de estoque.
-- [x] Projeto.
-- [x] ItemPedido.
-- [x] Pedido.
-- [x] Aprovação, rejeição, entrega e cancelamento.
-- [x] HistoricoLaboratorio.
-- [x] DataInitializer com dados de teste.
-- [x] Diagramas e referências de pedidos.
+O próximo passo oficial é o **item 2 do roadmap**.
+
+Prioridade recomendada:
+
+1. validar se o Usuário pertence ao mesmo Laboratório informado no Pedido;
+2. validar se a Unidade do Usuário corresponde à Unidade do Laboratório;
+3. validar se o Projeto informado pertence ao Laboratório do Pedido;
+4. impedir uso de Unidade, Laboratório, Usuário, Projeto, Produto ou Estoque inativos;
+5. revisar todas as transições de status do Pedido;
+6. revisar regras de risco, perecibilidade e validade;
+7. eliminar validações duplicadas ou conflitantes.
+
+A primeira implementação recomendada é consolidar as regras do método `PedidoService.criar`, pois ele concentra os vínculos entre Usuário, Laboratório, Projeto, Produto e Estoque.
 
 ---
 
-# 8. Pendências imediatas de código
+# 9. Etapas posteriores
 
-## Migração do EstoqueCentral
+## Etapa 3 — Padronizar exceções e respostas HTTP
 
-- [ ] adicionar relacionamento de `EstoqueCentral` com `Unidade`;
-- [ ] trocar `Produto` de `OneToOne` para `ManyToOne`;
-- [ ] remover unicidade isolada de `produto_id`;
-- [ ] criar unicidade composta entre `unidade_id` e `produto_id`;
-- [ ] adicionar `unidadeId` ao `EstoqueCentralDTO`;
-- [ ] carregar e validar a Unidade no Service;
-- [ ] impedir cadastro duplicado da combinação Unidade + Produto;
-- [ ] alterar consultas de Repository para considerar Unidade;
-- [ ] alterar aprovação e cancelamento de Pedido para buscar estoque por Unidade + Produto;
-- [ ] adicionar consultas de estoque por Unidade;
-- [ ] atualizar DataInitializer;
-- [ ] atualizar testes do Postman;
-- [ ] atualizar diagramas após o código estar concluído.
-
----
-
-# 9. Próximas etapas
-
-## Etapa 2 — Consolidar regras de negócio
-
-- validar vínculos entre Unidade, Laboratório, Usuário, Projeto e Pedido;
-- impedir uso de entidades inativas;
-- revisar regras de risco e perecibilidade;
-- revisar todas as transições de status;
-- eliminar validações duplicadas ou conflitantes.
-
-## Etapa 3 — Padronizar exceções e respostas
-
-Planejar exceções de domínio, por exemplo:
+Planejar exceções de domínio:
 
 - recurso não encontrado;
 - recurso duplicado;
@@ -403,18 +362,7 @@ Padronizar respostas `400`, `401`, `403`, `404`, `409` e demais códigos necess�
 
 ## Etapa 4 — Testar fluxos completos e falhas
 
-Testar:
-
-- CRUDs válidos e inválidos;
-- entradas e saídas;
-- estoque insuficiente;
-- duplicidade Unidade + Produto;
-- pedido com Unidade incompatível;
-- aprovação parcial;
-- rollback de aprovação;
-- entrega;
-- cancelamento e devolução;
-- exclusões bloqueadas por integridade.
+Os testes manuais principais foram executados, mas esta etapa futura deve incluir testes automatizados e cenários de rollback, concorrência e integridade referencial.
 
 ## Etapa 5 — Autenticação e autorização
 
@@ -455,14 +403,15 @@ O frontend Vue.js só deve ser iniciado após:
 - código de barras e QR Code;
 - relatórios de risco;
 - controle avançado de validade;
-- auditoria detalhada de movimentações.
+- auditoria detalhada de movimentações;
+- possível separação futura entre saldo físico, reservado e disponível.
 
 ---
 
 ## 📂 Referências
 
 - [`README.md`](README.md) — visão geral do projeto.
-- [`docs/codigos-referencia-pedidos.md`](docs/codigos-referencia-pedidos.md) — referência do fluxo de pedidos.
+- [`docs/codigos-referencia-pedidos.md`](docs/codigos-referencia-pedidos.md) — referência do fluxo de Pedidos.
 - `docs/diagramas/` — diagramas UML, ER e arquitetura.
 
 ---
@@ -479,4 +428,6 @@ O frontend Vue.js só deve ser iniciado após:
 | 24/07/2026 | Projeto definido como vínculo opcional no Pedido |
 | 31/07/2026 | Revisões dos CRUDs de Unidade, Usuario e Projeto |
 | 03/08/2026 | Estagiario migrou para herança JOINED de Usuario |
-| 04/08/2026 | EstoqueCentral definido oficialmente por combinação Unidade + Produto |
+| 04/08/2026 | EstoqueCentral definido e implementado por combinação Unidade + Produto |
+| 04/08/2026 | Baixa de estoque definida na aprovação; entrega apenas confirma e registra histórico |
+| 04/08/2026 | Testes manuais de estoque e Pedido concluídos com sucesso |
