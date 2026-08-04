@@ -6,275 +6,273 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue)](https://www.postgresql.org)
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)]()
 
-## 📋 Sobre o Projeto
+## 📋 Sobre o projeto
 
-O **SGL** automatiza e centraliza o controle de materiais em laboratórios de pesquisa e ensino. O sistema organiza a operação em uma hierarquia institucional (**Unidade → Laboratório → Usuário**), vincula pedidos de material a projetos e pesquisadores, controla riscos e perecibilidade dos produtos, e mantém histórico completo de movimentações para fins de auditoria.
+O **SGL — Sistema de Gestão de Laboratórios** automatiza e centraliza o controle de materiais em laboratórios de pesquisa e ensino.
 
-> ⚠️ **Projeto em fase de desenvolvimento (backend).**
-> Este README dá uma visão geral do sistema. Para o histórico detalhado de decisões, pendências e o passo a passo de implementação, consulte [`CONTINUIDADE.md`](docs/CONTINUIDADE.md).
+O sistema organiza a operação na hierarquia **Unidade → Laboratório → Usuário**, permite pedidos vinculados opcionalmente a projetos, controla riscos e perecibilidade dos produtos e mantém histórico das entregas realizadas aos laboratórios.
+
+> ⚠️ O projeto está na fase de consolidação do backend. O frontend ainda não foi iniciado.
+>
+> Para decisões, progresso e próximas tarefas, consulte [`CONTINUIDADE.md`](CONTINUIDADE.md).
 
 ---
 
-## 🧭 Em que pé está o desenvolvimento
-
-O projeto está na fase de **backend**, com o núcleo de estoque já implementado e testado. O frontend (Vue.js) ainda não foi iniciado.
+## 🧭 Estado atual
 
 | Módulo | Status | Observação |
 |---|:---:|---|
-| Unidade (CRUD) | ✅ Concluído | Testado no Postman |
-| Laboratório (CRUD) | ✅ Concluído | Testado no Postman |
-| Usuário (CRUD + Perfil) | ✅ Concluído | Testado no Postman |
-| Produto (catálogo central) | ✅ Concluído | Testado no Postman |
-| EstoqueCentral (entrada/saída) | ✅ Concluído | Testado no Postman |
-| Projeto | ✅ Concluído | Entity + DTO + Repository + Service + Controller |
-| ItemPedido / Pedido | ✅ Concluído | Fluxo completo de aprovação/entrega/cancelamento implementado |
-| HistoricoLaboratorio (histórico) | ✅ Implementado | Entity + DTO + Repository + Service + Controller implementados; dataRecebimento atualmente usa LocalDate (considerar migração para LocalDateTime) |
-| Autenticação (Spring Security + JWT) | ⏳ Pendente | Planejado após validações e regras de negócio |
-| Frontend (Vue.js) | ⬜ Não iniciado | Prioridade é consolidar e testar o backend primeiro |
+| Unidade | ✅ Concluído | CRUD implementado e revisado |
+| Laboratório | ✅ Concluído | CRUD implementado e revisado |
+| Usuário e Perfil | ✅ Concluído | Senha com BCrypt; autenticação ainda pendente |
+| Estagiário | ✅ Concluído | Herança de `Usuario` com estratégia `JOINED` |
+| Produto | ✅ Concluído | Catálogo central com risco e perecibilidade |
+| EstoqueCentral | ⚠️ Em ajuste estrutural | CRUD atual existe, mas precisa ser vinculado à Unidade |
+| Projeto | ✅ Concluído | Vínculo opcional no Pedido |
+| ItemPedido e Pedido | ✅ Concluído | Aprovação, rejeição, entrega e cancelamento |
+| HistoricoLaboratorio | ✅ Implementado | Histórico de materiais entregues ao laboratório |
+| Regras e validações globais | 🔎 Em andamento | Etapa atual |
+| Spring Security + JWT | ⏳ Pendente | Após consolidação das regras |
+| PostgreSQL definitivo | ⏳ Pendente | H2 permanece no desenvolvimento |
+| Frontend Vue.js | ⬜ Não iniciado | Será iniciado após validação final do backend |
 
-**Próximo passo imediato:** avançar para validações de regras de negócio e autenticação (Spring Security + JWT). Consulte [CONTINUIDADE.md](docs/CONTINUIDADE.md) para detalhes.
+### Ordem oficial das próximas etapas
 
-Todas as decisões técnicas, correções aplicadas e o roadmap completo, etapa por etapa, estão documentados em [`CONTINUIDADE.md`](docs/CONTINUIDADE.md).
+1. Corrigir decisões estruturais contraditórias.
+2. Consolidar regras de negócio.
+3. Padronizar exceções e respostas HTTP.
+4. Testar fluxos completos e falhas.
+5. Implementar autenticação e autorização.
+6. Migrar definitivamente para PostgreSQL.
+7. Iniciar o frontend.
 
 ---
 
-## 🏛️ Hierarquia do Sistema
+## 🏛️ Hierarquia do sistema
 
-```
+```text
 UNIDADE (Instituição/Tenant)
-   │
-   ├──▶ ESTOQUE GERAL (EstoqueCentral — 1 por Unidade)
-   │        Abastece os pedidos de usuários de TODOS os
-   │        laboratórios daquela unidade
-   │
-   └──▶ LABORATÓRIO (cada unidade tem N laboratórios)
-              │
-              ├──▶ USUÁRIO (perfis: ADMINISTRADOR, GESTOR, TECNICO, PESQUISADOR, ESTAGIARIO)
-              │        │
-              │        ▼
-              │     PEDIDO (usuário solicita materiais do Estoque Geral da Unidade)
-              │        │        └─ opcionalmente marcado com um PROJETO do laboratório
-              │        ▼
-              │  ITEM PEDIDO ──▶ PRODUTO (catálogo central de materiais)
-              │
-              └──▶ PROJETO (vínculo opcional para o Pedido — não agrupa pedidos)
+│
+├── ESTOQUE CENTRAL DA UNIDADE
+│   ├── Produto A — saldo e quantidade mínima
+│   ├── Produto B — saldo e quantidade mínima
+│   └── Produto C — saldo e quantidade mínima
+│
+└── LABORATÓRIOS
+    ├── USUÁRIOS
+    ├── PROJETOS
+    └── PEDIDOS
+        └── ITENS DO PEDIDO
 ```
 
-O **Produto** não pertence a um laboratório específico — ele é um catálogo central único. Quem controla "quanto tem disponível" é o **EstoqueCentral**, que é **único por Unidade** (o estoque geral daquela instituição) e atende pedidos de usuários de qualquer laboratório vinculado a ela. Quem registra "o que cada laboratório já recebeu" é o **HistoricoLaboratorio** (histórico/conferência). O **Projeto** não agrupa os pedidos do laboratório — é apenas uma informação opcional no Pedido, indicando se ele está ou não vinculado a um projeto específico daquele laboratório.
+### Decisão oficial sobre o estoque
+
+Cada **Unidade possui seu próprio estoque central**.
+
+A entidade `EstoqueCentral` representa o saldo de **um Produto dentro de uma Unidade específica**. Portanto, o mesmo produto pode existir no estoque de várias unidades, mas não pode aparecer duas vezes no estoque da mesma unidade.
+
+```text
+Produto: Álcool 70%
+├── Unidade A — 50 frascos
+├── Unidade B — 25 frascos
+└── Unidade C — 80 frascos
+```
+
+A identificação lógica de um registro de estoque é:
+
+```text
+Unidade + Produto
+```
+
+No banco, essa combinação deverá possuir restrição única:
+
+```text
+UNIQUE (unidade_id, produto_id)
+```
+
+> O código atual ainda representa `EstoqueCentral` como uma relação global `OneToOne` com `Produto`. Essa implementação será migrada para o modelo por Unidade.
 
 ---
 
-## ⚙️ Como o Sistema Funciona
+## ⚙️ Fluxo de estoque
 
-### Fluxo de estoque
+### Entrada
 
-O SGL separa **estoque real** de **histórico de distribuição**, e essa é a decisão de design mais importante do projeto:
+A entrada soma uma quantidade ao saldo atual:
 
-```
-┌───────────────────────────────────────────────────────────┐
-│              ESTOQUE CENTRAL (1 por Unidade)                │
-│     Quantidade total disponível para distribuição entre    │
-│     TODOS os laboratórios daquela Unidade                  │
-│     Ex.: 10 unidades de Álcool 70% no total da Unidade      │
-│     ↑↓ ÚNICO ponto do sistema com entrada/saída real        │
-└───────────────────────────────────────────────────────────┘
-                              │  Pedido aprovado
-                              ▼  (baixa automática)
-┌───────────────────────────────────────────────────────────┐
-│                          PEDIDO                             │
-│   Pesquisador solicita → Gestor aprova/rejeita → Entrega    │
-└───────────────────────────────────────────────────────────┘
-                              │  Material entregue
-                              ▼  (registro de conferência)
-┌───────────────────────────────────────────────────────────┐
-│              HISTÓRICO LABORATÓRIO (histórico)               │
-│   Apenas registra: "este lab recebeu X unidades em Y data"  │
-│   Não tem entrada/saída própria — é só log de conferência    │
-└───────────────────────────────────────────────────────────┘
+```text
+Saldo atual: 20
+Entrada: 10
+Novo saldo: 30
 ```
 
-**Por que separar assim?** Sem essa separação, "quantos vidros de reagente o Laboratório 1 recebeu este mês" e "quanto ainda existe no estoque geral" seriam a mesma pergunta, misturando controle de estoque com histórico de distribuição — o que dificulta tanto auditoria quanto relatórios gerenciais.
+```text
+quantidadeAtual = quantidadeAtual + quantidadeEntrada
+```
 
-### Fluxo de um pedido, passo a passo
+### Saída
 
-1. Um usuário (pesquisador/estagiário) cria um **Pedido**, com um ou mais **ItemPedido**, opcionalmente marcando um **Projeto** do laboratório ao qual o pedido está relacionado (esse vínculo é só informativo — o Projeto não agrupa nem controla os pedidos).
-2. O sistema valida se cada produto solicitado possui registro no `EstoqueCentral`.
-3. O pedido nasce com status `PENDENTE`.
-4. Um usuário com perfil `GESTOR` ou `ADMINISTRADOR` aprova ou rejeita — na aprovação, a quantidade aprovada pode ser menor que a solicitada.
-5. Ao aprovar, o sistema faz a **baixa automática** no `EstoqueCentral`.
-6. Ao marcar como entregue, o sistema cria o registro correspondente no `HistoricoLaboratorio` (conferência).
-7. Se um pedido aprovado for cancelado, o estoque é **devolvido** automaticamente ao `EstoqueCentral`.
-8. Status segue sempre um único sentido: `PENDENTE → APROVADO/REJEITADO → ENTREGUE/CANCELADO`.
+A saída subtrai uma quantidade do saldo atual:
 
-### Controle de risco e perecibilidade
+```text
+Saldo atual: 30
+Saída: 8
+Novo saldo: 22
+```
 
-Cada `Produto` carrega classificação de **nível de risco** (`NENHUM`, `BAIXO`, `MEDIO`, `ALTO`) e **tipo de risco** (`INFLAMAVEL`, `RADIOATIVO`, `TOXICO`, `CORROSIVO`, `BIOLOGICO`), pensado para o contexto real de laboratório — manuseio de reagentes, agentes biológicos e materiais perigosos exige esse nível de detalhe desde o cadastro. Produtos perecíveis (`VEGETAL`, `ANIMAL`, `MICROBIANO`, `QUIMICO`) contam com alerta de validade próxima via endpoint dedicado.
+A operação deve ser recusada quando a quantidade solicitada for maior que a disponível. O estoque nunca pode ficar negativo.
+
+### Estoque mínimo
+
+Cada registro possui uma `quantidadeMinima` para indicar necessidade de reposição.
+
+```text
+quantidadeAtual <= quantidadeMinima
+```
+
+Quando essa condição for verdadeira, o item deve aparecer nas consultas de estoque baixo da respectiva Unidade.
+
+### Pedido
+
+O laboratório do pedido define qual estoque deve ser utilizado:
+
+```text
+Pedido
+→ Laboratório
+→ Unidade do laboratório
+→ Registro de EstoqueCentral da Unidade + Produto
+```
+
+Um pedido de uma Unidade nunca pode consumir o estoque de outra Unidade.
 
 ---
 
-## 🧩 Padrões de Arquitetura
+## 📦 Produto, estoque e histórico
 
-### Camadas e fluxo de comunicação
+### Produto
 
+`Produto` é um **catálogo central**. Ele descreve o material e não possui saldo próprio nem pertence diretamente a uma Unidade ou Laboratório.
+
+Exemplos de informações do produto:
+
+- nome e descrição;
+- código de referência;
+- unidade de medida e armazenamento;
+- localização física;
+- nível e tipo de risco;
+- perecibilidade e validade;
+- condições de armazenamento.
+
+### EstoqueCentral
+
+`EstoqueCentral` representa o saldo real de um produto em uma Unidade. É o único ponto do sistema que controla entrada e saída.
+
+Campos conceituais:
+
+```text
+id
+unidade
+produto
+quantidadeAtual
+quantidadeMinima
+ativo
 ```
-Frontend (Vue.js) → Controller → DTO → Service → Repository → Entity → PostgreSQL
+
+### HistoricoLaboratorio
+
+`HistoricoLaboratorio` não é um segundo estoque. Ele apenas registra que determinado laboratório recebeu uma quantidade de um produto por meio de um pedido.
+
+```text
+Laboratório X recebeu 4 unidades do Produto Y
+na data Z, por meio do Pedido N.
 ```
 
-<p align="center">
-  <img src="docs/diagramas/diagrama-arquitetura.png" alt="Diagrama de camadas do SGL" width="380">
-</p>
-
-- O **DTO** é usado **apenas** entre `Controller` e `Service`. `Repository` e `Entity` nunca conhecem DTO.
-- A conversão `Entity → DTO` acontece dentro do `Service`, via construtor no próprio DTO (`new UnidadeDTO(entity)`).
-- A conversão `DTO → Entity` acontece dentro do `Service`, antes de chamar `repository.save()`.
-- DTOs **não replicam relacionamentos bidirecionais** das entidades — a exposição é sempre "de cima para baixo" (ex.: `LaboratorioDTO` nunca devolve o objeto `Unidade` completo, só o `unidadeId`).
-
-### Convenções adotadas
-
-- **Lombok** (`@Data`, `@NoArgsConstructor`, `@AllArgsConstructor`) para reduzir boilerplate em entidades e DTOs.
-- **Injeção de dependência via construtor** com `@RequiredArgsConstructor` — sem uso de `@Autowired` em campo.
-- **Transacionalidade:** métodos de escrita usam `@Transactional`; métodos de leitura usam `@Transactional(readOnly = true)`.
-- **Exception handler global** (`@RestControllerAdvice`) mapeia `EntityNotFoundException` → 404, evitando erros 500 genéricos.
-- **Validação em duas camadas:** Bean Validation (`@NotNull`, `@NotBlank`, `@Valid`) nos DTOs de entrada, e regras de negócio explícitas no Service.
+Ele não possui entrada, saída ou saldo disponível.
 
 ---
 
-## 🗂️ Diagramas do Projeto
+## 🧾 Fluxo de pedido
 
-### Diagrama de Classes (UML)
+1. Um usuário cria um Pedido com pelo menos um ItemPedido.
+2. O Pedido pertence ao laboratório do usuário.
+3. Um Projeto pode ser informado opcionalmente, desde que pertença ao mesmo laboratório.
+4. O pedido nasce como `PENDENTE`.
+5. Um gestor ou administrador aprova ou rejeita.
+6. Na aprovação, a quantidade aprovada pode ser menor que a solicitada.
+7. O sistema localiza o estoque pela combinação **Unidade do laboratório + Produto**.
+8. A aprovação reduz o saldo do EstoqueCentral da Unidade.
+9. A entrega cria registros no HistoricoLaboratorio.
+10. O cancelamento de um pedido aprovado devolve as quantidades ao mesmo estoque utilizado na aprovação.
 
-Visão completa das entidades, enums e seus relacionamentos.
+Fluxo de status:
 
-<p align="center">
-  <img src="docs/diagramas/diagrama-geral.png" alt="Diagrama de classes UML do SGL" width="700">
-</p>
-
-### Diagrama Entidade-Relacionamento (banco de dados)
-
-Estrutura das tabelas, colunas, chaves primárias e estrangeiras conforme mapeado pelo JPA/Hibernate.
-
-<p align="center">
-  <img src="docs/diagramas/diagrama-er.png" alt="Diagrama ER do banco de dados do SGL" width="700">
-</p>
+```text
+PENDENTE
+├── APROVADO
+│   ├── ENTREGUE
+│   └── CANCELADO
+└── REJEITADO
+```
 
 ---
 
-## 📊 Modelo de Dados — Entidades Principais
+## 🧩 Padrões de arquitetura
 
-| Entidade | Papel no sistema |
+```text
+Controller → DTO → Service → Repository → Entity → Banco
+```
+
+- DTOs são usados entre Controller e Service.
+- Repository trabalha apenas com Entity.
+- Conversões entre DTO e Entity ficam no Service ou em construtores do DTO.
+- DTOs expõem IDs de relacionamentos, evitando objetos bidirecionais completos.
+- Injeção de dependência via construtor com `@RequiredArgsConstructor`.
+- Métodos de escrita usam `@Transactional`.
+- Métodos de leitura usam `@Transactional(readOnly = true)`.
+- Bean Validation trata formato e obrigatoriedade.
+- Regras que dependem do banco ou de outras entidades ficam no Service.
+- Exceções são tratadas globalmente com `@RestControllerAdvice`.
+
+---
+
+## 📊 Entidades principais
+
+| Entidade | Papel |
 |---|---|
-| **Unidade** | Instituição/tenant; agrupa laboratórios (`id`, `nome`, `sigla`) |
-| **Laboratorio** | Vinculado a uma Unidade; possui um usuário responsável |
-| **Usuario** | Login e perfil de acesso (`Perfil`: ADMINISTRADOR, GESTOR, TECNICO, PESQUISADOR, ESTAGIARIO); senha com BCrypt |
-| **Produto** | Catálogo central de materiais — **não** pertence a um laboratório específico; carrega classificação de risco e perecibilidade |
-| **EstoqueCentral** | Quantidade total disponível por produto (relação 1:1 com Produto); **único** ponto com entrada/saída real |
-| **HistoricoLaboratorio** | Histórico/conferência do que cada laboratório recebeu — sem lógica própria de entrada/saída |
-| **Projeto** | Agrupa pedidos de um laboratório; vínculo opcional no Pedido |
-| **Pedido** | Solicitação feita por um Usuario, com status controlado (`StatusPedido`) |
-| **ItemPedido** | Cada produto e quantidade dentro de um Pedido, com quantidade solicitada e aprovada |
+| `Unidade` | Instituição/tenant; possui laboratórios e seu estoque central |
+| `Laboratorio` | Pertence a uma Unidade e possui usuários e projetos |
+| `Usuario` | Usuário do sistema com perfil de acesso |
+| `Estagiario` | Especialização de Usuario para informações de estágio |
+| `Produto` | Catálogo central de materiais |
+| `EstoqueCentral` | Saldo de um Produto dentro de uma Unidade |
+| `Projeto` | Contexto opcional associado a um Pedido |
+| `Pedido` | Solicitação de materiais de um laboratório |
+| `ItemPedido` | Produto e quantidades solicitada/aprovada |
+| `HistoricoLaboratorio` | Registro de materiais entregues ao laboratório |
+
+> `Projeto` não agrupa nem controla obrigatoriamente os pedidos. Ele é apenas um vínculo opcional que identifica o contexto do pedido.
 
 ---
 
-## 📏 Principais Regras de Negócio
+## 📏 Regras principais
 
-- Estoque nunca fica negativo — saída além do disponível lança exceção.
-- Cada produto possui **um único** registro no `EstoqueCentral` (relação 1:1).
-- Só usuários com perfil `GESTOR` ou `ADMINISTRADOR` aprovam ou rejeitam pedidos.
-- Todo pedido nasce com status `PENDENTE`.
-- `quantidadeAprovada` nunca é maior que `quantidadeSolicitada`.
-- Cancelamento de um pedido já aprovado devolve a quantidade ao `EstoqueCentral`.
-- Produto perecível exige data de validade; produto de risco `ALTO` exige descrição do risco.
-- Exclusão de entidade "pai" com filhos vinculados (ex.: Unidade com Laboratórios) é bloqueada, retornando 409.
-
----
-
-## 🔌 Endpoints Principais da API
-
-<details>
-<summary><strong>Unidades</strong></summary>
-
-```
-GET    /api/v1/unidades
-POST   /api/v1/unidades
-GET    /api/v1/unidades/{id}
-PUT    /api/v1/unidades/{id}
-DELETE /api/v1/unidades/{id}
-```
-</details>
-
-<details>
-<summary><strong>Laboratórios</strong></summary>
-
-```
-GET    /api/v1/laboratorios
-POST   /api/v1/laboratorios
-GET    /api/v1/laboratorios/{id}
-PUT    /api/v1/laboratorios/{id}
-GET    /api/v1/laboratorios/por-unidade?unidadeId=X
-```
-</details>
-
-<details>
-<summary><strong>Produtos (catálogo central)</strong></summary>
-
-```
-GET    /api/v1/produtos
-POST   /api/v1/produtos
-GET    /api/v1/produtos/{id}
-PUT    /api/v1/produtos/{id}
-DELETE /api/v1/produtos/{id}
-GET    /api/v1/produtos/risco/{nivel}
-GET    /api/v1/produtos/pereciveis
-GET    /api/v1/produtos/validade-proxima?dias=30
-```
-</details>
-
-<details>
-<summary><strong>Estoque Central</strong></summary>
-
-```
-GET    /api/v1/estoque-central
-GET    /api/v1/estoque-central/{id}
-GET    /api/v1/estoque-central/produto/{produtoId}
-POST   /api/v1/estoque-central
-PUT    /api/v1/estoque-central/{id}
-PUT    /api/v1/estoque-central/{id}/entrada
-PUT    /api/v1/estoque-central/{id}/saida
-DELETE /api/v1/estoque-central/{id}
-GET    /api/v1/estoque-central/estoque-baixo
-```
-</details>
-
-<details>
-<summary><strong>Histórico Laboratório</strong></summary>
-
-```
-GET    /api/v1/historico-laboratorio
-GET    /api/v1/historico-laboratorio/{id}
-GET    /api/v1/historico-laboratorio/laboratorio/{labId}
-GET    /api/v1/historico-laboratorio/produto/{produtoId}
-GET    /api/v1/historico-laboratorio/pedido/{pedidoId}
-POST   /api/v1/historico-laboratorio
-```
-</details>
-
-<details>
-<summary><strong>Pedidos</strong></summary>
-
-```
-GET    /api/v1/pedidos
-GET    /api/v1/pedidos/{id}
-GET    /api/v1/pedidos/por-usuario?usuarioId=X
-GET    /api/v1/pedidos/por-status?status=X
-POST   /api/v1/pedidos
-PUT    /api/v1/pedidos/{id}/aprovar
-PUT    /api/v1/pedidos/{id}/rejeitar
-PUT    /api/v1/pedidos/{id}/entregar
-DELETE /api/v1/pedidos/{id}
-```
-</details>
-
-Lista completa e atualizada de endpoints em [`CONTINUIDADE.md`](docs/CONTINUIDADE.md).
+- Cada Unidade possui seu próprio estoque central.
+- Cada combinação `Unidade + Produto` possui no máximo um registro de estoque.
+- O mesmo Produto pode existir no estoque de várias Unidades.
+- Estoque nunca fica negativo.
+- Entrada soma ao saldo existente.
+- Saída subtrai do saldo existente.
+- Estoque baixo ocorre quando `quantidadeAtual <= quantidadeMinima`.
+- Pedido utiliza somente o estoque da Unidade do laboratório.
+- Todo pedido nasce como `PENDENTE`.
+- Pedido deve possuir pelo menos um item.
+- Quantidade aprovada não pode superar a solicitada.
+- Aprovação reduz o estoque da Unidade.
+- Cancelamento de pedido aprovado devolve o estoque.
+- Entrega cria histórico para o laboratório.
+- Produto perecível exige informações de validade conforme as regras do domínio.
+- Produto de risco alto exige descrição adequada do risco.
+- Exclusões que quebrariam integridade referencial devem ser bloqueadas.
 
 ---
 
@@ -282,121 +280,84 @@ Lista completa e atualizada de endpoints em [`CONTINUIDADE.md`](docs/CONTINUIDAD
 
 | Camada | Tecnologia |
 |---|---|
-| Frontend | Vue.js 3 *(ainda não iniciado)* |
-| Backend | Java 17 + Spring Boot 4.1.0 |
-| Banco de Dados | PostgreSQL 14+ (H2 em memória para desenvolvimento) |
+| Backend | Java 17+, Spring Boot, Spring Data JPA |
+| Banco atual de desenvolvimento | H2 |
+| Banco definitivo planejado | PostgreSQL 14+ |
 | API | REST |
-| Segurança (planejado) | Spring Security + JWT |
-| Utilitários | Lombok, Bean Validation |
+| Segurança planejada | Spring Security + JWT |
+| Frontend planejado | Vue.js 3 |
+| Utilitários | Lombok e Bean Validation |
 
 ---
 
-## 📁 Estrutura do Projeto
+## 📁 Estrutura principal
 
-```
-sgl/
-├── backend/
+```text
+Sistema-SGL/
+├── backend/sgl-backend/
 │   ├── src/main/java/com/sgl/
-│   │   ├── SglApplication.java
-│   │   ├── controller/     # Endpoints REST
-│   │   ├── service/        # Regras de negócio
-│   │   ├── repository/     # Acesso a dados (Spring Data JPA)
-│   │   ├── model/          # Entidades JPA
-│   │   │   └── enums/      # NivelRisco, TipoRisco, TipoPerecivel, StatusPedido, Perfil
-│   │   ├── dto/             # Data Transfer Objects
-│   │   ├── config/          # SecurityConfig e demais configurações
-│   │   └── exception/       # Exception handler global
+│   │   ├── controller/
+│   │   ├── service/
+│   │   ├── repository/
+│   │   ├── model/
+│   │   ├── dto/
+│   │   ├── config/
+│   │   └── exception/
 │   └── pom.xml
-│
-├── frontend/                # Vue.js (não iniciado)
-│
 ├── docs/
-│   ├── CONTINUIDADE.md              # Histórico completo de decisões e progresso
 │   ├── codigos-referencia-pedidos.md
-│   └── diagramas/                   # Diagramas UML, ER e de arquitetura
-│
-├── README.md
-└── docker-compose.yml
+│   └── diagramas/
+├── CONTINUIDADE.md
+└── README.md
 ```
 
 ---
 
-## 🔧 Pré-requisitos
-
-- Java 17+
-- Node.js 18+ *(quando o frontend for iniciado)*
-- PostgreSQL 14+
-- Maven 3.8+
-
----
-
-## 📦 Instalação e Execução
-
-### Backend
+## 🔧 Execução do backend
 
 ```bash
-cd backend
+cd backend/sgl-backend
 mvn clean install
 mvn spring-boot:run
 ```
 
-A aplicação sobe em `http://localhost:8080`. Em desenvolvimento, o banco H2 em memória é usado por padrão — console disponível em `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:sgldb`, usuário `sa`, sem senha).
+A aplicação é executada, por padrão, em:
 
-### Banco de Dados (PostgreSQL — produção)
-
-```bash
-psql -U postgres -c "CREATE DATABASE sgl;"
-psql -U postgres -d sgl -f database/init.sql
+```text
+http://localhost:8080
 ```
 
-### Frontend
+---
 
-```bash
-cd frontend
-npm install
-npm run serve
-```
-*(ainda não iniciado — estrutura reservada no repositório)*
+## 🗺️ Roadmap
+
+- [x] CRUDs básicos.
+- [x] Fluxo de pedidos.
+- [x] Histórico de entregas por laboratório.
+- [x] Definir oficialmente o estoque central por Unidade.
+- [ ] Migrar o código de EstoqueCentral para `Unidade + Produto`.
+- [ ] Consolidar regras de negócio.
+- [ ] Padronizar exceções e respostas HTTP.
+- [ ] Executar testes completos de sucesso e falha.
+- [ ] Implementar autenticação e autorização.
+- [ ] Migrar definitivamente para PostgreSQL.
+- [ ] Validar o backend ponta a ponta.
+- [ ] Iniciar o frontend Vue.js.
+- [ ] Adicionar Swagger/OpenAPI.
+- [ ] Implementar documentos, relatórios, exportações e notificações.
 
 ---
 
-## 🗺️ Roadmap Resumido
+## 📚 Documentação complementar
 
-- [x] Etapa 1 — CRUDs básicos (Unidade, Laboratório, Usuário, Produto)
-- [x] Etapa 2 — Estoque Central (entrada/saída, alertas)
-- [x] Etapa 2.5 — Projeto
-- [x] Etapa 3 — Pedido (fluxo completo de aprovação/entrega/cancelamento)
-- [ ] Etapa 2 (continuação) — Histórico Laboratório (correção de campos pendente)
-- [ ] Etapa 4 — Regras de negócio e validações finais
-- [ ] Etapa 5 — Segurança e autenticação (Spring Security + JWT)
-- [ ] Etapa 6 — Infraestrutura (PostgreSQL, scripts SQL de produção)
-- [ ] Etapa 7 — Validação final do backend (testes ponta a ponta)
-- [ ] Etapa 8 — Início do frontend (Vue.js)
-
-Roadmap detalhado, com cada sub-tarefa e status, em [`CONTINUIDADE.md`](docs/CONTINUIDADE.md).
-
----
-
-## 📚 Documentação Complementar
-
-- [`CONTINUIDADE.md`](docs/CONTINUIDADE.md) — histórico de decisões, pendências e roadmap detalhado
-- [`docs/codigos-referencia-pedidos.md`](docs/codigos-referencia-pedidos.md) — referência de implementação de Projeto, ItemPedido, Pedido e HistoricoLaboratorio
-- Documentação da API (Swagger) — a criar
-
----
-
-## 🌐 Estratégia de Ambientes
-
-- **Fase atual:** separação via branches Git (`main` para produção/release, `develop`/`alpha` para desenvolvimento), com banco de dados único compartilhado enquanto o core é construído.
-- **Fase futura:** bancos de dados separados por ambiente (alpha e produção), após o projeto base estar consolidado.
-- **Infraestrutura em nuvem:** avaliação adiada até o sistema estar funcional de ponta a ponta.
-
----
+- [`CONTINUIDADE.md`](CONTINUIDADE.md) — decisões, estado atual e próximos passos.
+- [`docs/codigos-referencia-pedidos.md`](docs/codigos-referencia-pedidos.md) — referência do fluxo de pedidos.
+- `docs/diagramas/` — diagramas do sistema.
 
 ## 📝 Licença
 
 A definir.
 
-## 👥 Contribuidores
+## 👤 Responsável
 
-- [PREENCHER]
+Gabriel Salermo
