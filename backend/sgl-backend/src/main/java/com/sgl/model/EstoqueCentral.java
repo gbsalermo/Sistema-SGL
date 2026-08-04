@@ -9,8 +9,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +20,11 @@ import lombok.Setter;
 
 
 @Entity
-@Table(name = "estoque_central")
+@Table(name = "estoque_central",  uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_estoque_unidade_produto",
+                columnNames = {"unidade_id", "produto_id"}
+            ) })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,8 +38,12 @@ public class EstoqueCentral implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "produto_id", nullable = false, unique = true)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "unidade_id", nullable = false)
+	private Unidade unidade;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "produto_id", nullable = false)
 	private Produto produto;
 	
 	@Column(nullable = false)

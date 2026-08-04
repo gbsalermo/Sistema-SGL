@@ -11,9 +11,20 @@ import com.sgl.model.EstoqueCentral;
 @Repository
 public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, Long> {
 	
-	Optional<EstoqueCentral> findByProdutoId(Long produtoId);
+	Optional<EstoqueCentral> findByUnidadeIdAndProdutoId(
+	        Long unidadeId,
+	        Long produtoId
+	);
+
+	boolean existsByUnidadeIdAndProdutoId(
+	        Long unidadeId,
+	        Long produtoId
+	);
+
+	List<EstoqueCentral> findByUnidadeId(Long unidadeId);
+
+	List<EstoqueCentral> findByUnidadeIdAndAtivoTrue(Long unidadeId);
 	
 	List<EstoqueCentral> findByAtivoTrue();
 	
-
 }

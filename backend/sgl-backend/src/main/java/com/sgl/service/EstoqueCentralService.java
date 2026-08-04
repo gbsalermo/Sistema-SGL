@@ -2,7 +2,6 @@ package com.sgl.service;
 
 import java.util.List;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,8 +9,10 @@ import com.sgl.dto.EstoqueCentralDTO;
 import com.sgl.dto.MovimentacaoEstoqueDTO;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Produto;
+import com.sgl.model.Unidade;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.UnidadeRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -22,35 +23,40 @@ public class EstoqueCentralService {
 
 	private final EstoqueCentralRepository estoqueCentralRepository;
 	private final ProdutoRepository produtoRepository;
-	
+	private final UnidadeRepository unidadeRepository;
 	
 	@Transactional
 	public EstoqueCentralDTO criar(EstoqueCentralDTO dto) {
 
-	    if (estoqueCentralRepository.findByProdutoId(dto.getProdutoId()).isPresent()) {
-	        throw new RuntimeException(
-	                "Já existe estoque central para o produto com id: " + dto.getProdutoId());
+		if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(
+	            dto.getUnidadeId(),
+	            dto.getProdutoId())) {
+
+	        throw new IllegalArgumentException(
+	                "Já existe estoque para esse produto nesta unidade."
+	        );
 	    }
+
+	    Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+	            .orElseThrow(() -> new EntityNotFoundException(
+	                    "Unidade não encontrada com id: " + dto.getUnidadeId()
+	            ));
 
 	    Produto produto = produtoRepository.findById(dto.getProdutoId())
 	            .orElseThrow(() -> new EntityNotFoundException(
-	                    "Produto não encontrado com id: " + dto.getProdutoId()));
+	                    "Produto não encontrado com id: " + dto.getProdutoId()
+	            ));
 
 	    EstoqueCentral estoque = EstoqueCentral.builder()
+	            .unidade(unidade)
 	            .produto(produto)
 	            .quantidadeAtual(dto.getQuantidadeAtual())
 	            .quantidadeMinima(dto.getQuantidadeMinima())
 	            .ativo(dto.getAtivo() != null ? dto.getAtivo() : true)
 	            .build();
 
-	    try {
-	        EstoqueCentral salvo = estoqueCentralRepository.save(estoque);
-	        return new EstoqueCentralDTO(salvo);
-
-	    } catch (DataIntegrityViolationException e) {
-	        throw new RuntimeException(
-	                "Já existe um estoque cadastrado para esse produto.");
-	    }
+	    EstoqueCentral salvo = estoqueCentralRepository.save(estoque);
+	    return new EstoqueCentralDTO(salvo);
 	}
 	
 	@Transactional(readOnly = true)
@@ -69,10 +75,35 @@ public class EstoqueCentralService {
 	}
 	
 	@Transactional(readOnly = true)
-	public EstoqueCentralDTO buscarPorProdutoID(Long produtoId) {
-		EstoqueCentral estoque = estoqueCentralRepository.findByProdutoId(produtoId)
-				.orElseThrow(() -> new EntityNotFoundException("EStoque central não encontrado para o produto id: " + produtoId));
-		return new EstoqueCentralDTO(estoque);
+	public EstoqueCentralDTO buscarPorUnidadeEProduto(
+	        Long unidadeId,
+	        Long produtoId) {
+
+	    EstoqueCentral estoque =
+	            estoqueCentralRepository.findByUnidadeIdAndProdutoId(
+	                    unidadeId,
+	                    produtoId
+	            ).orElseThrow(() -> new EntityNotFoundException(
+	                    "Estoque não encontrado para a unidade "
+	                            + unidadeId + " e produto " + produtoId
+	            ));
+
+	    return new EstoqueCentralDTO(estoque);
+	}
+	
+	@Transactional(readOnly = true)
+	public List<EstoqueCentralDTO> listarPorUnidade(Long unidadeId) {
+
+	    if (!unidadeRepository.existsById(unidadeId)) {
+	        throw new EntityNotFoundException(
+	                "Unidade não encontrada com id: " + unidadeId
+	        );
+	    }
+
+	    return estoqueCentralRepository.findByUnidadeId(unidadeId)
+	            .stream()
+	            .map(EstoqueCentralDTO::new)
+	            .toList();
 	}
 	
 	@Transactional
@@ -88,13 +119,16 @@ public class EstoqueCentralService {
 	}
 	
 	@Transactional(readOnly = true)
-	public List<EstoqueCentralDTO> listarEstoqueBaixo(){
-		List<EstoqueCentral> estoques =
-				estoqueCentralRepository.findAll();
-		return estoques.stream()
-				.filter(e -> e.getQuantidadeAtual() <= e.getQuantidadeMinima())
-				.map(EstoqueCentralDTO::new)
-				.toList();
+	public List<EstoqueCentralDTO> listarEstoqueBaixoPorUnidade(
+	        Long unidadeId) {
+
+	    return estoqueCentralRepository.findByUnidadeIdAndAtivoTrue(unidadeId)
+	            .stream()
+	            .filter(estoque ->
+	                    estoque.getQuantidadeAtual()
+	                            <= estoque.getQuantidadeMinima())
+	            .map(EstoqueCentralDTO::new)
+	            .toList();
 	}
 	
 	@Transactional
