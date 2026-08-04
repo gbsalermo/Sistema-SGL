@@ -36,344 +36,350 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class PedidoService {
-	
-	private final PedidoRepository pedidoRepository;
-	private final EstoqueCentralRepository estoqueCentralRepository;
-	private final HistoricoLaboratorioRepository historicoLaboratorioRepository;
-	private final ProdutoRepository produtoRepository;
-	private final LaboratorioRepository laboratorioRepository;
-	private final UsuarioRepository usuarioRepository;
-	private final ProjetoRepository projetoRepository;
 
-	@Transactional
-	public PedidoDTO criar(PedidoDTO dto) {
-		
-		Projeto projeto = projetoRepository.findById(dto.getProjetoId())
-				.orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
-		
-		Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-	            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-		
-		Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
-				.orElseThrow(() -> new EntityNotFoundException("Laboratório não encontrado com id: " + dto.getLaboratorioId()));
-		
-		validarConsistenciaPedido(usuario, laboratorio, projeto); // projeto pode vir null
-		
-		Pedido pedido = Pedido.builder()
-				.usuario(usuario)
-				.laboratorio(laboratorio)
-				.projeto(projeto)
-				.dataSolicitacao(LocalDateTime.now())
-				.status(StatusPedido.PENDENTE)
-				.observacao(dto.getObservacao())
-				.arquivoDocumento(dto.getArquivoDocumento())
-				.itens(new ArrayList<>())
-				.build();
-		
-		//Evitar duplicidade
-		
-		Set<Long> produtosAdicionados = new HashSet<>();
+    private final PedidoRepository pedidoRepository;
+    private final EstoqueCentralRepository estoqueCentralRepository;
+    private final HistoricoLaboratorioRepository historicoLaboratorioRepository;
+    private final ProdutoRepository produtoRepository;
+    private final LaboratorioRepository laboratorioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final ProjetoRepository projetoRepository;
 
-		for (ItemPedidoDTO itemDTO : dto.getItens()) {
+    @Transactional
+    public PedidoDTO criar(PedidoDTO dto) {
 
-		    Produto produto = produtoRepository
-		            .findById(itemDTO.getProdutoId())
-		            .orElseThrow(() -> new EntityNotFoundException(
-		                    "Produto não encontrado com id: "
-		                    + itemDTO.getProdutoId()
-		            ));
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Usuário não encontrado com id: " + dto.getUsuarioId()));
 
-		    if (!produtosAdicionados.add(produto.getId())) {
-		        throw new IllegalArgumentException(
-		                "O produto '" + produto.getNome()
-		                + "' foi informado mais de uma vez no pedido."
-		        );
-		    }
-										
-			Long unidadeId = laboratorio.getUnidade().getId();
+        Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Laboratório não encontrado com id: " + dto.getLaboratorioId()));
 
-			EstoqueCentral estoque = estoqueCentralRepository
-			        .findByUnidadeIdAndProdutoId(unidadeId, produto.getId())
-			        .orElseThrow(() -> new IllegalArgumentException(
-			                "O produto '" + produto.getNome()
-			                + "' não possui estoque cadastrado na unidade "
-			                + laboratorio.getUnidade().getNome()));
-			
-			if (!estoque.getAtivo() || !produto.getAtivo()) {
-			    throw new IllegalArgumentException(
-			        "O produto '" + produto.getNome()
-			        + "' ou seu estoque está inativo."
-			    );
-			}
-			
-			ItemPedido item = ItemPedido.builder()
-					.pedido(pedido)
-					.produto(produto)
-					.quantidadeSolicitada(itemDTO.getQuantidadeSolicitada())
-					.build();
-			
-			pedido.getItens().add(item);
-		}
-		
-		Pedido salvo = pedidoRepository.save(pedido);
-		return new PedidoDTO(salvo);
-	}
-	
-	@Transactional(readOnly = true)
-	public List<PedidoDTO> listarTodos(){
-		return pedidoRepository.findAll()
-				.stream()
-				.map(PedidoDTO::new)
-				.toList();
-	}
-	
-	@Transactional(readOnly = true)
-	public PedidoDTO buscarPorId(Long id) {
-		Pedido pedido = pedidoRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
-		return new PedidoDTO(pedido);
-	}
-	
-	@Transactional(readOnly = true)
-	public List<PedidoDTO> listarPorUsuario(Long usuarioId){
-		return pedidoRepository.findByUsuarioId(usuarioId)
-				.stream()
-				.map(PedidoDTO::new)
-				.toList();
-	}
-	
-	@Transactional(readOnly = true)
-	public List<PedidoDTO> listarPorStatus(StatusPedido status){
-		return pedidoRepository.findByStatus(status)
-				.stream()
-				.map(PedidoDTO::new)
-				.toList();
-	}
-	
-	
-	// Apenas os itens informados serão aprovados.
-	// Os demais permanecerão com quantidadeAprovada = null,
-	// caracterizando uma aprovação parcial do pedido.
-	@Transactional
-	public PedidoDTO aprovar(Long id, AprovarPedidoDTO dto) {
-		Pedido pedido = pedidoRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
-		
-		if(pedido.getStatus() != StatusPedido.PENDENTE) {
-			throw new IllegalArgumentException("Apenas pedidos PENDENTES podem ser aprovados. Status atual: " + pedido.getStatus());		
-		}
-		
-		for (AprovarPedidoDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
-			ItemPedido item = pedido.getItens().stream()
-					.filter(i -> i.getId().equals(itemAprovacao.getItemId()))
-					.findFirst()
-					.orElseThrow(() -> new EntityNotFoundException("Item não encontrado com id: " + itemAprovacao.getItemId()));		
-		
-			if(itemAprovacao.getQuantidadeAprovada() > item.getQuantidadeSolicitada() || itemAprovacao.getQuantidadeAprovada() <= 0) {
-				throw new IllegalArgumentException("Quantidade aprovada não pode ser maior que a solicitada ou menor/igual a zero. "
-						+ "Solicitadada: " + item.getQuantidadeSolicitada()
-						+ ", Aprovada: " + itemAprovacao.getQuantidadeAprovada());
-			}
-			
-			Long unidadeId = pedido.getLaboratorio()
-			        .getUnidade()
-			        .getId();
+        Projeto projeto = null;
+        if (dto.getProjetoId() != null) {
+            projeto = projetoRepository.findById(dto.getProjetoId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Projeto não encontrado com id: " + dto.getProjetoId()));
+        }
 
-			EstoqueCentral estoque = estoqueCentralRepository
-			        .findByUnidadeIdAndProdutoId(
-			                unidadeId,
-			                item.getProduto().getId()
-			        )
-			        .orElseThrow(() -> new EntityNotFoundException(
-			                "Estoque não encontrado para o produto '"
-			                        + item.getProduto().getNome()
-			                        + "' na unidade "
-			                        + pedido.getLaboratorio().getUnidade().getNome()
-			        ));
-			
-			if(estoque.getQuantidadeAtual() < itemAprovacao.getQuantidadeAprovada()) {
-				throw new IllegalArgumentException("Estoque insuficiente para o produto: " + item.getProduto().getNome()
-						+ ". Disponivel: " + estoque.getQuantidadeAtual()
-						+ ", Solicitado: " + itemAprovacao.getQuantidadeAprovada());
-			}
-			
-			estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() - itemAprovacao.getQuantidadeAprovada());
-			estoqueCentralRepository.save(estoque);
-			
-			item.setQuantidadeAprovada(itemAprovacao.getQuantidadeAprovada());
-		}
-		
-		pedido.setStatus(StatusPedido.APROVADO);
-		pedido.setObservacao(dto.getObservacao());
+        validarConsistenciaPedido(usuario, laboratorio, projeto);
+        validarEntidadesAtivas(usuario, laboratorio, projeto);
 
-		Pedido atualizado = pedidoRepository.save(pedido);
-		return new PedidoDTO(atualizado);
-	}
-	
-	@Transactional
-	public PedidoDTO rejeitar(Long id, String observacao) {
-		Pedido pedido = pedidoRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
-		
-		if(pedido.getStatus() != StatusPedido.PENDENTE) {
-			throw new IllegalArgumentException("Apenas pedidos PENDENTES podem ser rejeitados. Status atual: " + pedido.getStatus());
-			
-		}
-			pedido.setStatus(StatusPedido.REJEITADO);
-			pedido.setObservacao(observacao);
-			
-			Pedido atualizado = pedidoRepository.save(pedido);
-			return new PedidoDTO(atualizado);
-		}
-	
-	@Transactional
-	public PedidoDTO entregar(Long id) {
+        Pedido pedido = Pedido.builder()
+                .usuario(usuario)
+                .laboratorio(laboratorio)
+                .projeto(projeto)
+                .dataSolicitacao(LocalDateTime.now())
+                .status(StatusPedido.PENDENTE)
+                .observacao(dto.getObservacao())
+                .arquivoDocumento(dto.getArquivoDocumento())
+                .itens(new ArrayList<>())
+                .build();
 
-	    // Busca o pedido pelo id
-	    Pedido pedido = pedidoRepository.findById(id)
-	            .orElseThrow(() ->
-	                    new EntityNotFoundException(
-	                            "Pedido não encontrado com id: " + id));
+        Set<Long> produtosAdicionados = new HashSet<>();
 
-	    // Apenas pedidos APROVADOS podem ser entregues
-	    if (pedido.getStatus() != StatusPedido.APROVADO) {
-	        throw new IllegalArgumentException(
-	                "Apenas pedidos APROVADOS podem ser entregues. Status atual: "
-	                        + pedido.getStatus());
-	    }
+        for (ItemPedidoDTO itemDTO : dto.getItens()) {
 
-	    // Percorre todos os itens do pedido
-	    for (ItemPedido item : pedido.getItens()) {
+            Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Produto não encontrado com id: " + itemDTO.getProdutoId()));
 
-	        // Ignora itens que não tiveram quantidade aprovada
-	        if (item.getQuantidadeAprovada() != null
-	                && item.getQuantidadeAprovada() > 0) {
+            if (!produtosAdicionados.add(produto.getId())) {
+                throw new IllegalArgumentException(
+                        "O produto '" + produto.getNome()
+                                + "' foi informado mais de uma vez no pedido.");
+            }
 
-	            // Procura se o laboratório já possui esse produto em estoque
-	            HistoricoLaboratorio estoqueLab =
-	            		historicoLaboratorioRepository
-	                            .findByLaboratorioIdAndProdutoId(
-	                                    pedido.getLaboratorio().getId(),
-	                                    item.getProduto().getId())
-	                            .orElse(null);
+            if (!Boolean.TRUE.equals(produto.getAtivo())) {
+                throw new IllegalArgumentException(
+                        "O produto '" + produto.getNome() + "' está inativo.");
+            }
 
-	            // Caso NÃO exista, cria um novo estoque
-	            if (estoqueLab == null) {
+            Long unidadeId = laboratorio.getUnidade().getId();
 
-	                estoqueLab = HistoricoLaboratorio.builder()
-	                        .laboratorio(pedido.getLaboratorio())
-	                        .produto(item.getProduto())
-	                        .quantidade(item.getQuantidadeAprovada())
-	                        .dataRecebimento(LocalDate.now())
-	                        .pedido(pedido)
-	                        .ativo(true)
-	                        .build();
+            EstoqueCentral estoque = estoqueCentralRepository
+                    .findByUnidadeIdAndProdutoId(unidadeId, produto.getId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "O produto '" + produto.getNome()
+                                    + "' não possui estoque cadastrado na unidade "
+                                    + laboratorio.getUnidade().getNome()));
 
-	            }
-	            // Caso já exista, apenas soma a quantidade recebida
-	            else {
+            if (!Boolean.TRUE.equals(estoque.getAtivo())) {
+                throw new IllegalArgumentException(
+                        "O estoque central do produto '"
+                                + produto.getNome() + "' está inativo.");
+            }
 
-	                estoqueLab.setQuantidade(
-	                        estoqueLab.getQuantidade()
-	                                + item.getQuantidadeAprovada());
+            ItemPedido item = ItemPedido.builder()
+                    .pedido(pedido)
+                    .produto(produto)
+                    .quantidadeSolicitada(itemDTO.getQuantidadeSolicitada())
+                    .build();
 
-	                // Atualiza a data da última entrada
-	                estoqueLab.setDataRecebimento(LocalDate.now());
+            pedido.getItens().add(item);
+        }
 
-	                // Atualiza o último pedido responsável pela entrada
-	                estoqueLab.setPedido(pedido);
+        Pedido salvo = pedidoRepository.save(pedido);
+        return new PedidoDTO(salvo);
+    }
 
-	                // Garante que o estoque permaneça ativo
-	                estoqueLab.setAtivo(true);
-	            }
+    @Transactional(readOnly = true)
+    public List<PedidoDTO> listarTodos() {
+        return pedidoRepository.findAll()
+                .stream()
+                .map(PedidoDTO::new)
+                .toList();
+    }
 
-	            // Salva o estoque atualizado
-	            historicoLaboratorioRepository.save(estoqueLab);
+    @Transactional(readOnly = true)
+    public PedidoDTO buscarPorId(Long id) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+        return new PedidoDTO(pedido);
+    }
 
-	            // ======================================================
-	            // REGISTRA O HISTÓRICO DA ENTREGA
-	            // ======================================================
+    @Transactional(readOnly = true)
+    public List<PedidoDTO> listarPorUsuario(Long usuarioId) {
+        return pedidoRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .map(PedidoDTO::new)
+                .toList();
+    }
 
-	            HistoricoLaboratorio historico = HistoricoLaboratorio.builder()
-	                    .laboratorio(pedido.getLaboratorio())
-	                    .produto(item.getProduto())
-	                    .quantidade(item.getQuantidadeAprovada())
-	                    .dataRecebimento(LocalDate.now())
-	                    .pedido(pedido)
-	                    .ativo(true)
-	                    .build();
+    @Transactional(readOnly = true)
+    public List<PedidoDTO> listarPorStatus(StatusPedido status) {
+        return pedidoRepository.findByStatus(status)
+                .stream()
+                .map(PedidoDTO::new)
+                .toList();
+    }
 
-	            historicoLaboratorioRepository.save(historico);
-	        }
-	    }
+    // Apenas os itens informados serão aprovados.
+    // Os demais permanecerão com quantidadeAprovada = null,
+    // caracterizando uma aprovação parcial do pedido.
+    @Transactional
+    public PedidoDTO aprovar(Long id, AprovarPedidoDTO dto) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
 
-	    // Após entregar todos os itens, altera o status do pedido
-	    pedido.setStatus(StatusPedido.ENTREGUE);
+        if (pedido.getStatus() != StatusPedido.PENDENTE) {
+            throw new IllegalArgumentException(
+                    "Apenas pedidos PENDENTES podem ser aprovados. Status atual: " + pedido.getStatus());
+        }
 
-	    Pedido atualizado = pedidoRepository.save(pedido);
+        for (AprovarPedidoDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
+            ItemPedido item = pedido.getItens().stream()
+                    .filter(i -> i.getId().equals(itemAprovacao.getItemId()))
+                    .findFirst()
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Item não encontrado com id: " + itemAprovacao.getItemId()));
 
-	    return new PedidoDTO(atualizado);
-	}
-	
-	@Transactional
-	public PedidoDTO cancelar(Long id, String observacao) {
-		Pedido pedido = pedidoRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
-		
-		if(pedido.getStatus() == StatusPedido.ENTREGUE) {
-			throw new IllegalArgumentException("Pedidos ENTREGUES não podem ser cancelados");
-		}
-		
-		if(pedido.getStatus() == StatusPedido.CANCELADO) {
-			throw new IllegalArgumentException("Pedidos ja está cancelado");
-		}
-		
-		if(pedido.getStatus() == StatusPedido.APROVADO) {
-			for(ItemPedido item : pedido.getItens()) {
-				if(item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada() > 0) {
-					Long unidadeId = pedido.getLaboratorio()
-					        .getUnidade()
-					        .getId();
+            if (itemAprovacao.getQuantidadeAprovada() > item.getQuantidadeSolicitada()
+                    || itemAprovacao.getQuantidadeAprovada() <= 0) {
+                throw new IllegalArgumentException(
+                        "Quantidade aprovada não pode ser maior que a solicitada ou menor/igual a zero. "
+                                + "Solicitada: " + item.getQuantidadeSolicitada()
+                                + ", Aprovada: " + itemAprovacao.getQuantidadeAprovada());
+            }
 
-					EstoqueCentral estoque = estoqueCentralRepository
-					        .findByUnidadeIdAndProdutoId(
-					                unidadeId,
-					                item.getProduto().getId()
-					        )
-					        .orElseThrow(() -> new EntityNotFoundException(
-					                "Estoque não encontrado para o produto '"
-					                        + item.getProduto().getNome()
-					                        + "' na unidade "
-					                        + pedido.getLaboratorio().getUnidade().getNome()
-					        ));
-					
-					estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() 
-							+ item.getQuantidadeAprovada());
-					estoqueCentralRepository.save(estoque);
-				}
-			}
-		}
-		
-		pedido.setStatus(StatusPedido.CANCELADO);
-		pedido.setObservacao(observacao);
-		
-		Pedido atualizado = pedidoRepository.save(pedido);
-		return new PedidoDTO(atualizado);
-	}
-	
-	private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
+            Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
 
-	    if (usuario.getLaboratorio() == null
-	            || !usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
-	        throw new IllegalArgumentException("Usuário não pertence a este laboratório.");
-	    }
+            EstoqueCentral estoque = estoqueCentralRepository
+                    .findByUnidadeIdAndProdutoId(unidadeId, item.getProduto().getId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Estoque não encontrado para o produto '"
+                                    + item.getProduto().getNome()
+                                    + "' na unidade "
+                                    + pedido.getLaboratorio().getUnidade().getNome()));
 
-	    if (!usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
-	        throw new IllegalArgumentException("O usuário e o laboratório pertencem a unidades diferentes.");
-	    }
+            if (estoque.getQuantidadeAtual() < itemAprovacao.getQuantidadeAprovada()) {
+                throw new IllegalArgumentException(
+                        "Estoque insuficiente para o produto: " + item.getProduto().getNome()
+                                + ". Disponível: " + estoque.getQuantidadeAtual()
+                                + ", solicitado: " + itemAprovacao.getQuantidadeAprovada());
+            }
 
-	    if (projeto != null && !projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
-	        throw new IllegalArgumentException("O projeto informado não pertence a este laboratório.");
-	    }
-	}
+            estoque.setQuantidadeAtual(
+                    estoque.getQuantidadeAtual() - itemAprovacao.getQuantidadeAprovada());
+            estoqueCentralRepository.save(estoque);
+
+            item.setQuantidadeAprovada(itemAprovacao.getQuantidadeAprovada());
+        }
+
+        pedido.setStatus(StatusPedido.APROVADO);
+        pedido.setObservacao(dto.getObservacao());
+
+        Pedido atualizado = pedidoRepository.save(pedido);
+        return new PedidoDTO(atualizado);
+    }
+
+    @Transactional
+    public PedidoDTO rejeitar(Long id, String observacao) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+
+        if (pedido.getStatus() != StatusPedido.PENDENTE) {
+            throw new IllegalArgumentException(
+                    "Apenas pedidos PENDENTES podem ser rejeitados. Status atual: " + pedido.getStatus());
+        }
+
+        pedido.setStatus(StatusPedido.REJEITADO);
+        pedido.setObservacao(observacao);
+
+        Pedido atualizado = pedidoRepository.save(pedido);
+        return new PedidoDTO(atualizado);
+    }
+
+    @Transactional
+    public PedidoDTO entregar(Long id) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Pedido não encontrado com id: " + id));
+
+        if (pedido.getStatus() != StatusPedido.APROVADO) {
+            throw new IllegalArgumentException(
+                    "Apenas pedidos APROVADOS podem ser entregues. Status atual: "
+                            + pedido.getStatus());
+        }
+
+        for (ItemPedido item : pedido.getItens()) {
+            if (item.getQuantidadeAprovada() != null
+                    && item.getQuantidadeAprovada() > 0) {
+
+                HistoricoLaboratorio estoqueLab = historicoLaboratorioRepository
+                        .findByLaboratorioIdAndProdutoId(
+                                pedido.getLaboratorio().getId(),
+                                item.getProduto().getId())
+                        .orElse(null);
+
+                if (estoqueLab == null) {
+                    estoqueLab = HistoricoLaboratorio.builder()
+                            .laboratorio(pedido.getLaboratorio())
+                            .produto(item.getProduto())
+                            .quantidade(item.getQuantidadeAprovada())
+                            .dataRecebimento(LocalDate.now())
+                            .pedido(pedido)
+                            .ativo(true)
+                            .build();
+                } else {
+                    estoqueLab.setQuantidade(
+                            estoqueLab.getQuantidade() + item.getQuantidadeAprovada());
+                    estoqueLab.setDataRecebimento(LocalDate.now());
+                    estoqueLab.setPedido(pedido);
+                    estoqueLab.setAtivo(true);
+                }
+
+                historicoLaboratorioRepository.save(estoqueLab);
+
+                HistoricoLaboratorio historico = HistoricoLaboratorio.builder()
+                        .laboratorio(pedido.getLaboratorio())
+                        .produto(item.getProduto())
+                        .quantidade(item.getQuantidadeAprovada())
+                        .dataRecebimento(LocalDate.now())
+                        .pedido(pedido)
+                        .ativo(true)
+                        .build();
+
+                historicoLaboratorioRepository.save(historico);
+            }
+        }
+
+        pedido.setStatus(StatusPedido.ENTREGUE);
+
+        Pedido atualizado = pedidoRepository.save(pedido);
+        return new PedidoDTO(atualizado);
+    }
+
+    @Transactional
+    public PedidoDTO cancelar(Long id, String observacao) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+
+        if (pedido.getStatus() == StatusPedido.ENTREGUE) {
+            throw new IllegalArgumentException("Pedidos ENTREGUES não podem ser cancelados");
+        }
+
+        if (pedido.getStatus() == StatusPedido.CANCELADO) {
+            throw new IllegalArgumentException("O pedido já está cancelado");
+        }
+
+        if (pedido.getStatus() == StatusPedido.APROVADO) {
+            for (ItemPedido item : pedido.getItens()) {
+                if (item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada() > 0) {
+                    Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
+
+                    EstoqueCentral estoque = estoqueCentralRepository
+                            .findByUnidadeIdAndProdutoId(
+                                    unidadeId,
+                                    item.getProduto().getId())
+                            .orElseThrow(() -> new EntityNotFoundException(
+                                    "Estoque não encontrado para o produto '"
+                                            + item.getProduto().getNome()
+                                            + "' na unidade "
+                                            + pedido.getLaboratorio().getUnidade().getNome()));
+
+                    estoque.setQuantidadeAtual(
+                            estoque.getQuantidadeAtual() + item.getQuantidadeAprovada());
+                    estoqueCentralRepository.save(estoque);
+                }
+            }
+        }
+
+        pedido.setStatus(StatusPedido.CANCELADO);
+        pedido.setObservacao(observacao);
+
+        Pedido atualizado = pedidoRepository.save(pedido);
+        return new PedidoDTO(atualizado);
+    }
+
+    private void validarConsistenciaPedido(
+            Usuario usuario,
+            Laboratorio laboratorio,
+            Projeto projeto) {
+
+        if (usuario.getLaboratorio() == null
+                || !usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
+            throw new IllegalArgumentException(
+                    "O usuário não pertence ao laboratório informado.");
+        }
+
+        if (usuario.getUnidade() == null || laboratorio.getUnidade() == null) {
+            throw new IllegalArgumentException(
+                    "Usuário e laboratório devem possuir uma unidade vinculada.");
+        }
+
+        if (!usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
+            throw new IllegalArgumentException(
+                    "O usuário e o laboratório pertencem a unidades diferentes.");
+        }
+
+        if (projeto != null
+                && (projeto.getLaboratorio() == null
+                        || !projeto.getLaboratorio().getId().equals(laboratorio.getId()))) {
+            throw new IllegalArgumentException(
+                    "O projeto informado não pertence ao laboratório do pedido.");
+        }
+    }
+
+    private void validarEntidadesAtivas(
+            Usuario usuario,
+            Laboratorio laboratorio,
+            Projeto projeto) {
+
+        if (!Boolean.TRUE.equals(usuario.getAtivo())) {
+            throw new IllegalArgumentException(
+                    "O usuário informado está inativo.");
+        }
+
+        if (!Boolean.TRUE.equals(laboratorio.getAtivo())) {
+            throw new IllegalArgumentException(
+                    "O laboratório informado está inativo.");
+        }
+
+        if (projeto != null && !Boolean.TRUE.equals(projeto.getAtivo())) {
+            throw new IllegalArgumentException(
+                    "O projeto informado está inativo.");
+        }
+    }
 }
