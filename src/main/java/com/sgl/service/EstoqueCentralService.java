@@ -134,14 +134,14 @@ public class EstoqueCentralService {
 	@Transactional
 	public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
 		
-		if (dto.getQuantidade() <= 0) {
+		if (dto.getQuantidadeMovimentada() <= 0) {
 	        throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
 	    } 
 		
 		EstoqueCentral estoque = estoqueCentralRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado com id: " + id));
 
-		estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() + dto.getQuantidade());
+		estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() + dto.getQuantidadeMovimentada());
 
 		EstoqueCentral atualizado = estoqueCentralRepository.save(estoque);
 		return new EstoqueCentralDTO(atualizado);
@@ -150,16 +150,16 @@ public class EstoqueCentralService {
 	@Transactional
 	public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
 		
-		 if (dto.getQuantidade() <= 0) {
+		 if (dto.getQuantidadeMovimentada() <= 0) {
 		        throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
 		    }
 		EstoqueCentral estoque = estoqueCentralRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado com id: " + id));
 
-		int novaQuantidade = estoque.getQuantidadeAtual() - dto.getQuantidade();
+		int novaQuantidade = estoque.getQuantidadeAtual() - dto.getQuantidadeMovimentada();
 		if (novaQuantidade < 0) {
 			throw new IllegalArgumentException("Estoque insuficiente. Disponível: "
-					+ estoque.getQuantidadeAtual() + ", solicitado: " + dto.getQuantidade());
+					+ estoque.getQuantidadeAtual() + ", solicitado: " + dto.getQuantidadeMovimentada());
 		}
 
 		estoque.setQuantidadeAtual(novaQuantidade);
