@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.EstoqueCentralDTO;
@@ -44,10 +45,26 @@ public class EstoqueCentralController {
 		return ResponseEntity.ok(estoqueCentralService.buscarPorId(id));
 	}
 	
-	@GetMapping("/produto/{produtoId}")
-	public ResponseEntity<EstoqueCentralDTO>
-	buscarPorProdutoId(@PathVariable Long produtoId){
-		return ResponseEntity.ok(estoqueCentralService.buscarPorProdutoID(produtoId));
+	@GetMapping("/por-unidade")
+	public ResponseEntity<List<EstoqueCentralDTO>> listarPorUnidade(
+	        @RequestParam Long unidadeId) {
+
+	    return ResponseEntity.ok(
+	            estoqueCentralService.listarPorUnidade(unidadeId)
+	    );
+	}
+	
+	@GetMapping("/por-unidade-produto")
+	public ResponseEntity<EstoqueCentralDTO> buscarPorUnidadeEProduto(
+	        @RequestParam Long unidadeId,
+	        @RequestParam Long produtoId) {
+
+	    return ResponseEntity.ok(
+	            estoqueCentralService.buscarPorUnidadeEProduto(
+	                    unidadeId,
+	                    produtoId
+	            )
+	    );
 	}
 	
 	@PutMapping("/{id}")
@@ -59,9 +76,14 @@ public class EstoqueCentralController {
         estoqueCentralService.deletar(id);
         return ResponseEntity.noContent().build();
     }
+
     @GetMapping("/estoque-baixo")
-    public ResponseEntity<List<EstoqueCentralDTO>> listarEstoqueBaixo() {
-        return ResponseEntity.ok(estoqueCentralService.listarEstoqueBaixo());
+    public ResponseEntity<List<EstoqueCentralDTO>> listarEstoqueBaixo(
+            @RequestParam Long unidadeId) {
+
+        return ResponseEntity.ok(
+                estoqueCentralService.listarEstoqueBaixoPorUnidade(unidadeId)
+        );
     }
 
     @PutMapping("/{id}/entrada")

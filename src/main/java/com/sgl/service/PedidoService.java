@@ -64,10 +64,15 @@ public class PedidoService {
 			Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
 					.orElseThrow(() -> new EntityNotFoundException("Produto não Encontrado com id: " + itemDTO.getProdutoId()));
 					
-			EstoqueCentral estoque = estoqueCentralRepository.findByProdutoId(produto.getId())
-			        .orElseThrow(() -> new IllegalArgumentException(
-			                "Produto não possui estoque central registrado: " + produto.getNome()));
+			Long unidadeId = laboratorio.getUnidade().getId();
 
+			EstoqueCentral estoque = estoqueCentralRepository
+			        .findByUnidadeIdAndProdutoId(unidadeId, produto.getId())
+			        .orElseThrow(() -> new IllegalArgumentException(
+			                "O produto '" + produto.getNome()
+			                + "' não possui estoque cadastrado na unidade "
+			                + laboratorio.getUnidade().getNome()));
+			
 			if (!estoque.getAtivo()) {
 			    throw new IllegalArgumentException(
 			            "O estoque central do produto '" + produto.getNome() + "' está inativo.");
@@ -136,14 +141,27 @@ public class PedidoService {
 					.findFirst()
 					.orElseThrow(() -> new EntityNotFoundException("Item não encontrado com id: " + itemAprovacao.getItemId()));		
 		
-			if(itemAprovacao.getQuantidadeAprovada() > item.getQuantidadeSolicitada() && itemAprovacao.getQuantidadeAprovada() <= 0) {
+			if(itemAprovacao.getQuantidadeAprovada() > item.getQuantidadeSolicitada() || itemAprovacao.getQuantidadeAprovada() <= 0) {
 				throw new IllegalArgumentException("Quantidade aprovada não pode ser maior que a solicitada ou menor/igual a zero. "
 						+ "Solicitadada: " + item.getQuantidadeSolicitada()
 						+ ", Aprovada: " + itemAprovacao.getQuantidadeAprovada());
 			}
 			
-			EstoqueCentral estoque = estoqueCentralRepository.findByProdutoId(item.getProduto().getId())
-					.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado para o produto " + item.getProduto().getNome()));
+			Long unidadeId = pedido.getLaboratorio()
+			        .getUnidade()
+			        .getId();
+
+			EstoqueCentral estoque = estoqueCentralRepository
+			        .findByUnidadeIdAndProdutoId(
+			                unidadeId,
+			                item.getProduto().getId()
+			        )
+			        .orElseThrow(() -> new EntityNotFoundException(
+			                "Estoque não encontrado para o produto '"
+			                        + item.getProduto().getNome()
+			                        + "' na unidade "
+			                        + pedido.getLaboratorio().getUnidade().getNome()
+			        ));
 			
 			if(estoque.getQuantidadeAtual() < itemAprovacao.getQuantidadeAprovada()) {
 				throw new IllegalArgumentException("Estoque insuficiente para o produto: " + item.getProduto().getNome()
@@ -285,8 +303,21 @@ public class PedidoService {
 		if(pedido.getStatus() == StatusPedido.APROVADO) {
 			for(ItemPedido item : pedido.getItens()) {
 				if(item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada() > 0) {
-					EstoqueCentral estoque = estoqueCentralRepository.findByProdutoId(item.getProduto().getId())
-							.orElseThrow(() -> new EntityNotFoundException("Estoque central não encontrado para o produto: " + item.getProduto().getNome()));
+					Long unidadeId = pedido.getLaboratorio()
+					        .getUnidade()
+					        .getId();
+
+					EstoqueCentral estoque = estoqueCentralRepository
+					        .findByUnidadeIdAndProdutoId(
+					                unidadeId,
+					                item.getProduto().getId()
+					        )
+					        .orElseThrow(() -> new EntityNotFoundException(
+					                "Estoque não encontrado para o produto '"
+					                        + item.getProduto().getNome()
+					                        + "' na unidade "
+					                        + pedido.getLaboratorio().getUnidade().getNome()
+					        ));
 					
 					estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() 
 							+ item.getQuantidadeAprovada());

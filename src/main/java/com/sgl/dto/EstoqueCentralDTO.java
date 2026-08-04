@@ -18,8 +18,17 @@ public class EstoqueCentralDTO {
 
 	private Long id;
 	
+	@NotNull(message = "Id da unidade é obrigatório")
+	private Long unidadeId;
+	
 	@NotNull(message = "Id do produto é obrigatorio")
 	private Long produtoId;
+	
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private String unidadeNome;
+	
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private String unidadeSigla;
 	
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private String produtoNome;
@@ -42,13 +51,20 @@ public class EstoqueCentralDTO {
 	
 	public EstoqueCentralDTO(EstoqueCentral entity) {
 		
-		this.id = entity.getId();
-		this.produtoId = entity.getProduto().getId();
-		this.produtoNome = entity.getProduto().getNome();
-		this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
-		this.quantidadeAtual = entity.getQuantidadeAtual();
-		this.quantidadeMinima = entity.getQuantidadeMinima();
-		this.ativo = entity.getAtivo();
+		 	this.id = entity.getId();
+
+		    this.unidadeId = entity.getUnidade().getId();
+		    this.unidadeNome = entity.getUnidade().getNome();
+		    this.unidadeSigla = entity.getUnidade().getSigla();
+
+		    this.produtoId = entity.getProduto().getId();
+		    this.produtoNome = entity.getProduto().getNome();
+		    this.produtoUnidadeArmazenamento =
+		            entity.getProduto().getUnidadeArmazenamento();
+
+		    this.quantidadeAtual = entity.getQuantidadeAtual();
+		    this.quantidadeMinima = entity.getQuantidadeMinima();
+		    this.ativo = entity.getAtivo();
 		
 	}
 	
