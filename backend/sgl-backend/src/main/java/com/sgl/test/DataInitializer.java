@@ -60,18 +60,18 @@ public class DataInitializer implements CommandLineRunner {
         Laboratorio lab4 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Quimica Organica", "Lab de sintese organica", null, true));
         Laboratorio lab5 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Analise Instrumental", "Lab de instrumentacao analitica", null, false));
 
-        // Usuários
-        Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", "123456", Perfil.ADMINISTRADOR, u1, lab5, true));
-        Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, u3, lab1, true));
-        Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, u2, lab2, true));
-        Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", "123456", Perfil.PESQUISADOR, u1, lab3, true));
+        // Usuários: a Unidade deve ser a mesma Unidade do Laboratório.
+        Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", "123456", Perfil.ADMINISTRADOR, u3, lab5, true));
+        Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, u1, lab1, true));
+        Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, u1, lab2, true));
+        Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", "123456", Perfil.PESQUISADOR, u2, lab3, true));
 
         Estagiario maria = new Estagiario();
         maria.setNome("Maria Oliveira");
         maria.setEmail("maria@iq.com");
         maria.setSenha("123456");
         maria.setPerfil(Perfil.ESTAGIARIO);
-        maria.setUnidade(u2);
+        maria.setUnidade(u3);
         maria.setLaboratorio(lab4);
         maria.setAtivo(true);
         maria.setDataInicioEstagio(java.time.LocalDate.now().minusMonths(2));
