@@ -3,7 +3,9 @@ package com.sgl.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
+import com.sgl.model.Projeto;
+import com.sgl.model.Usuario;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
@@ -43,16 +47,22 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoDTO criar(PedidoDTO dto) {
+		
+		Projeto projeto = projetoRepository.findById(dto.getProjetoId())
+				.orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
+		
+		Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+	            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+		
 		Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
 				.orElseThrow(() -> new EntityNotFoundException("Laboratório não encontrado com id: " + dto.getLaboratorioId()));
 		
+		validarConsistenciaPedido(usuario, laboratorio, projeto); // projeto pode vir null
+		
 		Pedido pedido = Pedido.builder()
-				.usuario(usuarioRepository.findById(dto.getUsuarioId())
-				.orElseThrow(() -> new EntityNotFoundException("Usuario não encontrado com id: " + dto.getUsuarioId())))
+				.usuario(usuario)
 				.laboratorio(laboratorio)
-				.projeto(dto.getProjetoId() != null ?
-						projetoRepository.findById(dto.getProjetoId())
-								.orElseThrow(() -> new EntityNotFoundException("Projeto não encontrado com id: " + dto.getProjetoId())) : null)
+				.projeto(projeto)
 				.dataSolicitacao(LocalDateTime.now())
 				.status(StatusPedido.PENDENTE)
 				.observacao(dto.getObservacao())
@@ -60,10 +70,26 @@ public class PedidoService {
 				.itens(new ArrayList<>())
 				.build();
 		
-		for(ItemPedidoDTO itemDTO : dto.getItens()) {
-			Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
-					.orElseThrow(() -> new EntityNotFoundException("Produto não Encontrado com id: " + itemDTO.getProdutoId()));
-					
+		//Evitar duplicidade
+		
+		Set<Long> produtosAdicionados = new HashSet<>();
+
+		for (ItemPedidoDTO itemDTO : dto.getItens()) {
+
+		    Produto produto = produtoRepository
+		            .findById(itemDTO.getProdutoId())
+		            .orElseThrow(() -> new EntityNotFoundException(
+		                    "Produto não encontrado com id: "
+		                    + itemDTO.getProdutoId()
+		            ));
+
+		    if (!produtosAdicionados.add(produto.getId())) {
+		        throw new IllegalArgumentException(
+		                "O produto '" + produto.getNome()
+		                + "' foi informado mais de uma vez no pedido."
+		        );
+		    }
+										
 			Long unidadeId = laboratorio.getUnidade().getId();
 
 			EstoqueCentral estoque = estoqueCentralRepository
@@ -73,9 +99,11 @@ public class PedidoService {
 			                + "' não possui estoque cadastrado na unidade "
 			                + laboratorio.getUnidade().getNome()));
 			
-			if (!estoque.getAtivo()) {
+			if (!estoque.getAtivo() || !produto.getAtivo()) {
 			    throw new IllegalArgumentException(
-			            "O estoque central do produto '" + produto.getNome() + "' está inativo.");
+			        "O produto '" + produto.getNome()
+			        + "' ou seu estoque está inativo."
+			    );
 			}
 			
 			ItemPedido item = ItemPedido.builder()
@@ -331,5 +359,21 @@ public class PedidoService {
 		
 		Pedido atualizado = pedidoRepository.save(pedido);
 		return new PedidoDTO(atualizado);
+	}
+	
+	private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
+
+	    if (usuario.getLaboratorio() == null
+	            || !usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
+	        throw new IllegalArgumentException("Usuário não pertence a este laboratório.");
+	    }
+
+	    if (!usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
+	        throw new IllegalArgumentException("O usuário e o laboratório pertencem a unidades diferentes.");
+	    }
+
+	    if (projeto != null && !projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
+	        throw new IllegalArgumentException("O projeto informado não pertence a este laboratório.");
+	    }
 	}
 }
