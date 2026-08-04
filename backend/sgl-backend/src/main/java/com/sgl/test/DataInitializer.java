@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import com.sgl.model.ItemPedido;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
+import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
@@ -18,9 +18,9 @@ import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
-import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
@@ -65,8 +65,7 @@ public class DataInitializer implements CommandLineRunner {
         Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, u3, lab1, true));
         Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, u2, lab2, true));
         Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", "123456", Perfil.PESQUISADOR, u1, lab3, true));
-        
-        
+
         Estagiario maria = new Estagiario();
         maria.setNome("Maria Oliveira");
         maria.setEmail("maria@iq.com");
@@ -78,9 +77,8 @@ public class DataInitializer implements CommandLineRunner {
         maria.setDataInicioEstagio(java.time.LocalDate.now().minusMonths(2));
         maria.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
         maria.setObservacao("Cadastro inicial de estágio para testes");
-        maria = estagiarioRepository.save(maria); // um único save
-        
-        
+        maria = estagiarioRepository.save(maria);
+
         // Atualizar laboratórios com os responsáveis
         lab1.setResponsavel(carlos);
         lab2.setResponsavel(ana);
@@ -181,8 +179,19 @@ public class DataInitializer implements CommandLineRunner {
                 .ativo(true)
                 .build());
 
-        // EstoqueCentral (estoque total disponível)
+        // Estoques centrais por Unidade.
+        // A combinação Unidade + Produto deve ser única.
         estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(u1)
+                .produto(p1)
+                .quantidadeAtual(80)
+                .quantidadeMinima(20)
+                .ativo(true)
+                .build());
+
+        // O mesmo produto pode existir em outra Unidade com saldo próprio.
+        estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(u2)
                 .produto(p1)
                 .quantidadeAtual(100)
                 .quantidadeMinima(20)
@@ -190,6 +199,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(u1)
                 .produto(p2)
                 .quantidadeAtual(50)
                 .quantidadeMinima(10)
@@ -197,6 +207,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(u1)
                 .produto(p3)
                 .quantidadeAtual(30)
                 .quantidadeMinima(5)
@@ -204,6 +215,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(u3)
                 .produto(p4)
                 .quantidadeAtual(15)
                 .quantidadeMinima(5)
@@ -211,6 +223,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(u2)
                 .produto(p5)
                 .quantidadeAtual(200)
                 .quantidadeMinima(30)
@@ -218,13 +231,14 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(u3)
                 .produto(p6)
                 .quantidadeAtual(10)
                 .quantidadeMinima(3)
                 .ativo(true)
                 .build());
 
-     // Projetos
+        // Projetos
         Projeto proj1 = projetoRepository.save(Projeto.builder()
                 .laboratorio(lab3)
                 .nome("Projeto de Óptica Avançada")
@@ -290,6 +304,6 @@ public class DataInitializer implements CommandLineRunner {
         pedidoRepository.save(pedido2);
 
         System.out.println("=== Dados de teste injetados com sucesso! ===");
-        System.out.println("=== 3 Unidades, 5 Labs, 5 Usuarios, 1 Estagiario, 6 Produtos, 6 EstoqueCentral, 2 Projetos, 2 Pedidos ===");
+        System.out.println("=== 3 Unidades, 5 Labs, 5 Usuarios, 1 Estagiario, 6 Produtos, 7 registros de EstoqueCentral, 2 Projetos, 2 Pedidos ===");
     }
 }
