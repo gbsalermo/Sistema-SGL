@@ -2,15 +2,10 @@ package com.sgl.model.enums;
 
 public enum OrigemMovimentacao {
 
-	    PEDIDO,
-
-	    COMPRA,
-
-	    AJUSTE,
-
-	    DEVOLUCAO,
-
-	    INVENTARIO
-
-	
+    PEDIDO,
+    COMPRA,
+    AJUSTE,
+    DEVOLUCAO,
+    INVENTARIO,
+    DESCARTE
 }
