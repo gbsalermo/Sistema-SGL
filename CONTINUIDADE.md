@@ -1,219 +1,70 @@
-# 📦 Continuidade do Projeto SGL
+# Continuidade do Projeto SGL
 
-## 📋 Estado do projeto
+**Projeto:** Sistema de Gestão de Laboratórios  
+**Última atualização:** 05/08/2026  
+**Fase atual:** documentação estrutural e preparação para testes automatizados
 
-**Projeto:** SGL — Sistema de Gestão de Laboratórios  
-**Início:** 13/07/2026  
-**Última atualização:** 04/08/2026  
-**Fase atual:** consolidação das regras de negócio do backend
+Este arquivo registra o estado real do backend, as decisões já consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
-Este arquivo é a referência principal para continuar o desenvolvimento. O `README.md` apresenta a visão pública e resumida; este documento registra decisões, pendências técnicas e a ordem de execução.
+## Estado atual
 
----
+### Concluído
 
-## 🎯 Objetivo
+- CRUDs de Unidade, Laboratório, Usuário, Estagiário, Produto e Projeto.
+- Estoque central separado por combinação `Unidade + Produto`.
+- Entrada e saída manual com alteração de saldo e histórico de movimentação.
+- Descarte de produto vencido.
+- Pedido com criação, aprovação, rejeição, entrega e cancelamento.
+- Aprovação com baixa transacional do estoque.
+- Registro de movimentação `SAIDA` durante a aprovação do pedido.
+- Histórico de materiais entregues ao laboratório.
+- Validações de consistência entre usuário, laboratório, unidade e projeto.
+- Validações de risco, perecibilidade e código de referência do produto.
+- Senhas armazenadas com BCrypt.
+- Exclusão lógica de usuário por inativação.
+- Revisão das mensagens de erro mais evidentes.
+- Documentação estrutural, fluxo e fontes UML atualizados.
 
-O SGL automatiza e centraliza o controle de materiais em laboratórios de pesquisa e ensino.
+### Pendente
 
-O sistema deve permitir:
+- Registrar movimentação de devolução ao cancelar pedido aprovado.
+- Padronizar exceções de domínio e respostas HTTP.
+- Criar testes automatizados de service e controller.
+- Revisar concorrência de estoque e bloqueio de atualizações simultâneas.
+- Implementar autenticação e autorização com JWT.
+- Preparar migrations e PostgreSQL definitivo.
+- Criar documentação OpenAPI.
+- Iniciar o frontend.
 
-- cadastrar Unidades, Laboratórios, Usuários e Estagiários;
-- manter um catálogo central de Produtos;
-- controlar separadamente o estoque de cada Unidade;
-- registrar entradas e saídas de materiais;
-- monitorar estoque mínimo para reposição;
-- criar, aprovar, rejeitar, entregar e cancelar Pedidos;
-- vincular Pedidos opcionalmente a Projetos;
-- manter histórico do que foi entregue a cada Laboratório;
-- controlar risco, perecibilidade e validade dos Produtos;
-- futuramente, autenticar usuários, armazenar documentos e oferecer uma interface Vue.js.
+## Decisões oficiais
 
----
+### Produto e estoque
 
-## 🧭 Ordem oficial de desenvolvimento
+`Produto` é um catálogo global. Ele descreve o material, risco, perecibilidade e forma de armazenamento, mas não possui saldo.
 
-1. **Corrigir decisões estruturais contraditórias.**
-2. **Consolidar regras de negócio.**
-3. Padronizar exceções e respostas HTTP.
-4. Testar fluxos completos e falhas.
-5. Implementar autenticação e autorização.
-6. Migrar definitivamente para PostgreSQL.
-7. Iniciar o frontend.
-
-### Situação do item 1
-
-- [x] Definir oficialmente a arquitetura do `EstoqueCentral` por Unidade.
-- [x] Migrar o código para a nova definição.
-- [x] Adaptar `EstoqueCentral`, DTO, Repository, Service e Controller.
-- [x] Adaptar aprovação e cancelamento de Pedido para `Unidade + Produto`.
-- [x] Atualizar o `DataInitializer`.
-- [x] Alinhar a Unidade dos Usuários à Unidade de seus Laboratórios nos dados de teste.
-- [x] Validar os principais fluxos pelo Postman.
-- [ ] Revisar diagramas UML e ER após a alteração do código.
-- [ ] Conferir o enum `Perfil` e padronizar a documentação.
-- [ ] Revisar trechos antigos que ainda possam descrever Projeto como agrupador de Pedidos.
-
-> O item 1 está funcionalmente concluído. Restam apenas revisão de diagramas e documentação complementar.
-
----
-
-# 1. Decisão estrutural: EstoqueCentral por Unidade
-
-Cada **Unidade possui seu próprio estoque central**.
-
-No modelo relacional, `EstoqueCentral` representa o saldo de um Produto dentro de uma Unidade específica.
-
-```text
-EstoqueCentral
-- id
-- unidade
-- produto
-- quantidadeAtual
-- quantidadeMinima
-- ativo
-```
-
-A combinação abaixo é única:
+`EstoqueCentral` representa o saldo de um produto em uma unidade. Sua identidade lógica é:
 
 ```text
 Unidade + Produto
 ```
 
-Restrição no banco:
+A mesma unidade não pode possuir dois registros de estoque para o mesmo produto.
 
-```sql
-UNIQUE (unidade_id, produto_id)
-```
+### Movimentação
 
-Consequências:
+Toda alteração de saldo relevante deve gerar `MovimentacaoEstoque`, contendo:
 
-- o mesmo Produto pode existir no estoque de várias Unidades;
-- uma Unidade não pode possuir dois registros para o mesmo Produto;
-- Produto permanece como catálogo global, sem saldo próprio;
-- Pedido consome somente o estoque da Unidade do Laboratório solicitante;
-- cancelamento devolve a quantidade ao mesmo estoque usado na aprovação;
-- consultas de estoque baixo são filtradas por Unidade.
+- produto e registro de estoque afetado;
+- usuário responsável;
+- tipo e origem da movimentação;
+- quantidade movimentada;
+- saldo anterior e saldo resultante;
+- data e observação;
+- pedido ou laboratório quando aplicável.
 
-## Situação da implementação
+### Pedido
 
-- [x] `EstoqueCentral` possui relacionamento `ManyToOne` com `Unidade`.
-- [x] `EstoqueCentral` possui relacionamento `ManyToOne` com `Produto`.
-- [x] A unicidade é composta por `unidade_id` e `produto_id`.
-- [x] `EstoqueCentralDTO` possui dados da Unidade.
-- [x] Repository consulta por `Unidade + Produto`.
-- [x] Service e Controller oferecem consultas por Unidade.
-- [x] Pedido localiza o estoque pela Unidade do Laboratório.
-- [x] `DataInitializer` cria estoques válidos por Unidade.
-
----
-
-# 2. Regras de movimentação do estoque
-
-## Entrada
-
-```text
-quantidadeAtual = quantidadeAtual + quantidadeEntrada
-```
-
-## Saída manual
-
-```text
-quantidadeAtual = quantidadeAtual - quantidadeSaida
-```
-
-A operação deve falhar quando a quantidade solicitada for maior que a quantidade disponível.
-
-```text
-quantidadeAtual nunca pode ser negativa
-```
-
-## Quantidade mínima
-
-Um item está com estoque baixo quando:
-
-```text
-quantidadeAtual <= quantidadeMinima
-```
-
-## Baixa por Pedido
-
-A regra oficial atual é:
-
-```text
-PENDENTE
-→ APROVADO: reduz imediatamente o saldo disponível
-→ ENTREGUE: confirma a entrega e registra o histórico
-→ CANCELADO após aprovação: devolve a quantidade ao estoque
-```
-
-Regras obrigatórias:
-
-- a aprovação reduz somente `quantidadeAprovada`;
-- a entrega não reduz o estoque novamente;
-- o cancelamento de Pedido `APROVADO` devolve `quantidadeAprovada`;
-- o cancelamento de Pedido `PENDENTE` não altera estoque;
-- Pedido `ENTREGUE` não pode ser cancelado pelo fluxo comum;
-- a aprovação deve permanecer `@Transactional`;
-- se qualquer item falhar, nenhuma baixa parcial deve permanecer.
-
-A quantidade disponível não é validada na criação do Pedido. Essa validação permanece na aprovação para permitir aprovação parcial.
-
----
-
-# 3. Produto, estoque e histórico
-
-## Produto
-
-`Produto` é um catálogo central. Ele descreve o material, mas não define quanto existe disponível.
-
-## EstoqueCentral
-
-É o saldo disponível de um Produto dentro de uma Unidade.
-
-É responsável por:
-
-- entrada;
-- saída;
-- quantidade atual;
-- quantidade mínima;
-- baixa na aprovação de Pedido;
-- devolução no cancelamento;
-- alerta de reposição.
-
-## HistoricoLaboratorio
-
-`HistoricoLaboratorio` não representa estoque disponível.
-
-Ele registra que um Laboratório recebeu determinado Produto por meio de um Pedido.
-
-A entrega deve gerar o histórico, mas não realizar uma segunda baixa no `EstoqueCentral`.
-
----
-
-# 4. Fluxo de Pedido
-
-```text
-Pedido
-→ Laboratório
-→ Unidade do Laboratório
-→ EstoqueCentral localizado por Unidade + Produto
-```
-
-Fluxo principal:
-
-1. usuário cria o Pedido;
-2. o Pedido possui pelo menos um ItemPedido;
-3. o Pedido pertence a um Laboratório;
-4. Projeto é opcional e, quando informado, deve pertencer ao mesmo Laboratório;
-5. o status inicial é `PENDENTE`;
-6. o Pedido pode ser aprovado ou rejeitado;
-7. a quantidade aprovada pode ser menor que a solicitada;
-8. o estoque é localizado por `Unidade + Produto`;
-9. a aprovação reduz imediatamente o estoque;
-10. a entrega cria o histórico do Laboratório;
-11. o cancelamento de Pedido aprovado devolve o estoque.
-
-Fluxo de status:
+O pedido nasce como `PENDENTE`.
 
 ```text
 PENDENTE
@@ -223,206 +74,87 @@ PENDENTE
 └── REJEITADO
 ```
 
----
+- A criação valida os vínculos, mas não reserva saldo.
+- A aprovação valida saldo e reduz `quantidadeAprovada`.
+- A aprovação registra movimentação `SAIDA` com origem `PEDIDO`.
+- A entrega cria `HistoricoLaboratorio` e não reduz o estoque novamente.
+- O cancelamento de pedido aprovado devolve o saldo.
+- Pedido entregue não pode ser cancelado pelo fluxo comum.
 
-# 5. Testes concluídos em 04/08/2026
+### Usuários
 
-Os testes manuais pelo Postman foram concluídos com sucesso para os principais fluxos da migração.
+- O solicitante é `pedido.getUsuario()`.
+- O aprovador é informado no DTO de aprovação enquanto a autenticação não está pronta.
+- A movimentação de aprovação registra o aprovador como usuário responsável.
+- Usuário é inativado, não removido fisicamente.
+- A senha permanece protegida por BCrypt.
 
-- [x] listar todos os estoques;
-- [x] listar estoque por Unidade;
-- [x] buscar estoque por `Unidade + Produto`;
-- [x] confirmar o mesmo Produto em Unidades diferentes com saldos independentes;
-- [x] criar estoque para Produto em outra Unidade;
-- [x] bloquear duplicidade da combinação `Unidade + Produto`;
-- [x] entrada manual;
-- [x] saída manual;
-- [x] bloquear saída maior que o saldo;
-- [x] consultar estoque baixo por Unidade;
-- [x] criar Pedido válido;
-- [x] bloquear Pedido com Produto sem estoque na Unidade do Laboratório;
-- [x] aprovar Pedido e reduzir o estoque;
-- [x] bloquear aprovação maior que a quantidade solicitada;
-- [x] bloquear aprovação com estoque insuficiente;
-- [x] cancelar Pedido aprovado e devolver a quantidade;
-- [x] entregar Pedido aprovado;
-- [x] bloquear cancelamento de Pedido entregue.
+### Produto
 
-Observação técnica:
+- O código de referência é único.
+- Na atualização, a verificação de duplicidade ignora o próprio produto.
+- `NivelRisco.NENHUM` limpa tipo e descrição de risco.
+- Produto com risco exige tipo de risco.
+- Produto não perecível limpa data de validade e tipo de perecível.
+- Produto perecível exige data de validade e tipo de perecível.
 
-- `MovimentacaoEstoqueDTO` utiliza `quantidadeMovimentada`;
-- os métodos de entrada e saída devem utilizar `getQuantidadeMovimentada()`;
-- futuramente é recomendado criar um DTO menor específico para entrada e saída manual.
-
----
-
-# 6. Papel do Projeto
-
-`Projeto` é um contexto opcional do Pedido.
+## Fluxo técnico
 
 ```text
-Pedido pode possuir projetoId ou projetoId = null
+Cliente
+  → Controller
+  → DTO validado
+  → Service transacional
+  → Repository
+  → Banco
+  → DTO de resposta
 ```
 
-Quando informado, o Projeto deve pertencer ao mesmo Laboratório do Pedido.
+As regras que dependem do estado do banco pertencem ao Service. Controller não deve implementar regra de negócio. Repository não deve trabalhar com DTO.
 
----
+## Próxima ordem de trabalho
 
-# 7. Consolidação do PedidoService.criar
+1. Registrar `DEVOLUCAO` durante cancelamento de pedido aprovado.
+2. Criar exceções específicas para regras de negócio.
+3. Padronizar o corpo das respostas de erro.
+4. Criar testes automatizados dos fluxos de estoque e pedido.
+5. Revisar concorrência de saldo.
+6. Implementar Spring Security e JWT.
+7. Migrar para PostgreSQL com migrations.
+8. Adicionar OpenAPI.
+9. Iniciar frontend.
 
-Validações implementadas em 04/08/2026:
+## Cenários prioritários de teste
 
-- [x] buscar Usuário, Laboratório e Projeto com `EntityNotFoundException`;
-- [x] permitir criação de Pedido sem Projeto;
-- [x] validar se o Usuário pertence ao Laboratório informado;
-- [x] validar se Usuário e Laboratório pertencem à mesma Unidade;
-- [x] validar se o Projeto pertence ao Laboratório do Pedido;
-- [x] bloquear Usuário inativo;
-- [x] bloquear Laboratório inativo;
-- [x] bloquear Projeto inativo;
-- [x] bloquear Produto inativo;
-- [x] bloquear EstoqueCentral inativo;
-- [x] bloquear Produto repetido no mesmo Pedido;
-- [x] manter a validação de saldo apenas na aprovação.
-
-A entidade `Unidade` ainda não possui campo `ativo`, portanto não existe validação de Unidade inativa neste momento.
-
-O arquivo `SglFluxoTerminal.java` foi removido intencionalmente. Ele era um simulador de teste antigo, não utilizado pelo fluxo atual do projeto.
-
----
-
-# 8. Padrões arquiteturais
-
-```text
-Controller → DTO → Service → Repository → Entity → Banco
-```
-
-- Controller recebe e devolve DTOs.
-- Service contém regras de negócio.
-- Repository trabalha somente com Entity.
-- Entity e Repository não conhecem DTO.
-- Relacionamentos são expostos nos DTOs principalmente por IDs.
-
-Usar injeção por construtor com `@RequiredArgsConstructor`.
-
-Transações:
-
-- escrita: `@Transactional`;
-- leitura: `@Transactional(readOnly = true)`.
-
----
-
-# 9. Próxima etapa — Consolidar regras de negócio
-
-O próximo passo oficial continua sendo a consolidação das regras de negócio.
-
-Prioridade atual:
-
-1. testar as novas validações do `PedidoService.criar`;
-2. revisar todas as transições de status do Pedido;
-3. verificar regras de cancelamento de Pedido rejeitado;
-4. revisar risco, perecibilidade e validade;
-5. eliminar validações duplicadas ou conflitantes;
-6. revisar o comportamento de `HistoricoLaboratorio` na entrega.
-
----
-
-# 10. Problemas para discussão
-
-## Como tratar produto vencido sendo solicitado
-
-Atualmente, o Pedido pode solicitar um Produto marcado como perecível cuja `dataValidade` já passou.
-
-A regra ainda não foi fechada porque a validade está armazenada no catálogo global de `Produto`, enquanto diferentes lotes do mesmo Produto podem possuir datas de validade distintas.
-
-Pontos para decidir:
-
-- impedir a criação do Pedido quando o Produto estiver vencido;
-- permitir a criação, mas impedir a aprovação;
-- permitir aprovação somente mediante autorização especial;
-- mover validade para uma futura entidade de lote;
-- definir como tratar Produtos sem data de validade;
-- definir se o sistema deve bloquear ou apenas alertar sobre Produtos próximos do vencimento.
-
-Decisão provisória:
-
-> Não implementar bloqueio automático até revisar se a validade deve permanecer em `Produto` ou migrar para uma futura entidade de lote de estoque.
-
----
-
-# 11. Etapas posteriores
-
-## Padronizar exceções e respostas HTTP
-
-- recurso não encontrado;
-- recurso duplicado;
-- entidade em uso;
+- rollback quando um item falha durante aprovação;
+- aprovação parcial;
 - estoque insuficiente;
-- transição de status inválida;
-- regra de negócio violada.
+- produto vencido sem autorização;
+- pedido aprovado cancelado e saldo devolvido;
+- tentativa de cancelar pedido entregue;
+- movimentação com saldo anterior e atual corretos;
+- duplicidade de `Unidade + Produto`;
+- atualização de produto sem falso conflito de código;
+- atualização de usuário sem troca de senha;
+- inativação repetida de usuário.
 
-## Testes automatizados
+## Documentos de referência
 
-Incluir cenários de rollback, concorrência e integridade referencial.
+- [`README.md`](README.md): apresentação e execução.
+- [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo operacional completo.
+- [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): papel das classes e camadas.
+- [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml): entidades e relacionamentos.
+- [`docs/componentes.puml`](docs/componentes.puml): arquitetura em componentes.
+- [`docs/sequencia-pedido.puml`](docs/sequencia-pedido.puml): sequência do pedido.
 
-## Autenticação e autorização
-
-- Spring Security;
-- JWT;
-- login por e-mail e senha;
-- autorização por Perfil;
-- restrição por Unidade e Laboratório.
-
-## PostgreSQL
-
-- configurar perfis de ambiente;
-- criar banco definitivo;
-- preparar migrations;
-- revisar constraints e tipos.
-
-## Frontend
-
-O frontend Vue.js deve ser iniciado após estabilização das regras, respostas HTTP, autenticação e banco definitivo.
-
----
-
-# 12. Funcionalidades futuras
-
-- Swagger/OpenAPI;
-- upload e download de documentos;
-- relatórios gerenciais;
-- exportação PDF e Excel;
-- notificações por e-mail;
-- dashboard;
-- código de barras e QR Code;
-- relatórios de risco;
-- controle avançado de validade;
-- auditoria detalhada de movimentações;
-- possível separação futura entre saldo físico, reservado e disponível.
-
----
-
-## 📂 Referências
-
-- [`README.md`](README.md) — visão geral do projeto.
-- [`docs/codigos-referencia-pedidos.md`](docs/codigos-referencia-pedidos.md) — referência do fluxo de Pedidos.
-- `docs/diagramas/` — diagramas UML, ER e arquitetura.
-
----
-
-## 📝 Histórico resumido de decisões
+## Histórico recente
 
 | Data | Decisão |
 |---|---|
-| 13/07/2026 | Início do SGL e definição de Java, Spring Boot, Vue.js e PostgreSQL |
-| 17/07/2026 | Adoção de DTOs, validação e exception handler global |
-| 17/07/2026 | Substituição de Estudante/Pesquisador por Usuario + Perfil |
-| 20/07/2026 | Responsável do Laboratório passou a ser Usuario |
-| 21/07/2026 | Separação entre Produto, EstoqueCentral e HistoricoLaboratorio |
-| 24/07/2026 | Projeto definido como vínculo opcional no Pedido |
-| 03/08/2026 | Estagiario migrou para herança JOINED de Usuario |
-| 04/08/2026 | EstoqueCentral implementado por combinação Unidade + Produto |
-| 04/08/2026 | Baixa de estoque definida na aprovação |
-| 04/08/2026 | Testes manuais de estoque e Pedido concluídos |
-| 04/08/2026 | Validações de consistência do PedidoService.criar consolidadas |
-| 04/08/2026 | SglFluxoTerminal removido por não fazer parte do fluxo atual |
+| 04/08/2026 | Estoque central consolidado por Unidade + Produto |
+| 04/08/2026 | Baixa definida no momento da aprovação |
+| 05/08/2026 | Movimentação registrada durante aprovação |
+| 05/08/2026 | Validações de Produto revisadas |
+| 05/08/2026 | BCrypt mantido para proteger senhas |
+| 05/08/2026 | Usuário passou a ser inativado em vez de excluído |
+| 05/08/2026 | Documentação estrutural e UML revisados |

@@ -1,210 +1,78 @@
-# 📦 SGL — Sistema de Gestão de Laboratórios
+# SGL — Sistema de Gestão de Laboratórios
 
-[![Java](https://img.shields.io/badge/Java-17+-orange)](https://www.java.com)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen)](https://spring.io/projects/spring-boot)
-[![Vue.js](https://img.shields.io/badge/Vue.js-3.x-green)](https://vuejs.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue)](https://www.postgresql.org)
-[![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)]()
+Sistema backend para cadastro de unidades e laboratórios, catálogo de produtos, controle de estoque por unidade e atendimento de pedidos de materiais.
 
-## 📋 Sobre o projeto
+## Estado atual
 
-O **SGL — Sistema de Gestão de Laboratórios** automatiza e centraliza o controle de materiais em laboratórios de pesquisa e ensino.
+O backend está funcional e em fase de consolidação. Os fluxos principais de cadastro, estoque e pedido já foram implementados. Autenticação por JWT, migração definitiva para PostgreSQL, testes automatizados e frontend permanecem como próximas etapas.
 
-O sistema organiza a operação na hierarquia **Unidade → Laboratório → Usuário**, permite pedidos vinculados opcionalmente a projetos, controla riscos e perecibilidade dos produtos e mantém histórico das entregas realizadas aos laboratórios.
+## Tecnologias
 
-> ⚠️ O projeto está na fase de consolidação do backend. O frontend ainda não foi iniciado.
->
-> Para decisões, progresso e próximas tarefas, consulte [`CONTINUIDADE.md`](CONTINUIDADE.md).
+- Java e Spring Boot
+- Spring Data JPA e Hibernate
+- Bean Validation
+- BCrypt para armazenamento seguro de senhas
+- H2 no ambiente de desenvolvimento
+- PostgreSQL planejado para o ambiente definitivo
+- Lombok
 
----
-
-## 🧭 Estado atual
-
-| Módulo | Status | Observação |
-|---|:---:|---|
-| Unidade | ✅ Concluído | CRUD implementado e revisado |
-| Laboratório | ✅ Concluído | CRUD implementado e revisado |
-| Usuário e Perfil | ✅ Concluído | Senha com BCrypt; autenticação ainda pendente |
-| Estagiário | ✅ Concluído | Herança de `Usuario` com estratégia `JOINED` |
-| Produto | ✅ Concluído | Catálogo central com risco e perecibilidade |
-| EstoqueCentral | ⚠️ Em ajuste estrutural | CRUD atual existe, mas precisa ser vinculado à Unidade |
-| Projeto | ✅ Concluído | Vínculo opcional no Pedido |
-| ItemPedido e Pedido | ✅ Concluído | Aprovação, rejeição, entrega e cancelamento |
-| HistoricoLaboratorio | ✅ Implementado | Histórico de materiais entregues ao laboratório |
-| Regras e validações globais | 🔎 Em andamento | Etapa atual |
-| Spring Security + JWT | ⏳ Pendente | Após consolidação das regras |
-| PostgreSQL definitivo | ⏳ Pendente | H2 permanece no desenvolvimento |
-| Frontend Vue.js | ⬜ Não iniciado | Será iniciado após validação final do backend |
-
-### Ordem oficial das próximas etapas
-
-1. Corrigir decisões estruturais contraditórias.
-2. Consolidar regras de negócio.
-3. Padronizar exceções e respostas HTTP.
-4. Testar fluxos completos e falhas.
-5. Implementar autenticação e autorização.
-6. Migrar definitivamente para PostgreSQL.
-7. Iniciar o frontend.
-
----
-
-## 🏛️ Hierarquia do sistema
+## Arquitetura
 
 ```text
-UNIDADE (Instituição/Tenant)
-│
-├── ESTOQUE CENTRAL DA UNIDADE
-│   ├── Produto A — saldo e quantidade mínima
-│   ├── Produto B — saldo e quantidade mínima
-│   └── Produto C — saldo e quantidade mínima
-│
-└── LABORATÓRIOS
-    ├── USUÁRIOS
-    ├── PROJETOS
-    └── PEDIDOS
-        └── ITENS DO PEDIDO
+Requisição HTTP
+    ↓
+Controller
+    ↓ DTO
+Service — validações e regras de negócio
+    ↓ Entity
+Repository — persistência JPA
+    ↓
+Banco de dados
 ```
 
-### Decisão oficial sobre o estoque
+Responsabilidades:
 
-Cada **Unidade possui seu próprio estoque central**.
+- `controller`: expõe os endpoints REST e delega o processamento.
+- `dto`: define os dados recebidos e devolvidos pela API.
+- `service`: concentra regras de negócio, consistência e transações.
+- `repository`: executa consultas e persistência.
+- `model`: representa as entidades e relacionamentos do domínio.
+- `exception`: padroniza o tratamento das falhas da API.
+- `config`: reúne configurações e dados iniciais do ambiente.
 
-A entidade `EstoqueCentral` representa o saldo de **um Produto dentro de uma Unidade específica**. Portanto, o mesmo produto pode existir no estoque de várias unidades, mas não pode aparecer duas vezes no estoque da mesma unidade.
+## Modelo do domínio
 
 ```text
-Produto: Álcool 70%
-├── Unidade A — 50 frascos
-├── Unidade B — 25 frascos
-└── Unidade C — 80 frascos
+Unidade
+├── Laboratórios
+├── Usuários
+└── Estoque central
+    └── registros por Produto
+
+Laboratório
+├── Usuários
+├── Projetos
+├── Pedidos
+└── Histórico de materiais recebidos
 ```
 
-A identificação lógica de um registro de estoque é:
+`Produto` funciona como catálogo global. O saldo não fica no produto, mas em `EstoqueCentral`, identificado pela combinação única:
 
 ```text
 Unidade + Produto
 ```
 
-No banco, essa combinação deverá possuir restrição única:
+Assim, o mesmo produto pode possuir saldos diferentes em unidades diferentes.
 
-```text
-UNIQUE (unidade_id, produto_id)
-```
+## Fluxo principal do pedido
 
-> O código atual ainda representa `EstoqueCentral` como uma relação global `OneToOne` com `Produto`. Essa implementação será migrada para o modelo por Unidade.
-
----
-
-## ⚙️ Fluxo de estoque
-
-### Entrada
-
-A entrada soma uma quantidade ao saldo atual:
-
-```text
-Saldo atual: 20
-Entrada: 10
-Novo saldo: 30
-```
-
-```text
-quantidadeAtual = quantidadeAtual + quantidadeEntrada
-```
-
-### Saída
-
-A saída subtrai uma quantidade do saldo atual:
-
-```text
-Saldo atual: 30
-Saída: 8
-Novo saldo: 22
-```
-
-A operação deve ser recusada quando a quantidade solicitada for maior que a disponível. O estoque nunca pode ficar negativo.
-
-### Estoque mínimo
-
-Cada registro possui uma `quantidadeMinima` para indicar necessidade de reposição.
-
-```text
-quantidadeAtual <= quantidadeMinima
-```
-
-Quando essa condição for verdadeira, o item deve aparecer nas consultas de estoque baixo da respectiva Unidade.
-
-### Pedido
-
-O laboratório do pedido define qual estoque deve ser utilizado:
-
-```text
-Pedido
-→ Laboratório
-→ Unidade do laboratório
-→ Registro de EstoqueCentral da Unidade + Produto
-```
-
-Um pedido de uma Unidade nunca pode consumir o estoque de outra Unidade.
-
----
-
-## 📦 Produto, estoque e histórico
-
-### Produto
-
-`Produto` é um **catálogo central**. Ele descreve o material e não possui saldo próprio nem pertence diretamente a uma Unidade ou Laboratório.
-
-Exemplos de informações do produto:
-
-- nome e descrição;
-- código de referência;
-- unidade de medida e armazenamento;
-- localização física;
-- nível e tipo de risco;
-- perecibilidade e validade;
-- condições de armazenamento.
-
-### EstoqueCentral
-
-`EstoqueCentral` representa o saldo real de um produto em uma Unidade. É o único ponto do sistema que controla entrada e saída.
-
-Campos conceituais:
-
-```text
-id
-unidade
-produto
-quantidadeAtual
-quantidadeMinima
-ativo
-```
-
-### HistoricoLaboratorio
-
-`HistoricoLaboratorio` não é um segundo estoque. Ele apenas registra que determinado laboratório recebeu uma quantidade de um produto por meio de um pedido.
-
-```text
-Laboratório X recebeu 4 unidades do Produto Y
-na data Z, por meio do Pedido N.
-```
-
-Ele não possui entrada, saída ou saldo disponível.
-
----
-
-## 🧾 Fluxo de pedido
-
-1. Um usuário cria um Pedido com pelo menos um ItemPedido.
-2. O Pedido pertence ao laboratório do usuário.
-3. Um Projeto pode ser informado opcionalmente, desde que pertença ao mesmo laboratório.
-4. O pedido nasce como `PENDENTE`.
-5. Um gestor ou administrador aprova ou rejeita.
-6. Na aprovação, a quantidade aprovada pode ser menor que a solicitada.
-7. O sistema localiza o estoque pela combinação **Unidade do laboratório + Produto**.
-8. A aprovação reduz o saldo do EstoqueCentral da Unidade.
-9. A entrega cria registros no HistoricoLaboratorio.
-10. O cancelamento de um pedido aprovado devolve as quantidades ao mesmo estoque utilizado na aprovação.
-
-Fluxo de status:
+1. Um usuário cria um pedido para seu laboratório.
+2. O sistema valida usuário, laboratório, unidade, projeto e produtos.
+3. O pedido nasce como `PENDENTE`.
+4. Um usuário aprovador informa as quantidades aprovadas.
+5. Na aprovação, o saldo da unidade é reduzido e uma movimentação de saída é registrada.
+6. Na entrega, o sistema cria o histórico de recebimento do laboratório.
+7. Um pedido aprovado pode ser cancelado antes da entrega, devolvendo o saldo.
 
 ```text
 PENDENTE
@@ -214,106 +82,61 @@ PENDENTE
 └── REJEITADO
 ```
 
----
+Consulte o fluxo detalhado em [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md).
 
-## 🧩 Padrões de arquitetura
+## Módulos implementados
 
-```text
-Controller → DTO → Service → Repository → Entity → Banco
-```
-
-- DTOs são usados entre Controller e Service.
-- Repository trabalha apenas com Entity.
-- Conversões entre DTO e Entity ficam no Service ou em construtores do DTO.
-- DTOs expõem IDs de relacionamentos, evitando objetos bidirecionais completos.
-- Injeção de dependência via construtor com `@RequiredArgsConstructor`.
-- Métodos de escrita usam `@Transactional`.
-- Métodos de leitura usam `@Transactional(readOnly = true)`.
-- Bean Validation trata formato e obrigatoriedade.
-- Regras que dependem do banco ou de outras entidades ficam no Service.
-- Exceções são tratadas globalmente com `@RestControllerAdvice`.
-
----
-
-## 📊 Entidades principais
-
-| Entidade | Papel |
+| Módulo | Papel |
 |---|---|
-| `Unidade` | Instituição/tenant; possui laboratórios e seu estoque central |
-| `Laboratorio` | Pertence a uma Unidade e possui usuários e projetos |
-| `Usuario` | Usuário do sistema com perfil de acesso |
-| `Estagiario` | Especialização de Usuario para informações de estágio |
-| `Produto` | Catálogo central de materiais |
-| `EstoqueCentral` | Saldo de um Produto dentro de uma Unidade |
-| `Projeto` | Contexto opcional associado a um Pedido |
-| `Pedido` | Solicitação de materiais de um laboratório |
-| `ItemPedido` | Produto e quantidades solicitada/aprovada |
-| `HistoricoLaboratorio` | Registro de materiais entregues ao laboratório |
+| Unidade | Representa a instituição ou setor proprietário dos laboratórios e estoques |
+| Laboratório | Agrupa usuários, projetos, pedidos e históricos |
+| Usuário | Identifica solicitantes, aprovadores e demais perfis operacionais |
+| Estagiário | Especialização de usuário com dados do estágio |
+| Produto | Catálogo e classificação de materiais |
+| EstoqueCentral | Saldo de um produto dentro de uma unidade |
+| MovimentacaoEstoque | Trilha de auditoria de entradas, saídas, descartes e ajustes |
+| Projeto | Contexto opcional de um pedido |
+| Pedido e ItemPedido | Solicitação e aprovação de materiais |
+| HistoricoLaboratorio | Registro do material efetivamente entregue ao laboratório |
 
-> `Projeto` não agrupa nem controla obrigatoriamente os pedidos. Ele é apenas um vínculo opcional que identifica o contexto do pedido.
+## Regras estruturais importantes
 
----
+- Cada registro de estoque pertence a uma unidade e a um produto.
+- A combinação `unidade_id + produto_id` deve ser única.
+- O estoque nunca pode ficar negativo.
+- A aprovação reduz apenas a quantidade aprovada.
+- A entrega não reduz o estoque novamente.
+- O cancelamento de um pedido aprovado devolve o saldo.
+- A aprovação registra uma movimentação `SAIDA` com origem `PEDIDO`.
+- Produto sem risco não mantém tipo ou descrição de risco.
+- Produto não perecível não mantém tipo de perecível ou data de validade.
+- Usuários e demais registros históricos devem ser inativados quando a exclusão física comprometer a rastreabilidade.
 
-## 📏 Regras principais
-
-- Cada Unidade possui seu próprio estoque central.
-- Cada combinação `Unidade + Produto` possui no máximo um registro de estoque.
-- O mesmo Produto pode existir no estoque de várias Unidades.
-- Estoque nunca fica negativo.
-- Entrada soma ao saldo existente.
-- Saída subtrai do saldo existente.
-- Estoque baixo ocorre quando `quantidadeAtual <= quantidadeMinima`.
-- Pedido utiliza somente o estoque da Unidade do laboratório.
-- Todo pedido nasce como `PENDENTE`.
-- Pedido deve possuir pelo menos um item.
-- Quantidade aprovada não pode superar a solicitada.
-- Aprovação reduz o estoque da Unidade.
-- Cancelamento de pedido aprovado devolve o estoque.
-- Entrega cria histórico para o laboratório.
-- Produto perecível exige informações de validade conforme as regras do domínio.
-- Produto de risco alto exige descrição adequada do risco.
-- Exclusões que quebrariam integridade referencial devem ser bloqueadas.
-
----
-
-## 🚀 Tecnologias
-
-| Camada | Tecnologia |
-|---|---|
-| Backend | Java 17+, Spring Boot, Spring Data JPA |
-| Banco atual de desenvolvimento | H2 |
-| Banco definitivo planejado | PostgreSQL 14+ |
-| API | REST |
-| Segurança planejada | Spring Security + JWT |
-| Frontend planejado | Vue.js 3 |
-| Utilitários | Lombok e Bean Validation |
-
----
-
-## 📁 Estrutura principal
+## Estrutura do repositório
 
 ```text
 Sistema-SGL/
 ├── backend/sgl-backend/
 │   ├── src/main/java/com/sgl/
-│   │   ├── controller/
-│   │   ├── service/
-│   │   ├── repository/
-│   │   ├── model/
-│   │   ├── dto/
 │   │   ├── config/
-│   │   └── exception/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   ├── exception/
+│   │   ├── model/
+│   │   ├── repository/
+│   │   └── service/
 │   └── pom.xml
 ├── docs/
-│   ├── codigos-referencia-pedidos.md
-│   └── diagramas/
+│   ├── FLUXO_DO_SISTEMA.md
+│   ├── GUIA_ESTRUTURAL.md
+│   ├── diagrama-uml-completo.puml
+│   ├── componentes.puml
+│   └── sequencia-pedido.puml
 ├── CONTINUIDADE.md
 └── README.md
 ```
 
----
-
-## 🔧 Execução do backend
+## Executar o backend
 
 ```bash
 cd backend/sgl-backend
@@ -321,43 +144,27 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-A aplicação é executada, por padrão, em:
+A API é iniciada, por padrão, em `http://localhost:8080`.
 
-```text
-http://localhost:8080
-```
+## Próximas etapas
 
----
+- padronizar exceções e respostas HTTP;
+- criar testes automatizados dos fluxos críticos;
+- registrar movimentação na devolução causada por cancelamento;
+- implementar autenticação e autorização com Spring Security e JWT;
+- preparar migrations e migrar para PostgreSQL;
+- documentar os endpoints com OpenAPI;
+- iniciar o frontend Vue.js.
 
-## 🗺️ Roadmap
+## Documentação
 
-- [x] CRUDs básicos.
-- [x] Fluxo de pedidos.
-- [x] Histórico de entregas por laboratório.
-- [x] Definir oficialmente o estoque central por Unidade.
-- [ ] Migrar o código de EstoqueCentral para `Unidade + Produto`.
-- [ ] Consolidar regras de negócio.
-- [ ] Padronizar exceções e respostas HTTP.
-- [ ] Executar testes completos de sucesso e falha.
-- [ ] Implementar autenticação e autorização.
-- [ ] Migrar definitivamente para PostgreSQL.
-- [ ] Validar o backend ponta a ponta.
-- [ ] Iniciar o frontend Vue.js.
-- [ ] Adicionar Swagger/OpenAPI.
-- [ ] Implementar documentos, relatórios, exportações e notificações.
+- [`CONTINUIDADE.md`](CONTINUIDADE.md): estado técnico e ordem de continuidade.
+- [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo ponta a ponta.
+- [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): responsabilidades das classes e camadas.
+- [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml): modelo de domínio.
+- [`docs/componentes.puml`](docs/componentes.puml): componentes da aplicação.
+- [`docs/sequencia-pedido.puml`](docs/sequencia-pedido.puml): sequência do pedido.
 
----
-
-## 📚 Documentação complementar
-
-- [`CONTINUIDADE.md`](CONTINUIDADE.md) — decisões, estado atual e próximos passos.
-- [`docs/codigos-referencia-pedidos.md`](docs/codigos-referencia-pedidos.md) — referência do fluxo de pedidos.
-- `docs/diagramas/` — diagramas do sistema.
-
-## 📝 Licença
-
-A definir.
-
-## 👤 Responsável
+## Responsável
 
 Gabriel Salermo

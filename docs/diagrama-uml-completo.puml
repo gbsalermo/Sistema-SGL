@@ -1,7 +1,8 @@
 @startuml
-title SGL — Diagrama UML Completo
+title SGL — Modelo de Domínio Atual
 skinparam classAttributeIconSize 0
-\n' Entities
+hide methods
+
 class Unidade {
   +Long id
   +String nome
@@ -24,17 +25,21 @@ class Usuario {
   +Boolean ativo
 }
 
+class Estagiario
+
 class Projeto {
   +Long id
   +String nome
   +String descricao
+  +LocalDate dataInicio
+  +LocalDate dataFim
+  +String responsavel
   +Boolean ativo
 }
 
 class Produto {
   +Long id
   +String nome
-  +String descricao
   +String codigoReferencia
   +UnidadeMedida unidadeMedida
   +String localizacaoFisica
@@ -44,7 +49,6 @@ class Produto {
   +Boolean perecivel
   +TipoPerecivel tipoPerecivel
   +LocalDate dataValidade
-  +String condicoesArmazenamento
   +String unidadeArmazenamento
   +Boolean ativo
 }
@@ -54,6 +58,17 @@ class EstoqueCentral {
   +Integer quantidadeAtual
   +Integer quantidadeMinima
   +Boolean ativo
+}
+
+class MovimentacaoEstoque {
+  +Long id
+  +TipoMovimentacao tipoMovimentacao
+  +OrigemMovimentacao origem
+  +Integer quantidadeMovimentada
+  +Integer quantidadeAnterior
+  +Integer quantidadeAtual
+  +LocalDateTime dataMovimentacao
+  +String observacao
 }
 
 class Pedido {
@@ -77,98 +92,52 @@ class HistoricoLaboratorio {
   +Boolean ativo
 }
 
-class Lote {
-}
+enum Perfil
+enum StatusPedido
+enum UnidadeMedida
+enum TipoPerecivel
+enum TipoRisco
+enum NivelRisco
+enum TipoMovimentacao
+enum OrigemMovimentacao
 
-' DTOs (simplified)
-class UsuarioDTO
-class UnidadeDTO
-class LaboratorioDTO
-class ProdutoDTO
-class EstoqueCentralDTO
-class PedidoDTO
-class ItemPedidoDTO
-class HistoricoLaboratorioDTO
-class ProjetoDTO
+Usuario <|-- Estagiario
+Unidade "1" -- "0..*" Laboratorio
+Unidade "1" -- "0..*" Usuario
+Unidade "1" -- "0..*" EstoqueCentral
+Laboratorio "1" -- "0..*" Usuario
+Laboratorio "1" -- "0..*" Projeto
+Laboratorio "1" -- "0..*" Pedido
+Laboratorio "1" -- "0..*" HistoricoLaboratorio
+Laboratorio "0..1" -- "0..*" MovimentacaoEstoque
 
-' Enums
-enum Perfil {
-  ADMINISTRADOR
-  GESTOR
-  TECNICO
-  PESQUISADOR
-  ESTAGIARIO
-}
+Produto "1" -- "0..*" EstoqueCentral
+Produto "1" -- "0..*" ItemPedido
+Produto "1" -- "0..*" HistoricoLaboratorio
+Produto "1" -- "0..*" MovimentacaoEstoque
 
-enum StatusPedido {
-  PENDENTE
-  APROVADO
-  REJEITADO
-  ENTREGUE
-  CANCELADO
-}
+Pedido "1" *-- "1..*" ItemPedido
+Pedido "0..1" -- "0..*" MovimentacaoEstoque
+Pedido "1" -- "0..*" HistoricoLaboratorio
+Usuario "1" -- "0..*" Pedido : solicitante
+Usuario "1" -- "0..*" MovimentacaoEstoque : responsável
+Projeto "0..1" -- "0..*" Pedido
+EstoqueCentral "1" -- "0..*" MovimentacaoEstoque
 
-enum UnidadeMedida {
-  ML
-  L
-  MG
-  G
-  KG
-  UNIDADE
-  CAIXA
-  FRASCO
-  AMPOLA
-  PAR
-  METRO
-  OUTRO
-}
-
-enum TipoPerecivel { NENHUM QUIMICO MICROBIANO VEGETAL ANIMAL }
-
-enum TipoRisco { NENHUM INFLAMAVEL RADIOATIVO TOXICO CORROSIVO BIOLOGICO }
-
-enum NivelRisco { NENHUM BAIXO MEDIO ALTO }
-
-' Relationships
-Unidade "1" -- "0..*" Laboratorio : "laboratorios"
-Laboratorio "*" --> "1" Unidade : "unidade"
-
-Usuario "*" --> "0..1" Unidade : "unidade"
-Usuario "*" --> "0..1" Laboratorio : "laboratorio"
-
-EstoqueCentral "1" o-- "1" Produto : "produto"
-
-Pedido "1" o-- "*" ItemPedido : "itens"
-ItemPedido "*" --> "1" Produto : "produto"
-ItemPedido "*" --> "1" Pedido : "pedido"
-
-Pedido "*" --> "1" Usuario : "usuario"
-Pedido "*" --> "1" Laboratorio : "laboratorio"
-Pedido "*" --> "0..1" Projeto : "projeto"
-
-HistoricoLaboratorio "*" --> "1" Laboratorio : "laboratorio"
-HistoricoLaboratorio "*" --> "1" Produto : "produto"
-HistoricoLaboratorio "*" --> "1" Pedido : "pedido"
-
-' DTO relations (mapping)
-UsuarioDTO ..> Usuario
-UnidadeDTO ..> Unidade
-LaboratorioDTO ..> Laboratorio
-ProdutoDTO ..> Produto
-EstoqueCentralDTO ..> EstoqueCentral
-PedidoDTO ..> Pedido
-ItemPedidoDTO ..> ItemPedido
-HistoricoLaboratorioDTO ..> HistoricoLaboratorio
-ProjetoDTO ..> Projeto
-
-note top of Pedido
-  Pedido contém itens (ItemPedido). Fluxo: PENDENTE → APROVADO/REJEITADO → ENTREGUE/CANCELADO
+note right of EstoqueCentral
+  Saldo de um Produto em uma Unidade.
+  UNIQUE(unidade_id, produto_id)
 end note
 
-note top of EstoqueCentral
-  EstoqueCentral é o único ponto de entrada/saída real por Produto (1:1)
+note right of MovimentacaoEstoque
+  Auditoria da alteração de saldo:
+  quantidade anterior, movimentada e atual.
 end note
 
-' Diagram footer
-footer Generated: Sistema-SGL — diagrama-uml-completo.puml
+note bottom of Pedido
+  PENDENTE -> APROVADO -> ENTREGUE
+  PENDENTE -> REJEITADO
+  APROVADO -> CANCELADO
+end note
+
 @enduml
