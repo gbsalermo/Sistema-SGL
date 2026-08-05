@@ -181,6 +181,12 @@ public class EstoqueCentralService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Usuário não encontrado com id: " + dto.getUsuarioId()
                 ));
+        Usuario usuarioAprovador = usuarioRepository
+                .findById(dto.getU)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Usuário aprovador não encontrado com id: "
+                                + dto.getUsuarioAprovadorId()
+                ));
 
         int quantidadeAnterior = estoque.getQuantidadeAtual();
         int quantidadeAtual =

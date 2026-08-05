@@ -21,6 +21,9 @@ public class AprovarPedidoDTO {
 	
 	private Boolean autorizarProdutoVencido;
 	
+	@NotNull(message = "Id do usuário que aprovou é obrigatório")
+	private Long usuarioAprovadorId;
+	
 	
 	@Getter
 	@Setter
