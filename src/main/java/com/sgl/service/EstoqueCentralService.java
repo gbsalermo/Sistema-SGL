@@ -212,7 +212,7 @@ public class EstoqueCentralService {
                 .usuario(usuario)
                 .tipoMovimentacao(TipoMovimentacao.DESCARTE_VENCIMENTO)
                 .origem(OrigemMovimentacao.DESCARTE)
-                .quantidadeMovimentada(dto.getQuantidade())
+                .quantidadeMovimentada(dto.g)
                 .quantidadeAnterior(quantidadeAnterior)
                 .quantidadeAtual(quantidadeAtual)
                 .dataMovimentacao(LocalDateTime.now())
