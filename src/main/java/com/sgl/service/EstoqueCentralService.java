@@ -181,21 +181,24 @@ public class EstoqueCentralService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Usuário não encontrado com id: " + dto.getUsuarioId()
                 ));
-        Usuario usuarioAprovador = usuarioRepository
-                .findById(dto.getU)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Usuário aprovador não encontrado com id: "
-                                + dto.getUsuarioAprovadorId()
-                ));
+        
+        if (!Boolean.TRUE.equals(usuario.getAtivo())) {
+            throw new IllegalArgumentException(
+                    "O usuário responsável pela movimentação está inativo."
+            );
+        }
 
         int quantidadeAnterior = estoque.getQuantidadeAtual();
         int quantidadeAtual =
                 quantidadeAnterior - dto.getQuantidadeMovimentada();
+        int quantidadeMovimentada = dto.getQuantidadeMovimentada();
 
-        if (quantidadeAtual < 0) {
+        if (quantidadeAnterior < quantidadeMovimentada) {
             throw new IllegalArgumentException(
                     "Estoque insuficiente. Disponível: "
                             + quantidadeAnterior
+                            + ", solicitado: "
+                            + quantidadeMovimentada
             );
         }
 
