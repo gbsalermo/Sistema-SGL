@@ -26,4 +26,9 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long>{
 	LocalDate dataAtual, @Param("dataLimite") LocalDate dataLimite);
 
 	boolean existsByCodigoReferencia(String codigoReferencia);
+	
+	boolean existsByCodigoReferenciaAndIdNot(
+	        String codigoReferencia,
+	        Long id
+	);
 }
