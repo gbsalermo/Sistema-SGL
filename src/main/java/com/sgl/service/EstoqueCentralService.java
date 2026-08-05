@@ -150,6 +150,7 @@ public class EstoqueCentralService {
                         .usuario(usuario)
                         .estoqueCentral(estoque)
                         .tipoMovimentacao(TipoMovimentacao.ENTRADA)
+                        .origem(dto.getOrigem())
                         .quantidadeMovimentada(
                                 dto.getQuantidadeMovimentada()
                         )
@@ -201,6 +202,7 @@ public class EstoqueCentralService {
                         .usuario(usuario)
                         .estoqueCentral(estoque)
                         .tipoMovimentacao(TipoMovimentacao.SAIDA)
+                        .origem(dto.getOrigem())
                         .quantidadeMovimentada(
                                 dto.getQuantidadeMovimentada()
                         )

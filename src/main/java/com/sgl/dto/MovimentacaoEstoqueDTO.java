@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.MovimentacaoEstoque;
+import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
 
 import jakarta.validation.constraints.NotNull;
@@ -46,6 +47,9 @@ public class MovimentacaoEstoqueDTO {
 	@NotNull(message = "Tipo da movimentação é obrigatório")
 	private TipoMovimentacao tipoMovimentacao;
 	
+	@NotNull(message = "Origem é obrigatório")
+	private OrigemMovimentacao origem;
+	
 	
 	@NotNull(message = "Quantidade movimentada é obrigatória")
 	private Integer quantidadeMovimentada;
@@ -82,5 +86,6 @@ public class MovimentacaoEstoqueDTO {
 		this.quantidadeAtual = entity.getQuantidadeAtual();
 		this.dataMovimentacao = entity.getDataMovimentacao();
 		this.observacao = entity.getObservacao();
+		this.origem = entity.getOrigem();
 	}
 }
