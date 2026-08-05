@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.ProjetoDTO;
 import com.sgl.model.Laboratorio;
-import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -26,7 +25,7 @@ public class ProjetoService {
 	@Transactional
 	public ProjetoDTO criar(ProjetoDTO dto) {
 		Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
-				.orElseThrow(() -> new EntityNotFoundException("Laboratorio não encontrado com id: "
+				.orElseThrow(() -> new EntityNotFoundException("Laboratório não encontrado com id: "
 						+ dto.getLaboratorioId()));
 		
 		Projeto projeto = Projeto.builder()
@@ -47,10 +46,10 @@ public class ProjetoService {
 	}
 	
 	@Transactional(readOnly = true)
-	public ProjetoDTO buscarPorId( long id) {
+	public ProjetoDTO buscarPorId(Long id) {
 		return projetoRepository.findById(id)
 				.map(ProjetoDTO::new)
-				.orElseThrow(() -> new EntityNotFoundException("Projeto não encontrado com id " + id));
+				.orElseThrow(() -> new EntityNotFoundException("Projeto não encontrado com o id: " + id));
 	}
 	
 	@Transactional(readOnly = true)
@@ -83,7 +82,7 @@ public class ProjetoService {
 		Projeto projeto = projetoRepository.findById(id)
                 .orElseThrow(() ->
                         new EntityNotFoundException(
-                                "Produto não encontrado com o id: " + id));
+                                "Projeto não encontrado com o id: " + id));
 
 		projeto.setAtivo(false);
 	}
@@ -111,11 +110,11 @@ public class ProjetoService {
 
 	private void validarDatas(LocalDate dataInicio, LocalDate dataFim) {
 		if (dataInicio == null && dataFim != null) {
-			throw new IllegalArgumentException("dataInicio é obrigatória quando dataFim for informada.");
+			throw new IllegalArgumentException("A data de início é obrigatória quando a data de fim for informada.");
 		}
 
 		if (dataInicio != null && dataFim != null && dataInicio.isAfter(dataFim)) {
-			throw new IllegalArgumentException("dataInicio não pode ser maior que dataFim.");
+			throw new IllegalArgumentException("A data de início não pode ser posterior à data de fim.");
 		}
 	}
 }

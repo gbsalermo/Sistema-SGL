@@ -106,7 +106,13 @@ public class UsuarioService {
 		usuario.setEmail(dto.getEmail());
 		usuario.setPerfil(dto.getPerfil());
 		usuario.setAtivo(dto.getAtivo());
-		usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
+		if (dto.getSenha() != null
+		        && !dto.getSenha().isBlank()) {
+
+		    usuario.setSenha(
+		            passwordEncoder.encode(dto.getSenha())
+		    );
+		}
 		
 		
 		if(dto.getLaboratorioId() != null) {
@@ -124,13 +130,20 @@ public class UsuarioService {
 	
 	//Deletar
 	@Transactional
-	public void deletar(Long id) {
-		Usuario usuario = usuarioRepository.findById(id)
-		        .orElseThrow(() ->
-		            new EntityNotFoundException(
-		                "Usuário não encontrado"));
+	public void Inativar(Long id) {
 
-		usuarioRepository.delete(usuario);
-		}
+	    Usuario usuario = usuarioRepository.findById(id)
+	            .orElseThrow(() -> new EntityNotFoundException(
+	                    "Usuário não encontrado com id: " + id
+	            ));
+
+	    if (!Boolean.TRUE.equals(usuario.getAtivo())) {
+	        throw new IllegalArgumentException(
+	                "O usuário já está inativo."
+	        );
+	    }
+
+	    usuario.setAtivo(false);
+	}
 
 }
