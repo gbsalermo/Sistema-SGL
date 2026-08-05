@@ -33,6 +33,8 @@ Este arquivo registra o estado real do backend, as decisões já consolidadas e 
 - Revisar concorrência de estoque e bloqueio de atualizações simultâneas.
 - Implementar autenticação e autorização com JWT.
 - Preparar migrations e PostgreSQL definitivo.
+- Implementar consultas e endpoints de relatórios após a migração para PostgreSQL.
+- Adicionar exportação de relatórios em PDF e Excel.
 - Criar documentação OpenAPI.
 - Iniciar o frontend.
 
@@ -98,6 +100,21 @@ PENDENTE
 - Produto não perecível limpa data de validade e tipo de perecível.
 - Produto perecível exige data de validade e tipo de perecível.
 
+### Relatórios
+
+A etapa de relatórios será iniciada após a migração definitiva para PostgreSQL, quando o modelo de dados e as consultas estiverem estabilizados.
+
+A primeira versão deve disponibilizar endpoints JSON para:
+
+- estoque baixo por Unidade;
+- movimentações por período, produto, usuário e origem;
+- pedidos por status, laboratório e período;
+- produtos vencidos ou próximos do vencimento;
+- materiais entregues por Laboratório;
+- consumo de produtos por Unidade ou Laboratório.
+
+Depois da validação das consultas, o backend poderá oferecer exportação em PDF e Excel. O frontend será responsável por selecionar filtros, exibir os resultados e iniciar os downloads.
+
 ## Fluxo técnico
 
 ```text
@@ -121,8 +138,10 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 5. Revisar concorrência de saldo.
 6. Implementar Spring Security e JWT.
 7. Migrar para PostgreSQL com migrations.
-8. Adicionar OpenAPI.
-9. Iniciar frontend.
+8. Implementar consultas e endpoints JSON de relatórios.
+9. Implementar exportação de relatórios em PDF e Excel.
+10. Adicionar OpenAPI.
+11. Iniciar frontend e integrar visualização e download dos relatórios.
 
 ## Cenários prioritários de teste
 
@@ -158,3 +177,4 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 | 05/08/2026 | BCrypt mantido para proteger senhas |
 | 05/08/2026 | Usuário passou a ser inativado em vez de excluído |
 | 05/08/2026 | Documentação estrutural e UML revisados |
+| 05/08/2026 | Relatórios planejados para depois da migração ao PostgreSQL |
