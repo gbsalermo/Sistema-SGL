@@ -26,16 +26,6 @@ public class MovimentacaoEstoqueController {
 
     private final MovimentacaoEstoqueService movimentacaoService;
 
-    @PostMapping
-    public ResponseEntity<MovimentacaoEstoqueDTO> criar(
-            @Valid @RequestBody MovimentacaoEstoqueDTO dto) {
-
-        MovimentacaoEstoqueDTO criada = movimentacaoService.criar(dto);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(criada);
-    }
 
     @GetMapping
     public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarTodos() {
