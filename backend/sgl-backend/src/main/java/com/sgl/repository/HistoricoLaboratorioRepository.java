@@ -2,7 +2,7 @@ package com.sgl.repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,8 +18,6 @@ public interface HistoricoLaboratorioRepository extends JpaRepository<HistoricoL
 	List<HistoricoLaboratorio> findByLaboratorioId(Long laboratorioId);
 	
 	List<HistoricoLaboratorio> findByProdutoId(Long produtoId);
-	
-	Optional<HistoricoLaboratorio> findByLaboratorioIdAndProdutoId(Long laboratorioId, Long produtoId);
 	
 	List<HistoricoLaboratorio> findByPedidoId(Long pedidoId);
 	
