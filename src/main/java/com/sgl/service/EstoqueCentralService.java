@@ -121,45 +121,98 @@ public class EstoqueCentralService {
     }
 
     @Transactional
-    public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
-        if (dto.getQuantidadeMovimentada() <= 0) {
-            throw new IllegalArgumentException(
-                    "A quantidade deve ser maior que zero.");
-        }
+    public EstoqueCentralDTO entrada(
+            Long id,
+            MovimentacaoEstoqueDTO dto) {
+
+        validarQuantidade(dto.getQuantidadeMovimentada());
 
         EstoqueCentral estoque = estoqueCentralRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque central não encontrado com id: " + id));
+                        "Estoque central não encontrado com id: " + id
+                ));
 
-        estoque.setQuantidadeAtual(
-                estoque.getQuantidadeAtual() + dto.getQuantidadeMovimentada());
-        return new EstoqueCentralDTO(estoqueCentralRepository.save(estoque));
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Usuário não encontrado com id: " + dto.getUsuarioId()
+                ));
+
+        int quantidadeAnterior = estoque.getQuantidadeAtual();
+        int quantidadeAtual =
+                quantidadeAnterior + dto.getQuantidadeMovimentada();
+
+        estoque.setQuantidadeAtual(quantidadeAtual);
+        estoqueCentralRepository.save(estoque);
+
+        MovimentacaoEstoque movimentacao =
+                MovimentacaoEstoque.builder()
+                        .produto(estoque.getProduto())
+                        .usuario(usuario)
+                        .estoqueCentral(estoque)
+                        .tipoMovimentacao(TipoMovimentacao.ENTRADA)
+                        .quantidadeMovimentada(
+                                dto.getQuantidadeMovimentada()
+                        )
+                        .quantidadeAnterior(quantidadeAnterior)
+                        .quantidadeAtual(quantidadeAtual)
+                        .dataMovimentacao(LocalDateTime.now())
+                        .observacao(dto.getObservacao())
+                        .build();
+
+        movimentacaoEstoqueRepository.save(movimentacao);
+
+        return new EstoqueCentralDTO(estoque);
     }
 
     @Transactional
-    public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
-        if (dto.getQuantidadeMovimentada() <= 0) {
-            throw new IllegalArgumentException(
-                    "A quantidade deve ser maior que zero.");
-        }
+    public EstoqueCentralDTO saida(
+            Long id,
+            MovimentacaoEstoqueDTO dto) {
+
+        validarQuantidade(dto.getQuantidadeMovimentada());
 
         EstoqueCentral estoque = estoqueCentralRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque central não encontrado com id: " + id));
+                        "Estoque central não encontrado com id: " + id
+                ));
 
-        int novaQuantidade = estoque.getQuantidadeAtual()
-                - dto.getQuantidadeMovimentada();
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Usuário não encontrado com id: " + dto.getUsuarioId()
+                ));
 
-        if (novaQuantidade < 0) {
+        int quantidadeAnterior = estoque.getQuantidadeAtual();
+        int quantidadeAtual =
+                quantidadeAnterior - dto.getQuantidadeMovimentada();
+
+        if (quantidadeAtual < 0) {
             throw new IllegalArgumentException(
                     "Estoque insuficiente. Disponível: "
-                            + estoque.getQuantidadeAtual()
-                            + ", solicitado: "
-                            + dto.getQuantidadeMovimentada());
+                            + quantidadeAnterior
+            );
         }
 
-        estoque.setQuantidadeAtual(novaQuantidade);
-        return new EstoqueCentralDTO(estoqueCentralRepository.save(estoque));
+        estoque.setQuantidadeAtual(quantidadeAtual);
+        estoqueCentralRepository.save(estoque);
+
+        MovimentacaoEstoque movimentacao =
+                MovimentacaoEstoque.builder()
+                        .produto(estoque.getProduto())
+                        .usuario(usuario)
+                        .estoqueCentral(estoque)
+                        .tipoMovimentacao(TipoMovimentacao.SAIDA)
+                        .quantidadeMovimentada(
+                                dto.getQuantidadeMovimentada()
+                        )
+                        .quantidadeAnterior(quantidadeAnterior)
+                        .quantidadeAtual(quantidadeAtual)
+                        .dataMovimentacao(LocalDateTime.now())
+                        .observacao(dto.getObservacao())
+                        .build();
+
+        movimentacaoEstoqueRepository.save(movimentacao);
+
+        return new EstoqueCentralDTO(estoque);
     }
 
     @Transactional
@@ -212,7 +265,7 @@ public class EstoqueCentralService {
                 .usuario(usuario)
                 .tipoMovimentacao(TipoMovimentacao.DESCARTE_VENCIMENTO)
                 .origem(OrigemMovimentacao.DESCARTE)
-                .quantidadeMovimentada(dto.g)
+                .quantidadeMovimentada(dto.getQuantidade())
                 .quantidadeAnterior(quantidadeAnterior)
                 .quantidadeAtual(quantidadeAtual)
                 .dataMovimentacao(LocalDateTime.now())
@@ -222,5 +275,13 @@ public class EstoqueCentralService {
 
         movimentacaoEstoqueRepository.save(movimentacao);
         return new EstoqueCentralDTO(estoque);
+    }
+    
+    private void validarQuantidade(Integer quantidade) {
+        if (quantidade == null || quantidade <= 0) {
+            throw new IllegalArgumentException(
+                    "A quantidade deve ser maior que zero."
+            );
+        }
     }
 }
