@@ -247,42 +247,20 @@ public class PedidoService {
             if (item.getQuantidadeAprovada() != null
                     && item.getQuantidadeAprovada() > 0) {
 
-                HistoricoLaboratorio estoqueLab = historicoLaboratorioRepository
-                        .findByLaboratorioIdAndProdutoId(
-                                pedido.getLaboratorio().getId(),
-                                item.getProduto().getId())
-                        .orElse(null);
+      
 
-                if (estoqueLab == null) {
-                    estoqueLab = HistoricoLaboratorio.builder()
-                            .laboratorio(pedido.getLaboratorio())
-                            .produto(item.getProduto())
-                            .quantidade(item.getQuantidadeAprovada())
-                            .dataRecebimento(LocalDate.now())
-                            .pedido(pedido)
-                            .ativo(true)
-                            .build();
-                } else {
-                    estoqueLab.setQuantidade(
-                            estoqueLab.getQuantidade() + item.getQuantidadeAprovada());
-                    estoqueLab.setDataRecebimento(LocalDate.now());
-                    estoqueLab.setPedido(pedido);
-                    estoqueLab.setAtivo(true);
-                }
+            	        HistoricoLaboratorio historico =
+            	                HistoricoLaboratorio.builder()
+            	                        .laboratorio(pedido.getLaboratorio())
+            	                        .produto(item.getProduto())
+            	                        .quantidade(item.getQuantidadeAprovada())
+            	                        .dataRecebimento(LocalDate.now())
+            	                        .pedido(pedido)
+            	                        .ativo(true)
+            	                        .build();
 
-                historicoLaboratorioRepository.save(estoqueLab);
-
-                HistoricoLaboratorio historico = HistoricoLaboratorio.builder()
-                        .laboratorio(pedido.getLaboratorio())
-                        .produto(item.getProduto())
-                        .quantidade(item.getQuantidadeAprovada())
-                        .dataRecebimento(LocalDate.now())
-                        .pedido(pedido)
-                        .ativo(true)
-                        .build();
-
-                historicoLaboratorioRepository.save(historico);
-            }
+            	        historicoLaboratorioRepository.save(historico);
+            	    }	
         }
 
         pedido.setStatus(StatusPedido.ENTREGUE);
