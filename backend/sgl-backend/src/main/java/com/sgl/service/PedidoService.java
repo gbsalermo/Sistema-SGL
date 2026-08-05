@@ -296,6 +296,11 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
 
+        if (pedido.getStatus() == StatusPedido.REJEITADO) {
+            throw new IllegalArgumentException(
+                    "Pedidos REJEITADOS já estão encerrados e não podem ser cancelados."
+            );
+        }
         if (pedido.getStatus() == StatusPedido.ENTREGUE) {
             throw new IllegalArgumentException("Pedidos ENTREGUES não podem ser cancelados");
         }
