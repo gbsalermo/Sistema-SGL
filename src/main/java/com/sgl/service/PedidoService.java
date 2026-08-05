@@ -29,6 +29,10 @@ import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.model.MovimentacaoEstoque;
+import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.repository.MovimentacaoEstoqueRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -44,13 +48,15 @@ public class PedidoService {
     private final LaboratorioRepository laboratorioRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProjetoRepository projetoRepository;
+    private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 
     @Transactional
     public PedidoDTO criar(PedidoDTO dto) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Usuário não encontrado com id: " + dto.getUsuarioId()));
-
+        
+        
         Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Laboratório não encontrado com id: " + dto.getLaboratorioId()));
@@ -145,6 +151,21 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO aprovar(Long id, AprovarPedidoDTO dto) {
+    	
+    	Long aprovadorId = dto.getUsuarioAprovadorId();
+
+    	if (aprovadorId == null) {
+    	    throw new IllegalArgumentException(
+    	            "O usuário aprovador é obrigatório."
+    	    );
+    	}
+
+    	
+        Usuario usuarioAprovador = usuarioRepository.findById(aprovadorId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Usuário aprovador não encontrado com id: " + aprovadorId
+                ));
+
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
 
@@ -171,12 +192,18 @@ public class PedidoService {
                                 + "' está vencido. Confirme a autorização para continuar.");
             }
 
-            if (itemAprovacao.getQuantidadeAprovada() > item.getQuantidadeSolicitada()
-                    || itemAprovacao.getQuantidadeAprovada() <= 0) {
+            Integer quantidadeAprovada = itemAprovacao.getQuantidadeAprovada();
+
+            if (quantidadeAprovada == null
+                    || quantidadeAprovada <= 0
+                    || quantidadeAprovada > item.getQuantidadeSolicitada()) {
+
                 throw new IllegalArgumentException(
-                        "Quantidade aprovada não pode ser maior que a solicitada ou menor/igual a zero. "
+                        "Quantidade aprovada deve ser maior que zero "
+                                + "e não pode ser maior que a solicitada. "
                                 + "Solicitada: " + item.getQuantidadeSolicitada()
-                                + ", Aprovada: " + itemAprovacao.getQuantidadeAprovada());
+                                + ", aprovada: " + quantidadeAprovada
+                );
             }
 
             Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
@@ -193,11 +220,30 @@ public class PedidoService {
                                 + ", solicitado: " + itemAprovacao.getQuantidadeAprovada());
             }
 
-            estoque.setQuantidadeAtual(
-                    estoque.getQuantidadeAtual() - itemAprovacao.getQuantidadeAprovada());
+            int quantidadeAnterior = estoque.getQuantidadeAtual();
+            int quantidadeAtual = quantidadeAnterior - quantidadeAprovada;
+
+            estoque.setQuantidadeAtual(quantidadeAtual);
             estoqueCentralRepository.save(estoque);
-            item.setQuantidadeAprovada(itemAprovacao.getQuantidadeAprovada());
-        }
+
+            item.setQuantidadeAprovada(quantidadeAprovada);
+
+            MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
+                    .produto(produto)
+                    .laboratorio(pedido.getLaboratorio())
+                    .usuario(usuarioAprovador)
+                    .pedido(pedido)
+                    .tipoMovimentacao(TipoMovimentacao.SAIDA)
+                    .origem(OrigemMovimentacao.PEDIDO)
+                    .quantidadeMovimentada(quantidadeAprovada)
+                    .quantidadeAnterior(quantidadeAnterior)
+                    .quantidadeAtual(quantidadeAtual)
+                    .dataMovimentacao(LocalDateTime.now())
+                    .observacao(dto.getObservacao())
+                    .estoqueCentral(estoque)
+                    .build();
+
+            movimentacaoEstoqueRepository.save(movimentacao); }
 
         pedido.setStatus(StatusPedido.APROVADO);
         pedido.setObservacao(dto.getObservacao());
