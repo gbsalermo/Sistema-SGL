@@ -22,6 +22,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Catálogo global dos materiais controlados pelo SGL.
+ *
+ * <p>Esta entidade descreve o produto, mas não armazena saldo. As quantidades
+ * disponíveis são mantidas em {@link EstoqueCentral}, separadas por Unidade.</p>
+ */
 @Entity
 @Table(name = "produtos")
 @Getter
@@ -30,56 +36,63 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Produto implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@Column(nullable = false)
-	private String nome;
-	
-	private String descricao;
-	
-	@Column(unique = true)
-	private String codigoReferencia;
-	
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private UnidadeMedida unidadeMedida;
-	
-	private String localizacaoFisica;
-	
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private NivelRisco risco = NivelRisco.NENHUM;
-	
-	@Enumerated(EnumType.STRING)
-	private TipoRisco tipoRisco;
-	
-	private String descricaoRisco;
-	
-	@Column(nullable = false)
-	private Boolean perecivel = false;
-	
-	//Validade do produto(unid)
-	private LocalDate dataValidade;
-	
-	
-	@Enumerated(EnumType.STRING)
-	private TipoPerecivel tipoPerecivel;
-	
-	private String condicoesArmazenamento;
 
-	// Ex: "frasco de 1L", "caixa com 100 unidades", "saco de 5kg"
-	// Contextualiza a quantidade: se quantidadeAtual=4 e unidadeArmazenamento="frasco de 1L", são 4 frascos
-	private String unidadeArmazenamento;
+    private static final long serialVersionUID = 1L;
 
-	@Column(nullable = false)
-	private Boolean ativo = true;
-	
-	
-	
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @Column(nullable = false)
+    private String nome;
+
+    private String descricao;
+
+    /** Código único usado para identificação interna ou referência externa. */
+    @Column(unique = true)
+    private String codigoReferencia;
+
+    /** Unidade utilizada para expressar as quantidades movimentadas. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UnidadeMedida unidadeMedida;
+
+    /** Local físico sugerido, como sala, armário ou prateleira. */
+    private String localizacaoFisica;
+
+    /** Severidade geral do risco associado ao produto. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NivelRisco risco = NivelRisco.NENHUM;
+
+    /** Natureza do risco quando o nível informado não é NENHUM. */
+    @Enumerated(EnumType.STRING)
+    private TipoRisco tipoRisco;
+
+    /** Orientação complementar de risco não representada pelos enums. */
+    private String descricaoRisco;
+
+    @Column(nullable = false)
+    private Boolean perecivel = false;
+
+    /**
+     * Validade atualmente associada ao cadastro do produto.
+     * Futuramente pode ser movida para uma entidade de lote.
+     */
+    private LocalDate dataValidade;
+
+    @Enumerated(EnumType.STRING)
+    private TipoPerecivel tipoPerecivel;
+
+    private String condicoesArmazenamento;
+
+    /**
+     * Apresentação física do item, por exemplo: frasco de 1 L, caixa com 100
+     * unidades ou saco de 5 kg. Contextualiza o valor armazenado no estoque.
+     */
+    private String unidadeArmazenamento;
+
+    /** Permite inativar o catálogo sem remover vínculos históricos. */
+    @Column(nullable = false)
+    private Boolean ativo = true;
 }
