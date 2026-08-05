@@ -167,6 +167,14 @@ public class PedidoService {
             throw new IllegalArgumentException(
                     "Apenas pedidos PENDENTES podem ser aprovados. Status atual: " + pedido.getStatus());
         }
+        if (produtoVencido
+                && !Boolean.TRUE.equals(dto.getAutorizarProdutoVencido())) {
+
+            throw new IllegalArgumentException(
+                    "O produto '" + produto.getNome()
+                    + "' está vencido. Confirme a autorização para continuar."
+            );
+        }
 
         for (AprovarPedidoDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
             ItemPedido item = pedido.getItens().stream()

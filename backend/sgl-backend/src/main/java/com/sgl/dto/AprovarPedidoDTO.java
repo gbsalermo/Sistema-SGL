@@ -19,6 +19,8 @@ public class AprovarPedidoDTO {
 	@NotNull(message = "Lista de itens aprovados é obrigatoria")
 	private List<ItemAprovacaoDTO> itens;
 	
+	private Boolean autorizarProdutoVencido;
+	
 	
 	@Getter
 	@Setter

@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -7,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.EstoqueCentralDTO;
 import com.sgl.dto.MovimentacaoEstoqueDTO;
+import com.sgl.dto.ProdutoDTO.DescarteProdutoDTO;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
@@ -174,6 +176,48 @@ public class EstoqueCentralService {
 	        throw new EntityNotFoundException("Estoque central não encontrado com id: " + id);
 	    }
 	    estoqueCentralRepository.deleteById(id);
+	}
+	
+	
+	//Metodo de descarte de Produtos Vencidos
+	@Transactional
+	public EstoqueCentralDTO descartarProdutoVencido(
+	        Long estoqueId,
+	        DescarteProdutoDTO dto) {
+
+	    EstoqueCentral estoque = estoqueCentralRepository.findById(estoqueId)
+	            .orElseThrow(() ->
+	                    new EntityNotFoundException("Estoque não encontrado"));
+
+	    Produto produto = estoque.getProduto();
+
+	    if (!Boolean.TRUE.equals(produto.getPerecivel())) {
+	        throw new IllegalArgumentException(
+	                "Somente produtos perecíveis podem ser descartados por validade."
+	        );
+	    }
+
+	    if (produto.getDataValidade() == null
+	            || !produto.getDataValidade().isBefore(LocalDate.now())) {
+
+	        throw new IllegalArgumentException(
+	                "O produto ainda não está vencido."
+	        );
+	    }
+
+	    if (dto.getQuantidade() > estoque.getQuantidadeAtual()) {
+	        throw new IllegalArgumentException(
+	                "Quantidade de descarte maior que o estoque disponível."
+	        );
+	    }
+
+	    estoque.setQuantidadeAtual(
+	            estoque.getQuantidadeAtual() - dto.getQuantidade()
+	    );
+
+	    estoqueCentralRepository.save(estoque);
+
+	    return new EstoqueCentralDTO(estoque);
 	}
 	}
 

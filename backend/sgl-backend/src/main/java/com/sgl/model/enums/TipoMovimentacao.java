@@ -8,6 +8,8 @@ public enum TipoMovimentacao {
 
 	    AJUSTE,
 
-	    DEVOLUCAO
+	    DEVOLUCAO,
+	    
+	    Descarte
 	
 }
