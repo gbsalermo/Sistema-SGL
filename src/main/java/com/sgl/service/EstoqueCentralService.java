@@ -16,7 +16,6 @@ import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
-import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
@@ -184,11 +183,6 @@ public class EstoqueCentralService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Usuário não encontrado com id: " + dto.getUsuarioId()));
-
-        if (usuario.getPerfil() != Perfil.ADMINISTRADOR) {
-            throw new IllegalArgumentException(
-                    "Apenas usuários ADMINISTRADORES podem descartar produtos vencidos.");
-        }
 
         Produto produto = estoque.getProduto();
 
