@@ -57,6 +57,16 @@ public class ProdutoDTO implements Serializable {
 
 	private Boolean ativo;
 	
+	public class DescarteProdutoDTO {
+
+	    @NotNull
+	    @Min(1)
+	    private Integer quantidade;
+
+	    @NotBlank
+	    private String justificativa;
+	}
+	
 	public ProdutoDTO(Produto entity) {
 		this.id = entity.getId();
 		this.nome = entity.getNome();
