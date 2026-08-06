@@ -2,7 +2,7 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 06/08/2026  
-**Fase atual:** preparação para integração com PostgreSQL
+**Fase atual:** revisão da modelagem de lote, validade e entrada de estoque
 
 Este arquivo registra o estado real do backend, as decisões consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
@@ -32,17 +32,65 @@ Este arquivo registra o estado real do backend, as decisões consolidadas e a or
 - Bloqueio pessimista implementado nas transições de status de pedido.
 - Testes unitários executados novamente após os bloqueios, sem regressões.
 
-### Próxima etapa
+### Próxima etapa imediata
 
-- Integrar o backend com PostgreSQL.
-- Preparar configuração de conexão por ambiente.
-- Adicionar migrations versionadas.
-- Criar dados de teste locais.
-- Validar entidades, constraints e relacionamentos no banco real.
-- Criar teste de integração concorrente para confirmar os bloqueios pessimistas.
+Antes da integração com PostgreSQL, será revisada a modelagem de lote e validade.
+
+A primeira análise obrigatória será o fluxo de entrada do estoque:
+
+- a entrada não deve mais registrar apenas uma quantidade diretamente em `EstoqueCentral`;
+- cada entrada deve criar ou alimentar um `Lote` vinculado ao produto e ao estoque da unidade;
+- o lote será responsável por número do lote, quantidade recebida, quantidade disponível, data de entrada e validade;
+- o saldo de `EstoqueCentral` continuará representando o total agregado do produto na unidade;
+- a criação ou atualização de um lote deverá alimentar diretamente esse saldo agregado dentro da mesma transação;
+- movimentação de estoque e lote devem permanecer consistentes entre si.
+
+### Decisão ainda não fechada
+
+Antes de implementar, deve ser decidido se `EstoqueCentral.quantidadeAtual` continuará persistido ou se será calculado pela soma das quantidades disponíveis dos lotes.
+
+Opções:
+
+1. **Saldo agregado persistido**
+   - `EstoqueCentral.quantidadeAtual` continua existindo;
+   - entradas, saídas, descartes e devoluções atualizam lote e estoque na mesma transação;
+   - consultas de saldo são simples e rápidas;
+   - exige cuidado para impedir divergência entre lote e estoque.
+
+2. **Saldo calculado pelos lotes**
+   - o saldo é obtido pela soma de `Lote.quantidadeDisponivel`;
+   - reduz duplicidade de informação;
+   - consultas e bloqueios ficam mais complexos;
+   - o estoque central passa a funcionar principalmente como agrupador `Unidade + Produto`.
+
+Nenhuma alteração estrutural será implementada antes dessa decisão.
+
+### PostgreSQL — etapa temporariamente adiada
+
+A integração com PostgreSQL continua sendo a etapa seguinte, mas somente será iniciada após estabilizar a modelagem de lote e validade, para evitar criar migrations sobre um modelo que será alterado imediatamente.
+
+Depois da revisão de lotes:
+
+- integrar o backend com PostgreSQL;
+- preparar configuração de conexão por ambiente;
+- adicionar migrations versionadas;
+- criar dados de teste locais;
+- validar entidades, constraints e relacionamentos no banco real;
+- criar testes de integração concorrentes.
 
 ### Pendente no planejamento sequencial
 
+- Modelar a entidade `Lote`.
+- Revisar o método de entrada de estoque.
+- Definir como entradas alimentam lote e saldo agregado.
+- Definir como saídas consomem lotes.
+- Definir prioridade de consumo, preferencialmente FEFO: primeiro lote a vencer, primeiro a sair.
+- Revisar descarte de produto vencido para operar por lote.
+- Revisar aprovação de pedido para baixar quantidades de um ou mais lotes.
+- Revisar cancelamento e devolução para restaurar a rastreabilidade por lote.
+- Adaptar movimentações para registrar o lote quando aplicável.
+- Atualizar testes unitários afetados.
+- Integrar PostgreSQL e Flyway.
 - Implementar autenticação local simulada usando usuários de teste do PostgreSQL.
 - Obter o usuário responsável pelo contexto autenticado local nas ações auditáveis.
 - Registrar movimentação `DEVOLUCAO` ao cancelar pedido aprovado.
@@ -65,17 +113,91 @@ Enquanto essa dependência não estiver disponível, desenvolvimento, testes e e
 
 ## Decisões oficiais
 
-### Produto e estoque
+### Produto, estoque e lote
 
-`Produto` é um catálogo global e não possui saldo.
+`Produto` é um catálogo global e não deve armazenar saldo nem validade de uma entrada específica.
 
-`EstoqueCentral` representa o saldo de um produto dentro de uma Unidade. Sua identidade lógica é:
+`EstoqueCentral` representa o agrupamento e o saldo total de um produto dentro de uma Unidade. Sua identidade lógica permanece:
 
 ```text
 Unidade + Produto
 ```
 
-A mesma Unidade não pode possuir dois registros de estoque para o mesmo Produto.
+`Lote` representará uma entrada rastreável desse produto no estoque.
+
+Modelo conceitual inicial:
+
+```text
+Produto
+  └── EstoqueCentral por Unidade
+        ├── Lote A — quantidade e validade próprias
+        ├── Lote B — quantidade e validade próprias
+        └── Lote C — quantidade e validade próprias
+```
+
+Campos candidatos de `Lote`:
+
+- `id`;
+- `numeroLote`;
+- `estoqueCentral`;
+- `produto`, caso seja necessário acesso direto;
+- `quantidadeInicial`;
+- `quantidadeDisponivel`;
+- `dataEntrada`;
+- `dataFabricacao`, quando aplicável;
+- `dataValidade`;
+- `fornecedor` ou referência de origem, se exigido;
+- `ativo`;
+- observação.
+
+A lista definitiva de campos dependerá da validação dos requisitos com o supervisor.
+
+### Entrada de estoque
+
+O método atual de entrada deverá ser revisado.
+
+Fluxo esperado:
+
+```text
+Receber dados da entrada
+  → validar produto e unidade
+  → localizar e bloquear EstoqueCentral
+  → criar o Lote
+  → aumentar o saldo agregado
+  → registrar MovimentacaoEstoque
+  → confirmar tudo na mesma transação
+```
+
+A entidade `Lote` será a origem rastreável da entrada e da validade. `EstoqueCentral` continuará representando a disponibilidade total do produto na unidade, caso seja mantido o saldo agregado persistido.
+
+Não deve existir entrada que aumente apenas `EstoqueCentral.quantidadeAtual` sem criar ou identificar o lote correspondente, exceto em uma eventual migração controlada de dados antigos.
+
+### Saída e consumo por lote
+
+A saída não poderá reduzir somente o saldo agregado. Ela também deverá reduzir a quantidade disponível de um ou mais lotes.
+
+A estratégia preferencial a validar é FEFO:
+
+```text
+First Expire, First Out
+Primeiro a vencer, primeiro a sair
+```
+
+Isso evita consumir um lote mais novo enquanto outro está próximo do vencimento.
+
+Uma única saída poderá consumir mais de um lote. Nesse caso, será necessário registrar quais lotes e quantidades participaram da movimentação, possivelmente por uma entidade intermediária entre movimentação e lote.
+
+### Validade e descarte
+
+A validade deve pertencer ao lote, não ao catálogo global de `Produto`.
+
+Consequências esperadas:
+
+- remover ou descontinuar `Produto.dataValidade` como informação operacional de estoque;
+- produto perecível apenas indica que seus lotes exigem validade;
+- descarte por vencimento deve selecionar um lote vencido;
+- relatórios de vencimento devem consultar lotes;
+- produtos iguais podem coexistir com datas de validade diferentes.
 
 ### Movimentação
 
@@ -87,7 +209,8 @@ Toda alteração relevante de saldo deve gerar `MovimentacaoEstoque`, contendo:
 - quantidade movimentada;
 - saldo anterior e saldo resultante;
 - data e observação;
-- pedido ou laboratório quando aplicável.
+- pedido ou laboratório quando aplicável;
+- lote ou detalhamento de lotes quando aplicável.
 
 ### Pedido
 
@@ -100,107 +223,28 @@ PENDENTE
 ```
 
 - A criação valida os vínculos, mas não reserva saldo.
-- A aprovação valida saldo, reduz o estoque e registra movimentação `SAIDA`.
+- A aprovação valida saldo e deverá consumir os lotes adequados.
+- A aprovação registra movimentação `SAIDA`.
 - A entrega cria `HistoricoLaboratorio` e não reduz o estoque novamente.
-- O cancelamento de pedido aprovado devolve o saldo.
+- O cancelamento de pedido aprovado deverá restaurar saldo e rastreabilidade dos lotes consumidos.
 - A movimentação `DEVOLUCAO` será adicionada após a autenticação local simulada fornecer o usuário responsável.
 - Pedido entregue não pode ser cancelado pelo fluxo comum.
 
-### Concorrência de estoque e pedido
+### Concorrência de estoque, lote e pedido
 
-A proteção de concorrência foi implementada com `LockModeType.PESSIMISTIC_WRITE`.
+A proteção atual utiliza `LockModeType.PESSIMISTIC_WRITE`.
 
-Buscas bloqueadas de estoque são utilizadas em:
+Com a inclusão de lotes, será necessário revisar a ordem dos bloqueios para evitar inconsistências e reduzir risco de deadlock.
 
-- entrada manual;
-- saída manual;
-- descarte por vencimento;
-- aprovação de pedido;
-- cancelamento de pedido aprovado;
-- futura devolução auditada.
-
-Buscas bloqueadas de pedido são utilizadas em:
-
-- aprovação;
-- rejeição;
-- entrega;
-- cancelamento.
-
-Objetivos:
-
-- impedir duas alterações simultâneas sobre o mesmo saldo;
-- impedir o processamento simultâneo do mesmo status de pedido;
-- evitar aprovação duplicada, dupla baixa e conflitos entre entrega e cancelamento;
-- manter buscas comuns sem bloqueio em operações somente de leitura.
-
-Os testes unitários confirmam que os Services usam os métodos bloqueados corretos. O comportamento real entre duas transações será validado no PostgreSQL por teste de integração.
-
-### Exceções e respostas HTTP
-
-Os Services utilizam:
+Ordem candidata:
 
 ```text
-ResourceNotFoundException → HTTP 404
-BusinessRuleException     → HTTP 400
+Pedido, quando aplicável
+  → EstoqueCentral
+  → Lotes selecionados em ordem determinística
 ```
 
-O `RestExceptionHandler` padroniza erros de domínio, Bean Validation, JSON inválido, parâmetros, conflitos de integridade e erros internos.
-
-### Estratégia de testes
-
-#### Etapa 1 — proteção mínima concluída
-
-Foram criados testes unitários com JUnit e Mockito, sem iniciar Spring ou banco.
-
-Cobertura atual do estoque:
-
-- entrada aumenta saldo e registra movimentação;
-- saída reduz saldo e registra movimentação;
-- estoque insuficiente bloqueia a saída;
-- quantidade zero é rejeitada;
-- usuário inativo não pode realizar saída;
-- operações de alteração utilizam busca bloqueada.
-
-Cobertura atual da aprovação:
-
-- aprovação parcial reduz somente a quantidade aprovada;
-- movimentação `SAIDA` com origem `PEDIDO` é registrada;
-- pedido fora de `PENDENTE` não pode ser aprovado;
-- quantidade maior que a solicitada é rejeitada;
-- estoque insuficiente impede aprovação;
-- usuário aprovador é obrigatório na implementação atual;
-- pedido e estoque utilizam buscas bloqueadas.
-
-#### Etapa 2 — integração e estabilização
-
-- migrations e schema PostgreSQL;
-- testes de integração com banco real;
-- teste concorrente de atualização de saldo;
-- teste concorrente de transição de pedido;
-- autenticação local simulada e autorização por perfil;
-- testes de Controller com `MockMvc`;
-- testes do `RestExceptionHandler`;
-- ciclos completos de pedido e estoque;
-- relatórios e exportações.
-
-A integração com a autenticação externa será testada quando a infraestrutura corporativa estiver disponível, sem bloquear o restante da estabilização local.
-
-### PostgreSQL
-
-A próxima etapa deve seguir esta ordem:
-
-1. adicionar ou confirmar o driver PostgreSQL no Maven;
-2. definir configuração local por variáveis de ambiente;
-3. evitar credenciais reais versionadas;
-4. escolher e configurar migrations, preferencialmente Flyway;
-5. criar a migration inicial do schema;
-6. criar uma base local limpa;
-7. validar a inicialização da aplicação;
-8. inserir dados de teste de desenvolvimento;
-9. executar a suíte unitária;
-10. criar os primeiros testes de integração.
-
-A aplicação não deve depender de `ddl-auto=create` como estratégia definitiva. A estrutura do banco deve ser versionada por migrations.
+Os testes unitários confirmam atualmente o uso dos métodos bloqueados em estoque e pedido. O bloqueio dos lotes será definido durante a implementação e validado posteriormente no PostgreSQL.
 
 ### Autenticação
 
@@ -208,61 +252,47 @@ Existirão duas origens de autenticação.
 
 #### Autenticação local simulada
 
-Será usada continuamente durante o desenvolvimento e os testes enquanto a infraestrutura corporativa não estiver disponível.
+Será usada durante desenvolvimento e testes enquanto a infraestrutura corporativa não estiver disponível.
 
 - utilizará usuários de teste armazenados no PostgreSQL local;
 - permitirá validar perfis, autorizações e ações auditáveis;
 - fornecerá o usuário responsável pelo contexto autenticado;
-- não dependerá da hospedagem ou do DevOps da empresa;
-- deverá ser isolada por configuração ou perfil de ambiente.
+- deverá ser isolada por perfil de ambiente.
 
 #### Autenticação definitiva externa
 
 Será fornecida por uma API externa da empresa e é obrigatória para a versão definitiva.
 
-- não faz parte da ordem sequencial por depender de uma liberação externa sem data confirmada;
-- deverá ser integrada assim que a API, a hospedagem e o ambiente corporativo estiverem disponíveis;
-- substituirá a origem local das credenciais e da identidade;
-- não deverá exigir reescrita das regras de domínio;
-- deverá alimentar o mesmo mecanismo interno de usuário autenticado usado pelos Services;
-- deverá ser validada antes da implantação definitiva.
-
-O cliente não deve informar manualmente o responsável por ações auditáveis. Tanto na simulação local quanto na integração externa, esse usuário deverá vir do contexto autenticado.
-
-### Relatórios
-
-Após a migração definitiva para PostgreSQL, serão implementados endpoints JSON para:
-
-- estoque baixo por Unidade;
-- movimentações por período, produto, usuário e origem;
-- pedidos por status, laboratório e período;
-- produtos vencidos ou próximos do vencimento;
-- materiais entregues por Laboratório;
-- consumo por Unidade ou Laboratório.
-
-Depois serão adicionadas exportações em PDF e Excel.
+- permanece fora da ordem sequencial por depender de liberação externa;
+- deverá ser integrada assim que a infraestrutura corporativa estiver disponível;
+- substituirá a origem local da identidade sem exigir reescrita das regras de domínio;
+- deverá alimentar o mesmo mecanismo interno de usuário autenticado usado pelos Services.
 
 ## Próxima ordem de trabalho
 
-1. Integrar PostgreSQL ao projeto.
-2. Configurar conexão local por ambiente.
-3. Adicionar Flyway e criar a migration inicial.
-4. Criar banco e usuário locais de desenvolvimento.
-5. Validar schema, constraints e relacionamentos.
-6. Adaptar o `DataInitializer` para perfil de desenvolvimento ou migrations de dados.
-7. Executar os 10 testes unitários.
-8. Criar teste de integração concorrente para estoque.
-9. Criar teste de integração concorrente para pedido.
-10. Implementar autenticação local simulada.
-11. Obter o usuário responsável pelo contexto autenticado local.
-12. Registrar `DEVOLUCAO` no cancelamento aprovado.
-13. Implementar relatórios JSON.
-14. Implementar exportações em PDF e Excel.
-15. Adicionar OpenAPI.
-16. Executar estabilização completa no ambiente local.
-17. Iniciar frontend.
+1. Revisar o método atual de entrada de `EstoqueCentralService`.
+2. Definir se o saldo agregado será persistido ou calculado pelos lotes.
+3. Validar com o supervisor os requisitos de número do lote, validade, fabricação, fornecedor e rastreabilidade.
+4. Modelar `Lote` e seus relacionamentos.
+5. Definir o DTO de entrada por lote.
+6. Refatorar a entrada para criar lote, atualizar saldo e registrar movimentação na mesma transação.
+7. Definir e implementar consumo FEFO nas saídas.
+8. Adaptar aprovação, descarte, cancelamento e devolução para lotes.
+9. Revisar movimentações e histórico para rastreabilidade por lote.
+10. Atualizar e ampliar os testes unitários.
+11. Atualizar documentação e UML.
+12. Integrar PostgreSQL ao projeto.
+13. Configurar conexão local por ambiente.
+14. Adicionar Flyway e criar a migration inicial já com o modelo de lotes.
+15. Criar banco e dados de desenvolvimento.
+16. Executar testes de integração e concorrência.
+17. Implementar autenticação local simulada.
+18. Registrar `DEVOLUCAO` auditada.
+19. Implementar relatórios, exportações e OpenAPI.
+20. Executar estabilização completa.
+21. Iniciar frontend.
 
-A integração com a autenticação externa não aparece numerada nessa sequência. Ela deve ser executada assim que a infraestrutura corporativa for liberada e permanece condição obrigatória para implantação definitiva.
+A integração com a autenticação externa não aparece numerada nessa sequência. Ela será executada assim que a infraestrutura corporativa for liberada e permanece condição obrigatória para implantação definitiva.
 
 ## Documentos de referência
 
@@ -292,6 +322,7 @@ A integração com a autenticação externa não aparece numerada nessa sequênc
 | 06/08/2026 | Bloqueio pessimista adicionado aos fluxos de alteração de estoque |
 | 06/08/2026 | Bloqueio pessimista adicionado às transições de status de pedido |
 | 06/08/2026 | Testes unitários executados novamente sem falhas após as mudanças de concorrência |
-| 06/08/2026 | Próxima etapa definida: integração com PostgreSQL e migrations |
 | 06/08/2026 | Autenticação externa removida da ordem sequencial por depender da infraestrutura corporativa |
-| 06/08/2026 | Autenticação local simulada mantida para desenvolvimento e testes até a liberação do ambiente da empresa |
+| 06/08/2026 | Autenticação local simulada mantida para desenvolvimento e testes |
+| 06/08/2026 | Integração PostgreSQL adiada até estabilizar o modelo de lotes e validade |
+| 06/08/2026 | Primeira análise definida: entrada de estoque deverá criar lote e alimentar o saldo agregado |
