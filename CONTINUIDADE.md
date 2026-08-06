@@ -2,9 +2,9 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 06/08/2026  
-**Fase atual:** validação dos testes unitários de pedido
+**Fase atual:** revisão de concorrência e proteção do saldo de estoque
 
-Este arquivo registra o estado real do backend, as decisões já consolidadas e a ordem recomendada para continuar o desenvolvimento.
+Este arquivo registra o estado real do backend, as decisões consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
 ## Estado atual
 
@@ -22,63 +22,60 @@ Este arquivo registra o estado real do backend, as decisões já consolidadas e 
 - Validações de risco, perecibilidade e código de referência do produto.
 - Senhas armazenadas com BCrypt.
 - Exclusão lógica de usuário por inativação.
-- Revisão das mensagens de erro mais evidentes.
-- Exceções de domínio criadas para recurso inexistente e violação de regra de negócio.
-- Migração das exceções genéricas dos Services para exceções personalizadas.
-- Respostas HTTP de erro padronizadas por `RestExceptionHandler`.
-- Tratamento de validação de DTO, JSON inválido, parâmetros ausentes, conflito de dados e erro interno.
+- Exceções de domínio e respostas HTTP padronizadas.
 - Documentação estrutural, fluxo e fontes UML atualizados.
-- Cinco testes unitários de `EstoqueCentralService` executados com sucesso.
-- Testes de estoque cobrindo entrada, saída, saldo insuficiente, quantidade inválida e usuário inativo.
+- Primeira etapa de testes unitários concluída.
+- `EstoqueCentralServiceTest`: 5 testes executados com sucesso.
+- `PedidoServiceTest`: 5 testes executados com sucesso.
+- Total atual: 10 testes, 0 falhas e 0 erros.
 
-### Em validação
+### Em andamento
 
-- Testes unitários de aprovação do `PedidoService` adicionados e aguardando execução local.
+- Revisar concorrência de saldo.
+- Definir bloqueio seguro para operações simultâneas de entrada, saída, aprovação, cancelamento e descarte.
+- Preparar os pontos de acesso ao estoque para uso de bloqueio pessimista.
 
 ### Pendente
 
-- Confirmar a execução dos testes unitários de aprovação de pedido.
-- Complementar a primeira camada de testes de pedido, caso os cenários atuais revelem ajustes necessários.
-- Revisar concorrência de estoque e bloqueio de atualizações simultâneas.
+- Validar o bloqueio com testes de integração após a migração para PostgreSQL.
 - Preparar migrations e PostgreSQL definitivo.
-- Implementar autenticação local para desenvolvimento usando usuários de teste do PostgreSQL.
+- Implementar autenticação local usando usuários de teste do PostgreSQL.
 - Integrar a autenticação definitiva fornecida pela API externa.
-- Registrar movimentação `DEVOLUCAO` ao cancelar pedido aprovado, usando o usuário autenticado como responsável.
-- Implementar consultas e endpoints de relatórios após a migração para PostgreSQL.
+- Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
+- Registrar movimentação `DEVOLUCAO` ao cancelar pedido aprovado.
+- Implementar consultas e endpoints JSON de relatórios.
 - Adicionar exportação de relatórios em PDF e Excel.
 - Criar documentação OpenAPI.
-- Executar uma etapa completa de testes de integração, controllers e estabilização antes do frontend.
+- Executar testes completos de integração, controllers e estabilização antes do frontend.
 - Iniciar o frontend.
 
 ## Decisões oficiais
 
 ### Produto e estoque
 
-`Produto` é um catálogo global. Ele descreve o material, risco, perecibilidade e forma de armazenamento, mas não possui saldo.
+`Produto` é um catálogo global e não possui saldo.
 
-`EstoqueCentral` representa o saldo de um produto em uma unidade. Sua identidade lógica é:
+`EstoqueCentral` representa o saldo de um produto dentro de uma Unidade. Sua identidade lógica é:
 
 ```text
 Unidade + Produto
 ```
 
-A mesma unidade não pode possuir dois registros de estoque para o mesmo produto.
+A mesma Unidade não pode possuir dois registros de estoque para o mesmo Produto.
 
 ### Movimentação
 
-Toda alteração de saldo relevante deve gerar `MovimentacaoEstoque`, contendo:
+Toda alteração relevante de saldo deve gerar `MovimentacaoEstoque`, contendo:
 
-- produto e registro de estoque afetado;
+- produto e estoque afetado;
 - usuário responsável;
-- tipo e origem da movimentação;
+- tipo e origem;
 - quantidade movimentada;
 - saldo anterior e saldo resultante;
 - data e observação;
 - pedido ou laboratório quando aplicável.
 
 ### Pedido
-
-O pedido nasce como `PENDENTE`.
 
 ```text
 PENDENTE
@@ -89,226 +86,137 @@ PENDENTE
 ```
 
 - A criação valida os vínculos, mas não reserva saldo.
-- A aprovação valida saldo e reduz `quantidadeAprovada`.
-- A aprovação registra movimentação `SAIDA` com origem `PEDIDO`.
+- A aprovação valida saldo, reduz o estoque e registra movimentação `SAIDA`.
 - A entrega cria `HistoricoLaboratorio` e não reduz o estoque novamente.
 - O cancelamento de pedido aprovado devolve o saldo.
-- A movimentação de devolução será adicionada após a autenticação, para que o responsável venha do contexto autenticado e não de um ID enviado pelo cliente.
+- A movimentação `DEVOLUCAO` será adicionada após a autenticação.
 - Pedido entregue não pode ser cancelado pelo fluxo comum.
+
+### Concorrência de estoque
+
+Operações que consultam e alteram saldo devem tratar leitura e escrita como uma única operação protegida.
+
+Problema que será evitado:
+
+```text
+Saldo inicial: 10
+
+Operação A lê 10 e tenta retirar 7
+Operação B lê 10 e tenta retirar 6
+
+Sem bloqueio, as duas podem considerar o saldo suficiente.
+```
+
+Estratégia definida para os fluxos críticos:
+
+- utilizar bloqueio pessimista de escrita ao buscar um estoque que será alterado;
+- manter a busca bloqueada dentro de método `@Transactional`;
+- impedir que duas transações alterem simultaneamente o mesmo registro;
+- manter buscas comuns de consulta sem bloqueio;
+- aplicar o bloqueio somente nos fluxos que modificam `quantidadeAtual`;
+- validar o comportamento real posteriormente com PostgreSQL e testes de integração concorrentes.
+
+Fluxos que precisam usar busca bloqueada:
+
+- entrada manual;
+- saída manual;
+- descarte por vencimento;
+- aprovação de pedido;
+- cancelamento de pedido aprovado;
+- futura devolução auditada.
 
 ### Exceções e respostas HTTP
 
-Os Services devem utilizar exceções de domínio em vez de exceções genéricas:
+Os Services utilizam:
 
 ```text
-ResourceNotFoundException
-  → recurso solicitado não existe
-  → HTTP 404
-
-BusinessRuleException
-  → regra de negócio foi violada
-  → HTTP 400
+ResourceNotFoundException → HTTP 404
+BusinessRuleException     → HTTP 400
 ```
 
-O `RestExceptionHandler` é responsável por converter as exceções em um corpo HTTP padronizado com:
-
-- data e hora;
-- status HTTP;
-- categoria do erro;
-- mensagem;
-- caminho da requisição;
-- erros de campos, quando houver falha de Bean Validation.
-
-Também são tratados:
-
-- DTO inválido;
-- JSON malformado ou valor de enum inválido;
-- parâmetro obrigatório ausente;
-- parâmetro com tipo incompatível;
-- violação de integridade do banco;
-- erros inesperados sem exposição de detalhes internos.
-
-As exceções `EntityNotFoundException` e `IllegalArgumentException` permanecem temporariamente no handler apenas como compatibilidade, mas não devem ser usadas em novas regras dos Services.
+O `RestExceptionHandler` padroniza erros de domínio, Bean Validation, JSON inválido, parâmetros, conflitos de integridade e erros internos.
 
 ### Estratégia de testes
 
-Os testes automatizados serão implementados em duas etapas.
+#### Etapa 1 — proteção mínima concluída
 
-#### Etapa 1 — proteção mínima durante o desenvolvimento
-
-Está sendo criada uma camada pequena de testes unitários com JUnit e Mockito para proteger as regras mais críticas já existentes.
-
-Situação atual:
-
-- `EstoqueCentralServiceTest`: cinco testes executados com sucesso;
-- `PedidoServiceTest`: cinco testes adicionados e aguardando execução local.
+Foram criados testes unitários com JUnit e Mockito, sem iniciar Spring ou banco.
 
 Cobertura atual do estoque:
 
-- entrada aumenta o saldo e registra movimentação;
-- saída reduz o saldo e registra movimentação;
-- saída maior que o saldo é bloqueada;
-- quantidade zero é rejeitada antes de acessar repositories;
+- entrada aumenta saldo e registra movimentação;
+- saída reduz saldo e registra movimentação;
+- estoque insuficiente bloqueia a saída;
+- quantidade zero é rejeitada;
 - usuário inativo não pode realizar saída.
 
-Cobertura adicionada para aprovação de pedido:
+Cobertura atual da aprovação:
 
 - aprovação parcial reduz somente a quantidade aprovada;
-- aprovação registra movimentação `SAIDA` com origem `PEDIDO`;
+- movimentação `SAIDA` com origem `PEDIDO` é registrada;
 - pedido fora de `PENDENTE` não pode ser aprovado;
-- quantidade aprovada maior que a solicitada é rejeitada;
-- estoque insuficiente impede a aprovação;
-- o usuário aprovador é obrigatório enquanto a autenticação não está pronta.
+- quantidade maior que a solicitada é rejeitada;
+- estoque insuficiente impede aprovação;
+- usuário aprovador é obrigatório na implementação atual.
 
-Esses testes funcionam como proteção contra regressões durante as próximas alterações, especialmente concorrência, PostgreSQL, autenticação e devolução auditada.
+O rollback transacional real e a concorrência real serão testados na etapa de integração com banco.
 
-O rollback transacional real com banco será validado na etapa de integração. Os testes unitários com Mockito verificam que o fluxo interrompido não executa as persistências posteriores, mas não abrem uma transação real.
-
-#### Etapa 2 — estabilização completa antes do frontend
-
-Após PostgreSQL, autenticação, devolução, relatórios e OpenAPI, será executada uma bateria mais ampla de testes para validar o backend final antes da integração com o frontend.
-
-Essa etapa incluirá:
+#### Etapa 2 — estabilização antes do frontend
 
 - testes de Controller com `MockMvc`;
-- testes do `RestExceptionHandler` e dos corpos de erro;
+- testes do `RestExceptionHandler`;
 - testes de integração com PostgreSQL;
-- testes dos endpoints protegidos;
-- testes de autorização por perfil;
-- testes completos dos ciclos de pedido e estoque;
-- casos extremos e conflitos de dados;
-- validação dos endpoints de relatórios;
-- execução da suíte completa antes de liberar o backend para o frontend.
+- testes concorrentes de atualização de saldo;
+- testes de autenticação e autorização;
+- ciclos completos de pedido e estoque;
+- relatórios e exportações.
 
 ### Autenticação
 
-A autenticação definitiva do SGL será fornecida por uma API externa.
+A autenticação definitiva será fornecida por API externa.
 
-Durante o desenvolvimento local, após a migração para PostgreSQL, o sistema utilizará usuários de teste armazenados no próprio banco para simular a autenticação e permitir a validação dos fluxos protegidos.
+Durante o desenvolvimento local, após a migração para PostgreSQL, serão usados usuários de teste armazenados no banco.
 
-Regras adotadas:
-
-- o cliente não deve informar manualmente o ID do usuário responsável por ações auditáveis;
-- o usuário responsável deve ser obtido do contexto autenticado;
-- a autenticação local deve existir apenas como suporte ao desenvolvimento e aos testes;
-- a integração com a API externa deve substituir a origem das credenciais sem alterar as regras de negócio dos Services;
-- aprovação, cancelamento, entradas, saídas e demais ações auditáveis devem registrar o usuário autenticado.
-
-### Usuários
-
-- O solicitante é `pedido.getUsuario()`.
-- O aprovador é informado no DTO de aprovação enquanto a autenticação não está pronta.
-- Após a autenticação, o aprovador e os demais responsáveis devem vir do contexto autenticado.
-- A movimentação de aprovação registra o aprovador como usuário responsável.
-- Usuário é inativado, não removido fisicamente.
-- A senha permanece protegida por BCrypt durante os testes locais.
-
-### Produto
-
-- O código de referência é único.
-- Na atualização, a verificação de duplicidade ignora o próprio produto.
-- `NivelRisco.NENHUM` limpa tipo e descrição de risco.
-- Produto com risco exige tipo de risco.
-- Produto não perecível limpa data de validade e tipo de perecível.
-- Produto perecível exige data de validade e tipo de perecível.
+O cliente não deve informar manualmente o responsável por ações auditáveis. Esse usuário deverá vir do contexto autenticado.
 
 ### Relatórios
 
-A etapa de relatórios será iniciada após a migração definitiva para PostgreSQL, quando o modelo de dados e as consultas estiverem estabilizados.
-
-A primeira versão deve disponibilizar endpoints JSON para:
+Após a migração definitiva para PostgreSQL, serão implementados endpoints JSON para:
 
 - estoque baixo por Unidade;
 - movimentações por período, produto, usuário e origem;
 - pedidos por status, laboratório e período;
 - produtos vencidos ou próximos do vencimento;
 - materiais entregues por Laboratório;
-- consumo de produtos por Unidade ou Laboratório.
+- consumo por Unidade ou Laboratório.
 
-Depois da validação das consultas, o backend poderá oferecer exportação em PDF e Excel. O frontend será responsável por selecionar filtros, exibir os resultados e iniciar os downloads.
-
-## Fluxo técnico
-
-```text
-Cliente
-  → Controller
-  → DTO validado
-  → Service transacional
-  → Repository
-  → Banco
-  → DTO de resposta
-```
-
-As regras que dependem do estado do banco pertencem ao Service. Controller não deve implementar regra de negócio. Repository não deve trabalhar com DTO.
+Depois serão adicionadas exportações em PDF e Excel.
 
 ## Próxima ordem de trabalho
 
-1. Executar e validar `PedidoServiceTest`.
-2. Ajustar os testes ou o código apenas se a execução revelar inconsistências reais.
-3. Marcar a primeira etapa mínima de testes como concluída.
-4. Revisar concorrência de saldo.
+1. Adicionar busca de estoque com bloqueio pessimista no repository.
+2. Substituir as buscas comuns pelas buscas bloqueadas nos fluxos que alteram saldo.
+3. Executar novamente os 10 testes unitários para confirmar ausência de regressão.
+4. Documentar quais operações estão protegidas.
 5. Migrar para PostgreSQL com migrations e dados de teste.
-6. Implementar autenticação local usando os usuários de teste do PostgreSQL.
-7. Preparar a integração com a API externa de autenticação.
-8. Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
-9. Registrar `DEVOLUCAO` durante o cancelamento de pedido aprovado.
-10. Implementar consultas e endpoints JSON de relatórios.
-11. Implementar exportação de relatórios em PDF e Excel.
-12. Adicionar OpenAPI.
-13. Criar testes de Controller e do `RestExceptionHandler`.
-14. Criar testes de integração com PostgreSQL, autenticação e fluxos completos.
-15. Executar a etapa final de estabilização do backend.
-16. Iniciar frontend e integrar visualização e download dos relatórios.
-
-## Cenários prioritários de teste
-
-### Etapa 1 — testes mínimos
-
-#### Estoque — concluídos
-
-- entrada aumenta o saldo e registra movimentação;
-- saída reduz o saldo e registra movimentação;
-- saída maior que o saldo é bloqueada;
-- quantidade zero é rejeitada;
-- usuário inativo não pode realizar saída.
-
-#### Pedido — adicionados e aguardando execução
-
-- aprovação parcial reduz somente a quantidade aprovada;
-- aprovação registra movimentação com saldos corretos;
-- estoque insuficiente impede a aprovação;
-- pedido fora de `PENDENTE` não pode ser aprovado;
-- quantidade aprovada maior que a solicitada é rejeitada;
-- ausência de usuário aprovador interrompe o fluxo.
-
-### Etapa 2 — estabilização final
-
-- resposta `404` com corpo padrão para recurso inexistente;
-- resposta `400` com corpo padrão para regra de negócio;
-- lista de erros de campos quando o DTO for inválido;
-- resposta para JSON malformado ou enum inválido;
-- conflito de integridade convertido em `409`;
-- integração real com PostgreSQL e migrations;
-- autenticação local e integração com a API externa;
-- acesso permitido ou negado de acordo com o perfil;
-- produto vencido sem autorização;
-- pedido aprovado cancelado e saldo devolvido;
-- movimentação `DEVOLUCAO` associada ao usuário autenticado;
-- tentativa de cancelar pedido entregue;
-- movimentação com saldo anterior e atual corretos;
-- duplicidade de `Unidade + Produto`;
-- atualização de produto sem falso conflito de código;
-- atualização de usuário sem troca de senha;
-- inativação repetida de usuário;
-- filtros e exportações dos relatórios.
+6. Criar teste de integração concorrente para confirmar o bloqueio no banco real.
+7. Implementar autenticação local.
+8. Preparar integração com a API externa de autenticação.
+9. Obter o usuário responsável pelo contexto autenticado.
+10. Registrar `DEVOLUCAO` no cancelamento aprovado.
+11. Implementar relatórios JSON.
+12. Implementar exportações em PDF e Excel.
+13. Adicionar OpenAPI.
+14. Executar testes completos de integração e estabilização.
+15. Iniciar frontend.
 
 ## Documentos de referência
 
 - [`README.md`](README.md): apresentação e execução.
-- [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo operacional completo.
-- [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): papel das classes e camadas.
+- [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo operacional.
+- [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): classes e camadas.
 - [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml): entidades e relacionamentos.
-- [`docs/CODIGOS_REFERENCIA_TESTES.md`](docs/CODIGOS_REFERENCIA_TESTES.md): referência comentada dos testes unitários.
+- [`docs/CODIGOS_REFERENCIA_TESTES.md`](docs/CODIGOS_REFERENCIA_TESTES.md): referência dos testes unitários.
 
 ## Histórico recente
 
@@ -323,9 +231,8 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 | 05/08/2026 | Documentação estrutural e UML revisados |
 | 05/08/2026 | Relatórios planejados para depois da migração ao PostgreSQL |
 | 06/08/2026 | Movimentação de devolução movida para depois da autenticação |
-| 06/08/2026 | Autenticação local definida com usuários de teste do PostgreSQL antes da integração externa |
-| 06/08/2026 | Respostas HTTP de erro padronizadas com `RestExceptionHandler` |
-| 06/08/2026 | Exceções genéricas dos Services migradas para exceções de domínio |
+| 06/08/2026 | Autenticação local definida antes da integração externa |
+| 06/08/2026 | Respostas HTTP e exceções de domínio padronizadas |
 | 06/08/2026 | Estratégia de testes dividida em proteção mínima e estabilização final |
-| 06/08/2026 | Cinco testes unitários de estoque executados com sucesso |
-| 06/08/2026 | Testes unitários de aprovação de pedido adicionados para validação local |
+| 06/08/2026 | Dez testes unitários executados com sucesso |
+| 06/08/2026 | Iniciada revisão de concorrência com bloqueio pessimista para alteração de saldo |
