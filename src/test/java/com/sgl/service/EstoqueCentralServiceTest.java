@@ -127,8 +127,8 @@ class EstoqueCentralServiceTest {
         MovimentacaoEstoqueDTO dto = criarMovimentacaoDTO(5);
 
         // Programa os mocks para devolver o estoque e o usuário procurados.
-        when(estoqueCentralRepository.findById(30L))
-                .thenReturn(Optional.of(estoque));
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(30L))
+        .thenReturn(Optional.of(estoque));
 
         when(usuarioRepository.findById(20L))
                 .thenReturn(Optional.of(usuario));
@@ -176,8 +176,8 @@ class EstoqueCentralServiceTest {
         // ARRANGE: cria uma movimentação de saída de quatro unidades.
         MovimentacaoEstoqueDTO dto = criarMovimentacaoDTO(4);
 
-        when(estoqueCentralRepository.findById(30L))
-                .thenReturn(Optional.of(estoque));
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(30L))
+        .thenReturn(Optional.of(estoque));
 
         when(usuarioRepository.findById(20L))
                 .thenReturn(Optional.of(usuario));
@@ -219,8 +219,8 @@ class EstoqueCentralServiceTest {
         // ARRANGE: solicita uma quantidade maior que o saldo disponível.
         MovimentacaoEstoqueDTO dto = criarMovimentacaoDTO(15);
 
-        when(estoqueCentralRepository.findById(30L))
-                .thenReturn(Optional.of(estoque));
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(30L))
+        .thenReturn(Optional.of(estoque));
 
         when(usuarioRepository.findById(20L))
                 .thenReturn(Optional.of(usuario));
@@ -288,8 +288,8 @@ class EstoqueCentralServiceTest {
         usuario.setAtivo(false);
         MovimentacaoEstoqueDTO dto = criarMovimentacaoDTO(2);
 
-        when(estoqueCentralRepository.findById(30L))
-                .thenReturn(Optional.of(estoque));
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(30L))
+        .thenReturn(Optional.of(estoque));
 
         when(usuarioRepository.findById(20L))
                 .thenReturn(Optional.of(usuario));

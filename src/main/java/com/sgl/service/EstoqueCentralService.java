@@ -136,9 +136,18 @@ public class EstoqueCentralService {
     public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
         validarQuantidade(dto.getQuantidadeMovimentada());
 
-        EstoqueCentral estoque = estoqueCentralRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
-
+        /*
+         * Como o saldo será aumentado:
+         * O bloqueio permanece ativo até o término deste método.
+         */
+        EstoqueCentral estoque =
+                estoqueCentralRepository.buscarPorIdComBloqueio(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Estoque central",
+                                        id
+                                ));
+        
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuário",
@@ -172,9 +181,17 @@ public class EstoqueCentralService {
     public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
         validarQuantidade(dto.getQuantidadeMovimentada());
 
-        EstoqueCentral estoque = estoqueCentralRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
-
+        /*
+         * A verificação de saldo e a redução precisam ocorrer sobre um registro
+         * bloqueado. Isso impede que outra transação leia o mesmo saldo antigo e
+         * realize uma segunda retirada simultânea.
+         */
+        EstoqueCentral estoque =
+                estoqueCentralRepository.buscarPorIdComBloqueio(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Estoque central",id));
+        
+        
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuário",
@@ -233,11 +250,12 @@ public class EstoqueCentralService {
             Long estoqueId,
             DescarteProdutoDTO dto) {
 
-        EstoqueCentral estoque = estoqueCentralRepository.findById(estoqueId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Estoque central",
-                        estoqueId
-                ));
+    	//Bloqueia o registro antes de validar e alterar o saldo.
+    	 
+    	EstoqueCentral estoque = estoqueCentralRepository
+    	                .buscarPorIdComBloqueio(estoqueId)
+    	                .orElseThrow(() ->
+    	                        new ResourceNotFoundException( "Estoque central", estoqueId));
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(

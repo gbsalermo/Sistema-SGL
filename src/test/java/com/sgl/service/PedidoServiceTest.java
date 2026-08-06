@@ -182,7 +182,8 @@ class PedidoServiceTest {
         when(pedidoRepository.findById(7L))
                 .thenReturn(Optional.of(pedido));
 
-        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
+        when(estoqueCentralRepository
+                .buscarPorUnidadeEProdutoComBloqueio(1L, 5L))
                 .thenReturn(Optional.of(estoque));
 
         /*
@@ -309,7 +310,8 @@ class PedidoServiceTest {
         when(pedidoRepository.findById(7L))
                 .thenReturn(Optional.of(pedido));
 
-        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
+        when(estoqueCentralRepository
+                .buscarPorUnidadeEProdutoComBloqueio(1L, 5L))
                 .thenReturn(Optional.of(estoque));
 
         BusinessRuleException exception = assertThrows(
