@@ -13,26 +13,28 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sgl.dto.AprovarPedidoDTO;
 import com.sgl.dto.ItemPedidoDTO;
 import com.sgl.dto.PedidoDTO;
+import com.sgl.exception.BusinessRuleException;
+import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.HistoricoLaboratorio;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
-import com.sgl.model.MovimentacaoEstoque;
-import com.sgl.model.enums.OrigemMovimentacao;
-import com.sgl.model.enums.TipoMovimentacao;
-import com.sgl.repository.MovimentacaoEstoqueRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -134,8 +136,10 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public PedidoDTO buscarPorId(Long id) {
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+    	Pedido pedido = pedidoRepository.findById(id)
+    	        .orElseThrow(() ->
+    	                new ResourceNotFoundException("Pedido", id)
+    	        );
         return new PedidoDTO(pedido);
     }
 
@@ -167,11 +171,16 @@ public class PedidoService {
                 ));
 
         Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Pedido", id)
+                );
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
-            throw new IllegalArgumentException(
-                    "Apenas pedidos PENDENTES podem ser aprovados. Status atual: " + pedido.getStatus());
+            throw new BusinessRuleException(
+                    "Apenas pedidos PENDENTES podem ser aprovados. "
+                            + "Status atual: "
+                            + pedido.getStatus()
+            );
         }
 
         for (AprovarPedidoDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
@@ -252,8 +261,10 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO rejeitar(Long id, String observacao) {
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+    	Pedido pedido = pedidoRepository.findById(id)
+    	        .orElseThrow(() ->
+    	                new ResourceNotFoundException("Pedido", id)
+    	        );
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
             throw new IllegalArgumentException(
@@ -267,8 +278,10 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO entregar(Long id) {
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+    	Pedido pedido = pedidoRepository.findById(id)
+    	        .orElseThrow(() ->
+    	                new ResourceNotFoundException("Pedido", id)
+    	        );
 
         if (pedido.getStatus() != StatusPedido.APROVADO) {
             throw new IllegalArgumentException(
@@ -295,8 +308,10 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO cancelar(Long id, String observacao) {
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com id: " + id));
+    	Pedido pedido = pedidoRepository.findById(id)
+    	        .orElseThrow(() ->
+    	                new ResourceNotFoundException("Pedido", id)
+    	        );
 
         if (pedido.getStatus() == StatusPedido.REJEITADO) {
             throw new IllegalArgumentException(
