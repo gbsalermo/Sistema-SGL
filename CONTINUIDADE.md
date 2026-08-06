@@ -41,17 +41,27 @@ Este arquivo registra o estado real do backend, as decisões consolidadas e a or
 - Validar entidades, constraints e relacionamentos no banco real.
 - Criar teste de integração concorrente para confirmar os bloqueios pessimistas.
 
-### Pendente
+### Pendente no planejamento sequencial
 
-- Implementar autenticação local usando usuários de teste do PostgreSQL.
-- Integrar a autenticação definitiva fornecida pela API externa.
-- Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
+- Implementar autenticação local simulada usando usuários de teste do PostgreSQL.
+- Obter o usuário responsável pelo contexto autenticado local nas ações auditáveis.
 - Registrar movimentação `DEVOLUCAO` ao cancelar pedido aprovado.
 - Implementar consultas e endpoints JSON de relatórios.
 - Adicionar exportação de relatórios em PDF e Excel.
 - Criar documentação OpenAPI.
 - Executar testes completos de integração, controllers e estabilização antes do frontend.
 - Iniciar o frontend.
+
+### Dependência externa obrigatória, fora da sequência
+
+- Integrar a autenticação definitiva fornecida pela API externa da empresa.
+- Adaptar a aplicação ao ambiente de hospedagem e DevOps corporativo quando ele for liberado.
+- Substituir a origem local simulada da identidade pelo contexto autenticado corporativo sem alterar as regras de negócio.
+- Validar autenticação, autorização, perfis e auditoria no ambiente disponibilizado pela empresa.
+
+A integração externa é indispensável para a versão definitiva do SGL, mas não possui posição fixa no planejamento sequencial porque depende da liberação da hospedagem e da infraestrutura de DevOps da empresa.
+
+Enquanto essa dependência não estiver disponível, desenvolvimento, testes e execuções locais continuarão usando autenticação simulada com usuários armazenados no PostgreSQL local.
 
 ## Decisões oficiais
 
@@ -93,7 +103,7 @@ PENDENTE
 - A aprovação valida saldo, reduz o estoque e registra movimentação `SAIDA`.
 - A entrega cria `HistoricoLaboratorio` e não reduz o estoque novamente.
 - O cancelamento de pedido aprovado devolve o saldo.
-- A movimentação `DEVOLUCAO` será adicionada após a autenticação.
+- A movimentação `DEVOLUCAO` será adicionada após a autenticação local simulada fornecer o usuário responsável.
 - Pedido entregue não pode ser cancelado pelo fluxo comum.
 
 ### Concorrência de estoque e pedido
@@ -167,11 +177,13 @@ Cobertura atual da aprovação:
 - testes de integração com banco real;
 - teste concorrente de atualização de saldo;
 - teste concorrente de transição de pedido;
+- autenticação local simulada e autorização por perfil;
 - testes de Controller com `MockMvc`;
 - testes do `RestExceptionHandler`;
-- testes de autenticação e autorização;
 - ciclos completos de pedido e estoque;
 - relatórios e exportações.
+
+A integração com a autenticação externa será testada quando a infraestrutura corporativa estiver disponível, sem bloquear o restante da estabilização local.
 
 ### PostgreSQL
 
@@ -192,11 +204,30 @@ A aplicação não deve depender de `ddl-auto=create` como estratégia definitiv
 
 ### Autenticação
 
-A autenticação definitiva será fornecida por API externa.
+Existirão duas origens de autenticação.
 
-Durante o desenvolvimento local, após a migração para PostgreSQL, serão usados usuários de teste armazenados no banco.
+#### Autenticação local simulada
 
-O cliente não deve informar manualmente o responsável por ações auditáveis. Esse usuário deverá vir do contexto autenticado.
+Será usada continuamente durante o desenvolvimento e os testes enquanto a infraestrutura corporativa não estiver disponível.
+
+- utilizará usuários de teste armazenados no PostgreSQL local;
+- permitirá validar perfis, autorizações e ações auditáveis;
+- fornecerá o usuário responsável pelo contexto autenticado;
+- não dependerá da hospedagem ou do DevOps da empresa;
+- deverá ser isolada por configuração ou perfil de ambiente.
+
+#### Autenticação definitiva externa
+
+Será fornecida por uma API externa da empresa e é obrigatória para a versão definitiva.
+
+- não faz parte da ordem sequencial por depender de uma liberação externa sem data confirmada;
+- deverá ser integrada assim que a API, a hospedagem e o ambiente corporativo estiverem disponíveis;
+- substituirá a origem local das credenciais e da identidade;
+- não deverá exigir reescrita das regras de domínio;
+- deverá alimentar o mesmo mecanismo interno de usuário autenticado usado pelos Services;
+- deverá ser validada antes da implantação definitiva.
+
+O cliente não deve informar manualmente o responsável por ações auditáveis. Tanto na simulação local quanto na integração externa, esse usuário deverá vir do contexto autenticado.
 
 ### Relatórios
 
@@ -222,15 +253,16 @@ Depois serão adicionadas exportações em PDF e Excel.
 7. Executar os 10 testes unitários.
 8. Criar teste de integração concorrente para estoque.
 9. Criar teste de integração concorrente para pedido.
-10. Implementar autenticação local.
-11. Preparar integração com a API externa de autenticação.
-12. Obter o usuário responsável pelo contexto autenticado.
-13. Registrar `DEVOLUCAO` no cancelamento aprovado.
-14. Implementar relatórios JSON.
-15. Implementar exportações em PDF e Excel.
-16. Adicionar OpenAPI.
-17. Executar estabilização completa.
-18. Iniciar frontend.
+10. Implementar autenticação local simulada.
+11. Obter o usuário responsável pelo contexto autenticado local.
+12. Registrar `DEVOLUCAO` no cancelamento aprovado.
+13. Implementar relatórios JSON.
+14. Implementar exportações em PDF e Excel.
+15. Adicionar OpenAPI.
+16. Executar estabilização completa no ambiente local.
+17. Iniciar frontend.
+
+A integração com a autenticação externa não aparece numerada nessa sequência. Ela deve ser executada assim que a infraestrutura corporativa for liberada e permanece condição obrigatória para implantação definitiva.
 
 ## Documentos de referência
 
@@ -261,3 +293,5 @@ Depois serão adicionadas exportações em PDF e Excel.
 | 06/08/2026 | Bloqueio pessimista adicionado às transições de status de pedido |
 | 06/08/2026 | Testes unitários executados novamente sem falhas após as mudanças de concorrência |
 | 06/08/2026 | Próxima etapa definida: integração com PostgreSQL e migrations |
+| 06/08/2026 | Autenticação externa removida da ordem sequencial por depender da infraestrutura corporativa |
+| 06/08/2026 | Autenticação local simulada mantida para desenvolvimento e testes até a liberação do ambiente da empresa |
