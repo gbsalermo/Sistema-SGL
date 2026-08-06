@@ -170,7 +170,11 @@ public class PedidoService {
                         aprovadorId
                 ));
 
-        Pedido pedido = pedidoRepository.findById(id)
+        /*
+         * O pedido também é bloqueado para impedir que duas requisições o
+         * processem simultaneamente enquanto ambas ainda o enxergam PENDENTE.
+         */
+        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
@@ -214,22 +218,16 @@ public class PedidoService {
             }
 
             Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
-            /*
-             * A aprovação consulta o saldo e depois o reduz.
-             *
-             * A busca bloqueada impede que dois pedidos sejam aprovados ao mesmo tempo
-             * utilizando o mesmo saldo inicial.
-             */
             EstoqueCentral estoque = estoqueCentralRepository
                     .buscarPorUnidadeEProdutoComBloqueio(
                             unidadeId,
                             produto.getId()
                     )
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                             "Estoque do produto '"
-                              + produto.getNome() + "' na unidade " 
-                              + pedido.getLaboratorio().getUnidade().getNome()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Estoque do produto '" + produto.getNome()
+                                    + "' na unidade "
+                                    + pedido.getLaboratorio().getUnidade().getNome()
+                    ));
 
             if (estoque.getQuantidadeAtual() < quantidadeAprovada) {
                 throw new BusinessRuleException(
@@ -271,7 +269,7 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO rejeitar(Long id, String observacao) {
-        Pedido pedido = pedidoRepository.findById(id)
+        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
@@ -288,7 +286,7 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO entregar(Long id) {
-        Pedido pedido = pedidoRepository.findById(id)
+        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() != StatusPedido.APROVADO) {
@@ -318,7 +316,7 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO cancelar(Long id, String observacao) {
-        Pedido pedido = pedidoRepository.findById(id)
+        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() == StatusPedido.REJEITADO) {
@@ -334,31 +332,20 @@ public class PedidoService {
         }
 
         if (pedido.getStatus() == StatusPedido.APROVADO) {
-        	
-        	
             for (ItemPedido item : pedido.getItens()) {
                 if (item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada() > 0) {
                     Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
-                    /*
-                     * O cancelamento de um pedido aprovado devolve saldo.
-                     *
-                     * Mesmo sendo um aumento, o bloqueio é necessário para impedir que essa
-                     * devolução sobrescreva uma entrada, saída ou aprovação simultânea.
-                     */
                     EstoqueCentral estoque = estoqueCentralRepository
                             .buscarPorUnidadeEProdutoComBloqueio(
                                     unidadeId,
                                     item.getProduto().getId()
                             )
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Estoque do produto '"
-                                                    + item.getProduto().getNome()
-                                                    + "' na unidade "
-                                                    + pedido.getLaboratorio()
-                                                            .getUnidade()
-                                                            .getNome()
-                                    ));
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Estoque do produto '"
+                                            + item.getProduto().getNome()
+                                            + "' na unidade "
+                                            + pedido.getLaboratorio().getUnidade().getNome()
+                            ));
 
                     estoque.setQuantidadeAtual(
                             estoque.getQuantidadeAtual() + item.getQuantidadeAprovada()
