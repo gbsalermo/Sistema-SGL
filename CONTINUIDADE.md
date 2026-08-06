@@ -2,7 +2,7 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 06/08/2026  
-**Fase atual:** proteção dos fluxos críticos e preparação da infraestrutura
+**Fase atual:** validação dos testes unitários de pedido
 
 Este arquivo registra o estado real do backend, as decisões já consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
@@ -28,10 +28,17 @@ Este arquivo registra o estado real do backend, as decisões já consolidadas e 
 - Respostas HTTP de erro padronizadas por `RestExceptionHandler`.
 - Tratamento de validação de DTO, JSON inválido, parâmetros ausentes, conflito de dados e erro interno.
 - Documentação estrutural, fluxo e fontes UML atualizados.
+- Cinco testes unitários de `EstoqueCentralService` executados com sucesso.
+- Testes de estoque cobrindo entrada, saída, saldo insuficiente, quantidade inválida e usuário inativo.
+
+### Em validação
+
+- Testes unitários de aprovação do `PedidoService` adicionados e aguardando execução local.
 
 ### Pendente
 
-- Criar uma primeira camada de testes unitários para os fluxos críticos de estoque e pedido.
+- Confirmar a execução dos testes unitários de aprovação de pedido.
+- Complementar a primeira camada de testes de pedido, caso os cenários atuais revelem ajustes necessários.
 - Revisar concorrência de estoque e bloqueio de atualizações simultâneas.
 - Preparar migrations e PostgreSQL definitivo.
 - Implementar autenticação local para desenvolvimento usando usuários de teste do PostgreSQL.
@@ -129,19 +136,33 @@ Os testes automatizados serão implementados em duas etapas.
 
 #### Etapa 1 — proteção mínima durante o desenvolvimento
 
-Será criada agora uma camada pequena de testes unitários com JUnit e Mockito para proteger as regras mais críticas já existentes.
+Está sendo criada uma camada pequena de testes unitários com JUnit e Mockito para proteger as regras mais críticas já existentes.
 
-Prioridades:
+Situação atual:
 
-- entrada aumenta o saldo;
-- saída reduz o saldo;
+- `EstoqueCentralServiceTest`: cinco testes executados com sucesso;
+- `PedidoServiceTest`: cinco testes adicionados e aguardando execução local.
+
+Cobertura atual do estoque:
+
+- entrada aumenta o saldo e registra movimentação;
+- saída reduz o saldo e registra movimentação;
 - saída maior que o saldo é bloqueada;
-- quantidade zero ou negativa é rejeitada;
-- aprovação de pedido pendente reduz o estoque;
-- pedido em status inválido não pode ser aprovado;
-- falha em um item da aprovação não deve deixar alterações parciais.
+- quantidade zero é rejeitada antes de acessar repositories;
+- usuário inativo não pode realizar saída.
+
+Cobertura adicionada para aprovação de pedido:
+
+- aprovação parcial reduz somente a quantidade aprovada;
+- aprovação registra movimentação `SAIDA` com origem `PEDIDO`;
+- pedido fora de `PENDENTE` não pode ser aprovado;
+- quantidade aprovada maior que a solicitada é rejeitada;
+- estoque insuficiente impede a aprovação;
+- o usuário aprovador é obrigatório enquanto a autenticação não está pronta.
 
 Esses testes funcionam como proteção contra regressões durante as próximas alterações, especialmente concorrência, PostgreSQL, autenticação e devolução auditada.
+
+O rollback transacional real com banco será validado na etapa de integração. Os testes unitários com Mockito verificam que o fluxo interrompido não executa as persistências posteriores, mas não abrem uma transação real.
 
 #### Etapa 2 — estabilização completa antes do frontend
 
@@ -222,33 +243,43 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 
 ## Próxima ordem de trabalho
 
-1. Criar testes unitários mínimos dos fluxos críticos de estoque e pedido.
-2. Revisar concorrência de saldo.
-3. Migrar para PostgreSQL com migrations e dados de teste.
-4. Implementar autenticação local usando os usuários de teste do PostgreSQL.
-5. Preparar a integração com a API externa de autenticação.
-6. Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
-7. Registrar `DEVOLUCAO` durante o cancelamento de pedido aprovado.
-8. Implementar consultas e endpoints JSON de relatórios.
-9. Implementar exportação de relatórios em PDF e Excel.
-10. Adicionar OpenAPI.
-11. Criar testes de Controller e do `RestExceptionHandler`.
-12. Criar testes de integração com PostgreSQL, autenticação e fluxos completos.
-13. Executar a etapa final de estabilização do backend.
-14. Iniciar frontend e integrar visualização e download dos relatórios.
+1. Executar e validar `PedidoServiceTest`.
+2. Ajustar os testes ou o código apenas se a execução revelar inconsistências reais.
+3. Marcar a primeira etapa mínima de testes como concluída.
+4. Revisar concorrência de saldo.
+5. Migrar para PostgreSQL com migrations e dados de teste.
+6. Implementar autenticação local usando os usuários de teste do PostgreSQL.
+7. Preparar a integração com a API externa de autenticação.
+8. Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
+9. Registrar `DEVOLUCAO` durante o cancelamento de pedido aprovado.
+10. Implementar consultas e endpoints JSON de relatórios.
+11. Implementar exportação de relatórios em PDF e Excel.
+12. Adicionar OpenAPI.
+13. Criar testes de Controller e do `RestExceptionHandler`.
+14. Criar testes de integração com PostgreSQL, autenticação e fluxos completos.
+15. Executar a etapa final de estabilização do backend.
+16. Iniciar frontend e integrar visualização e download dos relatórios.
 
 ## Cenários prioritários de teste
 
 ### Etapa 1 — testes mínimos
 
+#### Estoque — concluídos
+
 - entrada aumenta o saldo e registra movimentação;
 - saída reduz o saldo e registra movimentação;
 - saída maior que o saldo é bloqueada;
-- quantidade zero ou negativa é rejeitada;
+- quantidade zero é rejeitada;
+- usuário inativo não pode realizar saída.
+
+#### Pedido — adicionados e aguardando execução
+
 - aprovação parcial reduz somente a quantidade aprovada;
+- aprovação registra movimentação com saldos corretos;
 - estoque insuficiente impede a aprovação;
 - pedido fora de `PENDENTE` não pode ser aprovado;
-- falha durante a aprovação não deve persistir alterações parciais.
+- quantidade aprovada maior que a solicitada é rejeitada;
+- ausência de usuário aprovador interrompe o fluxo.
 
 ### Etapa 2 — estabilização final
 
@@ -277,6 +308,7 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 - [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo operacional completo.
 - [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): papel das classes e camadas.
 - [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml): entidades e relacionamentos.
+- [`docs/CODIGOS_REFERENCIA_TESTES.md`](docs/CODIGOS_REFERENCIA_TESTES.md): referência comentada dos testes unitários.
 
 ## Histórico recente
 
@@ -295,3 +327,5 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 | 06/08/2026 | Respostas HTTP de erro padronizadas com `RestExceptionHandler` |
 | 06/08/2026 | Exceções genéricas dos Services migradas para exceções de domínio |
 | 06/08/2026 | Estratégia de testes dividida em proteção mínima e estabilização final |
+| 06/08/2026 | Cinco testes unitários de estoque executados com sucesso |
+| 06/08/2026 | Testes unitários de aprovação de pedido adicionados para validação local |
