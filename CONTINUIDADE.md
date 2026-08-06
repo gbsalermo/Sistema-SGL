@@ -2,7 +2,7 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 06/08/2026  
-**Fase atual:** documentação estrutural e preparação para testes automatizados
+**Fase atual:** proteção dos fluxos críticos e preparação da infraestrutura
 
 Este arquivo registra o estado real do backend, as decisões já consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
@@ -23,12 +23,15 @@ Este arquivo registra o estado real do backend, as decisões já consolidadas e 
 - Senhas armazenadas com BCrypt.
 - Exclusão lógica de usuário por inativação.
 - Revisão das mensagens de erro mais evidentes.
+- Exceções de domínio criadas para recurso inexistente e violação de regra de negócio.
+- Migração das exceções genéricas dos Services para exceções personalizadas.
+- Respostas HTTP de erro padronizadas por `RestExceptionHandler`.
+- Tratamento de validação de DTO, JSON inválido, parâmetros ausentes, conflito de dados e erro interno.
 - Documentação estrutural, fluxo e fontes UML atualizados.
 
 ### Pendente
 
-- Padronizar exceções de domínio e respostas HTTP.
-- Criar testes automatizados de service e controller.
+- Criar uma primeira camada de testes unitários para os fluxos críticos de estoque e pedido.
 - Revisar concorrência de estoque e bloqueio de atualizações simultâneas.
 - Preparar migrations e PostgreSQL definitivo.
 - Implementar autenticação local para desenvolvimento usando usuários de teste do PostgreSQL.
@@ -37,6 +40,7 @@ Este arquivo registra o estado real do backend, as decisões já consolidadas e 
 - Implementar consultas e endpoints de relatórios após a migração para PostgreSQL.
 - Adicionar exportação de relatórios em PDF e Excel.
 - Criar documentação OpenAPI.
+- Executar uma etapa completa de testes de integração, controllers e estabilização antes do frontend.
 - Iniciar o frontend.
 
 ## Decisões oficiais
@@ -84,6 +88,76 @@ PENDENTE
 - O cancelamento de pedido aprovado devolve o saldo.
 - A movimentação de devolução será adicionada após a autenticação, para que o responsável venha do contexto autenticado e não de um ID enviado pelo cliente.
 - Pedido entregue não pode ser cancelado pelo fluxo comum.
+
+### Exceções e respostas HTTP
+
+Os Services devem utilizar exceções de domínio em vez de exceções genéricas:
+
+```text
+ResourceNotFoundException
+  → recurso solicitado não existe
+  → HTTP 404
+
+BusinessRuleException
+  → regra de negócio foi violada
+  → HTTP 400
+```
+
+O `RestExceptionHandler` é responsável por converter as exceções em um corpo HTTP padronizado com:
+
+- data e hora;
+- status HTTP;
+- categoria do erro;
+- mensagem;
+- caminho da requisição;
+- erros de campos, quando houver falha de Bean Validation.
+
+Também são tratados:
+
+- DTO inválido;
+- JSON malformado ou valor de enum inválido;
+- parâmetro obrigatório ausente;
+- parâmetro com tipo incompatível;
+- violação de integridade do banco;
+- erros inesperados sem exposição de detalhes internos.
+
+As exceções `EntityNotFoundException` e `IllegalArgumentException` permanecem temporariamente no handler apenas como compatibilidade, mas não devem ser usadas em novas regras dos Services.
+
+### Estratégia de testes
+
+Os testes automatizados serão implementados em duas etapas.
+
+#### Etapa 1 — proteção mínima durante o desenvolvimento
+
+Será criada agora uma camada pequena de testes unitários com JUnit e Mockito para proteger as regras mais críticas já existentes.
+
+Prioridades:
+
+- entrada aumenta o saldo;
+- saída reduz o saldo;
+- saída maior que o saldo é bloqueada;
+- quantidade zero ou negativa é rejeitada;
+- aprovação de pedido pendente reduz o estoque;
+- pedido em status inválido não pode ser aprovado;
+- falha em um item da aprovação não deve deixar alterações parciais.
+
+Esses testes funcionam como proteção contra regressões durante as próximas alterações, especialmente concorrência, PostgreSQL, autenticação e devolução auditada.
+
+#### Etapa 2 — estabilização completa antes do frontend
+
+Após PostgreSQL, autenticação, devolução, relatórios e OpenAPI, será executada uma bateria mais ampla de testes para validar o backend final antes da integração com o frontend.
+
+Essa etapa incluirá:
+
+- testes de Controller com `MockMvc`;
+- testes do `RestExceptionHandler` e dos corpos de erro;
+- testes de integração com PostgreSQL;
+- testes dos endpoints protegidos;
+- testes de autorização por perfil;
+- testes completos dos ciclos de pedido e estoque;
+- casos extremos e conflitos de dados;
+- validação dos endpoints de relatórios;
+- execução da suíte completa antes de liberar o backend para o frontend.
 
 ### Autenticação
 
@@ -148,25 +222,44 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 
 ## Próxima ordem de trabalho
 
-1. Criar exceções específicas para regras de negócio.
-2. Padronizar o corpo das respostas de erro.
-3. Criar testes automatizados dos fluxos de estoque e pedido.
-4. Revisar concorrência de saldo.
-5. Migrar para PostgreSQL com migrations e dados de teste.
-6. Implementar autenticação local usando os usuários de teste do PostgreSQL.
-7. Preparar a integração com a API externa de autenticação.
-8. Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
-9. Registrar `DEVOLUCAO` durante o cancelamento de pedido aprovado.
-10. Implementar consultas e endpoints JSON de relatórios.
-11. Implementar exportação de relatórios em PDF e Excel.
-12. Adicionar OpenAPI.
-13. Iniciar frontend e integrar visualização e download dos relatórios.
+1. Criar testes unitários mínimos dos fluxos críticos de estoque e pedido.
+2. Revisar concorrência de saldo.
+3. Migrar para PostgreSQL com migrations e dados de teste.
+4. Implementar autenticação local usando os usuários de teste do PostgreSQL.
+5. Preparar a integração com a API externa de autenticação.
+6. Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
+7. Registrar `DEVOLUCAO` durante o cancelamento de pedido aprovado.
+8. Implementar consultas e endpoints JSON de relatórios.
+9. Implementar exportação de relatórios em PDF e Excel.
+10. Adicionar OpenAPI.
+11. Criar testes de Controller e do `RestExceptionHandler`.
+12. Criar testes de integração com PostgreSQL, autenticação e fluxos completos.
+13. Executar a etapa final de estabilização do backend.
+14. Iniciar frontend e integrar visualização e download dos relatórios.
 
 ## Cenários prioritários de teste
 
-- rollback quando um item falha durante aprovação;
-- aprovação parcial;
-- estoque insuficiente;
+### Etapa 1 — testes mínimos
+
+- entrada aumenta o saldo e registra movimentação;
+- saída reduz o saldo e registra movimentação;
+- saída maior que o saldo é bloqueada;
+- quantidade zero ou negativa é rejeitada;
+- aprovação parcial reduz somente a quantidade aprovada;
+- estoque insuficiente impede a aprovação;
+- pedido fora de `PENDENTE` não pode ser aprovado;
+- falha durante a aprovação não deve persistir alterações parciais.
+
+### Etapa 2 — estabilização final
+
+- resposta `404` com corpo padrão para recurso inexistente;
+- resposta `400` com corpo padrão para regra de negócio;
+- lista de erros de campos quando o DTO for inválido;
+- resposta para JSON malformado ou enum inválido;
+- conflito de integridade convertido em `409`;
+- integração real com PostgreSQL e migrations;
+- autenticação local e integração com a API externa;
+- acesso permitido ou negado de acordo com o perfil;
 - produto vencido sem autorização;
 - pedido aprovado cancelado e saldo devolvido;
 - movimentação `DEVOLUCAO` associada ao usuário autenticado;
@@ -175,7 +268,8 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 - duplicidade de `Unidade + Produto`;
 - atualização de produto sem falso conflito de código;
 - atualização de usuário sem troca de senha;
-- inativação repetida de usuário.
+- inativação repetida de usuário;
+- filtros e exportações dos relatórios.
 
 ## Documentos de referência
 
@@ -198,3 +292,6 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 | 05/08/2026 | Relatórios planejados para depois da migração ao PostgreSQL |
 | 06/08/2026 | Movimentação de devolução movida para depois da autenticação |
 | 06/08/2026 | Autenticação local definida com usuários de teste do PostgreSQL antes da integração externa |
+| 06/08/2026 | Respostas HTTP de erro padronizadas com `RestExceptionHandler` |
+| 06/08/2026 | Exceções genéricas dos Services migradas para exceções de domínio |
+| 06/08/2026 | Estratégia de testes dividida em proteção mínima e estabilização final |
