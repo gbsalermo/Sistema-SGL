@@ -53,7 +53,6 @@ import com.sgl.repository.UsuarioRepository;
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
 
-    /* Dependências falsas utilizadas pelo PedidoService durante os testes. */
     @Mock
     private PedidoRepository pedidoRepository;
 
@@ -78,7 +77,6 @@ class PedidoServiceTest {
     @Mock
     private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 
-    /* Service real recebendo os repositories falsos acima. */
     @InjectMocks
     private PedidoService pedidoService;
 
@@ -91,12 +89,6 @@ class PedidoServiceTest {
     private ItemPedido item;
     private Pedido pedido;
 
-    /**
-     * Cria um cenário novo antes de cada teste.
-     *
-     * <p>O pedido começa PENDENTE, solicita cinco unidades e o estoque possui
-     * dez. O aprovador está ativo e pertence à mesma unidade.</p>
-     */
     @BeforeEach
     void prepararCenario() {
 
@@ -162,51 +154,41 @@ class PedidoServiceTest {
         pedido.getItens().add(item);
     }
 
-    /**
-     * Cenário feliz de aprovação parcial.
-     *
-     * <p>O pedido solicita cinco unidades, mas apenas três são aprovadas. O
-     * saldo deve cair de dez para sete, o item deve guardar a quantidade três,
-     * o pedido deve se tornar APROVADO e uma movimentação SAIDA/PEDIDO deve ser
-     * criada.</p>
-     */
     @Test
     void deveAprovarParcialmentePedidoEReduzirEstoque() {
 
-        // ARRANGE: cria o DTO aprovando três das cinco unidades solicitadas.
         AprovarPedidoDTO dto = criarAprovacaoDTO(3);
 
         when(usuarioRepository.findById(4L))
                 .thenReturn(Optional.of(aprovador));
 
-        when(pedidoRepository.findById(7L))
+        /*
+         * A aprovação agora busca o pedido com bloqueio pessimista para impedir
+         * que duas requisições processem simultaneamente o mesmo status.
+         */
+        when(pedidoRepository.buscarPorIdComBloqueio(7L))
                 .thenReturn(Optional.of(pedido));
 
         when(estoqueCentralRepository
                 .buscarPorUnidadeEProdutoComBloqueio(1L, 5L))
                 .thenReturn(Optional.of(estoque));
 
-        /*
-         * Como PedidoDTO é criado com o retorno do save, fazemos o mock devolver
-         * o mesmo Pedido que recebeu. Isso simula o comportamento básico do JPA.
-         */
         when(pedidoRepository.save(any(Pedido.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
 
-        // ACT: executa a aprovação real do Service.
         PedidoDTO resultado = pedidoService.aprovar(7L, dto);
 
-        // ASSERT: verifica as alterações principais do domínio.
         assertEquals(StatusPedido.APROVADO, pedido.getStatus());
         assertEquals(StatusPedido.APROVADO, resultado.getStatus());
         assertEquals(3, item.getQuantidadeAprovada());
         assertEquals(7, estoque.getQuantidadeAtual());
         assertEquals("Aprovação parcial para teste", pedido.getObservacao());
 
+        verify(pedidoRepository).buscarPorIdComBloqueio(7L);
+        verify(estoqueCentralRepository).buscarPorUnidadeEProdutoComBloqueio(1L, 5L);
         verify(estoqueCentralRepository).save(estoque);
         verify(pedidoRepository).save(pedido);
 
-        // Captura a movimentação criada internamente para verificar seus dados.
         ArgumentCaptor<MovimentacaoEstoque> captor =
                 ArgumentCaptor.forClass(MovimentacaoEstoque.class);
 
@@ -225,12 +207,6 @@ class PedidoServiceTest {
         assertEquals(estoque, movimentacao.getEstoqueCentral());
     }
 
-    /**
-     * Apenas pedidos PENDENTES podem ser aprovados.
-     *
-     * <p>O teste muda o pedido para APROVADO antes da chamada e confirma que o
-     * fluxo para antes de consultar estoque ou realizar qualquer persistência.</p>
-     */
     @Test
     void deveImpedirAprovacaoQuandoPedidoNaoEstiverPendente() {
 
@@ -240,7 +216,7 @@ class PedidoServiceTest {
         when(usuarioRepository.findById(4L))
                 .thenReturn(Optional.of(aprovador));
 
-        when(pedidoRepository.findById(7L))
+        when(pedidoRepository.buscarPorIdComBloqueio(7L))
                 .thenReturn(Optional.of(pedido));
 
         BusinessRuleException exception = assertThrows(
@@ -258,12 +234,6 @@ class PedidoServiceTest {
         verify(pedidoRepository, never()).save(any());
     }
 
-    /**
-     * A quantidade aprovada não pode ultrapassar a solicitada.
-     *
-     * <p>Como o item solicita cinco e o DTO tenta aprovar seis, a validação deve
-     * ocorrer antes da busca pelo estoque.</p>
-     */
     @Test
     void deveImpedirQuantidadeAprovadaMaiorQueSolicitada() {
 
@@ -272,7 +242,7 @@ class PedidoServiceTest {
         when(usuarioRepository.findById(4L))
                 .thenReturn(Optional.of(aprovador));
 
-        when(pedidoRepository.findById(7L))
+        when(pedidoRepository.buscarPorIdComBloqueio(7L))
                 .thenReturn(Optional.of(pedido));
 
         BusinessRuleException exception = assertThrows(
@@ -292,12 +262,6 @@ class PedidoServiceTest {
         verify(pedidoRepository, never()).save(any());
     }
 
-    /**
-     * A aprovação deve ser bloqueada quando não houver saldo suficiente.
-     *
-     * <p>Nesse cenário o estoque tem apenas duas unidades e o DTO tenta aprovar
-     * três. Nenhum save ou registro de movimentação pode acontecer.</p>
-     */
     @Test
     void deveImpedirAprovacaoQuandoEstoqueForInsuficiente() {
 
@@ -307,7 +271,7 @@ class PedidoServiceTest {
         when(usuarioRepository.findById(4L))
                 .thenReturn(Optional.of(aprovador));
 
-        when(pedidoRepository.findById(7L))
+        when(pedidoRepository.buscarPorIdComBloqueio(7L))
                 .thenReturn(Optional.of(pedido));
 
         when(estoqueCentralRepository
@@ -331,12 +295,6 @@ class PedidoServiceTest {
         verify(pedidoRepository, never()).save(any());
     }
 
-    /**
-     * O aprovador é obrigatório na implementação atual.
-     *
-     * <p>A validação ocorre logo no início do método, portanto nenhum repository
-     * deve ser consultado quando o ID estiver ausente.</p>
-     */
     @Test
     void deveExigirUsuarioAprovador() {
 
@@ -358,7 +316,6 @@ class PedidoServiceTest {
         );
     }
 
-    /** Cria um DTO de aprovação para o único item existente no cenário. */
     private AprovarPedidoDTO criarAprovacaoDTO(Integer quantidadeAprovada) {
 
         AprovarPedidoDTO.ItemAprovacaoDTO itemDTO =
