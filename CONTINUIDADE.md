@@ -2,7 +2,7 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 06/08/2026  
-**Fase atual:** revisão de concorrência e proteção do saldo de estoque
+**Fase atual:** preparação para integração com PostgreSQL
 
 Este arquivo registra o estado real do backend, as decisões consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
@@ -28,17 +28,21 @@ Este arquivo registra o estado real do backend, as decisões consolidadas e a or
 - `EstoqueCentralServiceTest`: 5 testes executados com sucesso.
 - `PedidoServiceTest`: 5 testes executados com sucesso.
 - Total atual: 10 testes, 0 falhas e 0 erros.
+- Bloqueio pessimista implementado nas operações que alteram saldo.
+- Bloqueio pessimista implementado nas transições de status de pedido.
+- Testes unitários executados novamente após os bloqueios, sem regressões.
 
-### Em andamento
+### Próxima etapa
 
-- Revisar concorrência de saldo.
-- Definir bloqueio seguro para operações simultâneas de entrada, saída, aprovação, cancelamento e descarte.
-- Preparar os pontos de acesso ao estoque para uso de bloqueio pessimista.
+- Integrar o backend com PostgreSQL.
+- Preparar configuração de conexão por ambiente.
+- Adicionar migrations versionadas.
+- Criar dados de teste locais.
+- Validar entidades, constraints e relacionamentos no banco real.
+- Criar teste de integração concorrente para confirmar os bloqueios pessimistas.
 
 ### Pendente
 
-- Validar o bloqueio com testes de integração após a migração para PostgreSQL.
-- Preparar migrations e PostgreSQL definitivo.
 - Implementar autenticação local usando usuários de teste do PostgreSQL.
 - Integrar a autenticação definitiva fornecida pela API externa.
 - Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
@@ -92,31 +96,11 @@ PENDENTE
 - A movimentação `DEVOLUCAO` será adicionada após a autenticação.
 - Pedido entregue não pode ser cancelado pelo fluxo comum.
 
-### Concorrência de estoque
+### Concorrência de estoque e pedido
 
-Operações que consultam e alteram saldo devem tratar leitura e escrita como uma única operação protegida.
+A proteção de concorrência foi implementada com `LockModeType.PESSIMISTIC_WRITE`.
 
-Problema que será evitado:
-
-```text
-Saldo inicial: 10
-
-Operação A lê 10 e tenta retirar 7
-Operação B lê 10 e tenta retirar 6
-
-Sem bloqueio, as duas podem considerar o saldo suficiente.
-```
-
-Estratégia definida para os fluxos críticos:
-
-- utilizar bloqueio pessimista de escrita ao buscar um estoque que será alterado;
-- manter a busca bloqueada dentro de método `@Transactional`;
-- impedir que duas transações alterem simultaneamente o mesmo registro;
-- manter buscas comuns de consulta sem bloqueio;
-- aplicar o bloqueio somente nos fluxos que modificam `quantidadeAtual`;
-- validar o comportamento real posteriormente com PostgreSQL e testes de integração concorrentes.
-
-Fluxos que precisam usar busca bloqueada:
+Buscas bloqueadas de estoque são utilizadas em:
 
 - entrada manual;
 - saída manual;
@@ -124,6 +108,22 @@ Fluxos que precisam usar busca bloqueada:
 - aprovação de pedido;
 - cancelamento de pedido aprovado;
 - futura devolução auditada.
+
+Buscas bloqueadas de pedido são utilizadas em:
+
+- aprovação;
+- rejeição;
+- entrega;
+- cancelamento.
+
+Objetivos:
+
+- impedir duas alterações simultâneas sobre o mesmo saldo;
+- impedir o processamento simultâneo do mesmo status de pedido;
+- evitar aprovação duplicada, dupla baixa e conflitos entre entrega e cancelamento;
+- manter buscas comuns sem bloqueio em operações somente de leitura.
+
+Os testes unitários confirmam que os Services usam os métodos bloqueados corretos. O comportamento real entre duas transações será validado no PostgreSQL por teste de integração.
 
 ### Exceções e respostas HTTP
 
@@ -148,7 +148,8 @@ Cobertura atual do estoque:
 - saída reduz saldo e registra movimentação;
 - estoque insuficiente bloqueia a saída;
 - quantidade zero é rejeitada;
-- usuário inativo não pode realizar saída.
+- usuário inativo não pode realizar saída;
+- operações de alteração utilizam busca bloqueada.
 
 Cobertura atual da aprovação:
 
@@ -157,19 +158,37 @@ Cobertura atual da aprovação:
 - pedido fora de `PENDENTE` não pode ser aprovado;
 - quantidade maior que a solicitada é rejeitada;
 - estoque insuficiente impede aprovação;
-- usuário aprovador é obrigatório na implementação atual.
+- usuário aprovador é obrigatório na implementação atual;
+- pedido e estoque utilizam buscas bloqueadas.
 
-O rollback transacional real e a concorrência real serão testados na etapa de integração com banco.
+#### Etapa 2 — integração e estabilização
 
-#### Etapa 2 — estabilização antes do frontend
-
+- migrations e schema PostgreSQL;
+- testes de integração com banco real;
+- teste concorrente de atualização de saldo;
+- teste concorrente de transição de pedido;
 - testes de Controller com `MockMvc`;
 - testes do `RestExceptionHandler`;
-- testes de integração com PostgreSQL;
-- testes concorrentes de atualização de saldo;
 - testes de autenticação e autorização;
 - ciclos completos de pedido e estoque;
 - relatórios e exportações.
+
+### PostgreSQL
+
+A próxima etapa deve seguir esta ordem:
+
+1. adicionar ou confirmar o driver PostgreSQL no Maven;
+2. definir configuração local por variáveis de ambiente;
+3. evitar credenciais reais versionadas;
+4. escolher e configurar migrations, preferencialmente Flyway;
+5. criar a migration inicial do schema;
+6. criar uma base local limpa;
+7. validar a inicialização da aplicação;
+8. inserir dados de teste de desenvolvimento;
+9. executar a suíte unitária;
+10. criar os primeiros testes de integração.
+
+A aplicação não deve depender de `ddl-auto=create` como estratégia definitiva. A estrutura do banco deve ser versionada por migrations.
 
 ### Autenticação
 
@@ -194,21 +213,24 @@ Depois serão adicionadas exportações em PDF e Excel.
 
 ## Próxima ordem de trabalho
 
-1. Adicionar busca de estoque com bloqueio pessimista no repository.
-2. Substituir as buscas comuns pelas buscas bloqueadas nos fluxos que alteram saldo.
-3. Executar novamente os 10 testes unitários para confirmar ausência de regressão.
-4. Documentar quais operações estão protegidas.
-5. Migrar para PostgreSQL com migrations e dados de teste.
-6. Criar teste de integração concorrente para confirmar o bloqueio no banco real.
-7. Implementar autenticação local.
-8. Preparar integração com a API externa de autenticação.
-9. Obter o usuário responsável pelo contexto autenticado.
-10. Registrar `DEVOLUCAO` no cancelamento aprovado.
-11. Implementar relatórios JSON.
-12. Implementar exportações em PDF e Excel.
-13. Adicionar OpenAPI.
-14. Executar testes completos de integração e estabilização.
-15. Iniciar frontend.
+1. Integrar PostgreSQL ao projeto.
+2. Configurar conexão local por ambiente.
+3. Adicionar Flyway e criar a migration inicial.
+4. Criar banco e usuário locais de desenvolvimento.
+5. Validar schema, constraints e relacionamentos.
+6. Adaptar o `DataInitializer` para perfil de desenvolvimento ou migrations de dados.
+7. Executar os 10 testes unitários.
+8. Criar teste de integração concorrente para estoque.
+9. Criar teste de integração concorrente para pedido.
+10. Implementar autenticação local.
+11. Preparar integração com a API externa de autenticação.
+12. Obter o usuário responsável pelo contexto autenticado.
+13. Registrar `DEVOLUCAO` no cancelamento aprovado.
+14. Implementar relatórios JSON.
+15. Implementar exportações em PDF e Excel.
+16. Adicionar OpenAPI.
+17. Executar estabilização completa.
+18. Iniciar frontend.
 
 ## Documentos de referência
 
@@ -235,4 +257,7 @@ Depois serão adicionadas exportações em PDF e Excel.
 | 06/08/2026 | Respostas HTTP e exceções de domínio padronizadas |
 | 06/08/2026 | Estratégia de testes dividida em proteção mínima e estabilização final |
 | 06/08/2026 | Dez testes unitários executados com sucesso |
-| 06/08/2026 | Iniciada revisão de concorrência com bloqueio pessimista para alteração de saldo |
+| 06/08/2026 | Bloqueio pessimista adicionado aos fluxos de alteração de estoque |
+| 06/08/2026 | Bloqueio pessimista adicionado às transições de status de pedido |
+| 06/08/2026 | Testes unitários executados novamente sem falhas após as mudanças de concorrência |
+| 06/08/2026 | Próxima etapa definida: integração com PostgreSQL e migrations |
