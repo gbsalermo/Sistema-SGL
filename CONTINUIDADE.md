@@ -2,7 +2,7 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 06/08/2026  
-**Fase atual:** documentação estrutural e preparação para testes automatizados
+**Fase atual:** preparação para testes automatizados
 
 Este arquivo registra o estado real do backend, as decisões já consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
@@ -23,11 +23,14 @@ Este arquivo registra o estado real do backend, as decisões já consolidadas e 
 - Senhas armazenadas com BCrypt.
 - Exclusão lógica de usuário por inativação.
 - Revisão das mensagens de erro mais evidentes.
+- Exceções de domínio criadas para recurso inexistente e violação de regra de negócio.
+- Migração das exceções genéricas dos Services para exceções personalizadas.
+- Respostas HTTP de erro padronizadas por `RestExceptionHandler`.
+- Tratamento de validação de DTO, JSON inválido, parâmetros ausentes, conflito de dados e erro interno.
 - Documentação estrutural, fluxo e fontes UML atualizados.
 
 ### Pendente
 
-- Padronizar exceções de domínio e respostas HTTP.
 - Criar testes automatizados de service e controller.
 - Revisar concorrência de estoque e bloqueio de atualizações simultâneas.
 - Preparar migrations e PostgreSQL definitivo.
@@ -84,6 +87,40 @@ PENDENTE
 - O cancelamento de pedido aprovado devolve o saldo.
 - A movimentação de devolução será adicionada após a autenticação, para que o responsável venha do contexto autenticado e não de um ID enviado pelo cliente.
 - Pedido entregue não pode ser cancelado pelo fluxo comum.
+
+### Exceções e respostas HTTP
+
+Os Services devem utilizar exceções de domínio em vez de exceções genéricas:
+
+```text
+ResourceNotFoundException
+  → recurso solicitado não existe
+  → HTTP 404
+
+BusinessRuleException
+  → regra de negócio foi violada
+  → HTTP 400
+```
+
+O `RestExceptionHandler` é responsável por converter as exceções em um corpo HTTP padronizado com:
+
+- data e hora;
+- status HTTP;
+- categoria do erro;
+- mensagem;
+- caminho da requisição;
+- erros de campos, quando houver falha de Bean Validation.
+
+Também são tratados:
+
+- DTO inválido;
+- JSON malformado ou valor de enum inválido;
+- parâmetro obrigatório ausente;
+- parâmetro com tipo incompatível;
+- violação de integridade do banco;
+- erros inesperados sem exposição de detalhes internos.
+
+As exceções `EntityNotFoundException` e `IllegalArgumentException` permanecem temporariamente no handler apenas como compatibilidade, mas não devem ser usadas em novas regras dos Services.
 
 ### Autenticação
 
@@ -148,22 +185,26 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 
 ## Próxima ordem de trabalho
 
-1. Criar exceções específicas para regras de negócio.
-2. Padronizar o corpo das respostas de erro.
-3. Criar testes automatizados dos fluxos de estoque e pedido.
-4. Revisar concorrência de saldo.
-5. Migrar para PostgreSQL com migrations e dados de teste.
-6. Implementar autenticação local usando os usuários de teste do PostgreSQL.
-7. Preparar a integração com a API externa de autenticação.
-8. Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
-9. Registrar `DEVOLUCAO` durante o cancelamento de pedido aprovado.
-10. Implementar consultas e endpoints JSON de relatórios.
-11. Implementar exportação de relatórios em PDF e Excel.
-12. Adicionar OpenAPI.
-13. Iniciar frontend e integrar visualização e download dos relatórios.
+1. Criar testes automatizados dos fluxos de estoque e pedido.
+2. Criar testes do `RestExceptionHandler` e das respostas HTTP padronizadas.
+3. Revisar concorrência de saldo.
+4. Migrar para PostgreSQL com migrations e dados de teste.
+5. Implementar autenticação local usando os usuários de teste do PostgreSQL.
+6. Preparar a integração com a API externa de autenticação.
+7. Obter o usuário responsável pelo contexto autenticado nas ações auditáveis.
+8. Registrar `DEVOLUCAO` durante o cancelamento de pedido aprovado.
+9. Implementar consultas e endpoints JSON de relatórios.
+10. Implementar exportação de relatórios em PDF e Excel.
+11. Adicionar OpenAPI.
+12. Iniciar frontend e integrar visualização e download dos relatórios.
 
 ## Cenários prioritários de teste
 
+- resposta `404` com corpo padrão para recurso inexistente;
+- resposta `400` com corpo padrão para regra de negócio;
+- lista de erros de campos quando o DTO for inválido;
+- resposta para JSON malformado ou enum inválido;
+- conflito de integridade convertido em `409`;
 - rollback quando um item falha durante aprovação;
 - aprovação parcial;
 - estoque insuficiente;
@@ -198,3 +239,5 @@ As regras que dependem do estado do banco pertencem ao Service. Controller não 
 | 05/08/2026 | Relatórios planejados para depois da migração ao PostgreSQL |
 | 06/08/2026 | Movimentação de devolução movida para depois da autenticação |
 | 06/08/2026 | Autenticação local definida com usuários de teste do PostgreSQL antes da integração externa |
+| 06/08/2026 | Respostas HTTP de erro padronizadas com `RestExceptionHandler` |
+| 06/08/2026 | Exceções genéricas dos Services migradas para exceções de domínio |
