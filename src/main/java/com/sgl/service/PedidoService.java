@@ -36,7 +36,6 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -55,19 +54,21 @@ public class PedidoService {
     @Transactional
     public PedidoDTO criar(PedidoDTO dto) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Usuário não encontrado com id: " + dto.getUsuarioId()));
-        
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
+
         Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Laboratório não encontrado com id: " + dto.getLaboratorioId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Laboratório",
+                        dto.getLaboratorioId()
+                ));
 
         Projeto projeto = null;
         if (dto.getProjetoId() != null) {
             projeto = projetoRepository.findById(dto.getProjetoId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Projeto não encontrado com id: " + dto.getProjetoId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Projeto",
+                            dto.getProjetoId()
+                    ));
         }
 
         validarConsistenciaPedido(usuario, laboratorio, projeto);
@@ -88,32 +89,37 @@ public class PedidoService {
 
         for (ItemPedidoDTO itemDTO : dto.getItens()) {
             Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Produto não encontrado com id: " + itemDTO.getProdutoId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Produto",
+                            itemDTO.getProdutoId()
+                    ));
 
             if (!produtosAdicionados.add(produto.getId())) {
-                throw new IllegalArgumentException(
+                throw new BusinessRuleException(
                         "O produto '" + produto.getNome()
-                                + "' foi informado mais de uma vez no pedido.");
+                                + "' foi informado mais de uma vez no pedido."
+                );
             }
 
             if (!Boolean.TRUE.equals(produto.getAtivo())) {
-                throw new IllegalArgumentException(
-                        "O produto '" + produto.getNome() + "' está inativo.");
+                throw new BusinessRuleException(
+                        "O produto '" + produto.getNome() + "' está inativo."
+                );
             }
 
             Long unidadeId = laboratorio.getUnidade().getId();
             EstoqueCentral estoque = estoqueCentralRepository
                     .findByUnidadeIdAndProdutoId(unidadeId, produto.getId())
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "O produto '" + produto.getNome()
-                                    + "' não possui estoque cadastrado na unidade "
-                                    + laboratorio.getUnidade().getNome()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Estoque do produto '" + produto.getNome()
+                                    + "' na unidade " + laboratorio.getUnidade().getNome()
+                    ));
 
             if (!Boolean.TRUE.equals(estoque.getAtivo())) {
-                throw new IllegalArgumentException(
+                throw new BusinessRuleException(
                         "O estoque central do produto '"
-                                + produto.getNome() + "' está inativo.");
+                                + produto.getNome() + "' está inativo."
+                );
             }
 
             ItemPedido item = ItemPedido.builder()
@@ -125,8 +131,7 @@ public class PedidoService {
             pedido.getItens().add(item);
         }
 
-        Pedido salvo = pedidoRepository.save(pedido);
-        return new PedidoDTO(salvo);
+        return new PedidoDTO(pedidoRepository.save(pedido));
     }
 
     @Transactional(readOnly = true)
@@ -136,10 +141,8 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public PedidoDTO buscarPorId(Long id) {
-    	Pedido pedido = pedidoRepository.findById(id)
-    	        .orElseThrow(() ->
-    	                new ResourceNotFoundException("Pedido", id)
-    	        );
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
         return new PedidoDTO(pedido);
     }
 
@@ -155,30 +158,24 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO aprovar(Long id, AprovarPedidoDTO dto) {
-    	
-    	Long aprovadorId = dto.getUsuarioAprovadorId();
+        Long aprovadorId = dto.getUsuarioAprovadorId();
 
-    	if (aprovadorId == null) {
-    	    throw new IllegalArgumentException(
-    	            "O usuário aprovador é obrigatório."
-    	    );
-    	}
+        if (aprovadorId == null) {
+            throw new BusinessRuleException("O usuário aprovador é obrigatório.");
+        }
 
-    	
         Usuario usuarioAprovador = usuarioRepository.findById(aprovadorId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Usuário aprovador não encontrado com id: " + aprovadorId
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuário aprovador",
+                        aprovadorId
                 ));
 
         Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Pedido", id)
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
             throw new BusinessRuleException(
-                    "Apenas pedidos PENDENTES podem ser aprovados. "
-                            + "Status atual: "
+                    "Apenas pedidos PENDENTES podem ser aprovados. Status atual: "
                             + pedido.getStatus()
             );
         }
@@ -187,8 +184,10 @@ public class PedidoService {
             ItemPedido item = pedido.getItens().stream()
                     .filter(i -> i.getId().equals(itemAprovacao.getItemId()))
                     .findFirst()
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Item não encontrado com id: " + itemAprovacao.getItemId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Item do pedido",
+                            itemAprovacao.getItemId()
+                    ));
 
             Produto produto = item.getProduto();
             boolean produtoVencido = Boolean.TRUE.equals(produto.getPerecivel())
@@ -196,21 +195,20 @@ public class PedidoService {
                     && produto.getDataValidade().isBefore(LocalDate.now());
 
             if (produtoVencido && !Boolean.TRUE.equals(dto.getAutorizarProdutoVencido())) {
-                throw new IllegalArgumentException(
+                throw new BusinessRuleException(
                         "O produto '" + produto.getNome()
-                                + "' está vencido. Confirme a autorização para continuar.");
+                                + "' está vencido. Confirme a autorização para continuar."
+                );
             }
 
             Integer quantidadeAprovada = itemAprovacao.getQuantidadeAprovada();
-
             if (quantidadeAprovada == null
                     || quantidadeAprovada <= 0
                     || quantidadeAprovada > item.getQuantidadeSolicitada()) {
-
-                throw new IllegalArgumentException(
-                        "Quantidade aprovada deve ser maior que zero "
-                                + "e não pode ser maior que a solicitada. "
-                                + "Solicitada: " + item.getQuantidadeSolicitada()
+                throw new BusinessRuleException(
+                        "Quantidade aprovada deve ser maior que zero e não pode ser maior "
+                                + "que a solicitada. Solicitada: "
+                                + item.getQuantidadeSolicitada()
                                 + ", aprovada: " + quantidadeAprovada
                 );
             }
@@ -218,15 +216,18 @@ public class PedidoService {
             Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
             EstoqueCentral estoque = estoqueCentralRepository
                     .findByUnidadeIdAndProdutoId(unidadeId, produto.getId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Estoque não encontrado para o produto '" + produto.getNome()
-                                    + "' na unidade " + pedido.getLaboratorio().getUnidade().getNome()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Estoque do produto '" + produto.getNome()
+                                    + "' na unidade "
+                                    + pedido.getLaboratorio().getUnidade().getNome()
+                    ));
 
-            if (estoque.getQuantidadeAtual() < itemAprovacao.getQuantidadeAprovada()) {
-                throw new IllegalArgumentException(
+            if (estoque.getQuantidadeAtual() < quantidadeAprovada) {
+                throw new BusinessRuleException(
                         "Estoque insuficiente para o produto: " + produto.getNome()
                                 + ". Disponível: " + estoque.getQuantidadeAtual()
-                                + ", solicitado: " + itemAprovacao.getQuantidadeAprovada());
+                                + ", solicitado: " + quantidadeAprovada
+                );
             }
 
             int quantidadeAnterior = estoque.getQuantidadeAtual();
@@ -234,7 +235,6 @@ public class PedidoService {
 
             estoque.setQuantidadeAtual(quantidadeAtual);
             estoqueCentralRepository.save(estoque);
-
             item.setQuantidadeAprovada(quantidadeAprovada);
 
             MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
@@ -252,7 +252,8 @@ public class PedidoService {
                     .estoqueCentral(estoque)
                     .build();
 
-            movimentacaoEstoqueRepository.save(movimentacao); }
+            movimentacaoEstoqueRepository.save(movimentacao);
+        }
 
         pedido.setStatus(StatusPedido.APROVADO);
         pedido.setObservacao(dto.getObservacao());
@@ -261,14 +262,14 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO rejeitar(Long id, String observacao) {
-    	Pedido pedido = pedidoRepository.findById(id)
-    	        .orElseThrow(() ->
-    	                new ResourceNotFoundException("Pedido", id)
-    	        );
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
-            throw new IllegalArgumentException(
-                    "Apenas pedidos PENDENTES podem ser rejeitados. Status atual: " + pedido.getStatus());
+            throw new BusinessRuleException(
+                    "Apenas pedidos PENDENTES podem ser rejeitados. Status atual: "
+                            + pedido.getStatus()
+            );
         }
 
         pedido.setStatus(StatusPedido.REJEITADO);
@@ -278,14 +279,14 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO entregar(Long id) {
-    	Pedido pedido = pedidoRepository.findById(id)
-    	        .orElseThrow(() ->
-    	                new ResourceNotFoundException("Pedido", id)
-    	        );
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() != StatusPedido.APROVADO) {
-            throw new IllegalArgumentException(
-                    "Apenas pedidos APROVADOS podem ser entregues. Status atual: " + pedido.getStatus());
+            throw new BusinessRuleException(
+                    "Apenas pedidos APROVADOS podem ser entregues. Status atual: "
+                            + pedido.getStatus()
+            );
         }
 
         for (ItemPedido item : pedido.getItens()) {
@@ -308,20 +309,19 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO cancelar(Long id, String observacao) {
-    	Pedido pedido = pedidoRepository.findById(id)
-    	        .orElseThrow(() ->
-    	                new ResourceNotFoundException("Pedido", id)
-    	        );
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
         if (pedido.getStatus() == StatusPedido.REJEITADO) {
-            throw new IllegalArgumentException(
-                    "Pedidos REJEITADOS já estão encerrados e não podem ser cancelados.");
+            throw new BusinessRuleException(
+                    "Pedidos REJEITADOS já estão encerrados e não podem ser cancelados."
+            );
         }
         if (pedido.getStatus() == StatusPedido.ENTREGUE) {
-            throw new IllegalArgumentException("Pedidos ENTREGUES não podem ser cancelados");
+            throw new BusinessRuleException("Pedidos ENTREGUES não podem ser cancelados.");
         }
         if (pedido.getStatus() == StatusPedido.CANCELADO) {
-            throw new IllegalArgumentException("O pedido já está cancelado");
+            throw new BusinessRuleException("O pedido já está cancelado.");
         }
 
         if (pedido.getStatus() == StatusPedido.APROVADO) {
@@ -330,12 +330,15 @@ public class PedidoService {
                     Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
                     EstoqueCentral estoque = estoqueCentralRepository
                             .findByUnidadeIdAndProdutoId(unidadeId, item.getProduto().getId())
-                            .orElseThrow(() -> new EntityNotFoundException(
-                                    "Estoque não encontrado para o produto '"
-                                            + item.getProduto().getNome() + "' na unidade "
-                                            + pedido.getLaboratorio().getUnidade().getNome()));
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Estoque do produto '" + item.getProduto().getNome()
+                                            + "' na unidade "
+                                            + pedido.getLaboratorio().getUnidade().getNome()
+                            ));
+
                     estoque.setQuantidadeAtual(
-                            estoque.getQuantidadeAtual() + item.getQuantidadeAprovada());
+                            estoque.getQuantidadeAtual() + item.getQuantidadeAprovada()
+                    );
                     estoqueCentralRepository.save(estoque);
                 }
             }
@@ -346,36 +349,49 @@ public class PedidoService {
         return new PedidoDTO(pedidoRepository.save(pedido));
     }
 
-    private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
+    private void validarConsistenciaPedido(
+            Usuario usuario,
+            Laboratorio laboratorio,
+            Projeto projeto) {
+
         if (usuario.getLaboratorio() == null
                 || !usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
-            throw new IllegalArgumentException("O usuário não pertence ao laboratório informado.");
+            throw new BusinessRuleException(
+                    "O usuário não pertence ao laboratório informado."
+            );
         }
         if (usuario.getUnidade() == null || laboratorio.getUnidade() == null) {
-            throw new IllegalArgumentException(
-                    "Usuário e laboratório devem possuir uma unidade vinculada.");
+            throw new BusinessRuleException(
+                    "Usuário e laboratório devem possuir uma unidade vinculada."
+            );
         }
         if (!usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
-            throw new IllegalArgumentException(
-                    "O usuário e o laboratório pertencem a unidades diferentes.");
+            throw new BusinessRuleException(
+                    "O usuário e o laboratório pertencem a unidades diferentes."
+            );
         }
         if (projeto != null
                 && (projeto.getLaboratorio() == null
-                        || !projeto.getLaboratorio().getId().equals(laboratorio.getId()))) {
-            throw new IllegalArgumentException(
-                    "O projeto informado não pertence ao laboratório do pedido.");
+                || !projeto.getLaboratorio().getId().equals(laboratorio.getId()))) {
+            throw new BusinessRuleException(
+                    "O projeto informado não pertence ao laboratório do pedido."
+            );
         }
     }
 
-    private void validarEntidadesAtivas(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
+    private void validarEntidadesAtivas(
+            Usuario usuario,
+            Laboratorio laboratorio,
+            Projeto projeto) {
+
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
-            throw new IllegalArgumentException("O usuário informado está inativo.");
+            throw new BusinessRuleException("O usuário informado está inativo.");
         }
         if (!Boolean.TRUE.equals(laboratorio.getAtivo())) {
-            throw new IllegalArgumentException("O laboratório informado está inativo.");
+            throw new BusinessRuleException("O laboratório informado está inativo.");
         }
         if (projeto != null && !Boolean.TRUE.equals(projeto.getAtivo())) {
-            throw new IllegalArgumentException("O projeto informado está inativo.");
+            throw new BusinessRuleException("O projeto informado está inativo.");
         }
     }
 }
