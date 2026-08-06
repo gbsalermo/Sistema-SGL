@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sgl.dto.DescarteProdutoDTO;
 import com.sgl.dto.EstoqueCentralDTO;
 import com.sgl.dto.MovimentacaoEstoqueDTO;
+import com.sgl.exception.BusinessRuleException;
+import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Produto;
@@ -23,7 +25,6 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -39,37 +40,32 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EstoqueCentralService {
 
-    /** Acesso aos registros que representam o saldo por Unidade e Produto. */
     private final EstoqueCentralRepository estoqueCentralRepository;
-
-    /** Consulta o catálogo global de produtos. */
     private final ProdutoRepository produtoRepository;
-
-    /** Valida e recupera a Unidade proprietária do estoque. */
     private final UnidadeRepository unidadeRepository;
-
-    /** Recupera o usuário responsável por entradas, saídas e descartes. */
     private final UsuarioRepository usuarioRepository;
-
-    /** Persiste a trilha de auditoria de cada alteração de saldo. */
     private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 
     @Transactional
     public EstoqueCentralDTO criar(EstoqueCentralDTO dto) {
-        // A combinação Unidade + Produto identifica logicamente um estoque.
         if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(
                 dto.getUnidadeId(), dto.getProdutoId())) {
-            throw new IllegalArgumentException(
-                    "Já existe estoque para esse produto nesta unidade.");
+            throw new BusinessRuleException(
+                    "Já existe estoque para esse produto nesta unidade."
+            );
         }
 
         Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Unidade não encontrada com id: " + dto.getUnidadeId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Unidade",
+                        dto.getUnidadeId()
+                ));
 
         Produto produto = produtoRepository.findById(dto.getProdutoId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Produto não encontrado com id: " + dto.getProdutoId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Produto",
+                        dto.getProdutoId()
+                ));
 
         EstoqueCentral estoque = EstoqueCentral.builder()
                 .unidade(unidade)
@@ -92,30 +88,24 @@ public class EstoqueCentralService {
     @Transactional(readOnly = true)
     public EstoqueCentralDTO buscarPorId(Long id) {
         EstoqueCentral estoque = estoqueCentralRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque central não encontrado com id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
         return new EstoqueCentralDTO(estoque);
     }
 
-    /**
-     * Localiza diretamente o saldo de um Produto em uma Unidade.
-     * Essa consulta evita utilizar acidentalmente o estoque de outra Unidade.
-     */
     @Transactional(readOnly = true)
     public EstoqueCentralDTO buscarPorUnidadeEProduto(Long unidadeId, Long produtoId) {
         EstoqueCentral estoque = estoqueCentralRepository
                 .findByUnidadeIdAndProdutoId(unidadeId, produtoId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque não encontrado para a unidade "
-                                + unidadeId + " e produto " + produtoId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Estoque da unidade " + unidadeId + " para o produto " + produtoId
+                ));
         return new EstoqueCentralDTO(estoque);
     }
 
     @Transactional(readOnly = true)
     public List<EstoqueCentralDTO> listarPorUnidade(Long unidadeId) {
         if (!unidadeRepository.existsById(unidadeId)) {
-            throw new EntityNotFoundException(
-                    "Unidade não encontrada com id: " + unidadeId);
+            throw new ResourceNotFoundException("Unidade", unidadeId);
         }
 
         return estoqueCentralRepository.findByUnidadeId(unidadeId).stream()
@@ -126,20 +116,13 @@ public class EstoqueCentralService {
     @Transactional
     public EstoqueCentralDTO atualizar(Long id, EstoqueCentralDTO dto) {
         EstoqueCentral estoque = estoqueCentralRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque central não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
 
-        // O saldo não é alterado por este método; entradas e saídas possuem
-        // operações próprias para garantir o registro da movimentação.
         estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
         estoque.setAtivo(dto.getAtivo());
         return new EstoqueCentralDTO(estoqueCentralRepository.save(estoque));
     }
 
-    /**
-     * Retorna os estoques ativos cujo saldo atual atingiu ou ficou abaixo da
-     * quantidade mínima configurada.
-     */
     @Transactional(readOnly = true)
     public List<EstoqueCentralDTO> listarEstoqueBaixoPorUnidade(Long unidadeId) {
         return estoqueCentralRepository.findByUnidadeIdAndAtivoTrue(unidadeId).stream()
@@ -149,75 +132,57 @@ public class EstoqueCentralService {
                 .toList();
     }
 
-    /**
-     * Soma uma quantidade ao saldo e registra uma movimentação de ENTRADA.
-     * A transação garante que saldo e histórico sejam persistidos juntos.
-     */
     @Transactional
-    public EstoqueCentralDTO entrada(
-            Long id,
-            MovimentacaoEstoqueDTO dto) {
-
+    public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
         validarQuantidade(dto.getQuantidadeMovimentada());
 
         EstoqueCentral estoque = estoqueCentralRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque central não encontrado com id: " + id
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Usuário não encontrado com id: " + dto.getUsuarioId()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuário",
+                        dto.getUsuarioId()
                 ));
 
         int quantidadeAnterior = estoque.getQuantidadeAtual();
-        int quantidadeAtual =
-                quantidadeAnterior + dto.getQuantidadeMovimentada();
+        int quantidadeAtual = quantidadeAnterior + dto.getQuantidadeMovimentada();
 
         estoque.setQuantidadeAtual(quantidadeAtual);
         estoqueCentralRepository.save(estoque);
 
-        MovimentacaoEstoque movimentacao =
-                MovimentacaoEstoque.builder()
-                        .produto(estoque.getProduto())
-                        .usuario(usuario)
-                        .estoqueCentral(estoque)
-                        .tipoMovimentacao(TipoMovimentacao.ENTRADA)
-                        .origem(dto.getOrigem())
-                        .quantidadeMovimentada(dto.getQuantidadeMovimentada())
-                        .quantidadeAnterior(quantidadeAnterior)
-                        .quantidadeAtual(quantidadeAtual)
-                        .dataMovimentacao(LocalDateTime.now())
-                        .observacao(dto.getObservacao())
-                        .build();
+        MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
+                .produto(estoque.getProduto())
+                .usuario(usuario)
+                .estoqueCentral(estoque)
+                .tipoMovimentacao(TipoMovimentacao.ENTRADA)
+                .origem(dto.getOrigem())
+                .quantidadeMovimentada(dto.getQuantidadeMovimentada())
+                .quantidadeAnterior(quantidadeAnterior)
+                .quantidadeAtual(quantidadeAtual)
+                .dataMovimentacao(LocalDateTime.now())
+                .observacao(dto.getObservacao())
+                .build();
 
         movimentacaoEstoqueRepository.save(movimentacao);
         return new EstoqueCentralDTO(estoque);
     }
 
-    /**
-     * Subtrai uma quantidade do saldo e registra uma movimentação de SAÍDA.
-     * A operação é bloqueada quando produziria estoque negativo.
-     */
     @Transactional
-    public EstoqueCentralDTO saida(
-            Long id,
-            MovimentacaoEstoqueDTO dto) {
-
+    public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
         validarQuantidade(dto.getQuantidadeMovimentada());
 
         EstoqueCentral estoque = estoqueCentralRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque central não encontrado com id: " + id
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Usuário não encontrado com id: " + dto.getUsuarioId()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuário",
+                        dto.getUsuarioId()
                 ));
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "O usuário responsável pela movimentação está inativo."
             );
         }
@@ -226,7 +191,7 @@ public class EstoqueCentralService {
         int quantidadeMovimentada = dto.getQuantidadeMovimentada();
 
         if (quantidadeAnterior < quantidadeMovimentada) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "Estoque insuficiente. Disponível: "
                             + quantidadeAnterior
                             + ", solicitado: "
@@ -238,19 +203,18 @@ public class EstoqueCentralService {
         estoque.setQuantidadeAtual(quantidadeAtual);
         estoqueCentralRepository.save(estoque);
 
-        MovimentacaoEstoque movimentacao =
-                MovimentacaoEstoque.builder()
-                        .produto(estoque.getProduto())
-                        .usuario(usuario)
-                        .estoqueCentral(estoque)
-                        .tipoMovimentacao(TipoMovimentacao.SAIDA)
-                        .origem(dto.getOrigem())
-                        .quantidadeMovimentada(quantidadeMovimentada)
-                        .quantidadeAnterior(quantidadeAnterior)
-                        .quantidadeAtual(quantidadeAtual)
-                        .dataMovimentacao(LocalDateTime.now())
-                        .observacao(dto.getObservacao())
-                        .build();
+        MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
+                .produto(estoque.getProduto())
+                .usuario(usuario)
+                .estoqueCentral(estoque)
+                .tipoMovimentacao(TipoMovimentacao.SAIDA)
+                .origem(dto.getOrigem())
+                .quantidadeMovimentada(quantidadeMovimentada)
+                .quantidadeAnterior(quantidadeAnterior)
+                .quantidadeAtual(quantidadeAtual)
+                .dataMovimentacao(LocalDateTime.now())
+                .observacao(dto.getObservacao())
+                .build();
 
         movimentacaoEstoqueRepository.save(movimentacao);
         return new EstoqueCentralDTO(estoque);
@@ -259,45 +223,45 @@ public class EstoqueCentralService {
     @Transactional
     public void deletar(Long id) {
         if (!estoqueCentralRepository.existsById(id)) {
-            throw new EntityNotFoundException(
-                    "Estoque central não encontrado com id: " + id);
+            throw new ResourceNotFoundException("Estoque central", id);
         }
         estoqueCentralRepository.deleteById(id);
     }
 
-    /**
-     * Remove do saldo uma quantidade de produto comprovadamente vencido e
-     * registra a operação como descarte, mantendo justificativa e responsável.
-     */
     @Transactional
     public EstoqueCentralDTO descartarProdutoVencido(
             Long estoqueId,
             DescarteProdutoDTO dto) {
 
         EstoqueCentral estoque = estoqueCentralRepository.findById(estoqueId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Estoque não encontrado com id: " + estoqueId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Estoque central",
+                        estoqueId
+                ));
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Usuário não encontrado com id: " + dto.getUsuarioId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuário",
+                        dto.getUsuarioId()
+                ));
 
         Produto produto = estoque.getProduto();
 
         if (!Boolean.TRUE.equals(produto.getPerecivel())) {
-            throw new IllegalArgumentException(
-                    "Somente produtos perecíveis podem ser descartados por validade.");
+            throw new BusinessRuleException(
+                    "Somente produtos perecíveis podem ser descartados por validade."
+            );
         }
 
         if (produto.getDataValidade() == null
                 || !produto.getDataValidade().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException(
-                    "O produto ainda não está vencido.");
+            throw new BusinessRuleException("O produto ainda não está vencido.");
         }
 
         if (dto.getQuantidade() > estoque.getQuantidadeAtual()) {
-            throw new IllegalArgumentException(
-                    "Quantidade de descarte maior que o estoque disponível.");
+            throw new BusinessRuleException(
+                    "Quantidade de descarte maior que o estoque disponível."
+            );
         }
 
         int quantidadeAnterior = estoque.getQuantidadeAtual();
@@ -322,12 +286,9 @@ public class EstoqueCentralService {
         return new EstoqueCentralDTO(estoque);
     }
 
-    /** Garante que entradas, saídas e descartes utilizem valor positivo. */
     private void validarQuantidade(Integer quantidade) {
         if (quantidade == null || quantidade <= 0) {
-            throw new IllegalArgumentException(
-                    "A quantidade deve ser maior que zero."
-            );
+            throw new BusinessRuleException("A quantidade deve ser maior que zero.");
         }
     }
 }
