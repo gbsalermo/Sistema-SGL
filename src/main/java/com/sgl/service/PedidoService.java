@@ -19,18 +19,15 @@ import com.sgl.model.EstoqueCentral;
 import com.sgl.model.HistoricoLaboratorio;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
-import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.StatusPedido;
-import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
-import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -49,7 +46,7 @@ public class PedidoService {
     private final LaboratorioRepository laboratorioRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProjetoRepository projetoRepository;
-    private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
+    private final MovimentacaoEstoqueService movimentacaoEstoqueService;
 
     @Transactional
     public PedidoDTO criar(PedidoDTO dto) {
@@ -170,10 +167,10 @@ public class PedidoService {
                         aprovadorId
                 ));
 
-        /*
-         * O pedido também é bloqueado para impedir que duas requisições o
-         * processem simultaneamente enquanto ambas ainda o enxergam PENDENTE.
-         */
+        if (!Boolean.TRUE.equals(usuarioAprovador.getAtivo())) {
+            throw new BusinessRuleException("O usuário aprovador está inativo.");
+        }
+
         Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
 
@@ -193,18 +190,6 @@ public class PedidoService {
                             itemAprovacao.getItemId()
                     ));
 
-            Produto produto = item.getProduto();
-            boolean produtoVencido = Boolean.TRUE.equals(produto.getPerecivel())
-                    && produto.getDataValidade() != null
-                    && produto.getDataValidade().isBefore(LocalDate.now());
-
-            if (produtoVencido && !Boolean.TRUE.equals(dto.getAutorizarProdutoVencido())) {
-                throw new BusinessRuleException(
-                        "O produto '" + produto.getNome()
-                                + "' está vencido. Confirme a autorização para continuar."
-                );
-            }
-
             Integer quantidadeAprovada = itemAprovacao.getQuantidadeAprovada();
             if (quantidadeAprovada == null
                     || quantidadeAprovada <= 0
@@ -217,49 +202,28 @@ public class PedidoService {
                 );
             }
 
+            Produto produto = item.getProduto();
             Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
+
             EstoqueCentral estoque = estoqueCentralRepository
-                    .buscarPorUnidadeEProdutoComBloqueio(
-                            unidadeId,
-                            produto.getId()
-                    )
+                    .findByUnidadeIdAndProdutoId(unidadeId, produto.getId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Estoque do produto '" + produto.getNome()
                                     + "' na unidade "
                                     + pedido.getLaboratorio().getUnidade().getNome()
                     ));
 
-            if (estoque.getQuantidadeAtual() < quantidadeAprovada) {
-                throw new BusinessRuleException(
-                        "Estoque insuficiente para o produto: " + produto.getNome()
-                                + ". Disponível: " + estoque.getQuantidadeAtual()
-                                + ", solicitado: " + quantidadeAprovada
-                );
-            }
+            movimentacaoEstoqueService.registrarSaida(
+                    estoque.getId(),
+                    quantidadeAprovada,
+                    usuarioAprovador,
+                    OrigemMovimentacao.PEDIDO,
+                    pedido,
+                    pedido.getLaboratorio(),
+                    dto.getObservacao()
+            );
 
-            int quantidadeAnterior = estoque.getQuantidadeAtual();
-            int quantidadeAtual = quantidadeAnterior - quantidadeAprovada;
-
-            estoque.setQuantidadeAtual(quantidadeAtual);
-            estoqueCentralRepository.save(estoque);
             item.setQuantidadeAprovada(quantidadeAprovada);
-
-            MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
-                    .produto(produto)
-                    .laboratorio(pedido.getLaboratorio())
-                    .usuario(usuarioAprovador)
-                    .pedido(pedido)
-                    .tipoMovimentacao(TipoMovimentacao.SAIDA)
-                    .origem(OrigemMovimentacao.PEDIDO)
-                    .quantidadeMovimentada(quantidadeAprovada)
-                    .quantidadeAnterior(quantidadeAnterior)
-                    .quantidadeAtual(quantidadeAtual)
-                    .dataMovimentacao(LocalDateTime.now())
-                    .observacao(dto.getObservacao())
-                    .estoqueCentral(estoque)
-                    .build();
-
-            movimentacaoEstoqueRepository.save(movimentacao);
         }
 
         pedido.setStatus(StatusPedido.APROVADO);
@@ -332,27 +296,16 @@ public class PedidoService {
         }
 
         if (pedido.getStatus() == StatusPedido.APROVADO) {
-            for (ItemPedido item : pedido.getItens()) {
-                if (item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada() > 0) {
-                    Long unidadeId = pedido.getLaboratorio().getUnidade().getId();
-                    EstoqueCentral estoque = estoqueCentralRepository
-                            .buscarPorUnidadeEProdutoComBloqueio(
-                                    unidadeId,
-                                    item.getProduto().getId()
-                            )
-                            .orElseThrow(() -> new ResourceNotFoundException(
-                                    "Estoque do produto '"
-                                            + item.getProduto().getNome()
-                                            + "' na unidade "
-                                            + pedido.getLaboratorio().getUnidade().getNome()
-                            ));
-
-                    estoque.setQuantidadeAtual(
-                            estoque.getQuantidadeAtual() + item.getQuantidadeAprovada()
-                    );
-                    estoqueCentralRepository.save(estoque);
-                }
-            }
+            /*
+             * Restaura exatamente os lotes consumidos na aprovação.
+             * A movimentação DEVOLUCAO será registrada quando o contexto de
+             * autenticação local fornecer o usuário que executou o cancelamento.
+             */
+            movimentacaoEstoqueService.devolverSaidasDoPedido(
+                    pedido,
+                    null,
+                    observacao
+            );
         }
 
         pedido.setStatus(StatusPedido.CANCELADO);
