@@ -2,66 +2,26 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 07/08/2026  
-**Fase atual:** modelo de lotes implementado; próxima etapa é revisão de testes antes do PostgreSQL
+**Fase atual:** arquitetura por lotes estabilizada; validação final antes do PostgreSQL
 
-Este arquivo registra o estado real do backend, as decisões consolidadas e a ordem recomendada para continuar o desenvolvimento.
+Este arquivo registra o estado atual do backend, decisões consolidadas e a ordem recomendada de continuidade.
 
 ## Estado atual
 
-### Estrutura de lotes concluída
+### Lotes e estoque
 
-Foram implementados:
+Concluído:
 
 - entidade `Lote`;
 - `LoteDTO`, `EntradaLoteDTO` e `AtualizarLoteDTO`;
-- `LoteRepository`;
-- `LoteService` para consultas e manutenção cadastral;
-- `LoteController`;
-- vínculo entre `Lote` e `EstoqueCentral`;
-- bloqueios pessimistas para seleção e alteração de lotes;
-- unicidade lógica de número do lote dentro de cada estoque.
-
-`Lote` representa uma entrada física rastreável e possui:
-
-```text
-numeroLote
-quantidadeInicial
-quantidadeDisponivel
-dataEntrada
-dataValidade
-ativo
-EstoqueCentral
-```
-
-A quantidade inicial não deve ser alterada depois da entrada. A quantidade disponível só pode mudar através de uma operação física de estoque.
-
-## Responsabilidades atuais
-
-### Produto
-
-`Produto` voltou a ser exclusivamente catálogo.
-
-A validade operacional foi removida de `Produto` e de `ProdutoDTO`.
-
-```text
-Produto perecível
-→ informa que seus lotes exigem dataValidade
-
-Produto não perecível
-→ seus lotes não possuem dataValidade
-```
-
-Consultas de validade passam a utilizar `Lote`, não `Produto`.
-
-### EstoqueCentral
-
-`EstoqueCentral` representa o saldo agregado da combinação:
-
-```text
-Unidade + Produto
-```
-
-`EstoqueCentral.quantidadeAtual` continua persistido.
+- `LoteRepository`, `LoteService` e `LoteController`;
+- entrada física por lote;
+- FEFO para produtos perecíveis;
+- FIFO para produtos não perecíveis;
+- descarte de lotes vencidos;
+- rastreabilidade por `MovimentacaoEstoque.lote`;
+- restauração exata de lotes no cancelamento de pedido aprovado;
+- remoção das operações físicas de `EstoqueCentralService`.
 
 Regra de consistência:
 
@@ -71,255 +31,241 @@ EstoqueCentral.quantidadeAtual
 soma de Lote.quantidadeDisponivel
 ```
 
-O `EstoqueCentralService` não possui mais operações físicas de entrada, saída ou descarte. Ele ficou responsável por cadastro, configuração e consultas do estoque agregado.
+### Produto
 
-Um novo `EstoqueCentral` nasce com:
+`Produto` é catálogo e informa se o item é perecível.
+
+A validade operacional pertence ao lote.
 
 ```text
-quantidadeAtual = 0
-```
+Produto perecível
+→ lote exige dataValidade
+→ saída FEFO
 
-O saldo é alimentado pelas movimentações de lote.
+Produto não perecível
+→ lote sem dataValidade
+→ saída FIFO
+```
 
 ### MovimentacaoEstoque
 
-`MovimentacaoEstoque` continua sendo a entidade de auditoria.
+`MovimentacaoEstoque` permanece como entidade de auditoria.
 
-Foi adicionado vínculo opcional:
-
-```text
-MovimentacaoEstoque → Lote
-```
-
-Quando uma operação utiliza vários lotes, é criada uma `MovimentacaoEstoque` para cada lote afetado. Não foi criada entidade intermediária `MovimentacaoLote`.
-
-Isso permite rastrear exatamente qual quantidade saiu, entrou, foi descartada ou devolvida em cada lote.
-
-### MovimentacaoEstoqueService
-
-`MovimentacaoEstoqueService` centraliza as operações físicas que alteram quantidades.
-
-Atualmente contém lógica para:
+Cada lote afetado por uma operação gera sua própria movimentação, permitindo rastrear exatamente:
 
 ```text
-entrada por lote
-saída FEFO/FIFO
-descarte por vencimento
-devolução/restauração de lotes de pedido
+produto
+lote
+quantidade
+pedido, quando aplicável
+laboratório, quando aplicável
+usuário responsável
+saldo anterior
+saldo posterior
 ```
 
-Toda operação altera lote, saldo agregado e movimentação dentro da mesma transação quando houver usuário responsável disponível para auditoria.
-
-## Entrada física
-
-A entrada direta de `EstoqueCentralService` foi removida.
-
-Fluxo atual:
-
-```text
-receber EntradaLoteDTO
-→ obter usuário responsável do contexto de autenticação
-→ bloquear EstoqueCentral
-→ validar produto e lote
-→ criar Lote
-→ aumentar EstoqueCentral.quantidadeAtual
-→ registrar MovimentacaoEstoque ENTRADA vinculada ao lote
-```
-
-`EntradaLoteDTO` não recebe `usuarioId`. O usuário deverá vir do contexto de autenticação local e, futuramente, da autenticação corporativa.
-
-## FEFO e FIFO
-
-A política de saída foi fechada.
-
-### Produto perecível
-
-Usa **FEFO — First Expire, First Out**:
-
-```text
-primeiro a vencer → primeiro a sair
-```
-
-Somente lotes com:
-
-```text
-ativo = true
-quantidadeDisponivel > 0
-dataValidade >= hoje
-```
-
-participam da saída normal.
-
-Lotes vencidos ficam fora do atendimento de pedidos e seguem para descarte.
-
-### Produto não perecível
-
-Usa **FIFO — First In, First Out** pela entrada:
-
-```text
-primeiro a entrar → primeiro a sair
-```
-
-Ordenação:
-
-```text
-dataEntrada ASC
-id ASC
-```
-
-Produto não perecível não deve receber `dataValidade` no lote.
+`MovimentacaoEstoqueService` centraliza entrada, saída, descarte e devolução/restauração física.
 
 ## Pedido
 
-O `PedidoService` foi adaptado ao modelo por lotes.
-
-### Aprovação
-
-O `PedidoService` continua responsável por:
+O fluxo atual é:
 
 ```text
-validar pedido
-validar quantidade aprovada
-alterar status
+PENDENTE
+├── APROVADO
+│   ├── ENTREGUE
+│   └── CANCELADO
+└── REJEITADO
 ```
 
-Ele não altera mais diretamente o saldo.
-
-Fluxo:
+Na aprovação:
 
 ```text
-PedidoService.aprovar
+PedidoService
+→ valida pedido e quantidades
 → localiza EstoqueCentral
-→ MovimentacaoEstoqueService.registrarSaida
-→ seleciona lotes FEFO/FIFO
+→ delega ao MovimentacaoEstoqueService
+→ FEFO/FIFO seleciona lotes
 → reduz lotes
 → reduz saldo agregado
-→ registra uma SAIDA por lote
-→ PedidoService marca APROVADO
+→ registra SAIDA por lote
+→ pedido fica APROVADO
 ```
 
-A antiga autorização para utilizar produto vencido foi removida. Lote vencido não participa do fluxo normal de pedido.
-
-### Cancelamento de pedido aprovado
-
-As saídas do pedido são consultadas através de `MovimentacaoEstoque`.
-
-Como cada saída contém o lote usado, o cancelamento consegue restaurar exatamente:
+Na entrega:
 
 ```text
-Lote A + quantidade retirada do Lote A
-Lote B + quantidade retirada do Lote B
-...
-EstoqueCentral + total devolvido
+pedido APROVADO
+→ cria HistoricoLaboratorio
+→ não baixa estoque novamente
+→ pedido fica ENTREGUE
 ```
 
-A restauração física por lote já está implementada.
-
-O registro auditado de `DEVOLUCAO` continuará dependente do usuário executor do cancelamento. Enquanto o contexto de autenticação local ainda não estiver implementado, o cancelamento restaura fisicamente os lotes sem inventar um usuário responsável.
-
-## Descarte por vencimento
-
-O descarte antigo baseado em `Produto.dataValidade` foi removido de `EstoqueCentralService`.
-
-O novo fluxo seleciona somente lotes:
+No cancelamento de pedido aprovado:
 
 ```text
-dataValidade < hoje
-ativo = true
-quantidadeDisponivel > 0
+consulta SAIDAS do pedido
+→ identifica lotes usados
+→ restaura exatamente esses lotes
+→ restaura EstoqueCentral
+→ pedido fica CANCELADO
 ```
 
-Se a quantidade de descarte ultrapassar um lote vencido, o processamento continua pelos próximos lotes vencidos em ordem de validade.
+O registro auditado `DEVOLUCAO` será completado quando o contexto autenticado local fornecer o usuário executor do cancelamento.
 
-Cada lote descartado gera sua própria movimentação `DESCARTE_VENCIMENTO`.
+## Consultas por projeto e laboratório
 
-## Dados iniciais
+Foi adicionada uma separação explícita entre **pedidos realizados** e **materiais efetivamente recebidos**.
 
-`DataInitializer` foi adaptado à nova modelagem.
+### Pedidos realizados pelo projeto
 
-Os produtos perecíveis não possuem mais validade global. Os estoques iniciais possuem lotes correspondentes, preservando desde o início:
+```http
+GET /api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+```
+
+Essa consulta usa `Pedido.dataSolicitacao` e pode retornar pedidos em qualquer status.
+
+### Materiais efetivamente recebidos pelo projeto
+
+```http
+GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+```
+
+Essa consulta usa `HistoricoLaboratorio.dataRecebimento` e representa somente materiais entregues.
+
+As duas consultas validam:
 
 ```text
-EstoqueCentral.quantidadeAtual
-=
-soma dos lotes
+laboratório existe
+projeto existe
+projeto pertence ao laboratório informado
+dataInicio <= dataFim
 ```
 
-## Concorrência
-
-A proteção pessimista continua sendo usada.
-
-Fluxo conceitual:
+Com isso, o sistema já consegue responder perguntas como:
 
 ```text
-Pedido, quando aplicável
-→ EstoqueCentral
-→ Lotes em ordem determinística
+quantos pedidos o Laboratório A recebeu em junho?
+quantos desses pedidos pertencem ao Projeto 1?
+quanto material o Projeto 1 efetivamente recebeu em junho?
 ```
 
-As consultas FEFO/FIFO utilizam `PESSIMISTIC_WRITE`.
+## Testes automatizados
 
-A validação real de concorrência e possíveis deadlocks será feita posteriormente no PostgreSQL com testes de integração.
+A suíte foi migrada para a arquitetura atual.
 
-## Testes
+### `MovimentacaoEstoqueServiceTest`
 
-Os testes antigos ainda não foram migrados para a nova arquitetura.
+Cobre:
 
-Os 10 testes existentes foram escritos antes da remoção das operações físicas de `EstoqueCentralService`, portanto devem ser revisados antes de serem usados novamente como referência de regressão.
+- entrada por lote;
+- validade obrigatória em perecível;
+- FIFO;
+- FEFO;
+- consumo de múltiplos lotes;
+- insuficiência de lotes válidos;
+- descarte de vencidos;
+- restauração exata de lotes.
 
-Próximos testes necessários:
+### `PedidoServiceTest`
 
-- `LoteServiceTest`;
-- entrada física por lote;
-- entrada de perecível sem validade;
-- rejeição de validade em não perecível;
-- saída FEFO;
-- saída FIFO;
-- saída utilizando vários lotes;
-- saldo utilizável insuficiente por existência de lotes vencidos;
-- descarte de um e vários lotes vencidos;
-- aprovação de pedido por lotes;
-- cancelamento restaurando exatamente os lotes consumidos;
-- consistência entre soma dos lotes e `EstoqueCentral.quantidadeAtual`.
+Cobre:
+
+- aprovação delegada ao service de movimentação;
+- regras de status;
+- quantidade aprovada;
+- falha de estoque utilizável;
+- exigência de aprovador;
+- cancelamento com restauração;
+- pedidos por projeto/laboratório/período;
+- projeto pertencente a outro laboratório;
+- período invertido.
+
+### `HistoricoLaboratorioServiceTest`
+
+Cobre:
+
+- materiais recebidos por projeto/laboratório/período;
+- vínculo incorreto Projeto → Laboratório;
+- período invertido.
+
+A suíte deve ser executada localmente antes da migração:
+
+```bash
+cd backend/sgl-backend
+mvn test
+```
+
+O roteiro manual completo está em [`docs/testes.md`](docs/testes.md).
+
+## Catálogo de endpoints
+
+Foi criado o documento:
+
+```text
+docs/ENDPOINTS_INTERNOS.md
+```
+
+Ele contém os endpoints atuais separados por entidade, método HTTP e função.
+
+O documento é operacional/interno ao desenvolvimento, porém sua visibilidade acompanha a do repositório. Como o repositório está público, o arquivo também está público.
+
+Até a adoção de OpenAPI/Swagger, esse arquivo deve ser mantido como inventário principal da API.
 
 ## Autenticação
 
 ### Local simulada
 
-Continua planejada para desenvolvimento e testes após a integração com PostgreSQL.
+Permanece planejada para desenvolvimento após a integração inicial com PostgreSQL.
 
-Ela deverá fornecer o usuário responsável pelo contexto autenticado para que DTOs de operações físicas não recebam `usuarioId` do cliente.
+Ela deverá fornecer o usuário responsável através de contexto autenticado, eliminando os `usuarioId` temporários de endpoints de movimentação.
 
 ### Definitiva externa
 
-A autenticação definitiva será fornecida por API externa da empresa e permanece obrigatória para a versão final.
+Será fornecida por API corporativa e permanece obrigatória para implantação definitiva.
 
-Ela continua fora da sequência numerada porque depende da infraestrutura corporativa.
+## PostgreSQL
+
+A modelagem de domínio necessária para iniciar a migração está praticamente estabilizada.
+
+Antes de iniciar oficialmente PostgreSQL/Flyway, executar:
+
+```text
+1. mvn test
+2. roteiro Postman de Lote/FEFO/FIFO
+3. aprovação e cancelamento
+4. descarte
+5. pedidos por projeto/período
+6. histórico recebido por projeto/período
+```
+
+Se os fluxos estiverem corretos, iniciar a migração.
 
 ## Próxima ordem de trabalho
 
-1. Revisar e migrar os testes para a arquitetura por lotes.
-2. Atualizar UML e documentação estrutural restante.
-3. Integrar PostgreSQL.
-4. Configurar conexão por ambiente.
-5. Adicionar Flyway e criar a migration inicial já com `Lote` e o vínculo `MovimentacaoEstoque.lote`.
-6. Criar dados locais de desenvolvimento.
-7. Executar testes de integração e concorrência.
-8. Implementar autenticação local simulada.
-9. Passar o usuário autenticado para entrada, descarte, cancelamento e demais operações auditáveis.
-10. Ativar registro `DEVOLUCAO` no cancelamento com o usuário executor real.
-11. Implementar relatórios, exportações e OpenAPI.
-12. Executar estabilização completa.
-13. Iniciar frontend.
-
-A autenticação externa deverá ser integrada assim que a infraestrutura corporativa estiver disponível.
+1. Executar a suíte automatizada e corrigir eventuais falhas.
+2. Executar `docs/testes.md` no Postman.
+3. Confirmar consistência EstoqueCentral × Lotes.
+4. Confirmar filtros de Projeto × Laboratório × período.
+5. Integrar PostgreSQL.
+6. Configurar conexão por ambiente.
+7. Adicionar Flyway.
+8. Criar migration inicial com o modelo estabilizado.
+9. Criar dados locais de desenvolvimento.
+10. Executar testes de integração e concorrência.
+11. Implementar autenticação local simulada.
+12. Remover `usuarioId` temporário dos endpoints auditáveis.
+13. Ativar `DEVOLUCAO` auditada com usuário executor real.
+14. Adicionar OpenAPI/Swagger.
+15. Iniciar frontend.
 
 ## Documentos de referência
 
 - [`README.md`](README.md)
+- [`docs/ENDPOINTS_INTERNOS.md`](docs/ENDPOINTS_INTERNOS.md)
+- [`docs/testes.md`](docs/testes.md)
 - [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md)
 - [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md)
-- [`docs/CODIGOS_REFERENCIA_TESTES.md`](docs/CODIGOS_REFERENCIA_TESTES.md)
 - [`docs/CODIGOS_REFERENCIA_LOTE.md`](docs/CODIGOS_REFERENCIA_LOTE.md)
 - [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml)
 
@@ -327,15 +273,13 @@ A autenticação externa deverá ser integrada assim que a infraestrutura corpor
 
 | Data | Decisão |
 |---|---|
-| 06/08/2026 | Dez testes unitários executados com sucesso na arquitetura anterior |
-| 06/08/2026 | Bloqueio pessimista adicionado a estoque e pedido |
-| 06/08/2026 | PostgreSQL adiado até estabilização do modelo de lotes |
-| 07/08/2026 | `EstoqueCentral.quantidadeAtual` mantido como saldo agregado persistido |
-| 07/08/2026 | `Lote` implementado como composição rastreável do estoque |
+| 07/08/2026 | `Lote` consolidado como composição rastreável do estoque |
 | 07/08/2026 | FEFO definido para perecíveis e FIFO para não perecíveis |
-| 07/08/2026 | Validade removida de `Produto` e transferida definitivamente para `Lote` |
-| 07/08/2026 | Operações físicas removidas de `EstoqueCentralService` |
-| 07/08/2026 | `MovimentacaoEstoqueService` passou a centralizar entrada, saída, descarte e devolução |
-| 07/08/2026 | `MovimentacaoEstoque` passou a referenciar o lote afetado |
+| 07/08/2026 | Validade operacional transferida definitivamente para `Lote` |
+| 07/08/2026 | `MovimentacaoEstoqueService` passou a centralizar operações físicas |
 | 07/08/2026 | Aprovação de pedido passou a consumir lotes por FEFO/FIFO |
 | 07/08/2026 | Cancelamento aprovado passou a restaurar exatamente os lotes consumidos |
+| 07/08/2026 | Pedidos passaram a poder ser consultados por Projeto + Laboratório + período |
+| 07/08/2026 | Histórico de recebimentos passou a poder ser consultado por Projeto + Laboratório + período |
+| 07/08/2026 | Suíte automatizada atualizada para os novos filtros |
+| 07/08/2026 | Criado inventário de endpoints em `docs/ENDPOINTS_INTERNOS.md` |
