@@ -1,71 +1,85 @@
 # Testes — SGL
 
-Este arquivo reúne os testes automatizados e o roteiro manual no Postman para validar a arquitetura de estoque por lotes antes da migração para PostgreSQL.
+Este arquivo reúne os testes automatizados e o roteiro manual no Postman para validar a arquitetura atual antes da migração para PostgreSQL.
 
 ## 1. Executar testes automatizados
-
-A partir da pasta do backend:
 
 ```bash
 cd backend/sgl-backend
 mvn test
 ```
 
-A suíte atual cobre principalmente `MovimentacaoEstoqueService` e `PedidoService`.
+A suíte atual cobre três áreas principais.
 
-### MovimentacaoEstoqueServiceTest
-
-Os cenários principais são:
+### `MovimentacaoEstoqueServiceTest`
 
 - entrada física cria lote, aumenta `EstoqueCentral.quantidadeAtual` e registra `ENTRADA`;
-- produto perecível exige `dataValidade` no lote;
-- produto não perecível utiliza FIFO;
-- produto perecível utiliza FEFO;
-- uma saída pode consumir mais de um lote;
-- saldo agregado não basta para aprovação se não houver quantidade suficiente em lotes válidos;
-- descarte atua somente sobre lotes vencidos;
-- cancelamento restaura exatamente os mesmos lotes consumidos anteriormente.
+- perecível exige validade no lote;
+- não perecível usa FIFO;
+- perecível usa FEFO;
+- saída pode consumir mais de um lote;
+- saldo agregado não basta quando os lotes válidos são insuficientes;
+- descarte atua sobre lotes vencidos;
+- cancelamento restaura os mesmos lotes consumidos.
 
-### PedidoServiceTest
-
-Os cenários principais são:
+### `PedidoServiceTest`
 
 - aprovação delega a baixa física para `MovimentacaoEstoqueService`;
-- somente pedido `PENDENTE` pode ser aprovado;
-- quantidade aprovada deve ser maior que zero e não pode ultrapassar a solicitada;
+- somente `PENDENTE` pode ser aprovado;
+- quantidade aprovada não pode ultrapassar a solicitada;
 - falha de estoque utilizável impede aprovação;
-- usuário aprovador é obrigatório enquanto o contexto autenticado local ainda não está implementado;
-- cancelamento de pedido `APROVADO` solicita a restauração dos lotes consumidos.
+- aprovador é obrigatório enquanto a autenticação local não fornece o contexto;
+- cancelamento de `APROVADO` restaura lotes;
+- consulta pedidos de um projeto em determinado laboratório e período;
+- rejeita consulta quando projeto não pertence ao laboratório;
+- rejeita período invertido.
 
-## 2. Regras que precisam ser confirmadas
+### `HistoricoLaboratorioServiceTest`
+
+- consulta materiais efetivamente recebidos por um projeto em determinado laboratório e período;
+- rejeita projeto pertencente a outro laboratório;
+- rejeita período invertido.
+
+## 2. Regras que os testes precisam preservar
 
 ```text
 Produto
-→ representa o item do catálogo
+→ catálogo
 → informa se é perecível
-→ não possui uma data de validade única
+→ não possui validade única
 
 Lote
-→ representa a entrada física
-→ possui quantidade e validade próprias
+→ entrada física
+→ quantidade e validade próprias
 
 EstoqueCentral
-→ mantém o saldo agregado
+→ saldo agregado
 
 MovimentacaoEstoque
-→ registra cada lote efetivamente afetado
+→ auditoria por lote afetado
 ```
 
-Para saída:
+Saída:
 
 ```text
 Produto perecível     → FEFO
 Produto não perecível → FIFO
 ```
 
-Para produtos perecíveis, lote vencido não participa de saída normal nem de aprovação de pedido.
+Pedidos continuam usando `Produto + quantidade`. O usuário não escolhe lote.
 
-Uma saída de pedido continua sendo solicitada como `Produto + quantidade`. O usuário não escolhe o lote. Internamente, o sistema seleciona os lotes adequados e registra uma `MovimentacaoEstoque` para cada lote afetado.
+Para relatórios:
+
+```text
+Pedido
+→ solicitação realizada
+→ usa dataSolicitacao
+
+HistoricoLaboratorio
+→ material efetivamente recebido
+→ nasce na entrega
+→ usa dataRecebimento
+```
 
 ## 3. Preparação do Postman
 
@@ -75,62 +89,45 @@ Base URL:
 http://localhost:8080
 ```
 
-Antes de começar, execute a aplicação e consulte os dados iniciais:
+Consulte primeiro os dados reais da execução:
 
 ```http
+GET http://localhost:8080/api/v1/unidades
+GET http://localhost:8080/api/v1/laboratorios
+GET http://localhost:8080/api/v1/usuarios
+GET http://localhost:8080/api/v1/projetos
 GET http://localhost:8080/api/v1/produtos
-```
-
-```http
 GET http://localhost:8080/api/v1/estoque-central
-```
-
-```http
 GET http://localhost:8080/api/v1/lotes
 ```
 
-Use os IDs retornados pela sua execução. Não assuma que os IDs serão sempre iguais aos exemplos deste arquivo.
+Não assuma IDs fixos. Use os IDs retornados localmente.
 
-## 4. Conferir estoque inicial
+---
 
-### Listar estoques
+# Testes de Lote e Estoque
+
+## 4. Conferir consistência inicial
 
 ```http
 GET http://localhost:8080/api/v1/estoque-central
-```
-
-Confirme que cada `quantidadeAtual` possui lotes correspondentes.
-
-### Listar lotes
-
-```http
 GET http://localhost:8080/api/v1/lotes
 ```
 
-Ou por estoque:
-
-```http
-GET http://localhost:8080/api/v1/lotes/por-estoque?estoqueId={estoqueId}
-```
-
-Regra esperada:
+Para cada estoque:
 
 ```text
 EstoqueCentral.quantidadeAtual
 =
-soma dos Lote.quantidadeDisponivel daquele estoque
+soma de Lote.quantidadeDisponivel
 ```
 
 ## 5. Entrada de produto não perecível
-
-Endpoint temporário enquanto a autenticação local não está implementada:
 
 ```http
 POST http://localhost:8080/api/v1/movimentacoes/estoques/{estoqueId}/lotes?usuarioId={usuarioId}
 Content-Type: application/json
 ```
-
-Body:
 
 ```json
 {
@@ -138,17 +135,18 @@ Body:
   "quantidade": 10,
   "dataValidade": null,
   "origem": "COMPRA",
-  "observacao": "Entrada de produto não perecível pelo Postman"
+  "observacao": "Entrada FIFO via Postman"
 }
 ```
 
-Resultado esperado:
+Esperado:
 
 ```text
-novo Lote com quantidadeInicial = 10
+lote criado
+quantidadeInicial = 10
 quantidadeDisponivel = 10
 dataValidade = null
-EstoqueCentral.quantidadeAtual aumenta em 10
+EstoqueCentral +10
 MovimentacaoEstoque ENTRADA vinculada ao lote
 ```
 
@@ -156,32 +154,30 @@ Confira:
 
 ```http
 GET http://localhost:8080/api/v1/lotes/por-estoque?estoqueId={estoqueId}
-```
-
-```http
 GET http://localhost:8080/api/v1/movimentacoes/produto?produtoId={produtoId}
 ```
 
 ## 6. Entrada de produto perecível
 
+Crie dois lotes no mesmo estoque perecível:
+
 ```http
 POST http://localhost:8080/api/v1/movimentacoes/estoques/{estoqueId}/lotes?usuarioId={usuarioId}
-Content-Type: application/json
 ```
 
-Body de exemplo:
+Primeiro:
 
 ```json
 {
   "numeroLote": "POSTMAN-FEFO-A",
-  "quantidade": 10,
+  "quantidade": 4,
   "dataValidade": "2026-08-20",
   "origem": "COMPRA",
-  "observacao": "Primeiro lote para teste FEFO"
+  "observacao": "Primeiro lote FEFO"
 }
 ```
 
-Crie um segundo lote do mesmo produto com validade posterior:
+Segundo:
 
 ```json
 {
@@ -189,15 +185,13 @@ Crie um segundo lote do mesmo produto com validade posterior:
   "quantidade": 10,
   "dataValidade": "2026-12-20",
   "origem": "COMPRA",
-  "observacao": "Segundo lote para teste FEFO"
+  "observacao": "Segundo lote FEFO"
 }
 ```
 
-O lote `POSTMAN-FEFO-A` deve ser consumido antes do `POSTMAN-FEFO-B`.
+`POSTMAN-FEFO-A` deve ser consumido antes de `POSTMAN-FEFO-B`.
 
-## 7. Validar erro de perecível sem validade
-
-Tente cadastrar uma entrada perecível com:
+## 7. Perecível sem validade deve falhar
 
 ```json
 {
@@ -205,20 +199,18 @@ Tente cadastrar uma entrada perecível com:
   "quantidade": 5,
   "dataValidade": null,
   "origem": "COMPRA",
-  "observacao": "Este cadastro deve falhar"
+  "observacao": "Deve falhar"
 }
 ```
 
-Resultado esperado:
+Esperado:
 
 ```text
 400 Bad Request
 Data de validade é obrigatória para produto perecível.
 ```
 
-## 8. Validar erro de não perecível com validade
-
-Em um estoque cujo produto seja não perecível:
+## 8. Não perecível com validade deve falhar
 
 ```json
 {
@@ -226,42 +218,36 @@ Em um estoque cujo produto seja não perecível:
   "quantidade": 5,
   "dataValidade": "2027-01-01",
   "origem": "COMPRA",
-  "observacao": "Este cadastro deve falhar"
+  "observacao": "Deve falhar"
 }
 ```
 
-Resultado esperado:
+Esperado:
 
 ```text
 400 Bad Request
 Produto não perecível não deve possuir data de validade no lote.
 ```
 
-## 9. Criar pedido de produto perecível
+---
 
-Primeiro identifique:
+# Testes de Pedido + FEFO/FIFO
 
-```text
-usuarioId
-laboratorioId
-produtoId perecível
-```
+## 9. Criar pedido vinculado a projeto
 
-Crie o pedido:
+Escolha um usuário, laboratório, projeto pertencente ao mesmo laboratório e um produto existente no estoque da unidade.
 
 ```http
 POST http://localhost:8080/api/v1/pedidos
 Content-Type: application/json
 ```
 
-Body:
-
 ```json
 {
   "usuarioId": 2,
   "laboratorioId": 1,
-  "projetoId": null,
-  "observacao": "Pedido para validar FEFO",
+  "projetoId": 3,
+  "observacao": "Pedido de teste vinculado ao projeto",
   "arquivoDocumento": null,
   "itens": [
     {
@@ -272,58 +258,29 @@ Body:
 }
 ```
 
-Substitua os IDs pelos IDs reais retornados pelo sistema.
+Use IDs reais.
 
-Resultado esperado:
+Esperado:
 
 ```text
 status = PENDENTE
-nenhum lote é alterado
-EstoqueCentral não é alterado
-nenhuma SAIDA é registrada
+lotes não mudam
+EstoqueCentral não muda
+nenhuma SAIDA é criada
 ```
 
-Guarde:
+Guarde `pedidoId` e `itemId`.
 
-```text
-pedidoId
-itemId
-```
-
-## 10. Consultar pedido pendente
-
-```http
-GET http://localhost:8080/api/v1/pedidos/{pedidoId}
-```
-
-Ou:
-
-```http
-GET http://localhost:8080/api/v1/pedidos/por-status?status=PENDENTE
-```
-
-O gestor deve enxergar o produto solicitado e a quantidade, enquanto a disponibilidade real será decidida a partir dos lotes válidos durante a aprovação.
-
-## 11. Aprovar pedido e validar FEFO
-
-Antes da aprovação, consulte os lotes:
-
-```http
-GET http://localhost:8080/api/v1/lotes/por-estoque?estoqueId={estoqueId}
-```
-
-Aprove:
+## 10. Aprovar e validar FEFO/FIFO
 
 ```http
 PUT http://localhost:8080/api/v1/pedidos/{pedidoId}/aprovar
 Content-Type: application/json
 ```
 
-Body:
-
 ```json
 {
-  "observacao": "Aprovado no teste FEFO",
+  "observacao": "Aprovado no teste",
   "usuarioAprovadorId": 2,
   "itens": [
     {
@@ -334,112 +291,70 @@ Body:
 }
 ```
 
-Substitua `usuarioAprovadorId` e `itemId` pelos IDs reais.
-
-Resultado esperado:
-
-```text
-Pedido → APROVADO
-ItemPedido.quantidadeAprovada = 6
-lotes são reduzidos seguindo FEFO
-EstoqueCentral reduz 6
-MovimentacaoEstoque registra os lotes consumidos
-```
-
-Se um lote tiver somente 4 unidades e o pedido aprovado for de 6:
+Para perecível, se o primeiro lote tiver 4 e a aprovação for 6:
 
 ```text
 Lote A → -4
 Lote B → -2
 ```
 
-Devem existir duas movimentações de saída.
-
 Confira:
 
 ```http
 GET http://localhost:8080/api/v1/movimentacoes/pedido?pedidoId={pedidoId}
+GET http://localhost:8080/api/v1/lotes/por-estoque?estoqueId={estoqueId}
+GET http://localhost:8080/api/v1/estoque-central/{estoqueId}
 ```
 
-Cada saída deve indicar:
+Cada saída deve mostrar o lote realmente consumido.
 
-```text
-loteId
-numeroLote
-quantidadeMovimentada
-pedidoId
-produtoId
-tipoMovimentacao = SAIDA
-origem = PEDIDO
-```
+## 11. Lote vencido não atende pedido
 
-## 12. Validar que lote vencido não atende pedido
-
-Para esse cenário, tenha um produto perecível cujo `EstoqueCentral.quantidadeAtual` inclua unidades em lote vencido e poucas unidades em lotes válidos.
-
-Exemplo conceitual:
+Cenário:
 
 ```text
 EstoqueCentral = 20
-
 Lote vencido = 12
 Lote válido = 8
 ```
 
-Tente aprovar:
+Tente aprovar 10.
 
-```text
-quantidadeAprovada = 10
-```
-
-Mesmo com `EstoqueCentral.quantidadeAtual = 20`, o resultado esperado é erro porque apenas 8 unidades são utilizáveis.
-
-Mensagem esperada semelhante a:
+Esperado:
 
 ```text
 Estoque utilizável insuficiente. Disponível nos lotes válidos: 8, solicitado: 10
 ```
 
-Nenhum lote deve ser parcialmente modificado quando a operação é rejeitada.
+Mesmo que o saldo agregado seja 20, apenas 8 podem atender o pedido.
 
-## 13. Validar FIFO para produto não perecível
+## 12. FIFO para não perecível
 
-Cadastre dois lotes não perecíveis em momentos diferentes:
-
-```text
-FIFO-A → entrada mais antiga
-FIFO-B → entrada mais recente
-```
-
-Depois provoque uma saída através de um pedido desse produto.
-
-Resultado esperado:
+Tenha dois lotes não perecíveis:
 
 ```text
-FIFO-A é consumido primeiro
-FIFO-B só é usado se FIFO-A não for suficiente
+FIFO-A → entrou primeiro
+FIFO-B → entrou depois
 ```
 
-Para inspecionar:
+Aprove um pedido que obrigue o consumo.
 
-```http
-GET http://localhost:8080/api/v1/lotes/por-estoque?estoqueId={estoqueId}
+Esperado:
+
+```text
+FIFO-A é consumido antes de FIFO-B
 ```
 
-```http
-GET http://localhost:8080/api/v1/movimentacoes/pedido?pedidoId={pedidoId}
-```
+---
 
-## 14. Descarte de produto vencido
+# Testes de Descarte e Cancelamento
 
-Endpoint temporário enquanto o usuário ainda não vem do contexto autenticado:
+## 13. Descarte de vencidos
 
 ```http
 POST http://localhost:8080/api/v1/movimentacoes/estoques/{estoqueId}/descarte-vencimento?usuarioId={usuarioId}
 Content-Type: application/json
 ```
-
-Body:
 
 ```json
 {
@@ -448,137 +363,169 @@ Body:
 }
 ```
 
-Resultado esperado:
+Esperado:
 
 ```text
-somente lotes vencidos são consumidos
-EstoqueCentral diminui na mesma quantidade
-tipoMovimentacao = DESCARTE_VENCIMENTO
-origem = DESCARTE
-cada lote afetado gera sua própria MovimentacaoEstoque
+somente lotes vencidos são reduzidos
+EstoqueCentral reduz 5
+uma movimentação DESCARTE_VENCIMENTO é criada por lote afetado
 ```
 
 Confira:
 
 ```http
 GET http://localhost:8080/api/v1/lotes/vencidos
-```
-
-```http
 GET http://localhost:8080/api/v1/movimentacoes/tipo?tipo=DESCARTE_VENCIMENTO
 ```
 
-## 15. Cancelar pedido aprovado
+## 14. Cancelar pedido aprovado
 
-Escolha um pedido aprovado e consulte primeiro as saídas:
+Antes:
 
 ```http
 GET http://localhost:8080/api/v1/movimentacoes/pedido?pedidoId={pedidoId}
 ```
 
-Anote os lotes e quantidades consumidos.
+Anote lotes e quantidades.
 
-Cancele:
+Depois:
 
 ```http
 PUT http://localhost:8080/api/v1/pedidos/{pedidoId}/cancelar?observacao=Cancelamento%20Postman
 ```
 
-Resultado esperado:
+Esperado:
 
 ```text
 Pedido → CANCELADO
-os mesmos lotes consumidos na aprovação são restaurados
-EstoqueCentral volta a receber a quantidade correspondente
+os mesmos lotes consumidos são restaurados
+EstoqueCentral recebe a quantidade de volta
 ```
 
-Confira novamente:
+Confira novamente estoque e lotes.
+
+---
+
+# Testes de Histórico por Projeto
+
+## 15. Consultar pedidos feitos pelo projeto no período
+
+Esse endpoint consulta **solicitações**, usando `Pedido.dataSolicitacao`.
 
 ```http
-GET http://localhost:8080/api/v1/lotes/por-estoque?estoqueId={estoqueId}
+GET http://localhost:8080/api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=2026-06-01&dataFim=2026-06-30
 ```
+
+Esperado:
+
+```text
+retorna apenas pedidos do projeto informado
+retorna apenas pedidos do laboratório informado
+considera solicitações entre 01/06 e 30/06 inclusive
+```
+
+Um pedido pode aparecer aqui mesmo que esteja `PENDENTE`, `REJEITADO`, `CANCELADO`, `APROVADO` ou `ENTREGUE`.
+
+## 16. Projeto de outro laboratório deve falhar
+
+Use um `laboratorioId` e um `projetoId` que não tenham vínculo.
 
 ```http
-GET http://localhost:8080/api/v1/estoque-central/{estoqueId}
+GET http://localhost:8080/api/v1/pedidos/laboratorio/{laboratorioA}/projeto/{projetoDoLaboratorioB}/periodo?dataInicio=2026-06-01&dataFim=2026-06-30
 ```
 
-Observação: o registro auditado `DEVOLUCAO` ficará completo quando o contexto de autenticação local fornecer o usuário responsável pelo cancelamento.
+Esperado:
 
-## 16. Entregar pedido
+```text
+400 Bad Request
+O projeto informado não pertence ao laboratório informado.
+```
 
-Para um pedido aprovado que não será usado no teste de cancelamento:
+## 17. Período invertido deve falhar
+
+```http
+GET http://localhost:8080/api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=2026-06-30&dataFim=2026-06-01
+```
+
+Esperado:
+
+```text
+400 Bad Request
+A data inicial não pode ser posterior à data final.
+```
+
+## 18. Entregar pedido do projeto
+
+Use um pedido aprovado que não será cancelado:
 
 ```http
 PUT http://localhost:8080/api/v1/pedidos/{pedidoId}/entregar
 ```
 
-Resultado esperado:
+Esperado:
 
 ```text
 Pedido → ENTREGUE
-não ocorre nova baixa no estoque
-HistoricoLaboratorio é criado com a quantidade já aprovada
+não ocorre uma segunda baixa no estoque
+HistoricoLaboratorio é criado
 ```
 
-## 17. Consultas úteis durante os testes
+## 19. Consultar materiais recebidos pelo projeto no período
 
-Todos os lotes:
+Esse endpoint consulta **recebimentos efetivos**, usando `HistoricoLaboratorio.dataRecebimento`.
 
 ```http
-GET http://localhost:8080/api/v1/lotes
+GET http://localhost:8080/api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=2026-06-01&dataFim=2026-06-30
 ```
 
-Lotes de um estoque:
+Esperado:
+
+```text
+somente registros entregues aparecem
+somente o projeto informado aparece
+somente o laboratório informado aparece
+```
+
+Compare com o endpoint de pedidos. É normal existirem mais solicitações do que recebimentos.
+
+## 20. Consultar histórico geral do laboratório no período
 
 ```http
-GET http://localhost:8080/api/v1/lotes/por-estoque?estoqueId={estoqueId}
+GET http://localhost:8080/api/v1/historico-laboratorio/laboratorio/{laboratorioId}/periodo?dataInicio=2026-06-01&dataFim=2026-06-30
 ```
 
-Lotes vencidos:
+Isso permite comparar:
+
+```text
+Laboratório A em junho
+→ todos os materiais recebidos
+
+Projeto 1 do Laboratório A em junho
+→ apenas os materiais recebidos pelo Projeto 1
+```
+
+---
+
+# Consultas rápidas
 
 ```http
-GET http://localhost:8080/api/v1/lotes/vencidos
+GET /api/v1/lotes
+GET /api/v1/lotes/vencidos
+GET /api/v1/movimentacoes
+GET /api/v1/movimentacoes/pedido?pedidoId={pedidoId}
+GET /api/v1/movimentacoes/produto?produtoId={produtoId}
+GET /api/v1/movimentacoes/tipo?tipo=SAIDA
+GET /api/v1/estoque-central/{estoqueId}
+GET /api/v1/pedidos/por-status?status=PENDENTE
+GET /api/v1/projetos/por-laboratorio?laboratorioId={laboratorioId}
+GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}
 ```
 
-Todas as movimentações:
+O inventário completo da API está em [`ENDPOINTS_INTERNOS.md`](ENDPOINTS_INTERNOS.md).
 
-```http
-GET http://localhost:8080/api/v1/movimentacoes
-```
+---
 
-Movimentações de um pedido:
-
-```http
-GET http://localhost:8080/api/v1/movimentacoes/pedido?pedidoId={pedidoId}
-```
-
-Movimentações por produto:
-
-```http
-GET http://localhost:8080/api/v1/movimentacoes/produto?produtoId={produtoId}
-```
-
-Movimentações por tipo:
-
-```http
-GET http://localhost:8080/api/v1/movimentacoes/tipo?tipo=SAIDA
-```
-
-Estoque:
-
-```http
-GET http://localhost:8080/api/v1/estoque-central/{estoqueId}
-```
-
-Pedidos pendentes:
-
-```http
-GET http://localhost:8080/api/v1/pedidos/por-status?status=PENDENTE
-```
-
-## 18. Checklist antes do PostgreSQL
-
-Só iniciar oficialmente a migração quando estes pontos estiverem confirmados:
+# Checklist antes do PostgreSQL
 
 ```text
 [ ] mvn test executa sem falhas
@@ -587,13 +534,18 @@ Só iniciar oficialmente a migração quando estes pontos estiverem confirmados:
 [ ] saldo do EstoqueCentral acompanha os lotes
 [ ] FIFO funciona para não perecível
 [ ] FEFO funciona para perecível
-[ ] saída consegue consumir mais de um lote
+[ ] saída consome múltiplos lotes quando necessário
 [ ] lote vencido não atende pedido normal
-[ ] aprovação de pedido reduz lotes e saldo agregado
-[ ] movimentações indicam o lote de origem
+[ ] aprovação reduz lotes e saldo agregado
+[ ] movimentações registram o lote de origem
 [ ] descarte reduz somente lotes vencidos
 [ ] cancelamento restaura exatamente os lotes usados
-[ ] entrega não baixa o estoque novamente
+[ ] entrega não reduz estoque novamente
+[ ] consulta de pedidos por projeto/período retorna somente o projeto correto
+[ ] projeto de outro laboratório é rejeitado
+[ ] período invertido é rejeitado
+[ ] histórico por projeto/período mostra somente materiais efetivamente entregues
+[ ] histórico geral do laboratório e histórico específico do projeto apresentam resultados coerentes
 ```
 
-Com esses pontos confirmados, o modelo estará suficientemente estabilizado para iniciar a migração para PostgreSQL e Flyway.
+Com todos os itens confirmados, o modelo estará suficientemente estabilizado para iniciar PostgreSQL e Flyway.
