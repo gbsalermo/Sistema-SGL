@@ -17,16 +17,11 @@ public class DescarteProdutoDTO {
     @NotBlank(message = "Justificativa é obrigatória")
     private String justificativa;
 
-    @NotNull(message = "Id do usuário responsável é obrigatório")
-    private Long usuarioId;
-
     public DescarteProdutoDTO() {
     }
 
-    public DescarteProdutoDTO(Integer quantidade, String justificativa, Long usuarioId) {
+    public DescarteProdutoDTO(Integer quantidade, String justificativa) {
         this.quantidade = quantidade;
         this.justificativa = justificativa;
-        this.usuarioId = usuarioId;
     }
-
 }
