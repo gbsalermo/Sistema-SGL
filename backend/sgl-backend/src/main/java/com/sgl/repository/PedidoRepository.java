@@ -1,5 +1,6 @@
 package com.sgl.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,12 +18,6 @@ import jakarta.persistence.LockModeType;
 @Repository
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
-    /*
-     * Busca o pedido com bloqueio pessimista de escrita.
-     *
-     * Deve ser usada nas operações que alteram o status do pedido, impedindo
-     * que duas transações processem simultaneamente o mesmo estado anterior.
-     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT pedido
@@ -40,5 +35,24 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByLaboratorioIdAndStatus(
             Long laboratorioId,
             StatusPedido status
+    );
+
+    /**
+     * Pedidos realizados por um projeto específico dentro de um laboratório em
+     * um intervalo de datas de solicitação.
+     */
+    @Query("""
+            SELECT pedido
+            FROM Pedido pedido
+            WHERE pedido.laboratorio.id = :laboratorioId
+              AND pedido.projeto.id = :projetoId
+              AND pedido.dataSolicitacao BETWEEN :dataInicio AND :dataFim
+            ORDER BY pedido.dataSolicitacao ASC, pedido.id ASC
+            """)
+    List<Pedido> findByLaboratorioProjetoEPeriodo(
+            @Param("laboratorioId") Long laboratorioId,
+            @Param("projetoId") Long projetoId,
+            @Param("dataInicio") LocalDateTime dataInicio,
+            @Param("dataFim") LocalDateTime dataFim
     );
 }
