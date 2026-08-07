@@ -1,5 +1,6 @@
 package com.sgl.test;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -10,6 +11,7 @@ import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.Lote;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
@@ -25,6 +27,7 @@ import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.LoteRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -42,25 +45,23 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
+    private final LoteRepository loteRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final EstagiarioRepository estagiarioRepository;
 
     @Override
     public void run(String... args) throws Exception {
-        // Unidades
         Unidade u1 = unidadeRepository.save(new Unidade(null, "Instituto de Biologia", "IB", null));
         Unidade u2 = unidadeRepository.save(new Unidade(null, "Instituto de Fisica", "IF", null));
         Unidade u3 = unidadeRepository.save(new Unidade(null, "Instituto de Quimica", "IQ", null));
 
-        // Laboratórios (sem responsável ainda)
         Laboratorio lab1 = laboratorioRepository.save(new Laboratorio(null, u1, "Laboratorio de Microbiologia", "Lab de estudo de microrganismos", null, true));
         Laboratorio lab2 = laboratorioRepository.save(new Laboratorio(null, u1, "Laboratorio de Genetica", "Lab de analise genetica", null, true));
         Laboratorio lab3 = laboratorioRepository.save(new Laboratorio(null, u2, "Laboratorio de Optica", "Lab de estudo da luz", null, true));
         Laboratorio lab4 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Quimica Organica", "Lab de sintese organica", null, true));
         Laboratorio lab5 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Analise Instrumental", "Lab de instrumentacao analitica", null, false));
 
-        // Usuários: a Unidade deve ser a mesma Unidade do Laboratório.
         Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", "123456", Perfil.ADMINISTRADOR, u3, lab5, true));
         Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, u1, lab1, true));
         Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, u1, lab2, true));
@@ -74,12 +75,11 @@ public class DataInitializer implements CommandLineRunner {
         maria.setUnidade(u3);
         maria.setLaboratorio(lab4);
         maria.setAtivo(true);
-        maria.setDataInicioEstagio(java.time.LocalDate.now().minusMonths(2));
+        maria.setDataInicioEstagio(LocalDate.now().minusMonths(2));
         maria.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
         maria.setObservacao("Cadastro inicial de estágio para testes");
         maria = estagiarioRepository.save(maria);
 
-        // Atualizar laboratórios com os responsáveis
         lab1.setResponsavel(carlos);
         lab2.setResponsavel(ana);
         lab3.setResponsavel(joao);
@@ -92,7 +92,6 @@ public class DataInitializer implements CommandLineRunner {
         laboratorioRepository.save(lab4);
         laboratorioRepository.save(lab5);
 
-        // Produtos (catálogo central)
         Produto p1 = produtoRepository.save(Produto.builder()
                 .nome("Alcool Etílico 70%")
                 .descricao("Alcool etílico para desinfecção de superfícies")
@@ -130,7 +129,6 @@ public class DataInitializer implements CommandLineRunner {
                 .tipoRisco(TipoRisco.BIOLOGICO)
                 .descricaoRisco("Material biológico - manusear com EPI")
                 .perecivel(true)
-                .dataValidade(java.time.LocalDate.now().plusMonths(6))
                 .tipoPerecivel(TipoPerecivel.MICROBIANO)
                 .condicoesArmazenamento("Armazenar em geladeira 2-8°C")
                 .unidadeArmazenamento("frasco de 500mL")
@@ -172,78 +170,33 @@ public class DataInitializer implements CommandLineRunner {
                 .localizacaoFisica("Freezer -80°C - Sala de Biologia Molecular")
                 .risco(NivelRisco.NENHUM)
                 .perecivel(true)
-                .dataValidade(java.time.LocalDate.now().plusMonths(3))
                 .tipoPerecivel(TipoPerecivel.QUIMICO)
                 .condicoesArmazenamento("Armazenar em freezer -80°C")
                 .unidadeArmazenamento("kit com 50 reações")
                 .ativo(true)
                 .build());
 
-        // Estoques centrais por Unidade.
-        // A combinação Unidade + Produto deve ser única.
-        estoqueCentralRepository.save(EstoqueCentral.builder()
-                .unidade(u1)
-                .produto(p1)
-                .quantidadeAtual(80)
-                .quantidadeMinima(20)
-                .ativo(true)
-                .build());
+        EstoqueCentral e1 = criarEstoque(u1, p1, 80, 20);
+        EstoqueCentral e2 = criarEstoque(u2, p1, 100, 20);
+        EstoqueCentral e3 = criarEstoque(u1, p2, 50, 10);
+        EstoqueCentral e4 = criarEstoque(u1, p3, 30, 5);
+        EstoqueCentral e5 = criarEstoque(u3, p4, 15, 5);
+        EstoqueCentral e6 = criarEstoque(u2, p5, 200, 30);
+        EstoqueCentral e7 = criarEstoque(u3, p6, 10, 3);
 
-        // O mesmo produto pode existir em outra Unidade com saldo próprio.
-        estoqueCentralRepository.save(EstoqueCentral.builder()
-                .unidade(u2)
-                .produto(p1)
-                .quantidadeAtual(100)
-                .quantidadeMinima(20)
-                .ativo(true)
-                .build());
+        criarLoteInicial(e1, "INI-ALC-IB", 80, null);
+        criarLoteInicial(e2, "INI-ALC-IF", 100, null);
+        criarLoteInicial(e3, "INI-MIC-IB", 50, null);
+        criarLoteInicial(e4, "INI-BHI-IB", 30, LocalDate.now().plusMonths(6));
+        criarLoteInicial(e5, "INI-FOR-IQ", 15, null);
+        criarLoteInicial(e6, "INI-PIP-IF", 200, null);
+        criarLoteInicial(e7, "INI-DNA-IQ", 10, LocalDate.now().plusMonths(3));
 
-        estoqueCentralRepository.save(EstoqueCentral.builder()
-                .unidade(u1)
-                .produto(p2)
-                .quantidadeAtual(50)
-                .quantidadeMinima(10)
-                .ativo(true)
-                .build());
-
-        estoqueCentralRepository.save(EstoqueCentral.builder()
-                .unidade(u1)
-                .produto(p3)
-                .quantidadeAtual(30)
-                .quantidadeMinima(5)
-                .ativo(true)
-                .build());
-
-        estoqueCentralRepository.save(EstoqueCentral.builder()
-                .unidade(u3)
-                .produto(p4)
-                .quantidadeAtual(15)
-                .quantidadeMinima(5)
-                .ativo(true)
-                .build());
-
-        estoqueCentralRepository.save(EstoqueCentral.builder()
-                .unidade(u2)
-                .produto(p5)
-                .quantidadeAtual(200)
-                .quantidadeMinima(30)
-                .ativo(true)
-                .build());
-
-        estoqueCentralRepository.save(EstoqueCentral.builder()
-                .unidade(u3)
-                .produto(p6)
-                .quantidadeAtual(10)
-                .quantidadeMinima(3)
-                .ativo(true)
-                .build());
-
-        // Projetos
         Projeto proj1 = projetoRepository.save(Projeto.builder()
                 .laboratorio(lab3)
                 .nome("Projeto de Óptica Avançada")
                 .descricao("Estudo de fenômenos ópticos em materiais nanoestruturados")
-                .dataInicio(java.time.LocalDate.now().minusMonths(3))
+                .dataInicio(LocalDate.now().minusMonths(3))
                 .responsavel("Dr. Joao Pereira")
                 .ativo(true)
                 .build());
@@ -252,12 +205,11 @@ public class DataInitializer implements CommandLineRunner {
                 .laboratorio(lab4)
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise")
-                .dataInicio(java.time.LocalDate.now().minusMonths(1))
+                .dataInicio(LocalDate.now().minusMonths(1))
                 .responsavel("Maria Oliveira")
                 .ativo(true)
                 .build());
 
-        // Pedidos de teste
         Pedido pedido1 = Pedido.builder()
                 .usuario(joao)
                 .laboratorio(lab3)
@@ -281,7 +233,6 @@ public class DataInitializer implements CommandLineRunner {
                 .quantidadeSolicitada(2)
                 .build();
         pedido1.getItens().add(item2);
-
         pedidoRepository.save(pedido1);
 
         Pedido pedido2 = Pedido.builder()
@@ -300,10 +251,41 @@ public class DataInitializer implements CommandLineRunner {
                 .quantidadeSolicitada(3)
                 .build();
         pedido2.getItens().add(item3);
-
         pedidoRepository.save(pedido2);
 
         System.out.println("=== Dados de teste injetados com sucesso! ===");
-        System.out.println("=== 3 Unidades, 5 Labs, 5 Usuarios, 1 Estagiario, 6 Produtos, 7 registros de EstoqueCentral, 2 Projetos, 2 Pedidos ===");
+        System.out.println("=== Estoques iniciais criados com lotes correspondentes ===");
+    }
+
+    private EstoqueCentral criarEstoque(
+            Unidade unidade,
+            Produto produto,
+            int quantidade,
+            int quantidadeMinima) {
+
+        return estoqueCentralRepository.save(EstoqueCentral.builder()
+                .unidade(unidade)
+                .produto(produto)
+                .quantidadeAtual(quantidade)
+                .quantidadeMinima(quantidadeMinima)
+                .ativo(true)
+                .build());
+    }
+
+    private void criarLoteInicial(
+            EstoqueCentral estoque,
+            String numeroLote,
+            int quantidade,
+            LocalDate dataValidade) {
+
+        Lote lote = new Lote();
+        lote.setEstoqueCentral(estoque);
+        lote.setNumeroLote(numeroLote);
+        lote.setQuantidadeInicial(quantidade);
+        lote.setQuantidadeDisponivel(quantidade);
+        lote.setDataEntrada(LocalDate.now().minusDays(30));
+        lote.setDataValidade(dataValidade);
+        lote.setAtivo(true);
+        loteRepository.save(lote);
     }
 }
