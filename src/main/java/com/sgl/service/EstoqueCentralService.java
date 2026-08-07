@@ -28,13 +28,11 @@ import com.sgl.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Centraliza as regras de negócio relacionadas ao saldo de materiais de uma
- * Unidade.
+ * Gerencia cadastro, configuração e consulta do saldo agregado de materiais de
+ * uma Unidade.
  *
- * <p>Cada registro de {@link EstoqueCentral} representa a combinação única
- * Unidade + Produto. As operações que alteram o saldo também registram uma
- * {@link MovimentacaoEstoque}, preservando o saldo anterior, o saldo resultante
- * e o usuário responsável.</p>
+ * <p>Com a introdução de lotes, o saldo nasce em zero e deve ser alimentado
+ * pelas operações físicas coordenadas por MovimentacaoEstoqueService.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -70,7 +68,7 @@ public class EstoqueCentralService {
         EstoqueCentral estoque = EstoqueCentral.builder()
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(dto.getQuantidadeAtual())
+                .quantidadeAtual(0)
                 .quantidadeMinima(dto.getQuantidadeMinima())
                 .ativo(dto.getAtivo() != null ? dto.getAtivo() : true)
                 .build();
@@ -132,22 +130,18 @@ public class EstoqueCentralService {
                 .toList();
     }
 
+    /**
+     * Fluxo legado mantido apenas até a migração dos testes e consumidores para
+     * entrada física por lote em MovimentacaoEstoqueService.
+     */
+    @Deprecated
     @Transactional
     public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
         validarQuantidade(dto.getQuantidadeMovimentada());
 
-        /*
-         * Como o saldo será aumentado:
-         * O bloqueio permanece ativo até o término deste método.
-         */
-        EstoqueCentral estoque =
-                estoqueCentralRepository.buscarPorIdComBloqueio(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Estoque central",
-                                        id
-                                ));
-        
+        EstoqueCentral estoque = estoqueCentralRepository.buscarPorIdComBloqueio(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
+
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuário",
@@ -177,21 +171,18 @@ public class EstoqueCentralService {
         return new EstoqueCentralDTO(estoque);
     }
 
+    /**
+     * Fluxo legado. A saída definitiva será migrada para consumo de lotes por
+     * FEFO/FIFO em MovimentacaoEstoqueService.
+     */
+    @Deprecated
     @Transactional
     public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
         validarQuantidade(dto.getQuantidadeMovimentada());
 
-        /*
-         * A verificação de saldo e a redução precisam ocorrer sobre um registro
-         * bloqueado. Isso impede que outra transação leia o mesmo saldo antigo e
-         * realize uma segunda retirada simultânea.
-         */
-        EstoqueCentral estoque =
-                estoqueCentralRepository.buscarPorIdComBloqueio(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException("Estoque central",id));
-        
-        
+        EstoqueCentral estoque = estoqueCentralRepository.buscarPorIdComBloqueio(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
+
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuário",
@@ -245,17 +236,20 @@ public class EstoqueCentralService {
         estoqueCentralRepository.deleteById(id);
     }
 
+    /**
+     * Fluxo legado. O descarte será migrado para lote específico para que a
+     * validade usada seja a validade do lote e não a validade antiga de Produto.
+     */
+    @Deprecated
     @Transactional
     public EstoqueCentralDTO descartarProdutoVencido(
             Long estoqueId,
             DescarteProdutoDTO dto) {
 
-    	//Bloqueia o registro antes de validar e alterar o saldo.
-    	 
-    	EstoqueCentral estoque = estoqueCentralRepository
-    	                .buscarPorIdComBloqueio(estoqueId)
-    	                .orElseThrow(() ->
-    	                        new ResourceNotFoundException( "Estoque central", estoqueId));
+        EstoqueCentral estoque = estoqueCentralRepository
+                .buscarPorIdComBloqueio(estoqueId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Estoque central", estoqueId));
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(
