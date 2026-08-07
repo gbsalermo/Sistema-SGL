@@ -3,6 +3,7 @@ package com.sgl.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -51,5 +52,11 @@ public class LoteController {
             @PathVariable Long id,
             @Valid @RequestBody AtualizarLoteDTO dto) {
         return ResponseEntity.ok(loteService.atualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> inativar(@PathVariable Long id) {
+        loteService.inativar(id);
+        return ResponseEntity.noContent().build();
     }
 }
