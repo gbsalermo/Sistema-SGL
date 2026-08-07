@@ -33,11 +33,15 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
 
     List<Lote> findByDataValidadeBeforeAndAtivoTrue(LocalDate data);
 
-    /**
-     * FEFO: para produtos perecíveis, prioriza o lote válido com vencimento
-     * mais próximo. Lotes vencidos ficam fora do fluxo normal de saída e devem
-     * seguir para descarte.
-     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT lote
+            FROM Lote lote
+            WHERE lote.id = :id
+            """)
+    Optional<Lote> buscarPorIdComBloqueio(@Param("id") Long id);
+
+    /** FEFO: primeiro lote válido a vencer, primeiro a sair. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -54,9 +58,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             @Param("dataReferencia") LocalDate dataReferencia
     );
 
-    /**
-     * FIFO: para produtos não perecíveis, prioriza o lote que entrou primeiro.
-     */
+    /** FIFO: primeiro lote recebido, primeiro a sair. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -68,5 +70,22 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             """)
     List<Lote> buscarDisponiveisPorEntradaComBloqueio(
             @Param("estoqueId") Long estoqueId
+    );
+
+    /** Lotes vencidos disponíveis para descarte, em ordem de vencimento. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT lote
+            FROM Lote lote
+            WHERE lote.estoqueCentral.id = :estoqueId
+              AND lote.ativo = true
+              AND lote.quantidadeDisponivel > 0
+              AND lote.dataValidade IS NOT NULL
+              AND lote.dataValidade < :dataReferencia
+            ORDER BY lote.dataValidade ASC, lote.dataEntrada ASC, lote.id ASC
+            """)
+    List<Lote> buscarVencidosComBloqueio(
+            @Param("estoqueId") Long estoqueId,
+            @Param("dataReferencia") LocalDate dataReferencia
     );
 }
