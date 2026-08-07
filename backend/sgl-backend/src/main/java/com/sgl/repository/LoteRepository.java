@@ -16,8 +16,8 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface LoteRepository extends JpaRepository<Lote, Long> {
-	
-	List<Lote> findByEstoqueCentralId(Long estoqueCentralId);
+
+    List<Lote> findByEstoqueCentralId(Long estoqueCentralId);
 
     List<Lote> findByEstoqueCentralIdAndAtivoTrue(Long estoqueCentralId);
 
@@ -33,14 +33,8 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
 
     List<Lote> findByDataValidadeBeforeAndAtivoTrue(LocalDate data);
 
-    /*
-     * Consulta base para FEFO.
-     *
-     * Retorna somente lotes ativos com saldo positivo, ordenando primeiro os
-     * que possuem validade mais próxima.
-     *
-     * A versão definitiva precisará definir o comportamento dos lotes sem
-     * dataValidade para produtos não perecíveis.
+    /**
+     * FEFO: para produtos perecíveis, prioriza o lote com validade mais próxima.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -50,10 +44,25 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
               AND lote.ativo = true
               AND lote.quantidadeDisponivel > 0
               AND lote.dataValidade IS NOT NULL
-            ORDER BY lote.dataValidade ASC, lote.id ASC
+            ORDER BY lote.dataValidade ASC, lote.dataEntrada ASC, lote.id ASC
             """)
     List<Lote> buscarDisponiveisPorFefoComBloqueio(
             @Param("estoqueId") Long estoqueId
     );
 
+    /**
+     * FIFO: para produtos não perecíveis, prioriza o lote que entrou primeiro.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT lote
+            FROM Lote lote
+            WHERE lote.estoqueCentral.id = :estoqueId
+              AND lote.ativo = true
+              AND lote.quantidadeDisponivel > 0
+            ORDER BY lote.dataEntrada ASC, lote.id ASC
+            """)
+    List<Lote> buscarDisponiveisPorEntradaComBloqueio(
+            @Param("estoqueId") Long estoqueId
+    );
 }
