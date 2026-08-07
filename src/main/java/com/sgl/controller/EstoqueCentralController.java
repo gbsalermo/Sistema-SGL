@@ -14,9 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.DescarteProdutoDTO;
 import com.sgl.dto.EstoqueCentralDTO;
-import com.sgl.dto.MovimentacaoEstoqueDTO;
 import com.sgl.service.EstoqueCentralService;
 
 import jakarta.validation.Valid;
@@ -81,29 +79,5 @@ public class EstoqueCentralController {
             @RequestParam Long unidadeId) {
         return ResponseEntity.ok(
                 estoqueCentralService.listarEstoqueBaixoPorUnidade(unidadeId));
-    }
-
-    @PutMapping("/{id}/entrada")
-    public ResponseEntity<EstoqueCentralDTO> entrada(
-            @PathVariable Long id,
-            @Valid @RequestBody MovimentacaoEstoqueDTO dto) {
-        return ResponseEntity.ok(
-                estoqueCentralService.entrada(id, dto));
-    }
-
-    @PutMapping("/{id}/saida")
-    public ResponseEntity<EstoqueCentralDTO> saida(
-            @PathVariable Long id,
-            @Valid @RequestBody MovimentacaoEstoqueDTO dto) {
-        return ResponseEntity.ok(
-                estoqueCentralService.saida(id, dto));
-    }
-
-    @PutMapping("/{id}/descartar-vencido")
-    public ResponseEntity<EstoqueCentralDTO> descartarProdutoVencido(
-            @PathVariable Long id,
-            @Valid @RequestBody DescarteProdutoDTO dto) {
-        return ResponseEntity.ok(
-                estoqueCentralService.descartarProdutoVencido(id, dto));
     }
 }
