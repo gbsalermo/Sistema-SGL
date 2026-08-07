@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.EntradaLoteDTO;
+import com.sgl.dto.LoteDTO;
 import com.sgl.dto.MovimentacaoEstoqueDTO;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.service.MovimentacaoEstoqueService;
@@ -79,4 +81,5 @@ public class MovimentacaoEstoqueController {
         return ResponseEntity.ok(
                 movimentacaoService.listarPorTipo(tipo));
     }
+    
 }
