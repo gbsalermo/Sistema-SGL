@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -26,55 +27,74 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PedidoController {
 
-	
-	private final PedidoService pedidoService;
-	
-	@PostMapping
-	public ResponseEntity<PedidoDTO> criar(@Valid @RequestBody PedidoDTO dto){
-		PedidoDTO criado = pedidoService.criar(dto);
-		return ResponseEntity.status(HttpStatus.CREATED).body(criado);
-	}
-	
-	@GetMapping
-	public ResponseEntity<List<PedidoDTO>> listarTodos(){
-		return ResponseEntity.ok(pedidoService.listarTodos());
-	}
-	
-	
-	
-	@GetMapping("/por-usuario")
-	public ResponseEntity<List<PedidoDTO>> listarPorUsuario(@RequestParam Long usuarioId){
-		return ResponseEntity.ok(pedidoService.listarPorUsuario(usuarioId));
-	}
-	
-	
-	@GetMapping("/{id}")
-	public ResponseEntity<PedidoDTO> buscarPorId(@PathVariable Long id){
-		return ResponseEntity.ok(pedidoService.buscarPorId(id));
-	}
-	
-	@GetMapping("/por-status")
-	public ResponseEntity<List<PedidoDTO>> listarPorStatus(@RequestParam StatusPedido status){
-		return ResponseEntity.ok(pedidoService.listarPorStatus(status));
-	}
-	
-	@PutMapping("/{id}/aprovar")
-	public ResponseEntity<PedidoDTO> aprovar(@PathVariable Long id, @Valid @RequestBody AprovarPedidoDTO dto){
-		return ResponseEntity.ok(pedidoService.aprovar(id, dto));
-	}
-	
-	@PutMapping("/{id}/rejeitar")
-	public ResponseEntity<PedidoDTO> rejeitar(@PathVariable Long id, @RequestParam(required = false) String observacao){
-		return ResponseEntity.ok(pedidoService.rejeitar(id, observacao));
-	}
-	
-	@PutMapping("/{id}/entregar")
-	public ResponseEntity<PedidoDTO> entregar(@PathVariable Long id){
-		return ResponseEntity.ok(pedidoService.entregar(id));
-	}
-	
-	@PutMapping("/{id}/cancelar")
-	public ResponseEntity<PedidoDTO> cancelar(@PathVariable Long id, @RequestParam(required = false) String observacao){
-		return ResponseEntity.ok(pedidoService.cancelar(id, observacao));
-	}
+    private final PedidoService pedidoService;
+
+    @PostMapping
+    public ResponseEntity<PedidoDTO> criar(@Valid @RequestBody PedidoDTO dto) {
+        PedidoDTO criado = pedidoService.criar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<PedidoDTO>> listarTodos() {
+        return ResponseEntity.ok(pedidoService.listarTodos());
+    }
+
+    @GetMapping("/por-usuario")
+    public ResponseEntity<List<PedidoDTO>> listarPorUsuario(@RequestParam Long usuarioId) {
+        return ResponseEntity.ok(pedidoService.listarPorUsuario(usuarioId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PedidoDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(pedidoService.buscarPorId(id));
+    }
+
+    @GetMapping("/por-status")
+    public ResponseEntity<List<PedidoDTO>> listarPorStatus(@RequestParam StatusPedido status) {
+        return ResponseEntity.ok(pedidoService.listarPorStatus(status));
+    }
+
+    @GetMapping("/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo")
+    public ResponseEntity<List<PedidoDTO>> listarPorProjetoEPeriodo(
+            @PathVariable Long laboratorioId,
+            @PathVariable Long projetoId,
+            @RequestParam LocalDate dataInicio,
+            @RequestParam LocalDate dataFim) {
+
+        return ResponseEntity.ok(
+                pedidoService.listarPorProjetoEPeriodo(
+                        laboratorioId,
+                        projetoId,
+                        dataInicio,
+                        dataFim
+                )
+        );
+    }
+
+    @PutMapping("/{id}/aprovar")
+    public ResponseEntity<PedidoDTO> aprovar(
+            @PathVariable Long id,
+            @Valid @RequestBody AprovarPedidoDTO dto) {
+        return ResponseEntity.ok(pedidoService.aprovar(id, dto));
+    }
+
+    @PutMapping("/{id}/rejeitar")
+    public ResponseEntity<PedidoDTO> rejeitar(
+            @PathVariable Long id,
+            @RequestParam(required = false) String observacao) {
+        return ResponseEntity.ok(pedidoService.rejeitar(id, observacao));
+    }
+
+    @PutMapping("/{id}/entregar")
+    public ResponseEntity<PedidoDTO> entregar(@PathVariable Long id) {
+        return ResponseEntity.ok(pedidoService.entregar(id));
+    }
+
+    @PutMapping("/{id}/cancelar")
+    public ResponseEntity<PedidoDTO> cancelar(
+            @PathVariable Long id,
+            @RequestParam(required = false) String observacao) {
+        return ResponseEntity.ok(pedidoService.cancelar(id, observacao));
+    }
 }
