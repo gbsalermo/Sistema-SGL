@@ -1,8 +1,8 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 06/08/2026  
-**Fase atual:** revisão da modelagem de lote, validade e entrada de estoque
+**Última atualização:** 07/08/2026  
+**Fase atual:** modelagem de lotes e refatoração das movimentações de estoque
 
 Este arquivo registra o estado real do backend, as decisões consolidadas e a ordem recomendada para continuar o desenvolvimento.
 
@@ -12,207 +12,172 @@ Este arquivo registra o estado real do backend, as decisões consolidadas e a or
 
 - CRUDs de Unidade, Laboratório, Usuário, Estagiário, Produto e Projeto.
 - Estoque central separado por combinação `Unidade + Produto`.
-- Entrada e saída manual com alteração de saldo e histórico de movimentação.
-- Descarte de produto vencido.
+- Entrada e saída manual com alteração de saldo e histórico de movimentação na arquitetura atual.
+- Descarte de produto vencido na arquitetura atual.
 - Pedido com criação, aprovação, rejeição, entrega e cancelamento.
 - Aprovação com baixa transacional do estoque.
 - Registro de movimentação `SAIDA` durante a aprovação do pedido.
 - Histórico de materiais entregues ao laboratório.
 - Validações de consistência entre usuário, laboratório, unidade e projeto.
-- Validações de risco, perecibilidade e código de referência do produto.
 - Senhas armazenadas com BCrypt.
 - Exclusão lógica de usuário por inativação.
 - Exceções de domínio e respostas HTTP padronizadas.
-- Documentação estrutural, fluxo e fontes UML atualizados.
-- Primeira etapa de testes unitários concluída.
+- Bloqueio pessimista nas operações críticas de estoque e nas transições de pedido.
 - `EstoqueCentralServiceTest`: 5 testes executados com sucesso.
 - `PedidoServiceTest`: 5 testes executados com sucesso.
 - Total atual: 10 testes, 0 falhas e 0 erros.
-- Bloqueio pessimista implementado nas operações que alteram saldo.
-- Bloqueio pessimista implementado nas transições de status de pedido.
-- Testes unitários executados novamente após os bloqueios, sem regressões.
 
-### Próxima etapa imediata
+## Três mudanças estruturais aprovadas
 
-Antes da integração com PostgreSQL, será revisada a modelagem de lote e validade.
+### 1. Criação do módulo `Lote`
 
-A primeira análise obrigatória será o fluxo de entrada do estoque:
+`Lote` passa a representar a entrada física e rastreável de um produto em determinada unidade.
 
-- a entrada não deve mais registrar apenas uma quantidade diretamente em `EstoqueCentral`;
-- cada entrada deve criar ou alimentar um `Lote` vinculado ao produto e ao estoque da unidade;
-- o lote será responsável por número do lote, quantidade recebida, quantidade disponível, data de entrada e validade;
-- o saldo de `EstoqueCentral` continuará representando o total agregado do produto na unidade;
-- a criação ou atualização de um lote deverá alimentar diretamente esse saldo agregado dentro da mesma transação;
-- movimentação de estoque e lote devem permanecer consistentes entre si.
+Responsabilidades principais:
 
-### Decisão ainda não fechada
+- número do lote;
+- vínculo com `EstoqueCentral`;
+- quantidade inicial;
+- quantidade disponível;
+- data de entrada;
+- data de validade;
+- rastreabilidade da entrada;
+- participação nas saídas, descartes e devoluções.
 
-Antes de implementar, deve ser decidido se `EstoqueCentral.quantidadeAtual` continuará persistido ou se será calculado pela soma das quantidades disponíveis dos lotes.
+A validade operacional deixa de pertencer ao catálogo global de `Produto` e passa a pertencer ao lote.
 
-Opções:
-
-1. **Saldo agregado persistido**
-   - `EstoqueCentral.quantidadeAtual` continua existindo;
-   - entradas, saídas, descartes e devoluções atualizam lote e estoque na mesma transação;
-   - consultas de saldo são simples e rápidas;
-   - exige cuidado para impedir divergência entre lote e estoque.
-
-2. **Saldo calculado pelos lotes**
-   - o saldo é obtido pela soma de `Lote.quantidadeDisponivel`;
-   - reduz duplicidade de informação;
-   - consultas e bloqueios ficam mais complexos;
-   - o estoque central passa a funcionar principalmente como agrupador `Unidade + Produto`.
-
-Nenhuma alteração estrutural será implementada antes dessa decisão.
-
-### PostgreSQL — etapa temporariamente adiada
-
-A integração com PostgreSQL continua sendo a etapa seguinte, mas somente será iniciada após estabilizar a modelagem de lote e validade, para evitar criar migrations sobre um modelo que será alterado imediatamente.
-
-Depois da revisão de lotes:
-
-- integrar o backend com PostgreSQL;
-- preparar configuração de conexão por ambiente;
-- adicionar migrations versionadas;
-- criar dados de teste locais;
-- validar entidades, constraints e relacionamentos no banco real;
-- criar testes de integração concorrentes.
-
-### Pendente no planejamento sequencial
-
-- Modelar a entidade `Lote`.
-- Revisar o método de entrada de estoque.
-- Definir como entradas alimentam lote e saldo agregado.
-- Definir como saídas consomem lotes.
-- Definir prioridade de consumo, preferencialmente FEFO: primeiro lote a vencer, primeiro a sair.
-- Revisar descarte de produto vencido para operar por lote.
-- Revisar aprovação de pedido para baixar quantidades de um ou mais lotes.
-- Revisar cancelamento e devolução para restaurar a rastreabilidade por lote.
-- Adaptar movimentações para registrar o lote quando aplicável.
-- Atualizar testes unitários afetados.
-- Integrar PostgreSQL e Flyway.
-- Implementar autenticação local simulada usando usuários de teste do PostgreSQL.
-- Obter o usuário responsável pelo contexto autenticado local nas ações auditáveis.
-- Registrar movimentação `DEVOLUCAO` ao cancelar pedido aprovado.
-- Implementar consultas e endpoints JSON de relatórios.
-- Adicionar exportação de relatórios em PDF e Excel.
-- Criar documentação OpenAPI.
-- Executar testes completos de integração, controllers e estabilização antes do frontend.
-- Iniciar o frontend.
-
-### Dependência externa obrigatória, fora da sequência
-
-- Integrar a autenticação definitiva fornecida pela API externa da empresa.
-- Adaptar a aplicação ao ambiente de hospedagem e DevOps corporativo quando ele for liberado.
-- Substituir a origem local simulada da identidade pelo contexto autenticado corporativo sem alterar as regras de negócio.
-- Validar autenticação, autorização, perfis e auditoria no ambiente disponibilizado pela empresa.
-
-A integração externa é indispensável para a versão definitiva do SGL, mas não possui posição fixa no planejamento sequencial porque depende da liberação da hospedagem e da infraestrutura de DevOps da empresa.
-
-Enquanto essa dependência não estiver disponível, desenvolvimento, testes e execuções locais continuarão usando autenticação simulada com usuários armazenados no PostgreSQL local.
-
-## Decisões oficiais
-
-### Produto, estoque e lote
-
-`Produto` é um catálogo global e não deve armazenar saldo nem validade de uma entrada específica.
-
-`EstoqueCentral` representa o agrupamento e o saldo total de um produto dentro de uma Unidade. Sua identidade lógica permanece:
+Para produtos perecíveis, a saída deverá seguir **FEFO — First Expire, First Out**:
 
 ```text
-Unidade + Produto
+Primeiro a vencer → primeiro a sair
 ```
 
-`Lote` representará uma entrada rastreável desse produto no estoque.
+Uma única saída poderá consumir mais de um lote.
 
-Modelo conceitual inicial:
+### 2. Separação entre auditoria e lógica de movimentação
+
+A entidade existente `MovimentacaoEstoque` continuará sendo o registro histórico/auditoria do que aconteceu.
+
+Será criado um `MovimentacaoEstoqueService` para centralizar as operações físicas que alteram quantidades.
+
+```text
+MovimentacaoEstoque
+= entidade de auditoria
+
+MovimentacaoEstoqueService
+= coordenação das regras de entrada, saída, descarte e devolução
+```
+
+O novo Service deverá coordenar, dentro da mesma transação:
+
+```text
+bloqueio do EstoqueCentral
+→ seleção/criação/alteração de Lote(s)
+→ alteração do saldo agregado
+→ criação de MovimentacaoEstoque
+```
+
+Ele não deverá assumir regras de ciclo de vida de Pedido, Laboratório ou Usuário que pertençam aos respectivos Services.
+
+### 3. Redução das responsabilidades de `EstoqueCentralService`
+
+`EstoqueCentralService` deixará de ser o proprietário direto das operações físicas de entrada e saída.
+
+Responsabilidades que permanecem nele:
+
+- criar/configurar o registro `Unidade + Produto`;
+- consultar estoque;
+- listar por unidade;
+- consultar estoque baixo;
+- alterar quantidade mínima;
+- ativar/inativar o registro agregado.
+
+Operações que deverão sair dele:
+
+- entrada física;
+- saída física;
+- descarte por vencimento.
+
+O `EstoqueCentral` continuará sofrendo a consequência das movimentações através da atualização de `quantidadeAtual`, mas essa atualização será coordenada por `MovimentacaoEstoqueService`.
+
+## Decisão sobre saldo agregado
+
+A decisão foi fechada: **`EstoqueCentral.quantidadeAtual` continuará persistido**.
+
+O lote também possuirá seu próprio saldo disponível.
+
+Regra de consistência:
+
+```text
+EstoqueCentral.quantidadeAtual
+=
+soma de Lote.quantidadeDisponivel dos lotes válidos daquele estoque
+```
+
+Toda operação que alterar lote e saldo agregado deverá ocorrer na mesma transação.
+
+Não deverá existir alteração direta de `quantidadeAtual` sem uma operação de negócio correspondente sobre os lotes, exceto eventual migração controlada de dados antigos.
+
+## Modelo conceitual
 
 ```text
 Produto
-  └── EstoqueCentral por Unidade
+  └── EstoqueCentral (Unidade + Produto)
         ├── Lote A — quantidade e validade próprias
         ├── Lote B — quantidade e validade próprias
         └── Lote C — quantidade e validade próprias
 ```
 
-Campos candidatos de `Lote`:
+`Produto` permanece como catálogo global.
 
-- `id`;
-- `numeroLote`;
-- `estoqueCentral`;
-- `produto`, caso seja necessário acesso direto;
-- `quantidadeInicial`;
-- `quantidadeDisponivel`;
-- `dataEntrada`;
-- `dataFabricacao`, quando aplicável;
-- `dataValidade`;
-- `fornecedor` ou referência de origem, se exigido;
-- `ativo`;
-- observação.
+`EstoqueCentral` representa o saldo agregado do produto dentro de uma Unidade.
 
-A lista definitiva de campos dependerá da validação dos requisitos com o supervisor.
+`Lote` representa a composição rastreável desse saldo.
 
-### Entrada de estoque
+## Entrada física
 
-O método atual de entrada deverá ser revisado.
+O método atual `EstoqueCentralService.entrada(...)` deverá ser removido após a migração da lógica.
 
-Fluxo esperado:
+Novo fluxo pretendido:
 
 ```text
 Receber dados da entrada
-  → validar produto e unidade
-  → localizar e bloquear EstoqueCentral
-  → criar o Lote
-  → aumentar o saldo agregado
-  → registrar MovimentacaoEstoque
-  → confirmar tudo na mesma transação
+→ localizar e bloquear EstoqueCentral
+→ validar lote e quantidade
+→ criar Lote
+→ aumentar EstoqueCentral.quantidadeAtual
+→ criar MovimentacaoEstoque ENTRADA
+→ confirmar tudo na mesma transação
 ```
 
-A entidade `Lote` será a origem rastreável da entrada e da validade. `EstoqueCentral` continuará representando a disponibilidade total do produto na unidade, caso seja mantido o saldo agregado persistido.
+A entrada física será uma operação de movimentação baseada em lote. Não deverá existir entrada que apenas aumente o saldo agregado.
 
-Não deve existir entrada que aumente apenas `EstoqueCentral.quantidadeAtual` sem criar ou identificar o lote correspondente, exceto em uma eventual migração controlada de dados antigos.
+## Saída e FEFO
 
-### Saída e consumo por lote
+A saída deverá reduzir simultaneamente os lotes envolvidos e o saldo agregado.
 
-A saída não poderá reduzir somente o saldo agregado. Ela também deverá reduzir a quantidade disponível de um ou mais lotes.
-
-A estratégia preferencial a validar é FEFO:
+Exemplo:
 
 ```text
-First Expire, First Out
-Primeiro a vencer, primeiro a sair
+EstoqueCentral = 15
+
+Lote A — validade mais próxima — 5
+Lote B — validade posterior    — 10
+
+Saída = 7
+
+Lote A: 5 → 0
+Lote B: 10 → 8
+EstoqueCentral: 15 → 8
 ```
 
-Isso evita consumir um lote mais novo enquanto outro está próximo do vencimento.
+Para produtos com controle de validade, a seleção será FEFO.
 
-Uma única saída poderá consumir mais de um lote. Nesse caso, será necessário registrar quais lotes e quantidades participaram da movimentação, possivelmente por uma entidade intermediária entre movimentação e lote.
+A implementação deverá prever uma saída utilizando vários lotes quando um único lote não possuir quantidade suficiente.
 
-### Validade e descarte
+## Pedido
 
-A validade deve pertencer ao lote, não ao catálogo global de `Produto`.
-
-Consequências esperadas:
-
-- remover ou descontinuar `Produto.dataValidade` como informação operacional de estoque;
-- produto perecível apenas indica que seus lotes exigem validade;
-- descarte por vencimento deve selecionar um lote vencido;
-- relatórios de vencimento devem consultar lotes;
-- produtos iguais podem coexistir com datas de validade diferentes.
-
-### Movimentação
-
-Toda alteração relevante de saldo deve gerar `MovimentacaoEstoque`, contendo:
-
-- produto e estoque afetado;
-- usuário responsável;
-- tipo e origem;
-- quantidade movimentada;
-- saldo anterior e saldo resultante;
-- data e observação;
-- pedido ou laboratório quando aplicável;
-- lote ou detalhamento de lotes quando aplicável.
-
-### Pedido
+O `PedidoService` continua responsável pelo ciclo do pedido:
 
 ```text
 PENDENTE
@@ -222,107 +187,113 @@ PENDENTE
 └── REJEITADO
 ```
 
-- A criação valida os vínculos, mas não reserva saldo.
-- A aprovação valida saldo e deverá consumir os lotes adequados.
-- A aprovação registra movimentação `SAIDA`.
-- A entrega cria `HistoricoLaboratorio` e não reduz o estoque novamente.
-- O cancelamento de pedido aprovado deverá restaurar saldo e rastreabilidade dos lotes consumidos.
-- A movimentação `DEVOLUCAO` será adicionada após a autenticação local simulada fornecer o usuário responsável.
-- Pedido entregue não pode ser cancelado pelo fluxo comum.
+Na aprovação, o `PedidoService` deverá delegar a baixa física ao `MovimentacaoEstoqueService`.
 
-### Concorrência de estoque, lote e pedido
+Conceitualmente:
 
-A proteção atual utiliza `LockModeType.PESSIMISTIC_WRITE`.
+```text
+PedidoService
+→ valida pedido e quantidade aprovada
+→ solicita saída ao MovimentacaoEstoqueService
+→ MovimentacaoEstoqueService aplica FEFO e atualiza estoque
+→ PedidoService finaliza o status
+```
 
-Com a inclusão de lotes, será necessário revisar a ordem dos bloqueios para evitar inconsistências e reduzir risco de deadlock.
+O cancelamento de pedido aprovado deverá futuramente restaurar o saldo e a rastreabilidade dos lotes consumidos.
 
-Ordem candidata:
+## Concorrência
+
+A estratégia atual de bloqueio pessimista permanece válida.
+
+Com lotes, a ordem de bloqueio deverá ser consistente para reduzir risco de deadlock:
 
 ```text
 Pedido, quando aplicável
-  → EstoqueCentral
-  → Lotes selecionados em ordem determinística
+→ EstoqueCentral
+→ Lotes selecionados em ordem determinística
 ```
 
-Os testes unitários confirmam atualmente o uso dos métodos bloqueados em estoque e pedido. O bloqueio dos lotes será definido durante a implementação e validado posteriormente no PostgreSQL.
+A concorrência real será validada posteriormente em PostgreSQL com testes de integração.
 
-### Autenticação
+## PostgreSQL
 
-Existirão duas origens de autenticação.
+A migração para PostgreSQL foi adiada até a estabilização do modelo de lotes para evitar criar migrations sobre um modelo que seria alterado imediatamente.
 
-#### Autenticação local simulada
+Depois da refatoração de lote e movimentação:
+
+- integrar PostgreSQL;
+- configurar ambiente local;
+- adicionar Flyway;
+- criar migration inicial já com lotes;
+- criar dados de desenvolvimento;
+- executar testes de integração e concorrência.
+
+## Autenticação
+
+### Local simulada
 
 Será usada durante desenvolvimento e testes enquanto a infraestrutura corporativa não estiver disponível.
 
-- utilizará usuários de teste armazenados no PostgreSQL local;
-- permitirá validar perfis, autorizações e ações auditáveis;
-- fornecerá o usuário responsável pelo contexto autenticado;
-- deverá ser isolada por perfil de ambiente.
+- usuários de teste armazenados no PostgreSQL local;
+- perfis e autorizações locais;
+- contexto autenticado para ações auditáveis;
+- configuração isolada por ambiente.
 
-#### Autenticação definitiva externa
+### Definitiva externa
 
-Será fornecida por uma API externa da empresa e é obrigatória para a versão definitiva.
+A autenticação definitiva será fornecida por API externa da empresa e permanece obrigatória para a versão final.
 
-- permanece fora da ordem sequencial por depender de liberação externa;
-- deverá ser integrada assim que a infraestrutura corporativa estiver disponível;
-- substituirá a origem local da identidade sem exigir reescrita das regras de domínio;
-- deverá alimentar o mesmo mecanismo interno de usuário autenticado usado pelos Services.
+Ela está fora do planejamento sequencial por depender da liberação da hospedagem e da infraestrutura de DevOps corporativa.
+
+Quando liberada, deverá substituir a origem local da identidade sem exigir reescrita das regras de domínio.
 
 ## Próxima ordem de trabalho
 
-1. Revisar o método atual de entrada de `EstoqueCentralService`.
-2. Definir se o saldo agregado será persistido ou calculado pelos lotes.
-3. Validar com o supervisor os requisitos de número do lote, validade, fabricação, fornecedor e rastreabilidade.
-4. Modelar `Lote` e seus relacionamentos.
-5. Definir o DTO de entrada por lote.
-6. Refatorar a entrada para criar lote, atualizar saldo e registrar movimentação na mesma transação.
-7. Definir e implementar consumo FEFO nas saídas.
-8. Adaptar aprovação, descarte, cancelamento e devolução para lotes.
-9. Revisar movimentações e histórico para rastreabilidade por lote.
-10. Atualizar e ampliar os testes unitários.
-11. Atualizar documentação e UML.
-12. Integrar PostgreSQL ao projeto.
-13. Configurar conexão local por ambiente.
-14. Adicionar Flyway e criar a migration inicial já com o modelo de lotes.
-15. Criar banco e dados de desenvolvimento.
-16. Executar testes de integração e concorrência.
-17. Implementar autenticação local simulada.
-18. Registrar `DEVOLUCAO` auditada.
-19. Implementar relatórios, exportações e OpenAPI.
-20. Executar estabilização completa.
-21. Iniciar frontend.
+1. Modelar a entidade `Lote` e seus relacionamentos.
+2. Criar `LoteDTO`, `LoteRepository`, `LoteService` e `LoteController` para cadastro controlado e consultas.
+3. Criar `MovimentacaoEstoqueService`.
+4. Migrar primeiro a entrada física para `MovimentacaoEstoqueService`.
+5. Remover a responsabilidade de entrada de `EstoqueCentralService`.
+6. Ajustar e executar os testes afetados pela entrada.
+7. Implementar saída por lote usando FEFO.
+8. Remover a responsabilidade de saída de `EstoqueCentralService`.
+9. Adaptar aprovação de pedido para delegar a baixa física.
+10. Adaptar descarte por vencimento para lote.
+11. Adaptar cancelamento e futura devolução para rastreabilidade por lote.
+12. Revisar a modelagem de auditoria para registrar os lotes participantes de cada movimentação.
+13. Atualizar e ampliar testes unitários.
+14. Atualizar UML e documentação estrutural.
+15. Integrar PostgreSQL.
+16. Configurar Flyway e criar migrations.
+17. Executar testes de integração e concorrência.
+18. Implementar autenticação local simulada.
+19. Registrar `DEVOLUCAO` auditada.
+20. Implementar relatórios, exportações e OpenAPI.
+21. Executar estabilização completa.
+22. Iniciar frontend.
 
-A integração com a autenticação externa não aparece numerada nessa sequência. Ela será executada assim que a infraestrutura corporativa for liberada e permanece condição obrigatória para implantação definitiva.
+A autenticação externa não aparece numerada nessa sequência. Ela deverá ser integrada assim que a infraestrutura corporativa estiver disponível e permanece condição obrigatória para implantação definitiva.
 
 ## Documentos de referência
 
-- [`README.md`](README.md): apresentação e execução.
+- [`README.md`](README.md): visão geral do projeto e decisões principais.
 - [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo operacional.
 - [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): classes e camadas.
+- [`docs/CODIGOS_REFERENCIA_TESTES.md`](docs/CODIGOS_REFERENCIA_TESTES.md): referência dos testes existentes.
+- [`docs/CODIGOS_REFERENCIA_LOTE.md`](docs/CODIGOS_REFERENCIA_LOTE.md): referência para implementação inicial do módulo de lotes.
 - [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml): entidades e relacionamentos.
-- [`docs/CODIGOS_REFERENCIA_TESTES.md`](docs/CODIGOS_REFERENCIA_TESTES.md): referência dos testes unitários.
 
 ## Histórico recente
 
 | Data | Decisão |
 |---|---|
-| 04/08/2026 | Estoque central consolidado por Unidade + Produto |
-| 04/08/2026 | Baixa definida no momento da aprovação |
-| 05/08/2026 | Movimentação registrada durante aprovação |
-| 05/08/2026 | Validações de Produto revisadas |
-| 05/08/2026 | BCrypt mantido para proteger senhas |
-| 05/08/2026 | Usuário passou a ser inativado em vez de excluído |
-| 05/08/2026 | Documentação estrutural e UML revisados |
-| 05/08/2026 | Relatórios planejados para depois da migração ao PostgreSQL |
-| 06/08/2026 | Movimentação de devolução movida para depois da autenticação |
-| 06/08/2026 | Autenticação local definida antes da integração externa |
-| 06/08/2026 | Respostas HTTP e exceções de domínio padronizadas |
-| 06/08/2026 | Estratégia de testes dividida em proteção mínima e estabilização final |
 | 06/08/2026 | Dez testes unitários executados com sucesso |
-| 06/08/2026 | Bloqueio pessimista adicionado aos fluxos de alteração de estoque |
-| 06/08/2026 | Bloqueio pessimista adicionado às transições de status de pedido |
-| 06/08/2026 | Testes unitários executados novamente sem falhas após as mudanças de concorrência |
-| 06/08/2026 | Autenticação externa removida da ordem sequencial por depender da infraestrutura corporativa |
-| 06/08/2026 | Autenticação local simulada mantida para desenvolvimento e testes |
-| 06/08/2026 | Integração PostgreSQL adiada até estabilizar o modelo de lotes e validade |
-| 06/08/2026 | Primeira análise definida: entrada de estoque deverá criar lote e alimentar o saldo agregado |
+| 06/08/2026 | Bloqueio pessimista adicionado a estoque e transições de pedido |
+| 06/08/2026 | Autenticação externa retirada da ordem sequencial por depender da infraestrutura corporativa |
+| 06/08/2026 | PostgreSQL adiado até estabilização do modelo de lotes |
+| 07/08/2026 | `EstoqueCentral.quantidadeAtual` definido como saldo agregado persistido |
+| 07/08/2026 | Controle de validade transferido conceitualmente de Produto para Lote |
+| 07/08/2026 | FEFO definido como estratégia de consumo dos lotes com validade |
+| 07/08/2026 | Entrada física deixa de ser responsabilidade de `EstoqueCentralService` |
+| 07/08/2026 | `MovimentacaoEstoqueService` definido como centralizador das alterações físicas de estoque |
+| 07/08/2026 | `MovimentacaoEstoque` mantido como entidade de auditoria/histórico |
