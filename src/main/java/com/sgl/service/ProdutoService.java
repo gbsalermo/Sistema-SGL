@@ -1,6 +1,5 @@
 package com.sgl.service;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -79,18 +78,6 @@ public class ProdutoService {
         produto.setAtivo(false);
     }
 
-    @Transactional(readOnly = true)
-    public List<ProdutoDTO> listarValidadeProxima(int dias) {
-        LocalDate dataAtual = LocalDate.now();
-        LocalDate dataLimite = dataAtual.plusDays(dias);
-
-        return produtoRepository
-                .findPereciveisComValidadeProxima(dataAtual, dataLimite)
-                .stream()
-                .map(ProdutoDTO::new)
-                .toList();
-    }
-
     private void preencherProduto(Produto produto, ProdutoDTO dto) {
         validarCodigoReferencia(produto, dto.getCodigoReferencia());
 
@@ -162,15 +149,8 @@ public class ProdutoService {
         produto.setPerecivel(perecivel);
 
         if (!perecivel) {
-            produto.setDataValidade(null);
             produto.setTipoPerecivel(null);
             return;
-        }
-
-        if (dto.getDataValidade() == null) {
-            throw new BusinessRuleException(
-                    "A data de validade é obrigatória para produtos perecíveis."
-            );
         }
 
         if (dto.getTipoPerecivel() == null) {
@@ -179,7 +159,6 @@ public class ProdutoService {
             );
         }
 
-        produto.setDataValidade(dto.getDataValidade());
         produto.setTipoPerecivel(dto.getTipoPerecivel());
     }
 }
