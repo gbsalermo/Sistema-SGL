@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -153,6 +154,43 @@ public class PedidoService {
         return pedidoRepository.findByStatus(status).stream().map(PedidoDTO::new).toList();
     }
 
+    /**
+     * Lista os pedidos criados por um projeto específico dentro de determinado
+     * laboratório e intervalo de datas de solicitação.
+     */
+    @Transactional(readOnly = true)
+    public List<PedidoDTO> listarPorProjetoEPeriodo(
+            Long laboratorioId,
+            Long projetoId,
+            LocalDate dataInicio,
+            LocalDate dataFim) {
+
+        if (!laboratorioRepository.existsById(laboratorioId)) {
+            throw new ResourceNotFoundException("Laboratório", laboratorioId);
+        }
+
+        Projeto projeto = projetoRepository.findById(projetoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
+
+        if (projeto.getLaboratorio() == null
+                || !projeto.getLaboratorio().getId().equals(laboratorioId)) {
+            throw new BusinessRuleException(
+                    "O projeto informado não pertence ao laboratório informado."
+            );
+        }
+
+        validarPeriodo(dataInicio, dataFim);
+
+        LocalDateTime inicio = dataInicio.atStartOfDay();
+        LocalDateTime fim = dataFim.atTime(LocalTime.MAX);
+
+        return pedidoRepository
+                .findByLaboratorioProjetoEPeriodo(laboratorioId, projetoId, inicio, fim)
+                .stream()
+                .map(PedidoDTO::new)
+                .toList();
+    }
+
     @Transactional
     public PedidoDTO aprovar(Long id, AprovarPedidoDTO dto) {
         Long aprovadorId = dto.getUsuarioAprovadorId();
@@ -296,11 +334,6 @@ public class PedidoService {
         }
 
         if (pedido.getStatus() == StatusPedido.APROVADO) {
-            /*
-             * Restaura exatamente os lotes consumidos na aprovação.
-             * A movimentação DEVOLUCAO será registrada quando o contexto de
-             * autenticação local fornecer o usuário que executou o cancelamento.
-             */
             movimentacaoEstoqueService.devolverSaidasDoPedido(
                     pedido,
                     null,
@@ -356,6 +389,18 @@ public class PedidoService {
         }
         if (projeto != null && !Boolean.TRUE.equals(projeto.getAtivo())) {
             throw new BusinessRuleException("O projeto informado está inativo.");
+        }
+    }
+
+    private void validarPeriodo(LocalDate dataInicio, LocalDate dataFim) {
+        if (dataInicio == null || dataFim == null) {
+            throw new BusinessRuleException("Data inicial e data final são obrigatórias.");
+        }
+
+        if (dataInicio.isAfter(dataFim)) {
+            throw new BusinessRuleException(
+                    "A data inicial não pode ser posterior à data final."
+            );
         }
     }
 }
