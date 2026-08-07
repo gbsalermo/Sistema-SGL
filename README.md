@@ -1,10 +1,20 @@
 # SGL — Sistema de Gestão de Laboratórios
 
-Sistema backend para cadastro de unidades e laboratórios, catálogo de produtos, controle de estoque por unidade e atendimento de pedidos de materiais.
+Sistema backend para cadastro de unidades e laboratórios, catálogo de produtos, controle de estoque por unidade, rastreabilidade por lotes e atendimento de pedidos de materiais.
 
 ## Estado atual
 
-O backend está funcional e em fase de consolidação. O domínio de estoque já foi refatorado para controle por lotes, validade por lote, consumo FEFO/FIFO e rastreabilidade das movimentações. A próxima etapa técnica é revisar os testes afetados antes da migração para PostgreSQL.
+O backend está funcional e em fase de consolidação. O domínio de estoque já foi refatorado para controle por lotes, validade por lote, consumo FEFO/FIFO e rastreabilidade das movimentações.
+
+Também foram adicionadas consultas para diferenciar:
+
+```text
+pedidos realizados por um projeto
+versus
+materiais efetivamente recebidos por esse projeto
+```
+
+A próxima etapa técnica, após a validação dos testes automatizados e do roteiro Postman, é iniciar a migração para PostgreSQL e Flyway.
 
 A autenticação definitiva dependerá de uma API externa da empresa. Enquanto a infraestrutura corporativa não estiver disponível, será utilizada autenticação local simulada para desenvolvimento e testes.
 
@@ -13,11 +23,11 @@ A autenticação definitiva dependerá de uma API externa da empresa. Enquanto a
 - Java e Spring Boot
 - Spring Data JPA e Hibernate
 - Bean Validation
-- BCrypt para armazenamento seguro de senhas
-- H2 no ambiente atual de desenvolvimento
-- PostgreSQL planejado para a próxima etapa de persistência definitiva
+- BCrypt
+- H2 no ambiente atual
+- PostgreSQL planejado como banco definitivo
 - Flyway planejado para migrations
-- JUnit e Mockito para testes unitários
+- JUnit e Mockito
 - Lombok
 
 ## Arquitetura
@@ -27,22 +37,22 @@ Requisição HTTP
     ↓
 Controller
     ↓ DTO
-Service — validações e regras de negócio
+Service
     ↓ Entity
-Repository — persistência JPA
+Repository
     ↓
 Banco de dados
 ```
 
 Responsabilidades:
 
-- `controller`: expõe os endpoints REST e delega o processamento.
-- `dto`: define os dados recebidos e devolvidos pela API.
-- `service`: concentra regras de negócio, consistência e transações.
-- `repository`: executa consultas e persistência.
-- `model`: representa as entidades e relacionamentos do domínio.
-- `exception`: padroniza o tratamento das falhas da API.
-- `config`: reúne configurações e dados iniciais do ambiente.
+- `controller`: endpoints REST;
+- `dto`: contratos de entrada e saída;
+- `service`: regras de negócio, consistência e transações;
+- `repository`: persistência e consultas;
+- `model`: entidades e relacionamentos;
+- `exception`: tratamento padronizado de erros;
+- `config`: configurações da aplicação.
 
 ## Modelo do domínio
 
@@ -51,7 +61,7 @@ Unidade
 ├── Laboratórios
 ├── Usuários
 └── Estoque central
-    └── registros por Produto
+    └── Produto
         └── Lotes
 
 Laboratório
@@ -61,53 +71,53 @@ Laboratório
 └── Histórico de materiais recebidos
 ```
 
-`Produto` funciona como catálogo global. O saldo não fica no produto, mas em `EstoqueCentral`, identificado pela combinação única:
+`Produto` é catálogo global. O saldo pertence ao `EstoqueCentral`, identificado por:
 
 ```text
 Unidade + Produto
 ```
 
-`Lote` representa a entrada física e rastreável de um produto naquele estoque, com quantidade inicial, quantidade disponível, data de entrada e, quando o produto for perecível, validade própria.
+`Lote` representa uma entrada física rastreável, com quantidade própria e validade quando o produto for perecível.
 
-O saldo agregado permanece persistido em `EstoqueCentral.quantidadeAtual` e deve corresponder à soma das quantidades disponíveis dos lotes.
-
-## Controle por lote, FEFO e FIFO
-
-A validade operacional pertence exclusivamente ao `Lote`, não ao catálogo global de `Produto`.
-
-Para produtos perecíveis, o SGL utiliza **FEFO — First Expire, First Out**:
+Regra central:
 
 ```text
-Primeiro a vencer → primeiro a sair
+EstoqueCentral.quantidadeAtual
+=
+soma de Lote.quantidadeDisponivel
 ```
 
-Lotes vencidos não participam da saída normal e seguem para o fluxo de descarte.
+## FEFO e FIFO
 
-Para produtos não perecíveis, que não possuem `dataValidade`, o SGL utiliza **FIFO — First In, First Out**:
+A validade operacional pertence ao `Lote`.
+
+Produtos perecíveis utilizam **FEFO — First Expire, First Out**:
 
 ```text
-Primeiro a entrar → primeiro a sair
+primeiro a vencer → primeiro a sair
 ```
 
-A ordenação FIFO usa `dataEntrada` e, em caso de empate, o `id` do lote.
+Lotes vencidos não atendem saídas normais e seguem para descarte.
 
-Uma saída pode consumir vários lotes. Nesse caso, cada lote afetado gera uma `MovimentacaoEstoque` própria, mantendo a rastreabilidade sem necessidade de uma entidade intermediária.
+Produtos não perecíveis utilizam **FIFO — First In, First Out**:
 
-## Centralização das movimentações de estoque
+```text
+primeiro a entrar → primeiro a sair
+```
 
-A arquitetura separa auditoria de execução da regra:
+Uma saída pode consumir vários lotes. Cada lote afetado gera uma `MovimentacaoEstoque` própria.
+
+## Movimentações de estoque
 
 ```text
 MovimentacaoEstoque
-= entidade de registro e auditoria
+= auditoria do que aconteceu
 
 MovimentacaoEstoqueService
-= centralização das regras que alteram fisicamente o estoque
+= coordenação das operações físicas
 ```
 
-`MovimentacaoEstoque` possui vínculo opcional com o `Lote` efetivamente afetado.
-
-`MovimentacaoEstoqueService` coordena:
+O service centraliza:
 
 ```text
 entrada por lote
@@ -116,19 +126,18 @@ descarte por vencimento
 devolução/restauração por lote
 ```
 
-O `EstoqueCentralService` ficou responsável apenas pelo cadastro, configuração e consulta do saldo agregado. Entrada, saída e descarte não pertencem mais a ele.
+`EstoqueCentralService` ficou restrito a cadastro, configuração e consulta do saldo agregado.
 
-## Fluxo principal do pedido
+## Fluxo de pedido
 
-1. Um usuário cria um pedido para seu laboratório.
-2. O sistema valida usuário, laboratório, unidade, projeto e produtos.
-3. O pedido nasce como `PENDENTE`.
-4. Um usuário aprovador informa as quantidades aprovadas.
-5. `PedidoService` delega a baixa ao `MovimentacaoEstoqueService`.
-6. Produtos perecíveis consomem lotes por FEFO; não perecíveis usam FIFO.
-7. Uma movimentação `SAIDA` é registrada para cada lote utilizado.
-8. Na entrega, o sistema cria o histórico de recebimento do laboratório sem reduzir o estoque novamente.
-9. Um pedido aprovado cancelado restaura exatamente os lotes consumidos na aprovação.
+1. Usuário cria pedido para seu laboratório.
+2. O pedido nasce `PENDENTE`.
+3. O gestor informa as quantidades aprovadas.
+4. `PedidoService` delega a baixa ao `MovimentacaoEstoqueService`.
+5. Perecíveis usam FEFO; não perecíveis usam FIFO.
+6. Uma `SAIDA` é registrada para cada lote consumido.
+7. Na entrega, o sistema cria `HistoricoLaboratorio` sem baixar estoque novamente.
+8. Cancelamento de pedido aprovado restaura exatamente os lotes consumidos.
 
 ```text
 PENDENTE
@@ -138,67 +147,67 @@ PENDENTE
 └── REJEITADO
 ```
 
-A movimentação auditada `DEVOLUCAO` será ativada quando o contexto de autenticação local fornecer o usuário executor real do cancelamento.
+## Consultas por projeto
+
+O sistema separa solicitações de recebimentos reais.
+
+### Pedidos realizados
+
+```http
+GET /api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+```
+
+Responde quais pedidos foram criados para aquele projeto no laboratório e período informados, independentemente do status.
+
+### Materiais efetivamente recebidos
+
+```http
+GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+```
+
+Responde somente o que foi efetivamente entregue ao laboratório por pedidos vinculados ao projeto.
+
+Isso permite comparar, por exemplo:
+
+```text
+Projeto 1 em junho
+→ quantidade de pedidos realizados
+→ quantidade de materiais efetivamente recebidos
+```
+
+As consultas validam que o projeto pertence ao laboratório e que `dataInicio <= dataFim`.
 
 ## Módulos
 
 | Módulo | Papel |
 |---|---|
-| Unidade | Representa a instituição ou setor proprietário dos laboratórios e estoques |
+| Unidade | Instituição/setor proprietário dos laboratórios e estoques |
 | Laboratório | Agrupa usuários, projetos, pedidos e históricos |
-| Usuário | Identifica solicitantes, aprovadores e demais perfis operacionais |
-| Estagiário | Especialização de usuário com dados do estágio |
+| Usuário | Solicitantes, gestores e demais perfis |
+| Estagiário | Especialização de usuário |
 | Produto | Catálogo e classificação dos materiais |
-| EstoqueCentral | Saldo agregado de um produto dentro de uma unidade |
-| Lote | Entrada física rastreável, saldo individual e validade quando aplicável |
-| MovimentacaoEstoque | Auditoria da quantidade movimentada e do lote afetado |
-| MovimentacaoEstoqueService | Coordena entrada, saída, descarte e devolução física |
-| Projeto | Contexto opcional de um pedido |
-| Pedido e ItemPedido | Solicitação e aprovação de materiais |
-| HistoricoLaboratorio | Registro do material efetivamente entregue ao laboratório |
+| EstoqueCentral | Saldo agregado por Unidade + Produto |
+| Lote | Entrada física, saldo individual e validade |
+| MovimentacaoEstoque | Auditoria da quantidade e lote afetados |
+| MovimentacaoEstoqueService | Coordena operações físicas de estoque |
+| Projeto | Contexto opcional do pedido e eixo de consulta/relatório |
+| Pedido / ItemPedido | Solicitação e aprovação de materiais |
+| HistoricoLaboratorio | Material efetivamente entregue ao laboratório |
 
-## Regras estruturais importantes
+## Regras importantes
 
-- Cada estoque pertence a uma unidade e a um produto.
-- A combinação `unidade_id + produto_id` deve ser única.
-- `EstoqueCentral.quantidadeAtual` é saldo agregado persistido.
-- O saldo agregado deve permanecer consistente com os lotes.
-- Um novo estoque nasce com quantidade zero.
-- Toda entrada física cria um lote.
-- Produto perecível exige validade no lote e usa FEFO.
-- Produto não perecível não possui validade no lote e usa FIFO.
-- Lotes vencidos não atendem saídas normais.
-- O estoque nunca pode ficar negativo.
-- A aprovação reduz apenas a quantidade aprovada.
-- A entrega não reduz o estoque novamente.
-- O cancelamento aprovado restaura os lotes consumidos.
-- Produto sem risco não mantém tipo ou descrição de risco.
-- Usuários e demais registros históricos devem ser inativados quando a exclusão física comprometer a rastreabilidade.
-
-## Estrutura do repositório
-
-```text
-Sistema-SGL/
-├── backend/sgl-backend/
-│   ├── src/main/java/com/sgl/
-│   │   ├── config/
-│   │   ├── controller/
-│   │   ├── dto/
-│   │   ├── exception/
-│   │   ├── model/
-│   │   ├── repository/
-│   │   └── service/
-│   └── pom.xml
-├── docs/
-│   ├── FLUXO_DO_SISTEMA.md
-│   ├── GUIA_ESTRUTURAL.md
-│   ├── CODIGOS_REFERENCIA_LOTE.md
-│   ├── diagrama-uml-completo.puml
-│   ├── componentes.puml
-│   └── sequencia-pedido.puml
-├── CONTINUIDADE.md
-└── README.md
-```
+- `unidade_id + produto_id` deve ser único no estoque;
+- estoque novo nasce com quantidade zero;
+- toda entrada física cria lote;
+- perecível exige validade no lote e usa FEFO;
+- não perecível não possui validade no lote e usa FIFO;
+- lote vencido não atende pedido;
+- estoque nunca pode ficar negativo;
+- aprovação reduz somente a quantidade aprovada;
+- entrega não reduz estoque novamente;
+- cancelamento aprovado restaura os lotes usados;
+- histórico do laboratório representa recebimento efetivo, não apenas solicitação;
+- consultas por projeto sempre validam o vínculo Projeto → Laboratório.
 
 ## Executar o backend
 
@@ -208,31 +217,34 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-A API é iniciada, por padrão, em `http://localhost:8080`.
+API local:
+
+```text
+http://localhost:8080
+```
 
 ## Próximas etapas
 
-- revisar e migrar os testes para a arquitetura por lotes;
-- atualizar UML e documentação estrutural restante;
-- integrar PostgreSQL;
+- executar e corrigir eventuais falhas da suíte automatizada;
+- executar o roteiro completo do Postman;
+- validar consultas por projeto/período junto com lote/FEFO/FIFO;
+- migrar para PostgreSQL;
 - adicionar Flyway e migrations;
+- criar testes de integração e concorrência;
 - implementar autenticação local simulada;
-- registrar `DEVOLUCAO` com o usuário executor real;
-- executar testes de integração e concorrência;
-- documentar endpoints com OpenAPI;
-- iniciar o frontend.
-
-A autenticação definitiva via API externa permanece obrigatória, porém fora da ordem sequencial por depender da infraestrutura corporativa.
+- registrar `DEVOLUCAO` com usuário executor real;
+- documentar automaticamente a API com OpenAPI/Swagger;
+- iniciar frontend.
 
 ## Documentação
 
-- [`CONTINUIDADE.md`](CONTINUIDADE.md): estado técnico e ordem de continuidade.
+- [`CONTINUIDADE.md`](CONTINUIDADE.md): estado técnico e próximos passos.
+- [`docs/ENDPOINTS_INTERNOS.md`](docs/ENDPOINTS_INTERNOS.md): inventário de endpoints por entidade e função.
+- [`docs/testes.md`](docs/testes.md): testes automatizados e roteiro Postman.
 - [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo ponta a ponta.
-- [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): responsabilidades das classes e camadas.
-- [`docs/CODIGOS_REFERENCIA_LOTE.md`](docs/CODIGOS_REFERENCIA_LOTE.md): códigos de referência do módulo de lotes.
+- [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): responsabilidades das classes.
+- [`docs/CODIGOS_REFERENCIA_LOTE.md`](docs/CODIGOS_REFERENCIA_LOTE.md): referência do módulo de lotes.
 - [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml): modelo de domínio.
-- [`docs/componentes.puml`](docs/componentes.puml): componentes da aplicação.
-- [`docs/sequencia-pedido.puml`](docs/sequencia-pedido.puml): sequência do pedido.
 
 ## Responsável
 
