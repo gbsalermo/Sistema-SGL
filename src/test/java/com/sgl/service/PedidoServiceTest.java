@@ -8,7 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,7 @@ import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
+import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
@@ -282,6 +285,107 @@ class PedidoServiceTest {
                 "Cancelado pelo gestor"
         );
         assertEquals(StatusPedido.CANCELADO, resultado.getStatus());
+    }
+
+    @Test
+    void deveListarPedidosDoProjetoNoLaboratorioEPeriodo() {
+        Projeto projeto = Projeto.builder()
+                .id(9L)
+                .laboratorio(laboratorio)
+                .nome("Projeto 1")
+                .ativo(true)
+                .build();
+        pedido.setProjeto(projeto);
+        pedido.setDataSolicitacao(LocalDateTime.of(2026, 6, 15, 14, 30));
+
+        LocalDate dataInicio = LocalDate.of(2026, 6, 1);
+        LocalDate dataFim = LocalDate.of(2026, 6, 30);
+        LocalDateTime inicio = dataInicio.atStartOfDay();
+        LocalDateTime fim = dataFim.atTime(LocalTime.MAX);
+
+        when(laboratorioRepository.existsById(2L)).thenReturn(true);
+        when(projetoRepository.findById(9L)).thenReturn(Optional.of(projeto));
+        when(pedidoRepository.findByLaboratorioProjetoEPeriodo(2L, 9L, inicio, fim))
+                .thenReturn(List.of(pedido));
+
+        List<PedidoDTO> resultado = pedidoService.listarPorProjetoEPeriodo(
+                2L,
+                9L,
+                dataInicio,
+                dataFim
+        );
+
+        assertEquals(1, resultado.size());
+        assertEquals(7L, resultado.get(0).getId());
+        assertEquals(9L, resultado.get(0).getProjetoId());
+        verify(pedidoRepository).findByLaboratorioProjetoEPeriodo(2L, 9L, inicio, fim);
+    }
+
+    @Test
+    void deveImpedirConsultaDePedidosQuandoProjetoNaoPertenceAoLaboratorio() {
+        Laboratorio outroLaboratorio = Laboratorio.builder()
+                .id(99L)
+                .nome("Outro laboratório")
+                .unidade(unidade)
+                .ativo(true)
+                .build();
+
+        Projeto projeto = Projeto.builder()
+                .id(9L)
+                .laboratorio(outroLaboratorio)
+                .nome("Projeto externo")
+                .ativo(true)
+                .build();
+
+        when(laboratorioRepository.existsById(2L)).thenReturn(true);
+        when(projetoRepository.findById(9L)).thenReturn(Optional.of(projeto));
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> pedidoService.listarPorProjetoEPeriodo(
+                        2L,
+                        9L,
+                        LocalDate.of(2026, 6, 1),
+                        LocalDate.of(2026, 6, 30)
+                )
+        );
+
+        assertEquals(
+                "O projeto informado não pertence ao laboratório informado.",
+                exception.getMessage()
+        );
+        verify(pedidoRepository, never())
+                .findByLaboratorioProjetoEPeriodo(any(), any(), any(), any());
+    }
+
+    @Test
+    void deveImpedirConsultaDePedidosComPeriodoInvertido() {
+        Projeto projeto = Projeto.builder()
+                .id(9L)
+                .laboratorio(laboratorio)
+                .nome("Projeto 1")
+                .ativo(true)
+                .build();
+
+        when(laboratorioRepository.existsById(2L)).thenReturn(true);
+        when(projetoRepository.findById(9L)).thenReturn(Optional.of(projeto));
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> pedidoService.listarPorProjetoEPeriodo(
+                        2L,
+                        9L,
+                        LocalDate.of(2026, 6, 30),
+                        LocalDate.of(2026, 6, 1)
+                )
+        );
+
+        assertEquals(
+                "A data inicial não pode ser posterior à data final.",
+                exception.getMessage()
+        );
+        verify(pedidoRepository, never())
+                .findByLaboratorioProjetoEPeriodo(any(), any(), any(), any());
     }
 
     private AprovarPedidoDTO criarAprovacaoDTO(Integer quantidadeAprovada) {
