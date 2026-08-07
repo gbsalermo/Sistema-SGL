@@ -23,13 +23,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Registro de auditoria de toda alteração relevante no saldo central.
- *
- * <p>A movimentação não calcula o saldo por conta própria: ela registra o
- * resultado produzido pelo caso de uso de entrada, saída, pedido, descarte ou
- * devolução.</p>
- */
+/** Registro de auditoria de toda alteração relevante no estoque. */
 @Entity
 @Table(name = "movimentacao_estoque")
 @Getter
@@ -49,27 +43,30 @@ public class MovimentacaoEstoque implements Serializable {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
-    /** Laboratório envolvido, quando a movimentação possuir esse contexto. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "laboratorio_id")
     private Laboratorio laboratorio;
 
-    /** Usuário responsável por autorizar ou executar a operação. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    /** Pedido relacionado, preenchido nas movimentações originadas do fluxo de pedido. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
 
-    /** Efeito da operação no estoque: entrada, saída, ajuste, devolução ou descarte. */
+    /**
+     * Lote efetivamente afetado. Uma operação que consumir vários lotes gera
+     * uma MovimentacaoEstoque para cada lote, preservando a rastreabilidade.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lote_id")
+    private Lote lote;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoMovimentacao tipoMovimentacao;
 
-    /** Contexto de negócio que provocou a movimentação. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrigemMovimentacao origem;
@@ -77,11 +74,11 @@ public class MovimentacaoEstoque implements Serializable {
     @Column(nullable = false)
     private Integer quantidadeMovimentada;
 
-    /** Saldo imediatamente antes da operação. */
+    /** Saldo agregado do EstoqueCentral imediatamente antes da parcela. */
     @Column(nullable = false)
     private Integer quantidadeAnterior;
 
-    /** Saldo imediatamente depois da operação. */
+    /** Saldo agregado do EstoqueCentral imediatamente depois da parcela. */
     @Column(nullable = false)
     private Integer quantidadeAtual;
 
@@ -90,7 +87,6 @@ public class MovimentacaoEstoque implements Serializable {
 
     private String observacao;
 
-    /** Registro de estoque efetivamente alterado pela operação. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "estoque_central_id", nullable = false)
     private EstoqueCentral estoqueCentral;
