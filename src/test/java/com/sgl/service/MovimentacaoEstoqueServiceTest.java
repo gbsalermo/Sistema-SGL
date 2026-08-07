@@ -3,6 +3,7 @@ package com.sgl.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,7 +74,7 @@ class MovimentacaoEstoqueServiceTest {
                 .ativo(true)
                 .build();
 
-        when(movimentacaoRepository.save(any(MovimentacaoEstoque.class)))
+        lenient().when(movimentacaoRepository.save(any(MovimentacaoEstoque.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
     }
 
