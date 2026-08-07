@@ -19,49 +19,55 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "lote", uniqueConstraints = {@UniqueConstraint( name = "uk_lote_estoque_numero", columnNames = {"estoque_centrals_id", "numero_lote"})})
+@Table(
+        name = "lote",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_lote_estoque_numero",
+                        columnNames = {"estoque_central_id", "numero_lote"}
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Lote implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
-	
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	
-	/*
-	 * O lote pertence a um EstoqueCentral especifico.
-	 * Através do EstoqueCentral já conseguimos descobrir Produto e Unidade
-	 */
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "estoque_central_id", nullable = false)
-	private EstoqueCentral estoqueCentral;
-	
-	@Column(name = "numero_lote", nullable = false, length = 100)
-	private String numeroLote;
-	
-	//Quant. recebida originalmente, não deve diminuir após a entrada
-	@Column(nullable = false)
-	private Integer quantidadeInicial;
-	
-	//Quant. que ainda pode ser utilizada
-	@Column(nullable = false)
-	private Integer quantidadeDisponivel;
-	
-	@Column(nullable = false)
-	private LocalDate dataEntrada;
-	
-	/*
-	 * Pode ser nula para produtos que não tenham validade
-	 * Para produto perecivel é obrigatoria
-	 */
-	private LocalDate dataValidade;
-	
-	@Column(nullable = false)
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /*
+     * O lote pertence a um EstoqueCentral específico.
+     * Através do EstoqueCentral já conseguimos descobrir Produto e Unidade.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estoque_central_id", nullable = false)
+    private EstoqueCentral estoqueCentral;
+
+    @Column(name = "numero_lote", nullable = false, length = 100)
+    private String numeroLote;
+
+    /** Quantidade recebida originalmente. Não deve diminuir após a entrada. */
+    @Column(nullable = false)
+    private Integer quantidadeInicial;
+
+    /** Quantidade que ainda pode ser utilizada. */
+    @Column(nullable = false)
+    private Integer quantidadeDisponivel;
+
+    @Column(nullable = false)
+    private LocalDate dataEntrada;
+
+    /*
+     * Produto perecível: obrigatória.
+     * Produto não perecível: deve permanecer nula e será consumido por FIFO.
+     */
+    private LocalDate dataValidade;
+
+    @Column(nullable = false)
     private Boolean ativo = true;
 }
