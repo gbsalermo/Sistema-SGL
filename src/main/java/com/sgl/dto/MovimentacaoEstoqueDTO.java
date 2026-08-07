@@ -43,6 +43,12 @@ public class MovimentacaoEstoqueDTO {
 
     private Long pedidoId;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Long loteId;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String numeroLote;
+
     @NotNull(message = "Tipo da movimentação é obrigatório")
     private TipoMovimentacao tipoMovimentacao;
 
@@ -79,6 +85,8 @@ public class MovimentacaoEstoqueDTO {
         this.pedidoId = entity.getPedido() != null
                 ? entity.getPedido().getId()
                 : null;
+        this.loteId = entity.getLote() != null ? entity.getLote().getId() : null;
+        this.numeroLote = entity.getLote() != null ? entity.getLote().getNumeroLote() : null;
         this.tipoMovimentacao = entity.getTipoMovimentacao();
         this.quantidadeMovimentada = entity.getQuantidadeMovimentada();
         this.quantidadeAnterior = entity.getQuantidadeAnterior();
