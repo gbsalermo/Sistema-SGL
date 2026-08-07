@@ -240,10 +240,8 @@ http://localhost:8080
 
 - [`CONTINUIDADE.md`](CONTINUIDADE.md): estado técnico e próximos passos.
 - [`docs/ENDPOINTS_INTERNOS.md`](docs/ENDPOINTS_INTERNOS.md): inventário de endpoints por entidade e função.
-- [`docs/testes.md`](docs/testes.md): testes automatizados e roteiro Postman.
 - [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md): fluxo ponta a ponta.
 - [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md): responsabilidades das classes.
-- [`docs/CODIGOS_REFERENCIA_LOTE.md`](docs/CODIGOS_REFERENCIA_LOTE.md): referência do módulo de lotes.
 - [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml): modelo de domínio.
 
 ## Responsável
