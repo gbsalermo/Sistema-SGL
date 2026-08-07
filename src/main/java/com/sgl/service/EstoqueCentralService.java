@@ -1,29 +1,19 @@
 package com.sgl.service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.DescarteProdutoDTO;
 import com.sgl.dto.EstoqueCentralDTO;
-import com.sgl.dto.MovimentacaoEstoqueDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
-import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
-import com.sgl.model.Usuario;
-import com.sgl.model.enums.OrigemMovimentacao;
-import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
-import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.UnidadeRepository;
-import com.sgl.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,8 +21,9 @@ import lombok.RequiredArgsConstructor;
  * Gerencia cadastro, configuração e consulta do saldo agregado de materiais de
  * uma Unidade.
  *
- * <p>Com a introdução de lotes, o saldo nasce em zero e deve ser alimentado
- * pelas operações físicas coordenadas por MovimentacaoEstoqueService.</p>
+ * As operações físicas de entrada, saída, descarte e devolução pertencem a
+ * MovimentacaoEstoqueService e são refletidas aqui apenas como consequência no
+ * valor de quantidadeAtual.
  */
 @Service
 @RequiredArgsConstructor
@@ -41,8 +32,6 @@ public class EstoqueCentralService {
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final ProdutoRepository produtoRepository;
     private final UnidadeRepository unidadeRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 
     @Transactional
     public EstoqueCentralDTO criar(EstoqueCentralDTO dto) {
@@ -130,177 +119,11 @@ public class EstoqueCentralService {
                 .toList();
     }
 
-    /**
-     * Fluxo legado mantido apenas até a migração dos testes e consumidores para
-     * entrada física por lote em MovimentacaoEstoqueService.
-     */
-    @Deprecated
-    @Transactional
-    public EstoqueCentralDTO entrada(Long id, MovimentacaoEstoqueDTO dto) {
-        validarQuantidade(dto.getQuantidadeMovimentada());
-
-        EstoqueCentral estoque = estoqueCentralRepository.buscarPorIdComBloqueio(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
-
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuário",
-                        dto.getUsuarioId()
-                ));
-
-        int quantidadeAnterior = estoque.getQuantidadeAtual();
-        int quantidadeAtual = quantidadeAnterior + dto.getQuantidadeMovimentada();
-
-        estoque.setQuantidadeAtual(quantidadeAtual);
-        estoqueCentralRepository.save(estoque);
-
-        MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
-                .produto(estoque.getProduto())
-                .usuario(usuario)
-                .estoqueCentral(estoque)
-                .tipoMovimentacao(TipoMovimentacao.ENTRADA)
-                .origem(dto.getOrigem())
-                .quantidadeMovimentada(dto.getQuantidadeMovimentada())
-                .quantidadeAnterior(quantidadeAnterior)
-                .quantidadeAtual(quantidadeAtual)
-                .dataMovimentacao(LocalDateTime.now())
-                .observacao(dto.getObservacao())
-                .build();
-
-        movimentacaoEstoqueRepository.save(movimentacao);
-        return new EstoqueCentralDTO(estoque);
-    }
-
-    /**
-     * Fluxo legado. A saída definitiva será migrada para consumo de lotes por
-     * FEFO/FIFO em MovimentacaoEstoqueService.
-     */
-    @Deprecated
-    @Transactional
-    public EstoqueCentralDTO saida(Long id, MovimentacaoEstoqueDTO dto) {
-        validarQuantidade(dto.getQuantidadeMovimentada());
-
-        EstoqueCentral estoque = estoqueCentralRepository.buscarPorIdComBloqueio(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
-
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuário",
-                        dto.getUsuarioId()
-                ));
-
-        if (!Boolean.TRUE.equals(usuario.getAtivo())) {
-            throw new BusinessRuleException(
-                    "O usuário responsável pela movimentação está inativo."
-            );
-        }
-
-        int quantidadeAnterior = estoque.getQuantidadeAtual();
-        int quantidadeMovimentada = dto.getQuantidadeMovimentada();
-
-        if (quantidadeAnterior < quantidadeMovimentada) {
-            throw new BusinessRuleException(
-                    "Estoque insuficiente. Disponível: "
-                            + quantidadeAnterior
-                            + ", solicitado: "
-                            + quantidadeMovimentada
-            );
-        }
-
-        int quantidadeAtual = quantidadeAnterior - quantidadeMovimentada;
-        estoque.setQuantidadeAtual(quantidadeAtual);
-        estoqueCentralRepository.save(estoque);
-
-        MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
-                .produto(estoque.getProduto())
-                .usuario(usuario)
-                .estoqueCentral(estoque)
-                .tipoMovimentacao(TipoMovimentacao.SAIDA)
-                .origem(dto.getOrigem())
-                .quantidadeMovimentada(quantidadeMovimentada)
-                .quantidadeAnterior(quantidadeAnterior)
-                .quantidadeAtual(quantidadeAtual)
-                .dataMovimentacao(LocalDateTime.now())
-                .observacao(dto.getObservacao())
-                .build();
-
-        movimentacaoEstoqueRepository.save(movimentacao);
-        return new EstoqueCentralDTO(estoque);
-    }
-
     @Transactional
     public void deletar(Long id) {
         if (!estoqueCentralRepository.existsById(id)) {
             throw new ResourceNotFoundException("Estoque central", id);
         }
         estoqueCentralRepository.deleteById(id);
-    }
-
-    /**
-     * Fluxo legado. O descarte será migrado para lote específico para que a
-     * validade usada seja a validade do lote e não a validade antiga de Produto.
-     */
-    @Deprecated
-    @Transactional
-    public EstoqueCentralDTO descartarProdutoVencido(
-            Long estoqueId,
-            DescarteProdutoDTO dto) {
-
-        EstoqueCentral estoque = estoqueCentralRepository
-                .buscarPorIdComBloqueio(estoqueId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Estoque central", estoqueId));
-
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuário",
-                        dto.getUsuarioId()
-                ));
-
-        Produto produto = estoque.getProduto();
-
-        if (!Boolean.TRUE.equals(produto.getPerecivel())) {
-            throw new BusinessRuleException(
-                    "Somente produtos perecíveis podem ser descartados por validade."
-            );
-        }
-
-        if (produto.getDataValidade() == null
-                || !produto.getDataValidade().isBefore(LocalDate.now())) {
-            throw new BusinessRuleException("O produto ainda não está vencido.");
-        }
-
-        if (dto.getQuantidade() > estoque.getQuantidadeAtual()) {
-            throw new BusinessRuleException(
-                    "Quantidade de descarte maior que o estoque disponível."
-            );
-        }
-
-        int quantidadeAnterior = estoque.getQuantidadeAtual();
-        int quantidadeAtual = quantidadeAnterior - dto.getQuantidade();
-        estoque.setQuantidadeAtual(quantidadeAtual);
-        estoqueCentralRepository.save(estoque);
-
-        MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
-                .produto(produto)
-                .usuario(usuario)
-                .tipoMovimentacao(TipoMovimentacao.DESCARTE_VENCIMENTO)
-                .origem(OrigemMovimentacao.DESCARTE)
-                .quantidadeMovimentada(dto.getQuantidade())
-                .quantidadeAnterior(quantidadeAnterior)
-                .quantidadeAtual(quantidadeAtual)
-                .dataMovimentacao(LocalDateTime.now())
-                .observacao(dto.getJustificativa())
-                .estoqueCentral(estoque)
-                .build();
-
-        movimentacaoEstoqueRepository.save(movimentacao);
-        return new EstoqueCentralDTO(estoque);
-    }
-
-    private void validarQuantidade(Integer quantidade) {
-        if (quantidade == null || quantidade <= 0) {
-            throw new BusinessRuleException("A quantidade deve ser maior que zero.");
-        }
     }
 }
