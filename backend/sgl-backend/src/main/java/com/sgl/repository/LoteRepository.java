@@ -34,7 +34,9 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     List<Lote> findByDataValidadeBeforeAndAtivoTrue(LocalDate data);
 
     /**
-     * FEFO: para produtos perecíveis, prioriza o lote com validade mais próxima.
+     * FEFO: para produtos perecíveis, prioriza o lote válido com vencimento
+     * mais próximo. Lotes vencidos ficam fora do fluxo normal de saída e devem
+     * seguir para descarte.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -44,10 +46,12 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
               AND lote.ativo = true
               AND lote.quantidadeDisponivel > 0
               AND lote.dataValidade IS NOT NULL
+              AND lote.dataValidade >= :dataReferencia
             ORDER BY lote.dataValidade ASC, lote.dataEntrada ASC, lote.id ASC
             """)
     List<Lote> buscarDisponiveisPorFefoComBloqueio(
-            @Param("estoqueId") Long estoqueId
+            @Param("estoqueId") Long estoqueId,
+            @Param("dataReferencia") LocalDate dataReferencia
     );
 
     /**
