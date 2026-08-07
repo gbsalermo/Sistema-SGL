@@ -10,15 +10,19 @@ import com.sgl.model.enums.TipoMovimentacao;
 
 @Repository
 public interface MovimentacaoEstoqueRepository extends JpaRepository<MovimentacaoEstoque, Long> {
-	
-	List<MovimentacaoEstoque> findByProdutoId(Long produtoId);
 
-	List<MovimentacaoEstoque> findByLaboratorioId(Long laboratorioId);
+    List<MovimentacaoEstoque> findByProdutoId(Long produtoId);
 
-	List<MovimentacaoEstoque> findByPedidoId(Long pedidoId);
+    List<MovimentacaoEstoque> findByLaboratorioId(Long laboratorioId);
 
-	List<MovimentacaoEstoque> findByTipoMovimentacao(TipoMovimentacao tipo);
+    List<MovimentacaoEstoque> findByPedidoId(Long pedidoId);
 
-	List<MovimentacaoEstoque> findByUsuarioId(Long usuarioId);
+    List<MovimentacaoEstoque> findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(
+            Long pedidoId,
+            TipoMovimentacao tipoMovimentacao
+    );
 
+    List<MovimentacaoEstoque> findByTipoMovimentacao(TipoMovimentacao tipo);
+
+    List<MovimentacaoEstoque> findByUsuarioId(Long usuarioId);
 }
