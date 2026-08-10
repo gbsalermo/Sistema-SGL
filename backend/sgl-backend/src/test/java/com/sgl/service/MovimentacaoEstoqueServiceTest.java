@@ -26,6 +26,7 @@ import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Produto;
+import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
@@ -61,6 +62,12 @@ class MovimentacaoEstoqueServiceTest {
                 .ativo(true)
                 .build();
 
+        Unidade unidade = Unidade.builder()
+                .id(10L)
+                .nome("Unidade Teste")
+                .sigla("UT")
+                .build();
+
         usuario = new Usuario();
         usuario.setId(2L);
         usuario.setNome("Responsável");
@@ -68,6 +75,7 @@ class MovimentacaoEstoqueServiceTest {
 
         estoque = EstoqueCentral.builder()
                 .id(3L)
+                .unidade(unidade)
                 .produto(produto)
                 .quantidadeAtual(10)
                 .quantidadeMinima(2)
