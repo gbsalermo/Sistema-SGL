@@ -38,6 +38,4 @@ public class Estagiario extends Usuario implements Serializable {
 
 	private String observacao;
 
-	@Column(nullable = false)
-	private Boolean ativo = true;
 }
