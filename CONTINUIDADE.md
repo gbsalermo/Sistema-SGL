@@ -1,8 +1,8 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 10/08/2026  
-**Fase atual:** PostgreSQL conectado; Flyway inicializado; próxima etapa é criar a migration inicial
+**Última atualização:** 11/08/2026  
+**Fase atual:** PostgreSQL + Flyway estabilizados com migration V1 aplicada com sucesso
 
 Este arquivo registra o estado atual do backend, decisões consolidadas e a ordem recomendada de continuidade.
 
@@ -165,7 +165,7 @@ Assim, `mvn test` utiliza `application-test.properties` e continua usando H2 em 
 
 ## Configuração por ambiente
 
-A configuração foi separada em:
+A configuração está separada em:
 
 ```text
 application.properties
@@ -198,17 +198,17 @@ spring.datasource.username=${DB_USER:postgres}
 spring.datasource.password=${DB_PASSWD:}
 ```
 
-## PostgreSQL — CONEXÃO VALIDADA
+## PostgreSQL — VALIDADO
 
-Foi criado o banco local:
+Banco local atual:
 
 ```text
 sgl
 ```
 
-A conexão do backend com PostgreSQL foi confirmada em 10/08/2026 com o profile `dev`.
+A conexão do backend com PostgreSQL está confirmada no profile `dev`.
 
-O log confirmou:
+Execução validada em 11/08/2026:
 
 ```text
 jdbc:postgresql://localhost:5432/sgl
@@ -216,91 +216,143 @@ PostgreSQL 18.4
 schema public
 ```
 
-O pool Hikari abriu conexão normalmente e o Flyway conseguiu acessar o mesmo banco.
+O pool Hikari abriu conexão normalmente e o backend iniciou com PostgreSQL real.
 
-## Flyway — INICIALIZAÇÃO VALIDADA
+## Flyway — MIGRATION V1 CONCLUÍDA
 
-Flyway está integrado ao projeto e foi inicializado com sucesso.
+A migration inicial foi construída manualmente, entidade por entidade, a partir do mapeamento JPA atual.
 
-Na primeira execução, como ainda não existiam migrations, ele:
-
-```text
-conectou no PostgreSQL
-→ encontrou 0 migrations
-→ criou flyway_schema_history
-→ identificou o schema public como vazio
-```
-
-Depois disso, o Hibernate executou:
-
-```properties
-spring.jpa.hibernate.ddl-auto=validate
-```
-
-Como esperado, a aplicação interrompeu a inicialização por ausência das tabelas do domínio, começando por:
-
-```text
-Schema validation: missing table [estagiarios]
-```
-
-Esse erro é esperado neste ponto e confirma a separação de responsabilidades:
-
-```text
-Flyway
-→ cria/evolui o schema
-
-Hibernate
-→ valida se o schema corresponde às entidades
-```
-
-O Hibernate não deve voltar a usar `update` no ambiente PostgreSQL.
-
-## Próxima etapa — Migration V1
-
-Criar:
+Arquivo definitivo:
 
 ```text
 src/main/resources/db/migration/V1__create_initial_schema.sql
 ```
 
-A migration será construída a partir das entidades atuais, em ordem compatível com as chaves estrangeiras.
-
-Estratégia de aprendizado adotada:
+A V1 cria o schema inicial com as tabelas principais:
 
 ```text
-entidade Java
-→ analisar @Entity/@Table/@Column/relacionamentos
-→ traduzir para PostgreSQL
-→ criar tabela na V1
-→ avançar para a próxima entidade
+unidades
+produtos
+laboratorios
+usuarios
+estagiarios
+estoque_central
+lote
+projetos
+pedidos
+itens_pedido
+movimentacao_estoque
+historico_laboratorio
 ```
 
-A construção será feita entidade por entidade, começando pelas tabelas com menos dependências, como `unidades`, antes das tabelas com chaves estrangeiras.
-
-A migration inicial deve refletir obrigatoriamente o modelo estabilizado:
-
-- `Produto` sem `data_validade`;
-- tabela `lote` com validade por lote;
-- `movimentacao_estoque.lote_id` opcional;
-- `estoque_central` único por `unidade_id + produto_id`;
-- `lote` único por `estoque_central_id + numero_lote`;
-- relacionamentos atuais de pedido, projeto, laboratório, usuário e histórico.
-
-## DataInitializer
-
-O `DataInitializer` ainda precisa ser ajustado antes da conclusão da migração.
-
-Objetivo:
+Também cria as FKs e constraints relevantes, incluindo:
 
 ```text
-desenvolvimento local
-→ pode carregar dados de teste
-
-produção
-→ não deve executar dados artificiais automaticamente
+estoque_central único por unidade_id + produto_id
+lote único por estoque_central_id + numero_lote
+responsável de laboratório vinculado a usuário
+herança JOINED entre usuarios e estagiarios
 ```
 
-A restrição por profile será feita após a migration inicial estar funcional.
+Em 11/08/2026, foi executado o teste completo em banco vazio.
+
+Resultado confirmado:
+
+```text
+schema public vazio
+→ Flyway criou flyway_schema_history
+→ V1 validada
+→ V1 aplicada com sucesso
+→ schema passou a versão v1
+```
+
+O Hibernate foi mantido com:
+
+```properties
+spring.jpa.hibernate.ddl-auto=validate
+```
+
+Após a aplicação da V1, o Hibernate validou o schema sem acusar tabelas ou colunas ausentes.
+
+A aplicação iniciou normalmente na porta 8080.
+
+### Regra definitiva para migrations
+
+A partir deste ponto:
+
+```text
+V1 não deve mais ser alterada.
+```
+
+Toda mudança estrutural futura no banco deverá gerar nova migration:
+
+```text
+V2__descricao_da_mudanca.sql
+V3__descricao_da_mudanca.sql
+...
+```
+
+Isso evita `checksum mismatch` e preserva o histórico real de evolução do schema.
+
+## Ajuste identificado durante a V1 — Estagiario
+
+Durante a primeira execução real em PostgreSQL, foi encontrado um conflito entre herança `JOINED` e o campo `ativo` duplicado em `Estagiario`.
+
+Antes:
+
+```text
+Usuario
+→ ativo
+
+Estagiario
+→ ativo duplicado
+```
+
+O Hibernate persistia `ativo` apenas na tabela `usuarios`, mas a migration exigia também `ativo NOT NULL` em `estagiarios`.
+
+Decisão aplicada:
+
+```text
+ativo permanece somente em Usuario
+Estagiario herda getAtivo()/setAtivo()
+EstagiarioDTO mantém ativo porque o contrato da API ainda precisa expor esse estado
+```
+
+A coluna `ativo` foi removida da tabela `estagiarios` na V1 antes do fechamento definitivo da migration.
+
+## DataInitializer — EXECUÇÃO VALIDADA EM POSTGRESQL
+
+Após a correção da V1 e do modelo de `Estagiario`, o `DataInitializer` executou integralmente no PostgreSQL.
+
+Foram inseridos com sucesso:
+
+```text
+unidades
+laboratórios
+usuários
+estagiário
+produtos
+estoques centrais
+lotes
+projetos
+pedidos
+itens de pedido
+```
+
+O log final confirmou:
+
+```text
+=== Dados de teste injetados com sucesso! ===
+=== Estoques iniciais criados com lotes correspondentes ===
+```
+
+Próximo ajuste necessário:
+
+```text
+DataInitializer deve executar apenas no ambiente de desenvolvimento.
+```
+
+Em produção, dados artificiais não devem ser carregados automaticamente.
 
 ## Autenticação
 
@@ -314,23 +366,35 @@ Ela deverá fornecer o usuário responsável através de contexto autenticado, e
 
 Será fornecida por API corporativa e permanece obrigatória para implantação definitiva.
 
-## Próxima ordem de trabalho
+Essa integração permanece fora da sequência imediata de implementação porque depende da infraestrutura corporativa, mas continua indispensável para o projeto final.
 
-1. **Criar `db/migration/V1__create_initial_schema.sql`.**
-2. **Construir a migration entidade por entidade.**
-3. Subir o backend com PostgreSQL e confirmar aplicação da V1.
-4. Corrigir eventuais diferenças identificadas por `ddl-auto=validate`.
-5. Ajustar `DataInitializer` para execução apenas em desenvolvimento.
-6. Reexecutar os 20 testes.
-7. Executar `docs/testes.md` com PostgreSQL.
-8. Testar consistência EstoqueCentral × Lotes no PostgreSQL.
-9. Testar consultas Projeto × Laboratório × período no PostgreSQL.
-10. Executar testes de integração e concorrência.
-11. Implementar autenticação local simulada.
-12. Remover `usuarioId` temporário dos endpoints auditáveis.
-13. Ativar `DEVOLUCAO` auditada com usuário executor real.
-14. Adicionar OpenAPI/Swagger.
-15. Iniciar frontend.
+## Próximos passos
+
+1. **Ajustar `DataInitializer` para executar somente no profile `dev`.**
+2. **Reexecutar os 20 testes automatizados após o fechamento da V1.**
+3. **Executar o roteiro `docs/testes.md` usando PostgreSQL.**
+4. **Validar os endpoints principais manualmente via Postman com banco PostgreSQL.**
+5. **Testar consistência `EstoqueCentral.quantidadeAtual` × soma dos lotes após entradas, saídas, descartes e cancelamentos.**
+6. **Testar FEFO/FIFO em PostgreSQL real.**
+7. **Testar consultas Projeto × Laboratório × período em PostgreSQL.**
+8. **Criar testes de integração contra PostgreSQL quando o fluxo manual estiver estável.**
+9. **Adicionar testes de concorrência para aprovação/saída de estoque.**
+10. **Implementar autenticação local simulada.**
+11. **Remover `usuarioId` temporário dos endpoints auditáveis.**
+12. **Ativar `DEVOLUCAO` auditada com usuário executor real.**
+13. **Adicionar OpenAPI/Swagger.**
+14. **Iniciar frontend.**
+
+### Próxima etapa imediata recomendada
+
+```text
+DataInitializer por profile
+→ mvn test
+→ roteiro Postman no PostgreSQL
+→ validar regras críticas de estoque
+```
+
+Somente depois dessa validação funcional completa o backend deve avançar para novas mudanças estruturais de banco.
 
 ## Documentos de referência
 
@@ -358,4 +422,8 @@ Será fornecida por API corporativa e permanece obrigatória para implantação 
 | 10/08/2026 | Conexão PostgreSQL `sgl` confirmada pelo backend |
 | 10/08/2026 | Flyway criou `flyway_schema_history` e confirmou schema vazio |
 | 10/08/2026 | `dev` definido temporariamente como profile padrão local para facilitar execução pelo Eclipse |
-| 10/08/2026 | Próxima etapa definida: construir `V1__create_initial_schema.sql` entidade por entidade |
+| 11/08/2026 | Migration `V1__create_initial_schema.sql` concluída e aplicada com sucesso |
+| 11/08/2026 | Hibernate `ddl-auto=validate` validou o schema criado pelo Flyway |
+| 11/08/2026 | Duplicidade de `ativo` em `Estagiario` removida; estado permanece herdado de `Usuario` |
+| 11/08/2026 | `DataInitializer` executou integralmente sobre PostgreSQL |
+| 11/08/2026 | V1 congelada; futuras mudanças de schema deverão usar V2, V3 e seguintes |
