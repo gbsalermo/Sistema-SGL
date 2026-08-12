@@ -1,7 +1,7 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 11/08/2026  
+**Última atualização:** 12/08/2026  
 **Fase atual:** PostgreSQL + Flyway estabilizados com migration V1 aplicada com sucesso
 
 Este arquivo registra o estado atual do backend, decisões consolidadas e a ordem recomendada de continuidade.
@@ -390,6 +390,54 @@ relatórios e gráficos
 design responsivo
 ```
 
+## Pós-protótipo
+
+Após a primeira versão funcional do SGL estar implantada e sendo utilizada em produção, o projeto entra em uma etapa contínua de **Pós-protótipo**.
+
+O objetivo dessa fase é permitir que novas necessidades reais, sugestões dos usuários e melhorias identificadas durante o uso do sistema sejam incorporadas gradualmente **sem desestruturar a arquitetura base já validada**.
+
+Princípios dessa etapa:
+
+```text
+arquitetura base permanece estável
+→ novas ideias são avaliadas antes de alterar o domínio
+→ mudanças estruturais usam novas migrations Flyway
+→ regras já consolidadas não são reescritas sem necessidade
+→ novas funcionalidades devem aproveitar services, entidades e fluxos existentes quando possível
+→ alterações devem possuir testes antes de chegar à produção
+```
+
+Exemplos de itens que podem entrar no Pós-protótipo:
+
+```text
+novos relatórios e indicadores
+média histórica de saída de produtos
+cálculo de nível crítico baseado no histórico
+apoio à decisão de reposição/compra
+prazo mínimo de validade por produto no recebimento
+novos filtros e consultas solicitados pelos usuários
+dashboards adicionais
+melhorias de UX no frontend
+novas automações administrativas
+integrações futuras com sistemas corporativos
+```
+
+Fluxo recomendado para novas ideias após a implantação:
+
+```text
+necessidade observada em produção
+→ registrar requisito
+→ avaliar impacto na arquitetura existente
+→ definir se é regra de negócio, relatório, endpoint, interface ou alteração de banco
+→ implementar de forma incremental
+→ criar migration V2/V3/... quando houver mudança estrutural
+→ adicionar testes
+→ validar em ambiente de desenvolvimento/homologação
+→ publicar nova versão
+```
+
+Essa etapa não possui uma lista fechada de funcionalidades. Ela funciona como uma área controlada de evolução do SGL após a entrega do protótipo, preservando as decisões arquiteturais centrais construídas durante o desenvolvimento inicial.
+
 ## Próximos passos
 
 1. **Ajustar `DataInitializer` para executar somente no profile `dev`.**
@@ -406,6 +454,8 @@ design responsivo
 12. **Ativar `DEVOLUCAO` auditada com usuário executor real.**
 13. **Adicionar OpenAPI/Swagger.**
 14. **Iniciar frontend usando as referências visuais registradas neste documento.**
+15. **Implantar e validar a primeira versão funcional.**
+16. **Entrar na etapa Pós-protótipo para evolução incremental sem alterar a arquitetura base de forma descontrolada.**
 
 ### Próxima etapa imediata recomendada
 
@@ -450,3 +500,4 @@ Somente depois dessa validação funcional completa o backend deve avançar para
 | 11/08/2026 | `DataInitializer` executou integralmente sobre PostgreSQL |
 | 11/08/2026 | V1 congelada; futuras mudanças de schema deverão usar V2, V3 e seguintes |
 | 11/08/2026 | Referências de frontend registradas para futura definição visual do SGL |
+| 12/08/2026 | Criada etapa Pós-protótipo para evolução incremental do sistema em produção sem desestruturar a arquitetura base |
