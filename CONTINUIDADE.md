@@ -368,6 +368,28 @@ Será fornecida por API corporativa e permanece obrigatória para implantação 
 
 Essa integração permanece fora da sequência imediata de implementação porque depende da infraestrutura corporativa, mas continua indispensável para o projeto final.
 
+## Ideias e inspirações para o frontend
+
+Referências visuais e técnicas separadas para a futura etapa de frontend do SGL. O objetivo é usar esses materiais como inspiração de layout, navegação, dashboards, tabelas, cards, formulários e organização de telas administrativas, sem assumir cópia direta de identidade visual ou estrutura.
+
+- TikTok — referência visual/ideia de interface: https://vt.tiktok.com/ZS43bGhrK/
+- Salvia Kit: https://github.com/salvia-kit/salvia-kit
+- Materio Vuetify Vue.js Admin Template Free: https://github.com/themeselection/materio-vuetify-vuejs-admin-template-free
+- Vue Notus: https://github.com/creativetimofficial/vue-notus
+- Sneat Vuetify Vue.js Admin Template Free: https://github.com/themeselection/sneat-vuetify-vuejs-admin-template-free
+
+Essas referências deverão ser revisitadas quando a etapa de frontend começar oficialmente, principalmente para definir:
+
+```text
+layout geral do painel
+sidebar e navegação
+cards de indicadores
+tabelas de estoque, lotes e pedidos
+telas de cadastro e manutenção
+relatórios e gráficos
+design responsivo
+```
+
 ## Próximos passos
 
 1. **Ajustar `DataInitializer` para executar somente no profile `dev`.**
@@ -383,7 +405,7 @@ Essa integração permanece fora da sequência imediata de implementação porqu
 11. **Remover `usuarioId` temporário dos endpoints auditáveis.**
 12. **Ativar `DEVOLUCAO` auditada com usuário executor real.**
 13. **Adicionar OpenAPI/Swagger.**
-14. **Iniciar frontend.**
+14. **Iniciar frontend usando as referências visuais registradas neste documento.**
 
 ### Próxima etapa imediata recomendada
 
@@ -427,3 +449,4 @@ Somente depois dessa validação funcional completa o backend deve avançar para
 | 11/08/2026 | Duplicidade de `ativo` em `Estagiario` removida; estado permanece herdado de `Usuario` |
 | 11/08/2026 | `DataInitializer` executou integralmente sobre PostgreSQL |
 | 11/08/2026 | V1 congelada; futuras mudanças de schema deverão usar V2, V3 e seguintes |
+| 11/08/2026 | Referências de frontend registradas para futura definição visual do SGL |
