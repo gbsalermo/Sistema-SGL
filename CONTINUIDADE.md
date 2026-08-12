@@ -2,233 +2,29 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 12/08/2026  
-**Fase atual:** PostgreSQL + Flyway estabilizados com migration V1 aplicada com sucesso
+**Fase atual:** validação manual dos fluxos do backend em PostgreSQL real
 
-Este arquivo registra o estado atual do backend, decisões consolidadas e a ordem recomendada de continuidade.
+Este arquivo registra o estado atual do backend, decisões consolidadas e o ponto exato para continuidade do desenvolvimento.
 
 ## Estado atual
 
-### Lotes e estoque
+### Banco e migrations
 
-Concluído:
+PostgreSQL está configurado e validado no profile `dev`.
 
-- entidade `Lote`;
-- `LoteDTO`, `EntradaLoteDTO` e `AtualizarLoteDTO`;
-- `LoteRepository`, `LoteService` e `LoteController`;
-- entrada física por lote;
-- FEFO para produtos perecíveis;
-- FIFO para produtos não perecíveis;
-- descarte de lotes vencidos;
-- rastreabilidade por `MovimentacaoEstoque.lote`;
-- restauração exata de lotes no cancelamento de pedido aprovado;
-- remoção das operações físicas de `EstoqueCentralService`.
-
-Regra de consistência:
-
-```text
-EstoqueCentral.quantidadeAtual
-=
-soma de Lote.quantidadeDisponivel
-```
-
-### Produto
-
-`Produto` é catálogo e informa se o item é perecível.
-
-A validade operacional pertence ao lote.
-
-```text
-Produto perecível
-→ lote exige dataValidade
-→ saída FEFO
-
-Produto não perecível
-→ lote sem dataValidade
-→ saída FIFO
-```
-
-### MovimentacaoEstoque
-
-`MovimentacaoEstoque` permanece como entidade de auditoria.
-
-Cada lote afetado por uma operação gera sua própria movimentação, permitindo rastrear exatamente:
-
-```text
-produto
-lote
-quantidade
-pedido, quando aplicável
-laboratório, quando aplicável
-usuário responsável
-saldo anterior
-saldo posterior
-```
-
-`MovimentacaoEstoqueService` centraliza entrada, saída, descarte e devolução/restauração física.
-
-## Pedido
-
-O fluxo atual é:
-
-```text
-PENDENTE
-├── APROVADO
-│   ├── ENTREGUE
-│   └── CANCELADO
-└── REJEITADO
-```
-
-Na aprovação:
-
-```text
-PedidoService
-→ valida pedido e quantidades
-→ localiza EstoqueCentral
-→ delega ao MovimentacaoEstoqueService
-→ FEFO/FIFO seleciona lotes
-→ reduz lotes
-→ reduz saldo agregado
-→ registra SAIDA por lote
-→ pedido fica APROVADO
-```
-
-Na entrega:
-
-```text
-pedido APROVADO
-→ cria HistoricoLaboratorio
-→ não baixa estoque novamente
-→ pedido fica ENTREGUE
-```
-
-No cancelamento de pedido aprovado:
-
-```text
-consulta SAIDAS do pedido
-→ identifica lotes usados
-→ restaura exatamente esses lotes
-→ restaura EstoqueCentral
-→ pedido fica CANCELADO
-```
-
-O registro auditado `DEVOLUCAO` será completado quando o contexto autenticado local fornecer o usuário executor do cancelamento.
-
-## Consultas por projeto e laboratório
-
-Foi adicionada uma separação explícita entre **pedidos realizados** e **materiais efetivamente recebidos**.
-
-### Pedidos realizados pelo projeto
-
-```http
-GET /api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
-```
-
-Essa consulta usa `Pedido.dataSolicitacao` e pode retornar pedidos em qualquer status.
-
-### Materiais efetivamente recebidos pelo projeto
-
-```http
-GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
-```
-
-Essa consulta usa `HistoricoLaboratorio.dataRecebimento` e representa somente materiais entregues.
-
-As duas consultas validam:
-
-```text
-laboratório existe
-projeto existe
-projeto pertence ao laboratório informado
-dataInicio <= dataFim
-```
-
-## Testes automatizados — VALIDADO
-
-Em 10/08/2026, a suíte completa foi executada localmente após o ajuste do fixture de `MovimentacaoEstoqueServiceTest`.
-
-Resultado confirmado:
-
-```text
-Tests run: 20
-Failures: 0
-Errors: 0
-Skipped: 0
-```
-
-Os testes de service usam Mockito. O teste de contexto `SglApplicationTests` usa:
-
-```java
-@ActiveProfiles("test")
-```
-
-Assim, `mvn test` utiliza `application-test.properties` e continua usando H2 em memória, sem depender do PostgreSQL local.
-
-## Configuração por ambiente
-
-A configuração está separada em:
-
-```text
-application.properties
-→ configurações gerais
-
-application-dev.properties
-→ PostgreSQL + Flyway
-
-application-test.properties
-→ H2 para testes
-```
-
-### Profile `dev` como padrão local
-
-Durante o desenvolvimento local, foi adotado temporariamente em `application.properties`:
-
-```properties
-spring.profiles.active=dev
-```
-
-Motivo: facilitar a execução pelo Eclipse sem precisar informar manualmente o profile a cada inicialização.
-
-**Importante:** essa configuração é uma conveniência local de desenvolvimento. Quando houver ambiente de produção, o profile não deverá ficar fixo no arquivo principal. O ambiente de execução deverá informar explicitamente o profile apropriado (`dev`, `prod`, etc.).
-
-As credenciais do PostgreSQL permanecem externas ao repositório, usando variáveis de ambiente:
-
-```properties
-spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/sgl}
-spring.datasource.username=${DB_USER:postgres}
-spring.datasource.password=${DB_PASSWD:}
-```
-
-## PostgreSQL — VALIDADO
-
-Banco local atual:
+Banco local:
 
 ```text
 sgl
 ```
 
-A conexão do backend com PostgreSQL está confirmada no profile `dev`.
-
-Execução validada em 11/08/2026:
-
-```text
-jdbc:postgresql://localhost:5432/sgl
-PostgreSQL 18.4
-schema public
-```
-
-O pool Hikari abriu conexão normalmente e o backend iniciou com PostgreSQL real.
-
-## Flyway — MIGRATION V1 CONCLUÍDA
-
-A migration inicial foi construída manualmente, entidade por entidade, a partir do mapeamento JPA atual.
-
-Arquivo definitivo:
+A migration inicial está concluída:
 
 ```text
 src/main/resources/db/migration/V1__create_initial_schema.sql
 ```
 
-A V1 cria o schema inicial com as tabelas principais:
+A V1 cria:
 
 ```text
 unidades
@@ -245,86 +41,62 @@ movimentacao_estoque
 historico_laboratorio
 ```
 
-Também cria as FKs e constraints relevantes, incluindo:
+O Flyway foi validado em banco vazio:
 
 ```text
-estoque_central único por unidade_id + produto_id
-lote único por estoque_central_id + numero_lote
-responsável de laboratório vinculado a usuário
-herança JOINED entre usuarios e estagiarios
+schema vazio
+→ flyway_schema_history criado
+→ V1 aplicada
+→ schema em versão v1
+→ Hibernate ddl-auto=validate validou o modelo
 ```
 
-Em 11/08/2026, foi executado o teste completo em banco vazio.
-
-Resultado confirmado:
+### Regra definitiva de migrations
 
 ```text
-schema public vazio
-→ Flyway criou flyway_schema_history
-→ V1 validada
-→ V1 aplicada com sucesso
-→ schema passou a versão v1
+V1 está congelada e não deve mais ser alterada.
 ```
 
-O Hibernate foi mantido com:
-
-```properties
-spring.jpa.hibernate.ddl-auto=validate
-```
-
-Após a aplicação da V1, o Hibernate validou o schema sem acusar tabelas ou colunas ausentes.
-
-A aplicação iniciou normalmente na porta 8080.
-
-### Regra definitiva para migrations
-
-A partir deste ponto:
+Toda mudança estrutural futura deverá gerar nova migration:
 
 ```text
-V1 não deve mais ser alterada.
-```
-
-Toda mudança estrutural futura no banco deverá gerar nova migration:
-
-```text
-V2__descricao_da_mudanca.sql
-V3__descricao_da_mudanca.sql
+V2__descricao.sql
+V3__descricao.sql
 ...
 ```
 
-Isso evita `checksum mismatch` e preserva o histórico real de evolução do schema.
+## Profiles
 
-## Ajuste identificado durante a V1 — Estagiario
-
-Durante a primeira execução real em PostgreSQL, foi encontrado um conflito entre herança `JOINED` e o campo `ativo` duplicado em `Estagiario`.
-
-Antes:
+Configuração atual:
 
 ```text
-Usuario
-→ ativo
+application.properties
+→ configurações gerais
+→ dev ativo temporariamente para facilitar execução local
 
-Estagiario
-→ ativo duplicado
+application-dev.properties
+→ PostgreSQL + Flyway
+
+application-test.properties
+→ H2 em memória
+→ Flyway desabilitado
 ```
 
-O Hibernate persistia `ativo` apenas na tabela `usuarios`, mas a migration exigia também `ativo NOT NULL` em `estagiarios`.
+Credenciais PostgreSQL permanecem externas ao repositório:
 
-Decisão aplicada:
-
-```text
-ativo permanece somente em Usuario
-Estagiario herda getAtivo()/setAtivo()
-EstagiarioDTO mantém ativo porque o contrato da API ainda precisa expor esse estado
+```properties
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/sgl}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWD:}
 ```
 
-A coluna `ativo` foi removida da tabela `estagiarios` na V1 antes do fechamento definitivo da migration.
+O profile `dev` fixado no arquivo principal é apenas conveniência local e deverá ser removido antes do ambiente de produção.
 
-## DataInitializer — EXECUÇÃO VALIDADA EM POSTGRESQL
+## DataInitializer
 
-Após a correção da V1 e do modelo de `Estagiario`, o `DataInitializer` executou integralmente no PostgreSQL.
+O `DataInitializer` foi utilizado com sucesso para popular PostgreSQL com dados de desenvolvimento.
 
-Foram inseridos com sucesso:
+Foram carregados:
 
 ```text
 unidades
@@ -339,76 +111,481 @@ pedidos
 itens de pedido
 ```
 
-O log final confirmou:
+Foi identificado que, com banco persistente, o initializer não pode inserir novamente os mesmos dados em toda inicialização, pois existem constraints únicas como `unidades.sigla`.
+
+O fluxo de desenvolvimento deve evitar duplicação dos dados iniciais e manter o initializer restrito ao ambiente `dev`.
+
+## Senhas com BCrypt — VALIDADO
+
+O `SecurityConfig` já possui `BCryptPasswordEncoder`.
+
+O `UsuarioService` utiliza BCrypt na criação e na alteração de senha.
+
+O `DataInitializer` também foi ajustado para inserir senhas codificadas em vez de texto puro.
+
+O banco `sgl` foi recriado para validar o fluxo completo:
 
 ```text
-=== Dados de teste injetados com sucesso! ===
-=== Estoques iniciais criados com lotes correspondentes ===
+DROP DATABASE sgl
+→ CREATE DATABASE sgl
+→ Flyway executou V1
+→ DataInitializer recriou os registros
+→ usuários persistidos com hashes BCrypt
 ```
 
-Próximo ajuste necessário:
+Consulta utilizada para validação:
+
+```sql
+SELECT id, nome, email, senha
+FROM usuarios
+ORDER BY id;
+```
+
+Resultado esperado e confirmado: senhas armazenadas como hash BCrypt, não como `123456` em texto puro.
+
+Nenhuma migration V2 foi necessária, pois `senha VARCHAR(255)` já comporta o hash.
+
+## Testes automatizados — VALIDADO
+
+A suíte completa foi executada novamente em 12/08/2026 após os ajustes recentes.
+
+Resultado:
 
 ```text
-DataInitializer deve executar apenas no ambiente de desenvolvimento.
+Tests run: 20
+Failures: 0
+Errors: 0
+Skipped: 0
+BUILD SUCCESS
 ```
 
-Em produção, dados artificiais não devem ser carregados automaticamente.
+Distribuição atual:
+
+```text
+HistoricoLaboratorioServiceTest → 3
+MovimentacaoEstoqueServiceTest → 7
+PedidoServiceTest → 9
+SglApplicationTests → 1
+```
+
+O `SglApplicationTests` utiliza:
+
+```java
+@ActiveProfiles("test")
+```
+
+Logo:
+
+```text
+mvn test
+→ profile test
+→ H2 em memória
+→ não depende do PostgreSQL de desenvolvimento
+```
+
+## Produto, Lote e EstoqueCentral
+
+`Produto` continua sendo catálogo.
+
+A validade operacional pertence ao `Lote`.
+
+```text
+Produto perecível
+→ lote exige dataValidade
+→ saída FEFO
+
+Produto não perecível
+→ lote sem validade
+→ saída FIFO
+```
+
+`EstoqueCentral` mantém somente a referência ao produto e não duplica `produto.nome` na tabela.
+
+Para exibição, DTOs/consultas podem retornar `produtoNome` através do relacionamento.
+
+Regra estrutural:
+
+```text
+EstoqueCentral.quantidadeAtual
+=
+soma de Lote.quantidadeDisponivel
+```
+
+## MovimentacaoEstoque
+
+Continua sendo a entidade de auditoria das operações físicas.
+
+Cada lote afetado gera uma movimentação própria, permitindo rastrear:
+
+```text
+produto
+lote
+quantidade
+pedido
+laboratório
+usuário responsável
+saldo anterior
+saldo posterior
+```
+
+`MovimentacaoEstoqueService` centraliza:
+
+```text
+entrada
+saída
+descarte
+devolução/restauração
+```
+
+## Pedido
+
+Fluxo atual:
+
+```text
+PENDENTE
+├── APROVADO
+│   ├── ENTREGUE
+│   └── CANCELADO
+└── REJEITADO
+```
+
+### Criação
+
+Na criação do pedido:
+
+```text
+valida usuário/laboratório/projeto/produto
+→ cria itens
+→ salva pedido como PENDENTE
+→ não reduz estoque
+→ não reserva lote
+```
+
+### Aprovação
+
+Na aprovação:
+
+```text
+PedidoService
+→ valida status e quantidades
+→ localiza EstoqueCentral
+→ chama MovimentacaoEstoqueService.registrarSaida()
+→ FEFO/FIFO escolhe lotes
+→ reduz lotes
+→ reduz saldo agregado
+→ registra SAIDA por lote
+→ pedido fica APROVADO
+```
+
+O endpoint correto é:
+
+```http
+PUT /api/v1/pedidos/{pedidoId}/aprovar
+```
+
+Não usar `POST` para aprovação.
+
+Exemplo:
+
+```json
+{
+  "observacao": "Aprovado para validar FEFO",
+  "usuarioAprovadorId": 2,
+  "itens": [
+    {
+      "itemId": 4,
+      "quantidadeAprovada": 6
+    }
+  ]
+}
+```
+
+O campo usado é `itemId`, não `produtoId`.
+
+### Entrega
+
+```text
+pedido APROVADO
+→ cria HistoricoLaboratorio
+→ não baixa estoque novamente
+→ pedido fica ENTREGUE
+```
+
+### Cancelamento
+
+Se o pedido estava aprovado:
+
+```text
+consulta SAIDAS do pedido
+→ identifica exatamente os lotes usados
+→ restaura os mesmos lotes
+→ restaura EstoqueCentral
+→ pedido fica CANCELADO
+```
+
+## Validação manual com PostgreSQL — EM ANDAMENTO
+
+Os GETs básicos já haviam sido testados anteriormente. Nesta etapa, eles são usados apenas para conferir estado antes/depois das operações.
+
+O objetivo atual é validar as regras críticas contra PostgreSQL real.
+
+### Teste 1 — entrada não perecível — VALIDADO
+
+Foi registrada uma entrada física via:
+
+```http
+POST /api/v1/movimentacoes/estoques/{estoqueId}/lotes?usuarioId={usuarioId}
+```
+
+Exemplo utilizado:
+
+```json
+{
+  "numeroLote": "POSTMAN-FIFO-001",
+  "quantidade": 10,
+  "dataValidade": null,
+  "origem": "COMPRA",
+  "observacao": "Entrada FIFO via Postman"
+}
+```
+
+Validado no Postman e diretamente no PostgreSQL:
+
+```text
+novo lote persistido
+quantidadeInicial = 10
+quantidadeDisponivel = 10
+dataValidade = null
+EstoqueCentral +10
+MovimentacaoEstoque ENTRADA registrada
+```
+
+### Teste 2 — preparação FEFO — VALIDADO
+
+Foram criados dois lotes para o mesmo produto perecível:
+
+```text
+POSTMAN-FEFO-A
+quantidade = 4
+validade = 20/08/2026
+
+POSTMAN-FEFO-B
+quantidade = 10
+validade = 20/12/2026
+```
+
+O estoque agregado aumentou em 14 e os dois lotes foram persistidos corretamente.
+
+### Teste 3 — pedido FEFO — APROVAÇÃO REALIZADA
+
+Foi criado um pedido solicitando 6 unidades do produto perecível.
+
+O pedido foi criado como `PENDENTE`, sem baixa na criação.
+
+A aprovação inicialmente foi chamada acidentalmente com `POST`, resultando em erro. O método correto foi identificado como `PUT`.
+
+Após corrigir para:
+
+```http
+PUT /api/v1/pedidos/3/aprovar
+```
+
+a aprovação funcionou.
+
+### PONTO EXATO PARA RETOMAR AMANHÃ
+
+Amanhã começar conferindo o resultado físico da aprovação FEFO.
+
+Expectativa:
+
+```text
+POSTMAN-FEFO-A
+4 → 0
+
+POSTMAN-FEFO-B
+10 → 8
+```
+
+Consultar no PostgreSQL:
+
+```sql
+SELECT
+    id,
+    numero_lote,
+    quantidade_disponivel,
+    data_validade
+FROM lote
+WHERE numero_lote IN ('POSTMAN-FEFO-A', 'POSTMAN-FEFO-B')
+ORDER BY data_validade;
+```
+
+Depois conferir as movimentações do pedido aprovado:
+
+```sql
+SELECT
+    id,
+    tipo_movimentacao,
+    quantidade_movimentada,
+    lote_id,
+    pedido_id
+FROM movimentacao_estoque
+WHERE pedido_id = 3
+ORDER BY id;
+```
+
+Esperado:
+
+```text
+SAIDA 4 unidades → POSTMAN-FEFO-A
+SAIDA 2 unidades → POSTMAN-FEFO-B
+```
+
+Também conferir `EstoqueCentral.quantidadeAtual` após a baixa.
+
+Se tudo bater, marcar **FEFO em PostgreSQL como validado**.
+
+## Próximos testes depois do FEFO
+
+Ordem recomendada:
+
+1. validar resultado físico do FEFO atual;
+2. testar FIFO de produto não perecível com dois lotes;
+3. testar lote vencido não atendendo pedido normal;
+4. testar descarte de vencidos;
+5. testar cancelamento de pedido aprovado restaurando os lotes exatos;
+6. testar entrega sem segunda baixa de estoque;
+7. validar criação de `HistoricoLaboratorio`;
+8. testar consultas Projeto × Laboratório × período;
+9. validar consistência final `EstoqueCentral` × soma dos lotes;
+10. depois criar testes de integração/concorrência.
+
+## Concorrência
+
+A criação do pedido não reserva saldo.
+
+A saída acontece somente na aprovação.
+
+`PedidoService.aprovar()` busca o pedido com bloqueio antes de processá-lo.
+
+Ainda deve ser criado um teste específico de concorrência para validar dois pedidos diferentes tentando consumir simultaneamente o mesmo estoque/lote.
+
+## Consultas por projeto e laboratório
+
+Pedidos realizados:
+
+```http
+GET /api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+```
+
+Usa `Pedido.dataSolicitacao`.
+
+Materiais efetivamente recebidos:
+
+```http
+GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+```
+
+Usa `HistoricoLaboratorio.dataRecebimento`.
+
+## Documentação de JSON/Postman
+
+Foi criado em 12/08/2026:
+
+```text
+docs/JSON_EXEMPLOS.md
+```
+
+O documento reúne exemplos de chamadas e bodies para:
+
+```text
+unidade
+laboratório
+usuário
+estagiário
+produto
+projeto
+estoque central
+entrada de lote
+atualização de lote
+descarte
+pedido
+aprovação parcial/total
+rejeição
+entrega
+cancelamento
+movimentações
+histórico
+consultas principais
+```
+
+Ele deve ser mantido junto com:
+
+```text
+docs/ENDPOINTS_INTERNOS.md
+docs/testes.md
+```
 
 ## Autenticação
 
 ### Local simulada
 
-Permanece planejada para depois da estabilização inicial no PostgreSQL.
+Permanece planejada para depois da estabilização dos fluxos em PostgreSQL.
 
-Ela deverá fornecer o usuário responsável através de contexto autenticado, eliminando os `usuarioId` temporários de endpoints de movimentação.
+Ela substituirá os `usuarioId` temporários dos endpoints auditáveis por usuário obtido do contexto autenticado.
 
-### Definitiva externa
+### Definitiva
 
-Será fornecida por API corporativa e permanece obrigatória para implantação definitiva.
+A autenticação final deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
 
-Essa integração permanece fora da sequência imediata de implementação porque depende da infraestrutura corporativa, mas continua indispensável para o projeto final.
+## Requisito futuro de reposição/compra
 
-## Ideias e inspirações para o frontend
+Requisito informado pelo cliente:
 
-Referências visuais e técnicas separadas para a futura etapa de frontend do SGL. O objetivo é usar esses materiais como inspiração de layout, navegação, dashboards, tabelas, cards, formulários e organização de telas administrativas, sem assumir cópia direta de identidade visual ou estrutura.
+```text
+Sai primeiro o produto com validade mais próxima.
+Na compra existe prazo mínimo de validade por produto.
+Compra só ocorre quando estoque estiver em nível crítico segundo histórico dos últimos 5 anos.
+```
 
-- TikTok — referência visual/ideia de interface: https://vt.tiktok.com/ZS43bGhrK/
+Interpretação atual:
+
+```text
+FEFO → já implementado
+prazo mínimo de validade por produto → pós-protótipo / nova migration se necessário
+nível crítico → baseado em saída histórica, não simplesmente quantidade de pedidos
+```
+
+Para cálculo histórico, a fonte correta será `MovimentacaoEstoque` com `tipoMovimentacao = SAIDA`.
+
+## Frontend
+
+Referências registradas:
+
+- TikTok: https://vt.tiktok.com/ZS43bGhrK/
 - Salvia Kit: https://github.com/salvia-kit/salvia-kit
-- Materio Vuetify Vue.js Admin Template Free: https://github.com/themeselection/materio-vuetify-vuejs-admin-template-free
+- Materio Vuetify: https://github.com/themeselection/materio-vuetify-vuejs-admin-template-free
 - Vue Notus: https://github.com/creativetimofficial/vue-notus
-- Sneat Vuetify Vue.js Admin Template Free: https://github.com/themeselection/sneat-vuetify-vuejs-admin-template-free
+- Sneat Vuetify: https://github.com/themeselection/sneat-vuetify-vuejs-admin-template-free
 
-### Uso do Figma
-
-O **Figma** será utilizado como ferramenta de apoio antes e durante a implementação do frontend.
-
-A ideia é usar os modelos e referências salvos acima como ponto de partida visual, adaptando-os ao contexto real do SGL antes de transformar as telas em código.
-
-### Etapas do frontend
-
-O frontend seguirá este fluxo como processo base de design e implementação:
+Fluxo planejado:
 
 ```text
 Templates / referências
         ↓
-      Figma
+Figma
         ↓
-Selecionar o que funciona
+Selecionar padrões úteis
         ↓
 Adaptar ao fluxo do SGL
         ↓
-Criar componentes reutilizáveis
+Componentes reutilizáveis
         ↓
-Definir Design System
+Design System
         ↓
-Implementar no frontend
+Implementação frontend
 ```
 
-O objetivo é evitar que o frontend nasça diretamente de um template pronto. As referências servirão como matéria-prima; o Figma será a etapa de seleção, adaptação e validação visual; e somente depois os padrões aprovados serão transformados em componentes reais da aplicação.
-
-O **Design System** deve começar pequeno e crescer junto com o sistema, evitando excesso de engenharia antes das primeiras telas funcionais.
-
-Primeira base sugerida:
+Design System inicial:
 
 ```text
 Foundations
@@ -418,7 +595,7 @@ Foundations
 → bordas
 → estados visuais
 
-Componentes básicos
+Componentes
 → Button
 → Input / FormField
 → StatusBadge
@@ -428,163 +605,61 @@ Componentes básicos
 → Modal
 ```
 
-Alguns estados importantes do domínio devem ser representados de forma padronizada no design:
-
-```text
-Pedido
-→ PENDENTE
-→ APROVADO
-→ ENTREGUE
-→ REJEITADO
-→ CANCELADO
-
-Estoque
-→ NORMAL
-→ CRÍTICO
-→ ZERADO
-
-Lote
-→ VÁLIDO
-→ PRÓXIMO DO VENCIMENTO
-→ VENCIDO
-```
-
-Quando possível, haverá correspondência clara entre componente visual e componente implementado:
-
-```text
-FIGMA                         FRONTEND
-
-Button                →       Button.vue
-Status Badge          →       StatusBadge.vue
-Data Table            →       DataTable.vue
-Sidebar               →       Sidebar.vue
-Dashboard Card        →       DashboardCard.vue
-Modal                 →       Modal.vue
-Input / FormField     →       FormField.vue
-```
-
-Fluxo prático por tela:
-
-```text
-selecionar referências úteis
-→ adaptar no Figma
-→ validar fluxo e hierarquia visual
-→ identificar componentes reaproveitáveis
-→ adicionar/ajustar componentes no Design System
-→ implementar a tela
-→ revisar comportamento responsivo
-→ repetir para a próxima tela
-```
-
-O Figma deverá ajudar principalmente na adaptação de:
-
-```text
-sidebar e navegação
-cards e indicadores
-tabelas administrativas
-formulários
-fluxos de pedido e aprovação
-telas de estoque e lotes
-relatórios e dashboards
-responsividade e hierarquia visual
-```
-
-A intenção não é copiar integralmente os templates de referência, mas aproveitar padrões de interface já maduros e reorganizá-los em um protótipo visual coerente com o domínio do SGL antes da implementação.
-
-Essas referências deverão ser revisitadas quando a etapa de frontend começar oficialmente, principalmente para definir:
-
-```text
-layout geral do painel
-sidebar e navegação
-cards de indicadores
-tabelas de estoque, lotes e pedidos
-telas de cadastro e manutenção
-relatórios e gráficos
-design responsivo
-```
-
 ## Pós-protótipo
 
-Após a primeira versão funcional do SGL estar implantada e sendo utilizada em produção, o projeto entra em uma etapa contínua de **Pós-protótipo**.
+Após a primeira versão funcional, novas necessidades deverão ser incorporadas de forma incremental sem desestruturar a arquitetura base.
 
-O objetivo dessa fase é permitir que novas necessidades reais, sugestões dos usuários e melhorias identificadas durante o uso do sistema sejam incorporadas gradualmente **sem desestruturar a arquitetura base já validada**.
-
-Princípios dessa etapa:
+Fluxo:
 
 ```text
-arquitetura base permanece estável
-→ novas ideias são avaliadas antes de alterar o domínio
-→ mudanças estruturais usam novas migrations Flyway
-→ regras já consolidadas não são reescritas sem necessidade
-→ novas funcionalidades devem aproveitar services, entidades e fluxos existentes quando possível
-→ alterações devem possuir testes antes de chegar à produção
-```
-
-Exemplos de itens que podem entrar no Pós-protótipo:
-
-```text
-novos relatórios e indicadores
-média histórica de saída de produtos
-cálculo de nível crítico baseado no histórico
-apoio à decisão de reposição/compra
-prazo mínimo de validade por produto no recebimento
-novos filtros e consultas solicitados pelos usuários
-dashboards adicionais
-melhorias de UX no frontend
-novas automações administrativas
-integrações futuras com sistemas corporativos
-```
-
-Fluxo recomendado para novas ideias após a implantação:
-
-```text
-necessidade observada em produção
+necessidade real
 → registrar requisito
-→ avaliar impacto na arquitetura existente
-→ definir se é regra de negócio, relatório, endpoint, interface ou alteração de banco
-→ implementar de forma incremental
-→ criar migration V2/V3/... quando houver mudança estrutural
-→ adicionar testes
-→ validar em ambiente de desenvolvimento/homologação
-→ publicar nova versão
+→ analisar impacto
+→ classificar: regra / relatório / endpoint / UI / banco
+→ implementar incrementalmente
+→ V2/V3/... se houver mudança estrutural
+→ testes
+→ homologação
+→ release
 ```
 
-Essa etapa não possui uma lista fechada de funcionalidades. Ela funciona como uma área controlada de evolução do SGL após a entrega do protótipo, preservando as decisões arquiteturais centrais construídas durante o desenvolvimento inicial.
-
-## Próximos passos
-
-1. **Ajustar `DataInitializer` para executar somente no profile `dev`.**
-2. **Reexecutar os 20 testes automatizados após o fechamento da V1.**
-3. **Executar o roteiro `docs/testes.md` usando PostgreSQL.**
-4. **Validar os endpoints principais manualmente via Postman com banco PostgreSQL.**
-5. **Testar consistência `EstoqueCentral.quantidadeAtual` × soma dos lotes após entradas, saídas, descartes e cancelamentos.**
-6. **Testar FEFO/FIFO em PostgreSQL real.**
-7. **Testar consultas Projeto × Laboratório × período em PostgreSQL.**
-8. **Criar testes de integração contra PostgreSQL quando o fluxo manual estiver estável.**
-9. **Adicionar testes de concorrência para aprovação/saída de estoque.**
-10. **Implementar autenticação local simulada.**
-11. **Remover `usuarioId` temporário dos endpoints auditáveis.**
-12. **Ativar `DEVOLUCAO` auditada com usuário executor real.**
-13. **Adicionar OpenAPI/Swagger.**
-14. **Iniciar frontend seguindo o fluxo Referências → Figma → componentes → Design System → implementação.**
-15. **Implantar e validar a primeira versão funcional.**
-16. **Entrar na etapa Pós-protótipo para evolução incremental sem alterar a arquitetura base de forma descontrolada.**
-
-### Próxima etapa imediata recomendada
+Possíveis itens futuros:
 
 ```text
-DataInitializer por profile
-→ mvn test
-→ roteiro Postman no PostgreSQL
-→ validar regras críticas de estoque
+relatórios e indicadores
+média histórica de saída
+estoque crítico baseado no histórico
+apoio à reposição/compra
+prazo mínimo de validade
+novos filtros
+dashboards
+melhorias de UX
+automações
+integrações corporativas
 ```
 
-Somente depois dessa validação funcional completa o backend deve avançar para novas mudanças estruturais de banco.
+## Próximos passos gerais
+
+1. terminar roteiro manual crítico no PostgreSQL;
+2. validar FEFO e FIFO reais;
+3. validar descarte e cancelamento;
+4. validar entrega/histórico;
+5. validar filtros por projeto e período;
+6. testes de integração PostgreSQL;
+7. testes de concorrência;
+8. autenticação local simulada;
+9. remover `usuarioId` temporário;
+10. auditoria de DEVOLUCAO com executor real;
+11. OpenAPI/Swagger;
+12. frontend;
+13. deploy da primeira versão;
+14. pós-protótipo.
 
 ## Documentos de referência
 
 - [`README.md`](README.md)
 - [`docs/ENDPOINTS_INTERNOS.md`](docs/ENDPOINTS_INTERNOS.md)
+- [`docs/JSON_EXEMPLOS.md`](docs/JSON_EXEMPLOS.md)
 - [`docs/testes.md`](docs/testes.md)
 - [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md)
 - [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md)
@@ -593,26 +668,34 @@ Somente depois dessa validação funcional completa o backend deve avançar para
 
 ## Histórico recente
 
-| Data | Decisão |
+| Data | Decisão / validação |
 |---|---|
 | 07/08/2026 | `Lote` consolidado como composição rastreável do estoque |
-| 07/08/2026 | FEFO definido para perecíveis e FIFO para não perecíveis |
-| 07/08/2026 | Validade operacional transferida definitivamente para `Lote` |
+| 07/08/2026 | FEFO para perecíveis e FIFO para não perecíveis |
+| 07/08/2026 | Validade transferida para `Lote` |
 | 07/08/2026 | `MovimentacaoEstoqueService` passou a centralizar operações físicas |
-| 07/08/2026 | Aprovação de pedido passou a consumir lotes por FEFO/FIFO |
-| 07/08/2026 | Cancelamento aprovado passou a restaurar exatamente os lotes consumidos |
-| 07/08/2026 | Pedidos e histórico passaram a possuir filtros por Projeto + Laboratório + período |
-| 10/08/2026 | Suíte completa validada: 20 testes, 0 falhas e 0 erros |
-| 10/08/2026 | Dependências PostgreSQL/Flyway e profiles `dev`/`test` configurados |
-| 10/08/2026 | Conexão PostgreSQL `sgl` confirmada pelo backend |
-| 10/08/2026 | Flyway criou `flyway_schema_history` e confirmou schema vazio |
-| 10/08/2026 | `dev` definido temporariamente como profile padrão local para facilitar execução pelo Eclipse |
-| 11/08/2026 | Migration `V1__create_initial_schema.sql` concluída e aplicada com sucesso |
-| 11/08/2026 | Hibernate `ddl-auto=validate` validou o schema criado pelo Flyway |
-| 11/08/2026 | Duplicidade de `ativo` em `Estagiario` removida; estado permanece herdado de `Usuario` |
-| 11/08/2026 | `DataInitializer` executou integralmente sobre PostgreSQL |
-| 11/08/2026 | V1 congelada; futuras mudanças de schema deverão usar V2, V3 e seguintes |
-| 11/08/2026 | Referências de frontend registradas para futura definição visual do SGL |
-| 12/08/2026 | Criada etapa Pós-protótipo para evolução incremental do sistema em produção sem desestruturar a arquitetura base |
-| 12/08/2026 | Figma definido como ferramenta de apoio para adaptar as referências visuais ao frontend do SGL antes da implementação |
-| 12/08/2026 | Fluxo de frontend consolidado: Referências → Figma → adaptação ao SGL → componentes reutilizáveis → Design System → implementação |
+| 07/08/2026 | Cancelamento passou a restaurar os lotes exatos consumidos |
+| 10/08/2026 | Suíte com 20 testes validada |
+| 10/08/2026 | PostgreSQL/Flyway e profiles `dev`/`test` configurados |
+| 11/08/2026 | V1 aplicada e Hibernate validou o schema |
+| 11/08/2026 | Ajuste de `ativo` na herança `Estagiario` concluído |
+| 11/08/2026 | DataInitializer executou integralmente em PostgreSQL |
+| 11/08/2026 | V1 congelada |
+| 12/08/2026 | BCrypt validado para persistência de senhas |
+| 12/08/2026 | Banco recriado e fluxo Flyway + DataInitializer validado novamente |
+| 12/08/2026 | `mvn test`: 20 testes, 0 falhas, BUILD SUCCESS |
+| 12/08/2026 | Entrada não perecível validada no Postman e PostgreSQL |
+| 12/08/2026 | Dois lotes perecíveis preparados para teste FEFO |
+| 12/08/2026 | Pedido FEFO criado e aprovação concluída com `PUT /pedidos/{id}/aprovar` |
+| 12/08/2026 | Criado `docs/JSON_EXEMPLOS.md` com exemplos operacionais da API |
+
+### Próxima ação ao retomar
+
+```text
+Consultar POSTMAN-FEFO-A e POSTMAN-FEFO-B no PostgreSQL
+→ confirmar 4→0 e 10→8
+→ conferir duas movimentações SAIDA do pedido 3
+→ confirmar EstoqueCentral -6
+→ marcar FEFO PostgreSQL como VALIDADO
+→ seguir para FIFO
+```
