@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.sgl.model.Estagiario;
@@ -33,9 +34,11 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import lombok.RequiredArgsConstructor;
 
+@Profile("dev")
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
@@ -49,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final EstagiarioRepository estagiarioRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
@@ -62,15 +66,15 @@ public class DataInitializer implements CommandLineRunner {
         Laboratorio lab4 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Quimica Organica", "Lab de sintese organica", null, true));
         Laboratorio lab5 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Analise Instrumental", "Lab de instrumentacao analitica", null, false));
 
-        Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", "123456", Perfil.ADMINISTRADOR, u3, lab5, true));
-        Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", "123456", Perfil.GESTOR, u1, lab1, true));
-        Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", "123456", Perfil.TECNICO, u1, lab2, true));
-        Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", "123456", Perfil.PESQUISADOR, u2, lab3, true));
+        Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", passwordEncoder.encode("123456"), Perfil.ADMINISTRADOR, u3, lab5, true));
+        Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", passwordEncoder.encode("654321"), Perfil.GESTOR, u1, lab1, true));
+        Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", passwordEncoder.encode("987654"), Perfil.TECNICO, u1, lab2, true));
+        Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", passwordEncoder.encode("456789"), Perfil.PESQUISADOR, u2, lab3, true));
 
         Estagiario maria = new Estagiario();
         maria.setNome("Maria Oliveira");
         maria.setEmail("maria@iq.com");
-        maria.setSenha("123456");
+        maria.setSenha(passwordEncoder.encode("246813"));
         maria.setPerfil(Perfil.ESTAGIARIO);
         maria.setUnidade(u3);
         maria.setLaboratorio(lab4);
