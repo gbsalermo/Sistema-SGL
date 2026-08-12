@@ -378,6 +378,39 @@ Referências visuais e técnicas separadas para a futura etapa de frontend do SG
 - Vue Notus: https://github.com/creativetimofficial/vue-notus
 - Sneat Vuetify Vue.js Admin Template Free: https://github.com/themeselection/sneat-vuetify-vuejs-admin-template-free
 
+### Uso do Figma
+
+O **Figma** será utilizado como ferramenta de apoio antes e durante a implementação do frontend.
+
+A ideia é usar os modelos e referências salvos acima como ponto de partida visual, adaptando-os ao contexto real do SGL antes de transformar as telas em código.
+
+Fluxo proposto:
+
+```text
+referências visuais salvas
+→ selecionar padrões úteis
+→ reproduzir/adaptar no Figma
+→ ajustar identidade e necessidades do SGL
+→ definir layout e componentes
+→ validar organização das telas
+→ implementar no frontend
+```
+
+O Figma deverá ajudar principalmente na adaptação de:
+
+```text
+sidebar e navegação
+cards e indicadores
+tabelas administrativas
+formulários
+fluxos de pedido e aprovação
+telas de estoque e lotes
+relatórios e dashboards
+responsividade e hierarquia visual
+```
+
+A intenção não é copiar integralmente os templates de referência, mas aproveitar padrões de interface já maduros e reorganizá-los em um protótipo visual coerente com o domínio do SGL antes da implementação.
+
 Essas referências deverão ser revisitadas quando a etapa de frontend começar oficialmente, principalmente para definir:
 
 ```text
@@ -453,7 +486,7 @@ Essa etapa não possui uma lista fechada de funcionalidades. Ela funciona como u
 11. **Remover `usuarioId` temporário dos endpoints auditáveis.**
 12. **Ativar `DEVOLUCAO` auditada com usuário executor real.**
 13. **Adicionar OpenAPI/Swagger.**
-14. **Iniciar frontend usando as referências visuais registradas neste documento.**
+14. **Iniciar frontend usando Figma para adaptar as referências visuais antes da implementação.**
 15. **Implantar e validar a primeira versão funcional.**
 16. **Entrar na etapa Pós-protótipo para evolução incremental sem alterar a arquitetura base de forma descontrolada.**
 
@@ -501,3 +534,4 @@ Somente depois dessa validação funcional completa o backend deve avançar para
 | 11/08/2026 | V1 congelada; futuras mudanças de schema deverão usar V2, V3 e seguintes |
 | 11/08/2026 | Referências de frontend registradas para futura definição visual do SGL |
 | 12/08/2026 | Criada etapa Pós-protótipo para evolução incremental do sistema em produção sem desestruturar a arquitetura base |
+| 12/08/2026 | Figma definido como ferramenta de apoio para adaptar as referências visuais ao frontend do SGL antes da implementação |
