@@ -384,16 +384,96 @@ O **Figma** será utilizado como ferramenta de apoio antes e durante a implement
 
 A ideia é usar os modelos e referências salvos acima como ponto de partida visual, adaptando-os ao contexto real do SGL antes de transformar as telas em código.
 
-Fluxo proposto:
+### Etapas do frontend
+
+O frontend seguirá este fluxo como processo base de design e implementação:
 
 ```text
-referências visuais salvas
-→ selecionar padrões úteis
-→ reproduzir/adaptar no Figma
-→ ajustar identidade e necessidades do SGL
-→ definir layout e componentes
-→ validar organização das telas
-→ implementar no frontend
+Templates / referências
+        ↓
+      Figma
+        ↓
+Selecionar o que funciona
+        ↓
+Adaptar ao fluxo do SGL
+        ↓
+Criar componentes reutilizáveis
+        ↓
+Definir Design System
+        ↓
+Implementar no frontend
+```
+
+O objetivo é evitar que o frontend nasça diretamente de um template pronto. As referências servirão como matéria-prima; o Figma será a etapa de seleção, adaptação e validação visual; e somente depois os padrões aprovados serão transformados em componentes reais da aplicação.
+
+O **Design System** deve começar pequeno e crescer junto com o sistema, evitando excesso de engenharia antes das primeiras telas funcionais.
+
+Primeira base sugerida:
+
+```text
+Foundations
+→ cores
+→ tipografia
+→ espaçamento
+→ bordas
+→ estados visuais
+
+Componentes básicos
+→ Button
+→ Input / FormField
+→ StatusBadge
+→ DataTable
+→ DashboardCard
+→ Sidebar
+→ Modal
+```
+
+Alguns estados importantes do domínio devem ser representados de forma padronizada no design:
+
+```text
+Pedido
+→ PENDENTE
+→ APROVADO
+→ ENTREGUE
+→ REJEITADO
+→ CANCELADO
+
+Estoque
+→ NORMAL
+→ CRÍTICO
+→ ZERADO
+
+Lote
+→ VÁLIDO
+→ PRÓXIMO DO VENCIMENTO
+→ VENCIDO
+```
+
+Quando possível, haverá correspondência clara entre componente visual e componente implementado:
+
+```text
+FIGMA                         FRONTEND
+
+Button                →       Button.vue
+Status Badge          →       StatusBadge.vue
+Data Table            →       DataTable.vue
+Sidebar               →       Sidebar.vue
+Dashboard Card        →       DashboardCard.vue
+Modal                 →       Modal.vue
+Input / FormField     →       FormField.vue
+```
+
+Fluxo prático por tela:
+
+```text
+selecionar referências úteis
+→ adaptar no Figma
+→ validar fluxo e hierarquia visual
+→ identificar componentes reaproveitáveis
+→ adicionar/ajustar componentes no Design System
+→ implementar a tela
+→ revisar comportamento responsivo
+→ repetir para a próxima tela
 ```
 
 O Figma deverá ajudar principalmente na adaptação de:
@@ -486,7 +566,7 @@ Essa etapa não possui uma lista fechada de funcionalidades. Ela funciona como u
 11. **Remover `usuarioId` temporário dos endpoints auditáveis.**
 12. **Ativar `DEVOLUCAO` auditada com usuário executor real.**
 13. **Adicionar OpenAPI/Swagger.**
-14. **Iniciar frontend usando Figma para adaptar as referências visuais antes da implementação.**
+14. **Iniciar frontend seguindo o fluxo Referências → Figma → componentes → Design System → implementação.**
 15. **Implantar e validar a primeira versão funcional.**
 16. **Entrar na etapa Pós-protótipo para evolução incremental sem alterar a arquitetura base de forma descontrolada.**
 
@@ -535,3 +615,4 @@ Somente depois dessa validação funcional completa o backend deve avançar para
 | 11/08/2026 | Referências de frontend registradas para futura definição visual do SGL |
 | 12/08/2026 | Criada etapa Pós-protótipo para evolução incremental do sistema em produção sem desestruturar a arquitetura base |
 | 12/08/2026 | Figma definido como ferramenta de apoio para adaptar as referências visuais ao frontend do SGL antes da implementação |
+| 12/08/2026 | Fluxo de frontend consolidado: Referências → Figma → adaptação ao SGL → componentes reutilizáveis → Design System → implementação |
