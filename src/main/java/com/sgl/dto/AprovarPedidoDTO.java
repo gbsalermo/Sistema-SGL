@@ -1,8 +1,13 @@
 package com.sgl.dto;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +30,20 @@ public class AprovarPedidoDTO {
 
     @NotNull(message = "Id do usuário que aprovou é obrigatório")
     private Long usuarioAprovadorId;
+
+    @JsonIgnore
+    @AssertTrue(message = "O mesmo item do pedido não pode ser informado mais de uma vez")
+    public boolean isItensSemDuplicidade() {
+        if (itens == null) {
+            return true;
+        }
+
+        Set<Long> ids = new HashSet<>();
+        return itens.stream()
+                .map(ItemAprovacaoDTO::getItemId)
+                .filter(id -> id != null)
+                .allMatch(ids::add);
+    }
 
     @Getter
     @Setter
