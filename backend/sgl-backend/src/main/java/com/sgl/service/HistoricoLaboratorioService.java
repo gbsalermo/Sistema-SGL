@@ -1,17 +1,26 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.dto.ConsumoProdutoLaboratorioDTO;
 import com.sgl.dto.HistoricoLaboratorioDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.HistoricoLaboratorio;
+import com.sgl.model.Laboratorio;
+import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +32,7 @@ public class HistoricoLaboratorioService {
     private final HistoricoLaboratorioRepository historicoLaboratorioRepository;
     private final LaboratorioRepository laboratorioRepository;
     private final ProjetoRepository projetoRepository;
+    private final ProdutoRepository produtoRepository;
 
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioDTO> listarTodos() {
@@ -49,6 +59,8 @@ public class HistoricoLaboratorioService {
 
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioDTO> listarPorProduto(Long produtoId) {
+        validarProduto(produtoId);
+
         return historicoLaboratorioRepository.findByProdutoId(produtoId).stream()
                 .map(HistoricoLaboratorioDTO::new)
                 .toList();
@@ -75,6 +87,85 @@ public class HistoricoLaboratorioService {
                 .stream()
                 .map(HistoricoLaboratorioDTO::new)
                 .toList();
+    }
+
+    /**
+     * Calcula indicadores de consumo efetivo de um produto por laboratório.
+     *
+     * A fonte é HistoricoLaboratorio, portanto entram no cálculo apenas itens
+     * efetivamente entregues. A média mensal considera todos os meses do
+     * intervalo, inclusive meses sem recebimento. A quantidade mínima sugerida
+     * é a média mensal arredondada para cima e serve somente como referência;
+     * o método não altera automaticamente o EstoqueCentral.
+     */
+    @Transactional(readOnly = true)
+    public ConsumoProdutoLaboratorioDTO calcularConsumoProduto(
+            Long laboratorioId,
+            Long produtoId,
+            LocalDate dataInicio,
+            LocalDate dataFim) {
+
+        validarPeriodo(dataInicio, dataFim);
+
+        Laboratorio laboratorio = laboratorioRepository.findById(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+
+        Produto produto = produtoRepository.findById(produtoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
+
+        List<HistoricoLaboratorio> registros = historicoLaboratorioRepository
+                .findByLaboratorioProdutoEPeriodo(
+                        laboratorioId,
+                        produtoId,
+                        dataInicio,
+                        dataFim
+                );
+
+        int quantidadeTotal = registros.stream()
+                .mapToInt(HistoricoLaboratorio::getQuantidade)
+                .sum();
+
+        long quantidadePedidos = registros.stream()
+                .map(HistoricoLaboratorio::getPedido)
+                .filter(pedido -> pedido != null && pedido.getId() != null)
+                .map(pedido -> pedido.getId())
+                .distinct()
+                .count();
+
+        int mesesConsiderados = Math.toIntExact(
+                ChronoUnit.MONTHS.between(
+                        YearMonth.from(dataInicio),
+                        YearMonth.from(dataFim)
+                ) + 1
+        );
+
+        BigDecimal mediaQuantidadePorPedido = quantidadePedidos == 0
+                ? BigDecimal.ZERO.setScale(2)
+                : BigDecimal.valueOf(quantidadeTotal)
+                        .divide(BigDecimal.valueOf(quantidadePedidos), 2, RoundingMode.HALF_UP);
+
+        BigDecimal mediaConsumoMensal = BigDecimal.valueOf(quantidadeTotal)
+                .divide(BigDecimal.valueOf(mesesConsiderados), 2, RoundingMode.HALF_UP);
+
+        int quantidadeMinimaSugerida = mediaConsumoMensal
+                .setScale(0, RoundingMode.CEILING)
+                .intValue();
+
+        return new ConsumoProdutoLaboratorioDTO(
+                laboratorio.getId(),
+                laboratorio.getNome(),
+                produto.getId(),
+                produto.getNome(),
+                produto.getUnidadeArmazenamento(),
+                dataInicio,
+                dataFim,
+                quantidadePedidos,
+                quantidadeTotal,
+                mediaQuantidadePorPedido,
+                mesesConsiderados,
+                mediaConsumoMensal,
+                quantidadeMinimaSugerida
+        );
     }
 
     /**
@@ -108,6 +199,12 @@ public class HistoricoLaboratorioService {
     private void validarLaboratorio(Long laboratorioId) {
         if (!laboratorioRepository.existsById(laboratorioId)) {
             throw new ResourceNotFoundException("Laboratório", laboratorioId);
+        }
+    }
+
+    private void validarProduto(Long produtoId) {
+        if (!produtoRepository.existsById(produtoId)) {
+            throw new ResourceNotFoundException("Produto", produtoId);
         }
     }
 
