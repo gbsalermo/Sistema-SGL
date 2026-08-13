@@ -2,6 +2,7 @@ package com.sgl.dto;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
 
@@ -17,33 +18,45 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UsuarioDTO implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private Long id;
+    private Long id;
 
-	@NotBlank(message = "nome é obrigatório")
-	private String nome;
+    @NotBlank(message = "nome é obrigatório")
+    private String nome;
 
-	@NotBlank(message = "email é obrigatório")
-	@Email(message = "email inválido")
-	private String email;
+    @NotBlank(message = "email é obrigatório")
+    @Email(message = "email inválido")
+    private String email;
 
-	@NotBlank(message = "senha é obrigatória")
-	private String senha;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String senha;
 
-	@NotNull(message = "perfil é obrigatório")
-	private Perfil perfil;
+    @NotNull(message = "perfil é obrigatório")
+    private Perfil perfil;
 
-	private Long laboratorioId;
+    @NotNull(message = "Id da unidade é obrigatório")
+    private Long unidadeId;
 
-	private Boolean ativo = true;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String unidadeNome;
 
-	public UsuarioDTO(Usuario entity) {
-		this.id = entity.getId();
-		this.nome = entity.getNome();
-		this.email = entity.getEmail();
-		this.perfil = entity.getPerfil();
-		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getId() : null;
-		this.ativo = entity.getAtivo();
-	}
+    private Long laboratorioId;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String laboratorioNome;
+
+    private Boolean ativo = true;
+
+    public UsuarioDTO(Usuario entity) {
+        this.id = entity.getId();
+        this.nome = entity.getNome();
+        this.email = entity.getEmail();
+        this.perfil = entity.getPerfil();
+        this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getId() : null;
+        this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
+        this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getId() : null;
+        this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
+        this.ativo = entity.getAtivo();
+    }
 }
