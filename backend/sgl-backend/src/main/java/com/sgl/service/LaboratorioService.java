@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.LaboratorioDTO;
+import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
@@ -33,11 +34,7 @@ public class LaboratorioService {
         laboratorio.setDescricao(dto.getDescricao());
 
         if (dto.getResponsavel() != null) {
-            Usuario responsavel = usuarioRepository.findById(dto.getResponsavel())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Usuário responsável",
-                            dto.getResponsavel()
-                    ));
+            Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavel(), unidade);
             laboratorio.setResponsavel(responsavel);
         }
 
@@ -57,6 +54,10 @@ public class LaboratorioService {
 
     @Transactional(readOnly = true)
     public List<LaboratorioDTO> listarPorUnidade(Long unidadeId) {
+        if (!unidadeRepository.existsById(unidadeId)) {
+            throw new ResourceNotFoundException("Unidade", unidadeId);
+        }
+
         return laboratorioRepository.findByUnidadeId(unidadeId).stream()
                 .map(LaboratorioDTO::new)
                 .toList();
@@ -78,20 +79,18 @@ public class LaboratorioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
         if (dto.getResponsavel() != null) {
-            Usuario responsavel = usuarioRepository.findById(dto.getResponsavel())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Usuário responsável",
-                            dto.getResponsavel()
-                    ));
-            laboratorio.setResponsavel(responsavel);
+            laboratorio.setResponsavel(buscarResponsavelCompativel(dto.getResponsavel(), unidade));
         } else {
             laboratorio.setResponsavel(null);
         }
 
         laboratorio.setDescricao(dto.getDescricao());
-        laboratorio.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
         laboratorio.setNome(dto.getNome());
         laboratorio.setUnidade(unidade);
+
+        if (dto.getAtivo() != null) {
+            laboratorio.setAtivo(dto.getAtivo());
+        }
 
         return new LaboratorioDTO(laboratorioRepository.save(laboratorio));
     }
@@ -103,5 +102,22 @@ public class LaboratorioService {
 
         laboratorio.setAtivo(false);
         laboratorioRepository.save(laboratorio);
+    }
+
+    private Usuario buscarResponsavelCompativel(Long responsavelId, Unidade unidade) {
+        Usuario responsavel = usuarioRepository.findById(responsavelId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuário responsável",
+                        responsavelId
+                ));
+
+        if (responsavel.getUnidade() == null
+                || !responsavel.getUnidade().getId().equals(unidade.getId())) {
+            throw new BusinessRuleException(
+                    "O responsável deve pertencer à mesma unidade do laboratório."
+            );
+        }
+
+        return responsavel;
     }
 }
