@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.ConsumoProdutoLaboratorioDTO;
 import com.sgl.dto.HistoricoLaboratorioDTO;
 import com.sgl.service.HistoricoLaboratorioService;
 
@@ -61,6 +62,27 @@ public class HistoricoLaboratorioController {
         return ResponseEntity.ok(
                 historicoLaboratorioService.listarPorPeriodo(
                         laboratorioId,
+                        dataInicio,
+                        dataFim
+                )
+        );
+    }
+
+    /**
+     * Indicadores de consumo efetivo de um produto pelo laboratório no período.
+     * A fonte são os materiais entregues e registrados no histórico.
+     */
+    @GetMapping("/laboratorio/{laboratorioId}/produto/{produtoId}/consumo")
+    public ResponseEntity<ConsumoProdutoLaboratorioDTO> calcularConsumoProduto(
+            @PathVariable Long laboratorioId,
+            @PathVariable Long produtoId,
+            @RequestParam LocalDate dataInicio,
+            @RequestParam LocalDate dataFim) {
+
+        return ResponseEntity.ok(
+                historicoLaboratorioService.calcularConsumoProduto(
+                        laboratorioId,
+                        produtoId,
                         dataInicio,
                         dataFim
                 )
