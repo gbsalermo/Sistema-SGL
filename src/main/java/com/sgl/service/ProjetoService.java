@@ -25,8 +25,7 @@ public class ProjetoService {
 
     @Transactional
     public ProjetoDTO criar(ProjetoDTO dto) {
-        Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", dto.getLaboratorioId()));
+        Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
 
         Projeto projeto = Projeto.builder()
                 .laboratorio(laboratorio)
@@ -51,6 +50,10 @@ public class ProjetoService {
 
     @Transactional(readOnly = true)
     public List<ProjetoDTO> listarPorLaboratorio(Long laboratorioId) {
+        if (!laboratorioRepository.existsById(laboratorioId)) {
+            throw new ResourceNotFoundException("Laboratório", laboratorioId);
+        }
+
         return projetoRepository.findByLaboratorioId(laboratorioId)
                 .stream().map(ProjetoDTO::new).toList();
     }
@@ -60,8 +63,7 @@ public class ProjetoService {
         Projeto projeto = projetoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
 
-        Laboratorio novoLaboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", dto.getLaboratorioId()));
+        Laboratorio novoLaboratorio = buscarLaboratorio(dto.getLaboratorioId());
 
         projeto.setLaboratorio(novoLaboratorio);
         preencherProjeto(projeto, dto);
@@ -87,7 +89,23 @@ public class ProjetoService {
         projeto.setDataInicio(dto.getDataInicio());
         projeto.setDataFim(dto.getDataFim());
         projeto.setResponsavel(dto.getResponsavel());
-        projeto.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+
+        if (projeto.getId() == null) {
+            projeto.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+        } else if (dto.getAtivo() != null) {
+            projeto.setAtivo(dto.getAtivo());
+        }
+    }
+
+    private Laboratorio buscarLaboratorio(Long laboratorioId) {
+        Laboratorio laboratorio = laboratorioRepository.findById(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+
+        if (!Boolean.TRUE.equals(laboratorio.getAtivo())) {
+            throw new BusinessRuleException("O laboratório informado está inativo.");
+        }
+
+        return laboratorio;
     }
 
     private void validarDatas(LocalDate dataInicio, LocalDate dataFim) {
