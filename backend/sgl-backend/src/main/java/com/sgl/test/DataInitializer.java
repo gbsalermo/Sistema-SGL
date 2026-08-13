@@ -56,6 +56,16 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+    	
+    		//Para poder subir a aplicação corretamente mesmo com dados já persistidos
+    	    if (unidadeRepository.count() > 0) {
+    	        System.out.println(
+    	            "=== Dados de desenvolvimento já existem. DataInitializer ignorado. ==="
+    	        );
+    	        return;
+    	    }
+
+    	    
         Unidade u1 = unidadeRepository.save(new Unidade(null, "Instituto de Biologia", "IB", null));
         Unidade u2 = unidadeRepository.save(new Unidade(null, "Instituto de Fisica", "IF", null));
         Unidade u3 = unidadeRepository.save(new Unidade(null, "Instituto de Quimica", "IQ", null));
