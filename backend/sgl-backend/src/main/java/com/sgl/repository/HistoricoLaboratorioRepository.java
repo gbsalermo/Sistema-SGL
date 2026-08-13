@@ -19,10 +19,6 @@ public interface HistoricoLaboratorioRepository extends JpaRepository<HistoricoL
 
     List<HistoricoLaboratorio> findByPedidoId(Long pedidoId);
 
-    /**
-     * Retorna os materiais efetivamente recebidos por um laboratório dentro de
-     * um intervalo de datas.
-     */
     @Query("""
             SELECT historico
             FROM HistoricoLaboratorio historico
@@ -36,10 +32,22 @@ public interface HistoricoLaboratorioRepository extends JpaRepository<HistoricoL
             @Param("dataFim") LocalDate dataFim
     );
 
-    /**
-     * Retorna somente os materiais recebidos em pedidos vinculados ao projeto
-     * informado, dentro do laboratório e período especificados.
-     */
+    @Query("""
+            SELECT historico
+            FROM HistoricoLaboratorio historico
+            WHERE historico.laboratorio.id = :laboratorioId
+              AND historico.produto.id = :produtoId
+              AND historico.dataRecebimento BETWEEN :dataInicio AND :dataFim
+              AND historico.ativo = true
+            ORDER BY historico.dataRecebimento ASC, historico.id ASC
+            """)
+    List<HistoricoLaboratorio> findByLaboratorioProdutoEPeriodo(
+            @Param("laboratorioId") Long laboratorioId,
+            @Param("produtoId") Long produtoId,
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim") LocalDate dataFim
+    );
+
     @Query("""
             SELECT historico
             FROM HistoricoLaboratorio historico
