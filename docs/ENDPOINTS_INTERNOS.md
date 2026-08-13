@@ -20,11 +20,7 @@ Prefixo da API:
 
 ## Unidade
 
-Base:
-
-```text
-/api/v1/unidades
-```
+Base: `/api/v1/unidades`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -32,17 +28,13 @@ Base:
 | GET | `/api/v1/unidades/{id}` | Busca uma unidade pelo ID. |
 | POST | `/api/v1/unidades` | Cria uma unidade. |
 | PUT | `/api/v1/unidades/{id}` | Atualiza uma unidade. |
-| DELETE | `/api/v1/unidades/{id}` | Remove a unidade conforme a regra atual do service. |
+| DELETE | `/api/v1/unidades/{id}` | Remove a unidade; relacionamentos existentes podem gerar `409 Conflict`. |
 
 ---
 
 ## Laboratório
 
-Base:
-
-```text
-/api/v1/laboratorios
-```
+Base: `/api/v1/laboratorios`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -51,38 +43,34 @@ Base:
 | GET | `/api/v1/laboratorios/por-unidade?unidadeId={id}` | Lista laboratórios pertencentes a uma unidade. |
 | POST | `/api/v1/laboratorios` | Cria laboratório. |
 | PUT | `/api/v1/laboratorios/{id}` | Atualiza laboratório. |
-| DELETE | `/api/v1/laboratorios/{id}` | Remove/inativa conforme a regra atual do service. |
+| DELETE | `/api/v1/laboratorios/{id}` | Inativa o laboratório. |
+
+O responsável, quando informado, deve pertencer à mesma unidade do laboratório.
 
 ---
 
 ## Usuário
 
-Base:
-
-```text
-/api/v1/usuarios
-```
+Base: `/api/v1/usuarios`
 
 | Método | Endpoint | Função |
 |---|---|---|
 | GET | `/api/v1/usuarios` | Lista todos os usuários. |
 | GET | `/api/v1/usuarios/{id}` | Busca usuário pelo ID. |
 | GET | `/api/v1/usuarios/por-laboratorio?laboratorioId={id}` | Lista usuários de um laboratório. |
-| POST | `/api/v1/usuarios` | Cria usuário. |
-| PUT | `/api/v1/usuarios/{id}` | Atualiza usuário. |
+| POST | `/api/v1/usuarios` | Cria usuário. `unidadeId` e senha são obrigatórios. |
+| PUT | `/api/v1/usuarios/{id}` | Atualiza usuário. A senha é opcional; se omitida, permanece inalterada. |
 | DELETE | `/api/v1/usuarios/{id}` | Inativa o usuário. |
 
-> A identidade das operações auditáveis ainda utiliza parâmetros temporários em alguns endpoints. A autenticação local simulada substituirá isso por contexto autenticado.
+`laboratorioId`, quando informado, deve pertencer à mesma `unidadeId` do usuário. A senha é somente de entrada e não é devolvida nas respostas JSON.
+
+> A identidade das operações auditáveis ainda utiliza parâmetros temporários em alguns endpoints. A autenticação definitiva será integrada à API corporativa.
 
 ---
 
 ## Estagiário
 
-Base:
-
-```text
-/api/v1/estagiarios
-```
+Base: `/api/v1/estagiarios`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -90,20 +78,18 @@ Base:
 | GET | `/api/v1/estagiarios/{id}` | Busca estagiário pelo ID. |
 | GET | `/api/v1/estagiarios/por-laboratorio?laboratorioId={id}` | Lista estagiários de um laboratório. |
 | GET | `/api/v1/estagiarios/ativos` | Lista estágios/estagiários ativos. |
-| POST | `/api/v1/estagiarios` | Cria estagiário. |
+| POST | `/api/v1/estagiarios` | Cria a extensão de estagiário para um usuário com perfil `ESTAGIARIO`. |
 | PUT | `/api/v1/estagiarios/{id}` | Atualiza estagiário. |
 | PUT | `/api/v1/estagiarios/{id}/encerrar` | Encerra o estágio. |
-| DELETE | `/api/v1/estagiarios/{id}` | Remove/inativa conforme a regra atual do service. |
+| DELETE | `/api/v1/estagiarios/{id}` | Inativa/encerra o estágio. |
+
+Usuário e laboratório do estagiário devem pertencer à mesma unidade.
 
 ---
 
 ## Produto
 
-Base:
-
-```text
-/api/v1/produtos
-```
+Base: `/api/v1/produtos`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -114,9 +100,7 @@ Base:
 | GET | `/api/v1/produtos/buscar?nome={nome}` | Pesquisa produtos por nome. |
 | POST | `/api/v1/produtos` | Cria produto no catálogo. |
 | PUT | `/api/v1/produtos/{id}` | Atualiza produto. |
-| DELETE | `/api/v1/produtos/{id}` | Inativa/remove conforme a regra do service. |
-
-### Regra de validade
+| DELETE | `/api/v1/produtos/{id}` | Inativa produto. |
 
 `Produto` informa apenas se o material é perecível. A data de validade operacional pertence ao `Lote`.
 
@@ -124,11 +108,7 @@ Base:
 
 ## Projeto
 
-Base:
-
-```text
-/api/v1/projetos
-```
+Base: `/api/v1/projetos`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -138,17 +118,13 @@ Base:
 | GET | `/api/v1/projetos/ativos` | Lista projetos ativos. |
 | POST | `/api/v1/projetos` | Cria projeto. |
 | PUT | `/api/v1/projetos/{id}` | Atualiza projeto. |
-| DELETE | `/api/v1/projetos/{id}` | Inativa/remove conforme a regra do service. |
+| DELETE | `/api/v1/projetos/{id}` | Inativa projeto. |
 
 ---
 
 ## Estoque Central
 
-Base:
-
-```text
-/api/v1/estoque-central
-```
+Base: `/api/v1/estoque-central`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -158,10 +134,10 @@ Base:
 | GET | `/api/v1/estoque-central/por-unidade-produto?unidadeId={id}&produtoId={id}` | Busca o estoque específico da combinação Unidade + Produto. |
 | GET | `/api/v1/estoque-central/estoque-baixo?unidadeId={id}` | Lista produtos com saldo igual ou inferior ao mínimo na unidade. |
 | POST | `/api/v1/estoque-central` | Cria registro Unidade + Produto com saldo inicial zero. |
-| PUT | `/api/v1/estoque-central/{id}` | Atualiza configurações do estoque, como quantidade mínima/ativo. |
-| DELETE | `/api/v1/estoque-central/{id}` | Remove conforme a regra atual do service. |
+| PUT | `/api/v1/estoque-central/{id}` | Atualiza quantidade mínima/ativo; o saldo não pode ser editado diretamente. |
+| DELETE | `/api/v1/estoque-central/{id}` | Inativa o estoque central, preservando histórico e lotes. |
 
-### Regra estrutural
+Regra estrutural:
 
 ```text
 EstoqueCentral.quantidadeAtual
@@ -169,17 +145,13 @@ EstoqueCentral.quantidadeAtual
 soma de Lote.quantidadeDisponivel
 ```
 
-Entrada, saída e descarte físico não pertencem mais ao `EstoqueCentralService`.
+Entrada, saída e descarte físico pertencem ao `MovimentacaoEstoqueService`.
 
 ---
 
 ## Lote
 
-Base:
-
-```text
-/api/v1/lotes
-```
+Base: `/api/v1/lotes`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -190,24 +162,20 @@ Base:
 | PUT | `/api/v1/lotes/{id}` | Corrige/manutenção cadastral do lote sem edição livre de quantidade. |
 | DELETE | `/api/v1/lotes/{id}` | Inativa lote sem saldo disponível. |
 
-### Política de saída
+Política de saída:
 
 ```text
 Produto perecível     → FEFO
 Produto não perecível → FIFO
 ```
 
-O pedido continua solicitando `Produto + quantidade`. O lote é selecionado internamente pelo sistema.
+O pedido solicita `Produto + quantidade`; o lote é selecionado internamente pelo sistema.
 
 ---
 
 ## Movimentação de Estoque
 
-Base:
-
-```text
-/api/v1/movimentacoes
-```
+Base: `/api/v1/movimentacoes`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -217,27 +185,19 @@ Base:
 | GET | `/api/v1/movimentacoes/laboratorio?laboratorioId={id}` | Lista movimentações associadas a um laboratório. |
 | GET | `/api/v1/movimentacoes/usuario?usuarioId={id}` | Lista movimentações executadas por usuário. |
 | GET | `/api/v1/movimentacoes/pedido?pedidoId={id}` | Lista movimentações originadas por um pedido. |
-| GET | `/api/v1/movimentacoes/tipo?tipo={tipo}` | Lista movimentações por tipo, como `ENTRADA`, `SAIDA` ou `DESCARTE_VENCIMENTO`. |
-| POST | `/api/v1/movimentacoes/estoques/{estoqueId}/lotes?usuarioId={usuarioId}` | Registra entrada física, cria lote, aumenta saldo agregado e registra `ENTRADA`. |
-| POST | `/api/v1/movimentacoes/estoques/{estoqueId}/descarte-vencimento?usuarioId={usuarioId}` | Descarta quantidade existente em lotes vencidos e registra a auditoria por lote. |
+| GET | `/api/v1/movimentacoes/tipo?tipo={tipo}` | Lista movimentações por tipo. |
+| POST | `/api/v1/movimentacoes/estoques/{estoqueId}/lotes?usuarioId={usuarioId}` | Registra entrada física, cria lote, aumenta saldo e registra `ENTRADA`. |
+| POST | `/api/v1/movimentacoes/estoques/{estoqueId}/descarte-vencimento?usuarioId={usuarioId}` | Descarta lotes vencidos e registra auditoria por lote. |
 
-### Observação temporária
+Os `usuarioId` das operações físicas são temporários até a integração do contexto autenticado.
 
-Os parâmetros `usuarioId` das operações físicas existem apenas enquanto o contexto de autenticação local ainda não foi implementado.
-
-### Rastreabilidade
-
-Se uma saída utilizar mais de um lote, será criada uma `MovimentacaoEstoque` para cada lote efetivamente afetado.
+Se uma saída utilizar mais de um lote, existe uma movimentação para cada lote afetado.
 
 ---
 
 ## Pedido
 
-Base:
-
-```text
-/api/v1/pedidos
-```
+Base: `/api/v1/pedidos`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -245,32 +205,22 @@ Base:
 | GET | `/api/v1/pedidos/{id}` | Busca pedido pelo ID. |
 | GET | `/api/v1/pedidos/por-usuario?usuarioId={id}` | Lista pedidos criados por um usuário. |
 | GET | `/api/v1/pedidos/por-status?status={status}` | Lista pedidos por status. |
-| GET | `/api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD` | Lista os pedidos realizados por um projeto específico dentro de um laboratório no período informado. |
+| GET | `/api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD` | Lista pedidos realizados por um projeto no laboratório e período. |
 | POST | `/api/v1/pedidos` | Cria pedido com status inicial `PENDENTE`. |
-| PUT | `/api/v1/pedidos/{id}/aprovar` | Aprova quantidades e executa saída FEFO/FIFO dos lotes válidos. |
+| PUT | `/api/v1/pedidos/{id}/aprovar` | Aprova quantidades e executa saída FEFO/FIFO. |
 | PUT | `/api/v1/pedidos/{id}/rejeitar?observacao={texto}` | Rejeita pedido pendente. |
-| PUT | `/api/v1/pedidos/{id}/entregar` | Marca pedido aprovado como entregue e cria `HistoricoLaboratorio`, sem nova baixa de estoque. |
-| PUT | `/api/v1/pedidos/{id}/cancelar?observacao={texto}` | Cancela pedido; quando aprovado, restaura exatamente os lotes consumidos. |
+| PUT | `/api/v1/pedidos/{id}/entregar` | Marca pedido aprovado como entregue e cria `HistoricoLaboratorio`, sem nova baixa. |
+| PUT | `/api/v1/pedidos/{id}/cancelar?observacao={texto}` | Cancela pedido; quando aprovado, restaura os lotes consumidos. |
 
-### Consulta por projeto
+O payload de aprovação exige pelo menos um item e não aceita o mesmo `itemId` repetido.
 
-Esta consulta representa **solicitações/pedidos feitos**. Ela usa `Pedido.dataSolicitacao`.
-
-Exemplo:
-
-```http
-GET /api/v1/pedidos/laboratorio/2/projeto/3/periodo?dataInicio=2026-06-01&dataFim=2026-06-30
-```
+A consulta por projeto usa `Pedido.dataSolicitacao` e representa solicitações realizadas.
 
 ---
 
 ## Histórico do Laboratório
 
-Base:
-
-```text
-/api/v1/historico-laboratorio
-```
+Base: `/api/v1/historico-laboratorio`
 
 | Método | Endpoint | Função |
 |---|---|---|
@@ -280,33 +230,40 @@ Base:
 | GET | `/api/v1/historico-laboratorio/produto/{produtoId}` | Lista recebimentos relacionados a um produto. |
 | GET | `/api/v1/historico-laboratorio/pedido/{pedidoId}` | Lista os registros de recebimento de um pedido. |
 | GET | `/api/v1/historico-laboratorio/laboratorio/{laboratorioId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD` | Lista materiais efetivamente recebidos pelo laboratório no período. |
-| GET | `/api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD` | Lista materiais efetivamente recebidos por um projeto específico do laboratório no período. |
+| GET | `/api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD` | Lista materiais recebidos por um projeto específico no período. |
+| GET | `/api/v1/historico-laboratorio/laboratorio/{laboratorioId}/produto/{produtoId}/consumo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD` | Calcula consumo histórico do produto pelo laboratório. |
+
+### Indicador de consumo
+
+O endpoint de consumo usa apenas registros efetivamente entregues e retorna:
+
+```text
+quantidadePedidos
+quantidadeTotalRecebida
+mediaQuantidadePorPedido
+mesesConsiderados
+mediaConsumoMensal
+quantidadeMinimaSugerida
+```
+
+A média mensal considera todos os meses do intervalo, inclusive meses sem recebimento. `quantidadeMinimaSugerida` é a média mensal arredondada para cima e não altera automaticamente a configuração do estoque.
 
 ### Diferença entre Pedido e Histórico
 
 ```text
-PedidoRepository / PedidoService
-→ solicitações realizadas
-→ inclui pedidos pendentes, aprovados, rejeitados, cancelados e entregues
+Pedido
+→ solicitação realizada
+→ usa dataSolicitacao
 
 HistoricoLaboratorio
 → recebimento efetivo
-→ nasce quando um pedido aprovado é entregue
-```
-
-Assim, para o mesmo projeto é possível comparar:
-
-```text
-quantos pedidos foram feitos
-versus
-quanto material foi efetivamente recebido
+→ nasce na entrega
+→ usa dataRecebimento
 ```
 
 ---
 
 ## Status de Pedido
-
-Estados utilizados pelo fluxo atual:
 
 ```text
 PENDENTE
@@ -328,20 +285,31 @@ dataFim é obrigatória
 dataInicio <= dataFim
 ```
 
-Para pedidos, `dataFim` inclui o dia completo até `23:59:59.999...`.
+Para pedidos, `dataFim` inclui o dia completo. Consultas por projeto validam o vínculo Projeto × Laboratório.
 
-As consultas por projeto também validam que o projeto realmente pertence ao laboratório informado.
+---
+
+## Estado pré-Swagger
+
+A revisão detalhada está em [`API_AUDITORIA_PRE_SWAGGER.md`](API_AUDITORIA_PRE_SWAGGER.md).
+
+Pontos intencionalmente temporários da alpha:
+
+```text
+autenticação corporativa ainda não integrada
+usuarioId/usuarioAprovadorId ainda presentes em fluxos auditáveis
+SecurityConfig liberado para desenvolvimento
+```
 
 ---
 
 ## Manutenção deste documento
 
-Sempre que um endpoint for criado, removido ou tiver sua responsabilidade alterada, este arquivo deve ser atualizado junto com:
+Sempre que um endpoint for criado, removido ou tiver sua responsabilidade alterada, atualizar também:
 
 ```text
 README.md
 CONTINUIDADE.md
+docs/JSON_EXEMPLOS.md
 docs/testes.md
 ```
-
-Este documento deve servir como inventário operacional da API durante o desenvolvimento até a adoção de documentação automática via OpenAPI/Swagger.
