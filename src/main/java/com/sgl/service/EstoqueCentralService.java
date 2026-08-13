@@ -17,14 +17,6 @@ import com.sgl.repository.UnidadeRepository;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Gerencia cadastro, configuração e consulta do saldo agregado de materiais de
- * uma Unidade.
- *
- * As operações físicas de entrada, saída, descarte e devolução pertencem a
- * MovimentacaoEstoqueService e são refletidas aqui apenas como consequência no
- * valor de quantidadeAtual.
- */
 @Service
 @RequiredArgsConstructor
 public class EstoqueCentralService {
@@ -35,24 +27,19 @@ public class EstoqueCentralService {
 
     @Transactional
     public EstoqueCentralDTO criar(EstoqueCentralDTO dto) {
-        if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(
-                dto.getUnidadeId(), dto.getProdutoId())) {
-            throw new BusinessRuleException(
-                    "Já existe estoque para esse produto nesta unidade."
-            );
+        if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(dto.getUnidadeId(), dto.getProdutoId())) {
+            throw new BusinessRuleException("Já existe estoque para esse produto nesta unidade.");
         }
 
         Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Unidade",
-                        dto.getUnidadeId()
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
         Produto produto = produtoRepository.findById(dto.getProdutoId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Produto",
-                        dto.getProdutoId()
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto", dto.getProdutoId()));
+
+        if (!Boolean.TRUE.equals(produto.getAtivo())) {
+            throw new BusinessRuleException("Não é possível criar estoque para produto inativo.");
+        }
 
         EstoqueCentral estoque = EstoqueCentral.builder()
                 .unidade(unidade)
@@ -91,10 +78,7 @@ public class EstoqueCentralService {
 
     @Transactional(readOnly = true)
     public List<EstoqueCentralDTO> listarPorUnidade(Long unidadeId) {
-        if (!unidadeRepository.existsById(unidadeId)) {
-            throw new ResourceNotFoundException("Unidade", unidadeId);
-        }
-
+        validarUnidade(unidadeId);
         return estoqueCentralRepository.findByUnidadeId(unidadeId).stream()
                 .map(EstoqueCentralDTO::new)
                 .toList();
@@ -106,24 +90,37 @@ public class EstoqueCentralService {
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
 
         estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
-        estoque.setAtivo(dto.getAtivo());
+        if (dto.getAtivo() != null) {
+            estoque.setAtivo(dto.getAtivo());
+        }
+
         return new EstoqueCentralDTO(estoqueCentralRepository.save(estoque));
     }
 
     @Transactional(readOnly = true)
     public List<EstoqueCentralDTO> listarEstoqueBaixoPorUnidade(Long unidadeId) {
+        validarUnidade(unidadeId);
         return estoqueCentralRepository.findByUnidadeIdAndAtivoTrue(unidadeId).stream()
-                .filter(estoque -> estoque.getQuantidadeAtual()
-                        <= estoque.getQuantidadeMinima())
+                .filter(estoque -> estoque.getQuantidadeAtual() <= estoque.getQuantidadeMinima())
                 .map(EstoqueCentralDTO::new)
                 .toList();
     }
 
     @Transactional
     public void deletar(Long id) {
-        if (!estoqueCentralRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Estoque central", id);
+        EstoqueCentral estoque = estoqueCentralRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
+
+        if (!Boolean.TRUE.equals(estoque.getAtivo())) {
+            throw new BusinessRuleException("O estoque central já está inativo.");
         }
-        estoqueCentralRepository.deleteById(id);
+
+        estoque.setAtivo(false);
+    }
+
+    private void validarUnidade(Long unidadeId) {
+        if (!unidadeRepository.existsById(unidadeId)) {
+            throw new ResourceNotFoundException("Unidade", unidadeId);
+        }
     }
 }
