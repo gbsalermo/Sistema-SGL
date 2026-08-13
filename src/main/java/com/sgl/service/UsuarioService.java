@@ -10,10 +10,12 @@ import com.sgl.dto.UsuarioDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final LaboratorioRepository laboratorioRepository;
+    private final UnidadeRepository unidadeRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final EstagiarioRepository estagiarioRepository;
 
@@ -33,21 +36,23 @@ public class UsuarioService {
             throw new BusinessRuleException("Email já cadastrado: " + dto.getEmail());
         }
 
+        if (dto.getSenha() == null || dto.getSenha().isBlank()) {
+            throw new BusinessRuleException("Senha é obrigatória na criação do usuário.");
+        }
+
+        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
+
+        Laboratorio laboratorio = buscarLaboratorioCompativel(dto.getLaboratorioId(), unidade);
+
         Usuario usuario = new Usuario();
         usuario.setNome(dto.getNome());
         usuario.setEmail(dto.getEmail());
         usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         usuario.setPerfil(dto.getPerfil());
+        usuario.setUnidade(unidade);
+        usuario.setLaboratorio(laboratorio);
         usuario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
-
-        if (dto.getLaboratorioId() != null) {
-            Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Laboratório",
-                            dto.getLaboratorioId()
-                    ));
-            usuario.setLaboratorio(laboratorio);
-        }
 
         return new UsuarioDTO(usuarioRepository.save(usuario));
     }
@@ -61,6 +66,10 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioDTO> listarPorLaboratorio(Long laboratorioId) {
+        if (!laboratorioRepository.existsById(laboratorioId)) {
+            throw new ResourceNotFoundException("Laboratório", laboratorioId);
+        }
+
         return usuarioRepository.findByLaboratorioId(laboratorioId).stream()
                 .map(UsuarioDTO::new)
                 .toList();
@@ -90,24 +99,23 @@ public class UsuarioService {
             );
         }
 
+        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
+
+        Laboratorio laboratorio = buscarLaboratorioCompativel(dto.getLaboratorioId(), unidade);
+
         usuario.setNome(dto.getNome());
         usuario.setEmail(dto.getEmail());
         usuario.setPerfil(dto.getPerfil());
-        usuario.setAtivo(dto.getAtivo());
+        usuario.setUnidade(unidade);
+        usuario.setLaboratorio(laboratorio);
+
+        if (dto.getAtivo() != null) {
+            usuario.setAtivo(dto.getAtivo());
+        }
 
         if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
             usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
-        }
-
-        if (dto.getLaboratorioId() != null) {
-            Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Laboratório",
-                            dto.getLaboratorioId()
-                    ));
-            usuario.setLaboratorio(laboratorio);
-        } else {
-            usuario.setLaboratorio(null);
         }
 
         return new UsuarioDTO(usuarioRepository.save(usuario));
@@ -123,5 +131,23 @@ public class UsuarioService {
         }
 
         usuario.setAtivo(false);
+    }
+
+    private Laboratorio buscarLaboratorioCompativel(Long laboratorioId, Unidade unidade) {
+        if (laboratorioId == null) {
+            return null;
+        }
+
+        Laboratorio laboratorio = laboratorioRepository.findById(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+
+        if (laboratorio.getUnidade() == null
+                || !laboratorio.getUnidade().getId().equals(unidade.getId())) {
+            throw new BusinessRuleException(
+                    "O laboratório informado não pertence à unidade do usuário."
+            );
+        }
+
+        return laboratorio;
     }
 }
