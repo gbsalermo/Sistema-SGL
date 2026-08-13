@@ -1,10 +1,10 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 12/08/2026  
-**Fase atual:** validação manual dos fluxos do backend em PostgreSQL real
+**Última atualização:** 13/08/2026  
+**Fase atual:** backend estabilizado em PostgreSQL real; validação manual crítica concluída; concorrência validada; próxima fase = autenticação local simulada
 
-Este arquivo registra o estado atual do backend, decisões consolidadas e o ponto exato para continuidade do desenvolvimento.
+Este arquivo registra o estado atual do backend, decisões consolidadas e o ponto exato para continuidade do desenvolvimento. Deve ser tratado como fonte principal de contexto ao retomar o projeto.
 
 ## Estado atual
 
@@ -111,19 +111,19 @@ pedidos
 itens de pedido
 ```
 
-Foi identificado que, com banco persistente, o initializer não pode inserir novamente os mesmos dados em toda inicialização, pois existem constraints únicas como `unidades.sigla`.
+Com banco persistente, o initializer não pode inserir novamente os mesmos dados em toda inicialização por causa de constraints únicas como `unidades.sigla`.
 
-O fluxo de desenvolvimento deve evitar duplicação dos dados iniciais e manter o initializer restrito ao ambiente `dev`.
+O initializer deve permanecer restrito ao ambiente `dev`.
 
 ## Senhas com BCrypt — VALIDADO
 
-O `SecurityConfig` já possui `BCryptPasswordEncoder`.
+O `SecurityConfig` possui `BCryptPasswordEncoder`.
 
 O `UsuarioService` utiliza BCrypt na criação e na alteração de senha.
 
-O `DataInitializer` também foi ajustado para inserir senhas codificadas em vez de texto puro.
+O `DataInitializer` também grava senhas codificadas.
 
-O banco `sgl` foi recriado para validar o fluxo completo:
+Fluxo já validado:
 
 ```text
 DROP DATABASE sgl
@@ -133,23 +133,11 @@ DROP DATABASE sgl
 → usuários persistidos com hashes BCrypt
 ```
 
-Consulta utilizada para validação:
-
-```sql
-SELECT id, nome, email, senha
-FROM usuarios
-ORDER BY id;
-```
-
-Resultado esperado e confirmado: senhas armazenadas como hash BCrypt, não como `123456` em texto puro.
-
 Nenhuma migration V2 foi necessária, pois `senha VARCHAR(255)` já comporta o hash.
 
-## Testes automatizados — VALIDADO
+## Testes automatizados
 
-A suíte completa foi executada novamente em 12/08/2026 após os ajustes recentes.
-
-Resultado:
+A suíte anterior estava validada em 12/08/2026:
 
 ```text
 Tests run: 20
@@ -159,7 +147,7 @@ Skipped: 0
 BUILD SUCCESS
 ```
 
-Distribuição atual:
+Distribuição anterior:
 
 ```text
 HistoricoLaboratorioServiceTest → 3
@@ -167,6 +155,20 @@ MovimentacaoEstoqueServiceTest → 7
 PedidoServiceTest → 9
 SglApplicationTests → 1
 ```
+
+Em 13/08/2026 foi adicionado:
+
+```text
+PedidoConcorrenciaIntegrationTest
+```
+
+Arquivo:
+
+```text
+backend/sgl-backend/src/test/java/com/sgl/service/PedidoConcorrenciaIntegrationTest.java
+```
+
+O novo teste foi executado com sucesso isoladamente e valida dois pedidos concorrentes disputando o mesmo saldo.
 
 O `SglApplicationTests` utiliza:
 
@@ -182,6 +184,8 @@ mvn test
 → H2 em memória
 → não depende do PostgreSQL de desenvolvimento
 ```
+
+Ao retomar, é recomendável executar a suíte completa novamente para registrar formalmente o novo total de testes.
 
 ## Produto, Lote e EstoqueCentral
 
@@ -201,15 +205,15 @@ Produto não perecível
 
 `EstoqueCentral` mantém somente a referência ao produto e não duplica `produto.nome` na tabela.
 
-Para exibição, DTOs/consultas podem retornar `produtoNome` através do relacionamento.
-
-Regra estrutural:
+Regra estrutural validada no PostgreSQL:
 
 ```text
 EstoqueCentral.quantidadeAtual
 =
 soma de Lote.quantidadeDisponivel
 ```
+
+Em 13/08/2026 foi executada uma conferência global de todos os estoques e todas as diferenças resultaram em `0`.
 
 ## MovimentacaoEstoque
 
@@ -251,8 +255,6 @@ PENDENTE
 
 ### Criação
 
-Na criação do pedido:
-
 ```text
 valida usuário/laboratório/projeto/produto
 → cria itens
@@ -262,8 +264,6 @@ valida usuário/laboratório/projeto/produto
 ```
 
 ### Aprovação
-
-Na aprovação:
 
 ```text
 PedidoService
@@ -277,30 +277,13 @@ PedidoService
 → pedido fica APROVADO
 ```
 
-O endpoint correto é:
+Endpoint correto:
 
 ```http
 PUT /api/v1/pedidos/{pedidoId}/aprovar
 ```
 
-Não usar `POST` para aprovação.
-
-Exemplo:
-
-```json
-{
-  "observacao": "Aprovado para validar FEFO",
-  "usuarioAprovadorId": 2,
-  "itens": [
-    {
-      "itemId": 4,
-      "quantidadeAprovada": 6
-    }
-  ]
-}
-```
-
-O campo usado é `itemId`, não `produtoId`.
+O body usa `itemId`, não `produtoId`.
 
 ### Entrega
 
@@ -323,151 +306,222 @@ consulta SAIDAS do pedido
 → pedido fica CANCELADO
 ```
 
-## Validação manual com PostgreSQL — EM ANDAMENTO
+## Validação manual com PostgreSQL — CONCLUÍDA EM 13/08/2026
 
-Os GETs básicos já haviam sido testados anteriormente. Nesta etapa, eles são usados apenas para conferir estado antes/depois das operações.
+A bateria manual crítica foi concluída no PostgreSQL real.
 
-O objetivo atual é validar as regras críticas contra PostgreSQL real.
+### Entrada não perecível — VALIDADO
 
-### Teste 1 — entrada não perecível — VALIDADO
-
-Foi registrada uma entrada física via:
-
-```http
-POST /api/v1/movimentacoes/estoques/{estoqueId}/lotes?usuarioId={usuarioId}
-```
-
-Exemplo utilizado:
-
-```json
-{
-  "numeroLote": "POSTMAN-FIFO-001",
-  "quantidade": 10,
-  "dataValidade": null,
-  "origem": "COMPRA",
-  "observacao": "Entrada FIFO via Postman"
-}
-```
-
-Validado no Postman e diretamente no PostgreSQL:
+Validado:
 
 ```text
 novo lote persistido
-quantidadeInicial = 10
-quantidadeDisponivel = 10
+quantidadeInicial correta
+quantidadeDisponivel correta
 dataValidade = null
-EstoqueCentral +10
+EstoqueCentral incrementado
 MovimentacaoEstoque ENTRADA registrada
 ```
 
-### Teste 2 — preparação FEFO — VALIDADO
+### FEFO — VALIDADO
 
-Foram criados dois lotes para o mesmo produto perecível:
-
-```text
-POSTMAN-FEFO-A
-quantidade = 4
-validade = 20/08/2026
-
-POSTMAN-FEFO-B
-quantidade = 10
-validade = 20/12/2026
-```
-
-O estoque agregado aumentou em 14 e os dois lotes foram persistidos corretamente.
-
-### Teste 3 — pedido FEFO — APROVAÇÃO REALIZADA
-
-Foi criado um pedido solicitando 6 unidades do produto perecível.
-
-O pedido foi criado como `PENDENTE`, sem baixa na criação.
-
-A aprovação inicialmente foi chamada acidentalmente com `POST`, resultando em erro. O método correto foi identificado como `PUT`.
-
-Após corrigir para:
-
-```http
-PUT /api/v1/pedidos/3/aprovar
-```
-
-a aprovação funcionou.
-
-### PONTO EXATO PARA RETOMAR AMANHÃ
-
-Amanhã começar conferindo o resultado físico da aprovação FEFO.
-
-Expectativa:
+Cenário:
 
 ```text
-POSTMAN-FEFO-A
-4 → 0
-
-POSTMAN-FEFO-B
-10 → 8
+POSTMAN-FEFO-A = 4 unidades
+POSTMAN-FEFO-B = 10 unidades
+pedido aprovado = 6 unidades
 ```
 
-Consultar no PostgreSQL:
+Resultado confirmado:
+
+```text
+POSTMAN-FEFO-A: 4 → 0
+POSTMAN-FEFO-B: 10 → 8
+```
+
+Movimentações confirmadas:
+
+```text
+SAIDA 4 → lote A
+SAIDA 2 → lote B
+```
+
+`EstoqueCentral` também reduziu exatamente 6 unidades.
+
+### FIFO — VALIDADO
+
+O teste manual inicialmente utilizou um estoque que já possuía o lote inicial `INI-MIC-IB`.
+
+O sistema consumiu corretamente esse lote antes dos lotes `POSTMAN-FIFO-A` e `POSTMAN-FIFO-B`, comprovando que a regra considera todos os lotes ativos e ordena por entrada/id.
+
+Conclusão:
+
+```text
+produto não perecível
+→ lote mais antigo disponível é consumido primeiro
+```
+
+Não foi alterada a regra para privilegiar lotes recém-criados, pois isso seria incorreto.
+
+### Lote vencido não atende pedido — VALIDADO
+
+Para montar o cenário foi criado lote válido e depois sua validade foi alterada diretamente no PostgreSQL, já que a API corretamente impede cadastrar um lote já vencido.
+
+Cenário final:
+
+```text
+EstoqueCentral = 20
+saldo utilizável em lotes válidos = 8
+pedido = 9
+```
+
+Resultado confirmado:
+
+```text
+HTTP 400
+Estoque utilizável insuficiente. Disponível nos lotes válidos: 8, solicitado: 9
+```
+
+O lote vencido foi ignorado na aprovação.
+
+### Descarte de vencidos — VALIDADO
+
+Foi descartada quantidade 5 do lote vencido.
+
+Validado:
+
+```text
+somente lote vencido reduzido
+EstoqueCentral -5
+MovimentacaoEstoque = DESCARTE_VENCIMENTO
+pedidoId = null
+```
+
+### Cancelamento de pedido aprovado — VALIDADO
+
+Validado:
+
+```text
+pedido → CANCELADO
+os mesmos lotes consumidos foram restaurados
+EstoqueCentral recebeu a quantidade de volta
+movimentações DEVOLUCAO vinculadas aos lotes corretos
+```
+
+### Entrega sem segunda baixa — VALIDADO
+
+Validado:
+
+```text
+pedido APROVADO → ENTREGUE
+lotes não sofrem nova redução
+EstoqueCentral não sofre nova redução
+não é criada segunda SAIDA
+```
+
+### HistoricoLaboratorio — VALIDADO
+
+A entrega criou registro em `historico_laboratorio` com:
+
+```text
+laboratório
+produto
+quantidade aprovada
+dataRecebimento
+pedido
+ativo = true
+```
+
+### Consultas Projeto × Laboratório × período — VALIDADO
+
+Foram testadas as consultas de:
+
+```text
+pedidos realizados por projeto/período
+histórico geral do laboratório por período
+materiais efetivamente recebidos por projeto/período
+período invertido
+projeto pertencente a outro laboratório
+```
+
+Importante:
+
+```text
+Pedido.dataSolicitacao
+→ representa solicitação
+
+HistoricoLaboratorio.dataRecebimento
+→ representa recebimento efetivo
+```
+
+Uma consulta de histórico por projeto pode retornar `[]` com `200 OK` quando não existe entrega vinculada àquele projeto no período. Isso é comportamento correto.
+
+### Consistência final EstoqueCentral × lotes — VALIDADO
+
+Consulta executada sobre todos os estoques:
 
 ```sql
 SELECT
-    id,
-    numero_lote,
-    quantidade_disponivel,
-    data_validade
-FROM lote
-WHERE numero_lote IN ('POSTMAN-FEFO-A', 'POSTMAN-FEFO-B')
-ORDER BY data_validade;
+    ec.id AS estoque_id,
+    ec.produto_id,
+    ec.quantidade_atual AS saldo_estoque,
+    COALESCE(SUM(l.quantidade_disponivel), 0) AS soma_lotes,
+    ec.quantidade_atual - COALESCE(SUM(l.quantidade_disponivel), 0) AS diferenca
+FROM estoque_central ec
+LEFT JOIN lote l ON l.estoque_central_id = ec.id
+GROUP BY ec.id, ec.produto_id, ec.quantidade_atual
+ORDER BY ec.id;
 ```
 
-Depois conferir as movimentações do pedido aprovado:
-
-```sql
-SELECT
-    id,
-    tipo_movimentacao,
-    quantidade_movimentada,
-    lote_id,
-    pedido_id
-FROM movimentacao_estoque
-WHERE pedido_id = 3
-ORDER BY id;
-```
-
-Esperado:
+Resultado:
 
 ```text
-SAIDA 4 unidades → POSTMAN-FEFO-A
-SAIDA 2 unidades → POSTMAN-FEFO-B
+diferenca = 0 em todos os estoques
 ```
 
-Também conferir `EstoqueCentral.quantidadeAtual` após a baixa.
-
-Se tudo bater, marcar **FEFO em PostgreSQL como validado**.
-
-## Próximos testes depois do FEFO
-
-Ordem recomendada:
-
-1. validar resultado físico do FEFO atual;
-2. testar FIFO de produto não perecível com dois lotes;
-3. testar lote vencido não atendendo pedido normal;
-4. testar descarte de vencidos;
-5. testar cancelamento de pedido aprovado restaurando os lotes exatos;
-6. testar entrega sem segunda baixa de estoque;
-7. validar criação de `HistoricoLaboratorio`;
-8. testar consultas Projeto × Laboratório × período;
-9. validar consistência final `EstoqueCentral` × soma dos lotes;
-10. depois criar testes de integração/concorrência.
-
-## Concorrência
+## Concorrência — VALIDADO
 
 A criação do pedido não reserva saldo.
 
 A saída acontece somente na aprovação.
 
-`PedidoService.aprovar()` busca o pedido com bloqueio antes de processá-lo.
+`PedidoService.aprovar()` busca o pedido com bloqueio e `MovimentacaoEstoqueService` usa bloqueios pessimistas sobre estoque/lotes.
 
-Ainda deve ser criado um teste específico de concorrência para validar dois pedidos diferentes tentando consumir simultaneamente o mesmo estoque/lote.
+Foi criado o teste:
+
+```text
+PedidoConcorrenciaIntegrationTest
+```
+
+Cenário:
+
+```text
+Estoque/Lote = 10
+Pedido A = 7
+Pedido B = 7
+→ duas threads iniciam a aprovação simultaneamente
+```
+
+O teste valida:
+
+```text
+exatamente 1 pedido APROVADO
+exatamente 1 pedido PENDENTE
+EstoqueCentral final = 3
+Lote final = 3
+saldo nunca negativo
+total de SAIDA = 7
+somente uma movimentação SAIDA no lote
+```
+
+O teste foi executado com sucesso em 13/08/2026.
+
+Commit que adicionou o teste:
+
+```text
+e5fd297f4584fa305518199cdc7cb5a9fd3e35e5
+```
 
 ## Consultas por projeto e laboratório
 
@@ -487,55 +541,45 @@ GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId
 
 Usa `HistoricoLaboratorio.dataRecebimento`.
 
+Histórico geral do laboratório:
+
+```http
+GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+```
+
 ## Documentação de JSON/Postman
 
-Foi criado em 12/08/2026:
+Documentos operacionais principais:
 
 ```text
 docs/JSON_EXEMPLOS.md
-```
-
-O documento reúne exemplos de chamadas e bodies para:
-
-```text
-unidade
-laboratório
-usuário
-estagiário
-produto
-projeto
-estoque central
-entrada de lote
-atualização de lote
-descarte
-pedido
-aprovação parcial/total
-rejeição
-entrega
-cancelamento
-movimentações
-histórico
-consultas principais
-```
-
-Ele deve ser mantido junto com:
-
-```text
 docs/ENDPOINTS_INTERNOS.md
 docs/testes.md
 ```
 
-## Autenticação
+`JSON_EXEMPLOS.md` reúne exemplos para unidade, laboratório, usuário, estagiário, produto, projeto, estoque, lote, descarte, pedido, aprovação, rejeição, entrega, cancelamento, movimentações, histórico e consultas.
+
+## Autenticação — PRÓXIMA FASE
 
 ### Local simulada
 
-Permanece planejada para depois da estabilização dos fluxos em PostgreSQL.
+Agora que os fluxos críticos do PostgreSQL foram estabilizados, a próxima fase planejada é implementar autenticação local simulada.
 
-Ela substituirá os `usuarioId` temporários dos endpoints auditáveis por usuário obtido do contexto autenticado.
+Objetivo:
+
+```text
+login local
+→ identificar usuário autenticado
+→ obter usuário pelo contexto de segurança
+→ remover usuarioId temporário dos endpoints auditáveis
+→ usar usuário real nas ENTRADAS / SAIDAS / DESCARTES / DEVOLUCOES
+```
+
+Essa etapa deve preservar o BCrypt já implementado.
 
 ### Definitiva
 
-A autenticação final deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
+Depois da autenticação local e da estabilização do frontend, a autenticação final deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
 
 ## Requisito futuro de reposição/compra
 
@@ -550,7 +594,7 @@ Compra só ocorre quando estoque estiver em nível crítico segundo histórico d
 Interpretação atual:
 
 ```text
-FEFO → já implementado
+FEFO → implementado e validado
 prazo mínimo de validade por produto → pós-protótipo / nova migration se necessário
 nível crítico → baseado em saída histórica, não simplesmente quantidade de pedidos
 ```
@@ -607,7 +651,7 @@ Componentes
 
 ## Pós-protótipo
 
-Após a primeira versão funcional, novas necessidades deverão ser incorporadas de forma incremental sem desestruturar a arquitetura base.
+Após a primeira versão funcional, novas necessidades deverão ser incorporadas incrementalmente.
 
 Fluxo:
 
@@ -640,20 +684,16 @@ integrações corporativas
 
 ## Próximos passos gerais
 
-1. terminar roteiro manual crítico no PostgreSQL;
-2. validar FEFO e FIFO reais;
-3. validar descarte e cancelamento;
-4. validar entrega/histórico;
-5. validar filtros por projeto e período;
-6. testes de integração PostgreSQL;
-7. testes de concorrência;
-8. autenticação local simulada;
-9. remover `usuarioId` temporário;
-10. auditoria de DEVOLUCAO com executor real;
-11. OpenAPI/Swagger;
-12. frontend;
-13. deploy da primeira versão;
-14. pós-protótipo.
+1. executar `mvn test` completo novamente e registrar o total atualizado com o teste de concorrência;
+2. implementar autenticação local simulada;
+3. remover `usuarioId` temporário dos endpoints auditáveis e usar contexto autenticado;
+4. garantir auditoria de `DEVOLUCAO` com executor autenticado real;
+5. revisar autorização por `Perfil`;
+6. OpenAPI/Swagger;
+7. frontend;
+8. deploy da primeira versão;
+9. integração futura com autenticação corporativa;
+10. pós-protótipo.
 
 ## Documentos de referência
 
@@ -688,14 +728,30 @@ integrações corporativas
 | 12/08/2026 | Dois lotes perecíveis preparados para teste FEFO |
 | 12/08/2026 | Pedido FEFO criado e aprovação concluída com `PUT /pedidos/{id}/aprovar` |
 | 12/08/2026 | Criado `docs/JSON_EXEMPLOS.md` com exemplos operacionais da API |
+| 13/08/2026 | FEFO validado fisicamente: 4+2 consumidos nos lotes corretos |
+| 13/08/2026 | FIFO validado com consumo do lote mais antigo existente |
+| 13/08/2026 | Lote vencido confirmado como indisponível para aprovação normal |
+| 13/08/2026 | Descarte de vencimento validado |
+| 13/08/2026 | Cancelamento validado restaurando exatamente os lotes consumidos |
+| 13/08/2026 | Entrega validada sem segunda baixa e com criação de `HistoricoLaboratorio` |
+| 13/08/2026 | Consultas por projeto/laboratório/período e histórico geral validadas |
+| 13/08/2026 | Consistência global `EstoqueCentral = soma dos lotes` validada com diferença zero |
+| 13/08/2026 | Criado e executado com sucesso `PedidoConcorrenciaIntegrationTest` |
 
 ### Próxima ação ao retomar
 
 ```text
-Consultar POSTMAN-FEFO-A e POSTMAN-FEFO-B no PostgreSQL
-→ confirmar 4→0 e 10→8
-→ conferir duas movimentações SAIDA do pedido 3
-→ confirmar EstoqueCentral -6
-→ marcar FEFO PostgreSQL como VALIDADO
-→ seguir para FIFO
+1. executar mvn test completo
+→ confirmar que toda a suíte, incluindo PedidoConcorrenciaIntegrationTest, passa em conjunto
+→ registrar o novo total de testes
+
+2. iniciar autenticação local simulada
+→ definir fluxo de login
+→ usar BCrypt existente
+→ criar contexto de usuário autenticado
+→ substituir usuarioId temporário nos endpoints auditáveis
+→ preservar auditoria de ENTRADA, SAIDA, DESCARTE e DEVOLUCAO
+
+Não voltar aos testes manuais FEFO/FIFO, salvo regressão específica.
+A bateria manual crítica em PostgreSQL foi concluída em 13/08/2026.
 ```
