@@ -43,12 +43,13 @@ public class EstagiarioService {
 
         validarPerfilEstagiario(usuario);
         validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
+        validarUnidadeCompativel(usuario, laboratorio);
 
         usuario.setLaboratorio(laboratorio);
         usuarioRepository.save(usuario);
 
         entityManager.createNativeQuery(
-                "INSERT INTO estagiario (id, data_inicio_estagio, data_fim_estagio, tipo_bolsa, observacao) "
+                "INSERT INTO estagiarios (id, data_inicio_estagio, data_fim_estagio, tipo_bolsa, observacao) "
                         + "VALUES (:id, :dataInicio, :dataFim, :tipoBolsa, :observacao)")
                 .setParameter("id", usuario.getId())
                 .setParameter("dataInicio", dto.getDataInicioEstagio())
@@ -84,6 +85,10 @@ public class EstagiarioService {
 
     @Transactional(readOnly = true)
     public List<EstagiarioDTO> listarPorLaboratorio(Long laboratorioId) {
+        if (!laboratorioRepository.existsById(laboratorioId)) {
+            throw new ResourceNotFoundException("Laboratório", laboratorioId);
+        }
+
         return estagiarioRepository.findByLaboratorioId(laboratorioId).stream()
                 .map(EstagiarioDTO::new)
                 .toList();
@@ -109,6 +114,7 @@ public class EstagiarioService {
 
         Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
         validarPerfilEstagiario(estagiario);
+        validarUnidadeCompativel(estagiario, laboratorio);
 
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setLaboratorio(laboratorio);
@@ -146,6 +152,16 @@ public class EstagiarioService {
         }
     }
 
+    private void validarUnidadeCompativel(Usuario usuario, Laboratorio laboratorio) {
+        if (usuario.getUnidade() == null
+                || laboratorio.getUnidade() == null
+                || !usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
+            throw new BusinessRuleException(
+                    "O estagiário e o laboratório devem pertencer à mesma unidade."
+            );
+        }
+    }
+
     private void preencherEstagiario(Estagiario estagiario, EstagiarioDTO dto) {
         validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
 
@@ -153,7 +169,10 @@ public class EstagiarioService {
         estagiario.setDataFimEstagio(dto.getDataFimEstagio());
         estagiario.setTipoBolsa(dto.getTipoBolsa());
         estagiario.setObservacao(dto.getObservacao());
-        estagiario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+
+        if (dto.getAtivo() != null) {
+            estagiario.setAtivo(dto.getAtivo());
+        }
     }
 
     private void validarDatas(LocalDate dataInicio, LocalDate dataFim) {
