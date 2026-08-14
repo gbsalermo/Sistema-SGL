@@ -1,8 +1,8 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 13/08/2026  
-**Fase atual:** backend estabilizado em PostgreSQL real; validação manual crítica concluída; concorrência validada; próxima fase = autenticação local simulada
+**Última atualização:** 14/08/2026  
+**Fase atual:** backend estabilizado em PostgreSQL real; validação manual crítica concluída; concorrência validada; etapa atual = correções estruturais antes do OpenAPI/Swagger
 
 Este arquivo registra o estado atual do backend, decisões consolidadas e o ponto exato para continuidade do desenvolvimento. Deve ser tratado como fonte principal de contexto ao retomar o projeto.
 
@@ -559,13 +559,20 @@ docs/testes.md
 
 `JSON_EXEMPLOS.md` reúne exemplos para unidade, laboratório, usuário, estagiário, produto, projeto, estoque, lote, descarte, pedido, aprovação, rejeição, entrega, cancelamento, movimentações, histórico e consultas.
 
-## Autenticação — PRÓXIMA FASE
+## Autenticação e auditoria local — APÓS O FRONTEND
 
-### Local simulada
+A autenticação local simulada e a migração da auditoria para o usuário autenticado foram deliberadamente adiadas para depois da implementação e estabilização inicial do frontend.
 
-Agora que os fluxos críticos do PostgreSQL foram estabilizados, a próxima fase planejada é implementar autenticação local simulada.
+Até essa etapa:
 
-Objetivo:
+```text
+→ manter usuarioId temporário nos endpoints auditáveis
+→ não criar ainda contexto de usuário autenticado para substituir esses IDs
+→ preservar o BCrypt já implementado
+→ manter a auditoria atual funcionando com os identificadores temporários
+```
+
+Quando a etapa for iniciada, o objetivo será:
 
 ```text
 login local
@@ -573,13 +580,12 @@ login local
 → obter usuário pelo contexto de segurança
 → remover usuarioId temporário dos endpoints auditáveis
 → usar usuário real nas ENTRADAS / SAIDAS / DESCARTES / DEVOLUCOES
+→ revisar autorização por Perfil
 ```
-
-Essa etapa deve preservar o BCrypt já implementado.
 
 ### Definitiva
 
-Depois da autenticação local e da estabilização do frontend, a autenticação final deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
+Depois da autenticação local e da estabilização do sistema, a autenticação final deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
 
 ## Requisito futuro de reposição/compra
 
@@ -684,16 +690,17 @@ integrações corporativas
 
 ## Próximos passos gerais
 
-1. executar `mvn test` completo novamente e registrar o total atualizado com o teste de concorrência;
-2. implementar autenticação local simulada;
-3. remover `usuarioId` temporário dos endpoints auditáveis e usar contexto autenticado;
-4. garantir auditoria de `DEVOLUCAO` com executor autenticado real;
-5. revisar autorização por `Perfil`;
-6. OpenAPI/Swagger;
-7. frontend;
-8. deploy da primeira versão;
-9. integração futura com autenticação corporativa;
-10. pós-protótipo.
+1. concluir as correções estruturais pendentes do backend;
+2. executar `mvn test` completo novamente e registrar o total atualizado com o teste de concorrência;
+3. implementar OpenAPI/Swagger;
+4. iniciar e estabilizar o frontend;
+5. implementar autenticação local simulada;
+6. remover `usuarioId` temporário dos endpoints auditáveis e usar contexto autenticado;
+7. garantir auditoria de `ENTRADA`, `SAIDA`, `DESCARTE` e `DEVOLUCAO` com executor autenticado real;
+8. revisar autorização por `Perfil`;
+9. deploy da primeira versão;
+10. integração futura com autenticação corporativa;
+11. pós-protótipo.
 
 ## Documentos de referência
 
@@ -737,20 +744,30 @@ integrações corporativas
 | 13/08/2026 | Consultas por projeto/laboratório/período e histórico geral validadas |
 | 13/08/2026 | Consistência global `EstoqueCentral = soma dos lotes` validada com diferença zero |
 | 13/08/2026 | Criado e executado com sucesso `PedidoConcorrenciaIntegrationTest` |
+| 14/08/2026 | Ordem de desenvolvimento revisada: autenticação e auditoria local passam para depois do frontend |
 
 ### Próxima ação ao retomar
 
 ```text
-1. executar mvn test completo
+1. concluir as correções estruturais pendentes do backend
+→ avaliar impacto em entidade / DTO / repository / service / controller / migration / testes quando aplicável
+→ não alterar V1; qualquer mudança de schema deve gerar V2/V3/...
+
+2. executar mvn test completo
 → confirmar que toda a suíte, incluindo PedidoConcorrenciaIntegrationTest, passa em conjunto
 → registrar o novo total de testes
 
-2. iniciar autenticação local simulada
+3. implementar OpenAPI/Swagger
+
+4. iniciar o frontend
+
+5. somente após o frontend, iniciar autenticação + auditoria local
 → definir fluxo de login
 → usar BCrypt existente
 → criar contexto de usuário autenticado
 → substituir usuarioId temporário nos endpoints auditáveis
 → preservar auditoria de ENTRADA, SAIDA, DESCARTE e DEVOLUCAO
+→ revisar autorização por Perfil
 
 Não voltar aos testes manuais FEFO/FIFO, salvo regressão específica.
 A bateria manual crítica em PostgreSQL foi concluída em 13/08/2026.
