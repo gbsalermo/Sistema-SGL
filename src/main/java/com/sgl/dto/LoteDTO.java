@@ -1,6 +1,7 @@
 package com.sgl.dto;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.Lote;
@@ -16,18 +17,18 @@ import lombok.Setter;
 @AllArgsConstructor
 public class LoteDTO {
 
-    private Long id;
+    private UUID id;
 
-    private Long estoqueCentralId;
+    private UUID estoqueCentralId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Long produtoId;
+    private UUID produtoId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String produtoNome;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Long unidadeId;
+    private UUID unidadeId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unidadeNome;
@@ -45,11 +46,11 @@ public class LoteDTO {
     private Boolean ativo;
 
     public LoteDTO(Lote entity) {
-        this.id = entity.getId();
-        this.estoqueCentralId = entity.getEstoqueCentral().getId();
-        this.produtoId = entity.getEstoqueCentral().getProduto().getId();
+        this.id = entity.getPublicId();
+        this.estoqueCentralId = entity.getEstoqueCentral().getPublicId();
+        this.produtoId = entity.getEstoqueCentral().getProduto().getPublicId();
         this.produtoNome = entity.getEstoqueCentral().getProduto().getNome();
-        this.unidadeId = entity.getEstoqueCentral().getUnidade().getId();
+        this.unidadeId = entity.getEstoqueCentral().getUnidade().getPublicId();
         this.unidadeNome = entity.getEstoqueCentral().getUnidade().getNome();
         this.numeroLote = entity.getNumeroLote();
         this.quantidadeInicial = entity.getQuantidadeInicial();

@@ -1,10 +1,10 @@
 package com.sgl.model;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import com.sgl.model.enums.StatusPedido;
 
@@ -20,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,6 +43,9 @@ public class Pedido implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	
+	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "usuario_id", nullable = false)
@@ -77,7 +81,12 @@ public class Pedido implements Serializable {
 	 private List<ItemPedido> itens = new ArrayList<>();
 	 
 	
-	
+	 @PrePersist
+		private void gerarPublicId() {
+			if(publicId == null) {
+				publicId = UUID.randomUUID();
+			}
+		}
 	
 	
 

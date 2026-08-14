@@ -1,6 +1,7 @@
 package com.sgl.dto;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import com.sgl.model.Projeto;
 
@@ -17,10 +18,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ProjetoDTO {
 
-	private Long id;
+	private UUID id;
 	
 	@NotNull(message = "Id do laboratório é obrigatorio")
-	private Long laboratorioId;
+	private UUID laboratorioId;
 	
 	private String laboratorioNome;
 	
@@ -39,8 +40,8 @@ public class ProjetoDTO {
 	
 	public ProjetoDTO(Projeto entity) {
 		
-		this.id = entity.getId();
-		this.laboratorioId = entity.getLaboratorio().getId();
+		this.id = entity.getPublicId();
+		this.laboratorioId = entity.getLaboratorio().getPublicId();
 		this.laboratorioNome = entity.getLaboratorio().getNome();
 		this.nome = entity.getNome();
 		this.descricao = entity.getDescricao();

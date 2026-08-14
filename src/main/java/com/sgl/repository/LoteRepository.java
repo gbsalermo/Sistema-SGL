@@ -3,6 +3,7 @@ package com.sgl.repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -16,6 +17,8 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface LoteRepository extends JpaRepository<Lote, Long> {
+	
+	Optional<Lote> findByPublicId(UUID publicId);
 
     List<Lote> findByEstoqueCentralId(Long estoqueCentralId);
 

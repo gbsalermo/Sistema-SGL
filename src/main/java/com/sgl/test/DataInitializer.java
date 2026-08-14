@@ -66,20 +66,20 @@ public class DataInitializer implements CommandLineRunner {
     	    }
 
     	    
-        Unidade u1 = unidadeRepository.save(new Unidade(null, "Instituto de Biologia", "IB", null));
-        Unidade u2 = unidadeRepository.save(new Unidade(null, "Instituto de Fisica", "IF", null));
-        Unidade u3 = unidadeRepository.save(new Unidade(null, "Instituto de Quimica", "IQ", null));
+        Unidade u1 = unidadeRepository.save(new Unidade(null, null, "Instituto de Biologia", "IB", null));
+        Unidade u2 = unidadeRepository.save(new Unidade(null, null, "Instituto de Fisica", "IF", null));
+        Unidade u3 = unidadeRepository.save(new Unidade(null, null, "Instituto de Quimica", "IQ", null));
 
-        Laboratorio lab1 = laboratorioRepository.save(new Laboratorio(null, u1, "Laboratorio de Microbiologia", "Lab de estudo de microrganismos", null, true));
-        Laboratorio lab2 = laboratorioRepository.save(new Laboratorio(null, u1, "Laboratorio de Genetica", "Lab de analise genetica", null, true));
-        Laboratorio lab3 = laboratorioRepository.save(new Laboratorio(null, u2, "Laboratorio de Optica", "Lab de estudo da luz", null, true));
-        Laboratorio lab4 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Quimica Organica", "Lab de sintese organica", null, true));
-        Laboratorio lab5 = laboratorioRepository.save(new Laboratorio(null, u3, "Laboratorio de Analise Instrumental", "Lab de instrumentacao analitica", null, false));
+        Laboratorio lab1 = laboratorioRepository.save(new Laboratorio(null, null, u1, "Laboratorio de Microbiologia", "Lab de estudo de microrganismos", null, true));
+        Laboratorio lab2 = laboratorioRepository.save(new Laboratorio(null, null, u1, "Laboratorio de Genetica", "Lab de analise genetica", null, true));
+        Laboratorio lab3 = laboratorioRepository.save(new Laboratorio(null, null, u2, "Laboratorio de Optica", "Lab de estudo da luz", null, true));
+        Laboratorio lab4 = laboratorioRepository.save(new Laboratorio(null, null, u3, "Laboratorio de Quimica Organica", "Lab de sintese organica", null, true));
+        Laboratorio lab5 = laboratorioRepository.save(new Laboratorio(null, null, u3, "Laboratorio de Analise Instrumental", "Lab de instrumentacao analitica", null, false));
 
-        Usuario admin = usuarioRepository.save(new Usuario(null, "Admin Sistema", "admin@sgl.com", passwordEncoder.encode("123456"), Perfil.ADMINISTRADOR, u3, lab5, true));
-        Usuario carlos = usuarioRepository.save(new Usuario(null, "Dr. Carlos Silva", "carlos@ib.com", passwordEncoder.encode("654321"), Perfil.GESTOR, u1, lab1, true));
-        Usuario ana = usuarioRepository.save(new Usuario(null, "Dra. Ana Santos", "ana@ib.com", passwordEncoder.encode("987654"), Perfil.TECNICO, u1, lab2, true));
-        Usuario joao = usuarioRepository.save(new Usuario(null, "Joao Pereira", "joao@if.com", passwordEncoder.encode("456789"), Perfil.PESQUISADOR, u2, lab3, true));
+        Usuario admin = usuarioRepository.save(new Usuario(null, null, "Admin Sistema", "admin@sgl.com", passwordEncoder.encode("123456"), Perfil.ADMINISTRADOR, u3, lab5, true));
+        Usuario carlos = usuarioRepository.save(new Usuario(null, null, "Dr. Carlos Silva", "carlos@ib.com", passwordEncoder.encode("654321"), Perfil.GESTOR, u1, lab1, true));
+        Usuario ana = usuarioRepository.save(new Usuario(null, null, "Dra. Ana Santos", "ana@ib.com", passwordEncoder.encode("987654"), Perfil.TECNICO, u1, lab2, true));
+        Usuario joao = usuarioRepository.save(new Usuario(null, null, "Joao Pereira", "joao@if.com", passwordEncoder.encode("456789"), Perfil.PESQUISADOR, u2, lab3, true));
 
         Estagiario maria = new Estagiario();
         maria.setNome("Maria Oliveira");

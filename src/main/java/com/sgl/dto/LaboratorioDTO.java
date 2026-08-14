@@ -1,6 +1,7 @@
 package com.sgl.dto;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import com.sgl.model.Laboratorio;
 
@@ -19,22 +20,22 @@ public class LaboratorioDTO implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
 	
-	private Long id;
+	private UUID id;
 	@NotNull(message = "unidadeId é obrigatório")
-	private Long unidadeId;
+	private UUID unidadeId;
 	@NotBlank(message = "nome é obrigatório")
 	private String nome;
 	private String descricao;
-	private Long responsavel;
+	private UUID responsavel;
 	private Boolean ativo;
 	
 	public LaboratorioDTO(Laboratorio entity) {
 		
-		this.id = entity.getId();
-		this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getId() : null;
+		this.id = entity.getPublicId();
+		this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
 		this.nome = entity.getNome();
 		this.descricao = entity.getDescricao();
-		this.responsavel = entity.getResponsavel() != null ? entity.getResponsavel().getId() : null;
+		this.responsavel = entity.getResponsavel() != null ? entity.getResponsavel().getPublicId() : null;
 		this.ativo = entity.getAtivo();
 		
 	}

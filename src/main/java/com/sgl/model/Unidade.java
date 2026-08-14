@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "unidades")
@@ -31,6 +33,9 @@ public class Unidade implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
 
     @Column(nullable = false)
     private String nome;
@@ -40,4 +45,11 @@ public class Unidade implements Serializable {
     
     @OneToMany(mappedBy = "unidade", fetch = FetchType.LAZY)
     private List<Laboratorio> laboratorios = new ArrayList<>();
+    
+    @PrePersist
+	private void gerarPublicId() {
+		if(publicId == null) {
+			publicId = UUID.randomUUID();
+		}
+	}
 }

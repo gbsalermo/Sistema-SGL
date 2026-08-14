@@ -1,6 +1,7 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -45,6 +47,9 @@ public class EstoqueCentral implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
+    
     /** Unidade proprietária do saldo e fronteira usada para separar estoques. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unidade_id", nullable = false)
@@ -66,4 +71,11 @@ public class EstoqueCentral implements Serializable {
     /** Permite bloquear operações sem apagar o histórico do registro. */
     @Column(nullable = false)
     private Boolean ativo = true;
+    
+    @PrePersist
+	private void gerarPublicId() {
+		if(publicId == null) {
+			publicId = UUID.randomUUID();
+		}
+	}
 }
