@@ -2,6 +2,7 @@ package com.sgl.dto;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import com.sgl.model.Estagiario;
 import com.sgl.model.enums.TipoBolsa;
@@ -20,15 +21,15 @@ public class EstagiarioDTO implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private Long id;
+	private UUID id;
 
 	@NotNull(message = "Id do usuário é obrigatório")
-	private Long usuarioId;
+	private UUID usuarioId;
 
 	private String usuarioNome;
 
 	@NotNull(message = "Id do laboratório é obrigatório")
-	private Long laboratorioId;
+	private UUID laboratorioId;
 
 	private String laboratorioNome;
 
@@ -45,10 +46,10 @@ public class EstagiarioDTO implements Serializable {
 	private Boolean ativo = true;
 
 	public EstagiarioDTO(Estagiario entity) {
-		this.id = entity.getId();
-		this.usuarioId = entity.getId();
+		this.id = entity.getPublicId();
+		this.usuarioId = entity.getPublicId();
 		this.usuarioNome = entity.getNome();
-		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getId() : null;
+		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
 		this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
 		this.dataInicioEstagio = entity.getDataInicioEstagio();
 		this.dataFimEstagio = entity.getDataFimEstagio();

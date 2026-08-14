@@ -3,6 +3,7 @@ package com.sgl.dto;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -29,7 +30,7 @@ public class AprovarPedidoDTO {
     private List<ItemAprovacaoDTO> itens;
 
     @NotNull(message = "Id do usuário que aprovou é obrigatório")
-    private Long usuarioAprovadorId;
+    private UUID usuarioAprovadorId;
 
     @JsonIgnore
     @AssertTrue(message = "O mesmo item do pedido não pode ser informado mais de uma vez")
@@ -38,7 +39,7 @@ public class AprovarPedidoDTO {
             return true;
         }
 
-        Set<Long> ids = new HashSet<>();
+        Set<UUID> ids = new HashSet<>();
         return itens.stream()
                 .map(ItemAprovacaoDTO::getItemId)
                 .filter(id -> id != null)
@@ -52,7 +53,7 @@ public class AprovarPedidoDTO {
     public static class ItemAprovacaoDTO {
 
         @NotNull(message = "Id do item é obrigatório")
-        private Long itemId;
+        private UUID itemId;
 
         @NotNull(message = "Quantidade aprovada é obrigatória")
         @Min(value = 1, message = "Quantidade aprovada deve ser no mínimo 1")

@@ -2,6 +2,7 @@ package com.sgl.model;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
@@ -38,6 +39,9 @@ public class MovimentacaoEstoque implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produto_id", nullable = false)

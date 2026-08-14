@@ -1,5 +1,7 @@
 package com.sgl.dto;
 
+import java.util.UUID;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.EstoqueCentral;
 
@@ -16,13 +18,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class EstoqueCentralDTO {
 
-    private Long id;
+    private UUID id;
 
     @NotNull(message = "Id da unidade é obrigatório")
-    private Long unidadeId;
+    private UUID unidadeId;
 
     @NotNull(message = "Id do produto é obrigatorio")
-    private Long produtoId;
+    private UUID produtoId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unidadeNome;
@@ -50,11 +52,11 @@ public class EstoqueCentralDTO {
     private Boolean ativo;
 
     public EstoqueCentralDTO(EstoqueCentral entity) {
-        this.id = entity.getId();
-        this.unidadeId = entity.getUnidade().getId();
+        this.id = entity.getPublicId();
+        this.unidadeId = entity.getUnidade().getPublicId();
         this.unidadeNome = entity.getUnidade().getNome();
         this.unidadeSigla = entity.getUnidade().getSigla();
-        this.produtoId = entity.getProduto().getId();
+        this.produtoId = entity.getProduto().getPublicId();
         this.produtoNome = entity.getProduto().getNome();
         this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
         this.quantidadeAtual = entity.getQuantidadeAtual();

@@ -1,6 +1,7 @@
 package com.sgl.dto;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import com.sgl.model.HistoricoLaboratorio;
 
@@ -15,13 +16,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class HistoricoLaboratorioDTO {
 	
-	private Long id;
+	private UUID id;
 	
-	private Long laboratorioId;
+	private UUID laboratorioId;
 	
 	private String laboratorioNome;
 	
-	private Long produtoId;
+	private UUID produtoId;
 	
 	private String produtoNome;
 	
@@ -31,20 +32,20 @@ public class HistoricoLaboratorioDTO {
 	
 	private LocalDate dataRecebimento;
 	
-	private Long pedidoId;
+	private UUID pedidoId;
 	
 	private Boolean ativo;
 	
 	public HistoricoLaboratorioDTO(HistoricoLaboratorio entity) {
-		this.id = entity.getId();
-		this.laboratorioId = entity.getLaboratorio().getId();
+		this.id = entity.getPublicId();
+		this.laboratorioId = entity.getLaboratorio().getPublicId();
 		this.laboratorioNome = entity.getLaboratorio().getNome();
-		this.produtoId = entity.getProduto().getId();
+		this.produtoId = entity.getProduto().getPublicId();
 		this.produtoNome = entity.getProduto().getNome();
 		this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
 		this.quantidade = entity.getQuantidade();
 		this.dataRecebimento = entity.getDataRecebimento();
-		this.pedidoId = entity.getPedido() != null ? entity.getPedido().getId() : null;
+		this.pedidoId = entity.getPedido() != null ? entity.getPedido().getPublicId() : null;
 		this.ativo = entity.getAtivo();
 		
 	}

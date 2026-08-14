@@ -2,6 +2,7 @@ package com.sgl.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import com.sgl.model.Pedido;
 import com.sgl.model.enums.StatusPedido;
@@ -20,19 +21,19 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PedidoDTO {
 
-	private Long id;
+	private UUID id;
 	
 	@NotNull(message = "Id do usuario é obrigatorio")
-	private Long usuarioId;
+	private UUID usuarioId;
 	
 	private String usuarioNome;
 	
 	@NotNull(message = "Id do laboratório é obrigatório")
-	private Long laboratorioId;
+	private UUID laboratorioId;
 	
 	private String laboratorioNome;
 	
-	private Long projetoId;
+	private UUID projetoId;
 	
 	private String projetoNome;
 	
@@ -51,12 +52,12 @@ public class PedidoDTO {
 	
 	public PedidoDTO(Pedido entity) {
 		
-		this.id = entity.getId();
-		this.usuarioId = entity.getUsuario().getId();
+		this.id = entity.getPublicId();
+		this.usuarioId = entity.getUsuario().getPublicId();
 		this.usuarioNome = entity.getUsuario().getNome();
-		this.laboratorioId = entity.getLaboratorio().getId();
+		this.laboratorioId = entity.getLaboratorio().getPublicId();
 		this.laboratorioNome = entity.getLaboratorio().getNome();
-		this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getId() : null;
+		this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
 		this.projetoNome = entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
 		this.dataSolicitacao = entity.getDataSolicitacao();
 		this.status = entity.getStatus();

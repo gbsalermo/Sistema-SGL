@@ -2,6 +2,7 @@ package com.sgl.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,9 +10,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ConsumoProdutoLaboratorioDTO {
-    private Long laboratorioId;
+    private UUID laboratorioId;
     private String laboratorioNome;
-    private Long produtoId;
+    private UUID produtoId;
     private String produtoNome;
     private String produtoUnidadeArmazenamento;
     private LocalDate dataInicio;

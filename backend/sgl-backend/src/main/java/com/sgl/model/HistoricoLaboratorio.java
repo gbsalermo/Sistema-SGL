@@ -2,6 +2,7 @@ package com.sgl.model;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,6 +34,9 @@ public class HistoricoLaboratorio implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	
+	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "laboratorio_id", nullable = false)
