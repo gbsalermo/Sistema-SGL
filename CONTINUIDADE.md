@@ -559,111 +559,13 @@ docs/testes.md
 
 `JSON_EXEMPLOS.md` reúne exemplos para unidade, laboratório, usuário, estagiário, produto, projeto, estoque, lote, descarte, pedido, aprovação, rejeição, entrega, cancelamento, movimentações, histórico e consultas.
 
-## Correção estrutural em andamento — UUID público
+## Autenticação — PRÓXIMA FASE
 
-Foi aprovada a separação entre identificadores internos e identificadores públicos para impedir a exposição direta de IDs sequenciais da base de dados pela API.
+### Local simulada
 
-Padrão definido:
+Agora que os fluxos críticos do PostgreSQL foram estabilizados, a próxima fase planejada é implementar autenticação local simulada.
 
-```text
-Long id
-→ chave primária interna
-→ relacionamentos JPA
-→ foreign keys
-→ bloqueios e consultas internas quando aplicável
-→ não deve ser exposto pela API
-
-UUID publicId
-→ identificador externo
-→ único
-→ imutável
-→ utilizado por DTOs, endpoints e frontend
-```
-
-Entidades definidas com `publicId`:
-
-```text
-Usuario
-Unidade
-Laboratorio
-Produto
-EstoqueCentral
-Lote
-Projeto
-Pedido
-ItemPedido
-MovimentacaoEstoque
-HistoricoLaboratorio
-```
-
-`Estagiario` utiliza o `publicId` herdado de `Usuario`.
-
-### Motivo da correção
-
-IDs numéricos sequenciais permitem inferir e enumerar recursos, por exemplo `27`, `26`, `25` etc. O UUID público reduz essa previsibilidade sem alterar a estratégia de PK/FK interna baseada em `Long`.
-
-O UUID público não substitui autorização. Quando autenticação/autorização forem implementadas, o backend ainda deverá validar se o usuário autenticado pode acessar cada recurso.
-
-### Estado atual da correção
-
-Concluído nesta branch:
-
-```text
-→ publicId adicionado às entidades definidas
-→ geração automática via @PrePersist + UUID.randomUUID()
-→ V2 preparada para criar public_id UUID, preencher registros existentes, aplicar NOT NULL e UNIQUE
-→ PostgreSQL já apresentou public_id nas tabelas migradas
-→ repositories receberam findByPublicId(UUID publicId)
-→ DTOs migrados para UUID nos identificadores externos
-→ mapeamentos de DTO alterados de getId() para getPublicId()
-→ AprovarPedidoDTO ajustado para UUID, inclusive validação de IDs duplicados com Set<UUID>
-→ verificação por grep não encontrou Long ...Id nem getId() remanescentes no pacote dto
-```
-
-### PENDENTE
-
-A correção ainda não está concluída de ponta a ponta.
-
-Próximas etapas obrigatórias:
-
-```text
-Services
-→ trocar IDs recebidos externamente de Long para UUID
-→ usar findByPublicId(UUID) quando o identificador vier de DTO/controller/API
-→ preservar Long id para operações puramente internas, FKs e bloqueios quando adequado
-
-Controllers
-→ trocar @PathVariable Long e @RequestParam Long referentes a entidades por UUID
-→ garantir que nenhum Long id interno seja recebido ou devolvido pela API
-
-Testes
-→ atualizar testes afetados pela mudança de contrato
-→ executar mvn test completo
-→ validar criação, consulta, atualização e fluxos de Pedido
-→ validar regressões em estoque, FEFO/FIFO, histórico e concorrência quando aplicável
-
-Validação final
-→ procurar Longs usados como identificadores externos fora da camada interna
-→ revisar DTOs, services e controllers por uso indevido de getId()/findById()
-→ testar endpoints no Postman usando exclusivamente UUID público
-```
-
-A correção somente deverá ser considerada concluída após Services, Controllers e testes utilizarem corretamente o contrato externo baseado em UUID.
-
-## Autenticação e auditoria local — APÓS O FRONTEND
-
-A autenticação local simulada e a migração da auditoria para o usuário autenticado foram deliberadamente adiadas para depois da implementação e estabilização inicial do frontend.
-
-Até essa etapa:
-
-```text
-→ manter usuarioId temporário nos endpoints auditáveis
-→ não criar ainda contexto de usuário autenticado para substituir esses IDs
-→ preservar o BCrypt já implementado
-→ manter a auditoria atual funcionando com os identificadores temporários
-```
-
-Quando a etapa for iniciada, o objetivo será:
+Objetivo:
 
 ```text
 login local
@@ -781,19 +683,16 @@ integrações corporativas
 
 ## Próximos passos gerais
 
-1. concluir a correção estrutural de UUID público nos Services e Controllers;
-2. atualizar e executar os testes afetados pela mudança de contrato externo;
-3. executar `mvn test` completo novamente e registrar o total atualizado com o teste de concorrência;
-4. concluir as demais correções estruturais pendentes do backend;
-5. implementar OpenAPI/Swagger;
-6. iniciar e estabilizar o frontend;
-7. implementar autenticação local simulada;
-8. remover `usuarioId` temporário dos endpoints auditáveis e usar contexto autenticado;
-9. garantir auditoria de `ENTRADA`, `SAIDA`, `DESCARTE` e `DEVOLUCAO` com executor autenticado real;
-10. revisar autorização por `Perfil`;
-11. deploy da primeira versão;
-12. integração futura com autenticação corporativa;
-13. pós-protótipo.
+1. executar `mvn test` completo novamente e registrar o total atualizado com o teste de concorrência;
+2. implementar autenticação local simulada;
+3. remover `usuarioId` temporário dos endpoints auditáveis e usar contexto autenticado;
+4. garantir auditoria de `DEVOLUCAO` com executor autenticado real;
+5. revisar autorização por `Perfil`;
+6. OpenAPI/Swagger;
+7. frontend;
+8. deploy da primeira versão;
+9. integração futura com autenticação corporativa;
+10. pós-protótipo.
 
 ## Documentos de referência
 
@@ -837,33 +736,15 @@ integrações corporativas
 | 13/08/2026 | Consultas por projeto/laboratório/período e histórico geral validadas |
 | 13/08/2026 | Consistência global `EstoqueCentral = soma dos lotes` validada com diferença zero |
 | 13/08/2026 | Criado e executado com sucesso `PedidoConcorrenciaIntegrationTest` |
-| 14/08/2026 | Ordem de desenvolvimento revisada: autenticação e auditoria local passam para depois do frontend |
-| 14/08/2026 | Iniciada correção estrutural para separar `Long id` interno de `UUID publicId` externo; entidades/repositories/DTOs avançados e Services/Controllers/testes permanecem pendentes |
 
 ### Próxima ação ao retomar
 
 ```text
-1. continuar a correção UUID público
-→ atualizar Services para receber UUID nos identificadores externos
-→ usar findByPublicId() quando o identificador vier da API/DTO
-→ manter Long nas operações internas quando adequado
+1. executar mvn test completo
+→ confirmar que toda a suíte, incluindo PedidoConcorrenciaIntegrationTest, passa em conjunto
+→ registrar o novo total de testes
 
-2. atualizar Controllers
-→ trocar PathVariables/RequestParams de entidades para UUID
-→ impedir exposição de Long id pela API
-
-3. atualizar e executar testes
-→ validar endpoints com UUID no Postman
-→ executar mvn test completo
-→ revisar possíveis regressões em estoque/pedidos/histórico/concorrência
-
-4. concluir demais correções estruturais pendentes
-
-5. implementar OpenAPI/Swagger
-
-6. iniciar o frontend
-
-7. somente após o frontend, iniciar autenticação + auditoria local
+2. iniciar autenticação local simulada
 → definir fluxo de login
 → usar BCrypt existente
 → criar contexto de usuário autenticado
