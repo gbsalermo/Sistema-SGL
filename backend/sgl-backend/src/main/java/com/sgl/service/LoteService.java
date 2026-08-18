@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,8 +11,10 @@ import com.sgl.dto.AtualizarLoteDTO;
 import com.sgl.dto.LoteDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
 import com.sgl.model.Produto;
+import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LoteRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class LoteService {
 
     private final LoteRepository loteRepository;
+    private final EstoqueCentralRepository estoqueCentralRepository;
 
     @Transactional(readOnly = true)
     public List<LoteDTO> listarTodos() {
@@ -35,16 +39,19 @@ public class LoteService {
     }
 
     @Transactional(readOnly = true)
-    public LoteDTO buscarPorId(Long id) {
-        Lote lote = loteRepository.findById(id)
+    public LoteDTO buscarPorId(UUID id) {
+        Lote lote = loteRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
 
         return new LoteDTO(lote);
     }
 
     @Transactional(readOnly = true)
-    public List<LoteDTO> listarPorEstoque(Long estoqueId) {
-        return loteRepository.findByEstoqueCentralId(estoqueId)
+    public List<LoteDTO> listarPorEstoque(UUID estoqueId) {
+        EstoqueCentral estoque = estoqueCentralRepository.findByPublicId(estoqueId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", estoqueId));
+
+        return loteRepository.findByEstoqueCentralId(estoque.getId())
                 .stream()
                 .map(LoteDTO::new)
                 .toList();
@@ -60,8 +67,8 @@ public class LoteService {
     }
 
     @Transactional
-    public LoteDTO atualizar(Long id, AtualizarLoteDTO dto) {
-        Lote lote = loteRepository.findById(id)
+    public LoteDTO atualizar(UUID id, AtualizarLoteDTO dto) {
+        Lote lote = loteRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
 
         boolean numeroDuplicado = loteRepository
@@ -99,8 +106,8 @@ public class LoteService {
     }
 
     @Transactional
-    public void inativar(Long id) {
-        Lote lote = loteRepository.findById(id)
+    public void inativar(UUID id) {
+        Lote lote = loteRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
 
         if (lote.getQuantidadeDisponivel() > 0) {
