@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,48 +26,49 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EstagiarioController {
 
-	private final EstagiarioService estagiarioService;
+    private final EstagiarioService estagiarioService;
 
-	@GetMapping
-	public ResponseEntity<List<EstagiarioDTO>> listarTodos() {
-		return ResponseEntity.ok(estagiarioService.listarTodos());
-	}
+    @GetMapping
+    public ResponseEntity<List<EstagiarioDTO>> listarTodos() {
+        return ResponseEntity.ok(estagiarioService.listarTodos());
+    }
 
-	@GetMapping("/{id}")
-	public ResponseEntity<EstagiarioDTO> buscarPorId(@PathVariable Long id) {
-		return ResponseEntity.ok(estagiarioService.buscarPorId(id));
-	}
+    @GetMapping("/{id}")
+    public ResponseEntity<EstagiarioDTO> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(estagiarioService.buscarPorId(id));
+    }
 
-	@GetMapping("/por-laboratorio")
-	public ResponseEntity<List<EstagiarioDTO>> listarPorLaboratorio(@RequestParam Long laboratorioId) {
-		return ResponseEntity.ok(estagiarioService.listarPorLaboratorio(laboratorioId));
-	}
+    @GetMapping("/por-laboratorio")
+    public ResponseEntity<List<EstagiarioDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
+        return ResponseEntity.ok(estagiarioService.listarPorLaboratorio(laboratorioId));
+    }
 
-	@GetMapping("/ativos")
-	public ResponseEntity<List<EstagiarioDTO>> listarAtivos() {
-		return ResponseEntity.ok(estagiarioService.listarAtivos());
-	}
+    @GetMapping("/ativos")
+    public ResponseEntity<List<EstagiarioDTO>> listarAtivos() {
+        return ResponseEntity.ok(estagiarioService.listarAtivos());
+    }
 
-	@PostMapping
-	public ResponseEntity<EstagiarioDTO> criar(@Valid @RequestBody EstagiarioDTO dto) {
-		EstagiarioDTO novoEstagiario = estagiarioService.criar(dto);
-		return ResponseEntity.status(HttpStatus.CREATED).body(novoEstagiario);
-	}
+    @PostMapping
+    public ResponseEntity<EstagiarioDTO> criar(@Valid @RequestBody EstagiarioDTO dto) {
+        EstagiarioDTO novoEstagiario = estagiarioService.criar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novoEstagiario);
+    }
 
-	@PutMapping("/{id}")
-	public ResponseEntity<EstagiarioDTO> atualizar(@PathVariable Long id, @Valid @RequestBody EstagiarioDTO dto) {
-		return ResponseEntity.ok(estagiarioService.atualizar(id, dto));
-	}
+    @PutMapping("/{id}")
+    public ResponseEntity<EstagiarioDTO> atualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody EstagiarioDTO dto) {
+        return ResponseEntity.ok(estagiarioService.atualizar(id, dto));
+    }
 
-	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deletar(@PathVariable Long id) {
-		estagiarioService.deletar(id);
-		return ResponseEntity.noContent().build();
-	}
-	
-	//Encerrar estagio
-	@PutMapping("/{id}/encerrar")
-	public ResponseEntity<EstagiarioDTO> encerrarEstagio(@PathVariable Long id) {
-	    return ResponseEntity.ok(estagiarioService.encerrarEstagio(id));
-	}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
+        estagiarioService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/encerrar")
+    public ResponseEntity<EstagiarioDTO> encerrarEstagio(@PathVariable UUID id) {
+        return ResponseEntity.ok(estagiarioService.encerrarEstagio(id));
+    }
 }
