@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,34 +24,35 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/unidades")
 @RequiredArgsConstructor
 public class UnidadeController {
-	
-	private final UnidadeService unidadeService;
-	
-	@GetMapping
-	public ResponseEntity<List<UnidadeDTO>> listarTodos(){
-		return ResponseEntity.ok(unidadeService.listarTodos());
-	}
 
-	@GetMapping("/{id}")
-	public ResponseEntity<UnidadeDTO> buscarPorId(@PathVariable Long id){
-		return ResponseEntity.ok(unidadeService.buscarPorId(id));
-	}
-	
-	@PostMapping
-	public ResponseEntity<UnidadeDTO> criar(@Valid @RequestBody UnidadeDTO dto){
-		UnidadeDTO novaUnidade = unidadeService.criar(dto);
-		return ResponseEntity.status(HttpStatus.CREATED).body(novaUnidade);
-	}
-	
-	@PutMapping("/{id}")
-	public ResponseEntity<UnidadeDTO> atualizar(@PathVariable Long id, @Valid @RequestBody UnidadeDTO dto){
-		return ResponseEntity.ok(unidadeService.atualizar(id, dto));
-	}
-	
-	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deletar(@PathVariable Long id) {
-		unidadeService.deletar(id);
-		return ResponseEntity.noContent().build();
-	}
+    private final UnidadeService unidadeService;
+
+    @GetMapping
+    public ResponseEntity<List<UnidadeDTO>> listarTodos() {
+        return ResponseEntity.ok(unidadeService.listarTodos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UnidadeDTO> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(unidadeService.buscarPorId(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<UnidadeDTO> criar(@Valid @RequestBody UnidadeDTO dto) {
+        UnidadeDTO novaUnidade = unidadeService.criar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novaUnidade);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UnidadeDTO> atualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody UnidadeDTO dto) {
+        return ResponseEntity.ok(unidadeService.atualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
+        unidadeService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
 }
-
