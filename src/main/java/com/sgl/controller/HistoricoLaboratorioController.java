@@ -2,6 +2,7 @@ package com.sgl.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,13 +30,13 @@ public class HistoricoLaboratorioController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<HistoricoLaboratorioDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<HistoricoLaboratorioDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(historicoLaboratorioService.buscarPorId(id));
     }
 
     @GetMapping("/laboratorio/{laboratorioId}")
     public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorLaboratorio(
-            @PathVariable Long laboratorioId) {
+            @PathVariable UUID laboratorioId) {
         return ResponseEntity.ok(
                 historicoLaboratorioService.listarPorLaboratorio(laboratorioId)
         );
@@ -43,19 +44,19 @@ public class HistoricoLaboratorioController {
 
     @GetMapping("/produto/{produtoId}")
     public ResponseEntity<List<HistoricoLaboratorioDTO>> listarProduto(
-            @PathVariable Long produtoId) {
+            @PathVariable UUID produtoId) {
         return ResponseEntity.ok(historicoLaboratorioService.listarPorProduto(produtoId));
     }
 
     @GetMapping("/pedido/{pedidoId}")
     public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorPedido(
-            @PathVariable Long pedidoId) {
+            @PathVariable UUID pedidoId) {
         return ResponseEntity.ok(historicoLaboratorioService.listarPorPedido(pedidoId));
     }
 
     @GetMapping("/laboratorio/{laboratorioId}/periodo")
     public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorPeriodo(
-            @PathVariable Long laboratorioId,
+            @PathVariable UUID laboratorioId,
             @RequestParam LocalDate dataInicio,
             @RequestParam LocalDate dataFim) {
 
@@ -68,14 +69,10 @@ public class HistoricoLaboratorioController {
         );
     }
 
-    /**
-     * Indicadores de consumo efetivo de um produto pelo laboratório no período.
-     * A fonte são os materiais entregues e registrados no histórico.
-     */
     @GetMapping("/laboratorio/{laboratorioId}/produto/{produtoId}/consumo")
     public ResponseEntity<ConsumoProdutoLaboratorioDTO> calcularConsumoProduto(
-            @PathVariable Long laboratorioId,
-            @PathVariable Long produtoId,
+            @PathVariable UUID laboratorioId,
+            @PathVariable UUID produtoId,
             @RequestParam LocalDate dataInicio,
             @RequestParam LocalDate dataFim) {
 
@@ -89,14 +86,10 @@ public class HistoricoLaboratorioController {
         );
     }
 
-    /**
-     * Materiais efetivamente recebidos por um projeto dentro do laboratório no
-     * período informado.
-     */
     @GetMapping("/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo")
     public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorProjetoEPeriodo(
-            @PathVariable Long laboratorioId,
-            @PathVariable Long projetoId,
+            @PathVariable UUID laboratorioId,
+            @PathVariable UUID projetoId,
             @RequestParam LocalDate dataInicio,
             @RequestParam LocalDate dataFim) {
 
