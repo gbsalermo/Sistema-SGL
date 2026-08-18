@@ -1,249 +1,47 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 14/08/2026  
-**Fase atual:** backend estabilizado em PostgreSQL real; validação manual crítica concluída; concorrência validada; etapa atual = correções estruturais antes do OpenAPI/Swagger
+**Última atualização:** 18/08/2026  
+**Branch atual da correção:** `refactor/public-uuid`  
+**Fase atual:** correção estrutural de identificadores públicos antes do OpenAPI/Swagger
 
-Este arquivo registra o estado atual do backend, decisões consolidadas e o ponto exato para continuidade do desenvolvimento. Deve ser tratado como fonte principal de contexto ao retomar o projeto.
+Este arquivo registra o estado consolidado do backend, as decisões arquiteturais já aprovadas e o ponto exato de continuidade.
 
-## Estado atual
+## Regra de trabalho para correções estruturais
 
-### Banco e migrations
-
-PostgreSQL está configurado e validado no profile `dev`.
-
-Banco local:
+Toda correção estrutural deve seguir o fluxo:
 
 ```text
-sgl
+branch própria da correção
+→ análise
+→ avaliação
+→ revisão
+→ aprovação
+→ Pull Request
+→ main
 ```
 
-A migration inicial está concluída:
+Mudanças aprovadas devem ser registradas neste arquivo com o motivo da alteração.
+
+## Estado geral do backend
+
+O backend está estabilizado em PostgreSQL real com Flyway e os fluxos críticos já foram validados manualmente.
+
+Principais regras já consolidadas:
 
 ```text
-src/main/resources/db/migration/V1__create_initial_schema.sql
+Produto = catálogo
+Lote = validade + quantidade disponível
+Produto perecível → saída FEFO
+Produto não perecível → saída FIFO
+EstoqueCentral.quantidadeAtual = soma dos lotes
+MovimentacaoEstoque = auditoria das operações físicas
+Pedido só baixa estoque na aprovação
+Entrega não baixa estoque novamente
+Cancelamento de pedido aprovado restaura os lotes exatos consumidos
 ```
 
-A V1 cria:
-
-```text
-unidades
-produtos
-laboratorios
-usuarios
-estagiarios
-estoque_central
-lote
-projetos
-pedidos
-itens_pedido
-movimentacao_estoque
-historico_laboratorio
-```
-
-O Flyway foi validado em banco vazio:
-
-```text
-schema vazio
-→ flyway_schema_history criado
-→ V1 aplicada
-→ schema em versão v1
-→ Hibernate ddl-auto=validate validou o modelo
-```
-
-### Regra definitiva de migrations
-
-```text
-V1 está congelada e não deve mais ser alterada.
-```
-
-Toda mudança estrutural futura deverá gerar nova migration:
-
-```text
-V2__descricao.sql
-V3__descricao.sql
-...
-```
-
-## Profiles
-
-Configuração atual:
-
-```text
-application.properties
-→ configurações gerais
-→ dev ativo temporariamente para facilitar execução local
-
-application-dev.properties
-→ PostgreSQL + Flyway
-
-application-test.properties
-→ H2 em memória
-→ Flyway desabilitado
-```
-
-Credenciais PostgreSQL permanecem externas ao repositório:
-
-```properties
-spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/sgl}
-spring.datasource.username=${DB_USER:postgres}
-spring.datasource.password=${DB_PASSWD:}
-```
-
-O profile `dev` fixado no arquivo principal é apenas conveniência local e deverá ser removido antes do ambiente de produção.
-
-## DataInitializer
-
-O `DataInitializer` foi utilizado com sucesso para popular PostgreSQL com dados de desenvolvimento.
-
-Foram carregados:
-
-```text
-unidades
-laboratórios
-usuários
-estagiário
-produtos
-estoques centrais
-lotes
-projetos
-pedidos
-itens de pedido
-```
-
-Com banco persistente, o initializer não pode inserir novamente os mesmos dados em toda inicialização por causa de constraints únicas como `unidades.sigla`.
-
-O initializer deve permanecer restrito ao ambiente `dev`.
-
-## Senhas com BCrypt — VALIDADO
-
-O `SecurityConfig` possui `BCryptPasswordEncoder`.
-
-O `UsuarioService` utiliza BCrypt na criação e na alteração de senha.
-
-O `DataInitializer` também grava senhas codificadas.
-
-Fluxo já validado:
-
-```text
-DROP DATABASE sgl
-→ CREATE DATABASE sgl
-→ Flyway executou V1
-→ DataInitializer recriou os registros
-→ usuários persistidos com hashes BCrypt
-```
-
-Nenhuma migration V2 foi necessária, pois `senha VARCHAR(255)` já comporta o hash.
-
-## Testes automatizados
-
-A suíte anterior estava validada em 12/08/2026:
-
-```text
-Tests run: 20
-Failures: 0
-Errors: 0
-Skipped: 0
-BUILD SUCCESS
-```
-
-Distribuição anterior:
-
-```text
-HistoricoLaboratorioServiceTest → 3
-MovimentacaoEstoqueServiceTest → 7
-PedidoServiceTest → 9
-SglApplicationTests → 1
-```
-
-Em 13/08/2026 foi adicionado:
-
-```text
-PedidoConcorrenciaIntegrationTest
-```
-
-Arquivo:
-
-```text
-backend/sgl-backend/src/test/java/com/sgl/service/PedidoConcorrenciaIntegrationTest.java
-```
-
-O novo teste foi executado com sucesso isoladamente e valida dois pedidos concorrentes disputando o mesmo saldo.
-
-O `SglApplicationTests` utiliza:
-
-```java
-@ActiveProfiles("test")
-```
-
-Logo:
-
-```text
-mvn test
-→ profile test
-→ H2 em memória
-→ não depende do PostgreSQL de desenvolvimento
-```
-
-Ao retomar, é recomendável executar a suíte completa novamente para registrar formalmente o novo total de testes.
-
-## Produto, Lote e EstoqueCentral
-
-`Produto` continua sendo catálogo.
-
-A validade operacional pertence ao `Lote`.
-
-```text
-Produto perecível
-→ lote exige dataValidade
-→ saída FEFO
-
-Produto não perecível
-→ lote sem validade
-→ saída FIFO
-```
-
-`EstoqueCentral` mantém somente a referência ao produto e não duplica `produto.nome` na tabela.
-
-Regra estrutural validada no PostgreSQL:
-
-```text
-EstoqueCentral.quantidadeAtual
-=
-soma de Lote.quantidadeDisponivel
-```
-
-Em 13/08/2026 foi executada uma conferência global de todos os estoques e todas as diferenças resultaram em `0`.
-
-## MovimentacaoEstoque
-
-Continua sendo a entidade de auditoria das operações físicas.
-
-Cada lote afetado gera uma movimentação própria, permitindo rastrear:
-
-```text
-produto
-lote
-quantidade
-pedido
-laboratório
-usuário responsável
-saldo anterior
-saldo posterior
-```
-
-`MovimentacaoEstoqueService` centraliza:
-
-```text
-entrada
-saída
-descarte
-devolução/restauração
-```
-
-## Pedido
-
-Fluxo atual:
+Fluxo atual de Pedido:
 
 ```text
 PENDENTE
@@ -253,334 +51,400 @@ PENDENTE
 └── REJEITADO
 ```
 
-### Criação
+## Banco e migrations
+
+PostgreSQL permanece como banco do profile `dev`.
+
+A V1 está congelada:
 
 ```text
-valida usuário/laboratório/projeto/produto
-→ cria itens
-→ salva pedido como PENDENTE
-→ não reduz estoque
-→ não reserva lote
+src/main/resources/db/migration/V1__create_initial_schema.sql
 ```
 
-### Aprovação
+Regra definitiva:
 
 ```text
-PedidoService
-→ valida status e quantidades
-→ localiza EstoqueCentral
-→ chama MovimentacaoEstoqueService.registrarSaida()
-→ FEFO/FIFO escolhe lotes
-→ reduz lotes
-→ reduz saldo agregado
-→ registra SAIDA por lote
-→ pedido fica APROVADO
+V1 não deve mais ser alterada.
+Toda mudança estrutural futura deve gerar V2, V3, V4...
 ```
 
-Endpoint correto:
+A correção de UUID utiliza uma V2 responsável por adicionar `public_id UUID`, preencher registros existentes, aplicar `NOT NULL` e `UNIQUE`.
 
-```http
-PUT /api/v1/pedidos/{pedidoId}/aprovar
-```
-
-O body usa `itemId`, não `produtoId`.
-
-### Entrega
+Entidades/tabelas contempladas:
 
 ```text
-pedido APROVADO
-→ cria HistoricoLaboratorio
-→ não baixa estoque novamente
-→ pedido fica ENTREGUE
+Usuario / usuarios
+Unidade / unidades
+Laboratorio / laboratorios
+Produto / produtos
+EstoqueCentral / estoque_central
+Lote / lote
+Projeto / projetos
+Pedido / pedidos
+ItemPedido / itens_pedido
+MovimentacaoEstoque / movimentacao_estoque
+HistoricoLaboratorio / historico_laboratorio
 ```
 
-### Cancelamento
+`Estagiario` utiliza o `publicId` herdado de `Usuario`.
 
-Se o pedido estava aprovado:
+## Correção estrutural — UUID público
+
+### Problema que motivou a correção
+
+A API utilizava diretamente IDs sequenciais `Long`. Isso permitia inferir a existência de outros registros a partir de um identificador conhecido.
+
+Exemplo do problema:
 
 ```text
-consulta SAIDAS do pedido
-→ identifica exatamente os lotes usados
-→ restaura os mesmos lotes
-→ restaura EstoqueCentral
-→ pedido fica CANCELADO
+id = 27
+→ torna previsível a existência de IDs próximos como 22, 23, 24, 25...
 ```
 
-## Validação manual com PostgreSQL — CONCLUÍDA EM 13/08/2026
+### Arquitetura aprovada
 
-A bateria manual crítica foi concluída no PostgreSQL real.
+O `Long id` NÃO foi removido das entidades.
 
-### Entrada não perecível — VALIDADO
-
-Validado:
+Padrão definitivo:
 
 ```text
-novo lote persistido
-quantidadeInicial correta
-quantidadeDisponivel correta
-dataValidade = null
-EstoqueCentral incrementado
-MovimentacaoEstoque ENTRADA registrada
+Long id
+→ chave primária interna
+→ relacionamentos JPA
+→ foreign keys
+→ locks
+→ consultas técnicas internas
+→ não deve atravessar a API
+
+UUID publicId
+→ identificador público
+→ DTOs
+→ endpoints
+→ frontend
+→ não sequencial
+→ único
+→ imutável
 ```
 
-### FEFO — VALIDADO
-
-Cenário:
+Fluxo esperado:
 
 ```text
-POSTMAN-FEFO-A = 4 unidades
-POSTMAN-FEFO-B = 10 unidades
-pedido aprovado = 6 unidades
+Controller recebe UUID
+→ Service usa findByPublicId(UUID)
+→ entidade é localizada
+→ backend passa a usar Long id internamente quando necessário
 ```
 
-Resultado confirmado:
+Exemplo:
 
 ```text
-POSTMAN-FEFO-A: 4 → 0
-POSTMAN-FEFO-B: 10 → 8
+UUID do laboratório
+→ laboratorioRepository.findByPublicId(uuid)
+→ Laboratorio encontrado
+→ laboratorio.getId()
+→ query interna por FK Long
 ```
 
-Movimentações confirmadas:
+### Entidades — CONCLUÍDO
+
+As 11 entidades públicas possuem `publicId` com geração automática por UUID e persistência imutável.
+
+`Estagiario` herda o identificador de `Usuario`.
+
+### Migration V2 — PREPARADA
+
+A V2 foi preparada com o padrão:
 
 ```text
-SAIDA 4 → lote A
-SAIDA 2 → lote B
+ADD COLUMN public_id UUID
+→ UPDATE com gen_random_uuid() para registros existentes
+→ SET NOT NULL
+→ UNIQUE
 ```
 
-`EstoqueCentral` também reduziu exatamente 6 unidades.
-
-### FIFO — VALIDADO
-
-O teste manual inicialmente utilizou um estoque que já possuía o lote inicial `INI-MIC-IB`.
-
-O sistema consumiu corretamente esse lote antes dos lotes `POSTMAN-FIFO-A` e `POSTMAN-FIFO-B`, comprovando que a regra considera todos os lotes ativos e ordena por entrada/id.
-
-Conclusão:
-
-```text
-produto não perecível
-→ lote mais antigo disponível é consumido primeiro
-```
-
-Não foi alterada a regra para privilegiar lotes recém-criados, pois isso seria incorreto.
-
-### Lote vencido não atende pedido — VALIDADO
-
-Para montar o cenário foi criado lote válido e depois sua validade foi alterada diretamente no PostgreSQL, já que a API corretamente impede cadastrar um lote já vencido.
-
-Cenário final:
-
-```text
-EstoqueCentral = 20
-saldo utilizável em lotes válidos = 8
-pedido = 9
-```
-
-Resultado confirmado:
-
-```text
-HTTP 400
-Estoque utilizável insuficiente. Disponível nos lotes válidos: 8, solicitado: 9
-```
-
-O lote vencido foi ignorado na aprovação.
-
-### Descarte de vencidos — VALIDADO
-
-Foi descartada quantidade 5 do lote vencido.
-
-Validado:
-
-```text
-somente lote vencido reduzido
-EstoqueCentral -5
-MovimentacaoEstoque = DESCARTE_VENCIMENTO
-pedidoId = null
-```
-
-### Cancelamento de pedido aprovado — VALIDADO
-
-Validado:
-
-```text
-pedido → CANCELADO
-os mesmos lotes consumidos foram restaurados
-EstoqueCentral recebeu a quantidade de volta
-movimentações DEVOLUCAO vinculadas aos lotes corretos
-```
-
-### Entrega sem segunda baixa — VALIDADO
-
-Validado:
-
-```text
-pedido APROVADO → ENTREGUE
-lotes não sofrem nova redução
-EstoqueCentral não sofre nova redução
-não é criada segunda SAIDA
-```
-
-### HistoricoLaboratorio — VALIDADO
-
-A entrega criou registro em `historico_laboratorio` com:
-
-```text
-laboratório
-produto
-quantidade aprovada
-dataRecebimento
-pedido
-ativo = true
-```
-
-### Consultas Projeto × Laboratório × período — VALIDADO
-
-Foram testadas as consultas de:
-
-```text
-pedidos realizados por projeto/período
-histórico geral do laboratório por período
-materiais efetivamente recebidos por projeto/período
-período invertido
-projeto pertencente a outro laboratório
-```
-
-Importante:
-
-```text
-Pedido.dataSolicitacao
-→ representa solicitação
-
-HistoricoLaboratorio.dataRecebimento
-→ representa recebimento efetivo
-```
-
-Uma consulta de histórico por projeto pode retornar `[]` com `200 OK` quando não existe entrega vinculada àquele projeto no período. Isso é comportamento correto.
-
-### Consistência final EstoqueCentral × lotes — VALIDADO
-
-Consulta executada sobre todos os estoques:
+Inclui também:
 
 ```sql
-SELECT
-    ec.id AS estoque_id,
-    ec.produto_id,
-    ec.quantidade_atual AS saldo_estoque,
-    COALESCE(SUM(l.quantidade_disponivel), 0) AS soma_lotes,
-    ec.quantidade_atual - COALESCE(SUM(l.quantidade_disponivel), 0) AS diferenca
-FROM estoque_central ec
-LEFT JOIN lote l ON l.estoque_central_id = ec.id
-GROUP BY ec.id, ec.produto_id, ec.quantidade_atual
-ORDER BY ec.id;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 ```
 
-Resultado:
+### Repositories — CONCLUÍDO
 
-```text
-diferenca = 0 em todos os estoques
+Os repositories das entidades públicas possuem busca por:
+
+```java
+Optional<Entidade> findByPublicId(UUID publicId);
 ```
 
-## Concorrência — VALIDADO
+Consultas internas baseadas em PK/FK continuam usando `Long` quando apropriado.
 
-A criação do pedido não reserva saldo.
+Isso inclui métodos técnicos de concorrência e bloqueio pessimista, como buscas internas de estoque, lote e pedido.
 
-A saída acontece somente na aprovação.
+### DTOs — CONCLUÍDO
 
-`PedidoService.aprovar()` busca o pedido com bloqueio e `MovimentacaoEstoqueService` usa bloqueios pessimistas sobre estoque/lotes.
+Identificadores externos dos DTOs foram migrados de `Long` para `UUID`.
 
-Foi criado o teste:
+Mapeamentos externos usam:
+
+```java
+entity.getPublicId()
+```
+
+em vez de:
+
+```java
+entity.getId()
+```
+
+Foi executada a conferência:
+
+```bash
+grep -R "Long .*Id" src/main/java/com/sgl/dto
+grep -R "getId()" src/main/java/com/sgl/dto
+```
+
+Resultado após os ajustes:
 
 ```text
+nenhuma ocorrência pendente nos DTOs
+```
+
+`AprovarPedidoDTO.ItemAprovacaoDTO.itemId` também passou para UUID, incluindo a validação de duplicidade com `Set<UUID>`.
+
+### ResourceNotFoundException — AJUSTADO
+
+A exceção deixou de depender exclusivamente de `Long` e aceita identificador genérico:
+
+```java
+public ResourceNotFoundException(String recurso, Object id)
+```
+
+Motivo:
+
+```text
+operações públicas → UUID
+operações internas → Long
+```
+
+A camada de exceções não deve ficar acoplada a apenas um tipo de identificador.
+
+### Services — MIGRADOS
+
+Os services foram migrados para UUID nas operações que representam a fronteira externa da aplicação.
+
+Services revisados/migrados:
+
+```text
+UnidadeService
+LaboratorioService
+ProdutoService
+ProjetoService
+UsuarioService
+EstagiarioService
+EstoqueCentralService
+LoteService
+HistoricoLaboratorioService
+MovimentacaoEstoqueService
+PedidoService
+```
+
+Regra preservada:
+
+```text
+entrada pública → UUID
+findByPublicId(UUID)
+→ Long somente depois que a entidade já foi resolvida
+```
+
+Usos internos de `Long` foram mantidos intencionalmente em:
+
+```text
+FKs
+getId()
+existsBy...Id...
+queries internas
+bloqueios pessimistas
+FEFO/FIFO
+ordenação técnica
+restauração de lotes
+concorrência
+```
+
+No `PedidoService`, o `itemId` recebido na aprovação é comparado com `ItemPedido.publicId`.
+
+No `MovimentacaoEstoqueService`, operações chamadas diretamente pela API recebem UUID; operações internas chamadas pelo fluxo de pedido podem continuar recebendo PK `Long`.
+
+### Controllers — MIGRADOS
+
+Todos os controllers foram migrados para receber UUID nos identificadores públicos:
+
+```text
+UnidadeController
+LaboratorioController
+ProdutoController
+ProjetoController
+UsuarioController
+EstagiarioController
+EstoqueCentralController
+LoteController
+HistoricoLaboratorioController
+PedidoController
+MovimentacaoEstoqueController
+```
+
+`@PathVariable` e `@RequestParam` que identificam entidades públicas agora utilizam `UUID`.
+
+Nos endpoints temporários de movimentação, `usuarioId` também passou para UUID e é resolvido por `findByPublicId()`.
+
+## Estado atual da correção UUID
+
+Concluído estruturalmente:
+
+```text
+Entidades        ✅
+Migration V2     ✅ preparada
+Repositories     ✅
+DTOs             ✅
+Exceptions       ✅
+Services         ✅
+Controllers      ✅
+```
+
+Ainda não considerar a correção aprovada/encerrada.
+
+Falta validar o conjunto integrado.
+
+## Próxima etapa imediata — VALIDAÇÃO DA MIGRAÇÃO UUID
+
+Executar agora:
+
+```text
+1. atualizar branch local com refactor/public-uuid
+2. compilar o projeto
+3. corrigir referências restantes fora de DTO/Service/Controller
+4. revisar DataInitializer
+5. atualizar testes afetados
+6. executar mvn test
+7. iniciar aplicação com PostgreSQL/Flyway
+8. testar endpoints principais no Postman usando exclusivamente UUID público
+9. verificar que nenhum Long interno aparece nos responses ou é exigido nos endpoints
+```
+
+Buscas úteis:
+
+```bash
+grep -R "@PathVariable Long" src/main/java/com/sgl
+grep -R "@RequestParam Long .*Id" src/main/java/com/sgl
+grep -R "findById(dto.get" src/main/java/com/sgl
+grep -R "getId()" src/main/java/com/sgl/dto
+grep -R "Long .*Id" src/main/java/com/sgl/dto
+```
+
+As ocorrências restantes de `Long` devem ser avaliadas caso a caso. `Long` interno não é erro por si só.
+
+## Testes já existentes antes da migração UUID
+
+A suíte anterior estava validada com:
+
+```text
+HistoricoLaboratorioServiceTest
+MovimentacaoEstoqueServiceTest
+PedidoServiceTest
+SglApplicationTests
 PedidoConcorrenciaIntegrationTest
 ```
 
-Cenário:
+O teste de concorrência valida dois pedidos concorrentes disputando o mesmo saldo:
 
 ```text
 Estoque/Lote = 10
 Pedido A = 7
 Pedido B = 7
-→ duas threads iniciam a aprovação simultaneamente
+→ somente um deve aprovar
+→ saldo final = 3
+→ nenhuma quantidade negativa
 ```
 
-O teste valida:
+Como assinaturas de Services e DTOs mudaram para UUID, os testes podem precisar ser atualizados antes de voltarem a compilar.
+
+## Validações manuais críticas já concluídas
+
+Em PostgreSQL real foram validados:
 
 ```text
-exatamente 1 pedido APROVADO
-exatamente 1 pedido PENDENTE
-EstoqueCentral final = 3
-Lote final = 3
-saldo nunca negativo
-total de SAIDA = 7
-somente uma movimentação SAIDA no lote
+entrada de lote
+FEFO
+FIFO
+lote vencido fora da aprovação
+estoque utilizável insuficiente
+descarte por vencimento
+cancelamento restaurando os lotes exatos
+entrega sem segunda baixa
+HistoricoLaboratorio
+consultas por projeto/laboratório/período
+consistência EstoqueCentral = soma dos lotes
+concorrência de aprovação
 ```
 
-O teste foi executado com sucesso em 13/08/2026.
+Esses fluxos não precisam ser redesenhados por causa do UUID. Após a migração, devem apenas ser retestados como regressão usando identificadores públicos.
 
-Commit que adicionou o teste:
+## Autenticação e auditoria — DECISÃO ATUAL
+
+A autenticação local simulada e a revisão final de auditoria/autorização **não serão implementadas agora**.
+
+Decisão consolidada:
 
 ```text
-e5fd297f4584fa305518199cdc7cb5a9fd3e35e5
+backend estrutural
+→ Swagger/OpenAPI
+→ frontend
+→ autenticação + auditoria local
+→ integração futura com autenticação corporativa
 ```
 
-## Consultas por projeto e laboratório
+Enquanto isso, identificadores temporários de usuário necessários para testes locais podem continuar existindo nos endpoints de desenvolvimento, porém devem utilizar UUID público.
 
-Pedidos realizados:
+A autenticação definitiva futuramente deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
 
-```http
-GET /api/v1/pedidos/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
-```
+## OpenAPI / Swagger
 
-Usa `Pedido.dataSolicitacao`.
+Swagger continua sendo a próxima grande etapa funcional após a correção UUID estar compilando e validada.
 
-Materiais efetivamente recebidos:
-
-```http
-GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
-```
-
-Usa `HistoricoLaboratorio.dataRecebimento`.
-
-Histórico geral do laboratório:
-
-```http
-GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
-```
-
-## Documentação de JSON/Postman
-
-Documentos operacionais principais:
+Antes de iniciar Swagger, garantir:
 
 ```text
-docs/JSON_EXEMPLOS.md
-docs/ENDPOINTS_INTERNOS.md
-docs/testes.md
+mvn test passando
+aplicação iniciando em dev
+V2 aplicada corretamente
+endpoints aceitando UUID
+responses sem Long interno exposto
+fluxos críticos funcionando com UUID
 ```
 
-`JSON_EXEMPLOS.md` reúne exemplos para unidade, laboratório, usuário, estagiário, produto, projeto, estoque, lote, descarte, pedido, aprovação, rejeição, entrega, cancelamento, movimentações, histórico e consultas.
+## Frontend
 
-## Autenticação — PRÓXIMA FASE
+O frontend vem após a documentação OpenAPI/Swagger.
 
-### Local simulada
+Referências já registradas:
 
-Agora que os fluxos críticos do PostgreSQL foram estabilizados, a próxima fase planejada é implementar autenticação local simulada.
+- Salvia Kit
+- Materio Vuetify
+- Vue Notus
+- Sneat Vuetify
 
-Objetivo:
+Fluxo planejado:
 
 ```text
-login local
-→ identificar usuário autenticado
-→ obter usuário pelo contexto de segurança
-→ remover usuarioId temporário dos endpoints auditáveis
-→ usar usuário real nas ENTRADAS / SAIDAS / DESCARTES / DEVOLUCOES
-→ revisar autorização por Perfil
+referências/templates
+→ Figma
+→ selecionar padrões
+→ adaptar ao fluxo do SGL
+→ componentes reutilizáveis
+→ Design System
+→ implementação frontend
 ```
 
-### Definitiva
-
-Depois da autenticação local e da estabilização do sistema, a autenticação final deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
-
-## Requisito futuro de reposição/compra
+## Requisitos futuros de reposição/compra
 
 Requisito informado pelo cliente:
 
@@ -590,109 +454,29 @@ Na compra existe prazo mínimo de validade por produto.
 Compra só ocorre quando estoque estiver em nível crítico segundo histórico dos últimos 5 anos.
 ```
 
-Interpretação atual:
+Estado:
 
 ```text
 FEFO → implementado e validado
-prazo mínimo de validade por produto → pós-protótipo / nova migration se necessário
-nível crítico → baseado em saída histórica, não simplesmente quantidade de pedidos
-```
-
-Para cálculo histórico, a fonte correta será `MovimentacaoEstoque` com `tipoMovimentacao = SAIDA`.
-
-## Frontend
-
-Referências registradas:
-
-- TikTok: https://vt.tiktok.com/ZS43bGhrK/
-- Salvia Kit: https://github.com/salvia-kit/salvia-kit
-- Materio Vuetify: https://github.com/themeselection/materio-vuetify-vuejs-admin-template-free
-- Vue Notus: https://github.com/creativetimofficial/vue-notus
-- Sneat Vuetify: https://github.com/themeselection/sneat-vuetify-vuejs-admin-template-free
-
-Fluxo planejado:
-
-```text
-Templates / referências
-        ↓
-Figma
-        ↓
-Selecionar padrões úteis
-        ↓
-Adaptar ao fluxo do SGL
-        ↓
-Componentes reutilizáveis
-        ↓
-Design System
-        ↓
-Implementação frontend
-```
-
-Design System inicial:
-
-```text
-Foundations
-→ cores
-→ tipografia
-→ espaçamento
-→ bordas
-→ estados visuais
-
-Componentes
-→ Button
-→ Input / FormField
-→ StatusBadge
-→ DataTable
-→ DashboardCard
-→ Sidebar
-→ Modal
-```
-
-## Pós-protótipo
-
-Após a primeira versão funcional, novas necessidades deverão ser incorporadas incrementalmente.
-
-Fluxo:
-
-```text
-necessidade real
-→ registrar requisito
-→ analisar impacto
-→ classificar: regra / relatório / endpoint / UI / banco
-→ implementar incrementalmente
-→ V2/V3/... se houver mudança estrutural
-→ testes
-→ homologação
-→ release
-```
-
-Possíveis itens futuros:
-
-```text
-relatórios e indicadores
-média histórica de saída
-estoque crítico baseado no histórico
-apoio à reposição/compra
-prazo mínimo de validade
-novos filtros
-dashboards
-melhorias de UX
-automações
-integrações corporativas
+prazo mínimo de validade → pós-protótipo
+estoque crítico histórico → pós-protótipo
 ```
 
 ## Próximos passos gerais
 
-1. executar `mvn test` completo novamente e registrar o total atualizado com o teste de concorrência;
-2. implementar autenticação local simulada;
-3. remover `usuarioId` temporário dos endpoints auditáveis e usar contexto autenticado;
-4. garantir auditoria de `DEVOLUCAO` com executor autenticado real;
-5. revisar autorização por `Perfil`;
-6. OpenAPI/Swagger;
-7. frontend;
-8. deploy da primeira versão;
-9. integração futura com autenticação corporativa;
-10. pós-protótipo.
+```text
+1. validar integralmente a migração UUID
+2. corrigir DataInitializer/testes afetados
+3. executar suíte completa
+4. regressão principal no Postman com UUID
+5. aprovar correção refactor/public-uuid
+6. Pull Request para main
+7. OpenAPI/Swagger
+8. frontend
+9. autenticação + auditoria local pós-frontend
+10. integração futura com autenticação corporativa
+11. deploy e evolução pós-protótipo
+```
 
 ## Documentos de referência
 
@@ -711,47 +495,33 @@ integrações corporativas
 |---|---|
 | 07/08/2026 | `Lote` consolidado como composição rastreável do estoque |
 | 07/08/2026 | FEFO para perecíveis e FIFO para não perecíveis |
-| 07/08/2026 | Validade transferida para `Lote` |
 | 07/08/2026 | `MovimentacaoEstoqueService` passou a centralizar operações físicas |
-| 07/08/2026 | Cancelamento passou a restaurar os lotes exatos consumidos |
-| 10/08/2026 | Suíte com 20 testes validada |
-| 10/08/2026 | PostgreSQL/Flyway e profiles `dev`/`test` configurados |
-| 11/08/2026 | V1 aplicada e Hibernate validou o schema |
-| 11/08/2026 | Ajuste de `ativo` na herança `Estagiario` concluído |
-| 11/08/2026 | DataInitializer executou integralmente em PostgreSQL |
-| 11/08/2026 | V1 congelada |
-| 12/08/2026 | BCrypt validado para persistência de senhas |
-| 12/08/2026 | Banco recriado e fluxo Flyway + DataInitializer validado novamente |
-| 12/08/2026 | `mvn test`: 20 testes, 0 falhas, BUILD SUCCESS |
-| 12/08/2026 | Entrada não perecível validada no Postman e PostgreSQL |
-| 12/08/2026 | Dois lotes perecíveis preparados para teste FEFO |
-| 12/08/2026 | Pedido FEFO criado e aprovação concluída com `PUT /pedidos/{id}/aprovar` |
-| 12/08/2026 | Criado `docs/JSON_EXEMPLOS.md` com exemplos operacionais da API |
-| 13/08/2026 | FEFO validado fisicamente: 4+2 consumidos nos lotes corretos |
-| 13/08/2026 | FIFO validado com consumo do lote mais antigo existente |
-| 13/08/2026 | Lote vencido confirmado como indisponível para aprovação normal |
-| 13/08/2026 | Descarte de vencimento validado |
-| 13/08/2026 | Cancelamento validado restaurando exatamente os lotes consumidos |
-| 13/08/2026 | Entrega validada sem segunda baixa e com criação de `HistoricoLaboratorio` |
-| 13/08/2026 | Consultas por projeto/laboratório/período e histórico geral validadas |
-| 13/08/2026 | Consistência global `EstoqueCentral = soma dos lotes` validada com diferença zero |
-| 13/08/2026 | Criado e executado com sucesso `PedidoConcorrenciaIntegrationTest` |
+| 10/08/2026 | Suíte automatizada validada |
+| 11/08/2026 | PostgreSQL/Flyway validado e V1 congelada |
+| 12/08/2026 | BCrypt validado |
+| 13/08/2026 | Bateria manual crítica e concorrência validadas |
+| 14/08/2026 | Arquitetura `Long interno + UUID público` aprovada |
+| 14/08/2026 | Entidades, V2, repositories e DTOs iniciaram migração para UUID |
+| 18/08/2026 | Services migrados para UUID na fronteira externa |
+| 18/08/2026 | Controllers migrados para UUID público |
+| 18/08/2026 | Próxima etapa definida: compilação, testes e regressão completa da migração UUID |
 
 ### Próxima ação ao retomar
 
 ```text
-1. executar mvn test completo
-→ confirmar que toda a suíte, incluindo PedidoConcorrenciaIntegrationTest, passa em conjunto
-→ registrar o novo total de testes
+VALIDAR A MIGRAÇÃO UUID.
 
-2. iniciar autenticação local simulada
-→ definir fluxo de login
-→ usar BCrypt existente
-→ criar contexto de usuário autenticado
-→ substituir usuarioId temporário nos endpoints auditáveis
-→ preservar auditoria de ENTRADA, SAIDA, DESCARTE e DEVOLUCAO
-→ revisar autorização por Perfil
+→ puxar refactor/public-uuid
+→ compilar
+→ corrigir referências restantes
+→ revisar DataInitializer e testes
+→ mvn test
+→ iniciar PostgreSQL/Flyway
+→ Postman usando UUID
+→ confirmar ausência de Long exposto
 
-Não voltar aos testes manuais FEFO/FIFO, salvo regressão específica.
-A bateria manual crítica em PostgreSQL foi concluída em 13/08/2026.
+Somente após essa validação:
+→ aprovar correção
+→ Pull Request para main
+→ iniciar OpenAPI/Swagger
 ```
