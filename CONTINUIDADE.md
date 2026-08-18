@@ -3,13 +3,13 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 18/08/2026  
 **Branch atual da correção:** `refactor/public-uuid`  
-**Fase atual:** correção estrutural de identificadores públicos antes do OpenAPI/Swagger
+**Fase atual:** migração para UUID público implementada e validada estruturalmente; regressão manual parcial pendente antes da aprovação final da correção.
 
-Este arquivo registra o estado consolidado do backend, as decisões arquiteturais já aprovadas e o ponto exato de continuidade.
+Este arquivo registra o estado consolidado do backend, as decisões arquiteturais aprovadas e o ponto exato para continuidade.
 
 ## Regra de trabalho para correções estruturais
 
-Toda correção estrutural deve seguir o fluxo:
+Toda correção estrutural deve seguir:
 
 ```text
 branch própria da correção
@@ -21,13 +21,13 @@ branch própria da correção
 → main
 ```
 
-Mudanças aprovadas devem ser registradas neste arquivo com o motivo da alteração.
+Toda correção aprovada deve ser registrada neste arquivo com o motivo da alteração.
 
 ## Estado geral do backend
 
-O backend está estabilizado em PostgreSQL real com Flyway e os fluxos críticos já foram validados manualmente.
+O backend está estabilizado em PostgreSQL real com Flyway.
 
-Principais regras já consolidadas:
+Regras principais consolidadas:
 
 ```text
 Produto = catálogo
@@ -41,7 +41,7 @@ Entrega não baixa estoque novamente
 Cancelamento de pedido aprovado restaura os lotes exatos consumidos
 ```
 
-Fluxo atual de Pedido:
+Fluxo de Pedido:
 
 ```text
 PENDENTE
@@ -65,47 +65,75 @@ Regra definitiva:
 
 ```text
 V1 não deve mais ser alterada.
-Toda mudança estrutural futura deve gerar V2, V3, V4...
+Toda mudança estrutural posterior deve gerar nova migration.
 ```
 
-A correção de UUID utiliza uma V2 responsável por adicionar `public_id UUID`, preencher registros existentes, aplicar `NOT NULL` e `UNIQUE`.
+### V2 — UUID público
 
-Entidades/tabelas contempladas:
+A correção de UUID utiliza uma V2 que:
 
 ```text
-Usuario / usuarios
-Unidade / unidades
-Laboratorio / laboratorios
-Produto / produtos
-EstoqueCentral / estoque_central
-Lote / lote
-Projeto / projetos
-Pedido / pedidos
-ItemPedido / itens_pedido
-MovimentacaoEstoque / movimentacao_estoque
-HistoricoLaboratorio / historico_laboratorio
+ADD COLUMN public_id UUID
+→ preenche registros existentes com gen_random_uuid()
+→ SET NOT NULL
+→ UNIQUE
+```
+
+Inclui:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+```
+
+Tabelas contempladas:
+
+```text
+usuarios
+unidades
+laboratorios
+produtos
+estoque_central
+lote
+projetos
+pedidos
+itens_pedido
+movimentacao_estoque
+historico_laboratorio
 ```
 
 `Estagiario` utiliza o `publicId` herdado de `Usuario`.
 
+A V2 foi validada em banco recriado do zero:
+
+```text
+banco vazio
+→ V1 aplicada
+→ V2 aplicada
+→ Hibernate ddl-auto=validate
+→ DataInitializer executado
+→ aplicação iniciada normalmente
+```
+
+Durante a validação houve mismatch de checksum porque a V2 já havia sido aplicada em versão anterior. Como o ambiente era `dev`, o banco foi recriado em vez de usar `flyway repair`, garantindo que a V2 final fosse realmente executada do zero.
+
+Depois que a correção entrar na `main`, a V2 também deve ser considerada congelada; qualquer mudança estrutural posterior deve usar V3.
+
 ## Correção estrutural — UUID público
 
-### Problema que motivou a correção
+### Motivo
 
-A API utilizava diretamente IDs sequenciais `Long`. Isso permitia inferir a existência de outros registros a partir de um identificador conhecido.
+A API utilizava diretamente IDs sequenciais `Long`, permitindo inferir registros vizinhos.
 
-Exemplo do problema:
+Exemplo:
 
 ```text
 id = 27
-→ torna previsível a existência de IDs próximos como 22, 23, 24, 25...
+→ torna previsíveis IDs próximos como 22, 23, 24, 25...
 ```
 
 ### Arquitetura aprovada
 
-O `Long id` NÃO foi removido das entidades.
-
-Padrão definitivo:
+O `Long id` NÃO foi removido.
 
 ```text
 Long id
@@ -113,7 +141,7 @@ Long id
 → relacionamentos JPA
 → foreign keys
 → locks
-→ consultas técnicas internas
+→ queries técnicas internas
 → não deve atravessar a API
 
 UUID publicId
@@ -126,13 +154,13 @@ UUID publicId
 → imutável
 ```
 
-Fluxo esperado:
+Fluxo padrão:
 
 ```text
 Controller recebe UUID
 → Service usa findByPublicId(UUID)
 → entidade é localizada
-→ backend passa a usar Long id internamente quando necessário
+→ backend usa Long id internamente quando necessário
 ```
 
 Exemplo:
@@ -145,46 +173,52 @@ UUID do laboratório
 → query interna por FK Long
 ```
 
+## Estado por camada
+
 ### Entidades — CONCLUÍDO
 
-As 11 entidades públicas possuem `publicId` com geração automática por UUID e persistência imutável.
+As entidades públicas possuem `publicId`.
 
-`Estagiario` herda o identificador de `Usuario`.
+Padrão:
 
-### Migration V2 — PREPARADA
+```java
+@Column(name = "public_id", nullable = false, unique = true, updatable = false)
+private UUID publicId;
 
-A V2 foi preparada com o padrão:
-
-```text
-ADD COLUMN public_id UUID
-→ UPDATE com gen_random_uuid() para registros existentes
-→ SET NOT NULL
-→ UNIQUE
+@PrePersist
+private void gerarPublicId() {
+    if (publicId == null) {
+        publicId = UUID.randomUUID();
+    }
+}
 ```
 
-Inclui também:
+Durante os testes foi identificado que `MovimentacaoEstoque` e `HistoricoLaboratorio` possuíam `publicId`, porém estavam sem geração automática. Foi adicionado `@PrePersist` nas duas entidades.
 
-```sql
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+Motivo da correção:
+
+```text
+public_id é NOT NULL no banco
+→ toda nova entidade precisa gerar UUID antes do INSERT
 ```
 
 ### Repositories — CONCLUÍDO
 
-Os repositories das entidades públicas possuem busca por:
+Repositories públicos possuem:
 
 ```java
 Optional<Entidade> findByPublicId(UUID publicId);
 ```
 
-Consultas internas baseadas em PK/FK continuam usando `Long` quando apropriado.
+Buscas por PK/FK `Long` permanecem quando internas.
 
-Isso inclui métodos técnicos de concorrência e bloqueio pessimista, como buscas internas de estoque, lote e pedido.
+Isso inclui locks pessimistas, FEFO/FIFO, consultas por relacionamentos e operações técnicas de concorrência.
 
 ### DTOs — CONCLUÍDO
 
-Identificadores externos dos DTOs foram migrados de `Long` para `UUID`.
+IDs externos foram migrados de `Long` para `UUID`.
 
-Mapeamentos externos usam:
+DTOs mapeiam:
 
 ```java
 entity.getPublicId()
@@ -196,24 +230,24 @@ em vez de:
 entity.getId()
 ```
 
-Foi executada a conferência:
+Foi conferido:
 
 ```bash
 grep -R "Long .*Id" src/main/java/com/sgl/dto
 grep -R "getId()" src/main/java/com/sgl/dto
 ```
 
-Resultado após os ajustes:
+Resultado:
 
 ```text
 nenhuma ocorrência pendente nos DTOs
 ```
 
-`AprovarPedidoDTO.ItemAprovacaoDTO.itemId` também passou para UUID, incluindo a validação de duplicidade com `Set<UUID>`.
+`AprovarPedidoDTO.ItemAprovacaoDTO.itemId` também usa UUID e a validação de duplicidade passou a utilizar `Set<UUID>`.
 
 ### ResourceNotFoundException — AJUSTADO
 
-A exceção deixou de depender exclusivamente de `Long` e aceita identificador genérico:
+A exceção passou a aceitar identificador genérico:
 
 ```java
 public ResourceNotFoundException(String recurso, Object id)
@@ -222,17 +256,13 @@ public ResourceNotFoundException(String recurso, Object id)
 Motivo:
 
 ```text
-operações públicas → UUID
+fronteira externa → UUID
 operações internas → Long
 ```
 
-A camada de exceções não deve ficar acoplada a apenas um tipo de identificador.
+### Services — CONCLUÍDO
 
-### Services — MIGRADOS
-
-Os services foram migrados para UUID nas operações que representam a fronteira externa da aplicação.
-
-Services revisados/migrados:
+Services migrados:
 
 ```text
 UnidadeService
@@ -248,35 +278,32 @@ MovimentacaoEstoqueService
 PedidoService
 ```
 
-Regra preservada:
+Regra aplicada:
 
 ```text
 entrada pública → UUID
-findByPublicId(UUID)
-→ Long somente depois que a entidade já foi resolvida
+→ findByPublicId(UUID)
+→ Long apenas depois de resolver a entidade
 ```
 
-Usos internos de `Long` foram mantidos intencionalmente em:
+`Long` foi mantido propositalmente em:
 
 ```text
 FKs
 getId()
-existsBy...Id...
 queries internas
 bloqueios pessimistas
 FEFO/FIFO
-ordenação técnica
 restauração de lotes
 concorrência
+ordenação técnica
 ```
 
 No `PedidoService`, o `itemId` recebido na aprovação é comparado com `ItemPedido.publicId`.
 
-No `MovimentacaoEstoqueService`, operações chamadas diretamente pela API recebem UUID; operações internas chamadas pelo fluxo de pedido podem continuar recebendo PK `Long`.
+### Controllers — CONCLUÍDO
 
-### Controllers — MIGRADOS
-
-Todos os controllers foram migrados para receber UUID nos identificadores públicos:
+Controllers migrados:
 
 ```text
 UnidadeController
@@ -292,84 +319,122 @@ PedidoController
 MovimentacaoEstoqueController
 ```
 
-`@PathVariable` e `@RequestParam` que identificam entidades públicas agora utilizam `UUID`.
+`@PathVariable` e `@RequestParam` que identificam entidades públicas agora recebem UUID.
 
-Nos endpoints temporários de movimentação, `usuarioId` também passou para UUID e é resolvido por `findByPublicId()`.
+IDs temporários de usuário usados em endpoints de desenvolvimento também utilizam UUID.
 
-## Estado atual da correção UUID
+## DataInitializer — VALIDADO
 
-Concluído estruturalmente:
+O `DataInitializer` está compatível com a arquitetura.
 
-```text
-Entidades        ✅
-Migration V2     ✅ preparada
-Repositories     ✅
-DTOs             ✅
-Exceptions       ✅
-Services         ✅
-Controllers      ✅
-```
-
-Ainda não considerar a correção aprovada/encerrada.
-
-Falta validar o conjunto integrado.
-
-## Próxima etapa imediata — VALIDAÇÃO DA MIGRAÇÃO UUID
-
-Executar agora:
+Construtores que possuem `id` e `publicId` deixam ambos `null`, permitindo:
 
 ```text
-1. atualizar branch local com refactor/public-uuid
-2. compilar o projeto
-3. corrigir referências restantes fora de DTO/Service/Controller
-4. revisar DataInitializer
-5. atualizar testes afetados
-6. executar mvn test
-7. iniciar aplicação com PostgreSQL/Flyway
-8. testar endpoints principais no Postman usando exclusivamente UUID público
-9. verificar que nenhum Long interno aparece nos responses ou é exigido nos endpoints
+Long id → banco gera
+UUID publicId → @PrePersist gera
 ```
 
-Buscas úteis:
+Entidades criadas via builder também recebem UUID automaticamente no `@PrePersist`.
 
-```bash
-grep -R "@PathVariable Long" src/main/java/com/sgl
-grep -R "@RequestParam Long .*Id" src/main/java/com/sgl
-grep -R "findById(dto.get" src/main/java/com/sgl
-grep -R "getId()" src/main/java/com/sgl/dto
-grep -R "Long .*Id" src/main/java/com/sgl/dto
-```
+A aplicação foi iniciada com banco vazio e o DataInitializer executou normalmente após V1 + V2.
 
-As ocorrências restantes de `Long` devem ser avaliadas caso a caso. `Long` interno não é erro por si só.
+## Testes automatizados — VALIDADO
 
-## Testes já existentes antes da migração UUID
+Após a migração, o primeiro `mvn test` falhou em `testCompile` porque testes antigos ainda chamavam Services com `Long`.
 
-A suíte anterior estava validada com:
+Foram migrados:
 
 ```text
 HistoricoLaboratorioServiceTest
 MovimentacaoEstoqueServiceTest
 PedidoServiceTest
-SglApplicationTests
 PedidoConcorrenciaIntegrationTest
 ```
 
-O teste de concorrência valida dois pedidos concorrentes disputando o mesmo saldo:
+Padrão dos fixtures:
 
 ```text
-Estoque/Lote = 10
-Pedido A = 7
-Pedido B = 7
-→ somente um deve aprovar
-→ saldo final = 3
-→ nenhuma quantidade negativa
+Long id       → identidade interna
+UUID publicId → identidade externa usada nas chamadas aos Services
 ```
 
-Como assinaturas de Services e DTOs mudaram para UUID, os testes podem precisar ser atualizados antes de voltarem a compilar.
+Mocks externos passaram de `findById()` para `findByPublicId()` onde necessário.
 
-## Validações manuais críticas já concluídas
+O teste de concorrência continuou preservando as verificações de lock e saldo interno.
 
-Em PostgreSQL real foram validados:
+Durante essa etapa, o teste de concorrência revelou ausência de geração de `publicId` em `MovimentacaoEstoque`; a mesma lacuna foi encontrada preventivamente em `HistoricoLaboratorio` e ambas foram corrigidas com `@PrePersist`.
+
+Resultado final:
+
+```text
+mvn test ✅
+```
+
+A suíte passou após a migração dos testes e correções de geração dos UUIDs.
+
+## Validação estrutural da migração UUID — CONCLUÍDA
+
+Já validado:
+
+```text
+mvn clean compile ✅
+V1 + V2 em banco vazio ✅
+Hibernate validate ✅
+DataInitializer ✅
+aplicação inicia em dev ✅
+mvn test ✅
+```
+
+## Regressão manual da API com UUID — EM ANDAMENTO / PAUSADA
+
+Foi definida uma bateria curta de cinco testes principais:
+
+```text
+1. buscar entidade por UUID
+2. criar pedido usando UUIDs relacionados
+3. aprovar pedido usando pedido UUID + item UUID + aprovador UUID
+4. consulta laboratório/projeto/período usando UUID
+5. cancelar pedido aprovado usando UUID
+```
+
+### Resultado até agora
+
+```text
+1. busca por UUID ✅
+2. criação de pedido com UUID ✅
+3. aprovação → PENDENTE DE RETESTE
+4. consulta por relacionamento → PENDENTE
+5. cancelamento → PENDENTE
+```
+
+Na criação de pedido ocorreu inicialmente um `400` por um UUID de laboratório digitado com tamanho inválido. Após corrigir o UUID enviado, o pedido foi criado normalmente. Isso confirmou a desserialização e resolução de `usuarioId`, `laboratorioId` e `produtoId` por UUID.
+
+### Observação sobre o teste de aprovação
+
+Ao tentar aprovar o pedido, o PostgreSQL registrou:
+
+```text
+public_id NULL em movimentacao_estoque
+```
+
+Essa falha ocorreu porque a aplicação local ainda estava executando uma JVM iniciada antes da correção que adicionou `@PrePersist` a `MovimentacaoEstoque`.
+
+Na branch remota, a entidade já está corrigida.
+
+Antes de retestar a aprovação:
+
+```bash
+git pull origin refactor/public-uuid
+mvn clean spring-boot:run
+```
+
+Depois repetir os testes 3, 4 e 5.
+
+Não considerar a regressão manual concluída até esses três casos passarem.
+
+## Validações manuais críticas anteriores
+
+Antes da migração UUID já foram validados em PostgreSQL real:
 
 ```text
 entrada de lote
@@ -386,51 +451,71 @@ consistência EstoqueCentral = soma dos lotes
 concorrência de aprovação
 ```
 
-Esses fluxos não precisam ser redesenhados por causa do UUID. Após a migração, devem apenas ser retestados como regressão usando identificadores públicos.
+Essas regras não foram redesenhadas pela migração UUID; a regressão atual serve para confirmar apenas a nova fronteira pública.
+
+## Estado atual da correção `refactor/public-uuid`
+
+```text
+Entidades             ✅
+Migration V2          ✅ validada do zero
+Repositories          ✅
+DTOs                  ✅
+Exceptions            ✅
+Services              ✅
+Controllers           ✅
+DataInitializer       ✅
+Compilação            ✅
+Testes automatizados  ✅
+Regressão Postman     ⏸️ parcial
+```
+
+A correção ainda NÃO deve ser considerada encerrada ou pronta para PR enquanto os três testes manuais restantes não forem retomados e aprovados.
 
 ## Autenticação e auditoria — DECISÃO ATUAL
 
-A autenticação local simulada e a revisão final de auditoria/autorização **não serão implementadas agora**.
+Autenticação local simulada e revisão final de auditoria/autorização não serão implementadas antes do frontend.
 
-Decisão consolidada:
+Sequência aprovada:
 
 ```text
 backend estrutural
-→ Swagger/OpenAPI
+→ correções estruturais restantes
+→ OpenAPI/Swagger
 → frontend
 → autenticação + auditoria local
 → integração futura com autenticação corporativa
 ```
 
-Enquanto isso, identificadores temporários de usuário necessários para testes locais podem continuar existindo nos endpoints de desenvolvimento, porém devem utilizar UUID público.
-
-A autenticação definitiva futuramente deverá integrar com a API corporativa fornecida pela infraestrutura da empresa.
+Enquanto isso, IDs temporários de usuário usados para testes locais podem continuar existindo, mas sempre como UUID público.
 
 ## OpenAPI / Swagger
 
-Swagger continua sendo a próxima grande etapa funcional após a correção UUID estar compilando e validada.
+Swagger continua planejado antes do frontend.
 
-Antes de iniciar Swagger, garantir:
+Pré-condições já atendidas em grande parte:
 
 ```text
-mvn test passando
-aplicação iniciando em dev
-V2 aplicada corretamente
-endpoints aceitando UUID
-responses sem Long interno exposto
-fluxos críticos funcionando com UUID
+compilação ✅
+mvn test ✅
+aplicação inicia ✅
+V2 aplicada ✅
+endpoints migrados para UUID ✅
 ```
+
+Ainda falta concluir a regressão manual UUID antes de considerar essa correção pronta para merge.
 
 ## Frontend
 
-O frontend vem após a documentação OpenAPI/Swagger.
+O frontend vem após as correções estruturais restantes e a etapa OpenAPI/Swagger.
 
-Referências já registradas:
+Referências registradas:
 
-- Salvia Kit
-- Materio Vuetify
-- Vue Notus
-- Sneat Vuetify
+```text
+Salvia Kit
+Materio Vuetify
+Vue Notus
+Sneat Vuetify
+```
 
 Fluxo planejado:
 
@@ -444,7 +529,7 @@ referências/templates
 → implementação frontend
 ```
 
-## Requisitos futuros de reposição/compra
+## Requisito futuro de reposição/compra
 
 Requisito informado pelo cliente:
 
@@ -462,21 +547,34 @@ prazo mínimo de validade → pós-protótipo
 estoque crítico histórico → pós-protótipo
 ```
 
-## Próximos passos gerais
+## Próxima ação ao retomar a correção UUID
 
 ```text
-1. validar integralmente a migração UUID
-2. corrigir DataInitializer/testes afetados
-3. executar suíte completa
-4. regressão principal no Postman com UUID
-5. aprovar correção refactor/public-uuid
-6. Pull Request para main
-7. OpenAPI/Swagger
-8. frontend
-9. autenticação + auditoria local pós-frontend
-10. integração futura com autenticação corporativa
-11. deploy e evolução pós-protótipo
+1. atualizar branch local
+2. reiniciar a aplicação com código novo
+3. retestar aprovação de pedido por UUID
+4. testar consulta laboratório/projeto/período por UUID
+5. testar cancelamento por UUID
+6. confirmar que nenhum Long interno aparece nos contratos públicos
+7. aprovar correção refactor/public-uuid
+8. Pull Request para main
 ```
+
+## Próximo trabalho imediato
+
+A regressão manual UUID ficará pausada por enquanto.
+
+Próximo passo de desenvolvimento:
+
+```text
+→ iniciar a próxima correção/resolução estrutural em branch própria
+→ analisar
+→ revisar
+→ validar
+→ registrar neste CONTINUIDADE.md
+```
+
+Depois, retomar a sequência planejada rumo ao frontend.
 
 ## Documentos de referência
 
@@ -504,24 +602,9 @@ estoque crítico histórico → pós-protótipo
 | 14/08/2026 | Entidades, V2, repositories e DTOs iniciaram migração para UUID |
 | 18/08/2026 | Services migrados para UUID na fronteira externa |
 | 18/08/2026 | Controllers migrados para UUID público |
-| 18/08/2026 | Próxima etapa definida: compilação, testes e regressão completa da migração UUID |
-
-### Próxima ação ao retomar
-
-```text
-VALIDAR A MIGRAÇÃO UUID.
-
-→ puxar refactor/public-uuid
-→ compilar
-→ corrigir referências restantes
-→ revisar DataInitializer e testes
-→ mvn test
-→ iniciar PostgreSQL/Flyway
-→ Postman usando UUID
-→ confirmar ausência de Long exposto
-
-Somente após essa validação:
-→ aprovar correção
-→ Pull Request para main
-→ iniciar OpenAPI/Swagger
-```
+| 18/08/2026 | V1 + V2 validadas em banco recriado do zero |
+| 18/08/2026 | DataInitializer validado com geração automática de UUID |
+| 18/08/2026 | Testes automatizados migrados para UUID e `mvn test` aprovado |
+| 18/08/2026 | `@PrePersist` adicionado a `MovimentacaoEstoque` e `HistoricoLaboratorio` |
+| 18/08/2026 | Busca por UUID e criação de pedido por UUID validadas no Postman |
+| 18/08/2026 | Regressão manual UUID pausada com aprovação, consulta por relacionamento e cancelamento pendentes |
