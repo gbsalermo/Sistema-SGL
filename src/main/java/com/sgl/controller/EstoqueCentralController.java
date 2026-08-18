@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,43 +41,40 @@ public class EstoqueCentralController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EstoqueCentralDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<EstoqueCentralDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(estoqueCentralService.buscarPorId(id));
     }
 
     @GetMapping("/por-unidade")
     public ResponseEntity<List<EstoqueCentralDTO>> listarPorUnidade(
-            @RequestParam Long unidadeId) {
-        return ResponseEntity.ok(
-                estoqueCentralService.listarPorUnidade(unidadeId));
+            @RequestParam UUID unidadeId) {
+        return ResponseEntity.ok(estoqueCentralService.listarPorUnidade(unidadeId));
     }
 
     @GetMapping("/por-unidade-produto")
     public ResponseEntity<EstoqueCentralDTO> buscarPorUnidadeEProduto(
-            @RequestParam Long unidadeId,
-            @RequestParam Long produtoId) {
+            @RequestParam UUID unidadeId,
+            @RequestParam UUID produtoId) {
         return ResponseEntity.ok(
-                estoqueCentralService.buscarPorUnidadeEProduto(
-                        unidadeId, produtoId));
+                estoqueCentralService.buscarPorUnidadeEProduto(unidadeId, produtoId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EstoqueCentralDTO> atualizar(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody EstoqueCentralDTO dto) {
-        return ResponseEntity.ok(
-                estoqueCentralService.atualizar(id, dto));
+        return ResponseEntity.ok(estoqueCentralService.atualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         estoqueCentralService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/estoque-baixo")
     public ResponseEntity<List<EstoqueCentralDTO>> listarEstoqueBaixo(
-            @RequestParam Long unidadeId) {
+            @RequestParam UUID unidadeId) {
         return ResponseEntity.ok(
                 estoqueCentralService.listarEstoqueBaixoPorUnidade(unidadeId));
     }
