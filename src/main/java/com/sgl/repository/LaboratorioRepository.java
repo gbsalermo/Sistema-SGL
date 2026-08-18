@@ -15,4 +15,6 @@ public interface LaboratorioRepository extends JpaRepository<Laboratorio, Long> 
 	Optional<Laboratorio> findByPublicId(UUID publicId);
 	
 	List<Laboratorio> findByUnidadeId(Long unidadeId);
+	
+
 }
