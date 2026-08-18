@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +17,12 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.HistoricoLaboratorio;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 
@@ -33,6 +36,7 @@ public class HistoricoLaboratorioService {
     private final LaboratorioRepository laboratorioRepository;
     private final ProjetoRepository projetoRepository;
     private final ProdutoRepository produtoRepository;
+    private final PedidoRepository pedidoRepository;
 
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioDTO> listarTodos() {
@@ -42,48 +46,51 @@ public class HistoricoLaboratorioService {
     }
 
     @Transactional(readOnly = true)
-    public HistoricoLaboratorioDTO buscarPorId(Long id) {
-        return historicoLaboratorioRepository.findById(id)
+    public HistoricoLaboratorioDTO buscarPorId(UUID id) {
+        return historicoLaboratorioRepository.findByPublicId(id)
                 .map(HistoricoLaboratorioDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Histórico de laboratório", id));
     }
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorLaboratorio(Long laboratorioId) {
-        validarLaboratorio(laboratorioId);
+    public List<HistoricoLaboratorioDTO> listarPorLaboratorio(UUID laboratorioId) {
+        Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
 
-        return historicoLaboratorioRepository.findByLaboratorioId(laboratorioId).stream()
+        return historicoLaboratorioRepository.findByLaboratorioId(laboratorio.getId()).stream()
                 .map(HistoricoLaboratorioDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorProduto(Long produtoId) {
-        validarProduto(produtoId);
+    public List<HistoricoLaboratorioDTO> listarPorProduto(UUID produtoId) {
+        Produto produto = buscarProduto(produtoId);
 
-        return historicoLaboratorioRepository.findByProdutoId(produtoId).stream()
+        return historicoLaboratorioRepository.findByProdutoId(produto.getId()).stream()
                 .map(HistoricoLaboratorioDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorPedido(Long pedidoId) {
-        return historicoLaboratorioRepository.findByPedidoId(pedidoId).stream()
+    public List<HistoricoLaboratorioDTO> listarPorPedido(UUID pedidoId) {
+        Pedido pedido = pedidoRepository.findByPublicId(pedidoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
+
+        return historicoLaboratorioRepository.findByPedidoId(pedido.getId()).stream()
                 .map(HistoricoLaboratorioDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioDTO> listarPorPeriodo(
-            Long laboratorioId,
+            UUID laboratorioId,
             LocalDate dataInicio,
             LocalDate dataFim) {
 
-        validarLaboratorio(laboratorioId);
+        Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
         validarPeriodo(dataInicio, dataFim);
 
         return historicoLaboratorioRepository
-                .findByLaboratorioIdAndPeriodo(laboratorioId, dataInicio, dataFim)
+                .findByLaboratorioIdAndPeriodo(laboratorio.getId(), dataInicio, dataFim)
                 .stream()
                 .map(HistoricoLaboratorioDTO::new)
                 .toList();
@@ -100,23 +107,20 @@ public class HistoricoLaboratorioService {
      */
     @Transactional(readOnly = true)
     public ConsumoProdutoLaboratorioDTO calcularConsumoProduto(
-            Long laboratorioId,
-            Long produtoId,
+            UUID laboratorioId,
+            UUID produtoId,
             LocalDate dataInicio,
             LocalDate dataFim) {
 
         validarPeriodo(dataInicio, dataFim);
 
-        Laboratorio laboratorio = laboratorioRepository.findById(laboratorioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
-
-        Produto produto = produtoRepository.findById(produtoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
+        Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
+        Produto produto = buscarProduto(produtoId);
 
         List<HistoricoLaboratorio> registros = historicoLaboratorioRepository
                 .findByLaboratorioProdutoEPeriodo(
-                        laboratorioId,
-                        produtoId,
+                        laboratorio.getId(),
+                        produto.getId(),
                         dataInicio,
                         dataFim
                 );
@@ -128,7 +132,7 @@ public class HistoricoLaboratorioService {
         long quantidadePedidos = registros.stream()
                 .map(HistoricoLaboratorio::getPedido)
                 .filter(pedido -> pedido != null && pedido.getId() != null)
-                .map(pedido -> pedido.getId())
+                .map(Pedido::getId)
                 .distinct()
                 .count();
 
@@ -152,9 +156,9 @@ public class HistoricoLaboratorioService {
                 .intValue();
 
         return new ConsumoProdutoLaboratorioDTO(
-                laboratorio.getId(),
+                laboratorio.getPublicId(),
                 laboratorio.getNome(),
-                produto.getId(),
+                produto.getPublicId(),
                 produto.getNome(),
                 produto.getUnidadeArmazenamento(),
                 dataInicio,
@@ -175,19 +179,19 @@ public class HistoricoLaboratorioService {
      */
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioDTO> listarPorProjetoEPeriodo(
-            Long laboratorioId,
-            Long projetoId,
+            UUID laboratorioId,
+            UUID projetoId,
             LocalDate dataInicio,
             LocalDate dataFim) {
 
-        validarLaboratorio(laboratorioId);
-        validarProjetoDoLaboratorio(projetoId, laboratorioId);
+        Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
+        Projeto projeto = buscarProjetoDoLaboratorio(projetoId, laboratorio);
         validarPeriodo(dataInicio, dataFim);
 
         return historicoLaboratorioRepository
                 .findByLaboratorioProjetoEPeriodo(
-                        laboratorioId,
-                        projetoId,
+                        laboratorio.getId(),
+                        projeto.getId(),
                         dataInicio,
                         dataFim
                 )
@@ -196,28 +200,28 @@ public class HistoricoLaboratorioService {
                 .toList();
     }
 
-    private void validarLaboratorio(Long laboratorioId) {
-        if (!laboratorioRepository.existsById(laboratorioId)) {
-            throw new ResourceNotFoundException("Laboratório", laboratorioId);
-        }
+    private Laboratorio buscarLaboratorio(UUID laboratorioId) {
+        return laboratorioRepository.findByPublicId(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
     }
 
-    private void validarProduto(Long produtoId) {
-        if (!produtoRepository.existsById(produtoId)) {
-            throw new ResourceNotFoundException("Produto", produtoId);
-        }
+    private Produto buscarProduto(UUID produtoId) {
+        return produtoRepository.findByPublicId(produtoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
     }
 
-    private void validarProjetoDoLaboratorio(Long projetoId, Long laboratorioId) {
-        Projeto projeto = projetoRepository.findById(projetoId)
+    private Projeto buscarProjetoDoLaboratorio(UUID projetoId, Laboratorio laboratorio) {
+        Projeto projeto = projetoRepository.findByPublicId(projetoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 
         if (projeto.getLaboratorio() == null
-                || !projeto.getLaboratorio().getId().equals(laboratorioId)) {
+                || !projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
             throw new BusinessRuleException(
                     "O projeto informado não pertence ao laboratório informado."
             );
         }
+
+        return projeto;
     }
 
     private void validarPeriodo(LocalDate dataInicio, LocalDate dataFim) {
