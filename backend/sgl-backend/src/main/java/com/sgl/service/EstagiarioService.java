@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,19 +78,19 @@ public class EstagiarioService {
     }
 
     @Transactional(readOnly = true)
-    public EstagiarioDTO buscarPorId(Long id) {
+    public EstagiarioDTO buscarPorId(UUID id) {
         return estagiarioRepository.findById(id)
                 .map(EstagiarioDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
     }
 
     @Transactional(readOnly = true)
-    public List<EstagiarioDTO> listarPorLaboratorio(Long laboratorioId) {
+    public List<EstagiarioDTO> listarPorLaboratorio(Long laboratorioId, UUID id) {
         if (!laboratorioRepository.existsById(laboratorioId)) {
-            throw new ResourceNotFoundException("Laboratório", laboratorioId);
+            throw new ResourceNotFoundException("Laboratório", id);
         }
 
-        return estagiarioRepository.findByLaboratorioId(laboratorioId).stream()
+        return estagiarioRepository.findByPublicId(id).stream()
                 .map(EstagiarioDTO::new)
                 .toList();
     }
@@ -102,8 +103,8 @@ public class EstagiarioService {
     }
 
     @Transactional
-    public EstagiarioDTO atualizar(Long id, EstagiarioDTO dto) {
-        Estagiario estagiario = estagiarioRepository.findById(id)
+    public EstagiarioDTO atualizar(UUID id, EstagiarioDTO dto) {
+        Estagiario estagiario = estagiarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
 
         if (!id.equals(dto.getUsuarioId())) {
@@ -134,14 +135,14 @@ public class EstagiarioService {
         }
     }
 
-    private Usuario buscarUsuario(Long usuarioId) {
-        return usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
+    private Usuario buscarUsuario(UUID uuid) {
+        return usuarioRepository.findByPublicId(uuid)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", uuid));
     }
 
-    private Laboratorio buscarLaboratorio(Long laboratorioId) {
-        return laboratorioRepository.findById(laboratorioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+    private Laboratorio buscarLaboratorio(UUID uuid) {
+        return laboratorioRepository.findByPublicId(uuid)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", uuid));
     }
 
     private void validarPerfilEstagiario(Usuario usuario) {
@@ -184,8 +185,8 @@ public class EstagiarioService {
     }
 
     @Transactional
-    public EstagiarioDTO encerrarEstagio(Long id) {
-        Estagiario estagiario = estagiarioRepository.findById(id)
+    public EstagiarioDTO encerrarEstagio(UUID id) {
+        Estagiario estagiario = estagiarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
 
         if (!Boolean.TRUE.equals(estagiario.getAtivo())) {
