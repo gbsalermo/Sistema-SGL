@@ -138,7 +138,7 @@ Nenhuma migration V2 foi necessária, pois `senha VARCHAR(255)` já comporta o h
 ## Testes automatizados
 
 A suíte anterior estava validada em 12/08/2026:
-
+TRETSGSRGS
 ```text
 Tests run: 20
 Failures: 0
