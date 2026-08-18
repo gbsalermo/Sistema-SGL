@@ -2,6 +2,8 @@ package com.sgl.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +14,8 @@ import com.sgl.model.HistoricoLaboratorio;
 
 @Repository
 public interface HistoricoLaboratorioRepository extends JpaRepository<HistoricoLaboratorio, Long> {
+
+    Optional<HistoricoLaboratorio> findByPublicId(UUID publicId);
 
     List<HistoricoLaboratorio> findByLaboratorioId(Long laboratorioId);
 
