@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,18 +38,18 @@ public class UnidadeService {
     }
 
     @Transactional(readOnly = true)
-    public UnidadeDTO buscarPorId(Long id) {
-        Unidade unidade = unidadeRepository.findById(id)
+    public UnidadeDTO buscarPorId(UUID id) {
+        Unidade unidade = unidadeRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", id));
         return new UnidadeDTO(unidade);
     }
 
     @Transactional
-    public UnidadeDTO atualizar(Long id, UnidadeDTO dto) {
-        Unidade unidade = unidadeRepository.findById(id)
+    public UnidadeDTO atualizar(UUID id, UnidadeDTO dto) {
+        Unidade unidade = unidadeRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", id));
 
-        if (unidadeRepository.existsBySiglaAndIdNot(dto.getSigla(), id)) {
+        if (unidadeRepository.existsBySiglaAndIdNot(dto.getSigla(), unidade.getId())) {
             throw new BusinessRuleException("Já existe uma unidade com esta sigla.");
         }
 
@@ -58,8 +59,8 @@ public class UnidadeService {
     }
 
     @Transactional
-    public void deletar(Long id) {
-        Unidade unidade = unidadeRepository.findById(id)
+    public void deletar(UUID id) {
+        Unidade unidade = unidadeRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", id));
         unidadeRepository.delete(unidade);
     }
