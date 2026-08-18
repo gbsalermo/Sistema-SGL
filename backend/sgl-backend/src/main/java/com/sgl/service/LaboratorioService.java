@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,7 @@ public class LaboratorioService {
 
     @Transactional
     public LaboratorioDTO criar(LaboratorioDTO dto) {
-        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+        Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
         Laboratorio laboratorio = new Laboratorio();
@@ -53,29 +54,28 @@ public class LaboratorioService {
     }
 
     @Transactional(readOnly = true)
-    public List<LaboratorioDTO> listarPorUnidade(Long unidadeId) {
-        if (!unidadeRepository.existsById(unidadeId)) {
-            throw new ResourceNotFoundException("Unidade", unidadeId);
-        }
+    public List<LaboratorioDTO> listarPorUnidade(UUID unidadeId) {
+        Unidade unidade = unidadeRepository.findByPublicId(unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Unidade", unidadeId));
 
-        return laboratorioRepository.findByUnidadeId(unidadeId).stream()
+        return laboratorioRepository.findByUnidadeId(unidade.getId()).stream()
                 .map(LaboratorioDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public LaboratorioDTO buscarPorId(Long id) {
-        Laboratorio laboratorio = laboratorioRepository.findById(id)
+    public LaboratorioDTO buscarPorId(UUID id) {
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
         return new LaboratorioDTO(laboratorio);
     }
 
     @Transactional
-    public LaboratorioDTO atualizar(Long id, LaboratorioDTO dto) {
-        Laboratorio laboratorio = laboratorioRepository.findById(id)
+    public LaboratorioDTO atualizar(UUID id, LaboratorioDTO dto) {
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
 
-        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+        Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
         if (dto.getResponsavel() != null) {
@@ -96,16 +96,16 @@ public class LaboratorioService {
     }
 
     @Transactional
-    public void deletar(Long id) {
-        Laboratorio laboratorio = laboratorioRepository.findById(id)
+    public void deletar(UUID id) {
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
 
         laboratorio.setAtivo(false);
         laboratorioRepository.save(laboratorio);
     }
 
-    private Usuario buscarResponsavelCompativel(Long responsavelId, Unidade unidade) {
-        Usuario responsavel = usuarioRepository.findById(responsavelId)
+    private Usuario buscarResponsavelCompativel(UUID responsavelId, Unidade unidade) {
+        Usuario responsavel = usuarioRepository.findByPublicId(responsavelId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuário responsável",
                         responsavelId
