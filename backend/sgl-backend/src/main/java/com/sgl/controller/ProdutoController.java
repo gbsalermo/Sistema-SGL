@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,26 +41,25 @@ public class ProdutoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProdutoDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<ProdutoDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(produtoService.buscarPorId(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProdutoDTO> atualizar(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody ProdutoDTO dto) {
         return ResponseEntity.ok(produtoService.atualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         produtoService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/risco/{nivel}")
-    public ResponseEntity<List<ProdutoDTO>> listarPorRisco(
-            @PathVariable NivelRisco nivel) {
+    public ResponseEntity<List<ProdutoDTO>> listarPorRisco(@PathVariable NivelRisco nivel) {
         return ResponseEntity.ok(produtoService.listarPorRisco(nivel));
     }
 
