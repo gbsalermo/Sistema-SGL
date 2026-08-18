@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,45 +26,44 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProjetoController {
 
-	private final ProjetoService projetoService;
-	
-	
-	@PostMapping
-	public ResponseEntity<ProjetoDTO> criar(@Valid @RequestBody ProjetoDTO dto){
-		
-		ProjetoDTO criado = projetoService.criar(dto);
-		return ResponseEntity.status(HttpStatus.CREATED).body(criado);
-	}
-	
-	@GetMapping
-	public ResponseEntity<List<ProjetoDTO>> listarTodos(){
-		return ResponseEntity.ok(projetoService.listarTodos());
-	}
-	
-	@GetMapping("/{id}")
-	public ResponseEntity<ProjetoDTO> buscarPorId(@PathVariable Long id){
-		return ResponseEntity.ok(projetoService.buscarPorId(id));
-	}
-	
-	@GetMapping("/por-laboratorio")
-	public ResponseEntity<List<ProjetoDTO>> listarPorLaboratorio(@RequestParam Long laboratorioId){
-		return ResponseEntity.ok(projetoService.listarPorLaboratorio(laboratorioId));
-	}
-	
-	@PutMapping("/{id}")
-	public ResponseEntity<ProjetoDTO> atualizar(@PathVariable Long id, @Valid @RequestBody ProjetoDTO dto){
-		return ResponseEntity.ok(projetoService.atualizar(id, dto));
-	}
-	
-	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deletar(@PathVariable Long id){
-		projetoService.deletar(id);
-		return ResponseEntity.noContent().build();
-	}
-	
-	//LISTAR PROJETOS ATIVOS
-	@GetMapping("/ativos")
-	public ResponseEntity<List<ProjetoDTO>> listarAtivos() {
-	    return ResponseEntity.ok(projetoService.listarAtivos());
-	}
+    private final ProjetoService projetoService;
+
+    @PostMapping
+    public ResponseEntity<ProjetoDTO> criar(@Valid @RequestBody ProjetoDTO dto) {
+        ProjetoDTO criado = projetoService.criar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProjetoDTO>> listarTodos() {
+        return ResponseEntity.ok(projetoService.listarTodos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjetoDTO> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(projetoService.buscarPorId(id));
+    }
+
+    @GetMapping("/por-laboratorio")
+    public ResponseEntity<List<ProjetoDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
+        return ResponseEntity.ok(projetoService.listarPorLaboratorio(laboratorioId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProjetoDTO> atualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProjetoDTO dto) {
+        return ResponseEntity.ok(projetoService.atualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
+        projetoService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/ativos")
+    public ResponseEntity<List<ProjetoDTO>> listarAtivos() {
+        return ResponseEntity.ok(projetoService.listarAtivos());
+    }
 }
