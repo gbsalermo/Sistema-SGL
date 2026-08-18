@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,32 +40,31 @@ public class MovimentacaoEstoqueController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MovimentacaoEstoqueDTO> buscarPorId(
-            @PathVariable Long id) {
+    public ResponseEntity<MovimentacaoEstoqueDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(movimentacaoService.buscarPorId(id));
     }
 
     @GetMapping("/produto")
     public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorProduto(
-            @RequestParam Long produtoId) {
+            @RequestParam UUID produtoId) {
         return ResponseEntity.ok(movimentacaoService.listarPorProduto(produtoId));
     }
 
     @GetMapping("/laboratorio")
     public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorLaboratorio(
-            @RequestParam Long laboratorioId) {
+            @RequestParam UUID laboratorioId) {
         return ResponseEntity.ok(movimentacaoService.listarPorLaboratorio(laboratorioId));
     }
 
     @GetMapping("/usuario")
     public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorUsuario(
-            @RequestParam Long usuarioId) {
+            @RequestParam UUID usuarioId) {
         return ResponseEntity.ok(movimentacaoService.listarPorUsuario(usuarioId));
     }
 
     @GetMapping("/pedido")
     public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorPedido(
-            @RequestParam Long pedidoId) {
+            @RequestParam UUID pedidoId) {
         return ResponseEntity.ok(movimentacaoService.listarPorPedido(pedidoId));
     }
 
@@ -80,11 +80,11 @@ public class MovimentacaoEstoqueController {
      */
     @PostMapping("/estoques/{estoqueId}/lotes")
     public ResponseEntity<LoteDTO> registrarEntradaLote(
-            @PathVariable Long estoqueId,
-            @RequestParam Long usuarioId,
+            @PathVariable UUID estoqueId,
+            @RequestParam UUID usuarioId,
             @Valid @RequestBody EntradaLoteDTO dto) {
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
+        Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 
         LoteDTO lote = movimentacaoService.registrarEntradaLote(
@@ -102,11 +102,11 @@ public class MovimentacaoEstoqueController {
      */
     @PostMapping("/estoques/{estoqueId}/descarte-vencimento")
     public ResponseEntity<List<MovimentacaoEstoqueDTO>> descartarVencidos(
-            @PathVariable Long estoqueId,
-            @RequestParam Long usuarioId,
+            @PathVariable UUID estoqueId,
+            @RequestParam UUID usuarioId,
             @Valid @RequestBody DescarteProdutoDTO dto) {
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
+        Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 
         return ResponseEntity.ok(
