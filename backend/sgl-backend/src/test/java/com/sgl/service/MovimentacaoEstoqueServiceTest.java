@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,11 +32,17 @@ import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
+import com.sgl.repository.PedidoRepository;
+import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 class MovimentacaoEstoqueServiceTest {
+
+    private static final UUID ESTOQUE_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
 
     @Mock
     private MovimentacaoEstoqueRepository movimentacaoRepository;
@@ -45,6 +52,18 @@ class MovimentacaoEstoqueServiceTest {
 
     @Mock
     private LoteRepository loteRepository;
+
+    @Mock
+    private ProdutoRepository produtoRepository;
+
+    @Mock
+    private LaboratorioRepository laboratorioRepository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private PedidoRepository pedidoRepository;
 
     @InjectMocks
     private MovimentacaoEstoqueService service;
@@ -57,6 +76,7 @@ class MovimentacaoEstoqueServiceTest {
     void prepararCenario() {
         produto = Produto.builder()
                 .id(1L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
                 .nome("Produto Teste")
                 .perecivel(false)
                 .ativo(true)
@@ -64,17 +84,20 @@ class MovimentacaoEstoqueServiceTest {
 
         Unidade unidade = Unidade.builder()
                 .id(10L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000010"))
                 .nome("Unidade Teste")
                 .sigla("UT")
                 .build();
 
         usuario = new Usuario();
         usuario.setId(2L);
+        usuario.setPublicId(UUID.fromString("00000000-0000-0000-0000-000000000002"));
         usuario.setNome("Responsável");
         usuario.setAtivo(true);
 
         estoque = EstoqueCentral.builder()
                 .id(3L)
+                .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
                 .quantidadeAtual(10)
@@ -96,12 +119,14 @@ class MovimentacaoEstoqueServiceTest {
                 "Entrada de teste"
         );
 
+        when(estoqueCentralRepository.findByPublicId(ESTOQUE_PUBLIC_ID))
+                .thenReturn(Optional.of(estoque));
         when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.existsByEstoqueCentralIdAndNumeroLote(3L, "LT-001"))
                 .thenReturn(false);
 
-        service.registrarEntradaLote(3L, dto, usuario);
+        service.registrarEntradaLote(ESTOQUE_PUBLIC_ID, dto, usuario);
 
         assertEquals(15, estoque.getQuantidadeAtual());
 
@@ -137,12 +162,14 @@ class MovimentacaoEstoqueServiceTest {
                 null
         );
 
+        when(estoqueCentralRepository.findByPublicId(ESTOQUE_PUBLIC_ID))
+                .thenReturn(Optional.of(estoque));
         when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
                 .thenReturn(Optional.of(estoque));
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
-                () -> service.registrarEntradaLote(3L, dto, usuario)
+                () -> service.registrarEntradaLote(ESTOQUE_PUBLIC_ID, dto, usuario)
         );
 
         assertEquals(
@@ -286,12 +313,14 @@ class MovimentacaoEstoqueServiceTest {
                 LocalDate.now().minusMonths(1)
         );
 
+        when(estoqueCentralRepository.findByPublicId(ESTOQUE_PUBLIC_ID))
+                .thenReturn(Optional.of(estoque));
         when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarVencidosComBloqueio(any(), any(LocalDate.class)))
                 .thenReturn(List.of(vencido1, vencido2));
 
-        service.registrarDescarteVencimento(3L, 5, "Vencidos", usuario);
+        service.registrarDescarteVencimento(ESTOQUE_PUBLIC_ID, 5, "Vencidos", usuario);
 
         assertEquals(0, vencido1.getQuantidadeDisponivel());
         assertEquals(1, vencido2.getQuantidadeDisponivel());
@@ -356,6 +385,7 @@ class MovimentacaoEstoqueServiceTest {
 
         Lote lote = new Lote();
         lote.setId(id);
+        lote.setPublicId(UUID.randomUUID());
         lote.setEstoqueCentral(estoque);
         lote.setNumeroLote(numero);
         lote.setQuantidadeInicial(quantidade);
