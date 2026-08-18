@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,45 +24,41 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @RequiredArgsConstructor
-
 public class UsuarioController {
 
-	private final UsuarioService usuarioService;
-	
-	
-	@GetMapping
-	public ResponseEntity<List<UsuarioDTO>> listarTodos(){
-		return ResponseEntity.ok(usuarioService.listarTodos());
-	}
-	
-	@GetMapping("/{id}")
-	public ResponseEntity<UsuarioDTO> buscarPorId(@PathVariable Long id){
-		return ResponseEntity.ok(usuarioService.buscarPorId(id));
-	}
-	
-	@GetMapping("/por-laboratorio")
-	public ResponseEntity<List<UsuarioDTO>> listarPorLaboratorio(@RequestParam Long laboratorioId){
-		return ResponseEntity.ok(usuarioService.listarPorLaboratorio(laboratorioId));
-	}
-	
-	@PostMapping
-	public ResponseEntity<UsuarioDTO> criar(@Valid @RequestBody UsuarioDTO dto){
-		UsuarioDTO novoUsuario = usuarioService.criar(dto);
-		return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
-	}
-	
-	@PutMapping("/{id}")
-	public ResponseEntity<UsuarioDTO> atualizar(@PathVariable Long id, @Valid @RequestBody UsuarioDTO dto){
-		return ResponseEntity.ok(usuarioService.atualizar(id, dto));
-	}
-	
-	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> Inativar(@PathVariable Long id){
-		usuarioService.Inativar(id);
-		return ResponseEntity.noContent().build();
-	}
-	
-	
-	
+    private final UsuarioService usuarioService;
 
+    @GetMapping
+    public ResponseEntity<List<UsuarioDTO>> listarTodos() {
+        return ResponseEntity.ok(usuarioService.listarTodos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UsuarioDTO> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(usuarioService.buscarPorId(id));
+    }
+
+    @GetMapping("/por-laboratorio")
+    public ResponseEntity<List<UsuarioDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
+        return ResponseEntity.ok(usuarioService.listarPorLaboratorio(laboratorioId));
+    }
+
+    @PostMapping
+    public ResponseEntity<UsuarioDTO> criar(@Valid @RequestBody UsuarioDTO dto) {
+        UsuarioDTO novoUsuario = usuarioService.criar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioDTO> atualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody UsuarioDTO dto) {
+        return ResponseEntity.ok(usuarioService.atualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> inativar(@PathVariable UUID id) {
+        usuarioService.Inativar(id);
+        return ResponseEntity.noContent().build();
+    }
 }
