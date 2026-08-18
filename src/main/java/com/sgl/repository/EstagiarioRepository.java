@@ -19,7 +19,7 @@ public interface EstagiarioRepository extends JpaRepository<Estagiario, Long> {
 	
 	boolean existsByIdAndAtivoTrue(Long usuarioId);
 
-	Optional<Estagiario> findById(UUID id);
+	Optional<Estagiario> findById(Long id);
 	
 	Optional<Estagiario> findByPublicId(UUID publicId);
 	

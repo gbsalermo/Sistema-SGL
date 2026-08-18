@@ -79,18 +79,21 @@ public class EstagiarioService {
 
     @Transactional(readOnly = true)
     public EstagiarioDTO buscarPorId(UUID id) {
-        return estagiarioRepository.findById(id)
+        return estagiarioRepository.findByPublicId(id)
                 .map(EstagiarioDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
     }
 
     @Transactional(readOnly = true)
-    public List<EstagiarioDTO> listarPorLaboratorio(Long laboratorioId, UUID id) {
-        if (!laboratorioRepository.existsById(laboratorioId)) {
-            throw new ResourceNotFoundException("Laboratório", id);
-        }
+    public List<EstagiarioDTO> listarPorLaboratorio(UUID id) {
 
-        return estagiarioRepository.findByPublicId(id).stream()
+    	Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Laboratório", id)
+                );
+
+        return estagiarioRepository.findByLaboratorioId(laboratorio.getId())
+                .stream()
                 .map(EstagiarioDTO::new)
                 .toList();
     }
@@ -125,8 +128,8 @@ public class EstagiarioService {
     }
 
     @Transactional
-    public void deletar(Long id) {
-        Estagiario estagiario = estagiarioRepository.findById(id)
+    public void deletar(UUID id) {
+        Estagiario estagiario = estagiarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
 
         estagiario.setAtivo(false);
