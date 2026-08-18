@@ -1,6 +1,7 @@
 package com.sgl.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,13 +33,12 @@ public class LoteController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LoteDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<LoteDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(loteService.buscarPorId(id));
     }
 
     @GetMapping("/por-estoque")
-    public ResponseEntity<List<LoteDTO>> listarPorEstoque(
-            @RequestParam Long estoqueId) {
+    public ResponseEntity<List<LoteDTO>> listarPorEstoque(@RequestParam UUID estoqueId) {
         return ResponseEntity.ok(loteService.listarPorEstoque(estoqueId));
     }
 
@@ -49,13 +49,13 @@ public class LoteController {
 
     @PutMapping("/{id}")
     public ResponseEntity<LoteDTO> atualizar(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody AtualizarLoteDTO dto) {
         return ResponseEntity.ok(loteService.atualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> inativar(@PathVariable Long id) {
+    public ResponseEntity<Void> inativar(@PathVariable UUID id) {
         loteService.inativar(id);
         return ResponseEntity.noContent().build();
     }
