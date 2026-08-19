@@ -19,9 +19,11 @@ import com.sgl.dto.request.EstagiarioRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.service.EstagiarioService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Estagiários", description = "Operações de cadastro, consulta e encerramento de estágios.")
 @RestController
 @RequestMapping("/api/v1/estagiarios")
 @RequiredArgsConstructor
