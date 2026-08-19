@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.AprovarPedidoDTO;
+import com.sgl.dto.request.AprovarPedidoRequestDTO;
 import com.sgl.dto.request.PedidoRequestDTO;
 import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.model.enums.StatusPedido;
@@ -77,7 +78,21 @@ public class PedidoController {
     @PutMapping("/{id}/aprovar")
     public ResponseEntity<PedidoResponseDTO> aprovar(
             @PathVariable UUID id,
-            @Valid @RequestBody AprovarPedidoDTO dto) {
+            @Valid @RequestBody AprovarPedidoRequestDTO request) {
+
+        List<AprovarPedidoDTO.ItemAprovacaoDTO> itens = request.getItens().stream()
+                .map(item -> new AprovarPedidoDTO.ItemAprovacaoDTO(
+                        item.getItemId(),
+                        item.getQuantidadeAprovada()
+                ))
+                .toList();
+
+        AprovarPedidoDTO dto = new AprovarPedidoDTO(
+                request.getObservacao(),
+                itens,
+                request.getUsuarioAprovadorId()
+        );
+
         return ResponseEntity.ok(pedidoService.aprovar(id, dto));
     }
 
