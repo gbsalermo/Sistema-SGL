@@ -49,7 +49,7 @@ public class EstagiarioService {
         usuario.setLaboratorio(laboratorio);
         usuarioRepository.save(usuario);
 
-        // Native insert keeps the JOINED inheritance row tied to the same user id.
+        // O insert nativo mantém a linha da herança JOINED vinculada ao mesmo id de usuário.
         entityManager.createNativeQuery(
                 "INSERT INTO estagiarios (id, data_inicio_estagio, data_fim_estagio, tipo_bolsa, observacao) "
                         + "VALUES (:id, :dataInicio, :dataFim, :tipoBolsa, :observacao)")
