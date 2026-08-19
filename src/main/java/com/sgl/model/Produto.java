@@ -138,6 +138,12 @@ public class Produto implements Serializable {
         }
     }
 
+    public void validateActive() {
+        if (!Boolean.TRUE.equals(ativo)) {
+            throw new BusinessRuleException("O produto está inativo.");
+        }
+    }
+
     @PrePersist
     private void generatePublicId() {
         if (publicId == null) {
