@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.ProdutoDTO;
+import com.sgl.dto.request.ProdutoRequestDTO;
+import com.sgl.dto.response.ProdutoResponseDTO;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.service.ProdutoService;
 
@@ -30,25 +31,25 @@ public class ProdutoController {
     private final ProdutoService produtoService;
 
     @PostMapping
-    public ResponseEntity<ProdutoDTO> criar(@Valid @RequestBody ProdutoDTO dto) {
-        ProdutoDTO salvo = produtoService.criar(dto);
+    public ResponseEntity<ProdutoResponseDTO> criar(@Valid @RequestBody ProdutoRequestDTO dto) {
+        ProdutoResponseDTO salvo = produtoService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
     @GetMapping
-    public ResponseEntity<List<ProdutoDTO>> listarTodos() {
+    public ResponseEntity<List<ProdutoResponseDTO>> listarTodos() {
         return ResponseEntity.ok(produtoService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProdutoDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<ProdutoResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(produtoService.buscarPorId(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProdutoDTO> atualizar(
+    public ResponseEntity<ProdutoResponseDTO> atualizar(
             @PathVariable UUID id,
-            @Valid @RequestBody ProdutoDTO dto) {
+            @Valid @RequestBody ProdutoRequestDTO dto) {
         return ResponseEntity.ok(produtoService.atualizar(id, dto));
     }
 
@@ -59,17 +60,17 @@ public class ProdutoController {
     }
 
     @GetMapping("/risco/{nivel}")
-    public ResponseEntity<List<ProdutoDTO>> listarPorRisco(@PathVariable NivelRisco nivel) {
+    public ResponseEntity<List<ProdutoResponseDTO>> listarPorRisco(@PathVariable NivelRisco nivel) {
         return ResponseEntity.ok(produtoService.listarPorRisco(nivel));
     }
 
     @GetMapping("/pereciveis")
-    public ResponseEntity<List<ProdutoDTO>> listarPereciveis() {
+    public ResponseEntity<List<ProdutoResponseDTO>> listarPereciveis() {
         return ResponseEntity.ok(produtoService.listarPereciveis());
     }
 
     @GetMapping("/buscar")
-    public ResponseEntity<List<ProdutoDTO>> buscarPorNome(@RequestParam String nome) {
+    public ResponseEntity<List<ProdutoResponseDTO>> buscarPorNome(@RequestParam String nome) {
         return ResponseEntity.ok(produtoService.buscarPorNome(nome));
     }
 }
