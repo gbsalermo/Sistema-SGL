@@ -77,6 +77,12 @@ public class Projeto implements Serializable {
         this.dataFim = endDate;
     }
 
+    public void validateActive() {
+        if (!Boolean.TRUE.equals(ativo)) {
+            throw new BusinessRuleException("O projeto informado está inativo.");
+        }
+    }
+
     @PrePersist
     private void generatePublicId() {
         if (publicId == null) {
