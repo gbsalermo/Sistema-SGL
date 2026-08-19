@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.EntradaLoteDTO;
+import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
 import com.sgl.exception.BusinessRuleException;
@@ -110,7 +110,7 @@ public class MovimentacaoEstoqueService {
     @Transactional
     public LoteResponseDTO registrarEntradaLote(
             UUID estoqueId,
-            EntradaLoteDTO dto,
+            EntradaLoteRequestDTO dto,
             Usuario usuario) {
 
         validarUsuarioResponsavel(usuario);
@@ -446,7 +446,7 @@ public class MovimentacaoEstoqueService {
         return movimentacaoRepository.save(movimentacao);
     }
 
-    private void validarEntradaLote(Produto produto, EntradaLoteDTO dto) {
+    private void validarEntradaLote(Produto produto, EntradaLoteRequestDTO dto) {
         validarQuantidade(dto.getQuantidade());
 
         if (dto.getOrigem() == null) {
