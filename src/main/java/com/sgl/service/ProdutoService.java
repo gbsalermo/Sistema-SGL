@@ -87,10 +87,8 @@ public class ProdutoService {
         produto.setCodigoReferencia(dto.getCodigoReferencia());
         produto.setUnidadeMedida(dto.getUnidadeMedida());
         produto.setLocalizacaoFisica(dto.getLocalizacaoFisica());
-
-        preencherRisco(produto, dto);
-        preencherDadosPereciveis(produto, dto);
-
+        produto.updateRisk(dto.getRisco(), dto.getTipoRisco(), dto.getDescricaoRisco());
+        produto.updatePerishability(dto.getPerecivel(), dto.getTipoPerecivel());
         produto.setCondicoesArmazenamento(dto.getCondicoesArmazenamento());
         produto.setUnidadeArmazenamento(dto.getUnidadeArmazenamento());
 
@@ -118,48 +116,5 @@ public class ProdutoService {
                     "Já existe um produto com este código de referência."
             );
         }
-    }
-
-    private void preencherRisco(Produto produto, ProdutoDTO dto) {
-        NivelRisco risco = dto.getRisco();
-
-        if (risco == null) {
-            throw new BusinessRuleException("O nível de risco é obrigatório.");
-        }
-
-        produto.setRisco(risco);
-
-        if (risco == NivelRisco.NENHUM) {
-            produto.setTipoRisco(null);
-            produto.setDescricaoRisco(null);
-            return;
-        }
-
-        if (dto.getTipoRisco() == null) {
-            throw new BusinessRuleException(
-                    "O tipo de risco é obrigatório para produtos com risco."
-            );
-        }
-
-        produto.setTipoRisco(dto.getTipoRisco());
-        produto.setDescricaoRisco(dto.getDescricaoRisco());
-    }
-
-    private void preencherDadosPereciveis(Produto produto, ProdutoDTO dto) {
-        boolean perecivel = Boolean.TRUE.equals(dto.getPerecivel());
-        produto.setPerecivel(perecivel);
-
-        if (!perecivel) {
-            produto.setTipoPerecivel(null);
-            return;
-        }
-
-        if (dto.getTipoPerecivel() == null) {
-            throw new BusinessRuleException(
-                    "O tipo de perecível é obrigatório para produtos perecíveis."
-            );
-        }
-
-        produto.setTipoPerecivel(dto.getTipoPerecivel());
     }
 }
