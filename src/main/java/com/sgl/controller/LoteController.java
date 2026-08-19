@@ -17,9 +17,11 @@ import com.sgl.dto.request.AtualizarLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.service.LoteService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Lotes", description = "Operações de consulta e manutenção dos lotes que compõem o estoque.")
 @RestController
 @RequestMapping("/api/v1/lotes")
 @RequiredArgsConstructor
