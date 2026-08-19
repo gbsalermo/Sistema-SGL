@@ -20,13 +20,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Representa o saldo de um produto dentro de uma unidade específica.
- *
- * <p>Produto é apenas catálogo; a quantidade disponível pertence a esta
- * entidade. A combinação unidade + produto é única para impedir saldos
- * duplicados dentro da mesma unidade.</p>
- */
 @Entity
 @Table(name = "estoque_central", uniqueConstraints = {
         @UniqueConstraint(
@@ -48,34 +41,29 @@ public class EstoqueCentral implements Serializable {
     private Long id;
 
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
-    
-    /** Unidade proprietária do saldo e fronteira usada para separar estoques. */
+    private UUID publicId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unidade_id", nullable = false)
     private Unidade unidade;
 
-    /** Produto do catálogo ao qual este saldo se refere. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
-    /** Saldo disponível para entradas, saídas e atendimento de pedidos. */
     @Column(nullable = false)
     private Integer quantidadeAtual = 0;
 
-    /** Limite usado para identificar necessidade de reposição. */
     @Column(nullable = false)
     private Integer quantidadeMinima = 0;
 
-    /** Permite bloquear operações sem apagar o histórico do registro. */
     @Column(nullable = false)
     private Boolean ativo = true;
-    
+
     @PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
