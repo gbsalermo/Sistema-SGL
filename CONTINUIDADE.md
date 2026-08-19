@@ -2,8 +2,8 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 19/08/2026  
-**Branch da correção:** `mini-ajustes`  
-**Fase atual:** mini ajustes concluídos, compilação e testes aprovados; correção pronta para merge antes da etapa `divisao-dto`.
+**Branch da correção:** `divisao-dto`  
+**Fase atual:** divisão de DTOs concluída e validada; branch pronta para merge na `main`.
 
 Este arquivo registra o estado consolidado do backend, as decisões arquiteturais aprovadas e o ponto exato de continuidade.
 
@@ -185,12 +185,6 @@ Optional<Entidade> findByPublicId(UUID publicId);
 
 Buscas por PK/FK `Long` permanecem quando internas, inclusive locks pessimistas, FEFO/FIFO, consultas técnicas e concorrência.
 
-### DTOs
-
-IDs externos usam `UUID` e mapeiam `entity.getPublicId()`.
-
-`AprovarPedidoDTO.ItemAprovacaoDTO.itemId` também utiliza UUID e a validação de duplicidade usa `Set<UUID>`.
-
 ### ResourceNotFoundException
 
 A exceção aceita identificador genérico:
@@ -220,7 +214,7 @@ Foi aplicada a regra:
 ```text
 nome do método deve indicar seu papel
 comentário apenas quando a implementação não é autoexplicativa
-comentários técnicos em inglês e sem acentos
+comentários técnicos em português
 ```
 
 Comentários redundantes foram removidos. Permaneceram comentários curtos apenas em pontos como:
@@ -284,22 +278,91 @@ Produto x Fornecedor → produto_fornecedor, caso Fornecedor seja criado
 
 `Pedido x Produto` já é corretamente representado por `ItemPedido`, pois a relação possui atributos próprios como quantidade solicitada e aprovada.
 
+## Divisão dos DTOs — CONCLUÍDA
+
+Branch:
+
+```text
+divisao-dto
+```
+
+### Objetivo
+
+Os DTOs antigos acumulavam responsabilidades de entrada e saída. A camada foi separada em contratos explícitos:
+
+```text
+dto/
+├── request/
+└── response/
+```
+
+Regras adotadas:
+
+```text
+RequestDTO
+→ representa entrada da API
+→ não carrega o id do próprio recurso em criação/atualização quando ele já vem pela URL
+→ relacionamentos externos usam UUID público
+→ concentra validações de entrada
+
+ResponseDTO
+→ representa saída da API
+→ id público = entity.getPublicId()
+→ pode trazer nomes e informações enriquecidas
+→ não expõe Long interno
+→ não expõe senha
+```
+
+DTOs de operação também foram movidos para `request`, incluindo aprovação de pedido, entrada/atualização de lote e descarte.
+
+DTOs exclusivamente de consulta, como consumo por laboratório, foram movidos para `response`.
+
+Os DTOs híbridos/legados da raiz de `com.sgl.dto` foram removidos após Services, Controllers e testes passarem a usar diretamente os novos contratos.
+
+### IDs privados e públicos
+
+A separação preserva a arquitetura:
+
+```text
+Model / banco
+Long id       → interno
+UUID publicId → externo
+
+API
+RequestDTO  → UUID para relacionamentos externos
+ResponseDTO → UUID como id público
+```
+
+O `Long id` continua disponível para relacionamentos, locks e consultas técnicas internas, mas não atravessa a API.
+
+### Validação da divisão
+
+Resultado informado após a limpeza final:
+
+```text
+mvn clean test ✅
+Tests run: 23
+Failures: 0
+Errors: 0
+Skipped: 0
+BUILD SUCCESS
+```
+
+A suíte inclui o teste de concorrência de aprovação, que também passou após a migração dos DTOs.
+
+O aviso do Surefire sobre `Corrupted channel by directly writing to native stream` não provocou falha da suíte; o build terminou com sucesso.
+
 ## Testes automatizados — VALIDADO
 
-Resultado após `mini-ajustes`:
+Resultado consolidado após as correções estruturais atuais:
 
 ```text
 mvn clean compile ✅
 mvn test ✅
-```
-
-Os testes existentes passaram sem regressão após:
-
-```text
-V3 de defaults booleanos
-limpeza/padronização de comentários
-renomeação de métodos técnicos
-movimentação de regras de domínio para Models
+mvn clean test ✅
+23 testes ✅
+0 falhas ✅
+0 erros ✅
 ```
 
 ## Validação integrada da migração UUID — CONCLUÍDA
@@ -352,7 +415,6 @@ Sequência aprovada:
 
 ```text
 backend estrutural
-→ correções estruturais restantes
 → OpenAPI/Swagger
 → frontend
 → autenticação + auditoria local
@@ -363,7 +425,7 @@ Enquanto isso, IDs temporários de usuário usados para testes locais continuam 
 
 ## OpenAPI / Swagger
 
-Swagger continua planejado antes do frontend, após as correções estruturais restantes.
+Swagger é a próxima etapa após o merge da divisão dos DTOs.
 
 Pré-condições principais:
 
@@ -373,11 +435,12 @@ mvn test ✅
 aplicação inicia ✅
 UUID público ✅
 mini ajustes ✅
+divisão Request/Response DTO ✅
 ```
 
 ## Frontend
 
-O frontend vem após as correções estruturais restantes e OpenAPI/Swagger.
+O frontend vem após OpenAPI/Swagger.
 
 Referências registradas:
 
@@ -413,15 +476,11 @@ estoque crítico histórico → pós-protótipo
 ## Próxima ação
 
 ```text
-1. merge de mini-ajustes na main
-2. atualizar a branch divisao-dto com a main
-3. separar DTOs de request e response
-4. revisar Services e Controllers para os novos contratos
-5. validar compilação e testes
-6. registrar a divisão dos DTOs neste arquivo
-7. seguir para OpenAPI/Swagger
-8. frontend
-9. autenticação + auditoria local pós-frontend
+1. merge de divisao-dto na main
+2. iniciar OpenAPI/Swagger
+3. revisar contratos expostos pela API
+4. seguir para frontend
+5. autenticação + auditoria local pós-frontend
 ```
 
 ## Documentos de referência
@@ -452,6 +511,9 @@ estoque crítico histórico → pós-protótipo
 | 19/08/2026 | Regressão manual UUID concluída |
 | 19/08/2026 | Correção UUID integrada à `main` |
 | 19/08/2026 | Criada V3 com defaults booleanos no banco |
-| 19/08/2026 | Comentários e nomenclatura técnica padronizados |
+| 19/08/2026 | Comentários técnicos mantidos em português e nomenclatura técnica padronizada |
 | 19/08/2026 | Regras diretamente ligadas às entidades movidas parcialmente dos Services para Models |
 | 19/08/2026 | `mvn clean compile` e `mvn test` aprovados em `mini-ajustes` |
+| 19/08/2026 | DTOs separados em `request` e `response`; DTOs legados removidos |
+| 19/08/2026 | Services, Controllers e testes migrados para os novos contratos de DTO |
+| 19/08/2026 | `mvn clean test`: 23 testes, 0 falhas, 0 erros |
