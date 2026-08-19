@@ -11,7 +11,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-
 import com.sgl.model.Pedido;
 import com.sgl.model.enums.StatusPedido;
 
@@ -19,8 +18,8 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
-	
-	Optional<Pedido> findByPublicId(UUID publicId);
+
+    Optional<Pedido> findByPublicId(UUID publicId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -41,10 +40,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             StatusPedido status
     );
 
-    /**
-     * Pedidos realizados por um projeto específico dentro de um laboratório em
-     * um intervalo de datas de solicitação.
-     */
+    // Filters a project request history inside one laboratory and date range.
     @Query("""
             SELECT pedido
             FROM Pedido pedido
