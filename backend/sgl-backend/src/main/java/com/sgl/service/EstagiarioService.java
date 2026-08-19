@@ -7,7 +7,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.EstagiarioDTO;
+import com.sgl.dto.request.EstagiarioRequestDTO;
+import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Estagiario;
@@ -34,7 +35,7 @@ public class EstagiarioService {
     private EntityManager entityManager;
 
     @Transactional
-    public EstagiarioDTO criar(EstagiarioDTO dto) {
+    public EstagiarioResponseDTO criar(EstagiarioRequestDTO dto) {
         Usuario usuario = buscarUsuario(dto.getUsuarioId());
         Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
 
@@ -68,43 +69,43 @@ public class EstagiarioService {
                         usuario.getId()
                 ));
 
-        return new EstagiarioDTO(salvo);
+        return new EstagiarioResponseDTO(salvo);
     }
 
     @Transactional(readOnly = true)
-    public List<EstagiarioDTO> listarTodos() {
+    public List<EstagiarioResponseDTO> listarTodos() {
         return estagiarioRepository.findAll().stream()
-                .map(EstagiarioDTO::new)
+                .map(EstagiarioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public EstagiarioDTO buscarPorId(UUID id) {
+    public EstagiarioResponseDTO buscarPorId(UUID id) {
         return estagiarioRepository.findByPublicId(id)
-                .map(EstagiarioDTO::new)
+                .map(EstagiarioResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
     }
 
     @Transactional(readOnly = true)
-    public List<EstagiarioDTO> listarPorLaboratorio(UUID id) {
+    public List<EstagiarioResponseDTO> listarPorLaboratorio(UUID id) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
 
         return estagiarioRepository.findByLaboratorioId(laboratorio.getId())
                 .stream()
-                .map(EstagiarioDTO::new)
+                .map(EstagiarioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<EstagiarioDTO> listarAtivos() {
+    public List<EstagiarioResponseDTO> listarAtivos() {
         return estagiarioRepository.findByAtivoTrue().stream()
-                .map(EstagiarioDTO::new)
+                .map(EstagiarioResponseDTO::new)
                 .toList();
     }
 
     @Transactional
-    public EstagiarioDTO atualizar(UUID id, EstagiarioDTO dto) {
+    public EstagiarioResponseDTO atualizar(UUID id, EstagiarioRequestDTO dto) {
         Estagiario estagiario = estagiarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
 
@@ -122,7 +123,7 @@ public class EstagiarioService {
         estagiario.setLaboratorio(laboratorio);
         preencherEstagiario(estagiario, dto);
 
-        return new EstagiarioDTO(estagiarioRepository.save(estagiario));
+        return new EstagiarioResponseDTO(estagiarioRepository.save(estagiario));
     }
 
     @Transactional
@@ -156,7 +157,7 @@ public class EstagiarioService {
         }
     }
 
-    private void preencherEstagiario(Estagiario estagiario, EstagiarioDTO dto) {
+    private void preencherEstagiario(Estagiario estagiario, EstagiarioRequestDTO dto) {
         validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
 
         estagiario.setDataInicioEstagio(dto.getDataInicioEstagio());
@@ -178,7 +179,7 @@ public class EstagiarioService {
     }
 
     @Transactional
-    public EstagiarioDTO encerrarEstagio(UUID id) {
+    public EstagiarioResponseDTO encerrarEstagio(UUID id) {
         Estagiario estagiario = estagiarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
 
@@ -191,6 +192,6 @@ public class EstagiarioService {
             estagiario.setDataFimEstagio(LocalDate.now());
         }
 
-        return new EstagiarioDTO(estagiarioRepository.save(estagiario));
+        return new EstagiarioResponseDTO(estagiarioRepository.save(estagiario));
     }
 }
