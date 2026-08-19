@@ -16,32 +16,17 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, Long> {
-	
-	
-	Optional<EstoqueCentral> findByPublicId(UUID publicId);
-	
-	
-	  /*
-     * Busca comum, sem bloqueio.
-     *
-     * Deve continuar sendo utilizada em operações apenas de consulta,
-     * nas quais quantidadeAtual não será modificada.
-     */
-	Optional<EstoqueCentral> findByUnidadeIdAndProdutoId(Long unidadeId, Long produtoId);
 
-	boolean existsByUnidadeIdAndProdutoId(
-	        Long unidadeId,
-	        Long produtoId
-	);
+    Optional<EstoqueCentral> findByPublicId(UUID publicId);
 
-	 /*
-     * Busca o estoque pelo ID aplicando um bloqueio pessimista de escrita.
-     *
-     * Enquanto a transação que chamou este método não for finalizada,
-     * outra transação que tentar bloquear o mesmo estoque deverá aguardar.
-     *
-     * Esse método deve ser usado apenas quando quantidadeAtual será alterada.
-     */
+    Optional<EstoqueCentral> findByUnidadeIdAndProdutoId(Long unidadeId, Long produtoId);
+
+    boolean existsByUnidadeIdAndProdutoId(
+            Long unidadeId,
+            Long produtoId
+    );
+
+    // Use when the stock balance will be updated inside the transaction.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT estoque
@@ -51,15 +36,8 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
     Optional<EstoqueCentral> buscarPorIdComBloqueio(
             @Param("id") Long id
     );
-    
-    
-    /*
-     * Busca o estoque pela combinação Unidade + Produto aplicando bloqueio
-     * pessimista de escrita.
-     *
-     * Esse método será usado principalmente durante aprovação e cancelamento
-     * de pedidos.
-     */
+
+    // Locks the stock row resolved by unit and product.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT estoque
@@ -71,12 +49,10 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
             @Param("unidadeId") Long unidadeId,
             @Param("produtoId") Long produtoId
     );
-    
-    
-	List<EstoqueCentral> findByUnidadeId(Long unidadeId);
 
-	List<EstoqueCentral> findByUnidadeIdAndAtivoTrue(Long unidadeId);
-	
-	List<EstoqueCentral> findByAtivoTrue();
-	
+    List<EstoqueCentral> findByUnidadeId(Long unidadeId);
+
+    List<EstoqueCentral> findByUnidadeIdAndAtivoTrue(Long unidadeId);
+
+    List<EstoqueCentral> findByAtivoTrue();
 }
