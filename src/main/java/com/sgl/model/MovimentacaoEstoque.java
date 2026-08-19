@@ -59,7 +59,7 @@ public class MovimentacaoEstoque implements Serializable {
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
 
-    // One movement is stored per affected lot to preserve traceability.
+    // Uma movimentação por lote afetado preserva a rastreabilidade.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lote_id")
     private Lote lote;
