@@ -96,15 +96,7 @@ public class HistoricoLaboratorioService {
                 .toList();
     }
 
-    /**
-     * Calcula indicadores de consumo efetivo de um produto por laboratório.
-     *
-     * A fonte é HistoricoLaboratorio, portanto entram no cálculo apenas itens
-     * efetivamente entregues. A média mensal considera todos os meses do
-     * intervalo, inclusive meses sem recebimento. A quantidade mínima sugerida
-     * é a média mensal arredondada para cima e serve somente como referência;
-     * o método não altera automaticamente o EstoqueCentral.
-     */
+    // Includes zero-consumption months when calculating the monthly average.
     @Transactional(readOnly = true)
     public ConsumoProdutoLaboratorioDTO calcularConsumoProduto(
             UUID laboratorioId,
@@ -172,11 +164,7 @@ public class HistoricoLaboratorioService {
         );
     }
 
-    /**
-     * Materiais efetivamente recebidos pelo projeto dentro do laboratório e do
-     * período informados. Esta consulta representa consumo/recebimento, não
-     * apenas solicitações criadas.
-     */
+    // Uses delivered material history, not merely created requests.
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioDTO> listarPorProjetoEPeriodo(
             UUID laboratorioId,
