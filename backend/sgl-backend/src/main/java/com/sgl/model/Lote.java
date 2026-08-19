@@ -43,12 +43,8 @@ public class Lote implements Serializable {
     private Long id;
 
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
-    
-    /*
-     * O lote pertence a um EstoqueCentral específico.
-     * Através do EstoqueCentral já conseguimos descobrir Produto e Unidade.
-     */
+    private UUID publicId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "estoque_central_id", nullable = false)
     private EstoqueCentral estoqueCentral;
@@ -56,30 +52,25 @@ public class Lote implements Serializable {
     @Column(name = "numero_lote", nullable = false, length = 100)
     private String numeroLote;
 
-    /** Quantidade recebida originalmente. Não deve diminuir após a entrada. */
     @Column(nullable = false)
     private Integer quantidadeInicial;
 
-    /** Quantidade que ainda pode ser utilizada. */
     @Column(nullable = false)
     private Integer quantidadeDisponivel;
 
     @Column(nullable = false)
     private LocalDate dataEntrada;
 
-    /*
-     * Produto perecível: obrigatória.
-     * Produto não perecível: deve permanecer nula e será consumido por FIFO.
-     */
+    // Required for perishable products; null for FIFO products.
     private LocalDate dataValidade;
 
     @Column(nullable = false)
     private Boolean ativo = true;
-    
+
     @PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
