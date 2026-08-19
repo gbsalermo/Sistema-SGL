@@ -20,8 +20,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.sgl.dto.ConsumoProdutoLaboratorioDTO;
-import com.sgl.dto.HistoricoLaboratorioDTO;
+import com.sgl.dto.response.ConsumoProdutoLaboratorioResponseDTO;
+import com.sgl.dto.response.HistoricoLaboratorioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.HistoricoLaboratorio;
 import com.sgl.model.Laboratorio;
@@ -135,7 +135,7 @@ class HistoricoLaboratorioServiceTest {
                 fim
         )).thenReturn(List.of(historico));
 
-        List<HistoricoLaboratorioDTO> resultado =
+        List<HistoricoLaboratorioResponseDTO> resultado =
                 historicoLaboratorioService.listarPorProjetoEPeriodo(
                         LABORATORIO_PUBLIC_ID,
                         PROJETO_PUBLIC_ID,
@@ -198,7 +198,7 @@ class HistoricoLaboratorioServiceTest {
                 fim
         )).thenReturn(List.of(primeiroRecebimento, segundoRecebimento));
 
-        ConsumoProdutoLaboratorioDTO resultado =
+        ConsumoProdutoLaboratorioResponseDTO resultado =
                 historicoLaboratorioService.calcularConsumoProduto(
                         LABORATORIO_PUBLIC_ID,
                         PRODUTO_PUBLIC_ID,
@@ -230,7 +230,7 @@ class HistoricoLaboratorioServiceTest {
                 fim
         )).thenReturn(List.of());
 
-        ConsumoProdutoLaboratorioDTO resultado =
+        ConsumoProdutoLaboratorioResponseDTO resultado =
                 historicoLaboratorioService.calcularConsumoProduto(
                         LABORATORIO_PUBLIC_ID,
                         PRODUTO_PUBLIC_ID,
