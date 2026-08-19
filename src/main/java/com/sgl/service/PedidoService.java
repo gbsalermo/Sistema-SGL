@@ -13,8 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.AprovarPedidoDTO;
-import com.sgl.dto.ItemPedidoDTO;
-import com.sgl.dto.PedidoDTO;
+import com.sgl.dto.request.ItemPedidoRequestDTO;
+import com.sgl.dto.request.PedidoRequestDTO;
+import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
@@ -51,7 +52,7 @@ public class PedidoService {
     private final MovimentacaoEstoqueService movimentacaoEstoqueService;
 
     @Transactional
-    public PedidoDTO criar(PedidoDTO dto) {
+    public PedidoResponseDTO criar(PedidoRequestDTO dto) {
         Usuario usuario = usuarioRepository.findByPublicId(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
 
@@ -90,7 +91,7 @@ public class PedidoService {
 
         Set<Long> produtosAdicionados = new HashSet<>();
 
-        for (ItemPedidoDTO itemDTO : dto.getItens()) {
+        for (ItemPedidoRequestDTO itemDTO : dto.getItens()) {
             Produto produto = produtoRepository.findByPublicId(itemDTO.getProdutoId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Produto",
@@ -125,39 +126,41 @@ public class PedidoService {
             pedido.getItens().add(item);
         }
 
-        return new PedidoDTO(pedidoRepository.save(pedido));
+        return new PedidoResponseDTO(pedidoRepository.save(pedido));
     }
 
     @Transactional(readOnly = true)
-    public List<PedidoDTO> listarTodos() {
-        return pedidoRepository.findAll().stream().map(PedidoDTO::new).toList();
+    public List<PedidoResponseDTO> listarTodos() {
+        return pedidoRepository.findAll().stream().map(PedidoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
-    public PedidoDTO buscarPorId(UUID id) {
+    public PedidoResponseDTO buscarPorId(UUID id) {
         Pedido pedido = pedidoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
-        return new PedidoDTO(pedido);
+        return new PedidoResponseDTO(pedido);
     }
 
     @Transactional(readOnly = true)
-    public List<PedidoDTO> listarPorUsuario(UUID usuarioId) {
+    public List<PedidoResponseDTO> listarPorUsuario(UUID usuarioId) {
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 
         return pedidoRepository.findByUsuarioId(usuario.getId()).stream()
-                .map(PedidoDTO::new)
+                .map(PedidoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<PedidoDTO> listarPorStatus(StatusPedido status) {
-        return pedidoRepository.findByStatus(status).stream().map(PedidoDTO::new).toList();
+    public List<PedidoResponseDTO> listarPorStatus(StatusPedido status) {
+        return pedidoRepository.findByStatus(status).stream()
+                .map(PedidoResponseDTO::new)
+                .toList();
     }
 
     // Resolve os UUIDs públicos antes de filtrar por FKs internas e período.
     @Transactional(readOnly = true)
-    public List<PedidoDTO> listarPorProjetoEPeriodo(
+    public List<PedidoResponseDTO> listarPorProjetoEPeriodo(
             UUID laboratorioId,
             UUID projetoId,
             LocalDate dataInicio,
@@ -189,12 +192,12 @@ public class PedidoService {
                         fim
                 )
                 .stream()
-                .map(PedidoDTO::new)
+                .map(PedidoResponseDTO::new)
                 .toList();
     }
 
     @Transactional
-    public PedidoDTO aprovar(UUID id, AprovarPedidoDTO dto) {
+    public PedidoResponseDTO aprovar(UUID id, AprovarPedidoDTO dto) {
         UUID aprovadorId = dto.getUsuarioAprovadorId();
 
         if (aprovadorId == null) {
@@ -265,11 +268,11 @@ public class PedidoService {
 
         pedido.setStatus(StatusPedido.APROVADO);
         pedido.setObservacao(dto.getObservacao());
-        return new PedidoDTO(pedidoRepository.save(pedido));
+        return new PedidoResponseDTO(pedidoRepository.save(pedido));
     }
 
     @Transactional
-    public PedidoDTO rejeitar(UUID id, String observacao) {
+    public PedidoResponseDTO rejeitar(UUID id, String observacao) {
         Pedido pedido = buscarPedidoComBloqueio(id);
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
@@ -281,11 +284,11 @@ public class PedidoService {
 
         pedido.setStatus(StatusPedido.REJEITADO);
         pedido.setObservacao(observacao);
-        return new PedidoDTO(pedidoRepository.save(pedido));
+        return new PedidoResponseDTO(pedidoRepository.save(pedido));
     }
 
     @Transactional
-    public PedidoDTO entregar(UUID id) {
+    public PedidoResponseDTO entregar(UUID id) {
         Pedido pedido = buscarPedidoComBloqueio(id);
 
         if (pedido.getStatus() != StatusPedido.APROVADO) {
@@ -310,11 +313,11 @@ public class PedidoService {
         }
 
         pedido.setStatus(StatusPedido.ENTREGUE);
-        return new PedidoDTO(pedidoRepository.save(pedido));
+        return new PedidoResponseDTO(pedidoRepository.save(pedido));
     }
 
     @Transactional
-    public PedidoDTO cancelar(UUID id, String observacao) {
+    public PedidoResponseDTO cancelar(UUID id, String observacao) {
         Pedido pedido = buscarPedidoComBloqueio(id);
 
         if (pedido.getStatus() == StatusPedido.REJEITADO) {
@@ -339,7 +342,7 @@ public class PedidoService {
 
         pedido.setStatus(StatusPedido.CANCELADO);
         pedido.setObservacao(observacao);
-        return new PedidoDTO(pedidoRepository.save(pedido));
+        return new PedidoResponseDTO(pedidoRepository.save(pedido));
     }
 
     private Pedido buscarPedidoComBloqueio(UUID publicId) {
