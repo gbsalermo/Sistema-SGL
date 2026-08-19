@@ -23,9 +23,11 @@ import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.service.MovimentacaoEstoqueService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Movimentações de Estoque", description = "Operações de entrada, descarte e consulta das movimentações físicas de estoque.")
 @RestController
 @RequestMapping("/api/v1/movimentacoes")
 @RequiredArgsConstructor
