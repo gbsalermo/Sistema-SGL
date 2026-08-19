@@ -23,7 +23,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Catálogo global dos materiais controlados pelo SGL. */
 @Entity
 @Table(name = "produtos")
 @Getter
@@ -38,9 +37,9 @@ public class Produto implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
+    private UUID publicId;
 
     @Column(nullable = false)
     private String nome;
@@ -65,7 +64,6 @@ public class Produto implements Serializable {
 
     private String descricaoRisco;
 
-    /** Define se os lotes deste produto exigem controle de validade. */
     @Column(nullable = false)
     private Boolean perecivel = false;
 
@@ -78,11 +76,11 @@ public class Produto implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
-    
+
     @PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
