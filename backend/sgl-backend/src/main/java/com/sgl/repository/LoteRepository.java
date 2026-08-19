@@ -44,7 +44,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             """)
     Optional<Lote> buscarPorIdComBloqueio(@Param("id") Long id);
 
-    // FEFO: earliest valid expiration date first.
+    // FEFO: primeiro lote válido a vencer é o primeiro a sair.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -61,7 +61,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             @Param("dataReferencia") LocalDate dataReferencia
     );
 
-    // FIFO: earliest received lot first.
+    // FIFO: primeiro lote recebido é o primeiro a sair.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -75,7 +75,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             @Param("estoqueId") Long estoqueId
     );
 
-    // Locks expired lots in expiration order for disposal.
+    // Mantém os lotes vencidos reservados em ordem de vencimento para descarte.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
