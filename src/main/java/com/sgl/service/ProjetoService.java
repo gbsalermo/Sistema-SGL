@@ -6,7 +6,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.ProjetoDTO;
+import com.sgl.dto.request.ProjetoRequestDTO;
+import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
@@ -23,7 +24,7 @@ public class ProjetoService {
     private final LaboratorioRepository laboratorioRepository;
 
     @Transactional
-    public ProjetoDTO criar(ProjetoDTO dto) {
+    public ProjetoResponseDTO criar(ProjetoRequestDTO dto) {
         Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
 
         Projeto projeto = Projeto.builder()
@@ -32,32 +33,32 @@ public class ProjetoService {
         preencherProjeto(projeto, dto);
 
         Projeto salvo = projetoRepository.save(projeto);
-        return new ProjetoDTO(salvo);
+        return new ProjetoResponseDTO(salvo);
     }
 
     @Transactional(readOnly = true)
-    public List<ProjetoDTO> listarTodos() {
-        return projetoRepository.findAll().stream().map(ProjetoDTO::new).toList();
+    public List<ProjetoResponseDTO> listarTodos() {
+        return projetoRepository.findAll().stream().map(ProjetoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
-    public ProjetoDTO buscarPorId(UUID id) {
+    public ProjetoResponseDTO buscarPorId(UUID id) {
         return projetoRepository.findByPublicId(id)
-                .map(ProjetoDTO::new)
+                .map(ProjetoResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
     }
 
     @Transactional(readOnly = true)
-    public List<ProjetoDTO> listarPorLaboratorio(UUID laboratorioId) {
+    public List<ProjetoResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
         return projetoRepository.findByLaboratorioId(laboratorio.getId())
-                .stream().map(ProjetoDTO::new).toList();
+                .stream().map(ProjetoResponseDTO::new).toList();
     }
 
     @Transactional
-    public ProjetoDTO atualizar(UUID id, ProjetoDTO dto) {
+    public ProjetoResponseDTO atualizar(UUID id, ProjetoRequestDTO dto) {
         Projeto projeto = projetoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
 
@@ -65,7 +66,7 @@ public class ProjetoService {
 
         projeto.setLaboratorio(novoLaboratorio);
         preencherProjeto(projeto, dto);
-        return new ProjetoDTO(projetoRepository.save(projeto));
+        return new ProjetoResponseDTO(projetoRepository.save(projeto));
     }
 
     @Transactional
@@ -76,11 +77,11 @@ public class ProjetoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProjetoDTO> listarAtivos() {
-        return projetoRepository.findByAtivoTrue().stream().map(ProjetoDTO::new).toList();
+    public List<ProjetoResponseDTO> listarAtivos() {
+        return projetoRepository.findByAtivoTrue().stream().map(ProjetoResponseDTO::new).toList();
     }
 
-    private void preencherProjeto(Projeto projeto, ProjetoDTO dto) {
+    private void preencherProjeto(Projeto projeto, ProjetoRequestDTO dto) {
         projeto.setNome(dto.getNome());
         projeto.setDescricao(dto.getDescricao());
         projeto.updateDates(dto.getDataInicio(), dto.getDataFim());
