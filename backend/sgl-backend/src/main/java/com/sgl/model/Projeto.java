@@ -28,41 +28,40 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Projeto implements Serializable{
-	
-	private static final long  serialVersionUId = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "laboratorio_id", nullable = false)
-	@ToString.Exclude
-	private Laboratorio laboratorio;
-	
-	@Column(nullable = false)
-	private String nome;
-	
-	private String descricao;
-	
-	private LocalDate dataInicio;
-	
-	private LocalDate dataFim;
-	
-	private String responsavel;
-	
-	@Column(nullable = false)
-	private Boolean ativo = true;
-	
-	@PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
+public class Projeto implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "laboratorio_id", nullable = false)
+    @ToString.Exclude
+    private Laboratorio laboratorio;
+
+    @Column(nullable = false)
+    private String nome;
+
+    private String descricao;
+
+    private LocalDate dataInicio;
+
+    private LocalDate dataFim;
+
+    private String responsavel;
+
+    @Column(nullable = false)
+    private Boolean ativo = true;
+
+    @PrePersist
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
