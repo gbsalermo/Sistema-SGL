@@ -18,9 +18,11 @@ import com.sgl.dto.request.UnidadeRequestDTO;
 import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.service.UnidadeService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Unidades", description = "Operações de cadastro e consulta das unidades institucionais.")
 @RestController
 @RequestMapping("/api/v1/unidades")
 @RequiredArgsConstructor
