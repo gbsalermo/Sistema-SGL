@@ -61,7 +61,7 @@ public class Lote implements Serializable {
     @Column(nullable = false)
     private LocalDate dataEntrada;
 
-    // Required for perishable products; null for FIFO products.
+    // Obrigatória para perecíveis; nula para produtos controlados por FIFO.
     private LocalDate dataValidade;
 
     @Column(nullable = false)
