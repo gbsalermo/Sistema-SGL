@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.AtualizarLoteDTO;
-import com.sgl.dto.LoteDTO;
+import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
@@ -26,43 +26,43 @@ public class LoteService {
     private final EstoqueCentralRepository estoqueCentralRepository;
 
     @Transactional(readOnly = true)
-    public List<LoteDTO> listarTodos() {
+    public List<LoteResponseDTO> listarTodos() {
         return loteRepository.findAll()
                 .stream()
-                .map(LoteDTO::new)
+                .map(LoteResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public LoteDTO buscarPorId(UUID id) {
+    public LoteResponseDTO buscarPorId(UUID id) {
         Lote lote = loteRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
 
-        return new LoteDTO(lote);
+        return new LoteResponseDTO(lote);
     }
 
     @Transactional(readOnly = true)
-    public List<LoteDTO> listarPorEstoque(UUID estoqueId) {
+    public List<LoteResponseDTO> listarPorEstoque(UUID estoqueId) {
         EstoqueCentral estoque = estoqueCentralRepository.findByPublicId(estoqueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque central", estoqueId));
 
         return loteRepository.findByEstoqueCentralId(estoque.getId())
                 .stream()
-                .map(LoteDTO::new)
+                .map(LoteResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<LoteDTO> listarVencidos() {
+    public List<LoteResponseDTO> listarVencidos() {
         return loteRepository
                 .findByDataValidadeBeforeAndAtivoTrue(LocalDate.now())
                 .stream()
-                .map(LoteDTO::new)
+                .map(LoteResponseDTO::new)
                 .toList();
     }
 
     @Transactional
-    public LoteDTO atualizar(UUID id, AtualizarLoteDTO dto) {
+    public LoteResponseDTO atualizar(UUID id, AtualizarLoteDTO dto) {
         Lote lote = loteRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
 
@@ -96,7 +96,7 @@ public class LoteService {
             lote.setAtivo(dto.getAtivo());
         }
 
-        return new LoteDTO(loteRepository.save(lote));
+        return new LoteResponseDTO(loteRepository.save(lote));
     }
 
     @Transactional
