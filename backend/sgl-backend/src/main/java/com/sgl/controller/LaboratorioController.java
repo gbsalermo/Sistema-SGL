@@ -19,9 +19,11 @@ import com.sgl.dto.request.LaboratorioRequestDTO;
 import com.sgl.dto.response.LaboratorioResponseDTO;
 import com.sgl.service.LaboratorioService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Laboratórios", description = "Operações de cadastro e consulta dos laboratórios vinculados às unidades.")
 @RestController
 @RequestMapping("/api/v1/laboratorios")
 @RequiredArgsConstructor
