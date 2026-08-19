@@ -19,9 +19,11 @@ import com.sgl.dto.request.EstoqueCentralRequestDTO;
 import com.sgl.dto.response.EstoqueCentralResponseDTO;
 import com.sgl.service.EstoqueCentralService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Estoque Central", description = "Operações de consulta e gerenciamento do estoque central por unidade e produto.")
 @RestController
 @RequestMapping("/api/v1/estoque-central")
 @RequiredArgsConstructor
