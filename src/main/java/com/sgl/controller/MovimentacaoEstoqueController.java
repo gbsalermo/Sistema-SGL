@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.DescarteProdutoDTO;
 import com.sgl.dto.EntradaLoteDTO;
-import com.sgl.dto.LoteDTO;
-import com.sgl.dto.MovimentacaoEstoqueDTO;
+import com.sgl.dto.response.LoteResponseDTO;
+import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.TipoMovimentacao;
@@ -35,48 +35,48 @@ public class MovimentacaoEstoqueController {
     private final UsuarioRepository usuarioRepository;
 
     @GetMapping
-    public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarTodos() {
+    public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarTodos() {
         return ResponseEntity.ok(movimentacaoService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MovimentacaoEstoqueDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<MovimentacaoEstoqueResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(movimentacaoService.buscarPorId(id));
     }
 
     @GetMapping("/produto")
-    public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorProduto(
+    public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarPorProduto(
             @RequestParam UUID produtoId) {
         return ResponseEntity.ok(movimentacaoService.listarPorProduto(produtoId));
     }
 
     @GetMapping("/laboratorio")
-    public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorLaboratorio(
+    public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarPorLaboratorio(
             @RequestParam UUID laboratorioId) {
         return ResponseEntity.ok(movimentacaoService.listarPorLaboratorio(laboratorioId));
     }
 
     @GetMapping("/usuario")
-    public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorUsuario(
+    public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarPorUsuario(
             @RequestParam UUID usuarioId) {
         return ResponseEntity.ok(movimentacaoService.listarPorUsuario(usuarioId));
     }
 
     @GetMapping("/pedido")
-    public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorPedido(
+    public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarPorPedido(
             @RequestParam UUID pedidoId) {
         return ResponseEntity.ok(movimentacaoService.listarPorPedido(pedidoId));
     }
 
     @GetMapping("/tipo")
-    public ResponseEntity<List<MovimentacaoEstoqueDTO>> listarPorTipo(
+    public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> listarPorTipo(
             @RequestParam TipoMovimentacao tipo) {
         return ResponseEntity.ok(movimentacaoService.listarPorTipo(tipo));
     }
 
     // usuarioId temporário até a autenticação fornecer o usuário atual.
     @PostMapping("/estoques/{estoqueId}/lotes")
-    public ResponseEntity<LoteDTO> registrarEntradaLote(
+    public ResponseEntity<LoteResponseDTO> registrarEntradaLote(
             @PathVariable UUID estoqueId,
             @RequestParam UUID usuarioId,
             @Valid @RequestBody EntradaLoteDTO dto) {
@@ -84,7 +84,7 @@ public class MovimentacaoEstoqueController {
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 
-        LoteDTO lote = movimentacaoService.registrarEntradaLote(
+        LoteResponseDTO lote = movimentacaoService.registrarEntradaLote(
                 estoqueId,
                 dto,
                 usuario
@@ -95,7 +95,7 @@ public class MovimentacaoEstoqueController {
 
     // usuarioId temporário até a autenticação fornecer o usuário atual.
     @PostMapping("/estoques/{estoqueId}/descarte-vencimento")
-    public ResponseEntity<List<MovimentacaoEstoqueDTO>> descartarVencidos(
+    public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> descartarVencidos(
             @PathVariable UUID estoqueId,
             @RequestParam UUID usuarioId,
             @Valid @RequestBody DescarteProdutoDTO dto) {
