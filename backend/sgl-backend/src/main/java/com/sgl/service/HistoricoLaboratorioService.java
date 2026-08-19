@@ -96,7 +96,7 @@ public class HistoricoLaboratorioService {
                 .toList();
     }
 
-    // Includes zero-consumption months when calculating the monthly average.
+    // Inclui meses sem consumo no cálculo da média mensal.
     @Transactional(readOnly = true)
     public ConsumoProdutoLaboratorioDTO calcularConsumoProduto(
             UUID laboratorioId,
@@ -164,7 +164,7 @@ public class HistoricoLaboratorioService {
         );
     }
 
-    // Uses delivered material history, not merely created requests.
+    // Usa materiais efetivamente entregues, e não apenas pedidos criados.
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioDTO> listarPorProjetoEPeriodo(
             UUID laboratorioId,
