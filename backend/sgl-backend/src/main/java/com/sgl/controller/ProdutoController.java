@@ -20,9 +20,11 @@ import com.sgl.dto.response.ProdutoResponseDTO;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.service.ProdutoService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Produtos", description = "Operações de cadastro, consulta e classificação dos produtos do catálogo.")
 @RestController
 @RequestMapping("/api/v1/produtos")
 @RequiredArgsConstructor
