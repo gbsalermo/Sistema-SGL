@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.ConsumoProdutoLaboratorioDTO;
+import com.sgl.dto.response.ConsumoProdutoLaboratorioResponseDTO;
 import com.sgl.dto.response.HistoricoLaboratorioResponseDTO;
 import com.sgl.service.HistoricoLaboratorioService;
 
@@ -70,7 +70,7 @@ public class HistoricoLaboratorioController {
     }
 
     @GetMapping("/laboratorio/{laboratorioId}/produto/{produtoId}/consumo")
-    public ResponseEntity<ConsumoProdutoLaboratorioDTO> calcularConsumoProduto(
+    public ResponseEntity<ConsumoProdutoLaboratorioResponseDTO> calcularConsumoProduto(
             @PathVariable UUID laboratorioId,
             @PathVariable UUID produtoId,
             @RequestParam LocalDate dataInicio,
