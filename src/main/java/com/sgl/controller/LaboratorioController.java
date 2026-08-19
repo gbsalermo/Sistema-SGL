@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.LaboratorioDTO;
+import com.sgl.dto.request.LaboratorioRequestDTO;
+import com.sgl.dto.response.LaboratorioResponseDTO;
 import com.sgl.service.LaboratorioService;
 
 import jakarta.validation.Valid;
@@ -29,30 +30,32 @@ public class LaboratorioController {
     private final LaboratorioService laboratorioService;
 
     @GetMapping
-    public ResponseEntity<List<LaboratorioDTO>> listarTodos() {
+    public ResponseEntity<List<LaboratorioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(laboratorioService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LaboratorioDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<LaboratorioResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(laboratorioService.buscarPorId(id));
     }
 
     @GetMapping("/por-unidade")
-    public ResponseEntity<List<LaboratorioDTO>> listarPorUnidade(@RequestParam UUID unidadeId) {
+    public ResponseEntity<List<LaboratorioResponseDTO>> listarPorUnidade(
+            @RequestParam UUID unidadeId) {
         return ResponseEntity.ok(laboratorioService.listarPorUnidade(unidadeId));
     }
 
     @PostMapping
-    public ResponseEntity<LaboratorioDTO> criar(@Valid @RequestBody LaboratorioDTO dto) {
-        LaboratorioDTO novoLaboratorio = laboratorioService.criar(dto);
+    public ResponseEntity<LaboratorioResponseDTO> criar(
+            @Valid @RequestBody LaboratorioRequestDTO dto) {
+        LaboratorioResponseDTO novoLaboratorio = laboratorioService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoLaboratorio);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<LaboratorioDTO> atualizar(
+    public ResponseEntity<LaboratorioResponseDTO> atualizar(
             @PathVariable UUID id,
-            @Valid @RequestBody LaboratorioDTO dto) {
+            @Valid @RequestBody LaboratorioRequestDTO dto) {
         return ResponseEntity.ok(laboratorioService.atualizar(id, dto));
     }
 
