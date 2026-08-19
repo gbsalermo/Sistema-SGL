@@ -7,7 +7,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
-//LINHA DE TESTE IGNORA
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -19,22 +19,20 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .referrerPolicy(referrer ->
                     referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                .frameOptions(frame -> frame.disable()) //permite iframes do h2 Console
+                .frameOptions(frame -> frame.disable()) // Required by the H2 console iframe.
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/h2-console/**").permitAll() //permite acesso ao h2 console
-                .anyRequest().permitAll() //Por enquanto, permite tudo(focado em desenvolvimento)
+                .requestMatchers("/h2-console/**").permitAll()
+                .anyRequest().permitAll() // Temporary until local authentication is implemented.
             )
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable());
 
-        return http.build();    
-
+        return http.build();
     }
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }

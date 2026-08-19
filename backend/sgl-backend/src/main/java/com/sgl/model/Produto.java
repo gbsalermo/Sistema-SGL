@@ -1,8 +1,10 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.UUID;
 
+import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
@@ -23,7 +25,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Catálogo global dos materiais controlados pelo SGL. */
 @Entity
 @Table(name = "produtos")
 @Getter
@@ -38,9 +39,9 @@ public class Produto implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
+    private UUID publicId;
 
     @Column(nullable = false)
     private String nome;
@@ -65,7 +66,6 @@ public class Produto implements Serializable {
 
     private String descricaoRisco;
 
-    /** Define se os lotes deste produto exigem controle de validade. */
     @Column(nullable = false)
     private Boolean perecivel = false;
 
@@ -78,11 +78,76 @@ public class Produto implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
-    
+
+    public void updateRisk(
+            NivelRisco riskLevel,
+            TipoRisco riskType,
+            String riskDescription) {
+
+        if (riskLevel == null) {
+            throw new BusinessRuleException("O nível de risco é obrigatório.");
+        }
+
+        this.risco = riskLevel;
+
+        if (riskLevel == NivelRisco.NENHUM) {
+            this.tipoRisco = null;
+            this.descricaoRisco = null;
+            return;
+        }
+
+        if (riskType == null) {
+            throw new BusinessRuleException(
+                    "O tipo de risco é obrigatório para produtos com risco."
+            );
+        }
+
+        this.tipoRisco = riskType;
+        this.descricaoRisco = riskDescription;
+    }
+
+    public void updatePerishability(Boolean isPerishable, TipoPerecivel perishableType) {
+        boolean perishable = Boolean.TRUE.equals(isPerishable);
+        this.perecivel = perishable;
+
+        if (!perishable) {
+            this.tipoPerecivel = null;
+            return;
+        }
+
+        if (perishableType == null) {
+            throw new BusinessRuleException(
+                    "O tipo de perecível é obrigatório para produtos perecíveis."
+            );
+        }
+
+        this.tipoPerecivel = perishableType;
+    }
+
+    public void validateLotExpirationDate(LocalDate expirationDate) {
+        if (Boolean.TRUE.equals(perecivel) && expirationDate == null) {
+            throw new BusinessRuleException(
+                    "Data de validade é obrigatória para produto perecível."
+            );
+        }
+
+        if (!Boolean.TRUE.equals(perecivel) && expirationDate != null) {
+            throw new BusinessRuleException(
+                    "Produto não perecível não deve possuir data de validade no lote."
+            );
+        }
+    }
+
+    public void validateActive() {
+        if (!Boolean.TRUE.equals(ativo)) {
+            throw new BusinessRuleException("O produto está inativo.");
+        }
+    }
+
     @PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }

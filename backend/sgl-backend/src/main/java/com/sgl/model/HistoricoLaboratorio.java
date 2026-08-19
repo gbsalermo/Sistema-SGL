@@ -29,40 +29,40 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 public class HistoricoLaboratorio implements Serializable {
-    
+
     public static final long serialVersionUID = 1L;
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
     private UUID publicId;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "laboratorio_id", nullable = false)
     private Laboratorio laboratorio;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
-    
+
     @Column(nullable = false)
     private Integer quantidade;
-    
+
     @Column(nullable = false)
     private LocalDate dataRecebimento;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pedido_id", nullable = false)
     @ToString.Exclude
     private Pedido pedido;
-    
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
     @PrePersist
-    private void gerarPublicId() {
+    private void generatePublicId() {
         if (publicId == null) {
             publicId = UUID.randomUUID();
         }

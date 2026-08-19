@@ -1,6 +1,5 @@
 package com.sgl.service;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.ProjetoDTO;
-import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
@@ -83,11 +81,9 @@ public class ProjetoService {
     }
 
     private void preencherProjeto(Projeto projeto, ProjetoDTO dto) {
-        validarDatas(dto.getDataInicio(), dto.getDataFim());
         projeto.setNome(dto.getNome());
         projeto.setDescricao(dto.getDescricao());
-        projeto.setDataInicio(dto.getDataInicio());
-        projeto.setDataFim(dto.getDataFim());
+        projeto.updateDates(dto.getDataInicio(), dto.getDataFim());
         projeto.setResponsavel(dto.getResponsavel());
 
         if (projeto.getId() == null) {
@@ -101,19 +97,7 @@ public class ProjetoService {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
-        if (!Boolean.TRUE.equals(laboratorio.getAtivo())) {
-            throw new BusinessRuleException("O laboratório informado está inativo.");
-        }
-
+        laboratorio.validateActive();
         return laboratorio;
-    }
-
-    private void validarDatas(LocalDate dataInicio, LocalDate dataFim) {
-        if (dataInicio == null && dataFim != null) {
-            throw new BusinessRuleException("A data de início é obrigatória quando a data de fim for informada.");
-        }
-        if (dataInicio != null && dataFim != null && dataInicio.isAfter(dataFim)) {
-            throw new BusinessRuleException("A data de início não pode ser posterior à data de fim.");
-        }
     }
 }

@@ -71,7 +71,11 @@ public class PedidoService {
         }
 
         validarConsistenciaPedido(usuario, laboratorio, projeto);
-        validarEntidadesAtivas(usuario, laboratorio, projeto);
+        usuario.validateActive();
+        laboratorio.validateActive();
+        if (projeto != null) {
+            projeto.validateActive();
+        }
 
         Pedido pedido = Pedido.builder()
                 .usuario(usuario)
@@ -100,11 +104,7 @@ public class PedidoService {
                 );
             }
 
-            if (!Boolean.TRUE.equals(produto.getAtivo())) {
-                throw new BusinessRuleException(
-                        "O produto '" + produto.getNome() + "' está inativo."
-                );
-            }
+            produto.validateActive();
 
             Long unidadeId = laboratorio.getUnidade().getId();
             EstoqueCentral estoque = estoqueCentralRepository
@@ -114,12 +114,7 @@ public class PedidoService {
                                     + "' na unidade " + laboratorio.getUnidade().getNome()
                     ));
 
-            if (!Boolean.TRUE.equals(estoque.getAtivo())) {
-                throw new BusinessRuleException(
-                        "O estoque central do produto '"
-                                + produto.getNome() + "' está inativo."
-                );
-            }
+            estoque.validateActive();
 
             ItemPedido item = ItemPedido.builder()
                     .pedido(pedido)
@@ -160,10 +155,7 @@ public class PedidoService {
         return pedidoRepository.findByStatus(status).stream().map(PedidoDTO::new).toList();
     }
 
-    /**
-     * Lista os pedidos criados por um projeto específico dentro de determinado
-     * laboratório e intervalo de datas de solicitação.
-     */
+    // Resolves public ids before filtering by internal foreign keys and date range.
     @Transactional(readOnly = true)
     public List<PedidoDTO> listarPorProjetoEPeriodo(
             UUID laboratorioId,
@@ -215,9 +207,7 @@ public class PedidoService {
                         aprovadorId
                 ));
 
-        if (!Boolean.TRUE.equals(usuarioAprovador.getAtivo())) {
-            throw new BusinessRuleException("O usuário aprovador está inativo.");
-        }
+        usuarioAprovador.validateActive();
 
         Pedido pedido = buscarPedidoComBloqueio(id);
 
@@ -387,22 +377,6 @@ public class PedidoService {
             throw new BusinessRuleException(
                     "O projeto informado não pertence ao laboratório do pedido."
             );
-        }
-    }
-
-    private void validarEntidadesAtivas(
-            Usuario usuario,
-            Laboratorio laboratorio,
-            Projeto projeto) {
-
-        if (!Boolean.TRUE.equals(usuario.getAtivo())) {
-            throw new BusinessRuleException("O usuário informado está inativo.");
-        }
-        if (!Boolean.TRUE.equals(laboratorio.getAtivo())) {
-            throw new BusinessRuleException("O laboratório informado está inativo.");
-        }
-        if (projeto != null && !Boolean.TRUE.equals(projeto.getAtivo())) {
-            throw new BusinessRuleException("O projeto informado está inativo.");
         }
     }
 

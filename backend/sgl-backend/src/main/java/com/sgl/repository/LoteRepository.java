@@ -17,8 +17,8 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface LoteRepository extends JpaRepository<Lote, Long> {
-	
-	Optional<Lote> findByPublicId(UUID publicId);
+
+    Optional<Lote> findByPublicId(UUID publicId);
 
     List<Lote> findByEstoqueCentralId(Long estoqueCentralId);
 
@@ -44,7 +44,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             """)
     Optional<Lote> buscarPorIdComBloqueio(@Param("id") Long id);
 
-    /** FEFO: primeiro lote válido a vencer, primeiro a sair. */
+    // FEFO: earliest valid expiration date first.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -61,7 +61,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             @Param("dataReferencia") LocalDate dataReferencia
     );
 
-    /** FIFO: primeiro lote recebido, primeiro a sair. */
+    // FIFO: earliest received lot first.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -75,7 +75,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             @Param("estoqueId") Long estoqueId
     );
 
-    /** Lotes vencidos disponíveis para descarte, em ordem de vencimento. */
+    // Locks expired lots in expiration order for disposal.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
