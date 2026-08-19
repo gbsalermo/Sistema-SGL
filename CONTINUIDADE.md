@@ -2,8 +2,8 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 19/08/2026  
-**Branch da correção:** `refactor/public-uuid`  
-**Fase atual:** migração para UUID público concluída, validada e aprovada para merge na `main`.
+**Branch da correção:** `mini-ajustes`  
+**Fase atual:** mini ajustes concluídos, compilação e testes aprovados; correção pronta para merge antes da etapa `divisao-dto`.
 
 Este arquivo registra o estado consolidado do backend, as decisões arquiteturais aprovadas e o ponto exato de continuidade.
 
@@ -94,9 +94,42 @@ banco vazio
 → aplicação iniciada normalmente
 ```
 
-Durante o desenvolvimento houve mismatch de checksum porque a V2 havia sido alterada após uma execução anterior em `dev`. O banco foi recriado em vez de usar `flyway repair`, garantindo que a versão final da migration fosse realmente executada do zero.
+A V2 está congelada. Toda mudança estrutural posterior deve usar V3 ou superior.
 
-**Após o merge desta correção, V2 fica congelada. Toda mudança estrutural posterior deve usar V3 ou superior.**
+### V3 — defaults booleanos
+
+Criada em `mini-ajustes`:
+
+```text
+src/main/resources/db/migration/V3__add_boolean_defaults.sql
+```
+
+Objetivo:
+
+```text
+campos booleanos obrigatórios também possuem valor default no banco
+```
+
+Defaults definidos:
+
+```text
+ativo      → DEFAULT TRUE
+perecivel  → DEFAULT FALSE
+```
+
+Tabelas contempladas conforme os campos existentes:
+
+```text
+produtos
+laboratorios
+usuarios
+estoque_central
+lote
+projetos
+historico_laboratorio
+```
+
+A migration não altera V1/V2, preservando o histórico do Flyway.
 
 ## Correção estrutural — UUID público
 
@@ -134,13 +167,13 @@ Controller recebe UUID
 → backend usa Long id internamente quando necessário
 ```
 
-## Estado por camada — CONCLUÍDO
+## Estado por camada — UUID CONCLUÍDO
 
 ### Entidades
 
 As entidades públicas possuem `publicId` com geração automática via `@PrePersist`.
 
-Durante os testes foi identificado que `MovimentacaoEstoque` e `HistoricoLaboratorio` possuíam `publicId`, porém estavam sem geração automática. Foi adicionado `@PrePersist` nas duas entidades para impedir INSERT com `public_id = NULL`.
+`MovimentacaoEstoque` e `HistoricoLaboratorio` também possuem geração automática, evitando INSERT com `public_id = NULL`.
 
 ### Repositories
 
@@ -154,26 +187,13 @@ Buscas por PK/FK `Long` permanecem quando internas, inclusive locks pessimistas,
 
 ### DTOs
 
-IDs externos foram migrados de `Long` para `UUID` e mapeiam `entity.getPublicId()`.
-
-Foi conferido:
-
-```bash
-grep -R "Long .*Id" src/main/java/com/sgl/dto
-grep -R "getId()" src/main/java/com/sgl/dto
-```
-
-Resultado:
-
-```text
-nenhuma ocorrência pendente nos DTOs
-```
+IDs externos usam `UUID` e mapeiam `entity.getPublicId()`.
 
 `AprovarPedidoDTO.ItemAprovacaoDTO.itemId` também utiliza UUID e a validação de duplicidade usa `Set<UUID>`.
 
 ### ResourceNotFoundException
 
-A exceção passou a aceitar identificador genérico:
+A exceção aceita identificador genérico:
 
 ```java
 public ResourceNotFoundException(String recurso, Object id)
@@ -181,88 +201,105 @@ public ResourceNotFoundException(String recurso, Object id)
 
 Isso permite UUID na fronteira pública e `Long` em operações internas.
 
-### Services
+### Services e Controllers
 
-Migrados:
+A fronteira pública utiliza UUID; o `Long` é usado apenas após a entidade ser resolvida internamente.
 
-```text
-UnidadeService
-LaboratorioService
-ProdutoService
-ProjetoService
-UsuarioService
-EstagiarioService
-EstoqueCentralService
-LoteService
-HistoricoLaboratorioService
-MovimentacaoEstoqueService
-PedidoService
-```
+## Mini ajustes — CONCLUÍDO
 
-Regra aplicada:
+Branch:
 
 ```text
-entrada pública → UUID
-→ findByPublicId(UUID)
-→ Long apenas depois de resolver a entidade
+mini-ajustes
 ```
 
-### Controllers
+### Padronização de comentários
 
-Migrados:
+Foi aplicada a regra:
 
 ```text
-UnidadeController
-LaboratorioController
-ProdutoController
-ProjetoController
-UsuarioController
-EstagiarioController
-EstoqueCentralController
-LoteController
-HistoricoLaboratorioController
-PedidoController
-MovimentacaoEstoqueController
+nome do método deve indicar seu papel
+comentário apenas quando a implementação não é autoexplicativa
+comentários técnicos em inglês e sem acentos
 ```
 
-`@PathVariable` e `@RequestParam` que identificam entidades públicas agora utilizam UUID.
-
-### DataInitializer
-
-Validado com a nova arquitetura:
+Comentários redundantes foram removidos. Permaneceram comentários curtos apenas em pontos como:
 
 ```text
-Long id → banco gera
-UUID publicId → @PrePersist gera
+locks pessimistas
+FEFO/FIFO
+regras de rastreabilidade
+cálculos menos diretos
+herança JPA
+endpoints temporários de desenvolvimento
 ```
 
-A aplicação foi iniciada em banco vazio e o initializer executou normalmente após V1 + V2.
+### Padronização de idioma técnico
+
+Elementos técnicos novos/refatorados foram padronizados em inglês, por exemplo:
+
+```text
+gerarPublicId() → generatePublicId()
+validateActive()
+validateInternProfile()
+updateRisk()
+updateDates()
+validateLotExpirationDate()
+```
+
+Não foi feita tradução global de nomes do domínio (`Usuario`, `Pedido`, `Laboratorio`, `Produto`, endpoints e colunas), pois isso alteraria contratos existentes e excederia o escopo de mini ajustes.
+
+### Regras de domínio movidas para Models
+
+Parte das validações que estavam concentradas nos Services foi aproximada das entidades responsáveis.
+
+Exemplos:
+
+```text
+Usuario → valida perfil e estado ativo
+Laboratorio → valida estado ativo
+Projeto → valida datas e estado ativo
+Produto → valida risco, perecibilidade e validade de lote
+EstoqueCentral → valida estado ativo
+```
+
+Objetivo:
+
+```text
+Service = orquestração, transação e acesso a repositories
+Model = regras diretamente ligadas ao próprio estado da entidade
+```
+
+### Relacionamentos N:N — decisão conceitual
+
+Nenhuma nova tabela N:N foi criada nesta etapa.
+
+Possibilidades futuras identificadas:
+
+```text
+Projeto x Usuario   → projeto_membro
+Projeto x Produto   → projeto_material
+Produto x Fornecedor → produto_fornecedor, caso Fornecedor seja criado
+```
+
+`Pedido x Produto` já é corretamente representado por `ItemPedido`, pois a relação possui atributos próprios como quantidade solicitada e aprovada.
 
 ## Testes automatizados — VALIDADO
 
-Foram migrados os testes afetados pela mudança de contrato externo:
-
-```text
-HistoricoLaboratorioServiceTest
-MovimentacaoEstoqueServiceTest
-PedidoServiceTest
-PedidoConcorrenciaIntegrationTest
-```
-
-Padrão dos fixtures:
-
-```text
-Long id       → identidade interna
-UUID publicId → identidade externa usada nas chamadas aos Services
-```
-
-O teste de concorrência continua preservando locks e validações de saldo.
-
-Resultado final:
+Resultado após `mini-ajustes`:
 
 ```text
 mvn clean compile ✅
 mvn test ✅
+```
+
+Os testes existentes passaram sem regressão após:
+
+```text
+V3 de defaults booleanos
+limpeza/padronização de comentários
+renomeação de métodos técnicos
+movimentação de regras de domínio para Models
 ```
 
 ## Validação integrada da migração UUID — CONCLUÍDA
@@ -280,8 +317,6 @@ mvn test ✅
 
 ### Regressão manual principal no Postman — CONCLUÍDA
 
-Foram executados os cinco testes principais:
-
 ```text
 1. buscar entidade por UUID                                      ✅
 2. criar pedido usando UUIDs relacionados                       ✅
@@ -290,29 +325,9 @@ Foram executados os cinco testes principais:
 5. cancelar pedido aprovado usando UUID                         ✅
 ```
 
-A aprovação confirmou o fluxo completo da nova fronteira pública até a baixa de estoque e movimentação. O cancelamento confirmou a resolução do pedido por UUID e a restauração interna dos lotes/estoque. A consulta por laboratório/projeto/período confirmou que múltiplos UUIDs externos são resolvidos e convertidos para IDs internos apenas dentro do backend.
-
-### Resultado final da correção
-
-```text
-Entidades             ✅
-Migration V2          ✅
-Repositories          ✅
-DTOs                  ✅
-Exceptions            ✅
-Services              ✅
-Controllers           ✅
-DataInitializer       ✅
-Compilação            ✅
-Testes automatizados  ✅
-Regressão Postman     ✅
-```
-
-**Correção `refactor/public-uuid` aprovada para Pull Request e merge na `main`.**
-
 ## Validações manuais críticas anteriores
 
-Antes da migração UUID já estavam validados em PostgreSQL real:
+Já validados em PostgreSQL real:
 
 ```text
 entrada de lote
@@ -329,11 +344,9 @@ consistência EstoqueCentral = soma dos lotes
 concorrência de aprovação
 ```
 
-A migração UUID não redesenhou essas regras; alterou apenas a fronteira pública dos identificadores.
-
 ## Autenticação e auditoria — DECISÃO ATUAL
 
-Autenticação local simulada e revisão final de auditoria/autorização serão implementadas **após o frontend**.
+Autenticação local simulada e revisão final de auditoria/autorização serão implementadas após o frontend.
 
 Sequência aprovada:
 
@@ -346,21 +359,20 @@ backend estrutural
 → integração futura com autenticação corporativa
 ```
 
-Enquanto isso, IDs temporários de usuário usados para testes locais podem continuar existindo, mas sempre como UUID público.
+Enquanto isso, IDs temporários de usuário usados para testes locais continuam como UUID público.
 
 ## OpenAPI / Swagger
 
 Swagger continua planejado antes do frontend, após as correções estruturais restantes.
 
-Pré-condições relacionadas ao UUID estão atendidas:
+Pré-condições principais:
 
 ```text
 compilação ✅
 mvn test ✅
 aplicação inicia ✅
-V2 aplicada ✅
-endpoints migrados para UUID ✅
-regressão manual UUID ✅
+UUID público ✅
+mini ajustes ✅
 ```
 
 ## Frontend
@@ -401,13 +413,15 @@ estoque crítico histórico → pós-protótipo
 ## Próxima ação
 
 ```text
-1. merge de refactor/public-uuid na main
-2. criar branch própria para a próxima correção estrutural
-3. analisar → revisar → validar → aprovar
-4. registrar a nova correção neste arquivo
-5. após as correções estruturais, seguir para OpenAPI/Swagger
-6. frontend
-7. autenticação + auditoria local pós-frontend
+1. merge de mini-ajustes na main
+2. atualizar a branch divisao-dto com a main
+3. separar DTOs de request e response
+4. revisar Services e Controllers para os novos contratos
+5. validar compilação e testes
+6. registrar a divisão dos DTOs neste arquivo
+7. seguir para OpenAPI/Swagger
+8. frontend
+9. autenticação + auditoria local pós-frontend
 ```
 
 ## Documentos de referência
@@ -435,6 +449,9 @@ estoque crítico histórico → pós-protótipo
 | 18/08/2026 | Entidades, V2, repositories, DTOs, Services e Controllers migrados para UUID |
 | 18/08/2026 | V1 + V2 validadas em banco recriado do zero |
 | 18/08/2026 | DataInitializer e testes automatizados migrados/validados |
-| 18/08/2026 | `@PrePersist` corrigido em `MovimentacaoEstoque` e `HistoricoLaboratorio` |
-| 19/08/2026 | Regressão manual UUID concluída: busca, criação, aprovação, consulta relacional e cancelamento aprovados |
-| 19/08/2026 | Correção `refactor/public-uuid` aprovada para merge na `main` |
+| 19/08/2026 | Regressão manual UUID concluída |
+| 19/08/2026 | Correção UUID integrada à `main` |
+| 19/08/2026 | Criada V3 com defaults booleanos no banco |
+| 19/08/2026 | Comentários e nomenclatura técnica padronizados |
+| 19/08/2026 | Regras diretamente ligadas às entidades movidas parcialmente dos Services para Models |
+| 19/08/2026 | `mvn clean compile` e `mvn test` aprovados em `mini-ajustes` |
