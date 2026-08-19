@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.DescarteProdutoDTO;
-import com.sgl.dto.EntradaLoteDTO;
 import com.sgl.dto.request.DescarteProdutoRequestDTO;
 import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
@@ -81,18 +79,10 @@ public class MovimentacaoEstoqueController {
     public ResponseEntity<LoteResponseDTO> registrarEntradaLote(
             @PathVariable UUID estoqueId,
             @RequestParam UUID usuarioId,
-            @Valid @RequestBody EntradaLoteRequestDTO request) {
+            @Valid @RequestBody EntradaLoteRequestDTO dto) {
 
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
-
-        EntradaLoteDTO dto = new EntradaLoteDTO(
-                request.getNumeroLote(),
-                request.getQuantidade(),
-                request.getDataValidade(),
-                request.getOrigem(),
-                request.getObservacao()
-        );
 
         LoteResponseDTO lote = movimentacaoService.registrarEntradaLote(
                 estoqueId,
@@ -108,15 +98,10 @@ public class MovimentacaoEstoqueController {
     public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> descartarVencidos(
             @PathVariable UUID estoqueId,
             @RequestParam UUID usuarioId,
-            @Valid @RequestBody DescarteProdutoRequestDTO request) {
+            @Valid @RequestBody DescarteProdutoRequestDTO dto) {
 
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
-
-        DescarteProdutoDTO dto = new DescarteProdutoDTO(
-                request.getQuantidade(),
-                request.getJustificativa()
-        );
 
         return ResponseEntity.ok(
                 movimentacaoService.registrarDescarteVencimento(
