@@ -74,10 +74,7 @@ public class MovimentacaoEstoqueController {
         return ResponseEntity.ok(movimentacaoService.listarPorTipo(tipo));
     }
 
-    /**
-     * Endpoint temporário para desenvolvimento local.
-     * O usuarioId será substituído pelo contexto autenticado posteriormente.
-     */
+    // Temporary userId until authentication provides the current user.
     @PostMapping("/estoques/{estoqueId}/lotes")
     public ResponseEntity<LoteDTO> registrarEntradaLote(
             @PathVariable UUID estoqueId,
@@ -96,10 +93,7 @@ public class MovimentacaoEstoqueController {
         return ResponseEntity.status(HttpStatus.CREATED).body(lote);
     }
 
-    /**
-     * Endpoint temporário para desenvolvimento local.
-     * O usuarioId será substituído pelo contexto autenticado posteriormente.
-     */
+    // Temporary userId until authentication provides the current user.
     @PostMapping("/estoques/{estoqueId}/descarte-vencimento")
     public ResponseEntity<List<MovimentacaoEstoqueDTO>> descartarVencidos(
             @PathVariable UUID estoqueId,
