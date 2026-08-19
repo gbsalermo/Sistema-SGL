@@ -13,16 +13,11 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
-import com.sgl.model.Produto;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LoteRepository;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Cuida de consultas e manutenção cadastral do lote.
- * Alterações de quantidade pertencem ao fluxo de movimentação física.
- */
 @Service
 @RequiredArgsConstructor
 public class LoteService {
@@ -83,10 +78,9 @@ public class LoteService {
             );
         }
 
-        validarValidadeDoProduto(
-                lote.getEstoqueCentral().getProduto(),
-                dto.getDataValidade()
-        );
+        lote.getEstoqueCentral()
+                .getProduto()
+                .validateLotExpirationDate(dto.getDataValidade());
 
         if (Boolean.FALSE.equals(dto.getAtivo())
                 && lote.getQuantidadeDisponivel() > 0) {
@@ -117,19 +111,5 @@ public class LoteService {
         }
 
         lote.setAtivo(false);
-    }
-
-    private void validarValidadeDoProduto(Produto produto, LocalDate dataValidade) {
-        if (Boolean.TRUE.equals(produto.getPerecivel()) && dataValidade == null) {
-            throw new BusinessRuleException(
-                    "Data de validade é obrigatória para produto perecível."
-            );
-        }
-
-        if (!Boolean.TRUE.equals(produto.getPerecivel()) && dataValidade != null) {
-            throw new BusinessRuleException(
-                    "Produto não perecível não deve possuir data de validade no lote."
-            );
-        }
     }
 }
