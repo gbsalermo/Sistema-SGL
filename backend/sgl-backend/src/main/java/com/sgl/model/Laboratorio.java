@@ -11,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -34,9 +33,9 @@ public class Laboratorio implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
+    private UUID publicId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unidade_id", nullable = false)
@@ -53,12 +52,11 @@ public class Laboratorio implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
-    
-    @PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
-}
 
+    @PrePersist
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
+}
