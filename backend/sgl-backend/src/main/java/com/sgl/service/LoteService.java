@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.AtualizarLoteDTO;
+import com.sgl.dto.request.AtualizarLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -62,7 +62,7 @@ public class LoteService {
     }
 
     @Transactional
-    public LoteResponseDTO atualizar(UUID id, AtualizarLoteDTO dto) {
+    public LoteResponseDTO atualizar(UUID id, AtualizarLoteRequestDTO dto) {
         Lote lote = loteRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
 
