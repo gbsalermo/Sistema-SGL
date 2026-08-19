@@ -3,6 +3,8 @@ package com.sgl.model;
 import java.io.Serializable;
 import java.util.UUID;
 
+import com.sgl.exception.BusinessRuleException;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -59,6 +61,12 @@ public class EstoqueCentral implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    public void validateActive() {
+        if (!Boolean.TRUE.equals(ativo)) {
+            throw new BusinessRuleException("O estoque informado está inativo.");
+        }
+    }
 
     @PrePersist
     private void generatePublicId() {
