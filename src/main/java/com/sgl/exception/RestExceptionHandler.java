@@ -17,15 +17,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
-/**
- * Converte exceções lançadas pela aplicação em respostas HTTP padronizadas.
- */
 @RestControllerAdvice
 public class RestExceptionHandler {
 
-    /**
-     * Trata recursos que não existem.
-     */
     @ExceptionHandler({
             ResourceNotFoundException.class,
             EntityNotFoundException.class
@@ -42,9 +36,6 @@ public class RestExceptionHandler {
         );
     }
 
-    /**
-     * Trata violações conhecidas das regras de negócio.
-     */
     @ExceptionHandler({
             BusinessRuleException.class,
             IllegalArgumentException.class
@@ -61,9 +52,6 @@ public class RestExceptionHandler {
         );
     }
 
-    /**
-     * Trata falhas das anotações de validação dos DTOs.
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(
             MethodArgumentNotValidException ex,
@@ -90,10 +78,6 @@ public class RestExceptionHandler {
                 .body(error);
     }
 
-    /**
-     * Trata JSON inválido, enum inexistente ou valor incompatível
-     * com o tipo esperado pelo DTO.
-     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleUnreadableMessage(
             HttpMessageNotReadableException ex,
@@ -107,9 +91,6 @@ public class RestExceptionHandler {
         );
     }
 
-    /**
-     * Trata parâmetros obrigatórios que não foram enviados.
-     */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiError> handleMissingParameter(
             MissingServletRequestParameterException ex,
@@ -127,9 +108,6 @@ public class RestExceptionHandler {
         );
     }
 
-    /**
-     * Trata parâmetros enviados com tipo ou enum inválido.
-     */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex,
@@ -148,10 +126,6 @@ public class RestExceptionHandler {
         );
     }
 
-    /**
-     * Trata violações de restrições do banco, como campos únicos
-     * ou relacionamentos obrigatórios.
-     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrity(
             DataIntegrityViolationException ex,
@@ -165,10 +139,6 @@ public class RestExceptionHandler {
         );
     }
 
-    /**
-     * Impede que detalhes internos e stack traces sejam enviados
-     * ao cliente em erros inesperados.
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleUnexpected(
             Exception ex,
@@ -182,9 +152,7 @@ public class RestExceptionHandler {
         );
     }
 
-    private FieldValidationError convertFieldError(
-            FieldError fieldError) {
-
+    private FieldValidationError convertFieldError(FieldError fieldError) {
         return new FieldValidationError(
                 fieldError.getField(),
                 fieldError.getDefaultMessage()
