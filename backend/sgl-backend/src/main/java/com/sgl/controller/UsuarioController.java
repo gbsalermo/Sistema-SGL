@@ -19,9 +19,11 @@ import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.service.UsuarioService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Usuários", description = "Operações de cadastro, consulta e inativação dos usuários do sistema.")
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @RequiredArgsConstructor
