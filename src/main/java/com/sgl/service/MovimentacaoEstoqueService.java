@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.EntradaLoteDTO;
-import com.sgl.dto.LoteDTO;
-import com.sgl.dto.MovimentacaoEstoqueDTO;
+import com.sgl.dto.response.LoteResponseDTO;
+import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
@@ -47,68 +47,68 @@ public class MovimentacaoEstoqueService {
     private final PedidoRepository pedidoRepository;
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarTodos() {
+    public List<MovimentacaoEstoqueResponseDTO> listarTodos() {
         return movimentacaoRepository.findAll().stream()
-                .map(MovimentacaoEstoqueDTO::new)
+                .map(MovimentacaoEstoqueResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public MovimentacaoEstoqueDTO buscarPorId(UUID id) {
+    public MovimentacaoEstoqueResponseDTO buscarPorId(UUID id) {
         return movimentacaoRepository.findByPublicId(id)
-                .map(MovimentacaoEstoqueDTO::new)
+                .map(MovimentacaoEstoqueResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Movimentação", id));
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorProduto(UUID produtoId) {
+    public List<MovimentacaoEstoqueResponseDTO> listarPorProduto(UUID produtoId) {
         Produto produto = produtoRepository.findByPublicId(produtoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
 
         return movimentacaoRepository.findByProdutoId(produto.getId()).stream()
-                .map(MovimentacaoEstoqueDTO::new)
+                .map(MovimentacaoEstoqueResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorLaboratorio(UUID laboratorioId) {
+    public List<MovimentacaoEstoqueResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
         return movimentacaoRepository.findByLaboratorioId(laboratorio.getId()).stream()
-                .map(MovimentacaoEstoqueDTO::new)
+                .map(MovimentacaoEstoqueResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorUsuario(UUID usuarioId) {
+    public List<MovimentacaoEstoqueResponseDTO> listarPorUsuario(UUID usuarioId) {
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 
         return movimentacaoRepository.findByUsuarioId(usuario.getId()).stream()
-                .map(MovimentacaoEstoqueDTO::new)
+                .map(MovimentacaoEstoqueResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorPedido(UUID pedidoId) {
+    public List<MovimentacaoEstoqueResponseDTO> listarPorPedido(UUID pedidoId) {
         Pedido pedido = pedidoRepository.findByPublicId(pedidoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
 
         return movimentacaoRepository.findByPedidoId(pedido.getId()).stream()
-                .map(MovimentacaoEstoqueDTO::new)
+                .map(MovimentacaoEstoqueResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorTipo(TipoMovimentacao tipo) {
+    public List<MovimentacaoEstoqueResponseDTO> listarPorTipo(TipoMovimentacao tipo) {
         return movimentacaoRepository.findByTipoMovimentacao(tipo).stream()
-                .map(MovimentacaoEstoqueDTO::new)
+                .map(MovimentacaoEstoqueResponseDTO::new)
                 .toList();
     }
 
     @Transactional
-    public LoteDTO registrarEntradaLote(
+    public LoteResponseDTO registrarEntradaLote(
             UUID estoqueId,
             EntradaLoteDTO dto,
             Usuario usuario) {
@@ -156,12 +156,12 @@ public class MovimentacaoEstoqueService {
                 dto.getObservacao()
         );
 
-        return new LoteDTO(lote);
+        return new LoteResponseDTO(lote);
     }
 
     // Usa FEFO para produtos perecíveis e FIFO para os demais.
     @Transactional
-    public List<MovimentacaoEstoqueDTO> registrarSaida(
+    public List<MovimentacaoEstoqueResponseDTO> registrarSaida(
             Long estoqueId,
             Integer quantidade,
             Usuario usuario,
@@ -187,7 +187,7 @@ public class MovimentacaoEstoqueService {
             );
         }
 
-        List<MovimentacaoEstoqueDTO> movimentacoes = new ArrayList<>();
+        List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
         int restante = quantidade;
 
         for (Lote lote : lotes) {
@@ -219,7 +219,7 @@ public class MovimentacaoEstoqueService {
                     observacao
             );
 
-            movimentacoes.add(new MovimentacaoEstoqueDTO(movimentacao));
+            movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
             restante -= consumido;
         }
 
@@ -228,7 +228,7 @@ public class MovimentacaoEstoqueService {
 
     // Consome os lotes vencidos em ordem de vencimento.
     @Transactional
-    public List<MovimentacaoEstoqueDTO> registrarDescarteVencimento(
+    public List<MovimentacaoEstoqueResponseDTO> registrarDescarteVencimento(
             UUID estoqueId,
             Integer quantidade,
             String justificativa,
@@ -261,7 +261,7 @@ public class MovimentacaoEstoqueService {
             );
         }
 
-        List<MovimentacaoEstoqueDTO> movimentacoes = new ArrayList<>();
+        List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
         int restante = quantidade;
 
         for (Lote lote : lotesVencidos) {
@@ -293,7 +293,7 @@ public class MovimentacaoEstoqueService {
                     justificativa
             );
 
-            movimentacoes.add(new MovimentacaoEstoqueDTO(movimentacao));
+            movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
             restante -= descartado;
         }
 
@@ -377,10 +377,10 @@ public class MovimentacaoEstoqueService {
     }
 
     @Transactional
-    public List<LoteDTO> listarLotesOrdenadosParaSaida(Long estoqueId) {
+    public List<LoteResponseDTO> listarLotesOrdenadosParaSaida(Long estoqueId) {
         EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
         return buscarLotesParaSaida(estoque).stream()
-                .map(LoteDTO::new)
+                .map(LoteResponseDTO::new)
                 .toList();
     }
 
