@@ -1,9 +1,8 @@
-package com.sgl.dto;
+package com.sgl.dto.response;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.Lote;
 
 import lombok.AllArgsConstructor;
@@ -15,37 +14,22 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoteDTO {
+public class LoteResponseDTO {
 
     private UUID id;
-
     private UUID estoqueCentralId;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private UUID produtoId;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String produtoNome;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private UUID unidadeId;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unidadeNome;
-
     private String numeroLote;
-
     private Integer quantidadeInicial;
-
     private Integer quantidadeDisponivel;
-
     private LocalDate dataEntrada;
-
     private LocalDate dataValidade;
-
     private Boolean ativo;
 
-    public LoteDTO(Lote entity) {
+    public LoteResponseDTO(Lote entity) {
         this.id = entity.getPublicId();
         this.estoqueCentralId = entity.getEstoqueCentral().getPublicId();
         this.produtoId = entity.getEstoqueCentral().getProduto().getPublicId();

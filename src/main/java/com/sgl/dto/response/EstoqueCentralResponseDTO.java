@@ -1,12 +1,9 @@
-package com.sgl.dto;
+package com.sgl.dto.response;
 
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.EstoqueCentral;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,39 +13,20 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class EstoqueCentralDTO {
+public class EstoqueCentralResponseDTO {
 
     private UUID id;
-
-    @NotNull(message = "Id da unidade é obrigatório")
     private UUID unidadeId;
-
-    @NotNull(message = "Id do produto é obrigatorio")
-    private UUID produtoId;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unidadeNome;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unidadeSigla;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private UUID produtoId;
     private String produtoNome;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String produtoUnidadeArmazenamento;
-
-    // Saldo agregado alterado apenas pelas movimentações de lote.
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer quantidadeAtual;
-
-    @NotNull(message = "quantidade minima é obrigatoria")
-    @Min(value = 0, message = "quantidade mínima não pode ser negativa")
     private Integer quantidadeMinima;
-
     private Boolean ativo;
 
-    public EstoqueCentralDTO(EstoqueCentral entity) {
+    public EstoqueCentralResponseDTO(EstoqueCentral entity) {
         this.id = entity.getPublicId();
         this.unidadeId = entity.getUnidade().getPublicId();
         this.unidadeNome = entity.getUnidade().getNome();

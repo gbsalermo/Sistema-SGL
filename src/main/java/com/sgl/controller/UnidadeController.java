@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.UnidadeDTO;
+import com.sgl.dto.request.UnidadeRequestDTO;
+import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.service.UnidadeService;
 
 import jakarta.validation.Valid;
@@ -28,25 +29,26 @@ public class UnidadeController {
     private final UnidadeService unidadeService;
 
     @GetMapping
-    public ResponseEntity<List<UnidadeDTO>> listarTodos() {
+    public ResponseEntity<List<UnidadeResponseDTO>> listarTodos() {
         return ResponseEntity.ok(unidadeService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UnidadeDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<UnidadeResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(unidadeService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<UnidadeDTO> criar(@Valid @RequestBody UnidadeDTO dto) {
-        UnidadeDTO novaUnidade = unidadeService.criar(dto);
+    public ResponseEntity<UnidadeResponseDTO> criar(
+            @Valid @RequestBody UnidadeRequestDTO dto) {
+        UnidadeResponseDTO novaUnidade = unidadeService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(novaUnidade);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UnidadeDTO> atualizar(
+    public ResponseEntity<UnidadeResponseDTO> atualizar(
             @PathVariable UUID id,
-            @Valid @RequestBody UnidadeDTO dto) {
+            @Valid @RequestBody UnidadeRequestDTO dto) {
         return ResponseEntity.ok(unidadeService.atualizar(id, dto));
     }
 

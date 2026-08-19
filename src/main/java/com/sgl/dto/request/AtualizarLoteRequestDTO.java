@@ -1,4 +1,4 @@
-package com.sgl.dto;
+package com.sgl.dto.request;
 
 import java.time.LocalDate;
 
@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class AtualizarLoteDTO {
+public class AtualizarLoteRequestDTO {
 
     @NotBlank(message = "Número do lote é obrigatório")
     private String numeroLote;

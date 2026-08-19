@@ -6,7 +6,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.LaboratorioDTO;
+import com.sgl.dto.request.LaboratorioRequestDTO;
+import com.sgl.dto.response.LaboratorioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
@@ -27,15 +28,15 @@ public class LaboratorioService {
     private final UsuarioRepository usuarioRepository;
 
     @Transactional
-    public LaboratorioDTO criar(LaboratorioDTO dto) {
+    public LaboratorioResponseDTO criar(LaboratorioRequestDTO dto) {
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
         Laboratorio laboratorio = new Laboratorio();
         laboratorio.setDescricao(dto.getDescricao());
 
-        if (dto.getResponsavel() != null) {
-            Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavel(), unidade);
+        if (dto.getResponsavelId() != null) {
+            Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavelId(), unidade);
             laboratorio.setResponsavel(responsavel);
         }
 
@@ -43,43 +44,43 @@ public class LaboratorioService {
         laboratorio.setNome(dto.getNome());
         laboratorio.setUnidade(unidade);
 
-        return new LaboratorioDTO(laboratorioRepository.save(laboratorio));
+        return new LaboratorioResponseDTO(laboratorioRepository.save(laboratorio));
     }
 
     @Transactional(readOnly = true)
-    public List<LaboratorioDTO> listarTodos() {
+    public List<LaboratorioResponseDTO> listarTodos() {
         return laboratorioRepository.findAll().stream()
-                .map(LaboratorioDTO::new)
+                .map(LaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<LaboratorioDTO> listarPorUnidade(UUID unidadeId) {
+    public List<LaboratorioResponseDTO> listarPorUnidade(UUID unidadeId) {
         Unidade unidade = unidadeRepository.findByPublicId(unidadeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", unidadeId));
 
         return laboratorioRepository.findByUnidadeId(unidade.getId()).stream()
-                .map(LaboratorioDTO::new)
+                .map(LaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public LaboratorioDTO buscarPorId(UUID id) {
+    public LaboratorioResponseDTO buscarPorId(UUID id) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
-        return new LaboratorioDTO(laboratorio);
+        return new LaboratorioResponseDTO(laboratorio);
     }
 
     @Transactional
-    public LaboratorioDTO atualizar(UUID id, LaboratorioDTO dto) {
+    public LaboratorioResponseDTO atualizar(UUID id, LaboratorioRequestDTO dto) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
 
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
-        if (dto.getResponsavel() != null) {
-            laboratorio.setResponsavel(buscarResponsavelCompativel(dto.getResponsavel(), unidade));
+        if (dto.getResponsavelId() != null) {
+            laboratorio.setResponsavel(buscarResponsavelCompativel(dto.getResponsavelId(), unidade));
         } else {
             laboratorio.setResponsavel(null);
         }
@@ -92,7 +93,7 @@ public class LaboratorioService {
             laboratorio.setAtivo(dto.getAtivo());
         }
 
-        return new LaboratorioDTO(laboratorioRepository.save(laboratorio));
+        return new LaboratorioResponseDTO(laboratorioRepository.save(laboratorio));
     }
 
     @Transactional

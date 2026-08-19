@@ -1,4 +1,4 @@
-package com.sgl.dto;
+package com.sgl.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -9,7 +9,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ConsumoProdutoLaboratorioDTO {
+public class ConsumoProdutoLaboratorioResponseDTO {
     private UUID laboratorioId;
     private String laboratorioNome;
     private UUID produtoId;

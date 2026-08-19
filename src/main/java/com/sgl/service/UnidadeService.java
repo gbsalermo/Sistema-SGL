@@ -6,7 +6,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.UnidadeDTO;
+import com.sgl.dto.request.UnidadeRequestDTO;
+import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Unidade;
@@ -21,7 +22,7 @@ public class UnidadeService {
     private final UnidadeRepository unidadeRepository;
 
     @Transactional
-    public UnidadeDTO criar(UnidadeDTO dto) {
+    public UnidadeResponseDTO criar(UnidadeRequestDTO dto) {
         if (unidadeRepository.existsBySigla(dto.getSigla())) {
             throw new BusinessRuleException("Já existe uma unidade com esta sigla.");
         }
@@ -29,23 +30,25 @@ public class UnidadeService {
         Unidade unidade = new Unidade();
         unidade.setNome(dto.getNome());
         unidade.setSigla(dto.getSigla());
-        return new UnidadeDTO(unidadeRepository.save(unidade));
+        return new UnidadeResponseDTO(unidadeRepository.save(unidade));
     }
 
     @Transactional(readOnly = true)
-    public List<UnidadeDTO> listarTodos() {
-        return unidadeRepository.findAll().stream().map(UnidadeDTO::new).toList();
+    public List<UnidadeResponseDTO> listarTodos() {
+        return unidadeRepository.findAll().stream()
+                .map(UnidadeResponseDTO::new)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public UnidadeDTO buscarPorId(UUID id) {
+    public UnidadeResponseDTO buscarPorId(UUID id) {
         Unidade unidade = unidadeRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", id));
-        return new UnidadeDTO(unidade);
+        return new UnidadeResponseDTO(unidade);
     }
 
     @Transactional
-    public UnidadeDTO atualizar(UUID id, UnidadeDTO dto) {
+    public UnidadeResponseDTO atualizar(UUID id, UnidadeRequestDTO dto) {
         Unidade unidade = unidadeRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", id));
 
@@ -55,7 +58,7 @@ public class UnidadeService {
 
         unidade.setNome(dto.getNome());
         unidade.setSigla(dto.getSigla());
-        return new UnidadeDTO(unidadeRepository.save(unidade));
+        return new UnidadeResponseDTO(unidadeRepository.save(unidade));
     }
 
     @Transactional

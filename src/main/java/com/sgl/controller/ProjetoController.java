@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.ProjetoDTO;
+import com.sgl.dto.request.ProjetoRequestDTO;
+import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.service.ProjetoService;
 
 import jakarta.validation.Valid;
@@ -29,30 +30,30 @@ public class ProjetoController {
     private final ProjetoService projetoService;
 
     @PostMapping
-    public ResponseEntity<ProjetoDTO> criar(@Valid @RequestBody ProjetoDTO dto) {
-        ProjetoDTO criado = projetoService.criar(dto);
+    public ResponseEntity<ProjetoResponseDTO> criar(@Valid @RequestBody ProjetoRequestDTO dto) {
+        ProjetoResponseDTO criado = projetoService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
     @GetMapping
-    public ResponseEntity<List<ProjetoDTO>> listarTodos() {
+    public ResponseEntity<List<ProjetoResponseDTO>> listarTodos() {
         return ResponseEntity.ok(projetoService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjetoDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<ProjetoResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(projetoService.buscarPorId(id));
     }
 
     @GetMapping("/por-laboratorio")
-    public ResponseEntity<List<ProjetoDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
+    public ResponseEntity<List<ProjetoResponseDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
         return ResponseEntity.ok(projetoService.listarPorLaboratorio(laboratorioId));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProjetoDTO> atualizar(
+    public ResponseEntity<ProjetoResponseDTO> atualizar(
             @PathVariable UUID id,
-            @Valid @RequestBody ProjetoDTO dto) {
+            @Valid @RequestBody ProjetoRequestDTO dto) {
         return ResponseEntity.ok(projetoService.atualizar(id, dto));
     }
 
@@ -63,7 +64,7 @@ public class ProjetoController {
     }
 
     @GetMapping("/ativos")
-    public ResponseEntity<List<ProjetoDTO>> listarAtivos() {
+    public ResponseEntity<List<ProjetoResponseDTO>> listarAtivos() {
         return ResponseEntity.ok(projetoService.listarAtivos());
     }
 }

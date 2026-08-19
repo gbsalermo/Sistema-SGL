@@ -7,7 +7,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.UsuarioDTO;
+import com.sgl.dto.request.UsuarioRequestDTO;
+import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
@@ -32,7 +33,7 @@ public class UsuarioService {
     private final EstagiarioRepository estagiarioRepository;
 
     @Transactional
-    public UsuarioDTO criar(UsuarioDTO dto) {
+    public UsuarioResponseDTO criar(UsuarioRequestDTO dto) {
         if (usuarioRepository.existsByEmail(dto.getEmail())) {
             throw new BusinessRuleException("Email já cadastrado: " + dto.getEmail());
         }
@@ -55,35 +56,35 @@ public class UsuarioService {
         usuario.setLaboratorio(laboratorio);
         usuario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 
-        return new UsuarioDTO(usuarioRepository.save(usuario));
+        return new UsuarioResponseDTO(usuarioRepository.save(usuario));
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> listarTodos() {
+    public List<UsuarioResponseDTO> listarTodos() {
         return usuarioRepository.findAll().stream()
-                .map(UsuarioDTO::new)
+                .map(UsuarioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> listarPorLaboratorio(UUID laboratorioId) {
+    public List<UsuarioResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
         return usuarioRepository.findByLaboratorioId(laboratorio.getId()).stream()
-                .map(UsuarioDTO::new)
+                .map(UsuarioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public UsuarioDTO buscarPorId(UUID id) {
+    public UsuarioResponseDTO buscarPorId(UUID id) {
         Usuario usuario = usuarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
-        return new UsuarioDTO(usuario);
+        return new UsuarioResponseDTO(usuario);
     }
 
     @Transactional
-    public UsuarioDTO atualizar(UUID id, UsuarioDTO dto) {
+    public UsuarioResponseDTO atualizar(UUID id, UsuarioRequestDTO dto) {
         Usuario usuario = usuarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
 
@@ -118,7 +119,7 @@ public class UsuarioService {
             usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         }
 
-        return new UsuarioDTO(usuarioRepository.save(usuario));
+        return new UsuarioResponseDTO(usuarioRepository.save(usuario));
     }
 
     @Transactional

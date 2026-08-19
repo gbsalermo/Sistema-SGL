@@ -21,7 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.sgl.dto.EntradaLoteDTO;
+import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
@@ -111,7 +111,7 @@ class MovimentacaoEstoqueServiceTest {
 
     @Test
     void deveRegistrarEntradaCriandoLoteEAtualizandoSaldo() {
-        EntradaLoteDTO dto = new EntradaLoteDTO(
+        EntradaLoteRequestDTO dto = new EntradaLoteRequestDTO(
                 "LT-001",
                 5,
                 null,
@@ -154,7 +154,7 @@ class MovimentacaoEstoqueServiceTest {
     void deveExigirValidadeParaProdutoPerecivel() {
         produto.setPerecivel(true);
 
-        EntradaLoteDTO dto = new EntradaLoteDTO(
+        EntradaLoteRequestDTO dto = new EntradaLoteRequestDTO(
                 "LT-PER",
                 5,
                 null,
