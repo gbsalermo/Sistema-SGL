@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.AtualizarLoteDTO;
-import com.sgl.dto.LoteDTO;
+import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.service.LoteService;
 
 import jakarta.validation.Valid;
@@ -28,27 +28,27 @@ public class LoteController {
     private final LoteService loteService;
 
     @GetMapping
-    public ResponseEntity<List<LoteDTO>> listarTodos() {
+    public ResponseEntity<List<LoteResponseDTO>> listarTodos() {
         return ResponseEntity.ok(loteService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LoteDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<LoteResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(loteService.buscarPorId(id));
     }
 
     @GetMapping("/por-estoque")
-    public ResponseEntity<List<LoteDTO>> listarPorEstoque(@RequestParam UUID estoqueId) {
+    public ResponseEntity<List<LoteResponseDTO>> listarPorEstoque(@RequestParam UUID estoqueId) {
         return ResponseEntity.ok(loteService.listarPorEstoque(estoqueId));
     }
 
     @GetMapping("/vencidos")
-    public ResponseEntity<List<LoteDTO>> listarVencidos() {
+    public ResponseEntity<List<LoteResponseDTO>> listarVencidos() {
         return ResponseEntity.ok(loteService.listarVencidos());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<LoteDTO> atualizar(
+    public ResponseEntity<LoteResponseDTO> atualizar(
             @PathVariable UUID id,
             @Valid @RequestBody AtualizarLoteDTO dto) {
         return ResponseEntity.ok(loteService.atualizar(id, dto));
