@@ -25,7 +25,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Registro de auditoria de toda alteração relevante no estoque. */
 @Entity
 @Table(name = "movimentacao_estoque")
 @Getter
@@ -40,7 +39,7 @@ public class MovimentacaoEstoque implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
     private UUID publicId;
 
@@ -60,10 +59,7 @@ public class MovimentacaoEstoque implements Serializable {
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
 
-    /**
-     * Lote efetivamente afetado. Uma operação que consumir vários lotes gera
-     * uma MovimentacaoEstoque para cada lote, preservando a rastreabilidade.
-     */
+    // One movement is stored per affected lot to preserve traceability.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lote_id")
     private Lote lote;
@@ -79,11 +75,9 @@ public class MovimentacaoEstoque implements Serializable {
     @Column(nullable = false)
     private Integer quantidadeMovimentada;
 
-    /** Saldo agregado do EstoqueCentral imediatamente antes da parcela. */
     @Column(nullable = false)
     private Integer quantidadeAnterior;
 
-    /** Saldo agregado do EstoqueCentral imediatamente depois da parcela. */
     @Column(nullable = false)
     private Integer quantidadeAtual;
 
@@ -97,7 +91,7 @@ public class MovimentacaoEstoque implements Serializable {
     private EstoqueCentral estoqueCentral;
 
     @PrePersist
-    private void gerarPublicId() {
+    private void generatePublicId() {
         if (publicId == null) {
             publicId = UUID.randomUUID();
         }
