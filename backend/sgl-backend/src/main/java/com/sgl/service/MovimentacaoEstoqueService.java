@@ -226,7 +226,7 @@ public class MovimentacaoEstoqueService {
         return movimentacoes;
     }
 
-    // Consome os lotes vencidos em ordem de vencimento.
+    // Descarta os lotes vencidos em ordem de vencimento.
     @Transactional
     public List<MovimentacaoEstoqueDTO> registrarDescarteVencimento(
             UUID estoqueId,
