@@ -6,7 +6,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.ProdutoDTO;
+import com.sgl.dto.request.ProdutoRequestDTO;
+import com.sgl.dto.response.ProdutoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Produto;
@@ -22,54 +23,54 @@ public class ProdutoService {
     private final ProdutoRepository produtoRepository;
 
     @Transactional
-    public ProdutoDTO criar(ProdutoDTO dto) {
+    public ProdutoResponseDTO criar(ProdutoRequestDTO dto) {
         Produto produto = new Produto();
         preencherProduto(produto, dto);
-        return new ProdutoDTO(produtoRepository.save(produto));
+        return new ProdutoResponseDTO(produtoRepository.save(produto));
     }
 
     @Transactional(readOnly = true)
-    public List<ProdutoDTO> listarTodos() {
+    public List<ProdutoResponseDTO> listarTodos() {
         return produtoRepository.findAll().stream()
-                .map(ProdutoDTO::new)
+                .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ProdutoDTO> listarPorRisco(NivelRisco risco) {
+    public List<ProdutoResponseDTO> listarPorRisco(NivelRisco risco) {
         return produtoRepository.findByRisco(risco).stream()
-                .map(ProdutoDTO::new)
+                .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ProdutoDTO> listarPereciveis() {
+    public List<ProdutoResponseDTO> listarPereciveis() {
         return produtoRepository.findByPerecivelTrue().stream()
-                .map(ProdutoDTO::new)
+                .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ProdutoDTO> buscarPorNome(String nome) {
+    public List<ProdutoResponseDTO> buscarPorNome(String nome) {
         return produtoRepository.findByNomeContainingIgnoreCase(nome).stream()
-                .map(ProdutoDTO::new)
+                .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public ProdutoDTO buscarPorId(UUID id) {
+    public ProdutoResponseDTO buscarPorId(UUID id) {
         Produto produto = produtoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
-        return new ProdutoDTO(produto);
+        return new ProdutoResponseDTO(produto);
     }
 
     @Transactional
-    public ProdutoDTO atualizar(UUID id, ProdutoDTO dto) {
+    public ProdutoResponseDTO atualizar(UUID id, ProdutoRequestDTO dto) {
         Produto produto = produtoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
 
         preencherProduto(produto, dto);
-        return new ProdutoDTO(produtoRepository.save(produto));
+        return new ProdutoResponseDTO(produtoRepository.save(produto));
     }
 
     @Transactional
@@ -79,7 +80,7 @@ public class ProdutoService {
         produto.setAtivo(false);
     }
 
-    private void preencherProduto(Produto produto, ProdutoDTO dto) {
+    private void preencherProduto(Produto produto, ProdutoRequestDTO dto) {
         validarCodigoReferencia(produto, dto.getCodigoReferencia());
 
         produto.setNome(dto.getNome());
