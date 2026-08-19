@@ -38,7 +38,7 @@ public class EstoqueCentralDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String produtoUnidadeArmazenamento;
 
-    // Aggregate balance is changed only by lot movements.
+    // Saldo agregado alterado apenas pelas movimentações de lote.
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer quantidadeAtual;
 
