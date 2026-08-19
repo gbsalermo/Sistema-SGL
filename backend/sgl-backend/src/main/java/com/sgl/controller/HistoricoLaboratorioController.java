@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.ConsumoProdutoLaboratorioDTO;
-import com.sgl.dto.HistoricoLaboratorioDTO;
+import com.sgl.dto.response.HistoricoLaboratorioResponseDTO;
 import com.sgl.service.HistoricoLaboratorioService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,17 +25,17 @@ public class HistoricoLaboratorioController {
     private final HistoricoLaboratorioService historicoLaboratorioService;
 
     @GetMapping
-    public ResponseEntity<List<HistoricoLaboratorioDTO>> listarTodos() {
+    public ResponseEntity<List<HistoricoLaboratorioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(historicoLaboratorioService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<HistoricoLaboratorioDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<HistoricoLaboratorioResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(historicoLaboratorioService.buscarPorId(id));
     }
 
     @GetMapping("/laboratorio/{laboratorioId}")
-    public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorLaboratorio(
+    public ResponseEntity<List<HistoricoLaboratorioResponseDTO>> listarPorLaboratorio(
             @PathVariable UUID laboratorioId) {
         return ResponseEntity.ok(
                 historicoLaboratorioService.listarPorLaboratorio(laboratorioId)
@@ -43,19 +43,19 @@ public class HistoricoLaboratorioController {
     }
 
     @GetMapping("/produto/{produtoId}")
-    public ResponseEntity<List<HistoricoLaboratorioDTO>> listarProduto(
+    public ResponseEntity<List<HistoricoLaboratorioResponseDTO>> listarProduto(
             @PathVariable UUID produtoId) {
         return ResponseEntity.ok(historicoLaboratorioService.listarPorProduto(produtoId));
     }
 
     @GetMapping("/pedido/{pedidoId}")
-    public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorPedido(
+    public ResponseEntity<List<HistoricoLaboratorioResponseDTO>> listarPorPedido(
             @PathVariable UUID pedidoId) {
         return ResponseEntity.ok(historicoLaboratorioService.listarPorPedido(pedidoId));
     }
 
     @GetMapping("/laboratorio/{laboratorioId}/periodo")
-    public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorPeriodo(
+    public ResponseEntity<List<HistoricoLaboratorioResponseDTO>> listarPorPeriodo(
             @PathVariable UUID laboratorioId,
             @RequestParam LocalDate dataInicio,
             @RequestParam LocalDate dataFim) {
@@ -87,7 +87,7 @@ public class HistoricoLaboratorioController {
     }
 
     @GetMapping("/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo")
-    public ResponseEntity<List<HistoricoLaboratorioDTO>> listarPorProjetoEPeriodo(
+    public ResponseEntity<List<HistoricoLaboratorioResponseDTO>> listarPorProjetoEPeriodo(
             @PathVariable UUID laboratorioId,
             @PathVariable UUID projetoId,
             @RequestParam LocalDate dataInicio,
