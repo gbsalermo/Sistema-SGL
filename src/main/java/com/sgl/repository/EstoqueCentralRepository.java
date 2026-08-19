@@ -26,7 +26,7 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
             Long produtoId
     );
 
-    // Use when the stock balance will be updated inside the transaction.
+    // Use quando o saldo do estoque for alterado dentro da transação.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT estoque
@@ -37,7 +37,7 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
             @Param("id") Long id
     );
 
-    // Locks the stock row resolved by unit and product.
+    // Mantém o registro de estoque reservado pela combinação de unidade e produto.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT estoque
