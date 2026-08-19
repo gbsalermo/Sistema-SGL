@@ -15,8 +15,10 @@ import com.sgl.dto.response.ConsumoProdutoLaboratorioResponseDTO;
 import com.sgl.dto.response.HistoricoLaboratorioResponseDTO;
 import com.sgl.service.HistoricoLaboratorioService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Histórico de Laboratório", description = "Consultas históricas de materiais e consumo associados aos laboratórios.")
 @RestController
 @RequestMapping("/api/v1/historico-laboratorio")
 @RequiredArgsConstructor
