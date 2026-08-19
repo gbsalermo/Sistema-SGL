@@ -159,7 +159,7 @@ public class MovimentacaoEstoqueService {
         return new LoteDTO(lote);
     }
 
-    // Uses FEFO for perishable products and FIFO otherwise.
+    // Usa FEFO para produtos perecíveis e FIFO para os demais.
     @Transactional
     public List<MovimentacaoEstoqueDTO> registrarSaida(
             Long estoqueId,
@@ -226,7 +226,7 @@ public class MovimentacaoEstoqueService {
         return movimentacoes;
     }
 
-    // Consumes expired lots in expiration order.
+    // Consome os lotes vencidos em ordem de vencimento.
     @Transactional
     public List<MovimentacaoEstoqueDTO> registrarDescarteVencimento(
             UUID estoqueId,
@@ -300,7 +300,7 @@ public class MovimentacaoEstoqueService {
         return movimentacoes;
     }
 
-    // Restores the exact lots consumed by the order.
+    // Restaura exatamente os lotes consumidos pelo pedido.
     @Transactional
     public void devolverSaidasDoPedido(
             Pedido pedido,
