@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.DescarteProdutoDTO;
 import com.sgl.dto.EntradaLoteDTO;
+import com.sgl.dto.request.DescarteProdutoRequestDTO;
+import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
@@ -79,10 +81,18 @@ public class MovimentacaoEstoqueController {
     public ResponseEntity<LoteResponseDTO> registrarEntradaLote(
             @PathVariable UUID estoqueId,
             @RequestParam UUID usuarioId,
-            @Valid @RequestBody EntradaLoteDTO dto) {
+            @Valid @RequestBody EntradaLoteRequestDTO request) {
 
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
+
+        EntradaLoteDTO dto = new EntradaLoteDTO(
+                request.getNumeroLote(),
+                request.getQuantidade(),
+                request.getDataValidade(),
+                request.getOrigem(),
+                request.getObservacao()
+        );
 
         LoteResponseDTO lote = movimentacaoService.registrarEntradaLote(
                 estoqueId,
@@ -98,10 +108,15 @@ public class MovimentacaoEstoqueController {
     public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> descartarVencidos(
             @PathVariable UUID estoqueId,
             @RequestParam UUID usuarioId,
-            @Valid @RequestBody DescarteProdutoDTO dto) {
+            @Valid @RequestBody DescarteProdutoRequestDTO request) {
 
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
+
+        DescarteProdutoDTO dto = new DescarteProdutoDTO(
+                request.getQuantidade(),
+                request.getJustificativa()
+        );
 
         return ResponseEntity.ok(
                 movimentacaoService.registrarDescarteVencimento(
