@@ -34,12 +34,6 @@ import com.sgl.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Centraliza as operações físicas que alteram o estoque.
- *
- * MovimentacaoEstoque permanece como trilha de auditoria. Quando uma operação
- * utiliza mais de um lote, é criada uma movimentação para cada lote afetado.
- */
 @Service
 @RequiredArgsConstructor
 public class MovimentacaoEstoqueService {
@@ -165,11 +159,7 @@ public class MovimentacaoEstoqueService {
         return new LoteDTO(lote);
     }
 
-    /**
-     * Retira uma quantidade do estoque consumindo lotes por FEFO para produtos
-     * perecíveis e FIFO para produtos não perecíveis.
-     * Este método é interno ao backend e recebe a PK Long do estoque.
-     */
+    // Uses FEFO for perishable products and FIFO otherwise.
     @Transactional
     public List<MovimentacaoEstoqueDTO> registrarSaida(
             Long estoqueId,
@@ -236,10 +226,7 @@ public class MovimentacaoEstoqueService {
         return movimentacoes;
     }
 
-    /**
-     * Descarta somente lotes efetivamente vencidos. Se a quantidade ultrapassar
-     * um lote, o descarte continua nos próximos lotes vencidos.
-     */
+    // Consumes expired lots in expiration order.
     @Transactional
     public List<MovimentacaoEstoqueDTO> registrarDescarteVencimento(
             UUID estoqueId,
@@ -313,13 +300,7 @@ public class MovimentacaoEstoqueService {
         return movimentacoes;
     }
 
-    /**
-     * Restaura exatamente os lotes consumidos pelas saídas de um pedido.
-     *
-     * O usuário responsável pode ficar ausente nesta etapa apenas enquanto o
-     * contexto de autenticação local ainda não estiver integrado. Nesse caso a
-     * restauração física é feita, mas a movimentação DEVOLUCAO não é criada.
-     */
+    // Restores the exact lots consumed by the order.
     @Transactional
     public void devolverSaidasDoPedido(
             Pedido pedido,
@@ -395,7 +376,6 @@ public class MovimentacaoEstoqueService {
         }
     }
 
-    /** Apenas para consulta/diagnóstico da política de seleção interna. */
     @Transactional
     public List<LoteDTO> listarLotesOrdenadosParaSaida(Long estoqueId) {
         EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
@@ -430,10 +410,7 @@ public class MovimentacaoEstoqueService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Estoque central", estoqueId));
 
-        if (!Boolean.TRUE.equals(estoque.getAtivo())) {
-            throw new BusinessRuleException("O estoque informado está inativo.");
-        }
-
+        estoque.validateActive();
         return estoque;
     }
 
@@ -476,21 +453,12 @@ public class MovimentacaoEstoqueService {
             throw new BusinessRuleException("Origem da entrada é obrigatória.");
         }
 
-        if (Boolean.TRUE.equals(produto.getPerecivel())) {
-            if (dto.getDataValidade() == null) {
-                throw new BusinessRuleException(
-                        "Data de validade é obrigatória para produto perecível."
-                );
-            }
+        produto.validateLotExpirationDate(dto.getDataValidade());
 
-            if (dto.getDataValidade().isBefore(LocalDate.now())) {
-                throw new BusinessRuleException(
-                        "Não é possível registrar entrada de lote já vencido."
-                );
-            }
-        } else if (dto.getDataValidade() != null) {
+        if (dto.getDataValidade() != null
+                && dto.getDataValidade().isBefore(LocalDate.now())) {
             throw new BusinessRuleException(
-                    "Produto não perecível não deve possuir data de validade no lote."
+                    "Não é possível registrar entrada de lote já vencido."
             );
         }
     }
@@ -500,11 +468,7 @@ public class MovimentacaoEstoqueService {
             throw new BusinessRuleException("Usuário responsável é obrigatório.");
         }
 
-        if (!Boolean.TRUE.equals(usuario.getAtivo())) {
-            throw new BusinessRuleException(
-                    "O usuário responsável pela movimentação está inativo."
-            );
-        }
+        usuario.validateActive();
     }
 
     private void validarQuantidade(Integer quantidade) {
