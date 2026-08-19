@@ -11,7 +11,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.ConsumoProdutoLaboratorioDTO;
+import com.sgl.dto.response.ConsumoProdutoLaboratorioResponseDTO;
 import com.sgl.dto.response.HistoricoLaboratorioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -98,7 +98,7 @@ public class HistoricoLaboratorioService {
 
     // Inclui meses sem consumo no cálculo da média mensal.
     @Transactional(readOnly = true)
-    public ConsumoProdutoLaboratorioDTO calcularConsumoProduto(
+    public ConsumoProdutoLaboratorioResponseDTO calcularConsumoProduto(
             UUID laboratorioId,
             UUID produtoId,
             LocalDate dataInicio,
@@ -147,7 +147,7 @@ public class HistoricoLaboratorioService {
                 .setScale(0, RoundingMode.CEILING)
                 .intValue();
 
-        return new ConsumoProdutoLaboratorioDTO(
+        return new ConsumoProdutoLaboratorioResponseDTO(
                 laboratorio.getPublicId(),
                 laboratorio.getNome(),
                 produto.getPublicId(),
