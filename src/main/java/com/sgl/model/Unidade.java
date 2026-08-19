@@ -1,5 +1,10 @@
 package com.sgl.model;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,10 +19,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "unidades")
@@ -33,23 +34,23 @@ public class Unidade implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
+    private UUID publicId;
 
     @Column(nullable = false)
     private String nome;
 
     @Column(nullable = false, unique = true)
     private String sigla;
-    
+
     @OneToMany(mappedBy = "unidade", fetch = FetchType.LAZY)
     private List<Laboratorio> laboratorios = new ArrayList<>();
-    
+
     @PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
