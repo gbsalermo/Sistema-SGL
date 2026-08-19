@@ -19,11 +19,11 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .referrerPolicy(referrer ->
                     referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                .frameOptions(frame -> frame.disable()) // Required by the H2 console iframe.
+                .frameOptions(frame -> frame.disable()) // Necessário para o iframe do console H2.
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/h2-console/**").permitAll()
-                .anyRequest().permitAll() // Temporary until local authentication is implemented.
+                .anyRequest().permitAll() // Temporário até a autenticação local ser implementada.
             )
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable());
