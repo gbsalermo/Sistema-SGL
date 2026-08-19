@@ -37,57 +37,50 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 public class Pedido implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "usuario_id", nullable = false)
-	@ToString.Exclude
-	private Usuario usuario;
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "laboratorio_id", nullable = false)
-	@ToString.Exclude
-	private Laboratorio laboratorio;
-	
-	
-	 @ManyToOne(fetch = FetchType.LAZY)
-	 @JoinColumn(name = "projeto_id")
-	 @ToString.Exclude 
-	 private Projeto projeto;
-	 
-	
-	@Column(nullable = false)
-	private LocalDateTime dataSolicitacao;
-	
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private StatusPedido status;
-	
-	private String observacao;
-	
-	private String arquivoDocumento;
-	
-	
-	 @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
-	 @Builder.Default 
-	 private List<ItemPedido> itens = new ArrayList<>();
-	 
-	
-	 @PrePersist
-		private void gerarPublicId() {
-			if(publicId == null) {
-				publicId = UUID.randomUUID();
-			}
-		}
-	
-	
 
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    @ToString.Exclude
+    private Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "laboratorio_id", nullable = false)
+    @ToString.Exclude
+    private Laboratorio laboratorio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "projeto_id")
+    @ToString.Exclude
+    private Projeto projeto;
+
+    @Column(nullable = false)
+    private LocalDateTime dataSolicitacao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusPedido status;
+
+    private String observacao;
+
+    private String arquivoDocumento;
+
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ItemPedido> itens = new ArrayList<>();
+
+    @PrePersist
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
