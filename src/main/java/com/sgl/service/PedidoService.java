@@ -155,7 +155,7 @@ public class PedidoService {
         return pedidoRepository.findByStatus(status).stream().map(PedidoDTO::new).toList();
     }
 
-    // Resolves public ids before filtering by internal foreign keys and date range.
+    // Resolve os UUIDs públicos antes de filtrar por FKs internas e período.
     @Transactional(readOnly = true)
     public List<PedidoDTO> listarPorProjetoEPeriodo(
             UUID laboratorioId,
