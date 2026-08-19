@@ -21,9 +21,11 @@ import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.service.PedidoService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Pedidos", description = "Operações de criação, consulta e fluxo de aprovação, rejeição, entrega e cancelamento de pedidos.")
 @RestController
 @RequestMapping("/api/v1/pedidos")
 @RequiredArgsConstructor
