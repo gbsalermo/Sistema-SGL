@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.AtualizarLoteDTO;
+import com.sgl.dto.request.AtualizarLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.service.LoteService;
 
@@ -50,7 +51,13 @@ public class LoteController {
     @PutMapping("/{id}")
     public ResponseEntity<LoteResponseDTO> atualizar(
             @PathVariable UUID id,
-            @Valid @RequestBody AtualizarLoteDTO dto) {
+            @Valid @RequestBody AtualizarLoteRequestDTO request) {
+
+        AtualizarLoteDTO dto = new AtualizarLoteDTO();
+        dto.setNumeroLote(request.getNumeroLote());
+        dto.setDataValidade(request.getDataValidade());
+        dto.setAtivo(request.getAtivo());
+
         return ResponseEntity.ok(loteService.atualizar(id, dto));
     }
 
