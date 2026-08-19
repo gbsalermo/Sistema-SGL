@@ -28,34 +28,35 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 public class ItemPedido implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
-	private UUID publicId;
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "pedido_id", nullable = false)
-	@ToString.Exclude
-	private Pedido pedido;
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "produto_id", nullable = false)
-	@ToString.Exclude
-	private Produto produto;
-	
-	@Column(nullable = false)
-	private Integer quantidadeSolicitada;
-	private Integer quantidadeAprovada;
 
-	@PrePersist
-	private void gerarPublicId() {
-		if(publicId == null) {
-			publicId = UUID.randomUUID();
-		}
-	}
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pedido_id", nullable = false)
+    @ToString.Exclude
+    private Pedido pedido;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "produto_id", nullable = false)
+    @ToString.Exclude
+    private Produto produto;
+
+    @Column(nullable = false)
+    private Integer quantidadeSolicitada;
+
+    private Integer quantidadeAprovada;
+
+    @PrePersist
+    private void generatePublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
