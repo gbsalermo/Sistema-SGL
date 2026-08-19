@@ -42,13 +42,14 @@ public class EstagiarioService {
             throw new BusinessRuleException("Usuário já possui cadastro de estagiário.");
         }
 
-        validarPerfilEstagiario(usuario);
+        usuario.validateInternProfile();
         validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
         validarUnidadeCompativel(usuario, laboratorio);
 
         usuario.setLaboratorio(laboratorio);
         usuarioRepository.save(usuario);
 
+        // Native insert keeps the JOINED inheritance row tied to the same user id.
         entityManager.createNativeQuery(
                 "INSERT INTO estagiarios (id, data_inicio_estagio, data_fim_estagio, tipo_bolsa, observacao) "
                         + "VALUES (:id, :dataInicio, :dataFim, :tipoBolsa, :observacao)")
@@ -86,11 +87,8 @@ public class EstagiarioService {
 
     @Transactional(readOnly = true)
     public List<EstagiarioDTO> listarPorLaboratorio(UUID id) {
-
-    	Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Laboratório", id)
-                );
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
 
         return estagiarioRepository.findByLaboratorioId(laboratorio.getId())
                 .stream()
@@ -117,7 +115,7 @@ public class EstagiarioService {
         }
 
         Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
-        validarPerfilEstagiario(estagiario);
+        estagiario.validateInternProfile();
         validarUnidadeCompativel(estagiario, laboratorio);
 
         estagiario.setPerfil(Perfil.ESTAGIARIO);
@@ -146,14 +144,6 @@ public class EstagiarioService {
     private Laboratorio buscarLaboratorio(UUID uuid) {
         return laboratorioRepository.findByPublicId(uuid)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", uuid));
-    }
-
-    private void validarPerfilEstagiario(Usuario usuario) {
-        if (usuario.getPerfil() != Perfil.ESTAGIARIO) {
-            throw new BusinessRuleException(
-                    "Usuário deve ter perfil ESTAGIARIO para cadastro de estagiário."
-            );
-        }
     }
 
     private void validarUnidadeCompativel(Usuario usuario, Laboratorio laboratorio) {
