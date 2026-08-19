@@ -12,7 +12,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sgl.dto.AprovarPedidoDTO;
+import com.sgl.dto.request.AprovarPedidoRequestDTO;
 import com.sgl.dto.request.ItemPedidoRequestDTO;
 import com.sgl.dto.request.PedidoRequestDTO;
 import com.sgl.dto.response.PedidoResponseDTO;
@@ -197,7 +197,7 @@ public class PedidoService {
     }
 
     @Transactional
-    public PedidoResponseDTO aprovar(UUID id, AprovarPedidoDTO dto) {
+    public PedidoResponseDTO aprovar(UUID id, AprovarPedidoRequestDTO dto) {
         UUID aprovadorId = dto.getUsuarioAprovadorId();
 
         if (aprovadorId == null) {
@@ -221,7 +221,7 @@ public class PedidoService {
             );
         }
 
-        for (AprovarPedidoDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
+        for (AprovarPedidoRequestDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
             ItemPedido item = pedido.getItens().stream()
                     .filter(i -> i.getPublicId().equals(itemAprovacao.getItemId()))
                     .findFirst()
