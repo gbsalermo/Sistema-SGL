@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.UsuarioDTO;
+import com.sgl.dto.request.UsuarioRequestDTO;
+import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.service.UsuarioService;
 
 import jakarta.validation.Valid;
@@ -29,30 +30,30 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @GetMapping
-    public ResponseEntity<List<UsuarioDTO>> listarTodos() {
+    public ResponseEntity<List<UsuarioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<UsuarioResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(usuarioService.buscarPorId(id));
     }
 
     @GetMapping("/por-laboratorio")
-    public ResponseEntity<List<UsuarioDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
+    public ResponseEntity<List<UsuarioResponseDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
         return ResponseEntity.ok(usuarioService.listarPorLaboratorio(laboratorioId));
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioDTO> criar(@Valid @RequestBody UsuarioDTO dto) {
-        UsuarioDTO novoUsuario = usuarioService.criar(dto);
+    public ResponseEntity<UsuarioResponseDTO> criar(@Valid @RequestBody UsuarioRequestDTO dto) {
+        UsuarioResponseDTO novoUsuario = usuarioService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> atualizar(
+    public ResponseEntity<UsuarioResponseDTO> atualizar(
             @PathVariable UUID id,
-            @Valid @RequestBody UsuarioDTO dto) {
+            @Valid @RequestBody UsuarioRequestDTO dto) {
         return ResponseEntity.ok(usuarioService.atualizar(id, dto));
     }
 

@@ -1,15 +1,11 @@
-package com.sgl.dto;
+package com.sgl.dto.response;
 
 import java.io.Serializable;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,39 +13,21 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UsuarioDTO implements Serializable {
+public class UsuarioResponseDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private UUID id;
-
-    @NotBlank(message = "nome é obrigatório")
     private String nome;
-
-    @NotBlank(message = "email é obrigatório")
-    @Email(message = "email inválido")
     private String email;
-
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String senha;
-
-    @NotNull(message = "perfil é obrigatório")
     private Perfil perfil;
-
-    @NotNull(message = "Id da unidade é obrigatório")
     private UUID unidadeId;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unidadeNome;
-
     private UUID laboratorioId;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String laboratorioNome;
+    private Boolean ativo;
 
-    private Boolean ativo = true;
-
-    public UsuarioDTO(Usuario entity) {
+    public UsuarioResponseDTO(Usuario entity) {
         this.id = entity.getPublicId();
         this.nome = entity.getNome();
         this.email = entity.getEmail();

@@ -1,4 +1,4 @@
-package com.sgl.dto;
+package com.sgl.dto.request;
 
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +21,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AprovarPedidoDTO {
+public class AprovarPedidoRequestDTO {
 
     private String observacao;
 

@@ -1,9 +1,5 @@
-package com.sgl.dto;
+package com.sgl.dto.request;
 
-import java.io.Serializable;
-import java.util.UUID;
-
-import com.sgl.model.Produto;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
@@ -12,17 +8,15 @@ import com.sgl.model.enums.UnidadeMedida;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProdutoDTO implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    private UUID id;
+public class ProdutoRequestDTO {
 
     @NotBlank(message = "nome é obrigatório")
     private String nome;
@@ -41,34 +35,13 @@ public class ProdutoDTO implements Serializable {
     private NivelRisco risco;
 
     private TipoRisco tipoRisco;
-
     private String descricaoRisco;
 
     @NotNull(message = "Precisa confirmar se é perecivel")
     private Boolean perecivel;
 
     private TipoPerecivel tipoPerecivel;
-
     private String condicoesArmazenamento;
-
     private String unidadeArmazenamento;
-
     private Boolean ativo;
-
-    public ProdutoDTO(Produto entity) {
-        this.id = entity.getPublicId();
-        this.nome = entity.getNome();
-        this.descricao = entity.getDescricao();
-        this.codigoReferencia = entity.getCodigoReferencia();
-        this.unidadeMedida = entity.getUnidadeMedida();
-        this.localizacaoFisica = entity.getLocalizacaoFisica();
-        this.risco = entity.getRisco();
-        this.tipoRisco = entity.getTipoRisco();
-        this.descricaoRisco = entity.getDescricaoRisco();
-        this.perecivel = entity.getPerecivel();
-        this.tipoPerecivel = entity.getTipoPerecivel();
-        this.condicoesArmazenamento = entity.getCondicoesArmazenamento();
-        this.unidadeArmazenamento = entity.getUnidadeArmazenamento();
-        this.ativo = entity.getAtivo() != null ? entity.getAtivo() : true;
-    }
 }

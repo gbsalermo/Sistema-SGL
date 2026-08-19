@@ -1,4 +1,4 @@
-package com.sgl.dto;
+package com.sgl.dto.request;
 
 import java.time.LocalDate;
 
@@ -16,7 +16,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class EntradaLoteDTO {
+public class EntradaLoteRequestDTO {
 
     @NotBlank(message = "Número do lote é obrigatório")
     private String numeroLote;

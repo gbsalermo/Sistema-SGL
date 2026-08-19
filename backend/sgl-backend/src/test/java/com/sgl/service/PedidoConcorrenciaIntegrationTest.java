@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.sgl.dto.AprovarPedidoDTO;
+import com.sgl.dto.request.AprovarPedidoRequestDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
@@ -263,10 +263,10 @@ class PedidoConcorrenciaIntegrationTest {
         prontas.countDown();
         iniciar.await();
 
-        AprovarPedidoDTO dto = new AprovarPedidoDTO();
+        AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
         dto.setUsuarioAprovadorId(usuarioAprovadorId);
         dto.setObservacao("Teste de concorrência");
-        dto.setItens(List.of(new AprovarPedidoDTO.ItemAprovacaoDTO(itemId, 7)));
+        dto.setItens(List.of(new AprovarPedidoRequestDTO.ItemAprovacaoDTO(itemId, 7)));
 
         try {
             pedidoService.aprovar(pedidoId, dto);

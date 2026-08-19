@@ -15,8 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.AprovarPedidoDTO;
-import com.sgl.dto.PedidoDTO;
+import com.sgl.dto.request.AprovarPedidoRequestDTO;
+import com.sgl.dto.request.PedidoRequestDTO;
+import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.service.PedidoService;
 
@@ -31,33 +32,33 @@ public class PedidoController {
     private final PedidoService pedidoService;
 
     @PostMapping
-    public ResponseEntity<PedidoDTO> criar(@Valid @RequestBody PedidoDTO dto) {
-        PedidoDTO criado = pedidoService.criar(dto);
+    public ResponseEntity<PedidoResponseDTO> criar(@Valid @RequestBody PedidoRequestDTO dto) {
+        PedidoResponseDTO criado = pedidoService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
     @GetMapping
-    public ResponseEntity<List<PedidoDTO>> listarTodos() {
+    public ResponseEntity<List<PedidoResponseDTO>> listarTodos() {
         return ResponseEntity.ok(pedidoService.listarTodos());
     }
 
     @GetMapping("/por-usuario")
-    public ResponseEntity<List<PedidoDTO>> listarPorUsuario(@RequestParam UUID usuarioId) {
+    public ResponseEntity<List<PedidoResponseDTO>> listarPorUsuario(@RequestParam UUID usuarioId) {
         return ResponseEntity.ok(pedidoService.listarPorUsuario(usuarioId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PedidoDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<PedidoResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(pedidoService.buscarPorId(id));
     }
 
     @GetMapping("/por-status")
-    public ResponseEntity<List<PedidoDTO>> listarPorStatus(@RequestParam StatusPedido status) {
+    public ResponseEntity<List<PedidoResponseDTO>> listarPorStatus(@RequestParam StatusPedido status) {
         return ResponseEntity.ok(pedidoService.listarPorStatus(status));
     }
 
     @GetMapping("/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo")
-    public ResponseEntity<List<PedidoDTO>> listarPorProjetoEPeriodo(
+    public ResponseEntity<List<PedidoResponseDTO>> listarPorProjetoEPeriodo(
             @PathVariable UUID laboratorioId,
             @PathVariable UUID projetoId,
             @RequestParam LocalDate dataInicio,
@@ -74,26 +75,26 @@ public class PedidoController {
     }
 
     @PutMapping("/{id}/aprovar")
-    public ResponseEntity<PedidoDTO> aprovar(
+    public ResponseEntity<PedidoResponseDTO> aprovar(
             @PathVariable UUID id,
-            @Valid @RequestBody AprovarPedidoDTO dto) {
+            @Valid @RequestBody AprovarPedidoRequestDTO dto) {
         return ResponseEntity.ok(pedidoService.aprovar(id, dto));
     }
 
     @PutMapping("/{id}/rejeitar")
-    public ResponseEntity<PedidoDTO> rejeitar(
+    public ResponseEntity<PedidoResponseDTO> rejeitar(
             @PathVariable UUID id,
             @RequestParam(required = false) String observacao) {
         return ResponseEntity.ok(pedidoService.rejeitar(id, observacao));
     }
 
     @PutMapping("/{id}/entregar")
-    public ResponseEntity<PedidoDTO> entregar(@PathVariable UUID id) {
+    public ResponseEntity<PedidoResponseDTO> entregar(@PathVariable UUID id) {
         return ResponseEntity.ok(pedidoService.entregar(id));
     }
 
     @PutMapping("/{id}/cancelar")
-    public ResponseEntity<PedidoDTO> cancelar(
+    public ResponseEntity<PedidoResponseDTO> cancelar(
             @PathVariable UUID id,
             @RequestParam(required = false) String observacao) {
         return ResponseEntity.ok(pedidoService.cancelar(id, observacao));
