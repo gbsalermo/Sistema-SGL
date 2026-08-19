@@ -72,6 +72,12 @@ public class Usuario {
         }
     }
 
+    public void validateActive() {
+        if (!Boolean.TRUE.equals(ativo)) {
+            throw new BusinessRuleException("O usuário está inativo.");
+        }
+    }
+
     @PrePersist
     private void generatePublicId() {
         if (publicId == null) {
