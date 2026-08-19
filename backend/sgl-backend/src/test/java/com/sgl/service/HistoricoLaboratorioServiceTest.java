@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,11 +31,19 @@ import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 
 @ExtendWith(MockitoExtension.class)
 class HistoricoLaboratorioServiceTest {
+
+    private static final UUID UNIDADE_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID LABORATORIO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID PROJETO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    private static final UUID PRODUTO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000004");
+    private static final UUID PEDIDO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000005");
+    private static final UUID HISTORICO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000006");
 
     @Mock
     private HistoricoLaboratorioRepository historicoLaboratorioRepository;
@@ -47,6 +56,9 @@ class HistoricoLaboratorioServiceTest {
 
     @Mock
     private ProdutoRepository produtoRepository;
+
+    @Mock
+    private PedidoRepository pedidoRepository;
 
     @InjectMocks
     private HistoricoLaboratorioService historicoLaboratorioService;
@@ -61,12 +73,14 @@ class HistoricoLaboratorioServiceTest {
     void prepararCenario() {
         Unidade unidade = Unidade.builder()
                 .id(1L)
+                .publicId(UNIDADE_PUBLIC_ID)
                 .nome("Unidade Central")
                 .sigla("UC")
                 .build();
 
         laboratorio = Laboratorio.builder()
                 .id(2L)
+                .publicId(LABORATORIO_PUBLIC_ID)
                 .nome("Laboratório A")
                 .unidade(unidade)
                 .ativo(true)
@@ -74,6 +88,7 @@ class HistoricoLaboratorioServiceTest {
 
         projeto = Projeto.builder()
                 .id(3L)
+                .publicId(PROJETO_PUBLIC_ID)
                 .nome("Projeto 1")
                 .laboratorio(laboratorio)
                 .ativo(true)
@@ -81,6 +96,7 @@ class HistoricoLaboratorioServiceTest {
 
         produto = Produto.builder()
                 .id(4L)
+                .publicId(PRODUTO_PUBLIC_ID)
                 .nome("Produto de teste")
                 .unidadeArmazenamento("caixa")
                 .ativo(true)
@@ -88,12 +104,14 @@ class HistoricoLaboratorioServiceTest {
 
         pedido = Pedido.builder()
                 .id(5L)
+                .publicId(PEDIDO_PUBLIC_ID)
                 .laboratorio(laboratorio)
                 .projeto(projeto)
                 .build();
 
         historico = HistoricoLaboratorio.builder()
                 .id(6L)
+                .publicId(HISTORICO_PUBLIC_ID)
                 .laboratorio(laboratorio)
                 .produto(produto)
                 .quantidade(7)
@@ -108,8 +126,8 @@ class HistoricoLaboratorioServiceTest {
         LocalDate inicio = LocalDate.of(2026, 6, 1);
         LocalDate fim = LocalDate.of(2026, 6, 30);
 
-        when(laboratorioRepository.existsById(2L)).thenReturn(true);
-        when(projetoRepository.findById(3L)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
         when(historicoLaboratorioRepository.findByLaboratorioProjetoEPeriodo(
                 2L,
                 3L,
@@ -119,15 +137,15 @@ class HistoricoLaboratorioServiceTest {
 
         List<HistoricoLaboratorioDTO> resultado =
                 historicoLaboratorioService.listarPorProjetoEPeriodo(
-                        2L,
-                        3L,
+                        LABORATORIO_PUBLIC_ID,
+                        PROJETO_PUBLIC_ID,
                         inicio,
                         fim
                 );
 
         assertEquals(1, resultado.size());
-        assertEquals(6L, resultado.get(0).getId());
-        assertEquals(5L, resultado.get(0).getPedidoId());
+        assertEquals(HISTORICO_PUBLIC_ID, resultado.get(0).getId());
+        assertEquals(PEDIDO_PUBLIC_ID, resultado.get(0).getPedidoId());
         assertEquals(7, resultado.get(0).getQuantidade());
 
         verify(historicoLaboratorioRepository).findByLaboratorioProjetoEPeriodo(
@@ -145,11 +163,13 @@ class HistoricoLaboratorioServiceTest {
 
         Pedido segundoPedido = Pedido.builder()
                 .id(7L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000007"))
                 .laboratorio(laboratorio)
                 .build();
 
         HistoricoLaboratorio primeiroRecebimento = HistoricoLaboratorio.builder()
                 .id(8L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000008"))
                 .laboratorio(laboratorio)
                 .produto(produto)
                 .quantidade(6)
@@ -160,6 +180,7 @@ class HistoricoLaboratorioServiceTest {
 
         HistoricoLaboratorio segundoRecebimento = HistoricoLaboratorio.builder()
                 .id(9L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000009"))
                 .laboratorio(laboratorio)
                 .produto(produto)
                 .quantidade(10)
@@ -168,8 +189,8 @@ class HistoricoLaboratorioServiceTest {
                 .ativo(true)
                 .build();
 
-        when(laboratorioRepository.findById(2L)).thenReturn(Optional.of(laboratorio));
-        when(produtoRepository.findById(4L)).thenReturn(Optional.of(produto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID)).thenReturn(Optional.of(produto));
         when(historicoLaboratorioRepository.findByLaboratorioProdutoEPeriodo(
                 2L,
                 4L,
@@ -179,12 +200,14 @@ class HistoricoLaboratorioServiceTest {
 
         ConsumoProdutoLaboratorioDTO resultado =
                 historicoLaboratorioService.calcularConsumoProduto(
-                        2L,
-                        4L,
+                        LABORATORIO_PUBLIC_ID,
+                        PRODUTO_PUBLIC_ID,
                         inicio,
                         fim
                 );
 
+        assertEquals(LABORATORIO_PUBLIC_ID, resultado.getLaboratorioId());
+        assertEquals(PRODUTO_PUBLIC_ID, resultado.getProdutoId());
         assertEquals(2L, resultado.getQuantidadePedidos());
         assertEquals(16, resultado.getQuantidadeTotalRecebida());
         assertEquals(new BigDecimal("8.00"), resultado.getMediaQuantidadePorPedido());
@@ -198,8 +221,8 @@ class HistoricoLaboratorioServiceTest {
         LocalDate inicio = LocalDate.of(2026, 6, 1);
         LocalDate fim = LocalDate.of(2026, 6, 30);
 
-        when(laboratorioRepository.findById(2L)).thenReturn(Optional.of(laboratorio));
-        when(produtoRepository.findById(4L)).thenReturn(Optional.of(produto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID)).thenReturn(Optional.of(produto));
         when(historicoLaboratorioRepository.findByLaboratorioProdutoEPeriodo(
                 2L,
                 4L,
@@ -209,8 +232,8 @@ class HistoricoLaboratorioServiceTest {
 
         ConsumoProdutoLaboratorioDTO resultado =
                 historicoLaboratorioService.calcularConsumoProduto(
-                        2L,
-                        4L,
+                        LABORATORIO_PUBLIC_ID,
+                        PRODUTO_PUBLIC_ID,
                         inicio,
                         fim
                 );
@@ -226,20 +249,21 @@ class HistoricoLaboratorioServiceTest {
     void deveImpedirHistoricoQuandoProjetoNaoPertenceAoLaboratorio() {
         Laboratorio outroLaboratorio = Laboratorio.builder()
                 .id(99L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000099"))
                 .nome("Outro laboratório")
                 .ativo(true)
                 .build();
 
         projeto.setLaboratorio(outroLaboratorio);
 
-        when(laboratorioRepository.existsById(2L)).thenReturn(true);
-        when(projetoRepository.findById(3L)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
                 () -> historicoLaboratorioService.listarPorProjetoEPeriodo(
-                        2L,
-                        3L,
+                        LABORATORIO_PUBLIC_ID,
+                        PROJETO_PUBLIC_ID,
                         LocalDate.of(2026, 6, 1),
                         LocalDate.of(2026, 6, 30)
                 )
@@ -255,14 +279,14 @@ class HistoricoLaboratorioServiceTest {
 
     @Test
     void deveImpedirHistoricoComPeriodoInvertido() {
-        when(laboratorioRepository.existsById(2L)).thenReturn(true);
-        when(projetoRepository.findById(3L)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
                 () -> historicoLaboratorioService.listarPorProjetoEPeriodo(
-                        2L,
-                        3L,
+                        LABORATORIO_PUBLIC_ID,
+                        PROJETO_PUBLIC_ID,
                         LocalDate.of(2026, 6, 30),
                         LocalDate.of(2026, 6, 1)
                 )

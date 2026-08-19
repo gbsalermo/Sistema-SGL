@@ -1,6 +1,7 @@
 package com.sgl.dto;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.Usuario;
@@ -20,7 +21,7 @@ public class UsuarioDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Long id;
+    private UUID id;
 
     @NotBlank(message = "nome é obrigatório")
     private String nome;
@@ -36,12 +37,12 @@ public class UsuarioDTO implements Serializable {
     private Perfil perfil;
 
     @NotNull(message = "Id da unidade é obrigatório")
-    private Long unidadeId;
+    private UUID unidadeId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unidadeNome;
 
-    private Long laboratorioId;
+    private UUID laboratorioId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String laboratorioNome;
@@ -49,13 +50,13 @@ public class UsuarioDTO implements Serializable {
     private Boolean ativo = true;
 
     public UsuarioDTO(Usuario entity) {
-        this.id = entity.getId();
+        this.id = entity.getPublicId();
         this.nome = entity.getNome();
         this.email = entity.getEmail();
         this.perfil = entity.getPerfil();
-        this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getId() : null;
+        this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
         this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
-        this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getId() : null;
+        this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
         this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
         this.ativo = entity.getAtivo();
     }

@@ -1,5 +1,7 @@
 package com.sgl.dto;
 
+import java.util.UUID;
+
 import com.sgl.model.ItemPedido;
 
 import jakarta.validation.constraints.Min;
@@ -15,10 +17,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ItemPedidoDTO {
 
-	private Long id;
+	private UUID id;
 	
 	@NotNull(message = "Id do produto é obrigatório")
-	private Long produtoId;
+	private UUID produtoId;
 	
 	private String produtoNome;
 	
@@ -31,8 +33,8 @@ public class ItemPedidoDTO {
 	private Integer quantidadeAprovada;
 	
 	public ItemPedidoDTO(ItemPedido entity) {
-		this.id = entity.getId();
-		this.produtoId = entity.getProduto().getId();
+		this.id = entity.getPublicId();
+		this.produtoId = entity.getProduto().getPublicId();
 		this.produtoNome = entity.getProduto().getNome();
 		this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
 		this.quantidadeSolicitada = entity.getQuantidadeSolicitada();

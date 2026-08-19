@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,15 +57,15 @@ public class ProdutoService {
     }
 
     @Transactional(readOnly = true)
-    public ProdutoDTO buscarPorId(Long id) {
-        Produto produto = produtoRepository.findById(id)
+    public ProdutoDTO buscarPorId(UUID id) {
+        Produto produto = produtoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
         return new ProdutoDTO(produto);
     }
 
     @Transactional
-    public ProdutoDTO atualizar(Long id, ProdutoDTO dto) {
-        Produto produto = produtoRepository.findById(id)
+    public ProdutoDTO atualizar(UUID id, ProdutoDTO dto) {
+        Produto produto = produtoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
 
         preencherProduto(produto, dto);
@@ -72,8 +73,8 @@ public class ProdutoService {
     }
 
     @Transactional
-    public void deletar(Long id) {
-        Produto produto = produtoRepository.findById(id)
+    public void deletar(UUID id) {
+        Produto produto = produtoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
         produto.setAtivo(false);
     }

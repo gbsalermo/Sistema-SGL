@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,16 @@ import com.sgl.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
+
+    private static final UUID UNIDADE_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID LABORATORIO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID SOLICITANTE_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    private static final UUID APROVADOR_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000004");
+    private static final UUID PRODUTO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000005");
+    private static final UUID ESTOQUE_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000006");
+    private static final UUID PEDIDO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000007");
+    private static final UUID ITEM_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000008");
+    private static final UUID PROJETO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000009");
 
     @Mock
     private PedidoRepository pedidoRepository;
@@ -86,12 +97,14 @@ class PedidoServiceTest {
     void prepararCenario() {
         unidade = Unidade.builder()
                 .id(1L)
+                .publicId(UNIDADE_PUBLIC_ID)
                 .nome("Unidade Central")
                 .sigla("UC")
                 .build();
 
         laboratorio = Laboratorio.builder()
                 .id(2L)
+                .publicId(LABORATORIO_PUBLIC_ID)
                 .nome("Laboratório de Química")
                 .unidade(unidade)
                 .ativo(true)
@@ -99,6 +112,7 @@ class PedidoServiceTest {
 
         solicitante = new Usuario();
         solicitante.setId(3L);
+        solicitante.setPublicId(SOLICITANTE_PUBLIC_ID);
         solicitante.setNome("Solicitante");
         solicitante.setUnidade(unidade);
         solicitante.setLaboratorio(laboratorio);
@@ -106,12 +120,14 @@ class PedidoServiceTest {
 
         aprovador = new Usuario();
         aprovador.setId(4L);
+        aprovador.setPublicId(APROVADOR_PUBLIC_ID);
         aprovador.setNome("Aprovador");
         aprovador.setUnidade(unidade);
         aprovador.setAtivo(true);
 
         produto = Produto.builder()
                 .id(5L)
+                .publicId(PRODUTO_PUBLIC_ID)
                 .nome("Álcool 70%")
                 .perecivel(false)
                 .ativo(true)
@@ -119,6 +135,7 @@ class PedidoServiceTest {
 
         estoque = EstoqueCentral.builder()
                 .id(6L)
+                .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
                 .quantidadeAtual(10)
@@ -128,6 +145,7 @@ class PedidoServiceTest {
 
         pedido = Pedido.builder()
                 .id(7L)
+                .publicId(PEDIDO_PUBLIC_ID)
                 .usuario(solicitante)
                 .laboratorio(laboratorio)
                 .dataSolicitacao(LocalDateTime.now())
@@ -137,6 +155,7 @@ class PedidoServiceTest {
 
         item = ItemPedido.builder()
                 .id(8L)
+                .publicId(ITEM_PUBLIC_ID)
                 .pedido(pedido)
                 .produto(produto)
                 .quantidadeSolicitada(5)
@@ -148,16 +167,17 @@ class PedidoServiceTest {
     void deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService() {
         AprovarPedidoDTO dto = criarAprovacaoDTO(3);
 
-        when(usuarioRepository.findById(4L)).thenReturn(Optional.of(aprovador));
-        when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
+        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        prepararBuscaPedidoComBloqueio();
         when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
                 .thenReturn(Optional.of(estoque));
         when(pedidoRepository.save(any(Pedido.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
 
-        PedidoDTO resultado = pedidoService.aprovar(7L, dto);
+        PedidoDTO resultado = pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto);
 
         assertEquals(StatusPedido.APROVADO, resultado.getStatus());
+        assertEquals(PEDIDO_PUBLIC_ID, resultado.getId());
         assertEquals(3, item.getQuantidadeAprovada());
         assertEquals("Aprovação parcial", pedido.getObservacao());
 
@@ -178,12 +198,12 @@ class PedidoServiceTest {
         pedido.setStatus(StatusPedido.APROVADO);
         AprovarPedidoDTO dto = criarAprovacaoDTO(3);
 
-        when(usuarioRepository.findById(4L)).thenReturn(Optional.of(aprovador));
-        when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
+        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        prepararBuscaPedidoComBloqueio();
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
-                () -> pedidoService.aprovar(7L, dto)
+                () -> pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto)
         );
 
         assertEquals(
@@ -198,12 +218,12 @@ class PedidoServiceTest {
     void deveImpedirQuantidadeAprovadaMaiorQueSolicitada() {
         AprovarPedidoDTO dto = criarAprovacaoDTO(6);
 
-        when(usuarioRepository.findById(4L)).thenReturn(Optional.of(aprovador));
-        when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
+        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        prepararBuscaPedidoComBloqueio();
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
-                () -> pedidoService.aprovar(7L, dto)
+                () -> pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto)
         );
 
         assertEquals(
@@ -219,8 +239,8 @@ class PedidoServiceTest {
     void devePropagarFalhaQuandoNaoHaLotesValidosSuficientes() {
         AprovarPedidoDTO dto = criarAprovacaoDTO(3);
 
-        when(usuarioRepository.findById(4L)).thenReturn(Optional.of(aprovador));
-        when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
+        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        prepararBuscaPedidoComBloqueio();
         when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
                 .thenReturn(Optional.of(estoque));
 
@@ -238,7 +258,7 @@ class PedidoServiceTest {
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
-                () -> pedidoService.aprovar(7L, dto)
+                () -> pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto)
         );
 
         assertEquals(
@@ -257,7 +277,7 @@ class PedidoServiceTest {
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
-                () -> pedidoService.aprovar(7L, dto)
+                () -> pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto)
         );
 
         assertEquals("O usuário aprovador é obrigatório.", exception.getMessage());
@@ -273,11 +293,11 @@ class PedidoServiceTest {
     void deveRestaurarLotesAoCancelarPedidoAprovado() {
         pedido.setStatus(StatusPedido.APROVADO);
 
-        when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
+        prepararBuscaPedidoComBloqueio();
         when(pedidoRepository.save(any(Pedido.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
 
-        PedidoDTO resultado = pedidoService.cancelar(7L, "Cancelado pelo gestor");
+        PedidoDTO resultado = pedidoService.cancelar(PEDIDO_PUBLIC_ID, "Cancelado pelo gestor");
 
         verify(movimentacaoEstoqueService).devolverSaidasDoPedido(
                 pedido,
@@ -285,12 +305,14 @@ class PedidoServiceTest {
                 "Cancelado pelo gestor"
         );
         assertEquals(StatusPedido.CANCELADO, resultado.getStatus());
+        assertEquals(PEDIDO_PUBLIC_ID, resultado.getId());
     }
 
     @Test
     void deveListarPedidosDoProjetoNoLaboratorioEPeriodo() {
         Projeto projeto = Projeto.builder()
                 .id(9L)
+                .publicId(PROJETO_PUBLIC_ID)
                 .laboratorio(laboratorio)
                 .nome("Projeto 1")
                 .ativo(true)
@@ -303,21 +325,21 @@ class PedidoServiceTest {
         LocalDateTime inicio = dataInicio.atStartOfDay();
         LocalDateTime fim = dataFim.atTime(LocalTime.MAX);
 
-        when(laboratorioRepository.existsById(2L)).thenReturn(true);
-        when(projetoRepository.findById(9L)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
         when(pedidoRepository.findByLaboratorioProjetoEPeriodo(2L, 9L, inicio, fim))
                 .thenReturn(List.of(pedido));
 
         List<PedidoDTO> resultado = pedidoService.listarPorProjetoEPeriodo(
-                2L,
-                9L,
+                LABORATORIO_PUBLIC_ID,
+                PROJETO_PUBLIC_ID,
                 dataInicio,
                 dataFim
         );
 
         assertEquals(1, resultado.size());
-        assertEquals(7L, resultado.get(0).getId());
-        assertEquals(9L, resultado.get(0).getProjetoId());
+        assertEquals(PEDIDO_PUBLIC_ID, resultado.get(0).getId());
+        assertEquals(PROJETO_PUBLIC_ID, resultado.get(0).getProjetoId());
         verify(pedidoRepository).findByLaboratorioProjetoEPeriodo(2L, 9L, inicio, fim);
     }
 
@@ -325,6 +347,7 @@ class PedidoServiceTest {
     void deveImpedirConsultaDePedidosQuandoProjetoNaoPertenceAoLaboratorio() {
         Laboratorio outroLaboratorio = Laboratorio.builder()
                 .id(99L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000099"))
                 .nome("Outro laboratório")
                 .unidade(unidade)
                 .ativo(true)
@@ -332,19 +355,20 @@ class PedidoServiceTest {
 
         Projeto projeto = Projeto.builder()
                 .id(9L)
+                .publicId(PROJETO_PUBLIC_ID)
                 .laboratorio(outroLaboratorio)
                 .nome("Projeto externo")
                 .ativo(true)
                 .build();
 
-        when(laboratorioRepository.existsById(2L)).thenReturn(true);
-        when(projetoRepository.findById(9L)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
                 () -> pedidoService.listarPorProjetoEPeriodo(
-                        2L,
-                        9L,
+                        LABORATORIO_PUBLIC_ID,
+                        PROJETO_PUBLIC_ID,
                         LocalDate.of(2026, 6, 1),
                         LocalDate.of(2026, 6, 30)
                 )
@@ -362,19 +386,20 @@ class PedidoServiceTest {
     void deveImpedirConsultaDePedidosComPeriodoInvertido() {
         Projeto projeto = Projeto.builder()
                 .id(9L)
+                .publicId(PROJETO_PUBLIC_ID)
                 .laboratorio(laboratorio)
                 .nome("Projeto 1")
                 .ativo(true)
                 .build();
 
-        when(laboratorioRepository.existsById(2L)).thenReturn(true);
-        when(projetoRepository.findById(9L)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
 
         BusinessRuleException exception = assertThrows(
                 BusinessRuleException.class,
                 () -> pedidoService.listarPorProjetoEPeriodo(
-                        2L,
-                        9L,
+                        LABORATORIO_PUBLIC_ID,
+                        PROJETO_PUBLIC_ID,
                         LocalDate.of(2026, 6, 30),
                         LocalDate.of(2026, 6, 1)
                 )
@@ -388,12 +413,17 @@ class PedidoServiceTest {
                 .findByLaboratorioProjetoEPeriodo(any(), any(), any(), any());
     }
 
+    private void prepararBuscaPedidoComBloqueio() {
+        when(pedidoRepository.findByPublicId(PEDIDO_PUBLIC_ID)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
+    }
+
     private AprovarPedidoDTO criarAprovacaoDTO(Integer quantidadeAprovada) {
         AprovarPedidoDTO.ItemAprovacaoDTO itemDTO =
-                new AprovarPedidoDTO.ItemAprovacaoDTO(8L, quantidadeAprovada);
+                new AprovarPedidoDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, quantidadeAprovada);
 
         AprovarPedidoDTO dto = new AprovarPedidoDTO();
-        dto.setUsuarioAprovadorId(4L);
+        dto.setUsuarioAprovadorId(APROVADOR_PUBLIC_ID);
         dto.setObservacao("Aprovação parcial");
         dto.setItens(List.of(itemDTO));
         return dto;

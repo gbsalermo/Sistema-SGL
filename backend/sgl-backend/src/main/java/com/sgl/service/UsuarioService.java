@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class UsuarioService {
             throw new BusinessRuleException("Senha é obrigatória na criação do usuário.");
         }
 
-        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+        Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
         Laboratorio laboratorio = buscarLaboratorioCompativel(dto.getLaboratorioId(), unidade);
@@ -65,29 +66,28 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> listarPorLaboratorio(Long laboratorioId) {
-        if (!laboratorioRepository.existsById(laboratorioId)) {
-            throw new ResourceNotFoundException("Laboratório", laboratorioId);
-        }
+    public List<UsuarioDTO> listarPorLaboratorio(UUID laboratorioId) {
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
-        return usuarioRepository.findByLaboratorioId(laboratorioId).stream()
+        return usuarioRepository.findByLaboratorioId(laboratorio.getId()).stream()
                 .map(UsuarioDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public UsuarioDTO buscarPorId(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
+    public UsuarioDTO buscarPorId(UUID id) {
+        Usuario usuario = usuarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
         return new UsuarioDTO(usuario);
     }
 
     @Transactional
-    public UsuarioDTO atualizar(Long id, UsuarioDTO dto) {
-        Usuario usuario = usuarioRepository.findById(id)
+    public UsuarioDTO atualizar(UUID id, UsuarioDTO dto) {
+        Usuario usuario = usuarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
 
-        if (usuarioRepository.existsByEmailAndIdNot(dto.getEmail(), id)) {
+        if (usuarioRepository.existsByEmailAndIdNot(dto.getEmail(), usuario.getId())) {
             throw new BusinessRuleException("Já existe um usuário com este email.");
         }
 
@@ -99,7 +99,7 @@ public class UsuarioService {
             );
         }
 
-        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+        Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
         Laboratorio laboratorio = buscarLaboratorioCompativel(dto.getLaboratorioId(), unidade);
@@ -122,8 +122,8 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void Inativar(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
+    public void Inativar(UUID id) {
+        Usuario usuario = usuarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
@@ -133,12 +133,12 @@ public class UsuarioService {
         usuario.setAtivo(false);
     }
 
-    private Laboratorio buscarLaboratorioCompativel(Long laboratorioId, Unidade unidade) {
+    private Laboratorio buscarLaboratorioCompativel(UUID laboratorioId, Unidade unidade) {
         if (laboratorioId == null) {
             return null;
         }
 
-        Laboratorio laboratorio = laboratorioRepository.findById(laboratorioId)
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
         if (laboratorio.getUnidade() == null

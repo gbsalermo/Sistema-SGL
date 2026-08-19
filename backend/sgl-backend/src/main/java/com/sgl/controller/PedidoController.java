@@ -2,6 +2,7 @@ package com.sgl.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,12 +42,12 @@ public class PedidoController {
     }
 
     @GetMapping("/por-usuario")
-    public ResponseEntity<List<PedidoDTO>> listarPorUsuario(@RequestParam Long usuarioId) {
+    public ResponseEntity<List<PedidoDTO>> listarPorUsuario(@RequestParam UUID usuarioId) {
         return ResponseEntity.ok(pedidoService.listarPorUsuario(usuarioId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PedidoDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<PedidoDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(pedidoService.buscarPorId(id));
     }
 
@@ -57,8 +58,8 @@ public class PedidoController {
 
     @GetMapping("/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo")
     public ResponseEntity<List<PedidoDTO>> listarPorProjetoEPeriodo(
-            @PathVariable Long laboratorioId,
-            @PathVariable Long projetoId,
+            @PathVariable UUID laboratorioId,
+            @PathVariable UUID projetoId,
             @RequestParam LocalDate dataInicio,
             @RequestParam LocalDate dataFim) {
 
@@ -74,26 +75,26 @@ public class PedidoController {
 
     @PutMapping("/{id}/aprovar")
     public ResponseEntity<PedidoDTO> aprovar(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody AprovarPedidoDTO dto) {
         return ResponseEntity.ok(pedidoService.aprovar(id, dto));
     }
 
     @PutMapping("/{id}/rejeitar")
     public ResponseEntity<PedidoDTO> rejeitar(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestParam(required = false) String observacao) {
         return ResponseEntity.ok(pedidoService.rejeitar(id, observacao));
     }
 
     @PutMapping("/{id}/entregar")
-    public ResponseEntity<PedidoDTO> entregar(@PathVariable Long id) {
+    public ResponseEntity<PedidoDTO> entregar(@PathVariable UUID id) {
         return ResponseEntity.ok(pedidoService.entregar(id));
     }
 
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<PedidoDTO> cancelar(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestParam(required = false) String observacao) {
         return ResponseEntity.ok(pedidoService.cancelar(id, observacao));
     }

@@ -1,6 +1,7 @@
 package com.sgl.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sgl.model.MovimentacaoEstoque;
@@ -19,32 +20,32 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MovimentacaoEstoqueDTO {
 
-    private Long id;
+    private UUID id;
 
     @NotNull(message = "Id do produto é obrigatorio")
-    private Long produtoId;
+    private UUID produtoId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String produtoNome;
 
-    private Long laboratorioId;
+    private UUID laboratorioId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String laboratorioNome;
 
     @NotNull(message = "Id do usuario é obrigatorio")
-    private Long usuarioId;
+    private UUID usuarioId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String usuarioNome;
 
     @NotNull(message = "Id do estoque é obrigatório")
-    private Long estoqueCentralId;
+    private UUID estoqueCentralId;
 
-    private Long pedidoId;
+    private UUID pedidoId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Long loteId;
+    private UUID loteId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String numeroLote;
@@ -70,22 +71,22 @@ public class MovimentacaoEstoqueDTO {
     private String observacao;
 
     public MovimentacaoEstoqueDTO(MovimentacaoEstoque entity) {
-        this.id = entity.getId();
-        this.produtoId = entity.getProduto().getId();
+        this.id = entity.getPublicId();
+        this.produtoId = entity.getProduto().getPublicId();
         this.produtoNome = entity.getProduto().getNome();
         this.laboratorioId = entity.getLaboratorio() != null
-                ? entity.getLaboratorio().getId()
+                ? entity.getLaboratorio().getPublicId()
                 : null;
         this.laboratorioNome = entity.getLaboratorio() != null
                 ? entity.getLaboratorio().getNome()
                 : null;
-        this.usuarioId = entity.getUsuario().getId();
+        this.usuarioId = entity.getUsuario().getPublicId();
         this.usuarioNome = entity.getUsuario().getNome();
-        this.estoqueCentralId = entity.getEstoqueCentral().getId();
+        this.estoqueCentralId = entity.getEstoqueCentral().getPublicId();
         this.pedidoId = entity.getPedido() != null
-                ? entity.getPedido().getId()
+                ? entity.getPedido().getPublicId()
                 : null;
-        this.loteId = entity.getLote() != null ? entity.getLote().getId() : null;
+        this.loteId = entity.getLote() != null ? entity.getLote().getPublicId() : null;
         this.numeroLote = entity.getLote() != null ? entity.getLote().getNumeroLote() : null;
         this.tipoMovimentacao = entity.getTipoMovimentacao();
         this.quantidadeMovimentada = entity.getQuantidadeMovimentada();

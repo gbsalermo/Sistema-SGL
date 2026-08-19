@@ -1,6 +1,7 @@
 package com.sgl.dto;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import com.sgl.model.Produto;
 import com.sgl.model.enums.NivelRisco;
@@ -21,7 +22,7 @@ public class ProdutoDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Long id;
+    private UUID id;
 
     @NotBlank(message = "nome é obrigatório")
     private String nome;
@@ -55,7 +56,7 @@ public class ProdutoDTO implements Serializable {
     private Boolean ativo;
 
     public ProdutoDTO(Produto entity) {
-        this.id = entity.getId();
+        this.id = entity.getPublicId();
         this.nome = entity.getNome();
         this.descricao = entity.getDescricao();
         this.codigoReferencia = entity.getCodigoReferencia();

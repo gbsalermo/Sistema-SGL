@@ -1,6 +1,7 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoPerecivel;
@@ -14,6 +15,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +38,9 @@ public class Produto implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
 
     @Column(nullable = false)
     private String nome;
@@ -73,4 +78,11 @@ public class Produto implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+    
+    @PrePersist
+	private void gerarPublicId() {
+		if(publicId == null) {
+			publicId = UUID.randomUUID();
+		}
+	}
 }

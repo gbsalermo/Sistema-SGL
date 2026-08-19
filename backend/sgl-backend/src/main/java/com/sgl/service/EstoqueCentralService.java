@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +28,15 @@ public class EstoqueCentralService {
 
     @Transactional
     public EstoqueCentralDTO criar(EstoqueCentralDTO dto) {
-        if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(dto.getUnidadeId(), dto.getProdutoId())) {
-            throw new BusinessRuleException("Já existe estoque para esse produto nesta unidade.");
-        }
-
-        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+        Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
-        Produto produto = produtoRepository.findById(dto.getProdutoId())
+        Produto produto = produtoRepository.findByPublicId(dto.getProdutoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", dto.getProdutoId()));
+
+        if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(unidade.getId(), produto.getId())) {
+            throw new BusinessRuleException("Já existe estoque para esse produto nesta unidade.");
+        }
 
         if (!Boolean.TRUE.equals(produto.getAtivo())) {
             throw new BusinessRuleException("Não é possível criar estoque para produto inativo.");
@@ -60,16 +61,20 @@ public class EstoqueCentralService {
     }
 
     @Transactional(readOnly = true)
-    public EstoqueCentralDTO buscarPorId(Long id) {
-        EstoqueCentral estoque = estoqueCentralRepository.findById(id)
+    public EstoqueCentralDTO buscarPorId(UUID id) {
+        EstoqueCentral estoque = estoqueCentralRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
         return new EstoqueCentralDTO(estoque);
     }
 
     @Transactional(readOnly = true)
-    public EstoqueCentralDTO buscarPorUnidadeEProduto(Long unidadeId, Long produtoId) {
+    public EstoqueCentralDTO buscarPorUnidadeEProduto(UUID unidadeId, UUID produtoId) {
+        Unidade unidade = buscarUnidade(unidadeId);
+        Produto produto = produtoRepository.findByPublicId(produtoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
+
         EstoqueCentral estoque = estoqueCentralRepository
-                .findByUnidadeIdAndProdutoId(unidadeId, produtoId)
+                .findByUnidadeIdAndProdutoId(unidade.getId(), produto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Estoque da unidade " + unidadeId + " para o produto " + produtoId
                 ));
@@ -77,16 +82,16 @@ public class EstoqueCentralService {
     }
 
     @Transactional(readOnly = true)
-    public List<EstoqueCentralDTO> listarPorUnidade(Long unidadeId) {
-        validarUnidade(unidadeId);
-        return estoqueCentralRepository.findByUnidadeId(unidadeId).stream()
+    public List<EstoqueCentralDTO> listarPorUnidade(UUID unidadeId) {
+        Unidade unidade = buscarUnidade(unidadeId);
+        return estoqueCentralRepository.findByUnidadeId(unidade.getId()).stream()
                 .map(EstoqueCentralDTO::new)
                 .toList();
     }
 
     @Transactional
-    public EstoqueCentralDTO atualizar(Long id, EstoqueCentralDTO dto) {
-        EstoqueCentral estoque = estoqueCentralRepository.findById(id)
+    public EstoqueCentralDTO atualizar(UUID id, EstoqueCentralDTO dto) {
+        EstoqueCentral estoque = estoqueCentralRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
 
         estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
@@ -98,17 +103,17 @@ public class EstoqueCentralService {
     }
 
     @Transactional(readOnly = true)
-    public List<EstoqueCentralDTO> listarEstoqueBaixoPorUnidade(Long unidadeId) {
-        validarUnidade(unidadeId);
-        return estoqueCentralRepository.findByUnidadeIdAndAtivoTrue(unidadeId).stream()
+    public List<EstoqueCentralDTO> listarEstoqueBaixoPorUnidade(UUID unidadeId) {
+        Unidade unidade = buscarUnidade(unidadeId);
+        return estoqueCentralRepository.findByUnidadeIdAndAtivoTrue(unidade.getId()).stream()
                 .filter(estoque -> estoque.getQuantidadeAtual() <= estoque.getQuantidadeMinima())
                 .map(EstoqueCentralDTO::new)
                 .toList();
     }
 
     @Transactional
-    public void deletar(Long id) {
-        EstoqueCentral estoque = estoqueCentralRepository.findById(id)
+    public void deletar(UUID id) {
+        EstoqueCentral estoque = estoqueCentralRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
 
         if (!Boolean.TRUE.equals(estoque.getAtivo())) {
@@ -118,9 +123,8 @@ public class EstoqueCentralService {
         estoque.setAtivo(false);
     }
 
-    private void validarUnidade(Long unidadeId) {
-        if (!unidadeRepository.existsById(unidadeId)) {
-            throw new ResourceNotFoundException("Unidade", unidadeId);
-        }
+    private Unidade buscarUnidade(UUID unidadeId) {
+        return unidadeRepository.findByPublicId(unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Unidade", unidadeId));
     }
 }

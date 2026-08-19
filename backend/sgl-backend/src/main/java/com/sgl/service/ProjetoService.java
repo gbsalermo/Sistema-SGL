@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,25 +43,24 @@ public class ProjetoService {
     }
 
     @Transactional(readOnly = true)
-    public ProjetoDTO buscarPorId(Long id) {
-        return projetoRepository.findById(id)
+    public ProjetoDTO buscarPorId(UUID id) {
+        return projetoRepository.findByPublicId(id)
                 .map(ProjetoDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
     }
 
     @Transactional(readOnly = true)
-    public List<ProjetoDTO> listarPorLaboratorio(Long laboratorioId) {
-        if (!laboratorioRepository.existsById(laboratorioId)) {
-            throw new ResourceNotFoundException("Laboratório", laboratorioId);
-        }
+    public List<ProjetoDTO> listarPorLaboratorio(UUID laboratorioId) {
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
-        return projetoRepository.findByLaboratorioId(laboratorioId)
+        return projetoRepository.findByLaboratorioId(laboratorio.getId())
                 .stream().map(ProjetoDTO::new).toList();
     }
 
     @Transactional
-    public ProjetoDTO atualizar(Long id, ProjetoDTO dto) {
-        Projeto projeto = projetoRepository.findById(id)
+    public ProjetoDTO atualizar(UUID id, ProjetoDTO dto) {
+        Projeto projeto = projetoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
 
         Laboratorio novoLaboratorio = buscarLaboratorio(dto.getLaboratorioId());
@@ -71,8 +71,8 @@ public class ProjetoService {
     }
 
     @Transactional
-    public void deletar(Long id) {
-        Projeto projeto = projetoRepository.findById(id)
+    public void deletar(UUID id) {
+        Projeto projeto = projetoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
         projeto.setAtivo(false);
     }
@@ -97,8 +97,8 @@ public class ProjetoService {
         }
     }
 
-    private Laboratorio buscarLaboratorio(Long laboratorioId) {
-        Laboratorio laboratorio = laboratorioRepository.findById(laboratorioId)
+    private Laboratorio buscarLaboratorio(UUID laboratorioId) {
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
         if (!Boolean.TRUE.equals(laboratorio.getAtivo())) {

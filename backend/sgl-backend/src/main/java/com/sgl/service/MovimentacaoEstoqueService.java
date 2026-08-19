@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +25,12 @@ import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
+import com.sgl.repository.PedidoRepository;
+import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,6 +47,10 @@ public class MovimentacaoEstoqueService {
     private final MovimentacaoEstoqueRepository movimentacaoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final LoteRepository loteRepository;
+    private final ProdutoRepository produtoRepository;
+    private final LaboratorioRepository laboratorioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PedidoRepository pedidoRepository;
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueDTO> listarTodos() {
@@ -51,36 +60,48 @@ public class MovimentacaoEstoqueService {
     }
 
     @Transactional(readOnly = true)
-    public MovimentacaoEstoqueDTO buscarPorId(Long id) {
-        return movimentacaoRepository.findById(id)
+    public MovimentacaoEstoqueDTO buscarPorId(UUID id) {
+        return movimentacaoRepository.findByPublicId(id)
                 .map(MovimentacaoEstoqueDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Movimentação", id));
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorProduto(Long produtoId) {
-        return movimentacaoRepository.findByProdutoId(produtoId).stream()
+    public List<MovimentacaoEstoqueDTO> listarPorProduto(UUID produtoId) {
+        Produto produto = produtoRepository.findByPublicId(produtoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
+
+        return movimentacaoRepository.findByProdutoId(produto.getId()).stream()
                 .map(MovimentacaoEstoqueDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorLaboratorio(Long laboratorioId) {
-        return movimentacaoRepository.findByLaboratorioId(laboratorioId).stream()
+    public List<MovimentacaoEstoqueDTO> listarPorLaboratorio(UUID laboratorioId) {
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+
+        return movimentacaoRepository.findByLaboratorioId(laboratorio.getId()).stream()
                 .map(MovimentacaoEstoqueDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorUsuario(Long usuarioId) {
-        return movimentacaoRepository.findByUsuarioId(usuarioId).stream()
+    public List<MovimentacaoEstoqueDTO> listarPorUsuario(UUID usuarioId) {
+        Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
+
+        return movimentacaoRepository.findByUsuarioId(usuario.getId()).stream()
                 .map(MovimentacaoEstoqueDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoqueDTO> listarPorPedido(Long pedidoId) {
-        return movimentacaoRepository.findByPedidoId(pedidoId).stream()
+    public List<MovimentacaoEstoqueDTO> listarPorPedido(UUID pedidoId) {
+        Pedido pedido = pedidoRepository.findByPublicId(pedidoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
+
+        return movimentacaoRepository.findByPedidoId(pedido.getId()).stream()
                 .map(MovimentacaoEstoqueDTO::new)
                 .toList();
     }
@@ -94,7 +115,7 @@ public class MovimentacaoEstoqueService {
 
     @Transactional
     public LoteDTO registrarEntradaLote(
-            Long estoqueId,
+            UUID estoqueId,
             EntradaLoteDTO dto,
             Usuario usuario) {
 
@@ -104,7 +125,7 @@ public class MovimentacaoEstoqueService {
         validarEntradaLote(estoque.getProduto(), dto);
 
         if (loteRepository.existsByEstoqueCentralIdAndNumeroLote(
-                estoqueId,
+                estoque.getId(),
                 dto.getNumeroLote())) {
             throw new BusinessRuleException(
                     "Já existe lote com esse número neste estoque."
@@ -147,6 +168,7 @@ public class MovimentacaoEstoqueService {
     /**
      * Retira uma quantidade do estoque consumindo lotes por FEFO para produtos
      * perecíveis e FIFO para produtos não perecíveis.
+     * Este método é interno ao backend e recebe a PK Long do estoque.
      */
     @Transactional
     public List<MovimentacaoEstoqueDTO> registrarSaida(
@@ -220,7 +242,7 @@ public class MovimentacaoEstoqueService {
      */
     @Transactional
     public List<MovimentacaoEstoqueDTO> registrarDescarteVencimento(
-            Long estoqueId,
+            UUID estoqueId,
             Integer quantidade,
             String justificativa,
             Usuario usuario) {
@@ -237,7 +259,7 @@ public class MovimentacaoEstoqueService {
         }
 
         List<Lote> lotesVencidos = loteRepository.buscarVencidosComBloqueio(
-                estoqueId,
+                estoque.getId(),
                 LocalDate.now()
         );
 
@@ -373,7 +395,7 @@ public class MovimentacaoEstoqueService {
         }
     }
 
-    /** Apenas para consulta/diagnóstico da política de seleção. */
+    /** Apenas para consulta/diagnóstico da política de seleção interna. */
     @Transactional
     public List<LoteDTO> listarLotesOrdenadosParaSaida(Long estoqueId) {
         EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
@@ -393,6 +415,13 @@ public class MovimentacaoEstoqueService {
         return loteRepository.buscarDisponiveisPorEntradaComBloqueio(
                 estoque.getId()
         );
+    }
+
+    private EstoqueCentral buscarEstoqueAtivoComBloqueio(UUID estoquePublicId) {
+        EstoqueCentral referencia = estoqueCentralRepository.findByPublicId(estoquePublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", estoquePublicId));
+
+        return buscarEstoqueAtivoComBloqueio(referencia.getId());
     }
 
     private EstoqueCentral buscarEstoqueAtivoComBloqueio(Long estoqueId) {

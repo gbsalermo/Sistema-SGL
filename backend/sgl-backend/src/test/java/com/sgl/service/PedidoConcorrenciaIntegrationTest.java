@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -148,11 +149,13 @@ class PedidoConcorrenciaIntegrationTest {
 
         Long pedidoAId = pedidoA.getId();
         Long pedidoBId = pedidoB.getId();
-        Long itemAId = pedidoA.getItens().get(0).getId();
-        Long itemBId = pedidoB.getItens().get(0).getId();
+        UUID pedidoAPublicId = pedidoA.getPublicId();
+        UUID pedidoBPublicId = pedidoB.getPublicId();
+        UUID itemAPublicId = pedidoA.getItens().get(0).getPublicId();
+        UUID itemBPublicId = pedidoB.getItens().get(0).getPublicId();
         Long estoqueId = estoque.getId();
         Long loteId = lote.getId();
-        Long usuarioId = usuario.getId();
+        UUID usuarioPublicId = usuario.getPublicId();
 
         CountDownLatch prontas = new CountDownLatch(2);
         CountDownLatch iniciar = new CountDownLatch(1);
@@ -160,17 +163,17 @@ class PedidoConcorrenciaIntegrationTest {
         executor = Executors.newFixedThreadPool(2);
 
         Future<Boolean> resultadoA = executor.submit(() -> aprovarConcorrentemente(
-                pedidoAId,
-                itemAId,
-                usuarioId,
+                pedidoAPublicId,
+                itemAPublicId,
+                usuarioPublicId,
                 prontas,
                 iniciar
         ));
 
         Future<Boolean> resultadoB = executor.submit(() -> aprovarConcorrentemente(
-                pedidoBId,
-                itemBId,
-                usuarioId,
+                pedidoBPublicId,
+                itemBPublicId,
+                usuarioPublicId,
                 prontas,
                 iniciar
         ));
@@ -251,9 +254,9 @@ class PedidoConcorrenciaIntegrationTest {
     }
 
     private boolean aprovarConcorrentemente(
-            Long pedidoId,
-            Long itemId,
-            Long usuarioAprovadorId,
+            UUID pedidoId,
+            UUID itemId,
+            UUID usuarioAprovadorId,
             CountDownLatch prontas,
             CountDownLatch iniciar) throws InterruptedException {
 

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,10 +52,10 @@ public class PedidoService {
 
     @Transactional
     public PedidoDTO criar(PedidoDTO dto) {
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+        Usuario usuario = usuarioRepository.findByPublicId(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
 
-        Laboratorio laboratorio = laboratorioRepository.findById(dto.getLaboratorioId())
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(dto.getLaboratorioId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Laboratório",
                         dto.getLaboratorioId()
@@ -62,7 +63,7 @@ public class PedidoService {
 
         Projeto projeto = null;
         if (dto.getProjetoId() != null) {
-            projeto = projetoRepository.findById(dto.getProjetoId())
+            projeto = projetoRepository.findByPublicId(dto.getProjetoId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Projeto",
                             dto.getProjetoId()
@@ -86,7 +87,7 @@ public class PedidoService {
         Set<Long> produtosAdicionados = new HashSet<>();
 
         for (ItemPedidoDTO itemDTO : dto.getItens()) {
-            Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
+            Produto produto = produtoRepository.findByPublicId(itemDTO.getProdutoId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Produto",
                             itemDTO.getProdutoId()
@@ -138,15 +139,20 @@ public class PedidoService {
     }
 
     @Transactional(readOnly = true)
-    public PedidoDTO buscarPorId(Long id) {
-        Pedido pedido = pedidoRepository.findById(id)
+    public PedidoDTO buscarPorId(UUID id) {
+        Pedido pedido = pedidoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
         return new PedidoDTO(pedido);
     }
 
     @Transactional(readOnly = true)
-    public List<PedidoDTO> listarPorUsuario(Long usuarioId) {
-        return pedidoRepository.findByUsuarioId(usuarioId).stream().map(PedidoDTO::new).toList();
+    public List<PedidoDTO> listarPorUsuario(UUID usuarioId) {
+        Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
+
+        return pedidoRepository.findByUsuarioId(usuario.getId()).stream()
+                .map(PedidoDTO::new)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -160,20 +166,19 @@ public class PedidoService {
      */
     @Transactional(readOnly = true)
     public List<PedidoDTO> listarPorProjetoEPeriodo(
-            Long laboratorioId,
-            Long projetoId,
+            UUID laboratorioId,
+            UUID projetoId,
             LocalDate dataInicio,
             LocalDate dataFim) {
 
-        if (!laboratorioRepository.existsById(laboratorioId)) {
-            throw new ResourceNotFoundException("Laboratório", laboratorioId);
-        }
+        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
-        Projeto projeto = projetoRepository.findById(projetoId)
+        Projeto projeto = projetoRepository.findByPublicId(projetoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 
         if (projeto.getLaboratorio() == null
-                || !projeto.getLaboratorio().getId().equals(laboratorioId)) {
+                || !projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
             throw new BusinessRuleException(
                     "O projeto informado não pertence ao laboratório informado."
             );
@@ -185,21 +190,26 @@ public class PedidoService {
         LocalDateTime fim = dataFim.atTime(LocalTime.MAX);
 
         return pedidoRepository
-                .findByLaboratorioProjetoEPeriodo(laboratorioId, projetoId, inicio, fim)
+                .findByLaboratorioProjetoEPeriodo(
+                        laboratorio.getId(),
+                        projeto.getId(),
+                        inicio,
+                        fim
+                )
                 .stream()
                 .map(PedidoDTO::new)
                 .toList();
     }
 
     @Transactional
-    public PedidoDTO aprovar(Long id, AprovarPedidoDTO dto) {
-        Long aprovadorId = dto.getUsuarioAprovadorId();
+    public PedidoDTO aprovar(UUID id, AprovarPedidoDTO dto) {
+        UUID aprovadorId = dto.getUsuarioAprovadorId();
 
         if (aprovadorId == null) {
             throw new BusinessRuleException("O usuário aprovador é obrigatório.");
         }
 
-        Usuario usuarioAprovador = usuarioRepository.findById(aprovadorId)
+        Usuario usuarioAprovador = usuarioRepository.findByPublicId(aprovadorId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuário aprovador",
                         aprovadorId
@@ -209,8 +219,7 @@ public class PedidoService {
             throw new BusinessRuleException("O usuário aprovador está inativo.");
         }
 
-        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
+        Pedido pedido = buscarPedidoComBloqueio(id);
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
             throw new BusinessRuleException(
@@ -221,7 +230,7 @@ public class PedidoService {
 
         for (AprovarPedidoDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
             ItemPedido item = pedido.getItens().stream()
-                    .filter(i -> i.getId().equals(itemAprovacao.getItemId()))
+                    .filter(i -> i.getPublicId().equals(itemAprovacao.getItemId()))
                     .findFirst()
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Item do pedido",
@@ -270,9 +279,8 @@ public class PedidoService {
     }
 
     @Transactional
-    public PedidoDTO rejeitar(Long id, String observacao) {
-        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
+    public PedidoDTO rejeitar(UUID id, String observacao) {
+        Pedido pedido = buscarPedidoComBloqueio(id);
 
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
             throw new BusinessRuleException(
@@ -287,9 +295,8 @@ public class PedidoService {
     }
 
     @Transactional
-    public PedidoDTO entregar(Long id) {
-        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
+    public PedidoDTO entregar(UUID id) {
+        Pedido pedido = buscarPedidoComBloqueio(id);
 
         if (pedido.getStatus() != StatusPedido.APROVADO) {
             throw new BusinessRuleException(
@@ -317,9 +324,8 @@ public class PedidoService {
     }
 
     @Transactional
-    public PedidoDTO cancelar(Long id, String observacao) {
-        Pedido pedido = pedidoRepository.buscarPorIdComBloqueio(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
+    public PedidoDTO cancelar(UUID id, String observacao) {
+        Pedido pedido = buscarPedidoComBloqueio(id);
 
         if (pedido.getStatus() == StatusPedido.REJEITADO) {
             throw new BusinessRuleException(
@@ -344,6 +350,14 @@ public class PedidoService {
         pedido.setStatus(StatusPedido.CANCELADO);
         pedido.setObservacao(observacao);
         return new PedidoDTO(pedidoRepository.save(pedido));
+    }
+
+    private Pedido buscarPedidoComBloqueio(UUID publicId) {
+        Pedido referencia = pedidoRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", publicId));
+
+        return pedidoRepository.buscarPorIdComBloqueio(referencia.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", publicId));
     }
 
     private void validarConsistenciaPedido(
