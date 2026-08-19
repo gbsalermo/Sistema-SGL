@@ -40,7 +40,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             StatusPedido status
     );
 
-    // Filters a project request history inside one laboratory and date range.
+    // Busca pedidos de um projeto dentro do laboratório e do período informados.
     @Query("""
             SELECT pedido
             FROM Pedido pedido
