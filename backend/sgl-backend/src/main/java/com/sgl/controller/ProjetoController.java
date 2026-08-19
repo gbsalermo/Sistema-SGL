@@ -19,9 +19,11 @@ import com.sgl.dto.request.ProjetoRequestDTO;
 import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.service.ProjetoService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Projetos", description = "Operações de cadastro e consulta dos projetos vinculados aos laboratórios.")
 @RestController
 @RequestMapping("/api/v1/projetos")
 @RequiredArgsConstructor
