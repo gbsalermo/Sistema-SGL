@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sgl.dto.EstoqueCentralDTO;
+import com.sgl.dto.request.EstoqueCentralRequestDTO;
+import com.sgl.dto.response.EstoqueCentralResponseDTO;
 import com.sgl.service.EstoqueCentralService;
 
 import jakarta.validation.Valid;
@@ -29,30 +30,30 @@ public class EstoqueCentralController {
     private final EstoqueCentralService estoqueCentralService;
 
     @PostMapping
-    public ResponseEntity<EstoqueCentralDTO> criar(
-            @Valid @RequestBody EstoqueCentralDTO dto) {
-        EstoqueCentralDTO salvo = estoqueCentralService.criar(dto);
+    public ResponseEntity<EstoqueCentralResponseDTO> criar(
+            @Valid @RequestBody EstoqueCentralRequestDTO dto) {
+        EstoqueCentralResponseDTO salvo = estoqueCentralService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
     @GetMapping
-    public ResponseEntity<List<EstoqueCentralDTO>> listarTodos() {
+    public ResponseEntity<List<EstoqueCentralResponseDTO>> listarTodos() {
         return ResponseEntity.ok(estoqueCentralService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EstoqueCentralDTO> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<EstoqueCentralResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(estoqueCentralService.buscarPorId(id));
     }
 
     @GetMapping("/por-unidade")
-    public ResponseEntity<List<EstoqueCentralDTO>> listarPorUnidade(
+    public ResponseEntity<List<EstoqueCentralResponseDTO>> listarPorUnidade(
             @RequestParam UUID unidadeId) {
         return ResponseEntity.ok(estoqueCentralService.listarPorUnidade(unidadeId));
     }
 
     @GetMapping("/por-unidade-produto")
-    public ResponseEntity<EstoqueCentralDTO> buscarPorUnidadeEProduto(
+    public ResponseEntity<EstoqueCentralResponseDTO> buscarPorUnidadeEProduto(
             @RequestParam UUID unidadeId,
             @RequestParam UUID produtoId) {
         return ResponseEntity.ok(
@@ -60,9 +61,9 @@ public class EstoqueCentralController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EstoqueCentralDTO> atualizar(
+    public ResponseEntity<EstoqueCentralResponseDTO> atualizar(
             @PathVariable UUID id,
-            @Valid @RequestBody EstoqueCentralDTO dto) {
+            @Valid @RequestBody EstoqueCentralRequestDTO dto) {
         return ResponseEntity.ok(estoqueCentralService.atualizar(id, dto));
     }
 
@@ -73,7 +74,7 @@ public class EstoqueCentralController {
     }
 
     @GetMapping("/estoque-baixo")
-    public ResponseEntity<List<EstoqueCentralDTO>> listarEstoqueBaixo(
+    public ResponseEntity<List<EstoqueCentralResponseDTO>> listarEstoqueBaixo(
             @RequestParam UUID unidadeId) {
         return ResponseEntity.ok(
                 estoqueCentralService.listarEstoqueBaixoPorUnidade(unidadeId));
