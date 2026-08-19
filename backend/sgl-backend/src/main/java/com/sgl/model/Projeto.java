@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.sgl.exception.BusinessRuleException;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -57,6 +59,23 @@ public class Projeto implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    public void updateDates(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null && endDate != null) {
+            throw new BusinessRuleException(
+                    "A data de início é obrigatória quando a data de fim for informada."
+            );
+        }
+
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new BusinessRuleException(
+                    "A data de início não pode ser posterior à data de fim."
+            );
+        }
+
+        this.dataInicio = startDate;
+        this.dataFim = endDate;
+    }
 
     @PrePersist
     private void generatePublicId() {
