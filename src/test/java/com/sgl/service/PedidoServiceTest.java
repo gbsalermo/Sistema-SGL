@@ -23,8 +23,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.sgl.dto.AprovarPedidoDTO;
-import com.sgl.dto.PedidoDTO;
+import com.sgl.dto.request.AprovarPedidoRequestDTO;
+import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
@@ -165,7 +165,7 @@ class PedidoServiceTest {
 
     @Test
     void deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService() {
-        AprovarPedidoDTO dto = criarAprovacaoDTO(3);
+        AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
         when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
@@ -174,7 +174,7 @@ class PedidoServiceTest {
         when(pedidoRepository.save(any(Pedido.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
 
-        PedidoDTO resultado = pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto);
+        PedidoResponseDTO resultado = pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto);
 
         assertEquals(StatusPedido.APROVADO, resultado.getStatus());
         assertEquals(PEDIDO_PUBLIC_ID, resultado.getId());
@@ -196,7 +196,7 @@ class PedidoServiceTest {
     @Test
     void deveImpedirAprovacaoQuandoPedidoNaoEstiverPendente() {
         pedido.setStatus(StatusPedido.APROVADO);
-        AprovarPedidoDTO dto = criarAprovacaoDTO(3);
+        AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
         when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
@@ -216,7 +216,7 @@ class PedidoServiceTest {
 
     @Test
     void deveImpedirQuantidadeAprovadaMaiorQueSolicitada() {
-        AprovarPedidoDTO dto = criarAprovacaoDTO(6);
+        AprovarPedidoRequestDTO dto = criarAprovacaoDTO(6);
 
         when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
@@ -237,7 +237,7 @@ class PedidoServiceTest {
 
     @Test
     void devePropagarFalhaQuandoNaoHaLotesValidosSuficientes() {
-        AprovarPedidoDTO dto = criarAprovacaoDTO(3);
+        AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
         when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
@@ -272,7 +272,7 @@ class PedidoServiceTest {
 
     @Test
     void deveExigirUsuarioAprovador() {
-        AprovarPedidoDTO dto = criarAprovacaoDTO(3);
+        AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
         dto.setUsuarioAprovadorId(null);
 
         BusinessRuleException exception = assertThrows(
@@ -297,7 +297,7 @@ class PedidoServiceTest {
         when(pedidoRepository.save(any(Pedido.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
 
-        PedidoDTO resultado = pedidoService.cancelar(PEDIDO_PUBLIC_ID, "Cancelado pelo gestor");
+        PedidoResponseDTO resultado = pedidoService.cancelar(PEDIDO_PUBLIC_ID, "Cancelado pelo gestor");
 
         verify(movimentacaoEstoqueService).devolverSaidasDoPedido(
                 pedido,
@@ -330,7 +330,7 @@ class PedidoServiceTest {
         when(pedidoRepository.findByLaboratorioProjetoEPeriodo(2L, 9L, inicio, fim))
                 .thenReturn(List.of(pedido));
 
-        List<PedidoDTO> resultado = pedidoService.listarPorProjetoEPeriodo(
+        List<PedidoResponseDTO> resultado = pedidoService.listarPorProjetoEPeriodo(
                 LABORATORIO_PUBLIC_ID,
                 PROJETO_PUBLIC_ID,
                 dataInicio,
@@ -418,11 +418,11 @@ class PedidoServiceTest {
         when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
     }
 
-    private AprovarPedidoDTO criarAprovacaoDTO(Integer quantidadeAprovada) {
-        AprovarPedidoDTO.ItemAprovacaoDTO itemDTO =
-                new AprovarPedidoDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, quantidadeAprovada);
+    private AprovarPedidoRequestDTO criarAprovacaoDTO(Integer quantidadeAprovada) {
+        AprovarPedidoRequestDTO.ItemAprovacaoDTO itemDTO =
+                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, quantidadeAprovada);
 
-        AprovarPedidoDTO dto = new AprovarPedidoDTO();
+        AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
         dto.setUsuarioAprovadorId(APROVADOR_PUBLIC_ID);
         dto.setObservacao("Aprovação parcial");
         dto.setItens(List.of(itemDTO));
