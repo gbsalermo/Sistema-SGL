@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.ConsumoProdutoLaboratorioDTO;
-import com.sgl.dto.HistoricoLaboratorioDTO;
+import com.sgl.dto.response.HistoricoLaboratorioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.HistoricoLaboratorio;
@@ -39,49 +39,49 @@ public class HistoricoLaboratorioService {
     private final PedidoRepository pedidoRepository;
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarTodos() {
+    public List<HistoricoLaboratorioResponseDTO> listarTodos() {
         return historicoLaboratorioRepository.findAll().stream()
-                .map(HistoricoLaboratorioDTO::new)
+                .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public HistoricoLaboratorioDTO buscarPorId(UUID id) {
+    public HistoricoLaboratorioResponseDTO buscarPorId(UUID id) {
         return historicoLaboratorioRepository.findByPublicId(id)
-                .map(HistoricoLaboratorioDTO::new)
+                .map(HistoricoLaboratorioResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Histórico de laboratório", id));
     }
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorLaboratorio(UUID laboratorioId) {
+    public List<HistoricoLaboratorioResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
         Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
 
         return historicoLaboratorioRepository.findByLaboratorioId(laboratorio.getId()).stream()
-                .map(HistoricoLaboratorioDTO::new)
+                .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorProduto(UUID produtoId) {
+    public List<HistoricoLaboratorioResponseDTO> listarPorProduto(UUID produtoId) {
         Produto produto = buscarProduto(produtoId);
 
         return historicoLaboratorioRepository.findByProdutoId(produto.getId()).stream()
-                .map(HistoricoLaboratorioDTO::new)
+                .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorPedido(UUID pedidoId) {
+    public List<HistoricoLaboratorioResponseDTO> listarPorPedido(UUID pedidoId) {
         Pedido pedido = pedidoRepository.findByPublicId(pedidoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
 
         return historicoLaboratorioRepository.findByPedidoId(pedido.getId()).stream()
-                .map(HistoricoLaboratorioDTO::new)
+                .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorPeriodo(
+    public List<HistoricoLaboratorioResponseDTO> listarPorPeriodo(
             UUID laboratorioId,
             LocalDate dataInicio,
             LocalDate dataFim) {
@@ -92,7 +92,7 @@ public class HistoricoLaboratorioService {
         return historicoLaboratorioRepository
                 .findByLaboratorioIdAndPeriodo(laboratorio.getId(), dataInicio, dataFim)
                 .stream()
-                .map(HistoricoLaboratorioDTO::new)
+                .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
 
@@ -166,7 +166,7 @@ public class HistoricoLaboratorioService {
 
     // Usa materiais efetivamente entregues, e não apenas pedidos criados.
     @Transactional(readOnly = true)
-    public List<HistoricoLaboratorioDTO> listarPorProjetoEPeriodo(
+    public List<HistoricoLaboratorioResponseDTO> listarPorProjetoEPeriodo(
             UUID laboratorioId,
             UUID projetoId,
             LocalDate dataInicio,
@@ -184,7 +184,7 @@ public class HistoricoLaboratorioService {
                         dataFim
                 )
                 .stream()
-                .map(HistoricoLaboratorioDTO::new)
+                .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
 
