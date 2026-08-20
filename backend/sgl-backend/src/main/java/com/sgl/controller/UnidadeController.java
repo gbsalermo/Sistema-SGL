@@ -37,17 +37,17 @@ public class UnidadeController {
     private final UnidadeService unidadeService;
 
     @Operation(summary = "Listar unidades", description = "Retorna todas as unidades institucionais cadastradas no sistema.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Unidades listadas com sucesso"), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Unidades listadas com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping
     public ResponseEntity<List<UnidadeResponseDTO>> listarTodos() { return ResponseEntity.ok(unidadeService.listarTodos()); }
 
     @Operation(summary = "Buscar unidade por ID", description = "Retorna uma unidade pelo seu identificador público UUID.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Unidade encontrada"), @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Unidade encontrada", useReturnTypeSchema = true), @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/{id}")
     public ResponseEntity<UnidadeResponseDTO> buscarPorId(@PathVariable UUID id) { return ResponseEntity.ok(unidadeService.buscarPorId(id)); }
 
     @Operation(summary = "Criar unidade", description = "Cadastra uma nova unidade institucional no sistema.")
-    @ApiResponses({@ApiResponse(responseCode = "201", description = "Unidade criada com sucesso"), @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "Unidade criada com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PostMapping
     public ResponseEntity<UnidadeResponseDTO> criar(@Valid @RequestBody UnidadeRequestDTO dto) {
         UnidadeResponseDTO novaUnidade = unidadeService.criar(dto);
@@ -55,7 +55,7 @@ public class UnidadeController {
     }
 
     @Operation(summary = "Atualizar unidade", description = "Atualiza os dados da unidade identificada pelo UUID informado.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Unidade atualizada com sucesso"), @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Unidade atualizada com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PutMapping("/{id}")
     public ResponseEntity<UnidadeResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody UnidadeRequestDTO dto) { return ResponseEntity.ok(unidadeService.atualizar(id, dto)); }
 
