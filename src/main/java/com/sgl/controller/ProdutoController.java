@@ -39,7 +39,7 @@ public class ProdutoController {
     private final ProdutoService produtoService;
 
     @Operation(summary = "Criar produto", description = "Cadastra um novo produto no catálogo do sistema.")
-    @ApiResponses({@ApiResponse(responseCode = "201", description = "Produto criado com sucesso"), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "Produto criado com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PostMapping
     public ResponseEntity<ProdutoResponseDTO> criar(@Valid @RequestBody ProdutoRequestDTO dto) {
         ProdutoResponseDTO salvo = produtoService.criar(dto);
@@ -47,17 +47,17 @@ public class ProdutoController {
     }
 
     @Operation(summary = "Listar produtos", description = "Retorna todos os produtos cadastrados no catálogo.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produtos listados com sucesso"), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produtos listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping
     public ResponseEntity<List<ProdutoResponseDTO>> listarTodos() { return ResponseEntity.ok(produtoService.listarTodos()); }
 
     @Operation(summary = "Buscar produto por ID", description = "Retorna um produto pelo seu identificador público UUID.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produto encontrado"), @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produto encontrado", useReturnTypeSchema = true), @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/{id}")
     public ResponseEntity<ProdutoResponseDTO> buscarPorId(@PathVariable UUID id) { return ResponseEntity.ok(produtoService.buscarPorId(id)); }
 
     @Operation(summary = "Atualizar produto", description = "Atualiza os dados do produto identificado pelo UUID informado.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produto atualizado com sucesso"), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produto atualizado com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PutMapping("/{id}")
     public ResponseEntity<ProdutoResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody ProdutoRequestDTO dto) { return ResponseEntity.ok(produtoService.atualizar(id, dto)); }
 
@@ -67,17 +67,17 @@ public class ProdutoController {
     public ResponseEntity<Void> deletar(@PathVariable UUID id) { produtoService.deletar(id); return ResponseEntity.noContent().build(); }
 
     @Operation(summary = "Listar produtos por risco", description = "Retorna os produtos filtrados pelo nível de risco informado.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produtos listados com sucesso"), @ApiResponse(responseCode = "400", description = "Nível de risco inválido", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produtos listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Nível de risco inválido", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/risco/{nivel}")
     public ResponseEntity<List<ProdutoResponseDTO>> listarPorRisco(@PathVariable NivelRisco nivel) { return ResponseEntity.ok(produtoService.listarPorRisco(nivel)); }
 
     @Operation(summary = "Listar produtos perecíveis", description = "Retorna somente os produtos classificados como perecíveis.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produtos perecíveis listados com sucesso"), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Produtos perecíveis listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/pereciveis")
     public ResponseEntity<List<ProdutoResponseDTO>> listarPereciveis() { return ResponseEntity.ok(produtoService.listarPereciveis()); }
 
     @Operation(summary = "Buscar produtos por nome", description = "Retorna os produtos compatíveis com o nome informado.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Busca realizada com sucesso"), @ApiResponse(responseCode = "400", description = "Parâmetro inválido", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Busca realizada com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Parâmetro inválido", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/buscar")
     public ResponseEntity<List<ProdutoResponseDTO>> buscarPorNome(@RequestParam String nome) { return ResponseEntity.ok(produtoService.buscarPorNome(nome)); }
 }
