@@ -19,6 +19,7 @@ import com.sgl.dto.request.LaboratorioRequestDTO;
 import com.sgl.dto.response.LaboratorioResponseDTO;
 import com.sgl.service.LaboratorioService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,22 +32,26 @@ public class LaboratorioController {
 
     private final LaboratorioService laboratorioService;
 
+    @Operation(summary = "Listar laboratórios", description = "Retorna todos os laboratórios cadastrados no sistema.")
     @GetMapping
     public ResponseEntity<List<LaboratorioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(laboratorioService.listarTodos());
     }
 
+    @Operation(summary = "Buscar laboratório por ID", description = "Retorna um laboratório pelo seu identificador público UUID.")
     @GetMapping("/{id}")
     public ResponseEntity<LaboratorioResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(laboratorioService.buscarPorId(id));
     }
 
+    @Operation(summary = "Listar laboratórios por unidade", description = "Retorna os laboratórios vinculados à unidade informada.")
     @GetMapping("/por-unidade")
     public ResponseEntity<List<LaboratorioResponseDTO>> listarPorUnidade(
             @RequestParam UUID unidadeId) {
         return ResponseEntity.ok(laboratorioService.listarPorUnidade(unidadeId));
     }
 
+    @Operation(summary = "Criar laboratório", description = "Cadastra um novo laboratório vinculado a uma unidade.")
     @PostMapping
     public ResponseEntity<LaboratorioResponseDTO> criar(
             @Valid @RequestBody LaboratorioRequestDTO dto) {
@@ -54,6 +59,7 @@ public class LaboratorioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novoLaboratorio);
     }
 
+    @Operation(summary = "Atualizar laboratório", description = "Atualiza os dados do laboratório identificado pelo UUID informado.")
     @PutMapping("/{id}")
     public ResponseEntity<LaboratorioResponseDTO> atualizar(
             @PathVariable UUID id,
@@ -61,6 +67,7 @@ public class LaboratorioController {
         return ResponseEntity.ok(laboratorioService.atualizar(id, dto));
     }
 
+    @Operation(summary = "Excluir laboratório", description = "Remove o laboratório identificado pelo UUID informado.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         laboratorioService.deletar(id);
