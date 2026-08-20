@@ -19,6 +19,7 @@ import com.sgl.dto.request.EstoqueCentralRequestDTO;
 import com.sgl.dto.response.EstoqueCentralResponseDTO;
 import com.sgl.service.EstoqueCentralService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class EstoqueCentralController {
 
     private final EstoqueCentralService estoqueCentralService;
 
+    @Operation(summary = "Criar novo Estoque-central", description = "Cria um novo estoque-central")
     @PostMapping
     public ResponseEntity<EstoqueCentralResponseDTO> criar(
             @Valid @RequestBody EstoqueCentralRequestDTO dto) {
@@ -38,22 +40,26 @@ public class EstoqueCentralController {
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
+    @Operation(summary = "Listar todos os estoque", description = "Retorna todos os estoques cadastrados no sistema")
     @GetMapping
     public ResponseEntity<List<EstoqueCentralResponseDTO>> listarTodos() {
         return ResponseEntity.ok(estoqueCentralService.listarTodos());
     }
-
+    
+    @Operation(summary = "Busca o Estoque por id", description = "Busca um estoque pelo identificador")
     @GetMapping("/{id}")
     public ResponseEntity<EstoqueCentralResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(estoqueCentralService.buscarPorId(id));
     }
 
+    @Operation(summary = "Lista Estoques por Unidade", description = "Recebe todos os estoques vinculados ao id da Unidade")
     @GetMapping("/por-unidade")
     public ResponseEntity<List<EstoqueCentralResponseDTO>> listarPorUnidade(
             @RequestParam UUID unidadeId) {
         return ResponseEntity.ok(estoqueCentralService.listarPorUnidade(unidadeId));
     }
 
+    @Operation(summary = "Busca o Estoque por Unidade e Produto", description = "Busca o estoque vinculado ao id da Unidade e do Produto")
     @GetMapping("/por-unidade-produto")
     public ResponseEntity<EstoqueCentralResponseDTO> buscarPorUnidadeEProduto(
             @RequestParam UUID unidadeId,
@@ -62,6 +68,7 @@ public class EstoqueCentralController {
                 estoqueCentralService.buscarPorUnidadeEProduto(unidadeId, produtoId));
     }
 
+    @Operation(summary = "Atualiza o Estoque", description = "Atualizar dados do estoque")
     @PutMapping("/{id}")
     public ResponseEntity<EstoqueCentralResponseDTO> atualizar(
             @PathVariable UUID id,
@@ -69,12 +76,14 @@ public class EstoqueCentralController {
         return ResponseEntity.ok(estoqueCentralService.atualizar(id, dto));
     }
 
+    @Operation(summary = "Deletar o estoque", description = "Deleta o estoque daquele produto a partir do identificador")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         estoqueCentralService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Listar Estoque com armazenamento baixo", description = "Recebe todos os estoques que estão com o armazenamento abaixo do ideal")
     @GetMapping("/estoque-baixo")
     public ResponseEntity<List<EstoqueCentralResponseDTO>> listarEstoqueBaixo(
             @RequestParam UUID unidadeId) {
