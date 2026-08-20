@@ -1,9 +1,9 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 19/08/2026  
-**Branch da correção:** `divisao-dto`  
-**Fase atual:** divisão de DTOs concluída e validada; branch pronta para merge na `main`.
+**Última atualização:** 20/08/2026  
+**Branch da correção:** `swagger-openapi`  
+**Fase atual:** OpenAPI/Swagger em implementação e validação; frontend permanece como próxima grande etapa.
 
 Este arquivo registra o estado consolidado do backend, as decisões arquiteturais aprovadas e o ponto exato de continuidade.
 
@@ -463,6 +463,30 @@ referências/templates
 → implementação frontend
 ```
 
+### Diretrizes e ideias já aprovadas para o frontend
+
+```text
+Dashboards claros e funcionais
+→ priorizar leitura rápida do estado do sistema
+→ evitar excesso de informação visual
+→ destacar estoque, pedidos e indicadores realmente úteis para cada perfil
+
+Interface de login inspirada no Publica
+→ manter familiaridade visual com o sistema já utilizado como referência
+→ adaptar identidade e campos às necessidades do SGL
+
+Fluxo de pedidos separado por responsabilidade
+→ interface de quem solicita materiais deve ser simples e orientada à criação/acompanhamento do pedido
+→ interface de quem faz gestão deve priorizar análise, aprovação, rejeição, entrega e acompanhamento
+→ evitar expor ações administrativas para o perfil que apenas solicita
+
+Página 404 customizada
+→ responsabilidade do frontend
+→ tratar rota inexistente com uma tela própria e navegação de retorno segura
+→ para recurso inexistente retornado pela API, interpretar o HTTP 404 e apresentar mensagem contextual adequada
+→ decidir conforme o contexto entre página, estado vazio, mensagem inline, modal ou notificação
+```
+
 ## Requisito futuro de reposição/compra
 
 Estado:
@@ -476,11 +500,10 @@ estoque crítico histórico → pós-protótipo
 ## Próxima ação
 
 ```text
-1. merge de divisao-dto na main
-2. iniciar OpenAPI/Swagger
-3. revisar contratos expostos pela API
-4. seguir para frontend
-5. autenticação + auditoria local pós-frontend
+1. concluir OpenAPI/Swagger
+2. revisar contratos expostos pela API
+3. seguir para frontend
+4. autenticação + auditoria local pós-frontend
 ```
 
 ## Documentos de referência
@@ -517,3 +540,4 @@ estoque crítico histórico → pós-protótipo
 | 19/08/2026 | DTOs separados em `request` e `response`; DTOs legados removidos |
 | 19/08/2026 | Services, Controllers e testes migrados para os novos contratos de DTO |
 | 19/08/2026 | `mvn clean test`: 23 testes, 0 falhas, 0 erros |
+| 20/08/2026 | Registradas diretrizes iniciais do frontend: dashboards funcionais, login inspirado no Publica, separação do fluxo de pedidos por responsabilidade e página 404 customizada |
