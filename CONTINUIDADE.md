@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Última atualização:** 20/08/2026  
 **Branch da correção:** `swagger-openapi`  
-**Fase atual:** OpenAPI/Swagger em implementação e validação; frontend permanece como próxima grande etapa.
+**Fase atual:** backend funcional/estrutural do protótipo concluído e validado; frontend é a próxima grande etapa.
 
 Este arquivo registra o estado consolidado do backend, as decisões arquiteturais aprovadas e o ponto exato de continuidade.
 
@@ -23,9 +23,11 @@ branch própria da correção
 
 Toda correção aprovada deve ser registrada neste arquivo com o motivo da alteração.
 
-## Estado geral do backend
+## Estado geral do backend — CONCLUÍDO
 
-O backend está estabilizado em PostgreSQL real com Flyway.
+O backend funcional e estrutural previsto para esta fase do protótipo está concluído e estabilizado em PostgreSQL real com Flyway.
+
+O encerramento desta fase não antecipa autenticação/autorização e auditoria local, que permanecem deliberadamente planejadas para depois do frontend, conforme decisão já registrada.
 
 Regras principais consolidadas:
 
@@ -414,8 +416,8 @@ Autenticação local simulada e revisão final de auditoria/autorização serão
 Sequência aprovada:
 
 ```text
-backend estrutural
-→ OpenAPI/Swagger
+backend estrutural ✅
+→ OpenAPI/Swagger ✅
 → frontend
 → autenticação + auditoria local
 → integração futura com autenticação corporativa
@@ -423,24 +425,40 @@ backend estrutural
 
 Enquanto isso, IDs temporários de usuário usados para testes locais continuam como UUID público.
 
-## OpenAPI / Swagger
+## OpenAPI / Swagger — CONCLUÍDO
 
-Swagger é a próxima etapa após o merge da divisão dos DTOs.
-
-Pré-condições principais:
+Branch:
 
 ```text
-compilação ✅
-mvn test ✅
-aplicação inicia ✅
-UUID público ✅
-mini ajustes ✅
-divisão Request/Response DTO ✅
+swagger-openapi
 ```
+
+Implementação concluída e validada:
+
+```text
+springdoc-openapi integrado ao Spring Boot
+OpenApiConfig com SGL API v1
+Swagger UI e /v3/api-docs funcionando
+controllers organizados com @Tag
+endpoints documentados com @Operation
+RequestDTOs e ResponseDTOs documentados com @Schema
+ApiError e FieldValidationError documentados
+respostas HTTP documentadas com @ApiResponse
+schemas de sucesso e erro revisados
+200 / 201 / 204 / 400 / 404 / 409 / 500 representados conforme o contrato atual
+validação visual final no Swagger UI concluída
+mvn clean compile ✅
+mvn test com profile test ✅
+23 testes ✅
+0 falhas ✅
+0 erros ✅
+```
+
+O Swagger/OpenAPI passa a ser a referência operacional principal para endpoints, parâmetros, request bodies, responses e erros da API. Documentos textuais permanecem úteis para arquitetura, regras de negócio e histórico, mas não devem duplicar manualmente o contrato vivo da API.
 
 ## Frontend
 
-O frontend vem após OpenAPI/Swagger.
+O frontend passa a ser a próxima grande fase do projeto.
 
 Referências registradas:
 
@@ -500,10 +518,11 @@ estoque crítico histórico → pós-protótipo
 ## Próxima ação
 
 ```text
-1. concluir OpenAPI/Swagger
-2. revisar contratos expostos pela API
-3. seguir para frontend
-4. autenticação + auditoria local pós-frontend
+1. abrir/revisar Pull Request de swagger-openapi para main
+2. integrar o fechamento do backend à main
+3. iniciar planejamento e implementação do frontend
+4. implementar autenticação + auditoria local após o frontend
+5. preparar integração futura com autenticação corporativa
 ```
 
 ## Documentos de referência
@@ -541,3 +560,5 @@ estoque crítico histórico → pós-protótipo
 | 19/08/2026 | Services, Controllers e testes migrados para os novos contratos de DTO |
 | 19/08/2026 | `mvn clean test`: 23 testes, 0 falhas, 0 erros |
 | 20/08/2026 | Registradas diretrizes iniciais do frontend: dashboards funcionais, login inspirado no Publica, separação do fluxo de pedidos por responsabilidade e página 404 customizada |
+| 20/08/2026 | OpenAPI/Swagger concluído e validado com documentação de controllers, operações, DTOs, respostas e erros |
+| 20/08/2026 | Backend funcional/estrutural do protótipo oficialmente encerrado; frontend definido como próxima grande fase |
