@@ -18,6 +18,7 @@ import com.sgl.dto.request.UnidadeRequestDTO;
 import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.service.UnidadeService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,16 +31,19 @@ public class UnidadeController {
 
     private final UnidadeService unidadeService;
 
+    @Operation(summary = "Listar unidades", description = "Retorna todas as unidades institucionais cadastradas no sistema.")
     @GetMapping
     public ResponseEntity<List<UnidadeResponseDTO>> listarTodos() {
         return ResponseEntity.ok(unidadeService.listarTodos());
     }
 
+    @Operation(summary = "Buscar unidade por ID", description = "Retorna uma unidade pelo seu identificador público UUID.")
     @GetMapping("/{id}")
     public ResponseEntity<UnidadeResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(unidadeService.buscarPorId(id));
     }
 
+    @Operation(summary = "Criar unidade", description = "Cadastra uma nova unidade institucional no sistema.")
     @PostMapping
     public ResponseEntity<UnidadeResponseDTO> criar(
             @Valid @RequestBody UnidadeRequestDTO dto) {
@@ -47,6 +51,7 @@ public class UnidadeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novaUnidade);
     }
 
+    @Operation(summary = "Atualizar unidade", description = "Atualiza os dados da unidade identificada pelo UUID informado.")
     @PutMapping("/{id}")
     public ResponseEntity<UnidadeResponseDTO> atualizar(
             @PathVariable UUID id,
@@ -54,6 +59,7 @@ public class UnidadeController {
         return ResponseEntity.ok(unidadeService.atualizar(id, dto));
     }
 
+    @Operation(summary = "Excluir unidade", description = "Remove a unidade identificada pelo UUID informado.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         unidadeService.deletar(id);
