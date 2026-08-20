@@ -21,8 +21,8 @@ import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.service.PedidoService;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -34,38 +34,38 @@ public class PedidoController {
 
     private final PedidoService pedidoService;
 
-    @Operation(summary = "Criar pedido", description = "Cria um novo pedido de materiais para um laboratório, podendo estar vinculado a um projeto")
+    @Operation(summary = "Criar pedido", description = "Cria um novo pedido de materiais para um laboratório, podendo estar vinculado a um projeto.")
     @PostMapping
     public ResponseEntity<PedidoResponseDTO> criar(@Valid @RequestBody PedidoRequestDTO dto) {
         PedidoResponseDTO criado = pedidoService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
-    @Operation(summary = "Listar todos os pedidos", description = "Retorna todos os pedidos cadastrados no sistema")
+    @Operation(summary = "Listar todos os pedidos", description = "Retorna todos os pedidos cadastrados no sistema.")
     @GetMapping
     public ResponseEntity<List<PedidoResponseDTO>> listarTodos() {
         return ResponseEntity.ok(pedidoService.listarTodos());
     }
 
-    @Operation(summary = "Listar pedidos por Usuarios", description = "Retorna os pedidos vinculados ao usuário informado pelo identificador ")
+    @Operation(summary = "Listar pedidos por usuário", description = "Retorna os pedidos vinculados ao usuário informado pelo identificador público UUID.")
     @GetMapping("/por-usuario")
     public ResponseEntity<List<PedidoResponseDTO>> listarPorUsuario(@RequestParam UUID usuarioId) {
         return ResponseEntity.ok(pedidoService.listarPorUsuario(usuarioId));
     }
 
-    @Operation(summary = "Buscar pedido por ID", description = "Retorna um pedido específico pelo seu identificador")
+    @Operation(summary = "Buscar pedido por ID", description = "Retorna um pedido específico pelo seu identificador público UUID.")
     @GetMapping("/{id}")
     public ResponseEntity<PedidoResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(pedidoService.buscarPorId(id));
     }
 
-    @Operation(summary = "Listar pedidos por status", description = "Retorna os pedidos filtrados pelo status informado")
+    @Operation(summary = "Listar pedidos por status", description = "Retorna os pedidos filtrados pelo status informado.")
     @GetMapping("/por-status")
     public ResponseEntity<List<PedidoResponseDTO>> listarPorStatus(@RequestParam StatusPedido status) {
         return ResponseEntity.ok(pedidoService.listarPorStatus(status));
     }
 
-    @Operation(summary = "Listar pedidos por projeto e periodo", description = "Retorna os pedidos de um laboratório e projeto dentro do periodo informado")
+    @Operation(summary = "Listar pedidos por projeto e período", description = "Retorna os pedidos de um laboratório e projeto dentro do período informado.")
     @GetMapping("/laboratorio/{laboratorioId}/projeto/{projetoId}/periodo")
     public ResponseEntity<List<PedidoResponseDTO>> listarPorProjetoEPeriodo(
             @PathVariable UUID laboratorioId,
@@ -105,7 +105,7 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.entregar(id));
     }
 
-    @Operation(summary = "Cancelar pedido", description = "Cancela um pedido, quando o pedido já foi aprovado, restaura os lotes exatos anteriormente consumidos")
+    @Operation(summary = "Cancelar pedido", description = "Cancela um pedido e, quando ele já foi aprovado, restaura os lotes exatos anteriormente consumidos.")
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<PedidoResponseDTO> cancelar(
             @PathVariable UUID id,
