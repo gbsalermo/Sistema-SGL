@@ -38,28 +38,28 @@ public class LaboratorioController {
     private final LaboratorioService laboratorioService;
 
     @Operation(summary = "Listar laboratórios", description = "Retorna todos os laboratórios cadastrados no sistema.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratórios listados com sucesso"), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratórios listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping
     public ResponseEntity<List<LaboratorioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(laboratorioService.listarTodos());
     }
 
     @Operation(summary = "Buscar laboratório por ID", description = "Retorna um laboratório pelo seu identificador público UUID.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratório encontrado"), @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratório encontrado", useReturnTypeSchema = true), @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/{id}")
     public ResponseEntity<LaboratorioResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(laboratorioService.buscarPorId(id));
     }
 
     @Operation(summary = "Listar laboratórios por unidade", description = "Retorna os laboratórios vinculados à unidade informada.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratórios listados com sucesso"), @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratórios listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/por-unidade")
     public ResponseEntity<List<LaboratorioResponseDTO>> listarPorUnidade(@RequestParam UUID unidadeId) {
         return ResponseEntity.ok(laboratorioService.listarPorUnidade(unidadeId));
     }
 
     @Operation(summary = "Criar laboratório", description = "Cadastra um novo laboratório vinculado a uma unidade.")
-    @ApiResponses({@ApiResponse(responseCode = "201", description = "Laboratório criado com sucesso"), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Unidade ou responsável não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "Laboratório criado com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Unidade ou responsável não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PostMapping
     public ResponseEntity<LaboratorioResponseDTO> criar(@Valid @RequestBody LaboratorioRequestDTO dto) {
         LaboratorioResponseDTO novoLaboratorio = laboratorioService.criar(dto);
@@ -67,7 +67,7 @@ public class LaboratorioController {
     }
 
     @Operation(summary = "Atualizar laboratório", description = "Atualiza os dados do laboratório identificado pelo UUID informado.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratório atualizado com sucesso"), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Laboratório ou recurso relacionado não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Laboratório atualizado com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Laboratório ou recurso relacionado não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PutMapping("/{id}")
     public ResponseEntity<LaboratorioResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody LaboratorioRequestDTO dto) {
         return ResponseEntity.ok(laboratorioService.atualizar(id, dto));
