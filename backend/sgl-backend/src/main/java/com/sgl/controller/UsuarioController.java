@@ -19,11 +19,12 @@ import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.service.UsuarioService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "Usuários", description = "Operações de cadastro, consulta e inativação dos usuários do sistema.")
+@Tag(name = "Usuários", description = "Operações de cadastro e consulta dos usuários do sistema.")
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @RequiredArgsConstructor
@@ -31,27 +32,32 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
+    @Operation(summary = "Listar usuários", description = "Retorna todos os usuários cadastrados no sistema.")
     @GetMapping
     public ResponseEntity<List<UsuarioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
 
+    @Operation(summary = "Buscar usuário por ID", description = "Retorna um usuário pelo seu identificador público UUID.")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(usuarioService.buscarPorId(id));
     }
 
+    @Operation(summary = "Listar usuários por laboratório", description = "Retorna os usuários vinculados ao laboratório informado.")
     @GetMapping("/por-laboratorio")
     public ResponseEntity<List<UsuarioResponseDTO>> listarPorLaboratorio(@RequestParam UUID laboratorioId) {
         return ResponseEntity.ok(usuarioService.listarPorLaboratorio(laboratorioId));
     }
 
+    @Operation(summary = "Criar usuário", description = "Cadastra um novo usuário no sistema.")
     @PostMapping
     public ResponseEntity<UsuarioResponseDTO> criar(@Valid @RequestBody UsuarioRequestDTO dto) {
         UsuarioResponseDTO novoUsuario = usuarioService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
     }
 
+    @Operation(summary = "Atualizar usuário", description = "Atualiza os dados do usuário identificado pelo UUID informado.")
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> atualizar(
             @PathVariable UUID id,
@@ -59,6 +65,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.atualizar(id, dto));
     }
 
+    @Operation(summary = "Inativar usuário", description = "Inativa o usuário identificado pelo UUID informado.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> inativar(@PathVariable UUID id) {
         usuarioService.Inativar(id);
