@@ -39,7 +39,7 @@ public class EstoqueCentralController {
 
     @Operation(summary = "Criar estoque central", description = "Cria um registro de estoque central para um produto em uma unidade.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Estoque central criado com sucesso"),
+            @ApiResponse(responseCode = "201", description = "Estoque central criado com sucesso", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Unidade ou produto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -53,7 +53,7 @@ public class EstoqueCentralController {
 
     @Operation(summary = "Listar estoques", description = "Retorna todos os registros de estoque central cadastrados no sistema.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estoques listados com sucesso"),
+            @ApiResponse(responseCode = "200", description = "Estoques listados com sucesso", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @GetMapping
@@ -63,7 +63,7 @@ public class EstoqueCentralController {
 
     @Operation(summary = "Buscar estoque por ID", description = "Retorna um registro de estoque central pelo seu identificador público UUID.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estoque encontrado"),
+            @ApiResponse(responseCode = "200", description = "Estoque encontrado", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "404", description = "Estoque não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
@@ -74,7 +74,7 @@ public class EstoqueCentralController {
 
     @Operation(summary = "Listar estoques por unidade", description = "Retorna os registros de estoque central vinculados à unidade informada.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estoques listados com sucesso"),
+            @ApiResponse(responseCode = "200", description = "Estoques listados com sucesso", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
@@ -85,7 +85,7 @@ public class EstoqueCentralController {
 
     @Operation(summary = "Buscar estoque por unidade e produto", description = "Retorna o registro de estoque correspondente à unidade e ao produto informados.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estoque encontrado"),
+            @ApiResponse(responseCode = "200", description = "Estoque encontrado", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "404", description = "Estoque, unidade ou produto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
@@ -96,7 +96,7 @@ public class EstoqueCentralController {
 
     @Operation(summary = "Atualizar estoque central", description = "Atualiza os dados configuráveis do registro de estoque central informado.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estoque atualizado com sucesso"),
+            @ApiResponse(responseCode = "200", description = "Estoque atualizado com sucesso", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Estoque ou recurso relacionado não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -122,7 +122,7 @@ public class EstoqueCentralController {
 
     @Operation(summary = "Listar estoques baixos", description = "Retorna os estoques da unidade cuja quantidade atual está abaixo da quantidade mínima configurada.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estoques baixos listados com sucesso"),
+            @ApiResponse(responseCode = "200", description = "Estoques baixos listados com sucesso", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "404", description = "Unidade não encontrada", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
