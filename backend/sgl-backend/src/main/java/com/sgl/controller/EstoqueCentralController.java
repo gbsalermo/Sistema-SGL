@@ -32,7 +32,7 @@ public class EstoqueCentralController {
 
     private final EstoqueCentralService estoqueCentralService;
 
-    @Operation(summary = "Criar novo Estoque-central", description = "Cria um novo estoque-central")
+    @Operation(summary = "Criar estoque central", description = "Cria um registro de estoque central para um produto em uma unidade.")
     @PostMapping
     public ResponseEntity<EstoqueCentralResponseDTO> criar(
             @Valid @RequestBody EstoqueCentralRequestDTO dto) {
@@ -40,26 +40,26 @@ public class EstoqueCentralController {
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
-    @Operation(summary = "Listar todos os estoque", description = "Retorna todos os estoques cadastrados no sistema")
+    @Operation(summary = "Listar estoques", description = "Retorna todos os registros de estoque central cadastrados no sistema.")
     @GetMapping
     public ResponseEntity<List<EstoqueCentralResponseDTO>> listarTodos() {
         return ResponseEntity.ok(estoqueCentralService.listarTodos());
     }
-    
-    @Operation(summary = "Busca o Estoque por id", description = "Busca um estoque pelo identificador")
+
+    @Operation(summary = "Buscar estoque por ID", description = "Retorna um registro de estoque central pelo seu identificador público UUID.")
     @GetMapping("/{id}")
     public ResponseEntity<EstoqueCentralResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(estoqueCentralService.buscarPorId(id));
     }
 
-    @Operation(summary = "Lista Estoques por Unidade", description = "Recebe todos os estoques vinculados ao id da Unidade")
+    @Operation(summary = "Listar estoques por unidade", description = "Retorna os registros de estoque central vinculados à unidade informada.")
     @GetMapping("/por-unidade")
     public ResponseEntity<List<EstoqueCentralResponseDTO>> listarPorUnidade(
             @RequestParam UUID unidadeId) {
         return ResponseEntity.ok(estoqueCentralService.listarPorUnidade(unidadeId));
     }
 
-    @Operation(summary = "Busca o Estoque por Unidade e Produto", description = "Busca o estoque vinculado ao id da Unidade e do Produto")
+    @Operation(summary = "Buscar estoque por unidade e produto", description = "Retorna o registro de estoque correspondente à unidade e ao produto informados.")
     @GetMapping("/por-unidade-produto")
     public ResponseEntity<EstoqueCentralResponseDTO> buscarPorUnidadeEProduto(
             @RequestParam UUID unidadeId,
@@ -68,7 +68,7 @@ public class EstoqueCentralController {
                 estoqueCentralService.buscarPorUnidadeEProduto(unidadeId, produtoId));
     }
 
-    @Operation(summary = "Atualiza o Estoque", description = "Atualizar dados do estoque")
+    @Operation(summary = "Atualizar estoque central", description = "Atualiza os dados configuráveis do registro de estoque central informado.")
     @PutMapping("/{id}")
     public ResponseEntity<EstoqueCentralResponseDTO> atualizar(
             @PathVariable UUID id,
@@ -76,14 +76,14 @@ public class EstoqueCentralController {
         return ResponseEntity.ok(estoqueCentralService.atualizar(id, dto));
     }
 
-    @Operation(summary = "Deletar o estoque", description = "Deleta o estoque daquele produto a partir do identificador")
+    @Operation(summary = "Excluir estoque central", description = "Remove o registro de estoque central identificado pelo UUID informado.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         estoqueCentralService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Listar Estoque com armazenamento baixo", description = "Recebe todos os estoques que estão com o armazenamento abaixo do ideal")
+    @Operation(summary = "Listar estoques baixos", description = "Retorna os estoques da unidade cuja quantidade atual está abaixo da quantidade mínima configurada.")
     @GetMapping("/estoque-baixo")
     public ResponseEntity<List<EstoqueCentralResponseDTO>> listarEstoqueBaixo(
             @RequestParam UUID unidadeId) {
