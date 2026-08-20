@@ -36,27 +36,27 @@ public class LoteController {
     private final LoteService loteService;
 
     @Operation(summary = "Listar lotes", description = "Retorna todos os lotes cadastrados no sistema.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lotes listados com sucesso"), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lotes listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping
     public ResponseEntity<List<LoteResponseDTO>> listarTodos() { return ResponseEntity.ok(loteService.listarTodos()); }
 
     @Operation(summary = "Buscar lote por ID", description = "Retorna um lote pelo seu identificador público UUID.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lote encontrado"), @ApiResponse(responseCode = "404", description = "Lote não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lote encontrado", useReturnTypeSchema = true), @ApiResponse(responseCode = "404", description = "Lote não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/{id}")
     public ResponseEntity<LoteResponseDTO> buscarPorId(@PathVariable UUID id) { return ResponseEntity.ok(loteService.buscarPorId(id)); }
 
     @Operation(summary = "Listar lotes por estoque", description = "Retorna os lotes vinculados ao registro de estoque informado.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lotes listados com sucesso"), @ApiResponse(responseCode = "404", description = "Estoque não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lotes listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "404", description = "Estoque não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/por-estoque")
     public ResponseEntity<List<LoteResponseDTO>> listarPorEstoque(@RequestParam UUID estoqueId) { return ResponseEntity.ok(loteService.listarPorEstoque(estoqueId)); }
 
     @Operation(summary = "Listar lotes vencidos", description = "Retorna os lotes cuja data de validade já foi ultrapassada.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lotes vencidos listados com sucesso"), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lotes vencidos listados com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/vencidos")
     public ResponseEntity<List<LoteResponseDTO>> listarVencidos() { return ResponseEntity.ok(loteService.listarVencidos()); }
 
     @Operation(summary = "Atualizar lote", description = "Atualiza os dados permitidos do lote identificado pelo UUID informado.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lote atualizado com sucesso"), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Lote não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Lote atualizado com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Lote não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PutMapping("/{id}")
     public ResponseEntity<LoteResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarLoteRequestDTO dto) { return ResponseEntity.ok(loteService.atualizar(id, dto)); }
 
