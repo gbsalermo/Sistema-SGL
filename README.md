@@ -3,7 +3,7 @@
 <!-- HERO SECTION -->
 <div align="center">
   <a href="https://github.com/gbsalermo/Sistema-SGL">
-    <img src="docs/LOGO.png" alt="SGL Logo" width="220" height="auto">
+    <img src="docs/LOGO.png" alt="SGL Logo" width="340" height="auto">
   </a>
 
   <h1 align="center">SGL — Sistema de Gestão de Laboratórios</h1>
