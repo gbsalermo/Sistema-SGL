@@ -1,8 +1,8 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 20/08/2026  
-**Branch da correção:** `swagger-openapi`  
+**Última atualização:** 21/08/2026  
+**Branch da correção:** `docs/requisito-fiscalizacao`  
 **Fase atual:** backend funcional/estrutural do protótipo concluído e validado; frontend é a próxima grande etapa.
 
 Este arquivo registra o estado consolidado do backend, as decisões arquiteturais aprovadas e o ponto exato de continuidade.
@@ -505,6 +505,123 @@ Página 404 customizada
 → decidir conforme o contexto entre página, estado vazio, mensagem inline, modal ou notificação
 ```
 
+## Requisito complementar — fiscalização/auditoria regulatória
+
+**Origem:** requisito identificado durante o planejamento do frontend em 21/08/2026.
+
+O cliente precisa informar a uma organização de fiscalização dados de produtos específicos mantidos no estoque. O backend atual já possui grande parte das fontes necessárias, porém ainda não possui uma classificação regulatória explícita nem um contrato dedicado para esse relatório.
+
+Dados já disponíveis e que devem continuar vindo das fontes oficiais do domínio:
+
+```text
+Produto
+→ nome/identificação
+→ código de referência
+→ unidade de medida
+→ localização física
+→ nível, tipo e descrição de risco
+→ condições de armazenamento
+→ unidade de armazenamento
+
+EstoqueCentral
+→ quantidade atual por Unidade + Produto
+
+Lote
+→ quantidade disponível e validade quando aplicável
+
+MovimentacaoEstoque
+→ entradas, saídas, descartes e restaurações
+→ base para apuração das saídas em um período
+```
+
+### Regra arquitetural
+
+Não criar uma entidade regulatória copiando quantidade, risco, armazenamento, localização ou saídas.
+
+```text
+Produto / EstoqueCentral / Lote / MovimentacaoEstoque
+→ continuam como fontes de verdade
+
+entidade regulatória auxiliar
+→ apenas identifica o escopo fiscalizado
+→ guarda metadados específicos do órgão/regra
+```
+
+### Modelagem candidata — NÃO CONGELADA
+
+Avaliar uma entidade conceitualmente semelhante a:
+
+```text
+ProdutoFiscalizado / ProdutoControlado
+→ publicId
+→ Produto
+→ Unidade, se o controle variar conforme estoque/local
+→ órgão fiscalizador
+→ código/registro regulatório, quando existir
+→ vigência/ativo
+→ observação
+→ outros metadados exigidos pelo órgão
+```
+
+Uma entidade auxiliar tende a ser mais segura do que apenas `Produto.fiscalizado = true` quando:
+
+```text
+o mesmo produto pode ser fiscalizado por mais de um órgão
+há regras diferentes por unidade/local
+há código regulatório específico
+há vigência ou metadados próprios da fiscalização
+```
+
+Não criar migration, entidade, DTO ou endpoint antes de conhecer o modelo oficial de informação exigido pelo órgão.
+
+### Relatório regulatório pretendido
+
+Fluxo conceitual:
+
+```text
+selecionar órgão / unidade / período quando aplicável
+→ localizar produtos sujeitos à fiscalização
+→ consolidar dados atuais do Produto e Estoque
+→ incluir lotes/validade quando exigido
+→ apurar entradas/saídas do período pelas movimentações
+→ gerar relatório oficial
+```
+
+### Possível necessidade de snapshot de declaração
+
+Se a fiscalização exigir demonstrar exatamente o que foi informado em uma data/período, avaliar uma segunda estrutura:
+
+```text
+RelatorioFiscalizacao / DeclaracaoRegulatoria
+→ órgão destinatário
+→ período de referência
+→ data/hora de geração
+→ usuário responsável
+→ snapshot dos produtos/valores declarados quando necessário
+→ arquivo/exportação ou identificador da declaração
+→ status de envio, se houver
+```
+
+Essa estrutura **não é obrigatória neste momento**. Se o relatório puder ser regenerado de forma confiável a partir do histórico existente, evitar persistir snapshot desnecessário.
+
+### Próxima decisão necessária para o backend
+
+Antes de implementar:
+
+```text
+1. obter o formulário/modelo exigido pelo órgão fiscalizador
+2. confirmar se o escopo é Produto ou Produto + Unidade/local
+3. confirmar se existem múltiplos órgãos/regras
+4. listar metadados regulatórios obrigatórios
+5. definir período e cálculo das saídas
+6. confirmar necessidade de histórico/snapshot do que foi declarado
+7. definir formato oficial de saída
+8. somente então criar migration V4+ ou superior, entidade, DTOs, services e endpoints
+9. documentar os novos contratos no Swagger/OpenAPI
+```
+
+Esse requisito é uma **extensão funcional descoberta na fase de frontend** e não invalida o encerramento estrutural anterior do backend.
+
 ## Requisito futuro de reposição/compra
 
 Estado:
@@ -518,11 +635,12 @@ estoque crítico histórico → pós-protótipo
 ## Próxima ação
 
 ```text
-1. abrir/revisar Pull Request de swagger-openapi para main
-2. integrar o fechamento do backend à main
-3. iniciar planejamento e implementação do frontend
-4. implementar autenticação + auditoria local após o frontend
-5. preparar integração futura com autenticação corporativa
+1. manter o backend estrutural encerrado até existir contrato funcional claro para novos requisitos
+2. continuar planejamento e implementação do frontend
+3. obter os requisitos oficiais da fiscalização antes de modelar ProdutoFiscalizado/ProdutoControlado
+4. implementar eventual complemento regulatório em branch própria + migration V4 ou superior
+5. implementar autenticação + auditoria local após o frontend
+6. preparar integração futura com autenticação corporativa
 ```
 
 ## Documentos de referência
@@ -562,3 +680,4 @@ estoque crítico histórico → pós-protótipo
 | 20/08/2026 | Registradas diretrizes iniciais do frontend: dashboards funcionais, login inspirado no Publica, separação do fluxo de pedidos por responsabilidade e página 404 customizada |
 | 20/08/2026 | OpenAPI/Swagger concluído e validado com documentação de controllers, operações, DTOs, respostas e erros |
 | 20/08/2026 | Backend funcional/estrutural do protótipo oficialmente encerrado; frontend definido como próxima grande fase |
+| 21/08/2026 | Registrado requisito complementar de fiscalização/auditoria regulatória, com `ProdutoFiscalizado/ProdutoControlado` como modelagem candidata e possível snapshot de declaração condicionado à exigência do órgão |
