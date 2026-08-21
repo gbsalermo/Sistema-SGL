@@ -121,6 +121,206 @@ Lote
 → guarda validade quando aplicável
 ```
 
+## 🚀 Fluxo de Funcionamento e Guia de Uso
+
+Para facilitar a compreensão do comportamento do **SGL**, abaixo apresentamos a representação visual do ciclo de vida das operações do sistema e um guia prático simulando a utilização real dos endpoints da API.
+
+### 📊 Diagrama de Ciclo de Vida do SGL (Mermaid)
+
+Este diagrama detalha o caminho lógico percorrido no sistema, desde as configurações e cadastros iniciais até a entrega final ou cancelamento de pedidos de materiais:
+
+```mermaid
+flowchart TD
+    %% Styling
+    classDef setup fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
+    classDef stock fill:#efebe9,stroke:#5d4037,stroke-width:2px,color:#3e2723;
+    classDef order fill:#fff8e1,stroke:#ffa000,stroke-width:2px,color:#ff6f00;
+    classDef approved fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#1b5e20;
+    classDef rejected fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#b71c1c;
+
+    subgraph 1. Estrutura Inicial [1. Estrutura Inicial]
+        A[Criar Unidade]:::setup --> B[Vincular Laboratório]:::setup
+        B --> C[Associar Usuários & Projetos]:::setup
+        D[Cadastrar Produtos]:::setup --> E[Inicializar Estoque Central da Unidade]:::setup
+    end
+
+    subgraph 2. Gestão de Estoque [2. Gestão de Estoque]
+        E --> F[Entrada de Lote]:::stock
+        F --> G{Produto Perecível?}:::stock
+        G -- Sim --> H[Controle FEFO: Vence Primeiro, Sai Primeiro]:::stock
+        G -- Não --> I[Controle FIFO: Entra Primeiro, Sai Primeiro]:::stock
+    end
+
+    subgraph 3. Fluxo de Pedidos [3. Fluxo de Pedidos]
+        H & I --> J[Criar Pedido PENDENTE]:::order
+        J --> K{Análise do Aprovador}:::order
+        
+        K -- Rejeitar --> L[Pedido REJEITADO]:::rejected
+        
+        K -- Aprovar --> M[Pedido APROVADO]:::approved
+        M --> N[Baixa Automática do Estoque por Lote]:::approved
+        
+        N --> O{Próximo Passo?}:::approved
+        O -- Cancelar --> P[Pedido CANCELADO]:::rejected
+        P --> Q[Estorno e Restauração Exata dos Lotes]:::rejected
+        
+        O -- Entregar --> R[Pedido ENTREGUE]:::approved
+        R --> S[Registrar Histórico do Laboratório]:::approved
+    end
+```
+
+---
+
+### 📖 Guia de Uso Passo a Passo (Simulação da API)
+
+Siga a sequência lógica abaixo para simular o funcionamento prático do SGL usando os endpoints REST do sistema:
+
+<details>
+<summary><b>Passo 1: Preparação do Ambiente (Unidade, Laboratório e Produto)</b></summary>
+<br>
+
+Antes de movimentar estoque ou solicitar itens, cadastramos a estrutura base do sistema.
+
+1. **Criar a Unidade** (Ex: Unidade Central):
+   - **Endpoint:** `POST /api/v1/unidades`
+   - **Payload de Exemplo:**
+     ```json
+     {
+       "nome": "Unidade Central de Biotecnologia",
+       "sigla": "UCB"
+     }
+     ```
+   
+2. **Criar o Laboratório** vinculado à unidade criada:
+   - **Endpoint:** `POST /api/v1/laboratorios`
+   - **Payload de Exemplo:**
+     ```json
+     {
+       "nome": "Laboratório de Virologia",
+       "descricao": "Pesquisas avançadas em vírus",
+       "unidadeId": 1
+     }
+     ```
+
+3. **Cadastrar o Produto** no catálogo global:
+   - **Endpoint:** `POST /api/v1/produtos`
+   - **Payload de Exemplo:**
+     ```json
+     {
+       "nome": "Álcool Isopropílico 99%",
+       "codigoReferencia": "ALC-ISO-99",
+       "unidadeMedida": "LITRO",
+       "perecivel": true,
+       "tipoPerecivel": "REAGENTE"
+     }
+     ```
+</details>
+
+<details>
+<summary><b>Passo 2: Abastecendo o Estoque (Entrada de Lotes)</b></summary>
+<br>
+
+O estoque no SGL é controlado por lotes físicos rastreáveis. Para abastecer a Unidade com o Produto cadastrado, fazemos uma entrada de lote.
+
+- **Endpoint:** `POST /api/v1/lotes/entrada`
+- **Payload de Exemplo:**
+  ```json
+  {
+    "produtoId": 1,
+    "unidadeId": 1,
+    "numeroLote": "LOT-2026-A",
+    "quantidade": 50.0,
+    "dataValidade": "2027-12-31"
+  }
+  ```
+
+*O que o sistema faz por baixo dos panos:*
+- Incrementa a quantidade no `EstoqueCentral` daquela `Unidade + Produto`.
+- Registra uma movimentação em `MovimentacaoEstoque` com o tipo `ENTRADA`.
+</details>
+
+<details>
+<summary><b>Passo 3: Realizando uma Solicitação (Pedido PENDENTE)</b></summary>
+<br>
+
+Com estoque disponível, os usuários do laboratório podem realizar pedidos de materiais.
+
+- **Endpoint:** `POST /api/v1/pedidos`
+- **Payload de Exemplo:**
+  ```json
+  {
+    "usuarioId": 2, // ID do solicitante (deve pertencer ao laboratório)
+    "laboratorioId": 1,
+    "projetoId": 1, // Projeto opcional vinculado
+    "itens": [
+      {
+        "produtoId": 1,
+        "quantidadeSolicitada": 10.0
+      }
+    ]
+  }
+  ```
+
+*Estado do sistema:*
+- O pedido é registrado com o status `PENDENTE`.
+- **Nenhum estoque é reduzido ainda** nesta etapa, garantindo que o saldo só baixe após a aprovação formal do responsável.
+</details>
+
+<details>
+<summary><b>Passo 4: Processo de Aprovação e Baixa Inteligente (FEFO/FIFO)</b></summary>
+<br>
+
+O responsável analisa o pedido pendente e decide aprová-lo.
+
+- **Endpoint:** `POST /api/v1/pedidos/{id}/aprovar`
+- **Payload de Exemplo:**
+  ```json
+  {
+    "usuarioAprovadorId": 1,
+    "itensAprovados": [
+      {
+        "itemPedidoId": 1,
+        "quantidadeAprovada": 10.0
+      }
+    ]
+  }
+  ```
+
+*O que o sistema faz por baixo dos panos:*
+1. **Seleção Inteligente de Lote:** Como o produto é perecível, o sistema aplica a regra **FEFO** (First Expire, First Out), selecionando e deduzindo o saldo do lote mais próximo do vencimento (`LOT-2026-A`).
+2. **Registro de Auditoria:** Cria uma movimentação em `MovimentacaoEstoque` com o tipo `SAIDA` e origem `PEDIDO`.
+3. **Mudança de Status:** O pedido passa para o status `APROVADO`.
+</details>
+
+<details>
+<summary><b>Passo 5: Entrega Física e Encerramento</b></summary>
+<br>
+
+Após a separação física do reagente no almoxarifado, ele é entregue ao laboratório de destino.
+
+- **Endpoint:** `POST /api/v1/pedidos/{id}/entregar`
+
+*Resultado final:*
+- O status do pedido muda para `ENTREGUE`.
+- O sistema registra um histórico em `HistoricoLaboratorio` contendo o que o laboratório e o projeto receberam de fato.
+- Nenhuma alteração no estoque é realizada nesta etapa, pois o saldo já foi debitado na aprovação.
+</details>
+
+<details>
+<summary><b>Passo 4.1: Cancelamento e Devolução Segura (Se aplicável)</b></summary>
+<br>
+
+Caso um pedido `APROVADO` seja cancelado antes de ser entregue:
+
+- **Endpoint:** `POST /api/v1/pedidos/{id}/cancelar`
+
+*Estorno e Auditoria:*
+- O status do pedido passa para `CANCELADO`.
+- O sistema rastreia as movimentações do pedido e **restaura exatamente a quantidade que havia sido debitada** aos lotes de origem, gerando uma movimentação do tipo `DEVOLUCAO`.
+</details>
+
+---
+
 ## FEFO e FIFO
 
 Produtos perecíveis utilizam **FEFO — First Expire, First Out**:
