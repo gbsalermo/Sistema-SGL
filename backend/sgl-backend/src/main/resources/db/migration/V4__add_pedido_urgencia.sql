@@ -1,0 +1,5 @@
+ALTER TABLE pedidos
+    ADD COLUMN urgente BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE pedidos
+    ADD COLUMN motivo_urgencia VARCHAR(500);
