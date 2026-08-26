@@ -69,6 +69,13 @@ public class Pedido implements Serializable {
     @Column(nullable = false)
     private StatusPedido status;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean urgente = false;
+
+    @Column(length = 500)
+    private String motivoUrgencia;
+
     private String observacao;
 
     private String arquivoDocumento;
@@ -81,6 +88,9 @@ public class Pedido implements Serializable {
     private void generatePublicId() {
         if (publicId == null) {
             publicId = UUID.randomUUID();
+        }
+        if (urgente == null) {
+            urgente = false;
         }
     }
 }
