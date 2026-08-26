@@ -40,7 +40,7 @@ public class PedidoController {
 
     private final PedidoService pedidoService;
 
-    @Operation(summary = "Criar pedido", description = "Cria um novo pedido de materiais para um laboratório, podendo estar vinculado a um projeto.")
+    @Operation(summary = "Criar pedido", description = "Cria um novo pedido de materiais para um laboratório, podendo estar vinculado a um projeto e marcado como urgente apenas para fins informativos.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Pedido criado com sucesso",
                     content = @Content(schema = @Schema(implementation = PedidoResponseDTO.class))),
@@ -111,6 +111,18 @@ public class PedidoController {
     @GetMapping("/por-status")
     public ResponseEntity<List<PedidoResponseDTO>> listarPorStatus(@RequestParam StatusPedido status) {
         return ResponseEntity.ok(pedidoService.listarPorStatus(status));
+    }
+
+    @Operation(summary = "Listar pedidos por urgência", description = "Retorna pedidos filtrados pela marcação informativa de urgência. A urgência não altera o fluxo operacional do pedido.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pedidos filtrados por urgência retornados com sucesso",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = PedidoResponseDTO.class)))),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping("/por-urgencia")
+    public ResponseEntity<List<PedidoResponseDTO>> listarPorUrgencia(@RequestParam Boolean urgente) {
+        return ResponseEntity.ok(pedidoService.listarPorUrgencia(urgente));
     }
 
     @Operation(summary = "Listar pedidos por projeto e período", description = "Retorna os pedidos de um laboratório e projeto dentro do período informado.")
