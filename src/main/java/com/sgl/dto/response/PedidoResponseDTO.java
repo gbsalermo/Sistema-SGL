@@ -38,6 +38,10 @@ public class PedidoResponseDTO {
     private LocalDateTime dataSolicitacao;
     @Schema(description = "Status atual do pedido.", example = "APROVADO")
     private StatusPedido status;
+    @Schema(description = "Indica se o pedido foi marcado como urgente pelo solicitante.", example = "true")
+    private Boolean urgente;
+    @Schema(description = "Justificativa da urgência, quando informada.", example = "Experimento agendado para amanhã.")
+    private String motivoUrgencia;
     @Schema(description = "Observação registrada no pedido.", example = "Aprovado para atendimento.")
     private String observacao;
     @Schema(description = "Referência ao documento associado ao pedido, quando houver.", example = "solicitacao-2026-08.pdf")
@@ -55,6 +59,8 @@ public class PedidoResponseDTO {
         this.projetoNome = entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
         this.dataSolicitacao = entity.getDataSolicitacao();
         this.status = entity.getStatus();
+        this.urgente = Boolean.TRUE.equals(entity.getUrgente());
+        this.motivoUrgencia = entity.getMotivoUrgencia();
         this.observacao = entity.getObservacao();
         this.arquivoDocumento = entity.getArquivoDocumento();
         this.itens = entity.getItens().stream()
