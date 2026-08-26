@@ -78,12 +78,27 @@ public class PedidoService {
             projeto.validateActive();
         }
 
+        boolean urgente = Boolean.TRUE.equals(dto.getUrgente());
+        String motivoUrgencia = normalizarTexto(dto.getMotivoUrgencia());
+
+        if (urgente && motivoUrgencia == null) {
+            throw new BusinessRuleException(
+                    "Informe o motivo da urgência quando o pedido for marcado como urgente."
+            );
+        }
+
+        if (!urgente) {
+            motivoUrgencia = null;
+        }
+
         Pedido pedido = Pedido.builder()
                 .usuario(usuario)
                 .laboratorio(laboratorio)
                 .projeto(projeto)
                 .dataSolicitacao(LocalDateTime.now())
                 .status(StatusPedido.PENDENTE)
+                .urgente(urgente)
+                .motivoUrgencia(motivoUrgencia)
                 .observacao(dto.getObservacao())
                 .arquivoDocumento(dto.getArquivoDocumento())
                 .itens(new ArrayList<>())
@@ -154,6 +169,13 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorStatus(StatusPedido status) {
         return pedidoRepository.findByStatus(status).stream()
+                .map(PedidoResponseDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PedidoResponseDTO> listarPorUrgencia(Boolean urgente) {
+        return pedidoRepository.findByUrgente(urgente).stream()
                 .map(PedidoResponseDTO::new)
                 .toList();
     }
@@ -393,5 +415,14 @@ public class PedidoService {
                     "A data inicial não pode ser posterior à data final."
             );
         }
+    }
+
+    private String normalizarTexto(String valor) {
+        if (valor == null) {
+            return null;
+        }
+
+        String normalizado = valor.trim();
+        return normalizado.isEmpty() ? null : normalizado;
     }
 }
