@@ -34,11 +34,11 @@ public class PedidoRequestDTO {
     @Schema(description = "Indica se o solicitante marcou o pedido como urgente. A urgência é informativa e não altera o fluxo do pedido.", example = "true")
     private Boolean urgente;
 
-    @Schema(description = "Justificativa informada pelo solicitante quando o pedido for marcado como urgente.", example = "Experimento agendado para amanhã.")
+    @Schema(description = "Justificativa opcional de urgência mantida por compatibilidade. Novos clientes podem registrar esse contexto no campo observação.", example = "Experimento agendado para amanhã.")
     @Size(max = 500, message = "Motivo da urgência deve ter no máximo 500 caracteres")
     private String motivoUrgencia;
 
-    @Schema(description = "Observação opcional sobre o pedido.", example = "Materiais destinados ao experimento da próxima semana.")
+    @Schema(description = "Observação ou descrição opcional sobre o pedido. Quando o pedido for urgente, este campo também pode informar o motivo ou contexto da urgência.", example = "Materiais destinados ao experimento da próxima semana.")
     private String observacao;
 
     @Schema(description = "Referência opcional ao documento associado ao pedido.", example = "solicitacao-2026-08.pdf")
