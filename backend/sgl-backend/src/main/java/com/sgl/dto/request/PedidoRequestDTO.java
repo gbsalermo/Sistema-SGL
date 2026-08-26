@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,13 @@ public class PedidoRequestDTO {
 
     @Schema(description = "Identificador público UUID do projeto vinculado ao pedido, quando houver.", example = "550e8400-e29b-41d4-a716-446655440003")
     private UUID projetoId;
+
+    @Schema(description = "Indica se o solicitante marcou o pedido como urgente. A urgência é informativa e não altera o fluxo do pedido.", example = "true")
+    private Boolean urgente;
+
+    @Schema(description = "Justificativa informada pelo solicitante quando o pedido for marcado como urgente.", example = "Experimento agendado para amanhã.")
+    @Size(max = 500, message = "Motivo da urgência deve ter no máximo 500 caracteres")
+    private String motivoUrgencia;
 
     @Schema(description = "Observação opcional sobre o pedido.", example = "Materiais destinados ao experimento da próxima semana.")
     private String observacao;
