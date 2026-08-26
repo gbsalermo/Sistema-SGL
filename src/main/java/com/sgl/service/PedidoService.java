@@ -81,12 +81,6 @@ public class PedidoService {
         boolean urgente = Boolean.TRUE.equals(dto.getUrgente());
         String motivoUrgencia = normalizarTexto(dto.getMotivoUrgencia());
 
-        if (urgente && motivoUrgencia == null) {
-            throw new BusinessRuleException(
-                    "Informe o motivo da urgência quando o pedido for marcado como urgente."
-            );
-        }
-
         if (!urgente) {
             motivoUrgencia = null;
         }
@@ -180,7 +174,6 @@ public class PedidoService {
                 .toList();
     }
 
-    // Resolve os UUIDs públicos antes de filtrar por FKs internas e período.
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorProjetoEPeriodo(
             UUID laboratorioId,
