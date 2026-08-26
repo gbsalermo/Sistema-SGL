@@ -35,6 +35,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByStatus(StatusPedido status);
 
+    List<Pedido> findByUrgente(Boolean urgente);
+
     List<Pedido> findByLaboratorioIdAndStatus(
             Long laboratorioId,
             StatusPedido status
