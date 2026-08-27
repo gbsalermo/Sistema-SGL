@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.sgl.model.Lote;
+import com.sgl.model.enums.UnidadeMedida;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -18,29 +19,31 @@ import lombok.Setter;
 @AllArgsConstructor
 public class LoteResponseDTO {
 
-    @Schema(description = "Identificador público UUID do lote.", example = "550e8400-e29b-41d4-a716-446655440013")
     private UUID id;
-    @Schema(description = "Identificador público UUID do estoque central.", example = "550e8400-e29b-41d4-a716-446655440012")
     private UUID estoqueCentralId;
-    @Schema(description = "Identificador público UUID do produto.", example = "550e8400-e29b-41d4-a716-446655440004")
     private UUID produtoId;
-    @Schema(description = "Nome do produto.", example = "Extrato de DNA Plant Wizard")
     private String produtoNome;
-    @Schema(description = "Identificador público UUID da unidade.", example = "550e8400-e29b-41d4-a716-446655440002")
     private UUID unidadeId;
-    @Schema(description = "Nome da unidade.", example = "Instituto de Química")
     private String unidadeNome;
-    @Schema(description = "Número de identificação do lote.", example = "LOT-2026-001")
     private String numeroLote;
-    @Schema(description = "Quantidade registrada na entrada original do lote.", example = "20")
+
+    @Schema(description = "Apresentação física registrada para o lote.", example = "kit")
+    private String apresentacao;
+    @Schema(description = "Quantidade de apresentações físicas recebidas.", example = "2")
+    private Integer quantidadeApresentacoes;
+    @Schema(description = "Conteúdo em unidade-base por apresentação.", example = "50")
+    private Integer conteudoPorApresentacao;
+    @Schema(description = "Indica se a apresentação permite saída parcial.", example = "true")
+    private Boolean fracionavel;
+    @Schema(description = "Unidade-base de controle do produto.", example = "UNIDADE")
+    private UnidadeMedida unidadeBase;
+
+    @Schema(description = "Quantidade inicial do lote, sempre na unidade-base do produto.", example = "100")
     private Integer quantidadeInicial;
-    @Schema(description = "Quantidade ainda disponível no lote.", example = "8")
+    @Schema(description = "Quantidade disponível no lote, sempre na unidade-base do produto.", example = "80")
     private Integer quantidadeDisponivel;
-    @Schema(description = "Data de entrada do lote no estoque.", example = "2026-08-20")
     private LocalDate dataEntrada;
-    @Schema(description = "Data de validade do lote, quando aplicável.", example = "2027-08-31")
     private LocalDate dataValidade;
-    @Schema(description = "Indica se o lote está ativo.", example = "true")
     private Boolean ativo;
 
     public LoteResponseDTO(Lote entity) {
@@ -51,6 +54,11 @@ public class LoteResponseDTO {
         this.unidadeId = entity.getEstoqueCentral().getUnidade().getPublicId();
         this.unidadeNome = entity.getEstoqueCentral().getUnidade().getNome();
         this.numeroLote = entity.getNumeroLote();
+        this.apresentacao = entity.getApresentacao();
+        this.quantidadeApresentacoes = entity.getQuantidadeApresentacoes();
+        this.conteudoPorApresentacao = entity.getConteudoPorApresentacao();
+        this.fracionavel = entity.getFracionavel();
+        this.unidadeBase = entity.getEstoqueCentral().getProduto().getUnidadeMedida();
         this.quantidadeInicial = entity.getQuantidadeInicial();
         this.quantidadeDisponivel = entity.getQuantidadeDisponivel();
         this.dataEntrada = entity.getDataEntrada();
