@@ -29,7 +29,11 @@ public class EstoqueCentralResponseDTO {
     private UUID produtoId;
     @Schema(description = "Nome do produto.", example = "Extrato de DNA Plant Wizard")
     private String produtoNome;
-    @Schema(description = "Unidade de armazenamento do produto.", example = "kit com 50 reações")
+    @Schema(description = "Código de referência do produto.", example = "DNA-PW-50")
+    private String produtoCodigoReferencia;
+    @Schema(description = "Localização física do produto na unidade.", example = "AMX2 - Prateleira 3")
+    private String produtoLocalizacaoFisica;
+    @Schema(description = "Apresentação ou forma de acondicionamento do produto.", example = "kit com 50 reações")
     private String produtoUnidadeArmazenamento;
     @Schema(description = "Quantidade total atual consolidada a partir dos lotes.", example = "20")
     private Integer quantidadeAtual;
@@ -45,6 +49,8 @@ public class EstoqueCentralResponseDTO {
         this.unidadeSigla = entity.getUnidade().getSigla();
         this.produtoId = entity.getProduto().getPublicId();
         this.produtoNome = entity.getProduto().getNome();
+        this.produtoCodigoReferencia = entity.getProduto().getCodigoReferencia();
+        this.produtoLocalizacaoFisica = entity.getProduto().getLocalizacaoFisica();
         this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
         this.quantidadeAtual = entity.getQuantidadeAtual();
         this.quantidadeMinima = entity.getQuantidadeMinima();
