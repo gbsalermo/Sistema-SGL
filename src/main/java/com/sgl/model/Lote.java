@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.sgl.exception.BusinessRuleException;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -52,40 +54,25 @@ public class Lote implements Serializable {
     @Column(name = "numero_lote", nullable = false, length = 100)
     private String numeroLote;
 
-    /**
-     * Apresentação física recebida neste lote, por exemplo: kit, frasco,
-     * caixa, bombona ou unidade avulsa. Não altera a unidade-base do produto.
-     */
     @Column(length = 120)
     private String apresentacao;
 
-    /** Quantidade de apresentações físicas recebidas. */
     private Integer quantidadeApresentacoes;
 
-    /**
-     * Quantidade de unidades-base contida em cada apresentação.
-     * Ex.: 50 reações por kit, 500 mL por frasco, 1 unidade por avulso.
-     */
     private Integer conteudoPorApresentacao;
 
-    /**
-     * Define se o conteúdo da apresentação pode sair parcialmente.
-     * Lotes legados nulos são tratados como fracionáveis pela camada de serviço.
-     */
     private Boolean fracionavel;
 
-    /** Quantidade inicial sempre expressa na unidade-base de controle do produto. */
     @Column(nullable = false)
     private Integer quantidadeInicial;
 
-    /** Quantidade disponível sempre expressa na unidade-base de controle do produto. */
     @Column(nullable = false)
+    @Setter(lombok.AccessLevel.NONE)
     private Integer quantidadeDisponivel;
 
     @Column(nullable = false)
     private LocalDate dataEntrada;
 
-    // Obrigatória para perecíveis; nula para produtos controlados por FIFO.
     private LocalDate dataValidade;
 
     @Column(nullable = false)
@@ -99,6 +86,24 @@ public class Lote implements Serializable {
 
     public boolean permiteFracionamento() {
         return fracionavel == null || Boolean.TRUE.equals(fracionavel);
+    }
+
+    /**
+     * O saldo do lote é sempre armazenado na unidade-base do produto.
+     * Para apresentação não fracionável, o saldo só pode variar em múltiplos
+     * inteiros do conteúdo por apresentação.
+     */
+    public void setQuantidadeDisponivel(Integer quantidadeDisponivel) {
+        if (quantidadeDisponivel != null
+                && quantidadeDisponivel >= 0
+                && !permiteFracionamento()
+                && quantidadeDisponivel % fatorApresentacao() != 0) {
+            throw new BusinessRuleException(
+                    "Este lote não permite fracionamento. A saída deve respeitar a apresentação completa de "
+                            + fatorApresentacao() + " unidade(s)-base."
+            );
+        }
+        this.quantidadeDisponivel = quantidadeDisponivel;
     }
 
     @PrePersist
