@@ -126,14 +126,29 @@ public class MovimentacaoEstoqueService {
             );
         }
 
+        int conteudoPorApresentacao = dto.getConteudoPorApresentacao() == null
+                ? 1
+                : dto.getConteudoPorApresentacao();
+
+        int quantidadeBase;
+        try {
+            quantidadeBase = Math.multiplyExact(dto.getQuantidade(), conteudoPorApresentacao);
+        } catch (ArithmeticException ex) {
+            throw new BusinessRuleException("Quantidade total do lote excede o limite suportado.");
+        }
+
         int quantidadeAnterior = estoque.getQuantidadeAtual();
-        int quantidadeAtual = quantidadeAnterior + dto.getQuantidade();
+        int quantidadeAtual = quantidadeAnterior + quantidadeBase;
 
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
         lote.setNumeroLote(dto.getNumeroLote());
-        lote.setQuantidadeInicial(dto.getQuantidade());
-        lote.setQuantidadeDisponivel(dto.getQuantidade());
+        lote.setApresentacao(normalizarApresentacao(estoque.getProduto(), dto.getApresentacao()));
+        lote.setQuantidadeApresentacoes(dto.getQuantidade());
+        lote.setConteudoPorApresentacao(conteudoPorApresentacao);
+        lote.setFracionavel(dto.getFracionavel() == null ? true : dto.getFracionavel());
+        lote.setQuantidadeInicial(quantidadeBase);
+        lote.setQuantidadeDisponivel(quantidadeBase);
         lote.setDataEntrada(LocalDate.now());
         lote.setDataValidade(dto.getDataValidade());
         lote.setAtivo(true);
@@ -150,7 +165,7 @@ public class MovimentacaoEstoqueService {
                 null,
                 TipoMovimentacao.ENTRADA,
                 dto.getOrigem(),
-                dto.getQuantidade(),
+                quantidadeBase,
                 quantidadeAnterior,
                 quantidadeAtual,
                 dto.getObservacao()
@@ -160,6 +175,8 @@ public class MovimentacaoEstoqueService {
     }
 
     // Usa FEFO para produtos perecíveis e FIFO para os demais.
+    // A quantidade recebida aqui é sempre expressa na unidade-base do produto.
+    // Lotes não fracionáveis rejeitam baixas que quebrem uma apresentação física.
     @Transactional
     public List<MovimentacaoEstoqueResponseDTO> registrarSaida(
             Long estoqueId,
@@ -226,7 +243,6 @@ public class MovimentacaoEstoqueService {
         return movimentacoes;
     }
 
-    // Descarta os lotes vencidos em ordem de vencimento.
     @Transactional
     public List<MovimentacaoEstoqueResponseDTO> registrarDescarteVencimento(
             UUID estoqueId,
@@ -300,7 +316,6 @@ public class MovimentacaoEstoqueService {
         return movimentacoes;
     }
 
-    // Restaura exatamente os lotes consumidos pelo pedido.
     @Transactional
     public void devolverSaidasDoPedido(
             Pedido pedido,
@@ -449,6 +464,10 @@ public class MovimentacaoEstoqueService {
     private void validarEntradaLote(Produto produto, EntradaLoteRequestDTO dto) {
         validarQuantidade(dto.getQuantidade());
 
+        if (dto.getConteudoPorApresentacao() != null && dto.getConteudoPorApresentacao() <= 0) {
+            throw new BusinessRuleException("Conteúdo por apresentação deve ser maior que zero.");
+        }
+
         if (dto.getOrigem() == null) {
             throw new BusinessRuleException("Origem da entrada é obrigatória.");
         }
@@ -461,6 +480,16 @@ public class MovimentacaoEstoqueService {
                     "Não é possível registrar entrada de lote já vencido."
             );
         }
+    }
+
+    private String normalizarApresentacao(Produto produto, String apresentacao) {
+        if (apresentacao != null && !apresentacao.isBlank()) {
+            return apresentacao.trim();
+        }
+        if (produto.getUnidadeArmazenamento() != null && !produto.getUnidadeArmazenamento().isBlank()) {
+            return produto.getUnidadeArmazenamento().trim();
+        }
+        return produto.getUnidadeMedida().name();
     }
 
     private void validarUsuarioResponsavel(Usuario usuario) {
