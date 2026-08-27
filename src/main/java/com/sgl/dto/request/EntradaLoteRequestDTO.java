@@ -60,6 +60,7 @@ public class EntradaLoteRequestDTO {
             OrigemMovimentacao origem,
             String observacao) {
         this.numeroLote = numeroLote;
+        this.apresentacao = "UNIDADE";
         this.quantidade = quantidade;
         this.conteudoPorApresentacao = 1;
         this.fracionavel = true;
