@@ -48,4 +48,23 @@ public class EntradaLoteRequestDTO {
 
     @Schema(description = "Observação opcional sobre a entrada do lote.", example = "Material recebido conforme nota fiscal.")
     private String observacao;
+
+    /**
+     * Compatibilidade com chamadas/testes anteriores ao modelo de apresentação.
+     * Nesse formato, a quantidade é tratada como unidade-base (fator 1).
+     */
+    public EntradaLoteRequestDTO(
+            String numeroLote,
+            Integer quantidade,
+            LocalDate dataValidade,
+            OrigemMovimentacao origem,
+            String observacao) {
+        this.numeroLote = numeroLote;
+        this.quantidade = quantidade;
+        this.conteudoPorApresentacao = 1;
+        this.fracionavel = true;
+        this.dataValidade = dataValidade;
+        this.origem = origem;
+        this.observacao = observacao;
+    }
 }
