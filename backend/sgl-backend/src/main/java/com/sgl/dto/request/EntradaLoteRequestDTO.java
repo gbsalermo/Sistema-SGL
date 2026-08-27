@@ -24,10 +24,20 @@ public class EntradaLoteRequestDTO {
     @NotBlank(message = "Número do lote é obrigatório")
     private String numeroLote;
 
-    @Schema(description = "Quantidade recebida no lote.", example = "20", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Apresentação física recebida no lote.", example = "kit")
+    private String apresentacao;
+
+    @Schema(description = "Quantidade de apresentações físicas recebidas.", example = "2", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Quantidade da entrada é obrigatória")
     @Min(value = 1, message = "Quantidade da entrada deve ser maior que zero")
     private Integer quantidade;
+
+    @Schema(description = "Conteúdo em unidade-base existente em cada apresentação. Ex.: 50 reações por kit.", example = "50", minimum = "1")
+    @Min(value = 1, message = "Conteúdo por apresentação deve ser maior que zero")
+    private Integer conteudoPorApresentacao;
+
+    @Schema(description = "Indica se a apresentação pode ser fracionada em uma saída parcial.", example = "true")
+    private Boolean fracionavel;
 
     @Schema(description = "Data de validade do lote, quando aplicável ao produto.", example = "2027-08-31")
     private LocalDate dataValidade;
