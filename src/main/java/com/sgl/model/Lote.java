@@ -52,9 +52,33 @@ public class Lote implements Serializable {
     @Column(name = "numero_lote", nullable = false, length = 100)
     private String numeroLote;
 
+    /**
+     * Apresentação física recebida neste lote, por exemplo: kit, frasco,
+     * caixa, bombona ou unidade avulsa. Não altera a unidade-base do produto.
+     */
+    @Column(length = 120)
+    private String apresentacao;
+
+    /** Quantidade de apresentações físicas recebidas. */
+    private Integer quantidadeApresentacoes;
+
+    /**
+     * Quantidade de unidades-base contida em cada apresentação.
+     * Ex.: 50 reações por kit, 500 mL por frasco, 1 unidade por avulso.
+     */
+    private Integer conteudoPorApresentacao;
+
+    /**
+     * Define se o conteúdo da apresentação pode sair parcialmente.
+     * Lotes legados nulos são tratados como fracionáveis pela camada de serviço.
+     */
+    private Boolean fracionavel;
+
+    /** Quantidade inicial sempre expressa na unidade-base de controle do produto. */
     @Column(nullable = false)
     private Integer quantidadeInicial;
 
+    /** Quantidade disponível sempre expressa na unidade-base de controle do produto. */
     @Column(nullable = false)
     private Integer quantidadeDisponivel;
 
@@ -66,6 +90,16 @@ public class Lote implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    public int fatorApresentacao() {
+        return conteudoPorApresentacao == null || conteudoPorApresentacao <= 0
+                ? 1
+                : conteudoPorApresentacao;
+    }
+
+    public boolean permiteFracionamento() {
+        return fracionavel == null || Boolean.TRUE.equals(fracionavel);
+    }
 
     @PrePersist
     private void generatePublicId() {
