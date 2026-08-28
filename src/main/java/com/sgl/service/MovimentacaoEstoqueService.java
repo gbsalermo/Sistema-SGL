@@ -24,6 +24,7 @@ import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
@@ -49,9 +50,7 @@ public class MovimentacaoEstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarTodos() {
-        return movimentacaoRepository.findAll().stream()
-                .map(MovimentacaoEstoqueResponseDTO::new)
-                .toList();
+        return movimentacaoRepository.findAll().stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
@@ -65,75 +64,58 @@ public class MovimentacaoEstoqueService {
     public List<MovimentacaoEstoqueResponseDTO> listarPorProduto(UUID produtoId) {
         Produto produto = produtoRepository.findByPublicId(produtoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
-
-        return movimentacaoRepository.findByProdutoId(produto.getId()).stream()
-                .map(MovimentacaoEstoqueResponseDTO::new)
-                .toList();
+        return movimentacaoRepository.findByProdutoId(produto.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
-
-        return movimentacaoRepository.findByLaboratorioId(laboratorio.getId()).stream()
-                .map(MovimentacaoEstoqueResponseDTO::new)
-                .toList();
+        return movimentacaoRepository.findByLaboratorioId(laboratorio.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorUsuario(UUID usuarioId) {
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
-
-        return movimentacaoRepository.findByUsuarioId(usuario.getId()).stream()
-                .map(MovimentacaoEstoqueResponseDTO::new)
-                .toList();
+        return movimentacaoRepository.findByUsuarioId(usuario.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorPedido(UUID pedidoId) {
         Pedido pedido = pedidoRepository.findByPublicId(pedidoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
+        return movimentacaoRepository.findByPedidoId(pedido.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
+    }
 
-        return movimentacaoRepository.findByPedidoId(pedido.getId()).stream()
+    @Transactional(readOnly = true)
+    public List<MovimentacaoEstoqueResponseDTO> listarPorLote(UUID loteId) {
+        Lote lote = loteRepository.findByPublicId(loteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lote", loteId));
+        return movimentacaoRepository.findByLoteIdOrderByDataMovimentacaoDesc(lote.getId()).stream()
                 .map(MovimentacaoEstoqueResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorTipo(TipoMovimentacao tipo) {
-        return movimentacaoRepository.findByTipoMovimentacao(tipo).stream()
-                .map(MovimentacaoEstoqueResponseDTO::new)
-                .toList();
+        return movimentacaoRepository.findByTipoMovimentacao(tipo).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
     }
 
     @Transactional
-    public LoteResponseDTO registrarEntradaLote(
-            UUID estoqueId,
-            EntradaLoteRequestDTO dto,
-            Usuario usuario) {
-
+    public LoteResponseDTO registrarEntradaLote(UUID estoqueId, EntradaLoteRequestDTO dto, Usuario usuario) {
         validarUsuarioResponsavel(usuario);
-
         EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
         validarEntradaLote(estoque.getProduto(), dto);
 
-        if (loteRepository.existsByEstoqueCentralIdAndNumeroLote(
-                estoque.getId(),
-                dto.getNumeroLote())) {
-            throw new BusinessRuleException(
-                    "Já existe lote com esse número de fornecedor neste estoque."
-            );
+        if (loteRepository.existsByEstoqueCentralIdAndNumeroLote(estoque.getId(), dto.getNumeroLote())) {
+            throw new BusinessRuleException("Já existe lote com esse número de fornecedor neste estoque.");
         }
 
         Produto produtoBloqueado = produtoRepository.buscarPorIdComBloqueio(estoque.getProduto().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", estoque.getProduto().getId()));
 
-        int multiplicador = dto.getConteudoPorApresentacao() == null
-                ? 1
-                : dto.getConteudoPorApresentacao();
-
+        int multiplicador = dto.getConteudoPorApresentacao() == null ? 1 : dto.getConteudoPorApresentacao();
         int quantidadeUnitaria;
         try {
             quantidadeUnitaria = Math.multiplyExact(dto.getQuantidade(), multiplicador);
@@ -143,7 +125,6 @@ public class MovimentacaoEstoqueService {
 
         int quantidadeAnterior = estoque.getQuantidadeAtual();
         int quantidadeAtual = quantidadeAnterior + quantidadeUnitaria;
-
         CodigoLoteGerado codigoGerado = gerarCodigoInternoLote(produtoBloqueado);
 
         Lote lote = new Lote();
@@ -155,11 +136,7 @@ public class MovimentacaoEstoqueService {
         lote.setQuantidadeApresentacoes(dto.getQuantidade());
         lote.setConteudoPorApresentacao(multiplicador);
         lote.setFracionavel(dto.getFracionavel() == null ? true : dto.getFracionavel());
-        lote.setObservacao(
-                dto.getObservacao() == null || dto.getObservacao().isBlank()
-                        ? null
-                        : dto.getObservacao().trim()
-        );
+        lote.setObservacao(dto.getObservacao() == null || dto.getObservacao().isBlank() ? null : dto.getObservacao().trim());
         lote.setQuantidadeInicial(quantidadeUnitaria);
         lote.setQuantidadeDisponivel(quantidadeUnitaria);
         lote.setDataEntrada(LocalDate.now());
@@ -169,218 +146,138 @@ public class MovimentacaoEstoqueService {
 
         estoque.setQuantidadeAtual(quantidadeAtual);
         estoqueCentralRepository.save(estoque);
-
-        registrarMovimentacao(
-                estoque,
-                lote,
-                usuario,
-                null,
-                null,
-                TipoMovimentacao.ENTRADA,
-                dto.getOrigem(),
-                quantidadeUnitaria,
-                quantidadeAnterior,
-                quantidadeAtual,
-                dto.getObservacao()
-        );
-
+        registrarMovimentacao(estoque, lote, usuario, null, null, TipoMovimentacao.ENTRADA, dto.getOrigem(), quantidadeUnitaria, quantidadeAnterior, quantidadeAtual, dto.getObservacao());
         return new LoteResponseDTO(lote);
     }
 
     @Transactional
-    public List<MovimentacaoEstoqueResponseDTO> registrarSaida(
-            Long estoqueId,
-            Integer quantidade,
-            Usuario usuario,
-            OrigemMovimentacao origem,
-            Pedido pedido,
-            Laboratorio laboratorio,
-            String observacao) {
+    public List<MovimentacaoEstoqueResponseDTO> registrarSaida(Long estoqueId, Integer quantidade, Usuario usuario,
+            OrigemMovimentacao origem, Pedido pedido, Laboratorio laboratorio, String observacao) {
+        return registrarSaida(estoqueId, quantidade, usuario, origem, pedido, laboratorio, observacao, null, null);
+    }
+
+    @Transactional
+    public List<MovimentacaoEstoqueResponseDTO> registrarSaida(Long estoqueId, Integer quantidade, Usuario usuario,
+            OrigemMovimentacao origem, Pedido pedido, Laboratorio laboratorio, String observacao,
+            TipoEmbalagem tipoEmbalagemSolicitada, Integer multiplicadorSolicitado) {
 
         validarQuantidade(quantidade);
         validarUsuarioResponsavel(usuario);
-
         EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
-        List<Lote> lotes = buscarLotesParaSaida(estoque);
+        List<Lote> lotes = buscarLotesParaSaida(estoque).stream()
+                .filter(lote -> loteCompativelComFormaSolicitada(lote, tipoEmbalagemSolicitada, multiplicadorSolicitado))
+                .toList();
 
-        int saldoUtilizavel = lotes.stream()
-                .mapToInt(Lote::getQuantidadeDisponivel)
-                .sum();
-
+        int saldoUtilizavel = lotes.stream().mapToInt(Lote::getQuantidadeDisponivel).sum();
         if (saldoUtilizavel < quantidade) {
-            throw new BusinessRuleException(
-                    "Estoque utilizável insuficiente. Disponível nos lotes válidos: "
-                            + saldoUtilizavel + ", solicitado: " + quantidade
-            );
+            String forma = tipoEmbalagemSolicitada == null ? "selecionada" : tipoEmbalagemSolicitada.name();
+            throw new BusinessRuleException("Estoque utilizável insuficiente para a forma de retirada " + forma
+                    + ". Disponível nos lotes compatíveis: " + saldoUtilizavel + ", solicitado: " + quantidade);
         }
 
         List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
         int restante = quantidade;
-
         for (Lote lote : lotes) {
             if (restante == 0) break;
-
             int consumido = calcularQuantidadeCompativel(lote, restante);
             if (consumido <= 0) continue;
 
             int saldoAnterior = estoque.getQuantidadeAtual();
             int saldoAtual = saldoAnterior - consumido;
-
             lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel() - consumido);
             estoque.setQuantidadeAtual(saldoAtual);
-
             loteRepository.save(lote);
             estoqueCentralRepository.save(estoque);
 
-            MovimentacaoEstoque movimentacao = registrarMovimentacao(
-                    estoque, lote, usuario, pedido, laboratorio,
-                    TipoMovimentacao.SAIDA, origem, consumido,
-                    saldoAnterior, saldoAtual, observacao
-            );
-
+            MovimentacaoEstoque movimentacao = registrarMovimentacao(estoque, lote, usuario, pedido, laboratorio,
+                    TipoMovimentacao.SAIDA, origem, consumido, saldoAnterior, saldoAtual, observacao);
             movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
             restante -= consumido;
         }
 
         if (restante > 0) {
-            throw new BusinessRuleException(
-                    "A quantidade solicitada não pode ser atendida sem fracionar uma embalagem fechada. "
-                            + "Escolha uma quantidade compatível com os lotes disponíveis."
-            );
+            throw new BusinessRuleException("A quantidade solicitada não pode ser atendida com a forma de retirada escolhida sem fracionar uma embalagem fechada.");
         }
-
         return movimentacoes;
     }
 
     @Transactional
-    public List<MovimentacaoEstoqueResponseDTO> registrarDescarteVencimento(
-            UUID estoqueId,
-            Integer quantidade,
-            String justificativa,
-            Usuario usuario) {
-
+    public List<MovimentacaoEstoqueResponseDTO> registrarDescarteVencimento(UUID estoqueId, Integer quantidade,
+            String justificativa, Usuario usuario) {
         validarQuantidade(quantidade);
         validarUsuarioResponsavel(usuario);
-
         EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
 
         if (!Boolean.TRUE.equals(estoque.getProduto().getPerecivel())) {
-            throw new BusinessRuleException(
-                    "Somente produtos perecíveis podem ser descartados por vencimento."
-            );
+            throw new BusinessRuleException("Somente produtos perecíveis podem ser descartados por vencimento.");
         }
 
-        List<Lote> lotesVencidos = loteRepository.buscarVencidosComBloqueio(
-                estoque.getId(), LocalDate.now()
-        );
-
-        int saldoVencido = lotesVencidos.stream()
-                .mapToInt(Lote::getQuantidadeDisponivel)
-                .sum();
-
+        List<Lote> lotesVencidos = loteRepository.buscarVencidosComBloqueio(estoque.getId(), LocalDate.now());
+        int saldoVencido = lotesVencidos.stream().mapToInt(Lote::getQuantidadeDisponivel).sum();
         if (saldoVencido < quantidade) {
-            throw new BusinessRuleException(
-                    "Quantidade de descarte maior que o saldo vencido disponível. Disponível: " + saldoVencido
-            );
+            throw new BusinessRuleException("Quantidade de descarte maior que o saldo vencido disponível. Disponível: " + saldoVencido);
         }
 
         List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
         int restante = quantidade;
-
         for (Lote lote : lotesVencidos) {
             if (restante == 0) break;
-
             int descartado = calcularQuantidadeCompativel(lote, restante);
             if (descartado <= 0) continue;
 
             int saldoAnterior = estoque.getQuantidadeAtual();
             int saldoAtual = saldoAnterior - descartado;
-
             lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel() - descartado);
             estoque.setQuantidadeAtual(saldoAtual);
-
             loteRepository.save(lote);
             estoqueCentralRepository.save(estoque);
-
-            MovimentacaoEstoque movimentacao = registrarMovimentacao(
-                    estoque, lote, usuario, null, null,
-                    TipoMovimentacao.DESCARTE_VENCIMENTO, OrigemMovimentacao.DESCARTE,
-                    descartado, saldoAnterior, saldoAtual, justificativa
-            );
-
+            MovimentacaoEstoque movimentacao = registrarMovimentacao(estoque, lote, usuario, null, null,
+                    TipoMovimentacao.DESCARTE_VENCIMENTO, OrigemMovimentacao.DESCARTE, descartado,
+                    saldoAnterior, saldoAtual, justificativa);
             movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
             restante -= descartado;
         }
 
         if (restante > 0) {
-            throw new BusinessRuleException(
-                    "A quantidade informada não pode ser descartada sem fracionar uma embalagem fechada. "
-                            + "Informe uma quantidade compatível com os lotes vencidos."
-            );
+            throw new BusinessRuleException("A quantidade informada não pode ser descartada sem fracionar uma embalagem fechada. Informe uma quantidade compatível com os lotes vencidos.");
         }
-
         return movimentacoes;
     }
 
     @Transactional
-    public void devolverSaidasDoPedido(
-            Pedido pedido,
-            Usuario usuarioResponsavel,
-            String observacao) {
-
+    public void devolverSaidasDoPedido(Pedido pedido, Usuario usuarioResponsavel, String observacao) {
         List<MovimentacaoEstoque> saidas = movimentacaoRepository
-                .findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(
-                        pedido.getId(), TipoMovimentacao.SAIDA
-                )
-                .stream()
-                .filter(m -> m.getLote() != null)
-                .sorted(Comparator
-                        .comparing((MovimentacaoEstoque m) -> m.getEstoqueCentral().getId())
-                        .thenComparing(m -> m.getLote().getId()))
+                .findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(pedido.getId(), TipoMovimentacao.SAIDA)
+                .stream().filter(m -> m.getLote() != null)
+                .sorted(Comparator.comparing((MovimentacaoEstoque m) -> m.getEstoqueCentral().getId()).thenComparing(m -> m.getLote().getId()))
                 .toList();
 
-        if (saidas.isEmpty()) {
-            throw new BusinessRuleException(
-                    "Não foram encontradas saídas por lote para devolver este pedido."
-            );
-        }
+        if (saidas.isEmpty()) throw new BusinessRuleException("Não foram encontradas saídas por lote para devolver este pedido.");
 
         for (MovimentacaoEstoque saida : saidas) {
-            EstoqueCentral estoque = estoqueCentralRepository
-                    .buscarPorIdComBloqueio(saida.getEstoqueCentral().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Estoque central", saida.getEstoqueCentral().getId()
-                    ));
-
+            EstoqueCentral estoque = estoqueCentralRepository.buscarPorIdComBloqueio(saida.getEstoqueCentral().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Estoque central", saida.getEstoqueCentral().getId()));
             Lote lote = loteRepository.buscarPorIdComBloqueio(saida.getLote().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Lote", saida.getLote().getId()
-                    ));
+                    .orElseThrow(() -> new ResourceNotFoundException("Lote", saida.getLote().getId()));
 
             int quantidade = saida.getQuantidadeMovimentada();
             int saldoAnterior = estoque.getQuantidadeAtual();
             int saldoAtual = saldoAnterior + quantidade;
-
             if (lote.getQuantidadeDisponivel() + quantidade > lote.getQuantidadeInicial()) {
-                throw new BusinessRuleException(
-                        "A devolução ultrapassaria a quantidade inicial do lote " + lote.getCodigoInterno() + "."
-                );
+                throw new BusinessRuleException("A devolução ultrapassaria a quantidade inicial do lote " + lote.getCodigoInterno() + ".");
             }
 
             lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel() + quantidade);
             lote.setAtivo(true);
             estoque.setQuantidadeAtual(saldoAtual);
-
             loteRepository.save(lote);
             estoqueCentralRepository.save(estoque);
 
             if (usuarioResponsavel != null) {
                 validarUsuarioResponsavel(usuarioResponsavel);
-                registrarMovimentacao(
-                        estoque, lote, usuarioResponsavel, pedido, pedido.getLaboratorio(),
-                        TipoMovimentacao.DEVOLUCAO, OrigemMovimentacao.DEVOLUCAO,
-                        quantidade, saldoAnterior, saldoAtual, observacao
-                );
+                registrarMovimentacao(estoque, lote, usuarioResponsavel, pedido, pedido.getLaboratorio(),
+                        TipoMovimentacao.DEVOLUCAO, OrigemMovimentacao.DEVOLUCAO, quantidade,
+                        saldoAnterior, saldoAtual, observacao);
             }
         }
     }
@@ -388,19 +285,22 @@ public class MovimentacaoEstoqueService {
     @Transactional
     public List<LoteResponseDTO> listarLotesOrdenadosParaSaida(Long estoqueId) {
         EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
-        return buscarLotesParaSaida(estoque).stream()
-                .map(LoteResponseDTO::new)
-                .toList();
+        return buscarLotesParaSaida(estoque).stream().map(LoteResponseDTO::new).toList();
+    }
+
+    private boolean loteCompativelComFormaSolicitada(Lote lote, TipoEmbalagem tipo, Integer multiplicador) {
+        if (tipo == null) return true;
+        if (tipo == TipoEmbalagem.UNITARIO) {
+            return lote.getTipoEmbalagem() == TipoEmbalagem.UNITARIO || lote.permiteFracionamento();
+        }
+        int fator = multiplicador == null || multiplicador <= 0 ? 1 : multiplicador;
+        return lote.getTipoEmbalagem() == tipo && lote.fatorApresentacao() == fator;
     }
 
     private int calcularQuantidadeCompativel(Lote lote, int restante) {
         int disponivel = Math.max(0, lote.getQuantidadeDisponivel());
         int limite = Math.min(restante, disponivel);
-
-        if (lote.permiteFracionamento()) {
-            return limite;
-        }
-
+        if (lote.permiteFracionamento()) return limite;
         int multiplicador = lote.fatorApresentacao();
         return (limite / multiplicador) * multiplicador;
     }
@@ -410,27 +310,17 @@ public class MovimentacaoEstoqueService {
         int sequencial = (maiorSequencial == null ? 0 : maiorSequencial) + 1;
         String sigla = gerarSiglaProduto(produto);
         String codigo = formatarCodigoLote(sigla, sequencial);
-
         while (loteRepository.existsByCodigoInterno(codigo)) {
             sequencial++;
             codigo = formatarCodigoLote(sigla, sequencial);
         }
-
         return new CodigoLoteGerado(codigo, sequencial);
     }
 
     private String gerarSiglaProduto(Produto produto) {
         String origem = produto.getCodigoReferencia();
-        if (origem == null || origem.isBlank()) {
-            origem = "PRD-" + produto.getId();
-        }
-
-        String sigla = origem
-                .trim()
-                .toUpperCase(Locale.ROOT)
-                .replaceAll("[^A-Z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
-
+        if (origem == null || origem.isBlank()) origem = "PRD-" + produto.getId();
+        String sigla = origem.trim().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]+", "-").replaceAll("^-+|-+$", "");
         return sigla.isBlank() ? "PRD-" + produto.getId() : sigla;
     }
 
@@ -442,9 +332,7 @@ public class MovimentacaoEstoqueService {
 
     private List<Lote> buscarLotesParaSaida(EstoqueCentral estoque) {
         if (Boolean.TRUE.equals(estoque.getProduto().getPerecivel())) {
-            return loteRepository.buscarDisponiveisPorFefoComBloqueio(
-                    estoque.getId(), LocalDate.now()
-            );
+            return loteRepository.buscarDisponiveisPorFefoComBloqueio(estoque.getId(), LocalDate.now());
         }
         return loteRepository.buscarDisponiveisPorEntradaComBloqueio(estoque.getId());
     }
@@ -456,62 +344,32 @@ public class MovimentacaoEstoqueService {
     }
 
     private EstoqueCentral buscarEstoqueAtivoComBloqueio(Long estoqueId) {
-        EstoqueCentral estoque = estoqueCentralRepository
-                .buscarPorIdComBloqueio(estoqueId)
+        EstoqueCentral estoque = estoqueCentralRepository.buscarPorIdComBloqueio(estoqueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque central", estoqueId));
         estoque.validateActive();
         return estoque;
     }
 
-    private MovimentacaoEstoque registrarMovimentacao(
-            EstoqueCentral estoque,
-            Lote lote,
-            Usuario usuario,
-            Pedido pedido,
-            Laboratorio laboratorio,
-            TipoMovimentacao tipo,
-            OrigemMovimentacao origem,
-            Integer quantidade,
-            Integer quantidadeAnterior,
-            Integer quantidadeAtual,
-            String observacao) {
-
+    private MovimentacaoEstoque registrarMovimentacao(EstoqueCentral estoque, Lote lote, Usuario usuario,
+            Pedido pedido, Laboratorio laboratorio, TipoMovimentacao tipo, OrigemMovimentacao origem,
+            Integer quantidade, Integer quantidadeAnterior, Integer quantidadeAtual, String observacao) {
         MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
-                .produto(estoque.getProduto())
-                .estoqueCentral(estoque)
-                .lote(lote)
-                .usuario(usuario)
-                .pedido(pedido)
-                .laboratorio(laboratorio)
-                .tipoMovimentacao(tipo)
-                .origem(origem)
-                .quantidadeMovimentada(quantidade)
-                .quantidadeAnterior(quantidadeAnterior)
-                .quantidadeAtual(quantidadeAtual)
-                .dataMovimentacao(LocalDateTime.now())
-                .observacao(observacao)
+                .produto(estoque.getProduto()).estoqueCentral(estoque).lote(lote).usuario(usuario)
+                .pedido(pedido).laboratorio(laboratorio).tipoMovimentacao(tipo).origem(origem)
+                .quantidadeMovimentada(quantidade).quantidadeAnterior(quantidadeAnterior)
+                .quantidadeAtual(quantidadeAtual).dataMovimentacao(LocalDateTime.now()).observacao(observacao)
                 .build();
-
         return movimentacaoRepository.save(movimentacao);
     }
 
     private void validarEntradaLote(Produto produto, EntradaLoteRequestDTO dto) {
         validarQuantidade(dto.getQuantidade());
-
-        if (dto.getTipoEmbalagem() == null) {
-            throw new BusinessRuleException("Tipo de embalagem é obrigatório.");
-        }
-
+        if (dto.getTipoEmbalagem() == null) throw new BusinessRuleException("Tipo de embalagem é obrigatório.");
         if (dto.getConteudoPorApresentacao() != null && dto.getConteudoPorApresentacao() <= 0) {
             throw new BusinessRuleException("Multiplicador deve ser maior que zero.");
         }
-
-        if (dto.getOrigem() == null) {
-            throw new BusinessRuleException("Origem da entrada é obrigatória.");
-        }
-
+        if (dto.getOrigem() == null) throw new BusinessRuleException("Origem da entrada é obrigatória.");
         produto.validateLotExpirationDate(dto.getDataValidade());
-
         if (dto.getDataValidade() != null && dto.getDataValidade().isBefore(LocalDate.now())) {
             throw new BusinessRuleException("Não é possível registrar entrada de lote já vencido.");
         }
@@ -519,22 +377,16 @@ public class MovimentacaoEstoqueService {
 
     private String normalizarApresentacao(Produto produto, String apresentacao) {
         if (apresentacao != null && !apresentacao.isBlank()) return apresentacao.trim();
-        if (produto.getUnidadeArmazenamento() != null && !produto.getUnidadeArmazenamento().isBlank()) {
-            return produto.getUnidadeArmazenamento().trim();
-        }
+        if (produto.getUnidadeArmazenamento() != null && !produto.getUnidadeArmazenamento().isBlank()) return produto.getUnidadeArmazenamento().trim();
         return produto.getUnidadeMedida().name();
     }
 
     private void validarUsuarioResponsavel(Usuario usuario) {
-        if (usuario == null) {
-            throw new BusinessRuleException("Usuário responsável é obrigatório.");
-        }
+        if (usuario == null) throw new BusinessRuleException("Usuário responsável é obrigatório.");
         usuario.validateActive();
     }
 
     private void validarQuantidade(Integer quantidade) {
-        if (quantidade == null || quantidade <= 0) {
-            throw new BusinessRuleException("A quantidade deve ser maior que zero.");
-        }
+        if (quantidade == null || quantidade <= 0) throw new BusinessRuleException("A quantidade deve ser maior que zero.");
     }
 }
