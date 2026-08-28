@@ -34,6 +34,15 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             String numeroLote
     );
 
+    boolean existsByCodigoInterno(String codigoInterno);
+
+    @Query("""
+            SELECT COALESCE(MAX(lote.sequencialInterno), 0)
+            FROM Lote lote
+            WHERE lote.estoqueCentral.produto.id = :produtoId
+            """)
+    Integer buscarMaiorSequencialInternoPorProduto(@Param("produtoId") Long produtoId);
+
     List<Lote> findByDataValidadeBeforeAndAtivoTrue(LocalDate data);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
