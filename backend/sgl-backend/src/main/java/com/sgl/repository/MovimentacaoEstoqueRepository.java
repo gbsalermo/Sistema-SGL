@@ -21,6 +21,8 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
 
     List<MovimentacaoEstoque> findByPedidoId(Long pedidoId);
 
+    List<MovimentacaoEstoque> findByLoteIdOrderByDataMovimentacaoDesc(Long loteId);
+
     List<MovimentacaoEstoque> findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(
             Long pedidoId,
             TipoMovimentacao tipoMovimentacao
