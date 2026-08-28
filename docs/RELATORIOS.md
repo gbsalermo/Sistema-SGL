@@ -52,17 +52,20 @@ Centralizar consultas operacionais, gerenciais e de fiscalização com exportaç
 
 7. Fiscalização
    - recorte especializado dos produtos explicitamente marcados como fiscalizados/controlados
-   - órgão(s) fiscalizador(es)
-   - saldo atual
-   - lotes e vencimentos
-   - entradas e saídas
-   - destino da saída (laboratório/projeto/solicitante/pedido)
+   - filtros por produto, órgão fiscalizador, unidade, período e janela de vencimento
+   - saldo atual consolidado
+   - lotes ativos, vencidos e próximos do vencimento
+   - entradas e saídas por período
+   - rastreabilidade por lote
+   - destino da saída: laboratório, projeto, solicitante e pedido
+   - responsável pela movimentação
+   - implementado em `GET /api/v1/relatorios/fiscalizacao`
 
 ## Produtos x Fiscalização
 
 O relatório de Produtos é a visão geral do catálogo e deve permitir inclusive filtrar apenas produtos fiscalizados.
 
-O relatório de Fiscalização não substitui Produtos. Ele é um relatório especializado de rastreabilidade e deve acrescentar informações operacionais exigidas em controle externo, como saldo, lotes, vencimentos, entradas, saídas e destino.
+O relatório de Fiscalização não substitui Produtos. Ele é um relatório especializado de rastreabilidade e acrescenta informações operacionais exigidas em controle externo, como saldo, lotes, vencimentos, entradas, saídas e destino.
 
 ## Pedidos dentro de Movimentações
 
@@ -98,16 +101,28 @@ O futuro formulário `Administração → Cadastros → Produtos` deve apresenta
 
 A prévia, o PDF e o XLSX devem usar a mesma consulta e os mesmos filtros. A geração oficial dos arquivos ficará no backend.
 
+A etapa de exportação começa após a validação das consultas. A proposta técnica é manter um serviço de dados por relatório e adicionar formatadores separados para PDF e XLSX, evitando duplicar regras de filtro e cálculo.
+
 ## Dados de domínio adicionados nesta etapa
 
 - `Pedido.dataEntrega` para registrar a data efetiva de entrega e suportar auditoria/consultas futuras.
 - classificação explícita de fiscalização em Produto (`fiscalizado`, `orgaosFiscalizadores`, `observacaoFiscalizacao`).
 
-## Ordem de implementação
+## Estado atual
 
-1. Completar dados de domínio necessários aos relatórios.
-2. Criar DTOs/serviços de relatório.
-3. Criar endpoints de consulta.
-4. Integrar as prévias na central `/relatorios`.
-5. Adicionar exportação PDF.
-6. Adicionar exportação XLSX.
+Consultas e prévias implementadas:
+
+- Estagiários;
+- Produtos;
+- Movimentações;
+- Resumo operacional;
+- Estoque e lotes;
+- Fiscalização.
+
+Pendente por dependência de outra branch:
+
+- Resíduos.
+
+Próxima decisão técnica:
+
+- formato e bibliotecas da exportação PDF/XLSX.
