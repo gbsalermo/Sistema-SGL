@@ -41,6 +41,30 @@ Centralizar consultas operacionais, gerenciais e de fiscalização com exportaç
    - entradas e saídas
    - destino da saída (laboratório/projeto/solicitante/pedido)
 
+## Regra de cadastro de Produto para fiscalização
+
+A classificação de fiscalização pertence ao cadastro do Produto, e não ao módulo de Relatórios.
+
+Na criação e edição de um produto, o responsável pelo cadastro deverá informar:
+
+- `fiscalizado`: indica se o produto é controlado/fiscalizado externamente;
+- `orgaosFiscalizadores`: um ou mais órgãos responsáveis pela fiscalização;
+- `observacaoFiscalizacao`: informação complementar opcional.
+
+Quando `fiscalizado = false`, os órgãos e a observação de fiscalização devem permanecer vazios.
+
+Quando `fiscalizado = true`, deve ser informado pelo menos um órgão fiscalizador.
+
+Órgãos inicialmente suportados:
+
+- Polícia Federal;
+- Vigilância Sanitária;
+- ANVISA;
+- Exército;
+- Outro.
+
+O futuro formulário `Administração → Cadastros → Produtos` deve apresentar uma seção própria de fiscalização. Essa classificação será a fonte oficial usada pelo relatório de fiscalização; risco químico, nível de risco e perecibilidade não devem ser usados para inferir automaticamente que um produto é fiscalizado.
+
 ## Regra de exportação
 
 A prévia, o PDF e o XLSX devem usar a mesma consulta e os mesmos filtros. A geração oficial dos arquivos ficará no backend.
