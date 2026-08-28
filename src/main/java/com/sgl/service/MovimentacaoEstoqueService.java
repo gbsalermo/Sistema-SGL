@@ -220,7 +220,9 @@ public class MovimentacaoEstoqueService {
         for (Lote lote : lotes) {
             if (restante == 0) break;
 
-            int consumido = Math.min(restante, lote.getQuantidadeDisponivel());
+            int consumido = calcularQuantidadeCompativel(lote, restante);
+            if (consumido <= 0) continue;
+
             int saldoAnterior = estoque.getQuantidadeAtual();
             int saldoAtual = saldoAnterior - consumido;
 
@@ -238,6 +240,13 @@ public class MovimentacaoEstoqueService {
 
             movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
             restante -= consumido;
+        }
+
+        if (restante > 0) {
+            throw new BusinessRuleException(
+                    "A quantidade solicitada não pode ser atendida sem fracionar uma embalagem fechada. "
+                            + "Escolha uma quantidade compatível com os lotes disponíveis."
+            );
         }
 
         return movimentacoes;
@@ -281,7 +290,9 @@ public class MovimentacaoEstoqueService {
         for (Lote lote : lotesVencidos) {
             if (restante == 0) break;
 
-            int descartado = Math.min(restante, lote.getQuantidadeDisponivel());
+            int descartado = calcularQuantidadeCompativel(lote, restante);
+            if (descartado <= 0) continue;
+
             int saldoAnterior = estoque.getQuantidadeAtual();
             int saldoAtual = saldoAnterior - descartado;
 
@@ -299,6 +310,13 @@ public class MovimentacaoEstoqueService {
 
             movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
             restante -= descartado;
+        }
+
+        if (restante > 0) {
+            throw new BusinessRuleException(
+                    "A quantidade informada não pode ser descartada sem fracionar uma embalagem fechada. "
+                            + "Informe uma quantidade compatível com os lotes vencidos."
+            );
         }
 
         return movimentacoes;
@@ -373,6 +391,18 @@ public class MovimentacaoEstoqueService {
         return buscarLotesParaSaida(estoque).stream()
                 .map(LoteResponseDTO::new)
                 .toList();
+    }
+
+    private int calcularQuantidadeCompativel(Lote lote, int restante) {
+        int disponivel = Math.max(0, lote.getQuantidadeDisponivel());
+        int limite = Math.min(restante, disponivel);
+
+        if (lote.permiteFracionamento()) {
+            return limite;
+        }
+
+        int multiplicador = lote.fatorApresentacao();
+        return (limite / multiplicador) * multiplicador;
     }
 
     private CodigoLoteGerado gerarCodigoInternoLote(Produto produto) {
