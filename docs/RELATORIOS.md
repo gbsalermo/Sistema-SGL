@@ -11,35 +11,60 @@ Centralizar consultas operacionais, gerenciais e de fiscalização com exportaç
    - por laboratório
    - por período de vínculo
 
-2. Movimentações
+2. Produtos
+   - todos, ativos e inativos
+   - perecíveis e não perecíveis
+   - por nível de risco
+   - fiscalizados e não fiscalizados
+   - por órgão fiscalizador
+   - visão cadastral geral do catálogo
+
+3. Movimentações
    - entradas, saídas, ajustes, devoluções e descartes
    - filtros por período, produto, laboratório, lote e responsável
 
-3. Resumo operacional
+4. Resumo operacional
    - maiores entradas
    - maiores saídas
    - quantidade de movimentações
-   - lotes recebidos, próximos do vencimento, vencidos e descartados
+   - lotes mais movimentados
 
-4. Pedidos entregues
+5. Pedidos entregues
    - total de pedidos entregues
    - filtros por período, laboratório, projeto, solicitante e produto
    - data efetiva de entrega
 
-5. Estoque e lotes
+6. Estoque e lotes
    - posição atual
    - estoque baixo
    - lotes ativos
    - lotes próximos do vencimento
    - lotes vencidos
 
-6. Fiscalização
-   - produtos explicitamente marcados como fiscalizados/controlados
+7. Resíduos
+   - resíduos informados e situação atual
+   - filtros por laboratório, status, período, projeto, gerador e gestor responsável
+   - riscos informados e confirmados
+   - recipiente e quantidade
+   - armazenamento temporário
+   - destino previsto e destino final confirmado
+   - datas de recebimento, liberação, armazenamento e despacho
+   - composição do resíduo
+   - depende da integração do módulo atualmente desenvolvido em `feat/gestao-residuos`
+
+8. Fiscalização
+   - recorte especializado dos produtos explicitamente marcados como fiscalizados/controlados
    - órgão(s) fiscalizador(es)
    - saldo atual
    - lotes e vencimentos
    - entradas e saídas
    - destino da saída (laboratório/projeto/solicitante/pedido)
+
+## Produtos x Fiscalização
+
+O relatório de Produtos é a visão geral do catálogo e deve permitir inclusive filtrar apenas produtos fiscalizados.
+
+O relatório de Fiscalização não substitui Produtos. Ele é um relatório especializado de rastreabilidade e deve acrescentar informações operacionais exigidas em controle externo, como saldo, lotes, vencimentos, entradas, saídas e destino.
 
 ## Regra de cadastro de Produto para fiscalização
 
@@ -69,16 +94,16 @@ O futuro formulário `Administração → Cadastros → Produtos` deve apresenta
 
 A prévia, o PDF e o XLSX devem usar a mesma consulta e os mesmos filtros. A geração oficial dos arquivos ficará no backend.
 
-## Lacunas de domínio identificadas
+## Dados de domínio adicionados nesta etapa
 
-- Pedido precisa registrar `dataEntrega` para permitir relatórios por período real de entrega.
-- Produto precisa registrar explicitamente se é fiscalizado/controlado e por quais órgãos; risco e perecibilidade não são suficientes para inferir fiscalização.
+- `Pedido.dataEntrega` para permitir relatórios por período real de entrega.
+- classificação explícita de fiscalização em Produto (`fiscalizado`, `orgaosFiscalizadores`, `observacaoFiscalizacao`).
 
 ## Ordem de implementação
 
-1. Completar dados de domínio (`dataEntrega` e fiscalização de produto).
+1. Completar dados de domínio necessários aos relatórios.
 2. Criar DTOs/serviços de relatório.
 3. Criar endpoints de consulta.
-4. Adicionar exportação PDF.
-5. Adicionar exportação XLSX.
-6. Integrar a central `/relatorios` no frontend.
+4. Integrar as prévias na central `/relatorios`.
+5. Adicionar exportação PDF.
+6. Adicionar exportação XLSX.
