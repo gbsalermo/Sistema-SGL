@@ -1,9 +1,11 @@
 package com.sgl.dto.response;
 
+import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.Produto;
 import com.sgl.model.enums.NivelRisco;
+import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
@@ -41,6 +43,12 @@ public class ProdutoResponseDTO {
     private final String condicoesArmazenamento;
     @Schema(description = "Forma de armazenamento apresentada ao usuário.", example = "kit com 50 reações")
     private final String unidadeArmazenamento;
+    @Schema(description = "Indica se o produto está sujeito a controle/fiscalização externa.", example = "true")
+    private final Boolean fiscalizado;
+    @Schema(description = "Órgãos fiscalizadores associados ao produto.")
+    private final Set<OrgaoFiscalizador> orgaosFiscalizadores;
+    @Schema(description = "Observação complementar sobre fiscalização.")
+    private final String observacaoFiscalizacao;
     @Schema(description = "Indica se o produto está ativo no catálogo.", example = "true")
     private final Boolean ativo;
 
@@ -58,6 +66,9 @@ public class ProdutoResponseDTO {
         this.tipoPerecivel = entity.getTipoPerecivel();
         this.condicoesArmazenamento = entity.getCondicoesArmazenamento();
         this.unidadeArmazenamento = entity.getUnidadeArmazenamento();
+        this.fiscalizado = Boolean.TRUE.equals(entity.getFiscalizado());
+        this.orgaosFiscalizadores = Set.copyOf(entity.getOrgaosFiscalizadores());
+        this.observacaoFiscalizacao = entity.getObservacaoFiscalizacao();
         this.ativo = entity.getAtivo();
     }
 }
