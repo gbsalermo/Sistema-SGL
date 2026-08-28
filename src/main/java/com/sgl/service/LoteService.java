@@ -89,8 +89,29 @@ public class LoteService {
             );
         }
 
-        lote.setNumeroLote(dto.getNumeroLote());
+        if (Boolean.FALSE.equals(dto.getFracionavel())
+                && lote.getQuantidadeDisponivel() % lote.fatorApresentacao() != 0) {
+            throw new BusinessRuleException(
+                    "Este lote já possui uma quantidade fracionada em uso e não pode ser marcado como não fracionável."
+            );
+        }
+
+        lote.setNumeroLote(dto.getNumeroLote().trim());
         lote.setDataValidade(dto.getDataValidade());
+
+        if (dto.getApresentacao() != null && !dto.getApresentacao().isBlank()) {
+            lote.setApresentacao(dto.getApresentacao().trim());
+        }
+
+        if (dto.getFracionavel() != null) {
+            lote.setFracionavel(dto.getFracionavel());
+        }
+
+        lote.setObservacao(
+                dto.getObservacao() == null || dto.getObservacao().isBlank()
+                        ? null
+                        : dto.getObservacao().trim()
+        );
 
         if (dto.getAtivo() != null) {
             lote.setAtivo(dto.getAtivo());
