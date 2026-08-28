@@ -136,7 +136,12 @@ class PedidoConcorrenciaIntegrationTest {
 
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
+        lote.definirCodigoInterno("LOT-CONC-001-001", 1);
         lote.setNumeroLote("CONC-LOTE-001");
+        lote.setApresentacao("unidade");
+        lote.setQuantidadeApresentacoes(10);
+        lote.setConteudoPorApresentacao(1);
+        lote.setFracionavel(true);
         lote.setQuantidadeInicial(10);
         lote.setQuantidadeDisponivel(10);
         lote.setDataEntrada(LocalDate.now());
