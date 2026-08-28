@@ -89,26 +89,29 @@ public class LoteService {
             );
         }
 
-        if (Boolean.FALSE.equals(dto.getFracionavel())
-                && lote.getQuantidadeDisponivel() % lote.fatorApresentacao() != 0) {
+        if (dto.getTipoEmbalagem() != null
+                && lote.getTipoEmbalagem() != null
+                && dto.getTipoEmbalagem() != lote.getTipoEmbalagem()) {
             throw new BusinessRuleException(
-                    "Este lote já possui uma quantidade fracionada em uso e não pode ser marcado como não fracionável."
+                    "O tipo de embalagem original do lote não pode ser alterado."
+            );
+        }
+
+        if (lote.permiteFracionamento() && Boolean.FALSE.equals(dto.getFracionavel())) {
+            throw new BusinessRuleException(
+                    "Um lote liberado para retirada unitária não pode voltar a exigir embalagem completa."
             );
         }
 
         lote.setNumeroLote(dto.getNumeroLote().trim());
         lote.setDataValidade(dto.getDataValidade());
 
-        if (dto.getTipoEmbalagem() != null) {
-            lote.setTipoEmbalagem(dto.getTipoEmbalagem());
-        }
-
         if (dto.getApresentacao() != null && !dto.getApresentacao().isBlank()) {
             lote.setApresentacao(dto.getApresentacao().trim());
         }
 
-        if (dto.getFracionavel() != null) {
-            lote.setFracionavel(dto.getFracionavel());
+        if (Boolean.TRUE.equals(dto.getFracionavel())) {
+            lote.setFracionavel(true);
         }
 
         lote.setObservacao(
