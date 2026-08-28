@@ -94,6 +94,22 @@ public class ProdutoService {
         produto.setUnidadeArmazenamento(dto.getUnidadeArmazenamento());
 
         if (produto.getId() == null) {
+            produto.updateFiscalizacao(
+                    Boolean.TRUE.equals(dto.getFiscalizado()),
+                    dto.getOrgaosFiscalizadores(),
+                    dto.getObservacaoFiscalizacao()
+            );
+        } else if (dto.getFiscalizado() != null
+                || dto.getOrgaosFiscalizadores() != null
+                || dto.getObservacaoFiscalizacao() != null) {
+            produto.updateFiscalizacao(
+                    dto.getFiscalizado() != null ? dto.getFiscalizado() : produto.getFiscalizado(),
+                    dto.getOrgaosFiscalizadores() != null ? dto.getOrgaosFiscalizadores() : produto.getOrgaosFiscalizadores(),
+                    dto.getObservacaoFiscalizacao() != null ? dto.getObservacaoFiscalizacao() : produto.getObservacaoFiscalizacao()
+            );
+        }
+
+        if (produto.getId() == null) {
             produto.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
         } else if (dto.getAtivo() != null) {
             produto.setAtivo(dto.getAtivo());
