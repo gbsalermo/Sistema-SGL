@@ -35,6 +35,8 @@ public class LoteResponseDTO {
     private Integer conteudoPorApresentacao;
     @Schema(description = "Indica se a apresentação permite saída parcial.", example = "true")
     private Boolean fracionavel;
+    @Schema(description = "Observação cadastral do lote.", example = "Material recebido lacrado.")
+    private String observacao;
     @Schema(description = "Unidade-base de controle do produto.", example = "UNIDADE")
     private UnidadeMedida unidadeBase;
 
@@ -58,6 +60,7 @@ public class LoteResponseDTO {
         this.quantidadeApresentacoes = entity.getQuantidadeApresentacoes();
         this.conteudoPorApresentacao = entity.getConteudoPorApresentacao();
         this.fracionavel = entity.getFracionavel();
+        this.observacao = entity.getObservacao();
         this.unidadeBase = entity.getEstoqueCentral().getProduto().getUnidadeMedida();
         this.quantidadeInicial = entity.getQuantidadeInicial();
         this.quantidadeDisponivel = entity.getQuantidadeDisponivel();
