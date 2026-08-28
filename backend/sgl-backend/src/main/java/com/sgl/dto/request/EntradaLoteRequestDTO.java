@@ -3,6 +3,7 @@ package com.sgl.dto.request;
 import java.time.LocalDate;
 
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
@@ -24,19 +25,23 @@ public class EntradaLoteRequestDTO {
     @NotBlank(message = "Número do lote é obrigatório")
     private String numeroLote;
 
-    @Schema(description = "Apresentação física recebida no lote.", example = "kit")
+    @Schema(description = "Tipo principal da embalagem recebida.", example = "KIT", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "Tipo de embalagem é obrigatório")
+    private TipoEmbalagem tipoEmbalagem;
+
+    @Schema(description = "Especificação da embalagem recebida.", example = "kit com 50 unidades")
     private String apresentacao;
 
-    @Schema(description = "Quantidade de apresentações físicas recebidas.", example = "2", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Quantidade de embalagens/unidades físicas recebidas.", example = "2", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Quantidade da entrada é obrigatória")
     @Min(value = 1, message = "Quantidade da entrada deve ser maior que zero")
     private Integer quantidade;
 
-    @Schema(description = "Conteúdo em unidade-base existente em cada apresentação. Ex.: 50 reações por kit.", example = "50", minimum = "1")
-    @Min(value = 1, message = "Conteúdo por apresentação deve ser maior que zero")
+    @Schema(description = "Multiplicador de unidades individuais por embalagem. Ex.: kit de 50 -> 50.", example = "50", minimum = "1")
+    @Min(value = 1, message = "Multiplicador deve ser maior que zero")
     private Integer conteudoPorApresentacao;
 
-    @Schema(description = "Indica se a apresentação pode ser fracionada em uma saída parcial.", example = "true")
+    @Schema(description = "Indica se a embalagem pode ser fracionada em uma saída parcial.", example = "true")
     private Boolean fracionavel;
 
     @Schema(description = "Data de validade do lote, quando aplicável ao produto.", example = "2027-08-31")
@@ -49,10 +54,7 @@ public class EntradaLoteRequestDTO {
     @Schema(description = "Observação opcional sobre a entrada do lote.", example = "Material recebido conforme nota fiscal.")
     private String observacao;
 
-    /**
-     * Compatibilidade com chamadas/testes anteriores ao modelo de apresentação.
-     * Nesse formato, a quantidade é tratada como unidade-base (fator 1).
-     */
+    /** Compatibilidade com chamadas/testes anteriores. */
     public EntradaLoteRequestDTO(
             String numeroLote,
             Integer quantidade,
@@ -60,7 +62,8 @@ public class EntradaLoteRequestDTO {
             OrigemMovimentacao origem,
             String observacao) {
         this.numeroLote = numeroLote;
-        this.apresentacao = "UNIDADE";
+        this.tipoEmbalagem = TipoEmbalagem.UNITARIO;
+        this.apresentacao = "unidade";
         this.quantidade = quantidade;
         this.conteudoPorApresentacao = 1;
         this.fracionavel = true;
