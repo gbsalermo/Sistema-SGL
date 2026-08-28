@@ -1,49 +1,192 @@
 # Continuidade do Projeto SGL
 
 **Projeto:** Sistema de Gestão de Laboratórios  
-**Última atualização:** 20/08/2026  
-**Branch da correção:** `swagger-openapi`  
-**Fase atual:** backend funcional/estrutural do protótipo concluído e validado; frontend é a próxima grande etapa.
+**Backend:** `gbsalermo/Sistema-SGL`  
+**Frontend:** `gbsalermo/SGL-FRONTEND`  
+**Última atualização:** 28/08/2026  
+**Branch de fechamento deste ciclo:** `feat/relatorios-exportacao`  
+**Fase atual:** frontend de Gestão em evolução; backend estável e ampliado com Relatórios, Fiscalização e exportação PDF/XLSX.  
+**Próximo grande bloco:** Administração/Cadastros e integração do módulo de Resíduos; autenticação/autorização/auditoria definitiva permanece pós-frontend.
 
-Este arquivo registra o estado consolidado do backend, as decisões arquiteturais aprovadas e o ponto exato de continuidade.
+Este arquivo é a referência de retomada do backend. O Swagger/OpenAPI continua sendo a fonte viva do contrato HTTP; este documento registra arquitetura, decisões de negócio, estado do projeto e próximos passos.
 
-## Regra de trabalho para correções estruturais
+---
 
-Toda correção estrutural deve seguir:
+# 0. Regra de trabalho
+
+Toda alteração relevante deve seguir:
 
 ```text
-branch própria da correção
-→ análise
-→ avaliação
-→ revisão
-→ aprovação
+branch própria
+→ implementação
+→ validação
+→ refinamento
 → Pull Request
 → main
+→ atualizar CONTINUIDADE
 ```
 
-Toda correção aprovada deve ser registrada neste arquivo com o motivo da alteração.
+Não avançar uma etapa declarada como concluída sem validação funcional.
 
-## Estado geral do backend — CONCLUÍDO
+---
 
-O backend funcional e estrutural previsto para esta fase do protótipo está concluído e estabilizado em PostgreSQL real com Flyway.
+# 1. Estado geral do sistema em 28/08/2026
 
-O encerramento desta fase não antecipa autenticação/autorização e auditoria local, que permanecem deliberadamente planejadas para depois do frontend, conforme decisão já registrada.
+## Backend
 
-Regras principais consolidadas:
+```text
+Base Spring Boot / PostgreSQL / Flyway                 ✅
+Long interno + UUID público                            ✅
+DTOs request/response                                  ✅
+Tratamento global de erros                             ✅
+Concorrência de aprovação                              ✅
+FIFO / FEFO                                            ✅
+Lotes / rastreabilidade                                ✅
+Embalagens / multiplicador / fracionamento             ✅
+Pedidos e urgência                                     ✅
+Swagger / OpenAPI                                      ✅
+Movimentações                                          ✅
+Relatórios consolidados                                ✅
+Produtos fiscalizados                                  ✅
+Fiscalização / rastreabilidade controlada              ✅
+Exportação PDF                                         ✅ validada manualmente
+Exportação XLSX                                        ✅ validada manualmente
+Resíduos                                               🟡 desenvolvido em branch própria; integrar
+Administração / novos cadastros                        ⏳
+Autenticação / autorização / auditoria definitiva      ⏳ pós-frontend
+Integração futura com autenticação corporativa         ⏳
+```
+
+## Frontend já suportado pelo backend
+
+```text
+Login atual / sessão de desenvolvimento                ✅
+Pedidos do solicitante                                 ✅
+Pedidos da gestão                                      ✅
+Estoque e lotes                                        ✅
+Movimentações                                          ✅
+Central de Relatórios                                  ✅
+PDF / Excel por relatório                              ✅
+Fiscalização                                           ✅
+```
+
+---
+
+# 2. Arquitetura consolidada
+
+## Identificadores
+
+```text
+Long id
+→ chave primária interna
+→ relacionamentos JPA
+→ foreign keys
+→ locks
+→ consultas técnicas
+→ nunca atravessa a API
+
+UUID publicId
+→ identificador público
+→ DTOs
+→ endpoints
+→ frontend
+→ não sequencial
+→ único e imutável
+```
+
+Fluxo padrão:
+
+```text
+Controller recebe UUID
+→ Service resolve por findByPublicId(UUID)
+→ domínio trabalha internamente com Long quando necessário
+```
+
+## Separação de responsabilidades
+
+```text
+Controller = contrato HTTP
+Service = orquestração/transação
+Repository = persistência
+Model = regras diretamente ligadas ao estado da entidade
+RequestDTO = entrada da API
+ResponseDTO = saída da API
+```
+
+---
+
+# 3. Regras centrais de estoque
 
 ```text
 Produto = catálogo
-Lote = validade + quantidade disponível
-Produto perecível → saída FEFO
-Produto não perecível → saída FIFO
-EstoqueCentral.quantidadeAtual = soma dos lotes
-MovimentacaoEstoque = auditoria das operações físicas
+EstoqueCentral = posição consolidada por produto/unidade
+Lote = validade + quantidade disponível + rastreabilidade
+MovimentacaoEstoque = trilha das operações físicas
+```
+
+Saída:
+
+```text
+produto perecível     → FEFO
+produto não perecível → FIFO
+```
+
+Invariantes:
+
+```text
+EstoqueCentral.quantidadeAtual = soma operacional dos lotes
 Pedido só baixa estoque na aprovação
 Entrega não baixa estoque novamente
 Cancelamento de pedido aprovado restaura os lotes exatos consumidos
+Movimentação de saída registra o lote efetivamente utilizado
 ```
 
-Fluxo de Pedido:
+---
+
+# 4. Embalagens e forma de retirada
+
+O saldo interno permanece em unidades individuais.
+
+Exemplo:
+
+```text
+2 kits de 50
+→ saldo = 100 unidades
+```
+
+Forma solicitada no pedido:
+
+```text
+UNITARIO
+KIT
+CAIXA
+GARRAFA
+GALAO
+```
+
+Compatibilidade:
+
+```text
+UNITARIO
+→ lote UNITARIO ou lote fracionável
+
+KIT/CAIXA/GARRAFA/GALAO
+→ mesmo tipo de embalagem
+→ mesmo multiplicador
+```
+
+Fracionamento:
+
+```text
+false → true  ✅
+true  → false ❌
+```
+
+O tipo original da embalagem, Código SGL e multiplicador histórico não devem ser reescritos de modo a quebrar rastreabilidade.
+
+---
+
+# 5. Fluxo de Pedido
 
 ```text
 PENDENTE
@@ -53,481 +196,519 @@ PENDENTE
 └── REJEITADO
 ```
 
-## Banco e migrations
-
-PostgreSQL permanece como banco do profile `dev`.
-
-A V1 está congelada:
+Regras:
 
 ```text
-src/main/resources/db/migration/V1__create_initial_schema.sql
+aprovação → baixa estoque
+entrega   → apenas registra conclusão; não baixa novamente
+cancelamento aprovado → restaura lotes exatos
+urgência → atributo do pedido, não altera automaticamente a regra de estoque
 ```
 
-### V2 — UUID público
+`Pedido.dataEntrega` foi adicionado em 28/08/2026 para registrar o momento real da entrega e permitir auditoria/consultas futuras.
 
-A V2 adiciona `public_id UUID`, preenche registros existentes com `gen_random_uuid()`, aplica `NOT NULL` e `UNIQUE` nas tabelas públicas.
+Pedidos antigos já `ENTREGUE` podem permanecer com `dataEntrega = null`; não inventar timestamp histórico.
 
-Tabelas contempladas:
+---
+
+# 6. Fiscalização de Produto — concluída
+
+Em 28/08/2026 o domínio de Produto passou a possuir classificação explícita para controle externo.
+
+Campos:
 
 ```text
-usuarios
-unidades
-laboratorios
-produtos
-estoque_central
-lote
-projetos
-pedidos
-itens_pedido
-movimentacao_estoque
-historico_laboratorio
+fiscalizado
+orgaosFiscalizadores
+observacaoFiscalizacao
 ```
 
-`Estagiario` utiliza o `publicId` herdado de `Usuario`.
-
-Validação da V2:
+Órgãos suportados inicialmente:
 
 ```text
-banco vazio
-→ V1 aplicada
-→ V2 aplicada
-→ Hibernate ddl-auto=validate
-→ DataInitializer executado
-→ aplicação iniciada normalmente
+POLICIA_FEDERAL
+VIGILANCIA_SANITARIA
+ANVISA
+EXERCITO
+OUTRO
 ```
 
-A V2 está congelada. Toda mudança estrutural posterior deve usar V3 ou superior.
-
-### V3 — defaults booleanos
-
-Criada em `mini-ajustes`:
+Regra:
 
 ```text
-src/main/resources/db/migration/V3__add_boolean_defaults.sql
+fiscalizado = false
+→ órgãos vazios
+→ observação de fiscalização limpa
+
+fiscalizado = true
+→ ao menos um órgão obrigatório
 ```
 
-Objetivo:
+**Não inferir fiscalização a partir de risco, perecibilidade ou tipo de risco.**
+
+A classificação deve ser feita no cadastro/edição de Produto e é a fonte oficial do relatório de Fiscalização.
+
+---
+
+# 7. Migration V10 — Relatórios/Fiscalização
+
+Arquivo:
 
 ```text
-campos booleanos obrigatórios também possuem valor default no banco
+V10__add_dados_relatorios.sql
 ```
 
-Defaults definidos:
+Adiciona:
 
 ```text
-ativo      → DEFAULT TRUE
-perecivel  → DEFAULT FALSE
+pedidos.data_entrega
+produtos.fiscalizado
+produtos.observacao_fiscalizacao
+produto_orgaos_fiscalizadores
 ```
 
-Tabelas contempladas conforme os campos existentes:
+A tabela `produto_orgaos_fiscalizadores` preserva a relação de um Produto com um ou mais órgãos de controle.
+
+Migrations anteriores permanecem imutáveis.
+
+Resumo recente:
 
 ```text
-produtos
-laboratorios
-usuarios
-estoque_central
-lote
-projetos
-historico_laboratorio
+V5 → apresentação/fracionamento do lote
+V6 → observação do lote
+V7 → Código SGL + sequência
+V8 → tipo de embalagem do lote
+V9 → forma de retirada no ItemPedido
+V10 → data de entrega + fiscalização de Produto
 ```
 
-A migration não altera V1/V2, preservando o histórico do Flyway.
+---
 
-## Correção estrutural — UUID público
+# 8. Relatórios — concluído e validado
 
-### Motivo
+A central usa consultas específicas por relatório, evitando um endpoint genérico difícil de manter.
 
-A API utilizava diretamente IDs sequenciais `Long`, permitindo inferir registros vizinhos.
-
-Arquitetura aprovada:
+Relatórios funcionais:
 
 ```text
-Long id
-→ chave primária interna
-→ relacionamentos JPA
-→ foreign keys
-→ locks
-→ queries técnicas internas
-→ não atravessa a API
-
-UUID publicId
-→ identificador público
-→ DTOs
-→ endpoints
-→ frontend
-→ não sequencial
-→ único
-→ imutável
+1. Estagiários
+2. Produtos
+3. Movimentações
+4. Resumo operacional
+5. Estoque e lotes
+6. Fiscalização
 ```
 
-Fluxo padrão:
+`Resíduos` está previsto na central, mas depende da integração do módulo existente em `feat/gestao-residuos`.
+
+## Estagiários
 
 ```text
-Controller recebe UUID
-→ Service usa findByPublicId(UUID)
-→ entidade é localizada
-→ backend usa Long id internamente quando necessário
+GET /api/v1/relatorios/estagiarios
 ```
 
-## Estado por camada — UUID CONCLUÍDO
-
-### Entidades
-
-As entidades públicas possuem `publicId` com geração automática via `@PrePersist`.
-
-`MovimentacaoEstoque` e `HistoricoLaboratorio` também possuem geração automática, evitando INSERT com `public_id = NULL`.
-
-### Repositories
-
-Repositories públicos possuem:
-
-```java
-Optional<Entidade> findByPublicId(UUID publicId);
-```
-
-Buscas por PK/FK `Long` permanecem quando internas, inclusive locks pessimistas, FEFO/FIFO, consultas técnicas e concorrência.
-
-### ResourceNotFoundException
-
-A exceção aceita identificador genérico:
-
-```java
-public ResourceNotFoundException(String recurso, Object id)
-```
-
-Isso permite UUID na fronteira pública e `Long` em operações internas.
-
-### Services e Controllers
-
-A fronteira pública utiliza UUID; o `Long` é usado apenas após a entidade ser resolvida internamente.
-
-## Mini ajustes — CONCLUÍDO
-
-Branch:
+Filtros principais:
 
 ```text
-mini-ajustes
+ativo
+laboratorioId
+dataInicio
+dataFim
 ```
 
-### Padronização de comentários
+Retorna total, ativos, inativos e dados do vínculo.
 
-Foi aplicada a regra:
+## Produtos
 
 ```text
-nome do método deve indicar seu papel
-comentário apenas quando a implementação não é autoexplicativa
-comentários técnicos em português
+GET /api/v1/relatorios/produtos
 ```
 
-Comentários redundantes foram removidos. Permaneceram comentários curtos apenas em pontos como:
+Filtros:
 
 ```text
-locks pessimistas
-FEFO/FIFO
-regras de rastreabilidade
-cálculos menos diretos
-herança JPA
-endpoints temporários de desenvolvimento
+ativo
+fiscalizado
+perecivel
+risco
+orgaoFiscalizador
 ```
 
-### Padronização de idioma técnico
+Serve como visão geral do catálogo. O filtro `fiscalizado=true` não substitui o relatório de Fiscalização.
 
-Elementos técnicos novos/refatorados foram padronizados em inglês, por exemplo:
+## Movimentações
 
 ```text
-gerarPublicId() → generatePublicId()
-validateActive()
-validateInternProfile()
-updateRisk()
-updateDates()
-validateLotExpirationDate()
+GET /api/v1/relatorios/movimentacoes
 ```
 
-Não foi feita tradução global de nomes do domínio (`Usuario`, `Pedido`, `Laboratorio`, `Produto`, endpoints e colunas), pois isso alteraria contratos existentes e excederia o escopo de mini ajustes.
-
-### Regras de domínio movidas para Models
-
-Parte das validações que estavam concentradas nos Services foi aproximada das entidades responsáveis.
-
-Exemplos:
+Filtros:
 
 ```text
-Usuario → valida perfil e estado ativo
-Laboratorio → valida estado ativo
-Projeto → valida datas e estado ativo
-Produto → valida risco, perecibilidade e validade de lote
-EstoqueCentral → valida estado ativo
+tipo
+origem
+produtoId
+laboratorioId
+usuarioId
+loteId
+dataInicio
+dataFim
 ```
 
-Objetivo:
+Consolida entradas, saídas, devoluções, descartes e ajustes.
+
+### Pedidos entregues
+
+Foi decidido **não manter relatório separado de Pedidos entregues**.
+
+Quando necessário, usar Movimentações com recorte como:
 
 ```text
-Service = orquestração, transação e acesso a repositories
-Model = regras diretamente ligadas ao próprio estado da entidade
+origem = PEDIDO
+tipo = SAIDA
 ```
 
-### Relacionamentos N:N — decisão conceitual
+`Pedido.dataEntrega` continua existindo como dado de domínio e auditoria.
 
-Nenhuma nova tabela N:N foi criada nesta etapa.
-
-Possibilidades futuras identificadas:
+## Resumo operacional
 
 ```text
-Projeto x Usuario   → projeto_membro
-Projeto x Produto   → projeto_material
-Produto x Fornecedor → produto_fornecedor, caso Fornecedor seja criado
+GET /api/v1/relatorios/resumo-operacional
 ```
 
-`Pedido x Produto` já é corretamente representado por `ItemPedido`, pois a relação possui atributos próprios como quantidade solicitada e aprovada.
-
-## Divisão dos DTOs — CONCLUÍDA
-
-Branch:
+Apresenta:
 
 ```text
-divisao-dto
+total de movimentações
+entradas
+saídas
+descartes
+produtos movimentados
+lotes movimentados
+ranking de entradas
+ranking de saídas
+lotes mais movimentados
 ```
 
-### Objetivo
-
-Os DTOs antigos acumulavam responsabilidades de entrada e saída. A camada foi separada em contratos explícitos:
+## Estoque e lotes
 
 ```text
-dto/
-├── request/
-└── response/
+GET /api/v1/relatorios/estoque-lotes
 ```
 
-Regras adotadas:
+Filtros principais:
 
 ```text
-RequestDTO
-→ representa entrada da API
-→ não carrega o id do próprio recurso em criação/atualização quando ele já vem pela URL
-→ relacionamentos externos usam UUID público
-→ concentra validações de entrada
-
-ResponseDTO
-→ representa saída da API
-→ id público = entity.getPublicId()
-→ pode trazer nomes e informações enriquecidas
-→ não expõe Long interno
-→ não expõe senha
+unidadeId
+produtoId
+ativoEstoque
+abaixoMinimo
+ativoLote
+validade
+diasVencimento
 ```
 
-DTOs de operação também foram movidos para `request`, incluindo aprovação de pedido, entrada/atualização de lote e descarte.
-
-DTOs exclusivamente de consulta, como consumo por laboratório, foram movidos para `response`.
-
-Os DTOs híbridos/legados da raiz de `com.sgl.dto` foram removidos após Services, Controllers e testes passarem a usar diretamente os novos contratos.
-
-### IDs privados e públicos
-
-A separação preserva a arquitetura:
+Classificações utilizadas:
 
 ```text
-Model / banco
-Long id       → interno
-UUID publicId → externo
-
-API
-RequestDTO  → UUID para relacionamentos externos
-ResponseDTO → UUID como id público
+VALIDO
+PROXIMO_VENCIMENTO
+VENCIDO
+SEM_VALIDADE
+ESGOTADO
+INATIVO
 ```
 
-O `Long id` continua disponível para relacionamentos, locks e consultas técnicas internas, mas não atravessa a API.
-
-### Validação da divisão
-
-Resultado informado após a limpeza final:
+## Fiscalização
 
 ```text
-mvn clean test ✅
-Tests run: 23
-Failures: 0
-Errors: 0
-Skipped: 0
-BUILD SUCCESS
+GET /api/v1/relatorios/fiscalizacao
 ```
 
-A suíte inclui o teste de concorrência de aprovação, que também passou após a migração dos DTOs.
-
-O aviso do Surefire sobre `Corrupted channel by directly writing to native stream` não provocou falha da suíte; o build terminou com sucesso.
-
-## Testes automatizados — VALIDADO
-
-Resultado consolidado após as correções estruturais atuais:
+Filtros:
 
 ```text
-mvn clean compile ✅
-mvn test ✅
-mvn clean test ✅
-23 testes ✅
-0 falhas ✅
-0 erros ✅
+produtoId
+orgaoFiscalizador
+unidadeId
+dataInicio
+dataFim
+diasVencimento
 ```
 
-## Validação integrada da migração UUID — CONCLUÍDA
-
-Validações estruturais:
+Cruza:
 
 ```text
-mvn clean compile ✅
-V1 + V2 em banco vazio ✅
-Hibernate validate ✅
-DataInitializer ✅
-aplicação inicia em dev ✅
-mvn test ✅
+Produto fiscalizado
++ EstoqueCentral
++ Lote
++ MovimentacaoEstoque
++ Pedido
 ```
 
-### Regressão manual principal no Postman — CONCLUÍDA
+Permite rastrear:
 
 ```text
-1. buscar entidade por UUID                                      ✅
-2. criar pedido usando UUIDs relacionados                       ✅
-3. aprovar pedido usando pedido UUID + item UUID + aprovador UUID ✅
-4. consultar pedidos por laboratório + projeto + período via UUID ✅
-5. cancelar pedido aprovado usando UUID                         ✅
+saldo atual
+órgão(s) fiscalizador(es)
+lotes ativos
+lotes vencidos
+próximos do vencimento
+entradas
+saídas
+laboratório de destino
+projeto
+solicitante
+pedido
+responsável pela operação
+saldo após movimentação
 ```
 
-## Validações manuais críticas anteriores
+---
 
-Já validados em PostgreSQL real:
+# 9. Exportação PDF/XLSX — concluída e validada
+
+Branch de desenvolvimento:
 
 ```text
+feat/relatorios-exportacao
+```
+
+Regra principal:
+
+```text
+prévia JSON
+PDF
+XLSX
+→ usam a mesma consulta e os mesmos filtros
+```
+
+Não existe exportação em lote de vários relatórios ao mesmo tempo.
+
+```text
+1 seleção de relatório
+→ 1 arquivo exportado
+```
+
+Para relatórios compostos, um único XLSX pode ter várias abas internas sem misturar módulos diferentes.
+
+## Bibliotecas
+
+```text
+Apache POI 5.5.1 → XLSX
+OpenPDF 2.0.5     → PDF compatível com Java 17
+```
+
+## PDF
+
+Preparado para impressão:
+
+```text
+logo SGL no canto superior esquerdo
+A4
+orientação adequada ao conteúdo
+paisagem para tabelas largas
+margens compactas
+quebra de texto
+cabeçalhos de tabela repetidos
+resumo e filtros no topo
+paginação
+```
+
+## XLSX
+
+Preparado para leitura e impressão:
+
+```text
+logo SGL no canto superior esquerdo
+título + filtros
+resumo
+cabeçalho congelado
+autofiltro
+quebra de texto
+largura de coluna limitada
+A4
+ajuste para uma página de largura
+paisagem quando necessário
+```
+
+Relatórios compostos:
+
+```text
+Estoque e Lotes.xlsx
+├── Posição de estoque
+└── Lotes
+
+Fiscalização.xlsx
+├── Produtos controlados
+└── Rastreabilidade
+```
+
+Endpoints:
+
+```text
+GET /api/v1/relatorios/estagiarios/exportar?formato=PDF|XLSX
+GET /api/v1/relatorios/produtos/exportar?formato=PDF|XLSX
+GET /api/v1/relatorios/movimentacoes/exportar?formato=PDF|XLSX
+GET /api/v1/relatorios/resumo-operacional/exportar?formato=PDF|XLSX
+GET /api/v1/relatorios/estoque-lotes/exportar?formato=PDF|XLSX
+GET /api/v1/relatorios/fiscalizacao/exportar?formato=PDF|XLSX
+```
+
+Validação manual informada pelo usuário em 28/08/2026:
+
+```text
+prévia de relatórios                  ✅
+filtros                               ✅
+Fiscalização                          ✅
+PDF                                   ✅
+XLSX                                  ✅
+layout/uso da exportação              ✅
+```
+
+---
+
+# 10. Resíduos — estado atual
+
+A modelagem de resíduos foi separada da lógica de Produto/Estoque.
+
+Decisão de domínio:
+
+```text
+Produto = produto do catálogo/estoque
+Resíduo = material gerado pelo laboratório
+```
+
+Um resíduo pode conter um ou vários produtos/reagentes, mas isso não altera automaticamente o estoque desses produtos.
+
+Fluxo conceitual:
+
+```text
+laboratório gera resíduo
+→ informa composição/uso/recipiente/riscos
+→ gestor identifica e ficha
+→ gestor confirma riscos e rotula
+→ armazenamento temporário
+→ despacho/destinação final
+```
+
+O módulo está sendo desenvolvido em:
+
+```text
+feat/gestao-residuos
+```
+
+Após integração, deve ser conectado também ao relatório `Resíduos` e às exportações.
+
+---
+
+# 11. Swagger/OpenAPI
+
+Permanece concluído e é a referência operacional dos contratos HTTP.
+
+```text
+Swagger UI                    ✅
+/v3/api-docs                  ✅
+Controllers / Operations      ✅
+DTO schemas                    ✅
+Erros HTTP                     ✅
+```
+
+Toda nova API deve manter documentação Swagger coerente.
+
+---
+
+# 12. Autenticação, autorização e auditoria
+
+Decisão preservada:
+
+```text
+backend estrutural              ✅
+Swagger                         ✅
+frontend principal              🟡 em andamento
+→ autenticação/autorização/auditoria definitiva
+→ integração corporativa futura
+```
+
+Não antecipar a autenticação corporativa enquanto os fluxos de frontend ainda estão sendo fechados.
+
+---
+
+# 13. Estado de validação histórica
+
+Já foram validados em ciclos anteriores:
+
+```text
+PostgreSQL + Flyway
+UUID público
 entrada de lote
 FEFO
 FIFO
 lote vencido fora da aprovação
 estoque utilizável insuficiente
 descarte por vencimento
-cancelamento restaurando os lotes exatos
+cancelamento restaurando lotes exatos
 entrega sem segunda baixa
-HistoricoLaboratorio
+Histórico de laboratório
 consultas por projeto/laboratório/período
 consistência EstoqueCentral = soma dos lotes
 concorrência de aprovação
+Swagger/OpenAPI
 ```
 
-## Autenticação e auditoria — DECISÃO ATUAL
-
-Autenticação local simulada e revisão final de auditoria/autorização serão implementadas após o frontend.
-
-Sequência aprovada:
+Em 28/08/2026 foram ainda validados manualmente:
 
 ```text
-backend estrutural ✅
-→ OpenAPI/Swagger ✅
-→ frontend
-→ autenticação + auditoria local
-→ integração futura com autenticação corporativa
+Central de Relatórios
+Relatório de Estagiários
+Relatório de Produtos
+Relatório de Movimentações
+Resumo Operacional
+Estoque e Lotes
+Fiscalização
+Exportação PDF
+Exportação XLSX
 ```
 
-Enquanto isso, IDs temporários de usuário usados para testes locais continuam como UUID público.
+---
 
-## OpenAPI / Swagger — CONCLUÍDO
+# 14. Próximos passos oficiais
 
-Branch:
+Ordem recomendada sem criar novo roadmap:
 
 ```text
-swagger-openapi
+1. concluir merge da exportação de Relatórios                 ← fechamento deste ciclo
+2. Administração / Cadastros
+   ├── Produtos
+   │   └── incluir fiscalização no formulário
+   ├── Laboratórios
+   ├── Projetos
+   ├── Usuários
+   └── Estagiários
+3. integrar módulo de Resíduos
+   └── conectar relatório/exportação de Resíduos
+4. revisar Dashboard final / alertas / robustez / página 404
+5. autenticação + autorização + auditoria local definitiva
+6. preparar integração futura com autenticação corporativa
 ```
 
-Implementação concluída e validada:
+Ponto importante para Produtos em Administração:
 
 ```text
-springdoc-openapi integrado ao Spring Boot
-OpenApiConfig com SGL API v1
-Swagger UI e /v3/api-docs funcionando
-controllers organizados com @Tag
-endpoints documentados com @Operation
-RequestDTOs e ResponseDTOs documentados com @Schema
-ApiError e FieldValidationError documentados
-respostas HTTP documentadas com @ApiResponse
-schemas de sucesso e erro revisados
-200 / 201 / 204 / 400 / 404 / 409 / 500 representados conforme o contrato atual
-validação visual final no Swagger UI concluída
-mvn clean compile ✅
-mvn test com profile test ✅
-23 testes ✅
-0 falhas ✅
-0 erros ✅
+Fiscalizado?              toggle
+Órgãos fiscalizadores    seleção múltipla
+Observação fiscalização  opcional
 ```
 
-O Swagger/OpenAPI passa a ser a referência operacional principal para endpoints, parâmetros, request bodies, responses e erros da API. Documentos textuais permanecem úteis para arquitetura, regras de negócio e histórico, mas não devem duplicar manualmente o contrato vivo da API.
+Se `Fiscalizado = Sim`, ao menos um órgão deve ser informado.
 
-## Frontend
+---
 
-O frontend passa a ser a próxima grande fase do projeto.
-
-Referências registradas:
-
-```text
-Salvia Kit
-Materio Vuetify
-Vue Notus
-Sneat Vuetify
-```
-
-Fluxo planejado:
-
-```text
-referências/templates
-→ Figma
-→ selecionar padrões
-→ adaptar ao fluxo do SGL
-→ componentes reutilizáveis
-→ Design System
-→ implementação frontend
-```
-
-### Diretrizes e ideias já aprovadas para o frontend
-
-```text
-Dashboards claros e funcionais
-→ priorizar leitura rápida do estado do sistema
-→ evitar excesso de informação visual
-→ destacar estoque, pedidos e indicadores realmente úteis para cada perfil
-
-Interface de login inspirada no Publica
-→ manter familiaridade visual com o sistema já utilizado como referência
-→ adaptar identidade e campos às necessidades do SGL
-
-Fluxo de pedidos separado por responsabilidade
-→ interface de quem solicita materiais deve ser simples e orientada à criação/acompanhamento do pedido
-→ interface de quem faz gestão deve priorizar análise, aprovação, rejeição, entrega e acompanhamento
-→ evitar expor ações administrativas para o perfil que apenas solicita
-
-Página 404 customizada
-→ responsabilidade do frontend
-→ tratar rota inexistente com uma tela própria e navegação de retorno segura
-→ para recurso inexistente retornado pela API, interpretar o HTTP 404 e apresentar mensagem contextual adequada
-→ decidir conforme o contexto entre página, estado vazio, mensagem inline, modal ou notificação
-```
-
-## Requisito futuro de reposição/compra
-
-Estado:
-
-```text
-FEFO → implementado e validado
-prazo mínimo de validade → pós-protótipo
-estoque crítico histórico → pós-protótipo
-```
-
-## Próxima ação
-
-```text
-1. abrir/revisar Pull Request de swagger-openapi para main
-2. integrar o fechamento do backend à main
-3. iniciar planejamento e implementação do frontend
-4. implementar autenticação + auditoria local após o frontend
-5. preparar integração futura com autenticação corporativa
-```
-
-## Documentos de referência
+# 15. Documentos de referência
 
 - [`README.md`](README.md)
+- [`docs/RELATORIOS.md`](docs/RELATORIOS.md)
+- [`docs/EXPORTACAO_RELATORIOS.md`](docs/EXPORTACAO_RELATORIOS.md)
 - [`docs/ENDPOINTS_INTERNOS.md`](docs/ENDPOINTS_INTERNOS.md)
 - [`docs/JSON_EXEMPLOS.md`](docs/JSON_EXEMPLOS.md)
 - [`docs/testes.md`](docs/testes.md)
@@ -536,29 +717,19 @@ estoque crítico histórico → pós-protótipo
 - [`docs/CODIGOS_REFERENCIA_LOTE.md`](docs/CODIGOS_REFERENCIA_LOTE.md)
 - [`docs/diagrama-uml-completo.puml`](docs/diagrama-uml-completo.puml)
 
-## Histórico recente
+---
+
+# 16. Histórico recente
 
 | Data | Decisão / validação |
 |---|---|
-| 07/08/2026 | `Lote` consolidado como composição rastreável do estoque |
-| 07/08/2026 | FEFO para perecíveis e FIFO para não perecíveis |
-| 07/08/2026 | `MovimentacaoEstoqueService` passou a centralizar operações físicas |
-| 11/08/2026 | PostgreSQL/Flyway validado e V1 congelada |
-| 12/08/2026 | BCrypt validado |
-| 13/08/2026 | Bateria manual crítica e concorrência validadas |
-| 14/08/2026 | Arquitetura `Long interno + UUID público` aprovada |
-| 18/08/2026 | Entidades, V2, repositories, DTOs, Services e Controllers migrados para UUID |
-| 18/08/2026 | V1 + V2 validadas em banco recriado do zero |
-| 18/08/2026 | DataInitializer e testes automatizados migrados/validados |
-| 19/08/2026 | Regressão manual UUID concluída |
-| 19/08/2026 | Correção UUID integrada à `main` |
-| 19/08/2026 | Criada V3 com defaults booleanos no banco |
-| 19/08/2026 | Comentários técnicos mantidos em português e nomenclatura técnica padronizada |
-| 19/08/2026 | Regras diretamente ligadas às entidades movidas parcialmente dos Services para Models |
-| 19/08/2026 | `mvn clean compile` e `mvn test` aprovados em `mini-ajustes` |
-| 19/08/2026 | DTOs separados em `request` e `response`; DTOs legados removidos |
-| 19/08/2026 | Services, Controllers e testes migrados para os novos contratos de DTO |
-| 19/08/2026 | `mvn clean test`: 23 testes, 0 falhas, 0 erros |
-| 20/08/2026 | Registradas diretrizes iniciais do frontend: dashboards funcionais, login inspirado no Publica, separação do fluxo de pedidos por responsabilidade e página 404 customizada |
-| 20/08/2026 | OpenAPI/Swagger concluído e validado com documentação de controllers, operações, DTOs, respostas e erros |
-| 20/08/2026 | Backend funcional/estrutural do protótipo oficialmente encerrado; frontend definido como próxima grande fase |
+| 20/08/2026 | Backend estrutural anterior encerrado; Swagger/OpenAPI validado |
+| 28/08/2026 | Movimentações consolidadas como base de auditoria e relatórios |
+| 28/08/2026 | Produto recebeu classificação explícita de fiscalização externa |
+| 28/08/2026 | Criada V10 com `data_entrega` e dados de fiscalização de Produto |
+| 28/08/2026 | Implementados relatórios de Estagiários, Produtos, Movimentações, Resumo Operacional, Estoque/Lotes e Fiscalização |
+| 28/08/2026 | Decidido que Pedidos entregues é recorte de Movimentações, não relatório próprio |
+| 28/08/2026 | Resíduos reservado como relatório próprio após integração do módulo correspondente |
+| 28/08/2026 | Relatórios e Fiscalização integrados à `main` via PR #8 |
+| 28/08/2026 | Exportação individual PDF/XLSX implementada com logo SGL e foco em impressão |
+| 28/08/2026 | Exportações PDF e XLSX validadas manualmente pelo usuário |

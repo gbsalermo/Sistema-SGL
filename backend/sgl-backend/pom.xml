@@ -28,6 +28,8 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<apache-poi.version>5.5.1</apache-poi.version>
+		<openpdf.version>2.0.5</openpdf.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -58,6 +60,16 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>3.1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>${apache-poi.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>${openpdf.version}</version>
 		</dependency>
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
