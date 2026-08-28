@@ -99,6 +99,10 @@ public class LoteService {
         lote.setNumeroLote(dto.getNumeroLote().trim());
         lote.setDataValidade(dto.getDataValidade());
 
+        if (dto.getTipoEmbalagem() != null) {
+            lote.setTipoEmbalagem(dto.getTipoEmbalagem());
+        }
+
         if (dto.getApresentacao() != null && !dto.getApresentacao().isBlank()) {
             lote.setApresentacao(dto.getApresentacao().trim());
         }
