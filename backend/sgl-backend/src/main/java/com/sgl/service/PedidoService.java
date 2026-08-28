@@ -261,6 +261,7 @@ public class PedidoService {
         }
 
         pedido.setStatus(StatusPedido.ENTREGUE);
+        pedido.setDataEntrega(LocalDateTime.now());
         return new PedidoResponseDTO(pedidoRepository.save(pedido));
     }
 
