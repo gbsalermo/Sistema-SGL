@@ -3,8 +3,12 @@ package com.sgl.model;
 import java.io.Serializable;
 import java.util.UUID;
 
+import com.sgl.model.enums.TipoEmbalagem;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -52,6 +56,16 @@ public class ItemPedido implements Serializable {
     private Integer quantidadeSolicitada;
 
     private Integer quantidadeAprovada;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_embalagem_solicitada")
+    private TipoEmbalagem tipoEmbalagemSolicitada;
+
+    @Column(name = "quantidade_embalagens_solicitada")
+    private Integer quantidadeEmbalagensSolicitada;
+
+    @Column(name = "multiplicador_solicitado")
+    private Integer multiplicadorSolicitado;
 
     @PrePersist
     private void generatePublicId() {
