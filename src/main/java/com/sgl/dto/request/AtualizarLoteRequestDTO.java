@@ -2,6 +2,8 @@ package com.sgl.dto.request;
 
 import java.time.LocalDate;
 
+import com.sgl.model.enums.TipoEmbalagem;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -16,10 +18,13 @@ public class AtualizarLoteRequestDTO {
     @NotBlank(message = "Número do lote do fornecedor é obrigatório")
     private String numeroLote;
 
-    @Schema(description = "Nome da apresentação física do lote.", example = "kit")
+    @Schema(description = "Tipo principal da embalagem.", example = "KIT")
+    private TipoEmbalagem tipoEmbalagem;
+
+    @Schema(description = "Especificação da embalagem.", example = "kit com 50 unidades")
     private String apresentacao;
 
-    @Schema(description = "Indica se a apresentação permite saída parcial.", example = "true")
+    @Schema(description = "Indica se a embalagem permite saída parcial.", example = "true")
     private Boolean fracionavel;
 
     @Schema(description = "Observação cadastral do lote.", example = "Material recebido lacrado.")
