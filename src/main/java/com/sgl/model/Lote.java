@@ -29,6 +29,10 @@ import lombok.Setter;
                 @UniqueConstraint(
                         name = "uk_lote_estoque_numero",
                         columnNames = {"estoque_central_id", "numero_lote"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_lote_codigo_interno",
+                        columnNames = {"codigo_interno"}
                 )
         }
 )
@@ -51,6 +55,23 @@ public class Lote implements Serializable {
     @JoinColumn(name = "estoque_central_id", nullable = false)
     private EstoqueCentral estoqueCentral;
 
+    /**
+     * Identificador interno gerado pelo SGL. Nunca deve ser alterado depois
+     * da criação do lote. Ex.: LOT-EXT-DNA-PL-001.
+     */
+    @Column(name = "codigo_interno", nullable = false, unique = true, updatable = false, length = 160)
+    @Setter(lombok.AccessLevel.NONE)
+    private String codigoInterno;
+
+    /** Sequência do lote dentro do produto, usada para gerar codigoInterno. */
+    @Column(name = "sequencial_interno", nullable = false, updatable = false)
+    @Setter(lombok.AccessLevel.NONE)
+    private Integer sequencialInterno;
+
+    /**
+     * Identificação externa informada pelo fornecedor/responsável.
+     * É separada do código interno imutável do SGL.
+     */
     @Column(name = "numero_lote", nullable = false, length = 100)
     private String numeroLote;
 
@@ -80,6 +101,17 @@ public class Lote implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    public void definirCodigoInterno(String codigoInterno, Integer sequencialInterno) {
+        if (this.codigoInterno != null || this.sequencialInterno != null) {
+            throw new BusinessRuleException("O código interno do lote é imutável.");
+        }
+        if (codigoInterno == null || codigoInterno.isBlank() || sequencialInterno == null || sequencialInterno <= 0) {
+            throw new BusinessRuleException("Código interno e sequência do lote são obrigatórios.");
+        }
+        this.codigoInterno = codigoInterno;
+        this.sequencialInterno = sequencialInterno;
+    }
 
     public int fatorApresentacao() {
         return conteudoPorApresentacao == null || conteudoPorApresentacao <= 0
