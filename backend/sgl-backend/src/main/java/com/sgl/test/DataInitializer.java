@@ -3,10 +3,12 @@ package com.sgl.test;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
@@ -34,7 +36,6 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import lombok.RequiredArgsConstructor;
 
@@ -56,16 +57,11 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-    	
-    		//Para poder subir a aplicação corretamente mesmo com dados já persistidos
-    	    if (unidadeRepository.count() > 0) {
-    	        System.out.println(
-    	            "=== Dados de desenvolvimento já existem. DataInitializer ignorado. ==="
-    	        );
-    	        return;
-    	    }
+        if (unidadeRepository.count() > 0) {
+            System.out.println("=== Dados de desenvolvimento já existem. DataInitializer ignorado. ===");
+            return;
+        }
 
-    	    
         Unidade u1 = unidadeRepository.save(new Unidade(null, null, "Instituto de Biologia", "IB", null));
         Unidade u2 = unidadeRepository.save(new Unidade(null, null, "Instituto de Fisica", "IF", null));
         Unidade u3 = unidadeRepository.save(new Unidade(null, null, "Instituto de Quimica", "IQ", null));
@@ -292,9 +288,26 @@ public class DataInitializer implements CommandLineRunner {
             int quantidade,
             LocalDate dataValidade) {
 
+        Produto produto = estoque.getProduto();
+        int maiorSequencial = loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId());
+        int sequencial = maiorSequencial + 1;
+        String sigla = produto.getCodigoReferencia()
+                .trim()
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[^A-Z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
+        lote.definirCodigoInterno(
+                "LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial),
+                sequencial
+        );
         lote.setNumeroLote(numeroLote);
+        lote.setApresentacao("Legado");
+        lote.setQuantidadeApresentacoes(quantidade);
+        lote.setConteudoPorApresentacao(1);
+        lote.setFracionavel(true);
         lote.setQuantidadeInicial(quantidade);
         lote.setQuantidadeDisponivel(quantidade);
         lote.setDataEntrada(LocalDate.now().minusDays(30));
