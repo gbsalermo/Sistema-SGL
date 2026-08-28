@@ -63,6 +63,9 @@ public class Lote implements Serializable {
 
     private Boolean fracionavel;
 
+    @Column(length = 500)
+    private String observacao;
+
     @Column(nullable = false)
     private Integer quantidadeInicial;
 
@@ -88,11 +91,6 @@ public class Lote implements Serializable {
         return fracionavel == null || Boolean.TRUE.equals(fracionavel);
     }
 
-    /**
-     * O saldo do lote é sempre armazenado na unidade-base do produto.
-     * Para apresentação não fracionável, o saldo só pode variar em múltiplos
-     * inteiros do conteúdo por apresentação.
-     */
     public void setQuantidadeDisponivel(Integer quantidadeDisponivel) {
         if (quantidadeDisponivel != null
                 && quantidadeDisponivel >= 0
