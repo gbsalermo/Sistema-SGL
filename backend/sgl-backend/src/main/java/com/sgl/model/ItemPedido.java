@@ -68,9 +68,21 @@ public class ItemPedido implements Serializable {
     private Integer multiplicadorSolicitado;
 
     @PrePersist
-    private void generatePublicId() {
+    private void prepareForPersistence() {
         if (publicId == null) {
             publicId = UUID.randomUUID();
+        }
+
+        if (tipoEmbalagemSolicitada == null) {
+            tipoEmbalagemSolicitada = TipoEmbalagem.UNITARIO;
+        }
+
+        if (multiplicadorSolicitado == null || multiplicadorSolicitado <= 0) {
+            multiplicadorSolicitado = 1;
+        }
+
+        if (quantidadeEmbalagensSolicitada == null || quantidadeEmbalagensSolicitada <= 0) {
+            quantidadeEmbalagensSolicitada = quantidadeSolicitada;
         }
     }
 }
