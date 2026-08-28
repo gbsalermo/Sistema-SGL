@@ -25,6 +25,10 @@ public class LoteResponseDTO {
     private String produtoNome;
     private UUID unidadeId;
     private String unidadeNome;
+
+    @Schema(description = "Código interno imutável gerado pelo SGL.", example = "LOT-EXT-DNA-PL-001")
+    private String codigoInterno;
+    @Schema(description = "Número/lote informado pelo fornecedor ou responsável.", example = "FAB-2026-8841")
     private String numeroLote;
 
     @Schema(description = "Apresentação física registrada para o lote.", example = "kit")
@@ -55,6 +59,7 @@ public class LoteResponseDTO {
         this.produtoNome = entity.getEstoqueCentral().getProduto().getNome();
         this.unidadeId = entity.getEstoqueCentral().getUnidade().getPublicId();
         this.unidadeNome = entity.getEstoqueCentral().getUnidade().getNome();
+        this.codigoInterno = entity.getCodigoInterno();
         this.numeroLote = entity.getNumeroLote();
         this.apresentacao = entity.getApresentacao();
         this.quantidadeApresentacoes = entity.getQuantidadeApresentacoes();
