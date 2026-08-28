@@ -16,6 +16,15 @@ public class AtualizarLoteRequestDTO {
     @NotBlank(message = "Número do lote é obrigatório")
     private String numeroLote;
 
+    @Schema(description = "Nome da apresentação física do lote.", example = "kit")
+    private String apresentacao;
+
+    @Schema(description = "Indica se a apresentação permite saída parcial.", example = "true")
+    private Boolean fracionavel;
+
+    @Schema(description = "Observação cadastral do lote.", example = "Material recebido lacrado.")
+    private String observacao;
+
     @Schema(description = "Data de validade do lote, quando aplicável.", example = "2027-08-31")
     private LocalDate dataValidade;
 
