@@ -1,0 +1,2 @@
+ALTER TABLE lote
+    ADD COLUMN IF NOT EXISTS observacao VARCHAR(500);
