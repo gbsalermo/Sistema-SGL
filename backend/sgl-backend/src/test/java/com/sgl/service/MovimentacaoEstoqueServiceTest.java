@@ -78,6 +78,7 @@ class MovimentacaoEstoqueServiceTest {
                 .id(1L)
                 .publicId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
                 .nome("Produto Teste")
+                .codigoReferencia("PROD-TESTE")
                 .perecivel(false)
                 .ativo(true)
                 .build();
@@ -107,6 +108,12 @@ class MovimentacaoEstoqueServiceTest {
 
         lenient().when(movimentacaoRepository.save(any(MovimentacaoEstoque.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
+        lenient().when(produtoRepository.buscarPorIdComBloqueio(1L))
+                .thenReturn(Optional.of(produto));
+        lenient().when(loteRepository.buscarMaiorSequencialInternoPorProduto(1L))
+                .thenReturn(0);
+        lenient().when(loteRepository.existsByCodigoInterno(any()))
+                .thenReturn(false);
     }
 
     @Test
@@ -134,6 +141,8 @@ class MovimentacaoEstoqueServiceTest {
         verify(loteRepository).save(loteCaptor.capture());
 
         Lote lote = loteCaptor.getValue();
+        assertEquals("LOT-PROD-TESTE-001", lote.getCodigoInterno());
+        assertEquals(1, lote.getSequencialInterno());
         assertEquals("LT-001", lote.getNumeroLote());
         assertEquals(5, lote.getQuantidadeInicial());
         assertEquals(5, lote.getQuantidadeDisponivel());
@@ -387,6 +396,7 @@ class MovimentacaoEstoqueServiceTest {
         lote.setId(id);
         lote.setPublicId(UUID.randomUUID());
         lote.setEstoqueCentral(estoque);
+        lote.definirCodigoInterno("LOT-TESTE-" + String.format("%03d", id), id.intValue());
         lote.setNumeroLote(numero);
         lote.setQuantidadeInicial(quantidade);
         lote.setQuantidadeDisponivel(quantidade);
