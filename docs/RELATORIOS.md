@@ -22,6 +22,7 @@ Centralizar consultas operacionais, gerenciais e de fiscalização com exportaç
 3. Movimentações
    - entradas, saídas, ajustes, devoluções e descartes
    - filtros por período, produto, laboratório, lote e responsável
+   - movimentações originadas por pedido permanecem como recorte/filtro deste relatório, e não como relatório separado
 
 4. Resumo operacional
    - maiores entradas
@@ -29,19 +30,16 @@ Centralizar consultas operacionais, gerenciais e de fiscalização com exportaç
    - quantidade de movimentações
    - lotes mais movimentados
 
-5. Pedidos entregues
-   - total de pedidos entregues
-   - filtros por período, laboratório, projeto, solicitante e produto
-   - data efetiva de entrega
-
-6. Estoque e lotes
+5. Estoque e lotes
    - posição atual
    - estoque baixo
    - lotes ativos
    - lotes próximos do vencimento
    - lotes vencidos
+   - lotes esgotados
+   - filtros por unidade, produto e situação
 
-7. Resíduos
+6. Resíduos
    - resíduos informados e situação atual
    - filtros por laboratório, status, período, projeto, gerador e gestor responsável
    - riscos informados e confirmados
@@ -52,7 +50,7 @@ Centralizar consultas operacionais, gerenciais e de fiscalização com exportaç
    - composição do resíduo
    - depende da integração do módulo atualmente desenvolvido em `feat/gestao-residuos`
 
-8. Fiscalização
+7. Fiscalização
    - recorte especializado dos produtos explicitamente marcados como fiscalizados/controlados
    - órgão(s) fiscalizador(es)
    - saldo atual
@@ -65,6 +63,12 @@ Centralizar consultas operacionais, gerenciais e de fiscalização com exportaç
 O relatório de Produtos é a visão geral do catálogo e deve permitir inclusive filtrar apenas produtos fiscalizados.
 
 O relatório de Fiscalização não substitui Produtos. Ele é um relatório especializado de rastreabilidade e deve acrescentar informações operacionais exigidas em controle externo, como saldo, lotes, vencimentos, entradas, saídas e destino.
+
+## Pedidos dentro de Movimentações
+
+Pedidos entregues não possuem relatório dedicado. Quando a gestão precisar consultar movimentações relacionadas a pedidos, deve utilizar o relatório de Movimentações com o recorte de origem `PEDIDO` e, quando aplicável, tipo `SAIDA`.
+
+O campo `Pedido.dataEntrega` permanece no domínio porque registra um evento real do pedido e pode ser utilizado em consultas futuras, auditoria e detalhamento, mesmo sem existir um relatório exclusivo de pedidos entregues.
 
 ## Regra de cadastro de Produto para fiscalização
 
@@ -96,7 +100,7 @@ A prévia, o PDF e o XLSX devem usar a mesma consulta e os mesmos filtros. A ger
 
 ## Dados de domínio adicionados nesta etapa
 
-- `Pedido.dataEntrega` para permitir relatórios por período real de entrega.
+- `Pedido.dataEntrega` para registrar a data efetiva de entrega e suportar auditoria/consultas futuras.
 - classificação explícita de fiscalização em Produto (`fiscalizado`, `orgaosFiscalizadores`, `observacaoFiscalizacao`).
 
 ## Ordem de implementação
