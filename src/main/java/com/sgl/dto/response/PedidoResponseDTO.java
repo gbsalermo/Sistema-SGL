@@ -36,6 +36,8 @@ public class PedidoResponseDTO {
     private String projetoNome;
     @Schema(description = "Data e hora em que o pedido foi criado.", example = "2026-08-20T14:30:00")
     private LocalDateTime dataSolicitacao;
+    @Schema(description = "Data e hora em que o pedido foi efetivamente entregue, quando aplicável.", example = "2026-08-21T09:15:00")
+    private LocalDateTime dataEntrega;
     @Schema(description = "Status atual do pedido.", example = "APROVADO")
     private StatusPedido status;
     @Schema(description = "Indica se o pedido foi marcado como urgente pelo solicitante.", example = "true")
@@ -58,6 +60,7 @@ public class PedidoResponseDTO {
         this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
         this.projetoNome = entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
         this.dataSolicitacao = entity.getDataSolicitacao();
+        this.dataEntrega = entity.getDataEntrega();
         this.status = entity.getStatus();
         this.urgente = Boolean.TRUE.equals(entity.getUrgente());
         this.motivoUrgencia = entity.getMotivoUrgencia();
