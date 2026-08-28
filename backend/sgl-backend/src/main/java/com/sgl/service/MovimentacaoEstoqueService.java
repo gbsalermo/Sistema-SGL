@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -122,9 +123,12 @@ public class MovimentacaoEstoqueService {
                 estoque.getId(),
                 dto.getNumeroLote())) {
             throw new BusinessRuleException(
-                    "Já existe lote com esse número neste estoque."
+                    "Já existe lote com esse número de fornecedor neste estoque."
             );
         }
+
+        Produto produtoBloqueado = produtoRepository.buscarPorIdComBloqueio(estoque.getProduto().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Produto", estoque.getProduto().getId()));
 
         int conteudoPorApresentacao = dto.getConteudoPorApresentacao() == null
                 ? 1
@@ -140,10 +144,13 @@ public class MovimentacaoEstoqueService {
         int quantidadeAnterior = estoque.getQuantidadeAtual();
         int quantidadeAtual = quantidadeAnterior + quantidadeBase;
 
+        CodigoLoteGerado codigoGerado = gerarCodigoInternoLote(produtoBloqueado);
+
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
+        lote.definirCodigoInterno(codigoGerado.codigo(), codigoGerado.sequencial());
         lote.setNumeroLote(dto.getNumeroLote());
-        lote.setApresentacao(normalizarApresentacao(estoque.getProduto(), dto.getApresentacao()));
+        lote.setApresentacao(normalizarApresentacao(produtoBloqueado, dto.getApresentacao()));
         lote.setQuantidadeApresentacoes(dto.getQuantidade());
         lote.setConteudoPorApresentacao(conteudoPorApresentacao);
         lote.setFracionavel(dto.getFracionavel() == null ? true : dto.getFracionavel());
@@ -337,7 +344,7 @@ public class MovimentacaoEstoqueService {
 
             if (lote.getQuantidadeDisponivel() + quantidade > lote.getQuantidadeInicial()) {
                 throw new BusinessRuleException(
-                        "A devolução ultrapassaria a quantidade inicial do lote " + lote.getNumeroLote() + "."
+                        "A devolução ultrapassaria a quantidade inicial do lote " + lote.getCodigoInterno() + "."
                 );
             }
 
@@ -366,6 +373,41 @@ public class MovimentacaoEstoqueService {
                 .map(LoteResponseDTO::new)
                 .toList();
     }
+
+    private CodigoLoteGerado gerarCodigoInternoLote(Produto produto) {
+        Integer maiorSequencial = loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId());
+        int sequencial = (maiorSequencial == null ? 0 : maiorSequencial) + 1;
+        String sigla = gerarSiglaProduto(produto);
+        String codigo = formatarCodigoLote(sigla, sequencial);
+
+        while (loteRepository.existsByCodigoInterno(codigo)) {
+            sequencial++;
+            codigo = formatarCodigoLote(sigla, sequencial);
+        }
+
+        return new CodigoLoteGerado(codigo, sequencial);
+    }
+
+    private String gerarSiglaProduto(Produto produto) {
+        String origem = produto.getCodigoReferencia();
+        if (origem == null || origem.isBlank()) {
+            origem = "PRD-" + produto.getId();
+        }
+
+        String sigla = origem
+                .trim()
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[^A-Z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+
+        return sigla.isBlank() ? "PRD-" + produto.getId() : sigla;
+    }
+
+    private String formatarCodigoLote(String sigla, int sequencial) {
+        return "LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial);
+    }
+
+    private record CodigoLoteGerado(String codigo, int sequencial) {}
 
     private List<Lote> buscarLotesParaSaida(EstoqueCentral estoque) {
         if (Boolean.TRUE.equals(estoque.getProduto().getPerecivel())) {
