@@ -7,13 +7,13 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-@Schema(description = "Dados permitidos para atualização cadastral de um lote.")
+@Schema(description = "Dados permitidos para atualização cadastral de um lote. O código interno SGL não faz parte deste contrato porque é imutável.")
 @Getter
 @Setter
 public class AtualizarLoteRequestDTO {
 
-    @Schema(description = "Número de identificação do lote.", example = "LOT-2026-001", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "Número do lote é obrigatório")
+    @Schema(description = "Número ou referência externa informada pelo fornecedor/responsável.", example = "FAB-2026-8841", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "Número do lote do fornecedor é obrigatório")
     private String numeroLote;
 
     @Schema(description = "Nome da apresentação física do lote.", example = "kit")
