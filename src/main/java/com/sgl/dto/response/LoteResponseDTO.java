@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.sgl.model.Lote;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.UnidadeMedida;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,22 +32,24 @@ public class LoteResponseDTO {
     @Schema(description = "Número/lote informado pelo fornecedor ou responsável.", example = "FAB-2026-8841")
     private String numeroLote;
 
-    @Schema(description = "Apresentação física registrada para o lote.", example = "kit")
+    @Schema(description = "Tipo principal da embalagem.", example = "KIT")
+    private TipoEmbalagem tipoEmbalagem;
+    @Schema(description = "Especificação livre da embalagem.", example = "kit com 50 unidades")
     private String apresentacao;
-    @Schema(description = "Quantidade de apresentações físicas recebidas.", example = "2")
+    @Schema(description = "Quantidade de embalagens/unidades físicas recebidas.", example = "2")
     private Integer quantidadeApresentacoes;
-    @Schema(description = "Conteúdo em unidade-base por apresentação.", example = "50")
+    @Schema(description = "Multiplicador de unidades individuais por embalagem.", example = "50")
     private Integer conteudoPorApresentacao;
-    @Schema(description = "Indica se a apresentação permite saída parcial.", example = "true")
+    @Schema(description = "Indica se a embalagem permite saída parcial.", example = "true")
     private Boolean fracionavel;
     @Schema(description = "Observação cadastral do lote.", example = "Material recebido lacrado.")
     private String observacao;
-    @Schema(description = "Unidade-base de controle do produto.", example = "UNIDADE")
+    @Schema(description = "Unidade interna de controle do produto.", example = "UNIDADE")
     private UnidadeMedida unidadeBase;
 
-    @Schema(description = "Quantidade inicial do lote, sempre na unidade-base do produto.", example = "100")
+    @Schema(description = "Quantidade inicial convertida para unidades individuais do produto.", example = "100")
     private Integer quantidadeInicial;
-    @Schema(description = "Quantidade disponível no lote, sempre na unidade-base do produto.", example = "80")
+    @Schema(description = "Quantidade disponível convertida para unidades individuais do produto.", example = "80")
     private Integer quantidadeDisponivel;
     private LocalDate dataEntrada;
     private LocalDate dataValidade;
@@ -61,6 +64,7 @@ public class LoteResponseDTO {
         this.unidadeNome = entity.getEstoqueCentral().getUnidade().getNome();
         this.codigoInterno = entity.getCodigoInterno();
         this.numeroLote = entity.getNumeroLote();
+        this.tipoEmbalagem = entity.getTipoEmbalagem();
         this.apresentacao = entity.getApresentacao();
         this.quantidadeApresentacoes = entity.getQuantidadeApresentacoes();
         this.conteudoPorApresentacao = entity.getConteudoPorApresentacao();
