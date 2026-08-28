@@ -147,6 +147,11 @@ public class MovimentacaoEstoqueService {
         lote.setQuantidadeApresentacoes(dto.getQuantidade());
         lote.setConteudoPorApresentacao(conteudoPorApresentacao);
         lote.setFracionavel(dto.getFracionavel() == null ? true : dto.getFracionavel());
+        lote.setObservacao(
+                dto.getObservacao() == null || dto.getObservacao().isBlank()
+                        ? null
+                        : dto.getObservacao().trim()
+        );
         lote.setQuantidadeInicial(quantidadeBase);
         lote.setQuantidadeDisponivel(quantidadeBase);
         lote.setDataEntrada(LocalDate.now());
@@ -174,9 +179,6 @@ public class MovimentacaoEstoqueService {
         return new LoteResponseDTO(lote);
     }
 
-    // Usa FEFO para produtos perecíveis e FIFO para os demais.
-    // A quantidade recebida aqui é sempre expressa na unidade-base do produto.
-    // Lotes não fracionáveis rejeitam baixas que quebrem uma apresentação física.
     @Transactional
     public List<MovimentacaoEstoqueResponseDTO> registrarSaida(
             Long estoqueId,
@@ -208,9 +210,7 @@ public class MovimentacaoEstoqueService {
         int restante = quantidade;
 
         for (Lote lote : lotes) {
-            if (restante == 0) {
-                break;
-            }
+            if (restante == 0) break;
 
             int consumido = Math.min(restante, lote.getQuantidadeDisponivel());
             int saldoAnterior = estoque.getQuantidadeAtual();
@@ -223,17 +223,9 @@ public class MovimentacaoEstoqueService {
             estoqueCentralRepository.save(estoque);
 
             MovimentacaoEstoque movimentacao = registrarMovimentacao(
-                    estoque,
-                    lote,
-                    usuario,
-                    pedido,
-                    laboratorio,
-                    TipoMovimentacao.SAIDA,
-                    origem,
-                    consumido,
-                    saldoAnterior,
-                    saldoAtual,
-                    observacao
+                    estoque, lote, usuario, pedido, laboratorio,
+                    TipoMovimentacao.SAIDA, origem, consumido,
+                    saldoAnterior, saldoAtual, observacao
             );
 
             movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
@@ -262,8 +254,7 @@ public class MovimentacaoEstoqueService {
         }
 
         List<Lote> lotesVencidos = loteRepository.buscarVencidosComBloqueio(
-                estoque.getId(),
-                LocalDate.now()
+                estoque.getId(), LocalDate.now()
         );
 
         int saldoVencido = lotesVencidos.stream()
@@ -272,8 +263,7 @@ public class MovimentacaoEstoqueService {
 
         if (saldoVencido < quantidade) {
             throw new BusinessRuleException(
-                    "Quantidade de descarte maior que o saldo vencido disponível. "
-                            + "Disponível: " + saldoVencido
+                    "Quantidade de descarte maior que o saldo vencido disponível. Disponível: " + saldoVencido
             );
         }
 
@@ -281,9 +271,7 @@ public class MovimentacaoEstoqueService {
         int restante = quantidade;
 
         for (Lote lote : lotesVencidos) {
-            if (restante == 0) {
-                break;
-            }
+            if (restante == 0) break;
 
             int descartado = Math.min(restante, lote.getQuantidadeDisponivel());
             int saldoAnterior = estoque.getQuantidadeAtual();
@@ -296,17 +284,9 @@ public class MovimentacaoEstoqueService {
             estoqueCentralRepository.save(estoque);
 
             MovimentacaoEstoque movimentacao = registrarMovimentacao(
-                    estoque,
-                    lote,
-                    usuario,
-                    null,
-                    null,
-                    TipoMovimentacao.DESCARTE_VENCIMENTO,
-                    OrigemMovimentacao.DESCARTE,
-                    descartado,
-                    saldoAnterior,
-                    saldoAtual,
-                    justificativa
+                    estoque, lote, usuario, null, null,
+                    TipoMovimentacao.DESCARTE_VENCIMENTO, OrigemMovimentacao.DESCARTE,
+                    descartado, saldoAnterior, saldoAtual, justificativa
             );
 
             movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
@@ -324,8 +304,7 @@ public class MovimentacaoEstoqueService {
 
         List<MovimentacaoEstoque> saidas = movimentacaoRepository
                 .findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(
-                        pedido.getId(),
-                        TipoMovimentacao.SAIDA
+                        pedido.getId(), TipoMovimentacao.SAIDA
                 )
                 .stream()
                 .filter(m -> m.getLote() != null)
@@ -344,14 +323,12 @@ public class MovimentacaoEstoqueService {
             EstoqueCentral estoque = estoqueCentralRepository
                     .buscarPorIdComBloqueio(saida.getEstoqueCentral().getId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Estoque central",
-                            saida.getEstoqueCentral().getId()
+                            "Estoque central", saida.getEstoqueCentral().getId()
                     ));
 
             Lote lote = loteRepository.buscarPorIdComBloqueio(saida.getLote().getId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Lote",
-                            saida.getLote().getId()
+                            "Lote", saida.getLote().getId()
                     ));
 
             int quantidade = saida.getQuantidadeMovimentada();
@@ -360,8 +337,7 @@ public class MovimentacaoEstoqueService {
 
             if (lote.getQuantidadeDisponivel() + quantidade > lote.getQuantidadeInicial()) {
                 throw new BusinessRuleException(
-                        "A devolução ultrapassaria a quantidade inicial do lote "
-                                + lote.getNumeroLote() + "."
+                        "A devolução ultrapassaria a quantidade inicial do lote " + lote.getNumeroLote() + "."
                 );
             }
 
@@ -375,17 +351,9 @@ public class MovimentacaoEstoqueService {
             if (usuarioResponsavel != null) {
                 validarUsuarioResponsavel(usuarioResponsavel);
                 registrarMovimentacao(
-                        estoque,
-                        lote,
-                        usuarioResponsavel,
-                        pedido,
-                        pedido.getLaboratorio(),
-                        TipoMovimentacao.DEVOLUCAO,
-                        OrigemMovimentacao.DEVOLUCAO,
-                        quantidade,
-                        saldoAnterior,
-                        saldoAtual,
-                        observacao
+                        estoque, lote, usuarioResponsavel, pedido, pedido.getLaboratorio(),
+                        TipoMovimentacao.DEVOLUCAO, OrigemMovimentacao.DEVOLUCAO,
+                        quantidade, saldoAnterior, saldoAtual, observacao
                 );
             }
         }
@@ -402,29 +370,22 @@ public class MovimentacaoEstoqueService {
     private List<Lote> buscarLotesParaSaida(EstoqueCentral estoque) {
         if (Boolean.TRUE.equals(estoque.getProduto().getPerecivel())) {
             return loteRepository.buscarDisponiveisPorFefoComBloqueio(
-                    estoque.getId(),
-                    LocalDate.now()
+                    estoque.getId(), LocalDate.now()
             );
         }
-
-        return loteRepository.buscarDisponiveisPorEntradaComBloqueio(
-                estoque.getId()
-        );
+        return loteRepository.buscarDisponiveisPorEntradaComBloqueio(estoque.getId());
     }
 
     private EstoqueCentral buscarEstoqueAtivoComBloqueio(UUID estoquePublicId) {
         EstoqueCentral referencia = estoqueCentralRepository.findByPublicId(estoquePublicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque central", estoquePublicId));
-
         return buscarEstoqueAtivoComBloqueio(referencia.getId());
     }
 
     private EstoqueCentral buscarEstoqueAtivoComBloqueio(Long estoqueId) {
         EstoqueCentral estoque = estoqueCentralRepository
                 .buscarPorIdComBloqueio(estoqueId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Estoque central", estoqueId));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", estoqueId));
         estoque.validateActive();
         return estoque;
     }
@@ -474,18 +435,13 @@ public class MovimentacaoEstoqueService {
 
         produto.validateLotExpirationDate(dto.getDataValidade());
 
-        if (dto.getDataValidade() != null
-                && dto.getDataValidade().isBefore(LocalDate.now())) {
-            throw new BusinessRuleException(
-                    "Não é possível registrar entrada de lote já vencido."
-            );
+        if (dto.getDataValidade() != null && dto.getDataValidade().isBefore(LocalDate.now())) {
+            throw new BusinessRuleException("Não é possível registrar entrada de lote já vencido.");
         }
     }
 
     private String normalizarApresentacao(Produto produto, String apresentacao) {
-        if (apresentacao != null && !apresentacao.isBlank()) {
-            return apresentacao.trim();
-        }
+        if (apresentacao != null && !apresentacao.isBlank()) return apresentacao.trim();
         if (produto.getUnidadeArmazenamento() != null && !produto.getUnidadeArmazenamento().isBlank()) {
             return produto.getUnidadeArmazenamento().trim();
         }
@@ -496,7 +452,6 @@ public class MovimentacaoEstoqueService {
         if (usuario == null) {
             throw new BusinessRuleException("Usuário responsável é obrigatório.");
         }
-
         usuario.validateActive();
     }
 
