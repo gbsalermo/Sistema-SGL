@@ -1,6 +1,9 @@
 package com.sgl.dto.request;
 
+import java.util.Set;
+
 import com.sgl.model.enums.NivelRisco;
+import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
@@ -60,6 +63,15 @@ public class ProdutoRequestDTO {
 
     @Schema(description = "Forma de armazenamento apresentada ao usuário.", example = "kit com 50 reações")
     private String unidadeArmazenamento;
+
+    @Schema(description = "Indica se o produto está sujeito a controle/fiscalização externa.", example = "true")
+    private Boolean fiscalizado;
+
+    @Schema(description = "Órgãos fiscalizadores aplicáveis ao produto.", example = "[\"POLICIA_FEDERAL\", \"ANVISA\"]")
+    private Set<OrgaoFiscalizador> orgaosFiscalizadores;
+
+    @Schema(description = "Observação complementar sobre controle ou fiscalização.", example = "Controle de entrada e saída exigido pelo órgão fiscalizador.")
+    private String observacaoFiscalizacao;
 
     @Schema(description = "Indica se o produto está ativo no catálogo.", example = "true")
     private Boolean ativo;
