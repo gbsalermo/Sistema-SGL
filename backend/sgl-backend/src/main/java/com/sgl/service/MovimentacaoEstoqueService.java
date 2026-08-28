@@ -130,37 +130,38 @@ public class MovimentacaoEstoqueService {
         Produto produtoBloqueado = produtoRepository.buscarPorIdComBloqueio(estoque.getProduto().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", estoque.getProduto().getId()));
 
-        int conteudoPorApresentacao = dto.getConteudoPorApresentacao() == null
+        int multiplicador = dto.getConteudoPorApresentacao() == null
                 ? 1
                 : dto.getConteudoPorApresentacao();
 
-        int quantidadeBase;
+        int quantidadeUnitaria;
         try {
-            quantidadeBase = Math.multiplyExact(dto.getQuantidade(), conteudoPorApresentacao);
+            quantidadeUnitaria = Math.multiplyExact(dto.getQuantidade(), multiplicador);
         } catch (ArithmeticException ex) {
             throw new BusinessRuleException("Quantidade total do lote excede o limite suportado.");
         }
 
         int quantidadeAnterior = estoque.getQuantidadeAtual();
-        int quantidadeAtual = quantidadeAnterior + quantidadeBase;
+        int quantidadeAtual = quantidadeAnterior + quantidadeUnitaria;
 
         CodigoLoteGerado codigoGerado = gerarCodigoInternoLote(produtoBloqueado);
 
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
         lote.definirCodigoInterno(codigoGerado.codigo(), codigoGerado.sequencial());
-        lote.setNumeroLote(dto.getNumeroLote());
+        lote.setNumeroLote(dto.getNumeroLote().trim());
+        lote.setTipoEmbalagem(dto.getTipoEmbalagem());
         lote.setApresentacao(normalizarApresentacao(produtoBloqueado, dto.getApresentacao()));
         lote.setQuantidadeApresentacoes(dto.getQuantidade());
-        lote.setConteudoPorApresentacao(conteudoPorApresentacao);
+        lote.setConteudoPorApresentacao(multiplicador);
         lote.setFracionavel(dto.getFracionavel() == null ? true : dto.getFracionavel());
         lote.setObservacao(
                 dto.getObservacao() == null || dto.getObservacao().isBlank()
                         ? null
                         : dto.getObservacao().trim()
         );
-        lote.setQuantidadeInicial(quantidadeBase);
-        lote.setQuantidadeDisponivel(quantidadeBase);
+        lote.setQuantidadeInicial(quantidadeUnitaria);
+        lote.setQuantidadeDisponivel(quantidadeUnitaria);
         lote.setDataEntrada(LocalDate.now());
         lote.setDataValidade(dto.getDataValidade());
         lote.setAtivo(true);
@@ -177,7 +178,7 @@ public class MovimentacaoEstoqueService {
                 null,
                 TipoMovimentacao.ENTRADA,
                 dto.getOrigem(),
-                quantidadeBase,
+                quantidadeUnitaria,
                 quantidadeAnterior,
                 quantidadeAtual,
                 dto.getObservacao()
@@ -467,8 +468,12 @@ public class MovimentacaoEstoqueService {
     private void validarEntradaLote(Produto produto, EntradaLoteRequestDTO dto) {
         validarQuantidade(dto.getQuantidade());
 
+        if (dto.getTipoEmbalagem() == null) {
+            throw new BusinessRuleException("Tipo de embalagem é obrigatório.");
+        }
+
         if (dto.getConteudoPorApresentacao() != null && dto.getConteudoPorApresentacao() <= 0) {
-            throw new BusinessRuleException("Conteúdo por apresentação deve ser maior que zero.");
+            throw new BusinessRuleException("Multiplicador deve ser maior que zero.");
         }
 
         if (dto.getOrigem() == null) {
