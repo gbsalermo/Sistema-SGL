@@ -5,9 +5,12 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.enums.TipoEmbalagem;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -75,11 +78,24 @@ public class Lote implements Serializable {
     @Column(name = "numero_lote", nullable = false, length = 100)
     private String numeroLote;
 
+    /** Categoria física principal usada na interface: KIT, CAIXA, GARRAFA etc. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_embalagem", nullable = false, length = 30)
+    private TipoEmbalagem tipoEmbalagem = TipoEmbalagem.UNITARIO;
+
+    /**
+     * Especificação livre da embalagem. Ex.: "kit com 50 unidades" ou
+     * "garrafa de 1 L".
+     */
     @Column(length = 120)
     private String apresentacao;
 
     private Integer quantidadeApresentacoes;
 
+    /**
+     * Multiplicador interno usado para converter uma embalagem em unidades
+     * individuais do produto. Ex.: kit de 50 -> multiplicador 50.
+     */
     private Integer conteudoPorApresentacao;
 
     private Boolean fracionavel;
@@ -129,8 +145,8 @@ public class Lote implements Serializable {
                 && !permiteFracionamento()
                 && quantidadeDisponivel % fatorApresentacao() != 0) {
             throw new BusinessRuleException(
-                    "Este lote não permite fracionamento. A saída deve respeitar a apresentação completa de "
-                            + fatorApresentacao() + " unidade(s)-base."
+                    "Este lote não permite fracionamento. A saída deve respeitar a embalagem completa de "
+                            + fatorApresentacao() + " unidade(s)."
             );
         }
         this.quantidadeDisponivel = quantidadeDisponivel;
@@ -140,6 +156,9 @@ public class Lote implements Serializable {
     private void generatePublicId() {
         if (publicId == null) {
             publicId = UUID.randomUUID();
+        }
+        if (tipoEmbalagem == null) {
+            tipoEmbalagem = TipoEmbalagem.UNITARIO;
         }
     }
 }
