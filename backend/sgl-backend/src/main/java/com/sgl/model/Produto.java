@@ -2,21 +2,28 @@ package com.sgl.model;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.enums.NivelRisco;
+import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -77,6 +84,23 @@ public class Produto implements Serializable {
     private String unidadeArmazenamento;
 
     @Column(nullable = false)
+    @Builder.Default
+    private Boolean fiscalizado = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "produto_orgaos_fiscalizadores",
+            joinColumns = @JoinColumn(name = "produto_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "orgao", nullable = false)
+    @Builder.Default
+    private Set<OrgaoFiscalizador> orgaosFiscalizadores = new HashSet<>();
+
+    @Column(length = 500)
+    private String observacaoFiscalizacao;
+
+    @Column(nullable = false)
     private Boolean ativo = true;
 
     public void updateRisk(
@@ -124,6 +148,31 @@ public class Produto implements Serializable {
         this.tipoPerecivel = perishableType;
     }
 
+    public void updateFiscalizacao(
+            Boolean isFiscalizado,
+            Set<OrgaoFiscalizador> orgaos,
+            String observacao) {
+
+        boolean controlado = Boolean.TRUE.equals(isFiscalizado);
+        this.fiscalizado = controlado;
+
+        if (!controlado) {
+            this.orgaosFiscalizadores.clear();
+            this.observacaoFiscalizacao = null;
+            return;
+        }
+
+        if (orgaos == null || orgaos.isEmpty()) {
+            throw new BusinessRuleException(
+                    "Informe ao menos um órgão fiscalizador para produtos fiscalizados."
+            );
+        }
+
+        this.orgaosFiscalizadores.clear();
+        this.orgaosFiscalizadores.addAll(orgaos);
+        this.observacaoFiscalizacao = observacao;
+    }
+
     public void validateLotExpirationDate(LocalDate expirationDate) {
         if (Boolean.TRUE.equals(perecivel) && expirationDate == null) {
             throw new BusinessRuleException(
@@ -148,6 +197,12 @@ public class Produto implements Serializable {
     private void generatePublicId() {
         if (publicId == null) {
             publicId = UUID.randomUUID();
+        }
+        if (fiscalizado == null) {
+            fiscalizado = false;
+        }
+        if (orgaosFiscalizadores == null) {
+            orgaosFiscalizadores = new HashSet<>();
         }
     }
 }
