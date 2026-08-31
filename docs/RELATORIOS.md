@@ -1,93 +1,225 @@
 # Relatórios — SGL
 
+**Atualizado em:** 31/08/2026  
+**Estado:** consultas, prévias e exportações dos relatórios atuais concluídas e integradas à `main`.
+
 ## Objetivo
 
-Centralizar consultas operacionais, gerenciais e de fiscalização com exportação oficial em PDF e XLSX.
+Centralizar consultas operacionais, gerenciais e de fiscalização com filtros específicos por contexto e exportação oficial em PDF/XLSX.
 
-## Relatórios previstos
+## Regra arquitetural
 
-1. Estagiários
-   - todos, ativos e inativos
-   - por laboratório
-   - por período de vínculo
+O SGL utiliza endpoints/serviços específicos por relatório, em vez de um endpoint genérico com todas as combinações possíveis.
 
-2. Produtos
-   - todos, ativos e inativos
-   - perecíveis e não perecíveis
-   - por nível de risco
-   - fiscalizados e não fiscalizados
-   - por órgão fiscalizador
-   - visão cadastral geral do catálogo
+```text
+filtro do relatório
+→ service de consulta
+→ prévia JSON
+→ mesma consulta para PDF/XLSX
+```
 
-3. Movimentações
-   - entradas, saídas, ajustes, devoluções e descartes
-   - filtros por período, produto, laboratório, lote e responsável
-   - movimentações originadas por pedido permanecem como recorte/filtro deste relatório, e não como relatório separado
+O frontend não deve recriar os cálculos ou regras de composição do relatório.
 
-4. Resumo operacional
-   - maiores entradas
-   - maiores saídas
-   - quantidade de movimentações
-   - lotes mais movimentados
+---
 
-5. Estoque e lotes
-   - posição atual
-   - estoque baixo
-   - lotes ativos
-   - lotes próximos do vencimento
-   - lotes vencidos
-   - lotes esgotados
-   - filtros por unidade, produto e situação
+## Relatórios atuais
 
-6. Resíduos
-   - resíduos informados e situação atual
-   - filtros por laboratório, status, período, projeto, gerador e gestor responsável
-   - riscos informados e confirmados
-   - recipiente e quantidade
-   - armazenamento temporário
-   - destino previsto e destino final confirmado
-   - datas de recebimento, liberação, armazenamento e despacho
-   - composição do resíduo
-   - depende da integração do módulo atualmente desenvolvido em `feat/gestao-residuos`
+### 1. Estagiários ✅
 
-7. Fiscalização
-   - recorte especializado dos produtos explicitamente marcados como fiscalizados/controlados
-   - filtros por produto, órgão fiscalizador, unidade, período e janela de vencimento
-   - saldo atual consolidado
-   - lotes ativos, vencidos e próximos do vencimento
-   - entradas e saídas por período
-   - rastreabilidade por lote
-   - destino da saída: laboratório, projeto, solicitante e pedido
-   - responsável pela movimentação
-   - implementado em `GET /api/v1/relatorios/fiscalizacao`
+Cobertura:
+
+- todos, ativos e inativos;
+- por laboratório;
+- por período de vínculo.
+
+Endpoint:
+
+```text
+GET /api/v1/relatorios/estagiarios
+```
+
+### 2. Produtos ✅
+
+Cobertura:
+
+- todos, ativos e inativos;
+- perecíveis e não perecíveis;
+- por nível/tipo de risco conforme contrato;
+- fiscalizados e não fiscalizados;
+- por órgão fiscalizador;
+- visão geral do catálogo.
+
+Endpoint:
+
+```text
+GET /api/v1/relatorios/produtos
+```
+
+### 3. Movimentações ✅
+
+Cobertura:
+
+- entradas;
+- saídas;
+- ajustes;
+- devoluções;
+- descartes;
+- filtros por período, produto, laboratório, lote, responsável e origem conforme contrato atual.
+
+Endpoint:
+
+```text
+GET /api/v1/relatorios/movimentacoes
+```
+
+#### Pedidos entregues
+
+Pedidos entregues **não possuem relatório dedicado**.
+
+Quando a gestão precisar analisar material movimentado por pedidos, usar Movimentações com recorte semelhante a:
+
+```text
+origem = PEDIDO
+tipo = SAIDA
+```
+
+`Pedido.dataEntrega` permanece no domínio porque registra um evento real e pode ser usado em auditoria/consultas futuras.
+
+### 4. Resumo operacional ✅
+
+Cobertura:
+
+- total de movimentações;
+- entradas;
+- saídas;
+- descartes;
+- produtos movimentados;
+- lotes movimentados;
+- principais entradas;
+- principais saídas;
+- lotes mais movimentados.
+
+Endpoint:
+
+```text
+GET /api/v1/relatorios/resumo-operacional
+```
+
+### 5. Estoque e lotes ✅
+
+Cobertura:
+
+- posição atual;
+- estoque baixo;
+- lotes ativos;
+- lotes próximos do vencimento;
+- lotes vencidos;
+- lotes esgotados;
+- filtros por unidade, produto e situação.
+
+Endpoint:
+
+```text
+GET /api/v1/relatorios/estoque-lotes
+```
+
+Classificações atuais:
+
+```text
+VALIDO
+PROXIMO_VENCIMENTO
+VENCIDO
+SEM_VALIDADE
+ESGOTADO
+INATIVO
+```
+
+### 6. Fiscalização ✅
+
+É um recorte especializado apenas dos produtos explicitamente classificados como fiscalizados/controlados.
+
+Cobertura:
+
+- produto;
+- órgão fiscalizador;
+- unidade;
+- período;
+- janela de vencimento;
+- saldo atual;
+- lotes ativos/vencidos/próximos do vencimento;
+- entradas e saídas;
+- rastreabilidade por lote;
+- destino da saída: laboratório, projeto, solicitante e pedido;
+- responsável pela movimentação.
+
+Endpoint:
+
+```text
+GET /api/v1/relatorios/fiscalizacao
+```
+
+### 7. Resíduos 🟡
+
+Planejado para apresentar:
+
+- resíduos informados e situação atual;
+- laboratório, projeto, gerador e gestor;
+- riscos informados e confirmados;
+- recipiente e quantidade;
+- armazenamento temporário;
+- destino previsto e final;
+- datas operacionais;
+- composição do resíduo.
+
+Ainda não está ativo porque depende da reconciliação e integração do módulo de Resíduos existente em `feat/gestao-residuos`.
+
+Essa branch está divergente da `main` e não deve ser mergeada diretamente sem portabilidade/migration adequada. Ver `../CONTINUIDADE.md` e `DOSSIE_PROJETO_SGL.md`.
+
+---
 
 ## Produtos x Fiscalização
 
-O relatório de Produtos é a visão geral do catálogo e deve permitir inclusive filtrar apenas produtos fiscalizados.
+O relatório de Produtos é a visão cadastral geral.
 
-O relatório de Fiscalização não substitui Produtos. Ele é um relatório especializado de rastreabilidade e acrescenta informações operacionais exigidas em controle externo, como saldo, lotes, vencimentos, entradas, saídas e destino.
+O relatório de Fiscalização é uma visão especializada de rastreabilidade de produtos controlados.
 
-## Pedidos dentro de Movimentações
+```text
+Produtos
+→ catálogo + filtros gerais
 
-Pedidos entregues não possuem relatório dedicado. Quando a gestão precisar consultar movimentações relacionadas a pedidos, deve utilizar o relatório de Movimentações com o recorte de origem `PEDIDO` e, quando aplicável, tipo `SAIDA`.
+Fiscalização
+→ somente produtos marcados como fiscalizados
+→ saldo + lotes + vencimentos + entradas/saídas + destino
+```
 
-O campo `Pedido.dataEntrega` permanece no domínio porque registra um evento real do pedido e pode ser utilizado em consultas futuras, auditoria e detalhamento, mesmo sem existir um relatório exclusivo de pedidos entregues.
+Não deduzir `fiscalizado` a partir de risco ou perecibilidade.
+
+---
 
 ## Regra de cadastro de Produto para fiscalização
 
-A classificação de fiscalização pertence ao cadastro do Produto, e não ao módulo de Relatórios.
+A classificação pertence ao cadastro do Produto:
 
-Na criação e edição de um produto, o responsável pelo cadastro deverá informar:
+```text
+fiscalizado
+orgaosFiscalizadores
+observacaoFiscalizacao
+```
 
-- `fiscalizado`: indica se o produto é controlado/fiscalizado externamente;
-- `orgaosFiscalizadores`: um ou mais órgãos responsáveis pela fiscalização;
-- `observacaoFiscalizacao`: informação complementar opcional.
+Quando `fiscalizado = false`:
 
-Quando `fiscalizado = false`, os órgãos e a observação de fiscalização devem permanecer vazios.
+```text
+órgãos = vazio
+observação = limpa
+```
 
-Quando `fiscalizado = true`, deve ser informado pelo menos um órgão fiscalizador.
+Quando `fiscalizado = true`:
 
-Órgãos inicialmente suportados:
+```text
+pelo menos um órgão obrigatório
+```
+
+Órgãos iniciais:
 
 - Polícia Federal;
 - Vigilância Sanitária;
@@ -95,34 +227,73 @@ Quando `fiscalizado = true`, deve ser informado pelo menos um órgão fiscalizad
 - Exército;
 - Outro.
 
-O futuro formulário `Administração → Cadastros → Produtos` deve apresentar uma seção própria de fiscalização. Essa classificação será a fonte oficial usada pelo relatório de fiscalização; risco químico, nível de risco e perecibilidade não devem ser usados para inferir automaticamente que um produto é fiscalizado.
+A próxima tela `Administração → Cadastros → Produtos` deve expor essa configuração na criação e edição.
 
-## Regra de exportação
+---
 
-A prévia, o PDF e o XLSX devem usar a mesma consulta e os mesmos filtros. A geração oficial dos arquivos ficará no backend.
+## Exportação — concluída ✅
 
-A etapa de exportação começa após a validação das consultas. A proposta técnica é manter um serviço de dados por relatório e adicionar formatadores separados para PDF e XLSX, evitando duplicar regras de filtro e cálculo.
+Formatos oficiais:
 
-## Dados de domínio adicionados nesta etapa
+```text
+PDF  → OpenPDF 2.0.5
+XLSX → Apache POI 5.5.1
+```
 
-- `Pedido.dataEntrega` para registrar a data efetiva de entrega e suportar auditoria/consultas futuras.
-- classificação explícita de fiscalização em Produto (`fiscalizado`, `orgaosFiscalizadores`, `observacaoFiscalizacao`).
+Regra:
 
-## Estado atual
+```text
+prévia + PDF + XLSX
+→ mesma consulta
+→ mesmos filtros
+```
 
-Consultas e prévias implementadas:
+Cada arquivo representa um relatório. Relatórios compostos podem possuir várias seções ou abas internas.
 
-- Estagiários;
-- Produtos;
-- Movimentações;
-- Resumo operacional;
-- Estoque e lotes;
-- Fiscalização.
+Endpoints:
 
-Pendente por dependência de outra branch:
+```text
+GET /api/v1/relatorios/estagiarios/exportar
+GET /api/v1/relatorios/produtos/exportar
+GET /api/v1/relatorios/movimentacoes/exportar
+GET /api/v1/relatorios/resumo-operacional/exportar
+GET /api/v1/relatorios/estoque-lotes/exportar
+GET /api/v1/relatorios/fiscalizacao/exportar
+```
 
-- Resíduos.
+Usar `formato=PDF` ou `formato=XLSX` e os mesmos filtros da prévia correspondente.
 
-Próxima decisão técnica:
+Detalhes: `EXPORTACAO_RELATORIOS.md`.
 
-- formato e bibliotecas da exportação PDF/XLSX.
+---
+
+## Estado de validação
+
+Em 28/08/2026 foram validados manualmente:
+
+```text
+Estagiários             ✅
+Produtos                ✅
+Movimentações           ✅
+Resumo operacional      ✅
+Estoque e lotes         ✅
+Fiscalização            ✅
+PDF                     ✅
+XLSX                    ✅
+```
+
+O ciclo foi integrado à `main`; exportação não é mais uma “próxima decisão técnica”.
+
+---
+
+## Próxima evolução deste módulo
+
+A próxima expansão específica de Relatórios será feita **após a integração do domínio de Resíduos**:
+
+```text
+Resíduos operacional
+→ consulta/relatório de Resíduos
+→ PDF/XLSX de Resíduos
+```
+
+Não criar novos relatórios apenas por conveniência visual; primeiro confirmar a necessidade operacional e o contrato de dados.
