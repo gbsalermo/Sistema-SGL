@@ -1,48 +1,107 @@
 # Exportação de Relatórios — SGL
 
+**Atualizado em:** 31/08/2026  
+**Estado:** ✅ concluída, validada e integrada à `main`.
+
 ## Objetivo
 
-Permitir que o gestor exporte e imprima um relatório por vez, sempre usando a mesma consulta e os mesmos filtros da prévia exibida na central de Relatórios.
+Permitir que o gestor exporte e imprima **um relatório por vez**, sempre usando a mesma consulta e os mesmos filtros da prévia exibida na Central de Relatórios.
 
-## Branch da etapa
+---
 
-Backend: `feat/relatorios-exportacao`
+## Histórico da implementação
 
-Frontend: `feat/relatorios-exportacao-interface`
+Branches usadas no ciclo:
 
-As branches partem, respectivamente, de `feat/relatorios` e `feat/relatorios-interface`.
+```text
+Backend  → feat/relatorios-exportacao
+Frontend → feat/relatorios-exportacao-interface
+```
 
-## Formatos
+Essas branches representam o histórico de desenvolvimento, não trabalho pendente.
 
-- PDF: OpenPDF 2.0.5, compatível com Java 17.
-- XLSX: Apache POI 5.5.1.
+Integração concluída em 28/08/2026:
+
+```text
+Backend  → PR #9
+Frontend → PR #14
+```
+
+---
+
+## Formatos oficiais
+
+```text
+PDF  → OpenPDF 2.0.5
+XLSX → Apache POI 5.5.1
+```
+
+---
 
 ## Relatórios exportáveis
 
-- Estagiários;
-- Produtos;
-- Movimentações;
-- Resumo operacional;
-- Estoque e lotes;
-- Fiscalização.
+```text
+Estagiários             ✅
+Produtos                ✅
+Movimentações           ✅
+Resumo operacional      ✅
+Estoque e lotes         ✅
+Fiscalização            ✅
+Resíduos                ⏳ após integração do módulo
+```
 
-Resíduos será adicionado depois da integração do módulo de resíduos à base utilizada por Relatórios.
+---
 
 ## Regra principal
 
-A exportação nunca combina relatórios diferentes em um único arquivo.
+```text
+prévia JSON
+PDF
+XLSX
+→ mesma consulta
+→ mesmos filtros
+```
 
-Um arquivo representa exatamente um tipo de relatório e reutiliza os filtros da consulta correspondente.
+A exportação nunca combina tipos diferentes de relatório no mesmo arquivo.
 
-Relatórios compostos podem possuir mais de uma seção no PDF ou mais de uma aba no XLSX sem deixar de representar um único relatório. Exemplos:
+```text
+1 relatório selecionado
+→ 1 arquivo
+```
 
-- Estoque e lotes: abas `Posição de estoque` e `Lotes`;
-- Fiscalização: abas `Produtos controlados` e `Rastreabilidade`;
-- Resumo operacional: entradas, saídas e lotes mais movimentados.
+Um relatório composto pode possuir mais de uma seção/aba sem violar essa regra.
 
-## Layout e impressão
+Exemplos:
 
-### PDF
+```text
+Estoque e Lotes.xlsx
+├── Posição de estoque
+└── Lotes
+
+Fiscalização.xlsx
+├── Produtos controlados
+└── Rastreabilidade
+```
+
+---
+
+## Comportamento do frontend
+
+A interface exporta a **última prévia concluída**.
+
+Isso evita o cenário:
+
+```text
+usuário consulta com filtro A
+→ altera visualmente para filtro B
+→ baixa arquivo sem consultar novamente
+```
+
+Trocar de relatório ou limpar/alterar o contexto da consulta invalida a exportação anterior até uma nova prévia válida ser gerada.
+
+---
+
+## Layout do PDF
 
 - logo oficial do SGL no canto superior esquerdo;
 - título e data de geração;
@@ -50,28 +109,33 @@ Relatórios compostos podem possuir mais de uma seção no PDF ou mais de uma ab
 - indicadores-resumo;
 - tabelas com cabeçalho repetido em novas páginas;
 - orientação paisagem quando a quantidade de colunas exigir;
-- conteúdo das células com quebra automática;
-- numeração de páginas no rodapé;
-- margens reduzidas para aproveitar melhor a folha A4.
+- conteúdo com quebra automática;
+- numeração de páginas;
+- margens compactas;
+- formato A4.
 
-### XLSX
+---
+
+## Layout do XLSX
 
 - logo oficial do SGL no canto superior esquerdo;
-- título, data de geração e filtros;
+- título, data e filtros;
 - indicadores-resumo;
-- uma aba por seção lógica do relatório;
+- uma aba por seção lógica quando necessário;
 - cabeçalho congelado;
 - autofiltro;
-- quebra de texto nas células;
-- largura de coluna automática com limite máximo;
+- quebra de texto;
+- largura de coluna limitada;
 - configuração de impressão A4;
 - ajuste para uma página de largura;
 - orientação paisagem para tabelas largas;
-- cabeçalho da tabela repetido durante a impressão.
+- repetição do cabeçalho durante impressão.
+
+---
 
 ## Endpoints
 
-Todos utilizam `formato=PDF` ou `formato=XLSX` e aceitam os mesmos filtros do endpoint de prévia correspondente.
+Todos utilizam `formato=PDF` ou `formato=XLSX` e aceitam os filtros da prévia correspondente.
 
 ```text
 GET /api/v1/relatorios/estagiarios/exportar
@@ -88,12 +152,46 @@ Exemplo:
 GET /api/v1/relatorios/fiscalizacao/exportar?formato=PDF&orgaoFiscalizador=POLICIA_FEDERAL
 ```
 
+Para confirmar parâmetros e UUIDs, usar o Swagger/OpenAPI atual.
+
+---
+
 ## Logo
 
-A logo usada nos arquivos está empacotada em:
+Arquivo empacotado no backend:
 
 ```text
 backend/sgl-backend/src/main/resources/relatorios/logo-sgl.png
 ```
 
-Ela reutiliza o mesmo arquivo já mantido na documentação do SGL.
+---
+
+## Validação
+
+Validação manual registrada em 28/08/2026:
+
+```text
+prévia + filtros            ✅
+PDF                         ✅
+XLSX                        ✅
+logo                        ✅
+layout para impressão       ✅
+fluxo frontend de exportar  ✅
+```
+
+---
+
+## Próxima expansão
+
+Não há pendência funcional nos seis relatórios atuais.
+
+Quando Resíduos for reconciliado e integrado:
+
+```text
+consulta Resíduos
+→ prévia
+→ PDF
+→ XLSX
+```
+
+A implementação deve reutilizar a mesma arquitetura e não criar uma segunda lógica de filtros apenas para exportação.
