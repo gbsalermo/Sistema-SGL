@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.response.RelatorioResiduosResponseDTO;
 import com.sgl.dto.response.ResiduoResponseDTO;
+import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Residuo;
 import com.sgl.model.enums.NivelRisco;
@@ -33,6 +34,10 @@ public class RelatorioResiduosService {
             NivelRisco nivelRisco,
             LocalDate dataInicio,
             LocalDate dataFim) {
+
+        if (dataInicio != null && dataFim != null && dataInicio.isAfter(dataFim)) {
+            throw new BusinessRuleException("A data inicial não pode ser posterior à data final");
+        }
 
         if (laboratorioId != null) {
             laboratorioRepository.findByPublicId(laboratorioId)
