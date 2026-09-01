@@ -203,6 +203,18 @@ public class ResiduoService {
     }
 
     @Transactional(readOnly = true)
+    public List<ResiduoResponseDTO> listarPorGerador(UUID usuarioGeradorId) {
+        Usuario gerador = buscarUsuario(usuarioGeradorId);
+        gerador.validateActive();
+
+        return residuoRepository
+                .findByGeradorPublicIdOrderByDataInformacaoDesc(usuarioGeradorId)
+                .stream()
+                .map(ResiduoResponseDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<HistoricoResiduoResponseDTO> buscarHistorico(UUID id) {
         Residuo residuo = buscarEntidade(id);
         return historicoResiduoRepository.findByResiduoIdOrderByDataHoraAsc(residuo.getId())
