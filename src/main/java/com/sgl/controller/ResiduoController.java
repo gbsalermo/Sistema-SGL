@@ -124,7 +124,7 @@ public class ResiduoController {
         return ResponseEntity.ok(residuoService.despachar(id, dto));
     }
 
-    @Operation(summary = "Obter dados do rótulo", description = "Retorna os dados consolidados para impressão do rótulo e geração visual do QR Code no frontend.")
+    @Operation(summary = "Obter dados do rótulo", description = "Retorna os dados consolidados para montagem e impressão do rótulo físico do resíduo.")
     @GetMapping("/{id}/rotulo")
     public ResponseEntity<RotuloResiduoResponseDTO> gerarRotulo(@PathVariable UUID id) {
         return ResponseEntity.ok(residuoService.gerarDadosRotulo(id));
