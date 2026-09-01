@@ -3,7 +3,7 @@
 **Branch atual:** `feat/residuos`  
 **Base:** `main` atual  
 **Migration:** `V11__create_residuo_module.sql`  
-**Estado:** R0 — backend reconciliado; aguardando compilação/testes antes do frontend.
+**Estado:** R0 — backend reconciliado; `mvn clean test` validado; aguardando validação PostgreSQL/Flyway/Swagger e fluxo real antes do frontend.
 
 ## 1. Regra central
 
@@ -228,13 +228,13 @@ Também foi adicionado o recorte por gerador necessário para `Meus resíduos`.
 
 ## 12. Validação R0 obrigatória
 
-Antes de iniciar o frontend:
+Status atual:
 
 ```text
-mvn clean test
-subida do PostgreSQL com V1 → V11
-Hibernate validate
-Swagger UI
+mvn clean test                                      ✅ validado em 01/09/2026
+subida do PostgreSQL com V1 → V11                  ⏳ próximo
+Hibernate validate                                  ⏳ próximo
+Swagger UI                                          ⏳ próximo
 ```
 
 Depois validar no Postman:
