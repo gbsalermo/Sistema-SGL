@@ -85,6 +85,13 @@ public class ResiduoController {
         return ResponseEntity.ok(residuoService.listarPorLaboratorio(laboratorioId));
     }
 
+    @Operation(summary = "Listar resíduos por gerador", description = "Suporta a experiência Meus resíduos usando o usuário da sessão atual como gerador.")
+    @GetMapping("/por-gerador")
+    public ResponseEntity<List<ResiduoResponseDTO>> listarPorGerador(
+            @RequestParam UUID usuarioGeradorId) {
+        return ResponseEntity.ok(residuoService.listarPorGerador(usuarioGeradorId));
+    }
+
     @Operation(summary = "Receber resíduo para análise", description = "Marca o recebimento pela gestão e inicia a etapa de conferência dos dados informados pelo laboratório.")
     @PutMapping("/{id}/receber")
     public ResponseEntity<ResiduoResponseDTO> receber(
