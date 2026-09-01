@@ -193,9 +193,10 @@ GET /api/v1/residuos
 GET /api/v1/residuos/{id}
 GET /api/v1/residuos/por-status?status=...
 GET /api/v1/residuos/por-laboratorio?laboratorioId=...
+GET /api/v1/residuos/por-gerador?usuarioGeradorId=...
 ```
 
-A frente `Meus resíduos` poderá exigir consulta específica por gerador quando o frontend for implementado. Se o endpoint atual não for suficiente, essa consulta deverá ser adicionada no backend antes da tela.
+`/por-gerador` é o contrato da frente **Meus resíduos**. Enquanto a autenticação definitiva não existe, o frontend envia o UUID do usuário da sessão DEV. Depois, a autorização real deverá limitar essa consulta à identidade autenticada ou às regras explicitamente permitidas.
 
 ## 11. Reconciliação com a main
 
@@ -223,6 +224,8 @@ extensão de TipoRisco
 V11__create_residuo_module.sql
 ```
 
+Também foi adicionado o recorte por gerador necessário para `Meus resíduos`.
+
 ## 12. Validação R0 obrigatória
 
 Antes de iniciar o frontend:
@@ -242,14 +245,15 @@ Depois validar no Postman:
 3. componente ligado a Produto
 4. componente livre
 5. conferir que Estoque/Lote não mudou
-6. receber
-7. analisar/liberar
-8. consultar rótulo
-9. armazenar
-10. despachar
-11. conferir histórico completo
-12. tentar transição fora de ordem
-13. tentar ação de Gestão com perfil comum
+6. consultar Meus resíduos por gerador
+7. receber
+8. analisar/liberar
+9. consultar rótulo
+10. armazenar
+11. despachar
+12. conferir histórico completo
+13. tentar transição fora de ordem
+14. tentar ação de Gestão com perfil comum
 ```
 
 Somente após essa validação começar `feat/residuos-interface`.
