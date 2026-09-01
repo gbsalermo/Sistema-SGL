@@ -3,7 +3,7 @@
 **Branch atual:** `feat/residuos`  
 **Base:** `main` atual  
 **Migration:** `V11__create_residuo_module.sql`  
-**Estado:** R0 — backend reconciliado; estrutura, frente usuário e recebimento pela Gestão validados; seguindo análise/liberação antes do frontend.
+**Estado:** R0 — backend reconciliado; estrutura, frente usuário, recebimento, análise/liberação e rótulo validados; seguindo armazenamento e despacho antes do frontend.
 
 ## 1. Regra central
 
@@ -243,6 +243,10 @@ histórico inicial RESIDUO_INFORMADO                 ✅ validado em 01/09/2026
 recebimento pela Gestão                             ✅ validado em 01/09/2026
 status EM_ANALISE                                   ✅ validado em 01/09/2026
 histórico RECEBIDO_PELA_GESTAO                      ✅ validado em 01/09/2026
+análise/liberação                                   ✅ validado em 01/09/2026
+código SGL de rastreio                              ✅ validado em 01/09/2026
+QR lógico do resíduo                                ✅ validado em 01/09/2026
+consulta dos dados do rótulo                        ✅ validado em 01/09/2026
 ```
 
 Fluxo funcional ainda a validar:
@@ -251,13 +255,11 @@ Fluxo funcional ainda a validar:
 1. informar mistura
 2. componente ligado a Produto
 3. conferir que Estoque/Lote não mudou
-4. analisar/liberar
-5. consultar rótulo
-6. armazenar
-7. despachar
-8. conferir histórico completo
-9. tentar transição fora de ordem
-10. tentar ação de Gestão com perfil comum
+4. armazenar
+5. despachar
+6. conferir histórico completo
+7. tentar transição fora de ordem
+8. tentar ação de Gestão com perfil comum
 ```
 
 Somente após essa validação começar `feat/residuos-interface`.
