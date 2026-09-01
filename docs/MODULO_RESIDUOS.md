@@ -3,7 +3,7 @@
 **Branch atual:** `feat/residuos`  
 **Base:** `main` atual  
 **Migration:** `V11__create_residuo_module.sql`  
-**Estado:** R0 — backend reconciliado; `mvn clean test` validado; aguardando validação PostgreSQL/Flyway/Swagger e fluxo real antes do frontend.
+**Estado:** R0 — backend reconciliado; testes, PostgreSQL/Flyway/Swagger e primeiro cadastro funcional validados; seguindo validação do fluxo real antes do frontend.
 
 ## 1. Regra central
 
@@ -232,28 +232,30 @@ Status atual:
 
 ```text
 mvn clean test                                      ✅ validado em 01/09/2026
-subida do PostgreSQL com V1 → V11                  ⏳ próximo
-Hibernate validate                                  ⏳ próximo
-Swagger UI                                          ⏳ próximo
+subida do PostgreSQL com V1 → V11                  ✅ validado em 01/09/2026
+Hibernate validate                                  ✅ validado em 01/09/2026
+Swagger UI                                          ✅ validado em 01/09/2026
+POST resíduo simples com componente livre           ✅ validado em 01/09/2026
+status inicial INFORMADO                            ✅ validado em 01/09/2026
+campos de Gestão/rótulo nulos antes do recebimento  ✅ validado em 01/09/2026
 ```
 
-Depois validar no Postman:
+Fluxo funcional ainda a validar:
 
 ```text
-1. informar resíduo simples
-2. informar mistura
-3. componente ligado a Produto
-4. componente livre
-5. conferir que Estoque/Lote não mudou
-6. consultar Meus resíduos por gerador
-7. receber
-8. analisar/liberar
-9. consultar rótulo
-10. armazenar
-11. despachar
-12. conferir histórico completo
-13. tentar transição fora de ordem
-14. tentar ação de Gestão com perfil comum
+1. informar mistura
+2. componente ligado a Produto
+3. conferir que Estoque/Lote não mudou
+4. consultar Meus resíduos por gerador
+5. conferir histórico inicial
+6. receber
+7. analisar/liberar
+8. consultar rótulo
+9. armazenar
+10. despachar
+11. conferir histórico completo
+12. tentar transição fora de ordem
+13. tentar ação de Gestão com perfil comum
 ```
 
 Somente após essa validação começar `feat/residuos-interface`.
