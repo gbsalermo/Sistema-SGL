@@ -3,7 +3,7 @@
 **Branch atual:** `feat/residuos`  
 **Base:** `main` atual  
 **Migration:** `V11__create_residuo_module.sql`  
-**Estado:** R0 — backend reconciliado; primeiro fluxo completo ponta a ponta validado; faltam validações negativas e mistura com Produto antes do frontend.
+**Estado:** R0 — backend reconciliado; primeiro fluxo completo ponta a ponta e validações negativas validados; falta apenas mistura com Produto sem impacto em Estoque/Lote antes do frontend.
 
 ## 1. Regra central
 
@@ -253,16 +253,16 @@ preservação dos dados após armazenamento            ✅ validado em 01/09/202
 despacho para destino final                         ✅ validado em 01/09/2026
 status DESPACHADO                                   ✅ validado em 01/09/2026
 histórico completo do ciclo                         ✅ validado em 01/09/2026
+transição fora de ordem rejeitada com HTTP 400      ✅ validado em 01/09/2026
+ação de Gestão por perfil comum rejeitada HTTP 400  ✅ validado em 01/09/2026
 ```
 
 Fluxo funcional ainda a validar:
 
 ```text
-1. tentar transição fora de ordem
-2. tentar ação de Gestão com perfil comum
-3. informar mistura
-4. componente ligado a Produto
-5. conferir que Estoque/Lote não mudou
+1. informar mistura
+2. componente ligado a Produto
+3. conferir que Estoque/Lote não mudou
 ```
 
 Somente após essa validação começar `feat/residuos-interface`.
