@@ -3,7 +3,7 @@
 **Branch atual:** `feat/residuos`  
 **Base:** `main` atual  
 **Migration:** `V11__create_residuo_module.sql`  
-**Estado:** R0 — backend reconciliado; testes, PostgreSQL/Flyway/Swagger e primeiro cadastro funcional validados; seguindo validação do fluxo real antes do frontend.
+**Estado:** R0 — backend reconciliado; estrutura, criação e consultas da frente usuário validadas; seguindo validação do fluxo de Gestão antes do frontend.
 
 ## 1. Regra central
 
@@ -238,6 +238,8 @@ Swagger UI                                          ✅ validado em 01/09/2026
 POST resíduo simples com componente livre           ✅ validado em 01/09/2026
 status inicial INFORMADO                            ✅ validado em 01/09/2026
 campos de Gestão/rótulo nulos antes do recebimento  ✅ validado em 01/09/2026
+Meus resíduos por gerador                           ✅ validado em 01/09/2026
+histórico inicial RESIDUO_INFORMADO                 ✅ validado em 01/09/2026
 ```
 
 Fluxo funcional ainda a validar:
@@ -246,16 +248,14 @@ Fluxo funcional ainda a validar:
 1. informar mistura
 2. componente ligado a Produto
 3. conferir que Estoque/Lote não mudou
-4. consultar Meus resíduos por gerador
-5. conferir histórico inicial
-6. receber
-7. analisar/liberar
-8. consultar rótulo
-9. armazenar
-10. despachar
-11. conferir histórico completo
-12. tentar transição fora de ordem
-13. tentar ação de Gestão com perfil comum
+4. receber pela Gestão
+5. analisar/liberar
+6. consultar rótulo
+7. armazenar
+8. despachar
+9. conferir histórico completo
+10. tentar transição fora de ordem
+11. tentar ação de Gestão com perfil comum
 ```
 
 Somente após essa validação começar `feat/residuos-interface`.
