@@ -20,4 +20,6 @@ public interface ResiduoRepository extends JpaRepository<Residuo, Long> {
     List<Residuo> findByStatusOrderByDataInformacaoDesc(StatusResiduo status);
 
     List<Residuo> findByLaboratorioPublicIdOrderByDataInformacaoDesc(UUID laboratorioPublicId);
+
+    List<Residuo> findByGeradorPublicIdOrderByDataInformacaoDesc(UUID geradorPublicId);
 }
