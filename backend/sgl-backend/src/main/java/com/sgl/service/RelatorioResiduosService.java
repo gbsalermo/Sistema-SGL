@@ -34,8 +34,9 @@ public class RelatorioResiduosService {
             LocalDate dataInicio,
             LocalDate dataFim) {
 
-        if (laboratorioId != null && !laboratorioRepository.existsByPublicId(laboratorioId)) {
-            throw new ResourceNotFoundException("Laboratório", laboratorioId);
+        if (laboratorioId != null) {
+            laboratorioRepository.findByPublicId(laboratorioId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
         }
 
         List<Residuo> filtrados = residuoRepository.findAllByOrderByDataInformacaoDesc().stream()
