@@ -1,9 +1,9 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Branch atual:** `feat/residuos`  
-**Base:** `main` atual  
-**Migration:** `V11__create_residuo_module.sql`  
-**Estado:** R0 — backend reconciliado; primeiro fluxo completo ponta a ponta e validações negativas validados; falta apenas mistura com Produto sem impacto em Estoque/Lote antes do frontend.
+**Branch backend:** `feat/residuos`  
+**Branch frontend:** `feat/residuos-interface`  
+**Base de banco:** `V11__create_residuo_module.sql`  
+**Estado em 01/09/2026:** fluxo operacional completo implementado; relatório e exportações adicionados; aguardando nova execução de testes após o fechamento do módulo.
 
 ## 1. Regra central
 
@@ -29,7 +29,8 @@ laboratório gera
 → usuário informa
 → recipiente chega à Gestão
 → Gestão recebe/confere
-→ rotula
+→ analisa/classifica
+→ libera e rotula
 → armazena temporariamente
 → despacha/destina
 ```
@@ -72,7 +73,7 @@ ARMAZENADO_TEMPORARIAMENTE
 DESPACHADO
 ```
 
-Transições fora de ordem devem ser rejeitadas.
+Transições fora de ordem são rejeitadas.
 
 ## 5. Criação pelo laboratório
 
@@ -123,9 +124,15 @@ riscosConfirmados[]
 
 Isso permite comparar declaração de origem e classificação técnica final.
 
-`TipoRisco` passa a contemplar, além das classificações já existentes:
+`TipoRisco` contempla:
 
 ```text
+NENHUM
+INFLAMAVEL
+RADIOATIVO
+TOXICO
+CORROSIVO
+BIOLOGICO
 IRRITANTE
 PERIGO_SAUDE
 OXIDANTE
@@ -134,9 +141,7 @@ GAS_PRESSURIZADO
 PERIGO_AMBIENTAL
 ```
 
-## 7. Gestão
-
-Endpoints:
+## 7. Operações da Gestão
 
 ```text
 PUT /api/v1/residuos/{id}/receber
@@ -155,8 +160,9 @@ Depois da análise/liberação:
 
 ```text
 codigoRastreio = SGL-RES-AAAA-NNNNNN
-qrCodeConteudo = SGL-RESIDUO:<UUID público>
 ```
+
+O backend atualmente também mantém `qrCodeConteudo` por compatibilidade técnica, porém o **QR Code foi retirado do rótulo visual do primeiro protótipo** por decisão de produto.
 
 Endpoint:
 
@@ -164,9 +170,20 @@ Endpoint:
 GET /api/v1/residuos/{id}/rotulo
 ```
 
-O rótulo só pode ser obtido depois da liberação.
+O frontend usa o DTO consolidado para montar e imprimir o rótulo com:
 
-A etapa frontend deve produzir uma visualização imprimível com QR e dados essenciais do recipiente.
+```text
+código SGL
+pictogramas de periculosidade
+classificação confirmada
+composição
+laboratório e gerador
+processo de origem
+recipiente
+armazenamento/destino
+quantidade
+marca Embrapa
+```
 
 ## 9. Histórico
 
@@ -186,7 +203,9 @@ observação
 data/hora
 ```
 
-## 10. Consultas
+O frontend exibe esses eventos como timeline no detalhe do resíduo.
+
+## 10. Consultas operacionais
 
 ```text
 GET /api/v1/residuos
@@ -198,7 +217,74 @@ GET /api/v1/residuos/por-gerador?usuarioGeradorId=...
 
 `/por-gerador` é o contrato da frente **Meus resíduos**. Enquanto a autenticação definitiva não existe, o frontend envia o UUID do usuário da sessão DEV. Depois, a autorização real deverá limitar essa consulta à identidade autenticada ou às regras explicitamente permitidas.
 
-## 11. Reconciliação com a main
+## 11. Relatório de Resíduos
+
+Implementado na mesma arquitetura dos demais relatórios do SGL.
+
+### Preview JSON
+
+```text
+GET /api/v1/relatorios/residuos
+```
+
+Filtros opcionais:
+
+```text
+status
+laboratorioId
+nivelRisco
+dataInicio
+dataFim
+```
+
+O retorno contém:
+
+```text
+geradoEm
+total
+informados
+emAnalise
+liberados
+armazenados
+despachados
+altoRisco
+itens[]
+```
+
+### Exportação
+
+```text
+GET /api/v1/relatorios/residuos/exportar?formato=PDF
+GET /api/v1/relatorios/residuos/exportar?formato=XLSX
+```
+
+Os mesmos filtros do preview são aceitos pela exportação.
+
+PDF:
+- OpenPDF;
+- A4 paisagem;
+- marca SGL;
+- resumo operacional;
+- tabela de rastreabilidade.
+
+XLSX:
+- Apache POI;
+- resumo;
+- dados completos do ciclo;
+- autofiltro;
+- cabeçalho congelado;
+- largura de colunas ajustada.
+
+Arquivos adicionados:
+
+```text
+RelatorioResiduosResponseDTO
+RelatorioResiduosService
+RelatorioResiduosExportacaoService
+RelatorioResiduosController
+```
+
+## 12. Reconciliação com a main
 
 O módulo experimental anterior estava em `feat/gestao-residuos`, muito atrás da `main`, e possuía uma migration chamada V5 que passou a conflitar com a evolução de Lotes.
 
@@ -211,75 +297,62 @@ portar apenas código específico de Resíduos
 usar V11 para a nova estrutura
 ```
 
-Arquivos portados nesta R0:
+## 13. Validações já executadas antes do fechamento atual
 
 ```text
-ResiduoController
-ResiduoService
-Residuo / ComponenteResiduo / HistoricoResiduo
-request/response DTOs específicos
-ResiduoRepository / HistoricoResiduoRepository
-StatusResiduo
-extensão de TipoRisco
-V11__create_residuo_module.sql
+mvn clean test                                      ✅ 01/09/2026
+subida PostgreSQL com V1 → V11                     ✅ 01/09/2026
+Hibernate validate                                  ✅ 01/09/2026
+Swagger UI                                          ✅ 01/09/2026
+POST resíduo simples                                ✅
+Meus resíduos                                       ✅ backend
+histórico inicial                                   ✅ backend
+recebimento                                         ✅
+análise/liberação                                   ✅
+código SGL                                          ✅
+consulta DTO do rótulo                              ✅
+armazenamento temporário                            ✅ backend
+DESPACHADO + histórico completo                     ✅ backend
+transição inválida rejeitada                        ✅
+perfil comum bloqueado em ação de Gestão            ✅
+mistura com Produto + componente livre              ✅ cadastro/composição
 ```
 
-Também foi adicionado o recorte por gerador necessário para `Meus resíduos`.
+A conferência explícita de saldo/lotes antes/depois do Produto referenciado deve continuar na bateria integrada para comprovar documentalmente que não houve efeito colateral em estoque.
 
-## 12. Validação R0 obrigatória
+## 14. Implementação atual a validar novamente
 
-Status atual:
+Como relatório/exportações e frontend completo foram adicionados depois dos testes acima, executar novamente:
 
 ```text
-mvn clean test                                      ✅ validado em 01/09/2026
-subida do PostgreSQL com V1 → V11                  ✅ validado em 01/09/2026
-Hibernate validate                                  ✅ validado em 01/09/2026
-Swagger UI                                          ✅ validado em 01/09/2026
-POST resíduo simples com componente livre           ✅ validado em 01/09/2026
-status inicial INFORMADO                            ✅ validado em 01/09/2026
-campos de Gestão/rótulo nulos antes do recebimento  ✅ validado em 01/09/2026
-Meus resíduos por gerador                           ✅ validado em 01/09/2026
-histórico inicial RESIDUO_INFORMADO                 ✅ validado em 01/09/2026
-recebimento pela Gestão                             ✅ validado em 01/09/2026
-status EM_ANALISE                                   ✅ validado em 01/09/2026
-histórico RECEBIDO_PELA_GESTAO                      ✅ validado em 01/09/2026
-análise/liberação                                   ✅ validado em 01/09/2026
-código SGL de rastreio                              ✅ validado em 01/09/2026
-QR lógico do resíduo                                ✅ validado em 01/09/2026
-consulta dos dados do rótulo                        ✅ validado em 01/09/2026
-armazenamento temporário                            ✅ validado em 01/09/2026
-status ARMAZENADO_TEMPORARIAMENTE                   ✅ validado em 01/09/2026
-preservação dos dados após armazenamento            ✅ validado em 01/09/2026
-despacho para destino final                         ✅ validado em 01/09/2026
-status DESPACHADO                                   ✅ validado em 01/09/2026
-histórico completo do ciclo                         ✅ validado em 01/09/2026
-transição fora de ordem rejeitada com HTTP 400      ✅ validado em 01/09/2026
-ação de Gestão por perfil comum rejeitada HTTP 400  ✅ validado em 01/09/2026
+backend: mvn clean test
+backend: subida + Swagger
+frontend: npm run build
+frontend: fluxo completo no navegador
+rótulo + print preview
+armazenamento
+despacho
+histórico visual
+relatório preview
+PDF
+XLSX
 ```
 
-Fluxo funcional ainda a validar:
+Nenhuma dessas validações novas deve ser marcada como concluída antes da execução local.
+
+## 15. Etapas do módulo
 
 ```text
-1. informar mistura
-2. componente ligado a Produto
-3. conferir que Estoque/Lote não mudou
-```
-
-Somente após essa validação começar `feat/residuos-interface`.
-
-## 13. Etapas seguintes do módulo
-
-```text
-R1 contrato final e consultas específicas
-R2 Informar Resíduo — usuário comum
-R3 Meus Resíduos — usuário comum
-R4 Central Resíduos — Gestão
-R5 análise/classificação
-R6 rótulo + QR + impressão
-R7 armazenamento temporário
-R8 despacho/destinação
-R9 histórico visual
-R10 relatório de Resíduos
-R11 PDF/XLSX
-R12 validação integrada
+R1 contrato final e consultas específicas             ✅
+R2 Informar Resíduo — usuário comum                   ✅ implementação
+R3 Meus Resíduos — usuário comum                      ✅ implementação
+R4 Central Resíduos — Gestão                          ✅ implementação
+R5 análise/classificação                              ✅ implementação e validação visual
+R6 rótulo + impressão (sem QR visual)                 ✅ implementação
+R7 armazenamento temporário                           ✅ implementação
+R8 despacho/destinação                                ✅ implementação
+R9 histórico visual                                   ✅ implementação
+R10 relatório de Resíduos                             ✅ implementação
+R11 PDF/XLSX                                          ✅ implementação
+R12 validação integrada                               ⏳ próxima validação
 ```
