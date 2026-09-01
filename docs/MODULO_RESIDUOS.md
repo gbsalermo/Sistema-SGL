@@ -1,0 +1,272 @@
+# Módulo de Resíduos Laboratoriais — SGL
+
+**Branch atual:** `feat/residuos`  
+**Base:** `main` atual  
+**Migration:** `V11__create_residuo_module.sql`  
+**Estado:** R0 — backend reconciliado; aguardando compilação/testes antes do frontend.
+
+## 1. Regra central
+
+```text
+Produto != Resíduo
+```
+
+Produto representa catálogo/estoque. Resíduo representa material gerado no laboratório e encaminhado à Gestão.
+
+Um componente de resíduo pode referenciar opcionalmente um Produto para rastreabilidade, mas essa associação **não baixa, repõe ou altera EstoqueCentral, Lote ou MovimentacaoEstoque**.
+
+## 2. Fluxo inverso a Pedidos
+
+```text
+PEDIDO
+usuário solicita
+→ Gestão atende
+→ material sai do estoque
+→ material chega ao laboratório
+
+RESÍDUO
+laboratório gera
+→ usuário informa
+→ recipiente chega à Gestão
+→ Gestão recebe/confere
+→ rotula
+→ armazena temporariamente
+→ despacha/destina
+```
+
+## 3. Duas frentes de interface
+
+### Usuário comum
+
+```text
+Informar resíduo
+Meus resíduos
+```
+
+O usuário informa o que foi efetivamente gerado no laboratório e acompanha o ciclo. Ele não define a classificação técnica final nem executa as etapas operacionais da Gestão.
+
+### Gestão
+
+```text
+Resíduos
+├── a receber
+├── em análise
+├── liberados
+├── armazenados
+└── despachados
+```
+
+A Gestão recebe fisicamente, confere, confirma/corrige riscos, libera o rótulo, registra armazenamento temporário e despacho.
+
+## 4. Fluxo de status
+
+```text
+INFORMADO
+   ↓ receber
+EM_ANALISE
+   ↓ analisar/liberar
+LIBERADO_PARA_ARMAZENAMENTO
+   ↓ armazenar
+ARMAZENADO_TEMPORARIAMENTE
+   ↓ despachar
+DESPACHADO
+```
+
+Transições fora de ordem devem ser rejeitadas.
+
+## 5. Criação pelo laboratório
+
+`POST /api/v1/residuos`
+
+Dados principais:
+
+```text
+usuarioGeradorId
+laboratorioId
+projetoId opcional
+descricao
+processoOrigem
+recipiente
+quantidade
+unidadeMedida
+nivelRiscoInformado
+riscosInformados[]
+observacaoGerador
+componentes[]
+```
+
+Cada componente aceita:
+
+```text
+produtoId opcional
+nomeComponente opcional se produtoId existir
+principal
+concentracaoOuQuantidade
+observacao
+```
+
+É obrigatório identificar o componente por `produtoId` ou `nomeComponente`.
+
+## 6. Risco declarado x confirmado
+
+A informação original do laboratório nunca é sobrescrita silenciosamente.
+
+```text
+Laboratório
+nivelRiscoInformado
+riscosInformados[]
+
+Gestão
+nivelRiscoConfirmado
+riscosConfirmados[]
+```
+
+Isso permite comparar declaração de origem e classificação técnica final.
+
+`TipoRisco` passa a contemplar, além das classificações já existentes:
+
+```text
+IRRITANTE
+PERIGO_SAUDE
+OXIDANTE
+EXPLOSIVO
+GAS_PRESSURIZADO
+PERIGO_AMBIENTAL
+```
+
+## 7. Gestão
+
+Endpoints:
+
+```text
+PUT /api/v1/residuos/{id}/receber
+PUT /api/v1/residuos/{id}/analisar-liberar
+PUT /api/v1/residuos/{id}/armazenar
+PUT /api/v1/residuos/{id}/despachar
+```
+
+Enquanto a autenticação definitiva não existe, os DTOs recebem `usuarioGestorId`. O Service exige `GESTOR` ou `ADMINISTRADOR` para as transições de Gestão.
+
+Depois da autenticação real, a identidade deverá vir da sessão/token sem alterar o domínio do Resíduo.
+
+## 8. Rótulo e rastreabilidade
+
+Depois da análise/liberação:
+
+```text
+codigoRastreio = SGL-RES-AAAA-NNNNNN
+qrCodeConteudo = SGL-RESIDUO:<UUID público>
+```
+
+Endpoint:
+
+```text
+GET /api/v1/residuos/{id}/rotulo
+```
+
+O rótulo só pode ser obtido depois da liberação.
+
+A etapa frontend deve produzir uma visualização imprimível com QR e dados essenciais do recipiente.
+
+## 9. Histórico
+
+Endpoint:
+
+```text
+GET /api/v1/residuos/{id}/historico
+```
+
+Cada transição registra:
+
+```text
+usuário responsável
+status resultante
+ação
+observação
+data/hora
+```
+
+## 10. Consultas
+
+```text
+GET /api/v1/residuos
+GET /api/v1/residuos/{id}
+GET /api/v1/residuos/por-status?status=...
+GET /api/v1/residuos/por-laboratorio?laboratorioId=...
+```
+
+A frente `Meus resíduos` poderá exigir consulta específica por gerador quando o frontend for implementado. Se o endpoint atual não for suficiente, essa consulta deverá ser adicionada no backend antes da tela.
+
+## 11. Reconciliação com a main
+
+O módulo experimental anterior estava em `feat/gestao-residuos`, muito atrás da `main`, e possuía uma migration chamada V5 que passou a conflitar com a evolução de Lotes.
+
+Decisão:
+
+```text
+não mergear feat/gestao-residuos diretamente
+não substituir arquivos atuais de Pedido/Produto/Lote
+portar apenas código específico de Resíduos
+usar V11 para a nova estrutura
+```
+
+Arquivos portados nesta R0:
+
+```text
+ResiduoController
+ResiduoService
+Residuo / ComponenteResiduo / HistoricoResiduo
+request/response DTOs específicos
+ResiduoRepository / HistoricoResiduoRepository
+StatusResiduo
+extensão de TipoRisco
+V11__create_residuo_module.sql
+```
+
+## 12. Validação R0 obrigatória
+
+Antes de iniciar o frontend:
+
+```text
+mvn clean test
+subida do PostgreSQL com V1 → V11
+Hibernate validate
+Swagger UI
+```
+
+Depois validar no Postman:
+
+```text
+1. informar resíduo simples
+2. informar mistura
+3. componente ligado a Produto
+4. componente livre
+5. conferir que Estoque/Lote não mudou
+6. receber
+7. analisar/liberar
+8. consultar rótulo
+9. armazenar
+10. despachar
+11. conferir histórico completo
+12. tentar transição fora de ordem
+13. tentar ação de Gestão com perfil comum
+```
+
+Somente após essa validação começar `feat/residuos-interface`.
+
+## 13. Etapas seguintes do módulo
+
+```text
+R1 contrato final e consultas específicas
+R2 Informar Resíduo — usuário comum
+R3 Meus Resíduos — usuário comum
+R4 Central Resíduos — Gestão
+R5 análise/classificação
+R6 rótulo + QR + impressão
+R7 armazenamento temporário
+R8 despacho/destinação
+R9 histórico visual
+R10 relatório de Resíduos
+R11 PDF/XLSX
+R12 validação integrada
+```
