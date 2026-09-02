@@ -92,13 +92,7 @@ public class UsuarioService {
             throw new BusinessRuleException("Já existe um usuário com este email.");
         }
 
-        if (usuario.getPerfil() == Perfil.ESTAGIARIO
-                && dto.getPerfil() != Perfil.ESTAGIARIO
-                && estagiarioRepository.existsByIdAndAtivoTrue(usuario.getId())) {
-            throw new BusinessRuleException(
-                    "Finalize o estágio antes de alterar o perfil do usuário."
-            );
-        }
+        validarAlteracaoPerfil(usuario, dto.getPerfil());
 
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
@@ -123,6 +117,20 @@ public class UsuarioService {
     }
 
     @Transactional
+    public UsuarioResponseDTO alterarPerfil(UUID id, Perfil novoPerfil) {
+        Usuario usuario = usuarioRepository.findByPublicId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+
+        if (novoPerfil == null) {
+            throw new BusinessRuleException("Perfil é obrigatório.");
+        }
+
+        validarAlteracaoPerfil(usuario, novoPerfil);
+        usuario.setPerfil(novoPerfil);
+        return new UsuarioResponseDTO(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
     public void Inativar(UUID id) {
         Usuario usuario = usuarioRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
@@ -132,6 +140,16 @@ public class UsuarioService {
         }
 
         usuario.setAtivo(false);
+    }
+
+    private void validarAlteracaoPerfil(Usuario usuario, Perfil novoPerfil) {
+        if (usuario.getPerfil() == Perfil.ESTAGIARIO
+                && novoPerfil != Perfil.ESTAGIARIO
+                && estagiarioRepository.existsByIdAndAtivoTrue(usuario.getId())) {
+            throw new BusinessRuleException(
+                    "Finalize o estágio antes de alterar o perfil do usuário."
+            );
+        }
     }
 
     private Laboratorio buscarLaboratorioCompativel(UUID laboratorioId, Unidade unidade) {
