@@ -78,7 +78,12 @@ public class ResiduoService {
 
         dto.getComponentes().forEach(item -> residuo.addComponente(criarComponente(item)));
 
+        // O código SGL é a referência humana do resíduo desde o primeiro registro.
+        // O primeiro save é necessário porque o formato usa o id sequencial interno.
         Residuo salvo = residuoRepository.save(residuo);
+        salvo.setCodigoRastreio(gerarCodigoRastreio(salvo));
+        salvo = residuoRepository.save(salvo);
+
         registrarHistorico(
                 salvo,
                 gerador,
@@ -116,8 +121,12 @@ public class ResiduoService {
                 dto.getObservacaoGestor()
         );
 
+        // Compatibilidade com registros antigos criados antes de o código SGL
+        // passar a ser gerado no momento da informação do resíduo.
         if (residuo.getCodigoRastreio() == null) {
             residuo.setCodigoRastreio(gerarCodigoRastreio(residuo));
+        }
+        if (residuo.getQrCodeConteudo() == null) {
             residuo.setQrCodeConteudo("SGL-RESIDUO:" + residuo.getPublicId());
         }
 
