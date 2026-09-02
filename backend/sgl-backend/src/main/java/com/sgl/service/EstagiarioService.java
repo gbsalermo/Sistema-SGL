@@ -50,7 +50,6 @@ public class EstagiarioService {
         usuario.setLaboratorio(laboratorio);
         usuarioRepository.save(usuario);
 
-        // O insert nativo mantém a linha da herança JOINED vinculada ao mesmo id de usuário.
         entityManager.createNativeQuery(
                 "INSERT INTO estagiarios (id, data_inicio_estagio, data_fim_estagio, tipo_bolsa, observacao) "
                         + "VALUES (:id, :dataInicio, :dataFim, :tipoBolsa, :observacao)")
@@ -132,9 +131,7 @@ public class EstagiarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
 
         estagiario.setAtivo(false);
-        if (estagiario.getDataFimEstagio() == null) {
-            estagiario.setDataFimEstagio(LocalDate.now());
-        }
+        estagiario.setDataFimEstagio(LocalDate.now());
     }
 
     private Usuario buscarUsuario(UUID uuid) {
@@ -187,10 +184,13 @@ public class EstagiarioService {
             throw new BusinessRuleException("O estágio já está encerrado.");
         }
 
-        estagiario.setAtivo(false);
-        if (estagiario.getDataFimEstagio() == null) {
-            estagiario.setDataFimEstagio(LocalDate.now());
+        LocalDate hoje = LocalDate.now();
+        if (hoje.isBefore(estagiario.getDataInicioEstagio())) {
+            throw new BusinessRuleException("Não é possível encerrar um estágio antes da data de início.");
         }
+
+        estagiario.setAtivo(false);
+        estagiario.setDataFimEstagio(hoje);
 
         return new EstagiarioResponseDTO(estagiarioRepository.save(estagiario));
     }
