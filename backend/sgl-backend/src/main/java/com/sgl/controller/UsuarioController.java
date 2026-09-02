@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.request.UsuarioPerfilRequestDTO;
 import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.exception.ApiError;
@@ -64,6 +65,23 @@ public class UsuarioController {
     @ApiResponses({@ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Usuário ou recurso relacionado não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "409", description = "Conflito de dados", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody UsuarioRequestDTO dto) { return ResponseEntity.ok(usuarioService.atualizar(id, dto)); }
+
+    @Operation(
+            summary = "Alterar perfil de acesso",
+            description = "Altera somente o perfil de acesso de um usuário existente. Endpoint destinado à administração; não cria nem substitui o cadastro institucional do usuário."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Perfil alterado com sucesso", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "400", description = "Regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PutMapping("/{id}/perfil")
+    public ResponseEntity<UsuarioResponseDTO> alterarPerfil(
+            @PathVariable UUID id,
+            @Valid @RequestBody UsuarioPerfilRequestDTO dto) {
+        return ResponseEntity.ok(usuarioService.alterarPerfil(id, dto.getPerfil()));
+    }
 
     @Operation(summary = "Inativar usuário", description = "Inativa o usuário identificado pelo UUID informado.")
     @ApiResponses({@ApiResponse(responseCode = "204", description = "Usuário inativado com sucesso"), @ApiResponse(responseCode = "400", description = "Regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
