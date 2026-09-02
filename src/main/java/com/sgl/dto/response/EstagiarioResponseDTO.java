@@ -34,7 +34,7 @@ public class EstagiarioResponseDTO implements Serializable {
     private LocalDate dataInicioEstagio;
     @Schema(description = "Data de encerramento do estágio, quando definida.", example = "2027-01-31")
     private LocalDate dataFimEstagio;
-    @Schema(description = "Tipo de bolsa do estágio.", example = "ESTAGIO")
+    @Schema(description = "Tipo de vínculo do estágio. O campo técnico permanece tipoBolsa por compatibilidade.", example = "CONTRATUAL")
     private TipoBolsa tipoBolsa;
     @Schema(description = "Observação registrada no vínculo de estágio.", example = "Estágio vinculado ao projeto de síntese.")
     private String observacao;
