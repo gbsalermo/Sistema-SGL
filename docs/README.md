@@ -10,10 +10,11 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 
 ```text
 1. ../CONTINUIDADE.md
-2. ../README.md
-3. DOSSIE_PROJETO_SGL.md
-4. Swagger/OpenAPI em execução
-5. documento específico da área em trabalho
+2. PLANO_PRE_PRODUCAO.md
+3. ../README.md
+4. DOSSIE_PROJETO_SGL.md
+5. Swagger/OpenAPI em execução
+6. documento específico da área em trabalho
 ```
 
 ---
@@ -26,6 +27,7 @@ Em caso de conflito:
 código da main
 → Swagger/OpenAPI para contrato HTTP
 → ../CONTINUIDADE.md
+→ PLANO_PRE_PRODUCAO.md durante o bloco atual
 → DOSSIE_PROJETO_SGL.md
 → decisões/documentos específicos
 → exemplos, roteiros e snapshots históricos
@@ -40,7 +42,9 @@ A data de um arquivo histórico não prevalece sobre uma implementação mais re
 ```text
 Primeiro protótipo funcional                 ✅ aprovado
 Pré-produção pós-aprovação                   🔧 em andamento
-Limpeza/revisão documental                   🔧 bloco atual
+Limpeza/revisão documental                   ✅ concluída
+Planejamento de pré-produção                 ✅ consolidado
+Etapa 1 — refinamento visual global          ⏭ próxima implementação
 Matriz formal de permissões                  ⏳ após a pré-produção atual
 Congelamento/homologação final               ⏳ posterior
 Autenticação/autorização definitiva          ⏳ posterior
@@ -56,6 +60,7 @@ O roadmap formal não foi cancelado. Ele começa depois do bloco atual de ajuste
 | Documento | Papel | Estado |
 |---|---|---|
 | `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 04/09** |
+| `PLANO_PRE_PRODUCAO.md` | sequência canônica das etapas atuais, dependências e regras de execução | **ATUAL — 04/09** |
 | `../README.md` | visão rápida do backend e execução | **ATUAL — 04/09** |
 | `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 04/09** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **VIGENTE** |
@@ -64,6 +69,25 @@ O roadmap formal não foi cancelado. Ele começa depois do bloco atual de ajuste
 | `PENDENCIAS_POS_PROTOTIPO.md` | refactors e pendências posteriores | **REFERÊNCIA VIGENTE** |
 | `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **REFERÊNCIA**; conferir `main` quando houver detalhe de implementação |
 | `GUIA_ESTRUTURAL.md` | organização arquitetural | **REFERÊNCIA** |
+
+---
+
+## Plano atual de pré-produção
+
+A sequência aprovada está detalhada em `PLANO_PRE_PRODUCAO.md`:
+
+```text
+1. padronização e refinamento visual global
+2. Dark Mode definitivo
+3. refinamentos do fluxo atual de Resíduos
+4. expansão de Resíduos: locais + modelos pré-cadastrados
+5. Projetos + vínculos históricos de Estagiários
+6. relatórios de Projetos/Laboratórios
+7. normalização de unidades + Soluções + integração com Pedidos
+8. Manual do Usuário + avaliação opcional de delete lógico
+```
+
+Regra deste bloco: alterações funcionais de backend serão implementadas manualmente pelo responsável do projeto; IA pode analisar, orientar a implementação e revisar o resultado.
 
 ---
 
@@ -131,9 +155,10 @@ Se algum documento histórico disser que Administração, Resíduos, Dashboard, 
 ### Agora
 
 ```text
-limpeza e atualização documental
-→ planejamento dos ajustes de pré-produção
-→ execução/refinamento
+limpeza e atualização documental       ✅
+→ planejamento de pré-produção         ✅
+→ Etapa 1: refinamento visual          ⏭ atual
+→ Etapas 2 a 8                         ⏳ sequenciais
 → estabilização do bloco
 ```
 
@@ -158,10 +183,11 @@ Antes de alterar o sistema:
 
 ```text
 1. ler ../CONTINUIDADE.md
-2. conferir a main atual
-3. conferir Swagger/OpenAPI quando houver contrato HTTP
-4. confirmar o documento específico da área
-5. distinguir requisito atual de registro histórico
+2. ler PLANO_PRE_PRODUCAO.md durante a fase atual
+3. conferir a main atual
+4. conferir Swagger/OpenAPI quando houver contrato HTTP
+5. confirmar o documento específico da área
+6. distinguir requisito atual de registro histórico
 ```
 
 Não reconstruir módulos aprovados apenas porque um documento antigo descreve uma fase anterior.
