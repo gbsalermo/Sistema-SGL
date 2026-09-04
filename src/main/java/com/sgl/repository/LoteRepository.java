@@ -21,6 +21,15 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     Optional<Lote> findByPublicId(UUID publicId);
     Optional<Lote> findByPublicIdAndEstoqueCentralUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
+    @Override
+    @Query("""
+            SELECT lote
+            FROM Lote lote
+            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
+               OR lote.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            """)
+    List<Lote> findAll();
+
     List<Lote> findByEstoqueCentralId(Long estoqueCentralId);
     List<Lote> findByEstoqueCentralUnidadePublicId(UUID unidadePublicId);
 
