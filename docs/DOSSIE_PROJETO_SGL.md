@@ -1,60 +1,89 @@
-# Dossiê do Projeto SGL — Handoff para IA
+# Dossiê do Projeto SGL — Handoff
 
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Snapshot:** 03/09/2026  
-**Objetivo:** permitir que outra pessoa ou IA entenda o estado real do projeto, decisões já fechadas e a sequência oficial restante sem reconstruir o histórico.
+**Snapshot:** 04/09/2026  
+**Estado:** primeiro protótipo funcional aprovado; ajustes de pré-produção em andamento.  
+**Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual, sem reconstruir o histórico nem usar um roadmap antigo como tarefa imediata.
 
 ---
 
 # 1. Ordem de precedência
 
-Quando houver conflito entre fontes:
+Quando houver conflito:
 
 ```text
-1. código da branch main
+1. código da main
 2. Swagger/OpenAPI do backend para contratos HTTP
 3. CONTINUIDADE.md do repositório em trabalho
 4. este DOSSIE_PROJETO_SGL.md
 5. documentos específicos de decisão/módulo
-6. documentos de etapas antigas, exemplos e roteiros históricos
+6. exemplos, roteiros e snapshots históricos
 ```
 
-Não apagar documentos antigos só porque registram um estado anterior. O erro a evitar é tratá-los como planejamento vigente.
+Documentação histórica pode ser mantida para rastreabilidade, mas não deve comandar o planejamento atual.
 
 ---
 
-# 2. Objetivo do SGL
+# 2. Fase atual
 
-O SGL é um sistema corporativo de gestão laboratorial com foco em:
+O sistema foi funcionalmente aprovado. Antes de iniciar o roadmap formal de produção, existe um bloco de **pré-produção pós-aprovação**.
+
+Sequência atual:
+
+```text
+1. limpeza, revisão e atualização documental
+2. levantamento dos ajustes de pré-produção
+3. implementação/refinamento dos ajustes
+4. validação e estabilização do bloco
+```
+
+Somente depois:
+
+```text
+matriz de permissões
+→ congelamento funcional
+→ homologação integrada final
+→ autenticação/autorização/auditoria definitiva
+→ integração corporativa
+→ demais etapas formais de produção
+```
+
+A matriz de permissões continua válida no roadmap, mas **não é a tarefa imediata enquanto o bloco atual estiver aberto**.
+
+---
+
+# 3. Objetivo do SGL
+
+O SGL é um sistema de gestão laboratorial com foco em:
 
 - pedidos de materiais;
-- estoque central por unidade;
+- estoque central por Unidade;
 - lotes, validade, embalagem e rastreabilidade;
 - FIFO/FEFO;
-- movimentações auditáveis;
-- fiscalização de produtos controlados;
-- resíduos laboratoriais de ponta a ponta;
+- movimentações de estoque;
+- produtos fiscalizados;
+- resíduos laboratoriais;
 - estagiários e vínculos institucionais;
 - administração de dados-base;
-- relatórios e exportações oficiais;
-- dashboards e alertas no frontend;
+- relatórios e exportações;
+- dashboards, alertas e busca no frontend;
 - futura autenticação/autorização/auditoria corporativa.
 
 Repos:
 
 ```text
 gbsalermo/Sistema-SGL
-→ API, regras de negócio, banco, Swagger, relatórios/exportações
+→ API, regras de negócio, persistência, Flyway, Swagger, relatórios/exportações
 
 gbsalermo/SGL-FRONTEND
-→ Vue SPA, UX Solicitante, Gestão e Administração
+→ Vue SPA, UX de Solicitante, Gestão e Administração
 ```
 
 ---
 
-# 3. Stack
+# 4. Stack
 
 ## Backend
 
@@ -88,10 +117,11 @@ Node >= 20.19
 
 ---
 
-# 4. Estado executivo em 03/09/2026
+# 5. Estado executivo
+
+## Backend
 
 ```text
-BACKEND
 Fundação Spring/PostgreSQL/Flyway                 ✅
 UUID público + Long interno                       ✅
 Pedidos / urgência                                ✅
@@ -101,25 +131,24 @@ Embalagem / multiplicador / fracionamento         ✅
 Movimentações / rastreabilidade                   ✅
 Swagger/OpenAPI                                   ✅
 Fiscalização                                      ✅
-Relatórios base                                   ✅
-PDF/XLSX                                          ✅
-Resíduos                                          ✅ integrado
-Relatório + PDF/XLSX de Resíduos                  ✅
+Relatórios + PDF/XLSX                             ✅
+Resíduos                                          ✅
 Estagiários                                       ✅
-Pessoas por laboratório + exportação              ✅
-Suporte a Administração/Cadastros                 ✅
-Alteração administrativa de perfil                ✅
+Pessoas por laboratório                           ✅
+Administração/Cadastros                           ✅
+Isolamento operacional por Unidade                ✅
 Autenticação/autorização definitiva               ⏳
 Integração corporativa                            ⏳
+```
 
-FRONTEND
-Login visual + sessão DEV                         ✅
-Expiração de sessão DEV                           ✅
+## Frontend
+
+```text
+Sessão DEV + expiração                            ✅
 Pedidos Solicitante/Gestão                        ✅
 Estoque / lotes                                   ✅
 Movimentações                                     ✅
 Relatórios / fiscalização                         ✅
-PDF/XLSX                                          ✅
 Resíduos Solicitante/Gestão                       ✅
 Rótulos Produto/Resíduo                           ✅
 Estagiários                                       ✅
@@ -130,44 +159,155 @@ Dashboard Solicitante                             ✅
 Alertas operacionais                              ✅
 Busca global                                      ✅
 Tema claro/escuro                                 ✅
-404 animada                                       ✅
+404                                               ✅
+Contexto de Unidade enviado à API                 ✅
 Autenticação/autorização definitiva               ⏳
 ```
 
-O primeiro protótipo está próximo do congelamento. A sequência oficial restante é consolidar permissões, congelar e homologar.
+---
+
+# 6. Arquitetura backend
+
+```text
+Controller
+→ contrato HTTP
+
+Service
+→ regras, transações e orquestração
+
+Repository
+→ persistência/consultas
+
+Model
+→ estado de domínio
+
+RequestDTO / ResponseDTO
+→ contratos públicos
+```
+
+Fluxo típico:
+
+```text
+Controller recebe UUID
+→ Service resolve publicId
+→ domínio trabalha com Long internamente
+→ ResponseDTO devolve UUID
+```
 
 ---
 
-# 5. Identificadores
+# 7. Identificadores
 
 ```text
 Long id
-→ somente fronteira interna do backend/banco
+→ interno: banco, JPA, FKs e locks
 
 UUID publicId
-→ endpoints
-→ DTOs
-→ frontend
+→ público: endpoints, DTOs e frontend
 ```
 
-Não reintroduzir IDs numéricos em contratos públicos novos.
+Não introduzir novos IDs numéricos em contratos públicos.
 
 ---
 
-# 6. Estoque e lotes
+# 8. PostgreSQL e Flyway
+
+Configuração de desenvolvimento:
+
+```text
+PostgreSQL
+Hibernate ddl-auto=validate
+Flyway habilitado
+```
+
+O Hibernate valida o schema; o Flyway controla a evolução.
+
+Sequência atual:
+
+```text
+V1 ... V12
+```
+
+Migrations aplicadas são imutáveis. Novas alterações de schema devem receber nova migration.
+
+---
+
+# 9. Multitenancy por Unidade
+
+Desde 04/09 a `main` possui isolamento operacional por Unidade.
+
+## Backend
+
+```text
+X-SGL-Unidade-Id
+→ TenantRequestFilter
+→ valida UUID
+→ TenantContext
+→ services/repositories restringem dados da Unidade
+→ TenantContext é limpo ao final da requisição
+```
+
+O filtro está presente em áreas centrais como:
+
+```text
+Usuários
+Laboratórios
+Projetos
+Produtos
+Estoque
+Lotes
+Pedidos
+Movimentações
+Estagiários
+Resíduos
+```
+
+`TenantProvider` permite que consultas Spring Data usem a Unidade atual.
+
+## Frontend
+
+A sessão DEV contém o contexto institucional do usuário, incluindo:
+
+```text
+unidadeId
+unidadeNome
+unidadeSigla
+laboratorioId
+laboratorioNome
+```
+
+O interceptor de `src/services/http.ts` envia:
+
+```text
+X-SGL-Unidade-Id: <unidadeId>
+```
+
+## Limite de segurança
+
+```text
+isolamento funcional por Unidade              ✅
+validação de cenários multitenant              ✅
+fronteira definitiva de autorização            ❌
+```
+
+O header ainda é controlado pelo cliente e o backend ainda não possui autenticação definitiva. Na produção, tenant/Unidade deverá ser derivado de uma identidade autenticada confiável.
+
+---
+
+# 10. Domínio de estoque
 
 ```text
 Produto
 → catálogo e unidade-base
 
 EstoqueCentral
-→ saldo consolidado por produto/unidade
+→ saldo consolidado por produto/Unidade
 
 Lote
 → quantidade física, validade, embalagem, multiplicador e rastreabilidade
 
 MovimentacaoEstoque
-→ trilha das alterações físicas
+→ trilha das operações físicas
 ```
 
 Seleção:
@@ -180,12 +320,12 @@ não perecível → FIFO
 Invariantes:
 
 ```text
-EstoqueCentral.quantidadeAtual acompanha soma operacional dos lotes
+EstoqueCentral.quantidadeAtual acompanha os lotes
 aprovação de pedido baixa estoque
 entrega não baixa novamente
-cancelamento aprovado restaura lotes exatos
-lote vencido não é utilizado na aprovação
-movimentação registra lote efetivamente afetado
+cancelamento aprovado restaura os lotes utilizados
+lote vencido não participa da aprovação
+movimentação identifica o lote efetivamente afetado
 ```
 
 Formas de retirada:
@@ -207,7 +347,9 @@ true → false proibido
 
 ---
 
-# 7. Pedidos
+# 11. Pedidos
+
+Estados:
 
 ```text
 PENDENTE
@@ -219,19 +361,18 @@ PENDENTE
 
 Regras:
 
-- aprovação executa baixa física;
+- criação não baixa estoque;
+- aprovação executa a baixa física;
 - entrega registra conclusão sem nova baixa;
-- cancelamento após aprovação restaura lotes consumidos;
-- urgência não altera automaticamente FIFO/FEFO;
+- cancelamento após aprovação restaura as quantidades dos lotes consumidos;
+- urgência não altera FIFO/FEFO;
 - `dataEntrega` registra o evento real.
+
+Evitar afirmar em documentos que todo cancelamento necessariamente cria um tipo específico de movimento se isso não estiver garantido pelo fluxo atual. O comportamento garantido hoje é a restauração dos lotes utilizados.
 
 ---
 
-# 8. Resíduos — estado vigente
-
-A descrição antiga de uma branch divergente está superada.
-
-O módulo experimental foi portado para a `main` atual e o fluxo funcional foi integrado.
+# 12. Resíduos
 
 Decisão:
 
@@ -241,40 +382,16 @@ Produto != Resíduo
 
 Produto representa catálogo/estoque. Resíduo representa material gerado no laboratório.
 
-Uma composição de Resíduo pode referenciar um Produto apenas para rastreabilidade; essa referência não baixa, repõe ou movimenta estoque automaticamente.
+Uma composição de Resíduo pode referenciar Produto para rastreabilidade, sem baixar ou repor estoque automaticamente.
 
 Fluxo:
 
 ```text
-laboratório informa
-→ Gestão recebe
-→ EM_ANALISE
-→ Gestão confirma classificação/riscos
-→ LIBERADO_PARA_ARMAZENAMENTO
-→ armazenamento temporário
-→ DESPACHADO
-```
-
-Status:
-
-```text
 INFORMADO
-EM_ANALISE
-LIBERADO_PARA_ARMAZENAMENTO
-ARMAZENADO_TEMPORARIAMENTE
-DESPACHADO
-```
-
-Duas experiências no frontend:
-
-```text
-Solicitante
-→ Informar resíduo
-→ Meus resíduos
-
-Gestão
-→ Resíduos
-→ receber/analisar/rotular/armazenar/despachar
+→ EM_ANALISE
+→ LIBERADO_PARA_ARMAZENAMENTO
+→ ARMAZENADO_TEMPORARIAMENTE
+→ DESPACHADO
 ```
 
 Código SGL:
@@ -283,32 +400,25 @@ Código SGL:
 SGL-RES-AAAA-NNNNNN
 ```
 
-O código é gerado no registro inicial. V12 realizou backfill em registros já existentes.
+V11 criou o módulo; V12 fez o backfill dos códigos para registros anteriores.
 
-O QR pode permanecer como campo técnico de compatibilidade, mas não faz parte do rótulo visual do primeiro protótipo.
-
-Migrations:
-
-```text
-V11__create_residuo_module.sql
-V12__backfill_codigo_sgl_residuos.sql
-```
+O QR pode existir tecnicamente, mas não integra o rótulo visual atual.
 
 Detalhes: `MODULO_RESIDUOS.md`.
 
 ---
 
-# 9. Estagiários
+# 13. Estagiários
 
-O módulo já não é apenas consulta. Está implementado:
+Cobertura:
 
 ```text
 listagem
 cadastro
 edição
-vínculo com unidade/laboratório
+vínculo com Unidade/Laboratório
 período
-Tipo de vínculo
+tipo de vínculo
 encerramento com data efetiva
 consulta de ativos
 consulta por laboratório
@@ -326,42 +436,16 @@ CONTRATUAL
 
 Regras importantes:
 
-- usuário precisa ter perfil `ESTAGIARIO` para vínculo de estágio;
-- usuário não possui dois cadastros de estágio;
-- laboratório e usuário devem pertencer à mesma unidade;
-- data final não pode ser anterior à inicial;
-- usuário vinculado não é trocado durante edição;
-- encerramento não pode ocorrer duas vezes nem antes do início;
-- encerramento grava a data efetiva.
+- usuário deve possuir perfil `ESTAGIARIO`;
+- não há dois cadastros de estágio para o mesmo usuário;
+- laboratório e usuário devem pertencer à mesma Unidade;
+- data final não pode anteceder a inicial;
+- usuário vinculado não é trocado em edição;
+- encerramento registra a data efetiva e não pode ser repetido.
 
 ---
 
-# 10. Pessoas por laboratório
-
-Relatório institucional adicionado para permitir auditoria de todas as pessoas vinculadas ao laboratório, não apenas estagiários.
-
-```text
-GET /api/v1/relatorios/pessoas-laboratorio
-GET /api/v1/relatorios/pessoas-laboratorio/exportar?formato=PDF|XLSX
-```
-
-Inclui:
-
-```text
-laboratório + unidade
-responsável
-usuários vinculados
-perfil
-ativo/inativo
-estagiário: tipo e período do vínculo
-totais por perfil
-```
-
----
-
-# 11. Administração / Cadastros
-
-A central administrativa foi concluída no frontend e o backend recebeu os contratos necessários.
+# 14. Administração / Cadastros
 
 Áreas atuais:
 
@@ -369,37 +453,34 @@ A central administrativa foi concluída no frontend e o backend recebeu os contr
 Laboratórios
 Projetos
 Produtos
-Permissões
-Resíduos — opção futura/em breve para modelos pré-determinados
+Permissões de usuários existentes
 ```
 
 Decisões:
 
 ## Unidade
 
-Não possui CRUD manual normal no frontend. No futuro virá/sincronizará via integração corporativa.
+É dado institucional. Não possui CRUD manual normal no frontend.
 
 ## Usuário
 
-Não há criação manual de usuário na central. A futura autenticação institucional deve criar/sincronizar o usuário.
-
-Administração pode consultar usuários existentes e alterar somente o perfil por endpoint específico.
+Não é cadastrado manualmente pela central. A futura autenticação corporativa deverá criar/sincronizar usuários.
 
 ## Produto
 
-É catálogo-base. Estoque/lotes permanecem em telas operacionais.
+Em Cadastros representa catálogo-base. Estoque e lotes permanecem na operação de estoque.
 
 ## Laboratório
 
-Responsável deve pertencer à mesma unidade.
+Responsável deve pertencer à mesma Unidade.
 
-## Modelos de Resíduo
+## Resíduos pré-determinados
 
-São opção futura em estudo. O protótipo apenas sinaliza “Em breve”; não alterar validações atuais até existir decisão/contrato oficial.
+Continuam como possibilidade futura; não fazem parte do fluxo operacional obrigatório atual.
 
 ---
 
-# 12. Fiscalização
+# 15. Fiscalização
 
 Campos de Produto:
 
@@ -419,13 +500,13 @@ EXERCITO
 OUTRO
 ```
 
-Se fiscalizado, ao menos um órgão é obrigatório. Não inferir fiscalização por risco/perecibilidade.
+Se fiscalizado, pelo menos um órgão é obrigatório. Não inferir fiscalização por risco ou perecibilidade.
 
 ---
 
-# 13. Relatórios
+# 16. Relatórios
 
-Relatórios atuais:
+Relatórios integrados:
 
 ```text
 Estagiários
@@ -438,19 +519,13 @@ Resíduos
 Pessoas por laboratório
 ```
 
-Decisão preservada:
+Pedidos entregues são um recorte de Movimentações, não um relatório próprio.
 
-```text
-Pedidos entregues não possui relatório próprio.
-```
-
-Usar Movimentações para esse recorte.
-
-Prévia, PDF e XLSX usam a mesma consulta e filtros.
+Prévia, PDF e XLSX devem usar a mesma consulta e os mesmos filtros.
 
 ---
 
-# 14. Frontend atual — rotas relevantes
+# 17. Frontend — rotas principais
 
 Fonte de verdade: `SGL-FRONTEND/src/router/index.ts`.
 
@@ -476,7 +551,7 @@ GESTÃO / ADMIN
 /relatorios
 /relatorios/residuos
 /relatorios/pessoas-laboratorio
-/administracao/cadastros      ADMINISTRADOR
+/administracao/cadastros
 /solicitacoes/novo
 /solicitacoes/meus-pedidos
 
@@ -492,14 +567,14 @@ Rota inicial:
 
 ```text
 GESTOR / ADMINISTRADOR → /dashboard
-solicitantes           → /inicio
+TECNICO / ANALISTA / PESQUISADOR / ESTAGIARIO → /inicio
 ```
 
 ---
 
-# 15. Dashboard, alertas, busca e aparência
+# 18. Dashboard, alertas, busca e tema
 
-Frontend Gestão usa dados reais de:
+Gestão usa dados reais de:
 
 ```text
 pedidos
@@ -511,121 +586,104 @@ laboratórios
 usuários
 ```
 
-Indicadores/atenções incluem:
+Indicadores incluem:
 
 ```text
-pedidos pendentes e urgentes
+pedidos pendentes/urgentes
 estoque baixo
 lotes vencidos
-lotes próximos do vencimento
+lotes vencendo em 7/30 dias
 resíduos INFORMADO/EM_ANALISE
 movimentações recentes
 resumo por laboratório
 ```
 
-Os cards e alertas navegam para telas já filtradas quando aplicável.
-
 Também estão integrados:
 
 ```text
 busca global
-alertas operacionais no shell
-modo claro/escuro
-persistência da preferência visual
+alertas operacionais
+tema claro/escuro
+persistência da preferência
+Dashboard do Solicitante
 ```
-
-Dashboard do Solicitante também existe em `/inicio`.
 
 ---
 
-# 16. Login e segurança
+# 19. Sessão DEV e segurança
 
-O login visual está funcional, mas ainda é DEV.
+Login atual:
 
 ```text
 identificador + senha preenchida
-→ frontend consulta usuários
-→ usuário ativo é resolvido
-→ senha NÃO é validada por endpoint definitivo
-→ sessão DEV em localStorage
+→ frontend consulta usuários existentes
+→ resolve usuário ativo
+→ senha ainda não é validada por autenticação definitiva
+→ sessão em localStorage
 → expiração automática em 5 horas
 ```
 
-Separar:
+Separação correta:
 
 ```text
-login visual / sessão DEV                    ✅
-guardas por perfil no frontend                ✅ UX
-validações pontuais no backend                ✅
-autenticação segura                           ⏳
-autorização global real                       ⏳
-auditoria pela identidade autenticada         ⏳
-SSO/API corporativa                           ⏳
+sessão DEV                                  ✅ temporária
+guardas por perfil frontend                 ✅ UX
+isolamento por Unidade via header           ✅ desenvolvimento
+Spring Security como base                   ✅
+autenticação segura                         ⏳
+autorização global real                     ⏳
+auditoria pela identidade autenticada       ⏳
+SSO/API corporativa                         ⏳
 ```
+
+O backend ainda possui `permitAll()` temporário. Não tratar controles visuais, sessão local ou header de Unidade como segurança final.
 
 ---
 
-# 17. Flyway
+# 20. Decisão corporativa de Unidade
 
-Sequência atual da `main`:
+Unidade não deve ser criada/selecionada livremente por usuário em produção.
+
+Modelo futuro esperado:
 
 ```text
-V1 ... V12
+login/integração corporativa
+→ identidade institucional
+→ identificador estável da Unidade
+→ backend resolve/reutiliza a Unidade
+→ sessão/token recebe o tenant confiável
+→ frontend apenas consome o contexto resolvido
 ```
 
-As migrations já aplicadas não devem ser alteradas. Novas mudanças de banco recebem nova versão.
+A sincronização deverá ser idempotente e preservar identificador corporativo estável.
 
 ---
 
-# 18. Primeiro protótipo — fechamento
+# 21. Pendências planejadas
 
-O planejamento oficial de fechamento foi criado no frontend e deve continuar sendo respeitado.
-
-Itens que já chegaram à `main`:
-
-```text
-Resíduos                                   ✅
-Estagiários                                ✅
-Administração/Cadastros                    ✅
-Dashboard                                  ✅
-Alertas operacionais                       ✅
-Aparência claro/escuro                     ✅
-```
-
-Próximo bloco:
-
-```text
-1. consolidar diretrizes/matriz funcional de permissões
-2. congelar o primeiro protótipo
-3. executar docs/PLANO_TESTES_PRIMEIRO_PROTOTIPO.md
-4. estabilizar apenas o que a homologação encontrar
-```
-
-Após isso:
+Não confundir com falhas funcionais do sistema aprovado:
 
 ```text
 autenticação/autorização/auditoria definitiva
-→ integração corporativa
-→ documentos/upload quando contrato existir
-→ refactor técnico para inglês
+integração corporativa
+upload/download documental quando houver contrato
+refactor técnico de nomenclatura para inglês
+modelos pré-determinados de resíduos, se aprovados no futuro
 ```
+
+A interface continua em português mesmo em eventual refactor técnico.
 
 ---
 
-# 19. Pendências que NÃO devem ser confundidas com falha atual
+# 22. Regra de retomada
 
 ```text
-autenticação segura real                     ⏳
-integração corporativa                        ⏳
-upload/download documental definitivo         ⏳
-modelos pré-determinados de resíduos           💡 futuro/em estudo
-refactor técnico para inglês                  ⏳ pós-protótipo
+1. ler CONTINUIDADE.md
+2. conferir a main atual
+3. validar contratos no Swagger
+4. consultar este dossiê
+5. abrir o documento específico da área
+6. distinguir decisão atual de histórico
 ```
 
-A interface de usuário permanece em português mesmo após o futuro refactor técnico.
-
----
-
-# 20. Regra de retomada
-
-**Não refazer Pedidos, Estoque, Resíduos, Estagiários, Administração ou Dashboard. O projeto está no fechamento do primeiro protótipo. Toda nova intervenção deve primeiro verificar se pertence à matriz de permissões, congelamento/homologação, correção de falha ou a uma etapa posterior já documentada.**
+**O SGL está funcionalmente aprovado e em pré-produção pós-aprovação. Não tratar documentos antigos que dizem “matriz de permissões = próximo passo” como estado atual; essa etapa pertence ao roadmap formal que começará após o bloco atual.**

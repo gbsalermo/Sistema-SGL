@@ -1,9 +1,12 @@
-# Pendências pós-protótipo — SGL
+# Pendências técnicas posteriores — SGL
 
 **Registrado em:** 29/08/2026  
+**Revisado em:** 04/09/2026  
 **Escopo:** `gbsalermo/Sistema-SGL` + `gbsalermo/SGL-FRONTEND`
 
-Este documento registra refactors e melhorias que devem ser executados **depois do fechamento e validação do protótipo**, sem alterar o roadmap funcional atual.
+Este documento registra refactors estruturais que **não fazem parte do bloco atual de pré-produção pós-aprovação**, salvo nova decisão explícita.
+
+O primeiro protótipo já foi funcionalmente aprovado. A sequência atual está em `CONTINUIDADE.md`; este arquivo continua sendo uma referência para trabalho técnico posterior.
 
 ---
 
@@ -95,12 +98,12 @@ Os nomes definitivos devem ser definidos em um mapa de nomenclatura antes da alt
 
 Esta mudança é estrutural e **não deve alterar regra de negócio**.
 
-Executar somente em branch própria após o protótipo estar estável.
+Executar somente em branch própria quando o ciclo formal determinar que o produto está estável para esse tipo de alteração.
 
-Fluxo obrigatório:
+Fluxo recomendado:
 
 ```text
-1. congelar contratos funcionais do protótipo
+1. congelar contratos funcionais
 2. criar branch específica de refactor
 3. criar mapa Português → Inglês
 4. renomear domínio e DTOs
@@ -132,7 +135,7 @@ campos JSON consumidos pelo frontend
 valores persistidos de enums
 ```
 
-Quando for desejável traduzir também um contrato externo, isso deve ser tratado como uma migração separada e coordenada entre backend e frontend.
+Quando for desejável traduzir também um contrato externo, isso deve ser tratado como migração separada e coordenada entre backend e frontend.
 
 Em entidades JPA, nomes de classes podem ser traduzidos mantendo `@Table` e `@Column` apontando para a estrutura existente do banco.
 
@@ -154,7 +157,9 @@ Histórico e rastreabilidade
 Fiscalização
 Relatórios
 Exportação PDF/XLSX
-Resíduos, se já estiver integrado
+Resíduos
+Estagiários
+Isolamento por Unidade
 Autenticação/autorização, se já estiver concluída
 ```
 
@@ -181,6 +186,6 @@ A pendência só é considerada concluída quando:
 
 # Decisão
 
-**Status:** ⏳ Pós-protótipo.
+**Status:** ⏳ Refactor técnico posterior.
 
-Não executar durante o fechamento funcional atual. A tradução do código deve ser tratada como um refactor controlado, sem alteração simultânea de comportamento, banco e contratos HTTP.
+Não executar automaticamente durante a pré-produção atual. Se esse refactor for priorizado no futuro, tratá-lo como mudança controlada e separada, sem misturar simultaneamente renomeação, alteração de comportamento, banco e contratos HTTP.

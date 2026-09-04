@@ -3,13 +3,14 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 03/09/2026  
+**Última atualização:** 04/09/2026  
 **Branch estável:** `main`  
-**Fase atual:** primeiro protótipo funcional próximo do congelamento/homologação.  
-**Próximo bloco oficial:** consolidar diretrizes/matriz de permissões → congelar protótipo → homologação completa.  
+**Fase atual:** ajustes de pré-produção pós-aprovação funcional.  
+**Bloco atual:** limpeza documental → planejamento dos ajustes de pré-produção → refinamentos.  
+**Roadmap formal posterior:** matriz de permissões → congelamento → homologação final → segurança/integração corporativa.  
 **Handoff completo:** `docs/DOSSIE_PROJETO_SGL.md`
 
-Este arquivo é o checkpoint de retomada. Para contratos HTTP, usar sempre o Swagger/OpenAPI em execução.
+Este arquivo é o checkpoint principal de retomada. Para contratos HTTP, usar sempre o Swagger/OpenAPI em execução.
 
 ---
 
@@ -17,7 +18,7 @@ Este arquivo é o checkpoint de retomada. Para contratos HTTP, usar sempre o Swa
 
 ```text
 branch própria
-→ implementação
+→ implementação/revisão
 → validação
 → refinamento
 → Pull Request
@@ -25,11 +26,11 @@ branch própria
 → atualizar documentação afetada
 ```
 
-Não reabrir etapas concluídas sem necessidade concreta e não reorganizar o roadmap silenciosamente.
+Não reabrir módulos aprovados sem uma necessidade concreta. Mudanças de pré-produção devem preservar o comportamento funcional aprovado, salvo decisão explícita em contrário.
 
 ---
 
-# 1. Estado geral em 03/09/2026
+# 1. Estado consolidado
 
 ## Backend
 
@@ -48,19 +49,17 @@ Movimentações                                         ✅
 Relatórios consolidados                               ✅
 Produtos fiscalizados                                 ✅
 PDF / XLSX                                            ✅
-Resíduos — fluxo operacional                          ✅
-Relatório + exportação de Resíduos                    ✅
-Estagiários — CRUD de vínculo + encerramento           ✅
-Pessoas por laboratório + exportação                  ✅
+Resíduos — fluxo operacional completo                 ✅
+Estagiários — vínculo + encerramento                   ✅
+Pessoas por laboratório                               ✅
 Suporte a Administração/Cadastros                     ✅
 Alteração administrativa de perfil                    ✅
-Código SGL de Resíduo desde o registro inicial        ✅
-Autenticação/autorização/auditoria definitiva         ⏳
-Integração corporativa                                ⏳
-Refactor técnico para inglês                          ⏳ pós-protótipo
+Isolamento operacional por Unidade                    ✅
+Autenticação/autorização/auditoria definitiva         ⏳ roadmap formal
+Integração corporativa                                ⏳ roadmap formal
 ```
 
-## Frontend integrado à main
+## Frontend integrado
 
 ```text
 Login visual / sessão DEV                             ✅
@@ -80,22 +79,51 @@ Dashboard Solicitante                                 ✅
 Alertas operacionais                                  ✅
 Busca global                                          ✅
 Tema claro/escuro com persistência                    ✅
-Página 404 animada                                    ✅
-Autenticação/autorização definitiva                   ⏳
+Página 404                                            ✅
+Contexto de Unidade enviado à API                     ✅
+Autenticação/autorização definitiva                   ⏳ roadmap formal
 ```
 
-O login atual continua sendo sessão de desenvolvimento. A existência de guardas de rota e validações pontuais por perfil não equivale à autorização segura de produção.
+O produto foi aprovado funcionalmente. O trabalho atual é de pré-produção e refinamento, não de reconstrução do primeiro protótipo.
 
 ---
 
-# 2. Identificadores e arquitetura
+# 2. Ordem de precedência
+
+Quando houver conflito entre documentos:
+
+```text
+1. código da main
+2. Swagger/OpenAPI para contratos HTTP
+3. CONTINUIDADE.md do repositório em trabalho
+4. docs/DOSSIE_PROJETO_SGL.md
+5. documentos específicos de decisão/módulo
+6. roteiros, exemplos e documentos históricos
+```
+
+Datas de upload/commit de documentos históricos não transformam conteúdo antigo em fonte de verdade.
+
+---
+
+# 3. Arquitetura e identificadores
+
+```text
+Controller = contrato HTTP
+Service = regra/transação/orquestração
+Repository = persistência
+Model = estado de domínio
+RequestDTO = entrada
+ResponseDTO = saída
+```
+
+Identificadores:
 
 ```text
 Long id
-→ banco, JPA, FKs, locks
+→ banco, JPA, FKs e locks
 
 UUID publicId
-→ DTOs, endpoints, frontend
+→ DTOs, endpoints e frontend
 ```
 
 Fluxo padrão:
@@ -106,42 +134,91 @@ Controller recebe UUID
 → domínio usa Long internamente
 ```
 
+---
+
+# 4. PostgreSQL e Flyway
+
+Ambiente de desenvolvimento padrão:
+
 ```text
-Controller = contrato HTTP
-Service = regra/transação/orquestração
-Repository = persistência
-Model = estado e regras da entidade
-RequestDTO = entrada
-ResponseDTO = saída
+PostgreSQL
+spring.jpa.hibernate.ddl-auto=validate
+spring.flyway.enabled=true
 ```
+
+O Hibernate valida o schema; quem evolui o banco é o Flyway.
+
+Migrations atuais:
+
+```text
+V1 ... V12
+```
+
+Regra obrigatória: migration já aplicada é imutável. Nova alteração de schema recebe uma nova versão.
 
 ---
 
-# 3. Estoque, lotes e pedidos — invariantes
+# 5. Multitenancy por Unidade — estado atual
+
+O isolamento por Unidade já está integrado à `main`.
+
+Backend:
+
+```text
+TenantRequestFilter
+→ lê X-SGL-Unidade-Id
+→ valida UUID
+→ define TenantContext durante a requisição
+→ limpa o contexto no final
+```
+
+`TenantProvider` e consultas/services usam a Unidade atual para restringir dados em áreas como usuários, laboratórios, projetos, produtos, estoque, lotes, pedidos, movimentações, estagiários e resíduos.
+
+Frontend:
+
+```text
+sessão DEV contém unidadeId/unidadeSigla
+→ interceptor HTTP lê unidadeId
+→ envia X-SGL-Unidade-Id em chamadas à API
+```
+
+Interpretação correta:
+
+```text
+isolamento funcional por Unidade              ✅
+validação de cenários multitenant              ✅
+fronteira definitiva de segurança              ❌ ainda não
+```
+
+Enquanto a Unidade vier de um header controlado pelo cliente e a autenticação definitiva não existir, esse mecanismo não deve ser tratado como autorização segura de produção. Na integração corporativa, Unidade/tenant deve ser derivado da identidade autenticada.
+
+---
+
+# 6. Estoque, lotes e pedidos
 
 ```text
 Produto = catálogo
-EstoqueCentral = saldo consolidado
+EstoqueCentral = saldo consolidado por produto/Unidade
 Lote = validade + saldo + embalagem + rastreabilidade
 MovimentacaoEstoque = trilha das operações físicas
 ```
 
-Saída:
+Seleção de lotes:
 
 ```text
 perecível     → FEFO
 não perecível → FIFO
 ```
 
-Regras consolidadas:
+Invariantes:
 
 ```text
-EstoqueCentral.quantidadeAtual = soma operacional dos lotes
+EstoqueCentral.quantidadeAtual acompanha os lotes
 aprovação baixa estoque
 entrega NÃO baixa novamente
-cancelamento aprovado restaura os lotes exatos
+cancelamento aprovado restaura os lotes exatos utilizados
 lote vencido não participa da aprovação
-movimentação registra o lote efetivamente utilizado
+movimentação identifica o lote efetivamente afetado
 ```
 
 Formas de retirada:
@@ -163,7 +240,7 @@ true  → false não permitido
 
 ---
 
-# 4. Pedidos
+# 7. Pedidos
 
 ```text
 PENDENTE
@@ -173,28 +250,29 @@ PENDENTE
 └── REJEITADO
 ```
 
+Regras consolidadas:
+
 ```text
-aprovação → baixa estoque
+criação → não baixa estoque
+aprovação → baixa física
 entrega → conclusão sem segunda baixa
-cancelamento após aprovação → restaura lotes exatos
-urgência → atributo do pedido; não muda FIFO/FEFO
+cancelamento aprovado → restaura quantidades dos lotes utilizados
+urgência → não altera FIFO/FEFO
 ```
 
-`Pedido.dataEntrega` registra entrega real. Não inventar data retroativa para registros antigos.
+`Pedido.dataEntrega` registra o evento real de entrega.
 
 ---
 
-# 5. Resíduos — concluído e integrado
-
-A antiga branch `feat/gestao-residuos` deixou de ser o estado vigente. O módulo foi portado/reconciliado sobre a `main` e depois integrado pelo ciclo `feat/residuos`.
+# 8. Resíduos
 
 Decisão central:
 
 ```text
-Produto ≠ Resíduo
+Produto != Resíduo
 ```
 
-Composição de Resíduo pode referenciar Produto sem alterar automaticamente estoque/lotes/movimentações.
+Componente de Resíduo pode referenciar Produto para rastreabilidade sem alterar estoque automaticamente.
 
 Fluxo:
 
@@ -206,63 +284,19 @@ INFORMADO
 → DESPACHADO
 ```
 
-Cobertura atual:
-
-```text
-cadastro pelo laboratório                            ✅
-Meus resíduos                                        ✅
-recebimento pela Gestão                              ✅
-análise/classificação                                ✅
-riscos informados x confirmados                      ✅
-Código SGL                                           ✅
-rótulo                                               ✅
-histórico                                             ✅
-armazenamento temporário                             ✅
-despacho                                             ✅
-relatório                                            ✅
-PDF/XLSX                                             ✅
-```
-
-Código:
+Código SGL:
 
 ```text
 SGL-RES-AAAA-NNNNNN
 ```
 
-O Código SGL passa a existir já no registro inicial; registros anteriores foram contemplados por backfill.
+O código existe desde o registro inicial; V12 realizou backfill dos registros anteriores.
 
 Detalhes: `docs/MODULO_RESIDUOS.md`.
 
 ---
 
-# 6. Flyway
-
-A `main` possui migrations de `V1` a `V12`.
-
-Resumo recente:
-
-```text
-V5  → apresentação/fracionamento do lote
-V6  → observação do lote
-V7  → Código SGL do lote
-V8  → tipo de embalagem do lote
-V9  → forma de retirada no ItemPedido
-V10 → dados usados por relatórios/fiscalização/entrega
-V11 → módulo de Resíduos
-V12 → backfill do Código SGL de Resíduos
-```
-
-Regra obrigatória: migration já aplicada é imutável.
-
----
-
-# 7. Estagiários e vínculos institucionais
-
-Base:
-
-```text
-/api/v1/estagiarios
-```
+# 9. Estagiários e estrutura institucional
 
 Cobertura:
 
@@ -278,7 +312,7 @@ tipo de vínculo
 encerramento com data efetiva
 ```
 
-Tipos atuais incluem:
+Tipos atuais:
 
 ```text
 BOLSA_CNPQ
@@ -288,35 +322,42 @@ VOLUNTARIO
 CONTRATUAL
 ```
 
-`CONTRATUAL` representa vínculo de estágio contratual/empregatício sem bolsa.
+Regras principais:
+
+- usuário precisa ter perfil `ESTAGIARIO`;
+- não há dois registros de estágio para o mesmo usuário;
+- laboratório e usuário precisam pertencer à mesma Unidade;
+- data final não pode anteceder a inicial;
+- usuário vinculado não é trocado durante edição;
+- encerramento grava data efetiva e não pode ser repetido.
 
 ---
 
-# 8. Administração / Cadastros
+# 10. Administração / Cadastros
 
-A central administrativa do frontend foi concluída e usa suporte backend para:
+A central administrativa usa suporte backend para:
 
 ```text
 Laboratórios
 Projetos
 Produtos
-Permissões de usuários existentes
+Permissões/perfis de usuários existentes
 ```
 
-Decisões:
+Decisões vigentes:
 
-- Unidade é dado institucional e não recebe CRUD manual normal no frontend;
-- usuário será criado/sincronizado pelo login institucional no futuro;
-- a Administração consulta usuários existentes e pode alterar somente o perfil por endpoint específico;
-- Produto em Cadastros é catálogo-base; quantidades e lotes permanecem em Estoque;
+- Unidade é dado institucional; não há CRUD manual normal no frontend;
+- usuário não é criado manualmente na central administrativa;
+- Administração pode alterar perfil de usuários existentes;
+- Produto em Cadastros é catálogo, não estoque;
 - responsável de Laboratório deve pertencer à mesma Unidade;
-- perfil `ESTAGIARIO` com vínculo ativo não deve ser removido antes do encerramento do estágio.
+- `ESTAGIARIO` com vínculo ativo não deve perder esse perfil antes do encerramento.
 
-Modelos de **Resíduos pré-determinados** aparecem apenas como opção futura/em estudo; não fazem parte do contrato operacional obrigatório atual.
+Modelos pré-determinados de Resíduos permanecem ideia futura, não requisito atual.
 
 ---
 
-# 9. Fiscalização
+# 11. Fiscalização
 
 Campos:
 
@@ -326,7 +367,7 @@ orgaosFiscalizadores
 observacaoFiscalizacao
 ```
 
-Órgãos iniciais:
+Órgãos atuais:
 
 ```text
 POLICIA_FEDERAL
@@ -336,18 +377,13 @@ EXERCITO
 OUTRO
 ```
 
-```text
-fiscalizado=false → órgãos vazios + observação limpa
-fiscalizado=true  → pelo menos um órgão obrigatório
-```
-
-Não inferir fiscalização a partir de risco/perecibilidade.
+Se `fiscalizado=true`, pelo menos um órgão deve existir. Não inferir fiscalização por risco ou perecibilidade.
 
 ---
 
-# 10. Relatórios e exportações
+# 12. Relatórios e exportações
 
-Relatórios atuais:
+Relatórios integrados:
 
 ```text
 1. Estagiários
@@ -360,9 +396,7 @@ Relatórios atuais:
 8. Pessoas por laboratório
 ```
 
-Pedidos entregues continuam sendo recorte de Movimentações, não relatório próprio.
-
-Exportações:
+Pedidos entregues são recorte de Movimentações, não relatório próprio.
 
 ```text
 prévia JSON
@@ -375,11 +409,11 @@ Detalhes: `docs/RELATORIOS.md` e `docs/EXPORTACAO_RELATORIOS.md`.
 
 ---
 
-# 11. Dashboard e alertas — impacto no backend
+# 13. Dashboard, alertas e busca
 
-Os dashboards do frontend foram integrados sem criar uma regra paralela de domínio. Eles compõem dados já expostos por pedidos, estoque, lotes, resíduos, movimentações, laboratórios e usuários.
+O frontend compõe dados reais já expostos por pedidos, estoque, lotes, resíduos, movimentações, laboratórios e usuários.
 
-Indicadores operacionais usados hoje incluem:
+Indicadores usados incluem:
 
 ```text
 pedidos pendentes/urgentes
@@ -391,92 +425,82 @@ movimentações recentes
 resumo por laboratório
 ```
 
-Qualquer novo KPI que exija cálculo oficial complexo deve preferir endpoint/serviço backend próprio em vez de regra duplicada no frontend.
+Novo KPI com regra oficial complexa deve preferir endpoint/serviço backend próprio, evitando duplicação de regra no frontend.
 
 ---
 
-# 12. Segurança e sessão
+# 14. Segurança e sessão
 
 Estado correto:
 
 ```text
-Spring Security/OAuth como base técnica             ✅
-validações pontuais de perfil em domínio             ✅
-guardas de rota no frontend                          ✅ UX/sessão DEV
+Spring Security como base técnica                    ✅
+guardas de rota no frontend                          ✅ UX
 sessão DEV com expiração                             ✅ temporária
+isolamento por Unidade via header                    ✅ desenvolvimento
 autenticação definitiva                              ⏳
 autorização global real                              ⏳
-auditoria baseada em identidade autenticada          ⏳
+auditoria por identidade autenticada                 ⏳
 integração corporativa/SSO                           ⏳
 ```
 
-A futura autenticação deve retirar dos payloads a responsabilidade de informar manualmente o usuário responsável sempre que essa identidade puder vir da sessão/token.
+A configuração atual do backend ainda usa `permitAll()` de forma temporária. A futura autenticação deverá retirar dos payloads e headers controláveis pelo cliente a responsabilidade por identidade, perfil e tenant sempre que esses dados puderem vir da sessão/token confiável.
 
 ---
 
-# 13. Próximos passos oficiais
+# 15. Fase atual — pré-produção pós-aprovação
 
-Sem criar novo roadmap, o planejamento de fechamento do protótipo passa a ser:
+O primeiro protótipo foi funcionalmente aprovado. Antes do roadmap formal, o projeto passa por um bloco de pré-produção destinado a aproximar o sistema do estado ideal sem reabrir desnecessariamente o que já foi aprovado.
+
+Sequência deste bloco:
 
 ```text
-1. consolidar diretrizes/matriz de permissões        ← PRÓXIMO
-2. congelar o primeiro protótipo
-3. executar homologação completa integrada
-4. corrigir falhas encontradas na homologação
+1. limpeza, revisão e atualização documental          ← ATUAL
+2. levantamento e planejamento dos ajustes
+3. execução dos ajustes de pré-produção
+4. validação e estabilização do bloco
+```
+
+Durante esta fase podem entrar melhorias e adições justificadas, desde que preservem coerência de domínio e não sejam confundidas com a etapa formal de segurança/produção.
+
+---
+
+# 16. Roadmap formal posterior
+
+Depois de concluído o bloco atual de pré-produção:
+
+```text
+1. consolidar diretrizes/matriz de permissões
+2. congelar o comportamento funcional
+3. executar homologação integrada final
+4. corrigir falhas encontradas
 5. autenticação + autorização + auditoria definitiva
-6. integração corporativa / sincronização de Unidade
+6. integração corporativa / SSO / Unidade confiável
 7. documentos/upload quando houver contrato definitivo
-8. refactor pós-protótipo para nomenclatura técnica em inglês
+8. refactors técnicos planejados
 ```
 
-Não reclassificar Resíduos, Administração ou Dashboard como “próxima etapa”: esses blocos já chegaram à `main`.
+Esse roadmap continua válido; apenas não é o bloco em execução neste momento.
 
 ---
 
-# 14. Validações consolidadas
-
-```text
-PostgreSQL + Flyway
-UUID público
-entrada de lote
-FIFO / FEFO
-lote vencido fora da aprovação
-estoque utilizável insuficiente
-descarte por vencimento
-cancelamento restaurando lotes exatos
-entrega sem segunda baixa
-histórico/rastreabilidade
-concorrência de aprovação
-Swagger/OpenAPI
-Movimentações
-Relatórios base
-Fiscalização
-PDF/XLSX base
-Resíduos — fluxo operacional
-Estagiários — vínculo/encerramento
-Administração — contratos principais
-```
-
-A homologação completa do protótipo congelado ainda deve executar a bateria integrada prevista no frontend, em vez de assumir que commits isolados substituem um teste de ponta a ponta.
-
----
-
-# 15. Documentação de referência
+# 17. Documentação de referência
 
 Começar por:
 
-- `docs/DOSSIE_PROJETO_SGL.md`
-- `docs/README.md`
-- `README.md`
-- `docs/MODULO_RESIDUOS.md`
-- `docs/RELATORIOS.md`
-- `docs/EXPORTACAO_RELATORIOS.md`
-- `docs/PENDENCIAS_POS_PROTOTIPO.md`
+```text
+README.md
+CONTINUIDADE.md
+docs/DOSSIE_PROJETO_SGL.md
+docs/README.md
+```
 
-Para endpoints e payloads, confirmar sempre no Swagger.
+Depois consultar o documento específico da área em trabalho.
+
+Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 ---
 
-# 16. Regra de retomada
+# 18. Regra final de retomada
 
-**Não refazer os módulos principais. O produto está no fechamento do primeiro protótipo: consolidar permissões, congelar, homologar e estabilizar. Novas funcionalidades só devem entrar antes disso se corrigirem uma lacuna que impeça a homologação.**
+**O SGL está funcionalmente aprovado. A fase atual é pré-produção pós-aprovação. Não tratar a matriz de permissões como tarefa imediata até que o bloco atual seja encerrado. Preservar regras consolidadas, usar a `main` como verdade e atualizar documentação sempre que uma decisão vigente mudar.**
