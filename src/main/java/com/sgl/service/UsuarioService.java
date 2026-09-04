@@ -19,6 +19,7 @@ import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +35,8 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponseDTO criar(UsuarioRequestDTO dto) {
+        validarTenantUnidade(dto.getUnidadeId());
+
         if (usuarioRepository.existsByEmail(dto.getEmail())) {
             throw new BusinessRuleException("Email já cadastrado: " + dto.getEmail());
         }
@@ -61,7 +64,11 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarTodos() {
-        return usuarioRepository.findAll().stream()
+        List<Usuario> usuarios = TenantContext.unidadeAtual()
+                .map(usuarioRepository::findByUnidadePublicId)
+                .orElseGet(usuarioRepository::findAll);
+
+        return usuarios.stream()
                 .map(UsuarioResponseDTO::new)
                 .toList();
     }
@@ -70,6 +77,7 @@ public class UsuarioService {
     public List<UsuarioResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
         return usuarioRepository.findByLaboratorioId(laboratorio.getId()).stream()
                 .map(UsuarioResponseDTO::new)
@@ -78,15 +86,13 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public UsuarioResponseDTO buscarPorId(UUID id) {
-        Usuario usuario = usuarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
-        return new UsuarioResponseDTO(usuario);
+        return new UsuarioResponseDTO(buscarUsuarioNoTenant(id));
     }
 
     @Transactional
     public UsuarioResponseDTO atualizar(UUID id, UsuarioRequestDTO dto) {
-        Usuario usuario = usuarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+        Usuario usuario = buscarUsuarioNoTenant(id);
+        validarTenantUnidade(dto.getUnidadeId());
 
         if (usuarioRepository.existsByEmailAndIdNot(dto.getEmail(), usuario.getId())) {
             throw new BusinessRuleException("Já existe um usuário com este email.");
@@ -118,8 +124,7 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponseDTO alterarPerfil(UUID id, Perfil novoPerfil) {
-        Usuario usuario = usuarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+        Usuario usuario = buscarUsuarioNoTenant(id);
 
         if (novoPerfil == null) {
             throw new BusinessRuleException("Perfil é obrigatório.");
@@ -132,14 +137,31 @@ public class UsuarioService {
 
     @Transactional
     public void Inativar(UUID id) {
-        Usuario usuario = usuarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+        Usuario usuario = buscarUsuarioNoTenant(id);
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
             throw new BusinessRuleException("O usuário já está inativo.");
         }
 
         usuario.setAtivo(false);
+    }
+
+    private Usuario buscarUsuarioNoTenant(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Usuário", id);
+                    }
+                    return usuarioRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+                });
+    }
+
+    private void validarTenantUnidade(UUID unidadeId) {
+        if (!TenantContext.pertence(unidadeId)) {
+            throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
     }
 
     private void validarAlteracaoPerfil(Usuario usuario, Perfil novoPerfil) {
@@ -167,6 +189,7 @@ public class UsuarioService {
             );
         }
 
+        validarTenantUnidade(laboratorio.getUnidade().getPublicId());
         return laboratorio;
     }
 }
