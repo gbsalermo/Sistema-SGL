@@ -14,10 +14,16 @@ import com.sgl.model.enums.StatusResiduo;
 public interface ResiduoRepository extends JpaRepository<Residuo, Long> {
 
     Optional<Residuo> findByPublicId(UUID publicId);
+    Optional<Residuo> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
     List<Residuo> findAllByOrderByDataInformacaoDesc();
+    List<Residuo> findByLaboratorioUnidadePublicIdOrderByDataInformacaoDesc(UUID unidadePublicId);
 
     List<Residuo> findByStatusOrderByDataInformacaoDesc(StatusResiduo status);
+    List<Residuo> findByLaboratorioUnidadePublicIdAndStatusOrderByDataInformacaoDesc(
+            UUID unidadePublicId,
+            StatusResiduo status
+    );
 
     List<Residuo> findByLaboratorioPublicIdOrderByDataInformacaoDesc(UUID laboratorioPublicId);
 
