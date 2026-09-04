@@ -57,6 +57,7 @@ public class LoteService {
         return loteRepository
                 .findByDataValidadeBeforeAndAtivoTrue(LocalDate.now())
                 .stream()
+                .filter(lote -> lote.getQuantidadeDisponivel() > 0)
                 .map(LoteResponseDTO::new)
                 .toList();
     }
