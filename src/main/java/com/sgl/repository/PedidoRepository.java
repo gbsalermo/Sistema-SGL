@@ -22,6 +22,15 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Optional<Pedido> findByPublicId(UUID publicId);
     Optional<Pedido> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
+    @Override
+    @Query("""
+            SELECT pedido
+            FROM Pedido pedido
+            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
+               OR pedido.laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            """)
+    List<Pedido> findAll();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT pedido
