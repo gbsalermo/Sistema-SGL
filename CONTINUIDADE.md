@@ -6,11 +6,13 @@
 **Última atualização:** 04/09/2026  
 **Branch estável:** `main`  
 **Fase atual:** ajustes de pré-produção pós-aprovação funcional.  
-**Bloco atual:** limpeza documental → planejamento dos ajustes de pré-produção → refinamentos.  
+**Bloco atual:** planejamento consolidado → execução sequencial das etapas de pré-produção.  
+**Etapa atual:** Etapa 1 — padronização e refinamento visual global.  
+**Plano oficial da pré-produção:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Roadmap formal posterior:** matriz de permissões → congelamento → homologação final → segurança/integração corporativa.  
 **Handoff completo:** `docs/DOSSIE_PROJETO_SGL.md`
 
-Este arquivo é o checkpoint principal de retomada. Para contratos HTTP, usar sempre o Swagger/OpenAPI em execução.
+Este arquivo é o checkpoint principal de retomada. Para o fluxo detalhado do bloco atual, ler `docs/PLANO_PRE_PRODUCAO.md`. Para contratos HTTP, usar sempre o Swagger/OpenAPI em execução.
 
 ---
 
@@ -27,6 +29,8 @@ branch própria
 ```
 
 Não reabrir módulos aprovados sem uma necessidade concreta. Mudanças de pré-produção devem preservar o comportamento funcional aprovado, salvo decisão explícita em contrário.
+
+**Regra especial deste bloco:** alterações funcionais de backend serão implementadas manualmente pelo responsável do projeto. O apoio de IA deve analisar, modelar, orientar a implementação e revisar o resultado; não aplicar diretamente código funcional de backend sem nova autorização explícita.
 
 ---
 
@@ -78,7 +82,7 @@ Dashboard Gestão                                      ✅
 Dashboard Solicitante                                 ✅
 Alertas operacionais                                  ✅
 Busca global                                          ✅
-Tema claro/escuro com persistência                    ✅
+Tema claro/escuro com persistência                    ✅ base atual; refinamento planejado
 Página 404                                            ✅
 Contexto de Unidade enviado à API                     ✅
 Autenticação/autorização definitiva                   ⏳ roadmap formal
@@ -96,9 +100,10 @@ Quando houver conflito entre documentos:
 1. código da main
 2. Swagger/OpenAPI para contratos HTTP
 3. CONTINUIDADE.md do repositório em trabalho
-4. docs/DOSSIE_PROJETO_SGL.md
-5. documentos específicos de decisão/módulo
-6. roteiros, exemplos e documentos históricos
+4. docs/PLANO_PRE_PRODUCAO.md durante o bloco atual
+5. docs/DOSSIE_PROJETO_SGL.md
+6. documentos específicos de decisão/módulo
+7. roteiros, exemplos e documentos históricos
 ```
 
 Datas de upload/commit de documentos históricos não transformam conteúdo antigo em fonte de verdade.
@@ -238,6 +243,8 @@ false → true  permitido
 true  → false não permitido
 ```
 
+A Etapa 7 da pré-produção revisará a representação de unidades de medida e apresentações físicas antes da introdução de Soluções. Até lá, preservar as regras atuais.
+
 ---
 
 # 7. Pedidos
@@ -262,6 +269,8 @@ urgência → não altera FIFO/FEFO
 
 `Pedido.dataEntrega` registra o evento real de entrega.
 
+A introdução de Soluções em Pedidos está planejada para a Etapa 7 e depende da normalização de unidades e do cadastro de Soluções.
+
 ---
 
 # 8. Resíduos
@@ -274,7 +283,7 @@ Produto != Resíduo
 
 Componente de Resíduo pode referenciar Produto para rastreabilidade sem alterar estoque automaticamente.
 
-Fluxo:
+Fluxo atual:
 
 ```text
 INFORMADO
@@ -292,13 +301,27 @@ SGL-RES-AAAA-NNNNNN
 
 O código existe desde o registro inicial; V12 realizou backfill dos registros anteriores.
 
-Detalhes: `docs/MODULO_RESIDUOS.md`.
+Pré-produção planejada:
+
+- Etapa 3: remover redundância visual de análise, refinar o rótulo e separar geração/visualização de permissão de impressão;
+- Etapa 4: locais de armazenamento cadastráveis e modelos de Resíduos pré-cadastrados pela Gestão, com escolha entre modelo padrão e preenchimento manual pelo Solicitante.
+
+Distinção futura obrigatória:
+
+```text
+ModeloResiduo = definição reutilizável/padrão
+Residuo       = ocorrência operacional real
+```
+
+Alterações posteriores no modelo não devem modificar retroativamente Resíduos já registrados.
+
+Detalhes do plano: `docs/PLANO_PRE_PRODUCAO.md`. Detalhes do domínio atual: `docs/MODULO_RESIDUOS.md`.
 
 ---
 
 # 9. Estagiários e estrutura institucional
 
-Cobertura:
+Cobertura atual:
 
 ```text
 listar / consultar
@@ -322,7 +345,7 @@ VOLUNTARIO
 CONTRATUAL
 ```
 
-Regras principais:
+Regras atuais principais:
 
 - usuário precisa ter perfil `ESTAGIARIO`;
 - não há dois registros de estágio para o mesmo usuário;
@@ -330,6 +353,8 @@ Regras principais:
 - data final não pode anteceder a inicial;
 - usuário vinculado não é trocado durante edição;
 - encerramento grava data efetiva e não pode ser repetido.
+
+A Etapa 5 da pré-produção reestruturará Projetos e vínculos de Estagiários. O vínculo Projeto–Estagiário deverá preservar histórico, atividade exercida, período, status, encerramento e renovação, permitindo múltiplos projetos ao longo do tempo.
 
 ---
 
@@ -353,7 +378,11 @@ Decisões vigentes:
 - responsável de Laboratório deve pertencer à mesma Unidade;
 - `ESTAGIARIO` com vínculo ativo não deve perder esse perfil antes do encerramento.
 
-Modelos pré-determinados de Resíduos permanecem ideia futura, não requisito atual.
+Alterações planejadas:
+
+- Etapa 4: liberar cadastro de modelos de Resíduos padrão e locais de armazenamento;
+- Etapa 5: ampliar Projetos com código obrigatório, ciclo de vida e vínculos de pessoas;
+- Etapa 7: incluir cadastro de Soluções padrão.
 
 ---
 
@@ -383,7 +412,7 @@ Se `fiscalizado=true`, pelo menos um órgão deve existir. Não inferir fiscaliz
 
 # 12. Relatórios e exportações
 
-Relatórios integrados:
+Relatórios integrados atualmente:
 
 ```text
 1. Estagiários
@@ -405,7 +434,9 @@ XLSX
 → mesma consulta e mesmos filtros
 ```
 
-Detalhes: `docs/RELATORIOS.md` e `docs/EXPORTACAO_RELATORIOS.md`.
+A Etapa 6 avaliará uma visão consolidada de Laboratórios e Projetos após a estabilização do novo domínio de Projetos/Estagiários.
+
+Detalhes atuais: `docs/RELATORIOS.md` e `docs/EXPORTACAO_RELATORIOS.md`.
 
 ---
 
@@ -450,18 +481,33 @@ A configuração atual do backend ainda usa `permitAll()` de forma temporária. 
 
 # 15. Fase atual — pré-produção pós-aprovação
 
-O primeiro protótipo foi funcionalmente aprovado. Antes do roadmap formal, o projeto passa por um bloco de pré-produção destinado a aproximar o sistema do estado ideal sem reabrir desnecessariamente o que já foi aprovado.
+O primeiro protótipo foi funcionalmente aprovado. O levantamento realizado durante a apresentação com o cliente foi consolidado em `docs/PLANO_PRE_PRODUCAO.md`.
 
-Sequência deste bloco:
+Situação:
 
 ```text
-1. limpeza, revisão e atualização documental          ← ATUAL
-2. levantamento e planejamento dos ajustes
-3. execução dos ajustes de pré-produção
-4. validação e estabilização do bloco
+limpeza/revisão documental                            ✅ concluída
+planejamento dos ajustes                              ✅ consolidado
+Etapa 1 — refinamento visual global                   ⏭ ATUAL / próxima implementação
+Etapa 2 — Dark Mode definitivo                        ⏳
+Etapa 3 — refinamentos do fluxo atual de Resíduos     ⏳
+Etapa 4 — expansão operacional de Resíduos            ⏳
+Etapa 5 — Projetos + vínculos de Estagiários          ⏳
+Etapa 6 — relatórios de Projetos/Laboratórios         ⏳
+Etapa 7 — unidades + Soluções + Pedidos               ⏳
+Etapa 8 — Manual do Usuário + decisão delete lógico  ⏳
 ```
 
-Durante esta fase podem entrar melhorias e adições justificadas, desde que preservem coerência de domínio e não sejam confundidas com a etapa formal de segurança/produção.
+Dependências centrais:
+
+```text
+padrão visual → Dark Mode
+Resíduos atuais → expansão/modelos de Resíduos
+Projetos/Estagiários → relatório de Projetos
+unidades → Soluções → Pedidos com Soluções
+```
+
+O detalhe, escopo, regras e impacto de cada etapa estão em `docs/PLANO_PRE_PRODUCAO.md`.
 
 ---
 
@@ -476,7 +522,7 @@ Depois de concluído o bloco atual de pré-produção:
 4. corrigir falhas encontradas
 5. autenticação + autorização + auditoria definitiva
 6. integração corporativa / SSO / Unidade confiável
-7. documentos/upload quando houver contrato definitivo
+7. demais contratos/documentos de produção necessários
 8. refactors técnicos planejados
 ```
 
@@ -491,6 +537,7 @@ Começar por:
 ```text
 README.md
 CONTINUIDADE.md
+docs/PLANO_PRE_PRODUCAO.md
 docs/DOSSIE_PROJETO_SGL.md
 docs/README.md
 ```
@@ -503,4 +550,4 @@ Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 # 18. Regra final de retomada
 
-**O SGL está funcionalmente aprovado. A fase atual é pré-produção pós-aprovação. Não tratar a matriz de permissões como tarefa imediata até que o bloco atual seja encerrado. Preservar regras consolidadas, usar a `main` como verdade e atualizar documentação sempre que uma decisão vigente mudar.**
+**O SGL está funcionalmente aprovado. A fase atual é a execução do plano de pré-produção registrado em `docs/PLANO_PRE_PRODUCAO.md`, começando pela Etapa 1 — padronização/refinamento visual. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
