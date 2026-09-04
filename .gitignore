@@ -1,18 +1,18 @@
-# MiMoCode
+# Ferramentas locais
 .mimocode/
 
 # Node
 node_modules/
-package.json
-package-lock.json
-bun.lock
 
 # IDE
 .idea/
+.vscode/
 *.iws
 *.iml
 *.ipr
-.vscode/
+.project
+.classpath
+.settings/
 
 # OS
 .DS_Store
@@ -22,13 +22,13 @@ Thumbs.db
 *.log
 logs/
 
-# Environment
+# Ambiente
 .env
 .env.local
 .env.*.local
 
-# Reference files
+# Arquivos locais de referência
 *-referencia*
 
-
+# Java compilado
 *.class
