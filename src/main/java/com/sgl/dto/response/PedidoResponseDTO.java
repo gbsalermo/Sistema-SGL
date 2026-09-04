@@ -20,41 +20,32 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PedidoResponseDTO {
 
-    @Schema(description = "Identificador público UUID do pedido.", example = "550e8400-e29b-41d4-a716-446655440010")
     private UUID id;
-    @Schema(description = "Identificador público UUID do usuário solicitante.", example = "550e8400-e29b-41d4-a716-446655440001")
     private UUID usuarioId;
-    @Schema(description = "Nome do usuário solicitante.", example = "Maria Oliveira")
     private String usuarioNome;
-    @Schema(description = "Identificador público UUID do laboratório.", example = "550e8400-e29b-41d4-a716-446655440002")
+    private UUID unidadeId;
+    private String unidadeNome;
+    private String unidadeSigla;
     private UUID laboratorioId;
-    @Schema(description = "Nome do laboratório.", example = "Laboratório de Química Orgânica")
     private String laboratorioNome;
-    @Schema(description = "Identificador público UUID do projeto, quando houver.", example = "550e8400-e29b-41d4-a716-446655440003")
     private UUID projetoId;
-    @Schema(description = "Nome do projeto vinculado ao pedido, quando houver.", example = "Síntese de Novos Compostos")
     private String projetoNome;
-    @Schema(description = "Data e hora em que o pedido foi criado.", example = "2026-08-20T14:30:00")
     private LocalDateTime dataSolicitacao;
-    @Schema(description = "Data e hora em que o pedido foi efetivamente entregue, quando aplicável.", example = "2026-08-21T09:15:00")
     private LocalDateTime dataEntrega;
-    @Schema(description = "Status atual do pedido.", example = "APROVADO")
     private StatusPedido status;
-    @Schema(description = "Indica se o pedido foi marcado como urgente pelo solicitante.", example = "true")
     private Boolean urgente;
-    @Schema(description = "Justificativa da urgência, quando informada.", example = "Experimento agendado para amanhã.")
     private String motivoUrgencia;
-    @Schema(description = "Observação registrada no pedido.", example = "Aprovado para atendimento.")
     private String observacao;
-    @Schema(description = "Referência ao documento associado ao pedido, quando houver.", example = "solicitacao-2026-08.pdf")
     private String arquivoDocumento;
-    @Schema(description = "Itens que compõem o pedido.")
     private List<ItemPedidoResponseDTO> itens;
 
     public PedidoResponseDTO(Pedido entity) {
         this.id = entity.getPublicId();
         this.usuarioId = entity.getUsuario().getPublicId();
         this.usuarioNome = entity.getUsuario().getNome();
+        this.unidadeId = entity.getLaboratorio().getUnidade().getPublicId();
+        this.unidadeNome = entity.getLaboratorio().getUnidade().getNome();
+        this.unidadeSigla = entity.getLaboratorio().getUnidade().getSigla();
         this.laboratorioId = entity.getLaboratorio().getPublicId();
         this.laboratorioNome = entity.getLaboratorio().getNome();
         this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
@@ -66,8 +57,6 @@ public class PedidoResponseDTO {
         this.motivoUrgencia = entity.getMotivoUrgencia();
         this.observacao = entity.getObservacao();
         this.arquivoDocumento = entity.getArquivoDocumento();
-        this.itens = entity.getItens().stream()
-                .map(ItemPedidoResponseDTO::new)
-                .toList();
+        this.itens = entity.getItens().stream().map(ItemPedidoResponseDTO::new).toList();
     }
 }
