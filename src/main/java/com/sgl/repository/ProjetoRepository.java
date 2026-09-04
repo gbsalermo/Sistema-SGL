@@ -20,8 +20,8 @@ public interface ProjetoRepository extends JpaRepository<Projeto, Long> {
     @Query("""
             SELECT projeto
             FROM Projeto projeto
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR projeto.laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR projeto.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<Projeto> findAll();
 
