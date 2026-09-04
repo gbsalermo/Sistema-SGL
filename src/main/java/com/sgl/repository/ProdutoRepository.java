@@ -24,12 +24,12 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
     @Query("""
             SELECT DISTINCT produto
             FROM Produto produto
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
                OR EXISTS (
                     SELECT estoque.id
                     FROM EstoqueCentral estoque
                     WHERE estoque.produto = produto
-                      AND estoque.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)}
+                      AND estoque.unidade.publicId = :#{@tenantProvider.unidadeId}
                ))
             """)
     List<Produto> findAll();
