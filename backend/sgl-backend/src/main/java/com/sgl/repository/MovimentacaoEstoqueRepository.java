@@ -23,8 +23,8 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
     @Override
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR m.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR m.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             ORDER BY m.dataMovimentacao DESC
             """)
     List<MovimentacaoEstoque> findAll();
@@ -32,32 +32,32 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
             WHERE m.produto.id = :produtoId
-              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR m.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+              AND (:#{@tenantProvider.unidadeId} IS NULL
+               OR m.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<MovimentacaoEstoque> findByProdutoId(@Param("produtoId") Long produtoId);
 
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
             WHERE m.laboratorio.id = :laboratorioId
-              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR m.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+              AND (:#{@tenantProvider.unidadeId} IS NULL
+               OR m.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<MovimentacaoEstoque> findByLaboratorioId(@Param("laboratorioId") Long laboratorioId);
 
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
             WHERE m.pedido.id = :pedidoId
-              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR m.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+              AND (:#{@tenantProvider.unidadeId} IS NULL
+               OR m.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<MovimentacaoEstoque> findByPedidoId(@Param("pedidoId") Long pedidoId);
 
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
             WHERE m.lote.id = :loteId
-              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR m.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+              AND (:#{@tenantProvider.unidadeId} IS NULL
+               OR m.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             ORDER BY m.dataMovimentacao DESC
             """)
     List<MovimentacaoEstoque> findByLoteIdOrderByDataMovimentacaoDesc(@Param("loteId") Long loteId);
@@ -70,16 +70,16 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
             WHERE m.tipoMovimentacao = :tipo
-              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR m.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+              AND (:#{@tenantProvider.unidadeId} IS NULL
+               OR m.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<MovimentacaoEstoque> findByTipoMovimentacao(@Param("tipo") TipoMovimentacao tipo);
 
     @Query("""
             SELECT m FROM MovimentacaoEstoque m
             WHERE m.usuario.id = :usuarioId
-              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR m.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+              AND (:#{@tenantProvider.unidadeId} IS NULL
+               OR m.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<MovimentacaoEstoque> findByUsuarioId(@Param("usuarioId") Long usuarioId);
 }
