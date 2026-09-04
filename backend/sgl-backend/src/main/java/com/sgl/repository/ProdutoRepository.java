@@ -17,8 +17,8 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, Long> {
-	
-	Optional<Produto> findByPublicId(UUID publicId);
+
+    Optional<Produto> findByPublicId(UUID publicId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Produto p WHERE p.id = :id")
@@ -29,6 +29,24 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
     List<Produto> findByPerecivelTrue();
 
     List<Produto> findByNomeContainingIgnoreCase(String nome);
+
+    @Query("""
+            SELECT DISTINCT estoque.produto
+            FROM EstoqueCentral estoque
+            WHERE estoque.unidade.publicId = :unidadePublicId
+            """)
+    List<Produto> findDisponiveisNaUnidade(@Param("unidadePublicId") UUID unidadePublicId);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(estoque) > 0 THEN true ELSE false END
+            FROM EstoqueCentral estoque
+            WHERE estoque.unidade.publicId = :unidadePublicId
+              AND estoque.produto.publicId = :produtoPublicId
+            """)
+    boolean pertenceAUnidade(
+            @Param("produtoPublicId") UUID produtoPublicId,
+            @Param("unidadePublicId") UUID unidadePublicId
+    );
 
     boolean existsByCodigoReferencia(String codigoReferencia);
 
