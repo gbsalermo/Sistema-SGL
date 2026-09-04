@@ -24,8 +24,8 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
     @Query("""
             SELECT estoque
             FROM EstoqueCentral estoque
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR estoque.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR estoque.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<EstoqueCentral> findAll();
 
