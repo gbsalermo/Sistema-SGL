@@ -85,6 +85,7 @@ Busca global                                          ✅
 Tema claro/escuro com persistência                    ✅ base atual; refinamento planejado
 Página 404                                            ✅
 Contexto de Unidade enviado à API                     ✅
+Testes automatizados frontend                         ⏳ Etapa 9 — Vitest/Vue Test Utils + Cypress
 Autenticação/autorização definitiva                   ⏳ roadmap formal
 ```
 
@@ -496,6 +497,7 @@ Etapa 5 — Projetos + vínculos de Estagiários          ⏳
 Etapa 6 — relatórios de Projetos/Laboratórios         ⏳
 Etapa 7 — unidades + Soluções + Pedidos               ⏳
 Etapa 8 — Manual do Usuário + decisão delete lógico  ⏳
+Etapa 9 — testes automatizados do Frontend            ⏳
 ```
 
 Dependências centrais:
@@ -505,7 +507,10 @@ padrão visual → Dark Mode
 Resíduos atuais → expansão/modelos de Resíduos
 Projetos/Estagiários → relatório de Projetos
 unidades → Soluções → Pedidos com Soluções
+Etapas 1 a 8 estabilizadas → testes automatizados frontend
 ```
+
+A Etapa 9 adotará `Vitest + Vue Test Utils` para testes unitários/componentes e `Cypress` como ferramenta E2E principal. Selenium não é o padrão escolhido para o SGL neste planejamento.
 
 O detalhe, escopo, regras e impacto de cada etapa estão em `docs/PLANO_PRE_PRODUCAO.md`.
 
@@ -550,4 +555,4 @@ Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 # 18. Regra final de retomada
 
-**O SGL está funcionalmente aprovado. A fase atual é a execução do plano de pré-produção registrado em `docs/PLANO_PRE_PRODUCAO.md`, começando pela Etapa 1 — padronização/refinamento visual. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
+**O SGL está funcionalmente aprovado. A fase atual é a execução do plano de pré-produção registrado em `docs/PLANO_PRE_PRODUCAO.md`, começando pela Etapa 1 — padronização/refinamento visual e terminando na Etapa 9 — testes automatizados do Frontend. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**

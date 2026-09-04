@@ -111,8 +111,6 @@ Regras:
 **Impacto:** baixo/médio  
 **Origem:** itens 3, 13 e 14
 
-Abrange:
-
 ### 3.1 Remover redundância de análise
 
 Retirar a sequência visual de “pendências de análise” quando ela apenas repetir as ações já representadas por recebimento e análise.
@@ -409,7 +407,7 @@ Também devem ser considerados:
 
 ## Etapa 8 — Manual do Usuário e avaliação final de delete lógico
 
-**Impacto:** variável / fechamento do bloco  
+**Impacto:** variável  
 **Origem:** itens 16 e 5
 
 ### 8.1 Manual do Usuário
@@ -429,7 +427,7 @@ A implementação definitiva de upload/armazenamento deve ser definida antes de 
 
 ### 8.2 Avaliação de delete lógico
 
-Esta parte permanece **opcional e propositalmente por último**.
+Esta parte permanece **opcional e propositalmente no fim das alterações funcionais**.
 
 Antes de implementar, revisar entidade por entidade, incluindo exemplos como:
 
@@ -443,6 +441,66 @@ Antes de implementar, revisar entidade por entidade, incluindo exemplos como:
 Não aplicar um simples `ativo=true/false` indiscriminadamente. Algumas entidades já possuem ciclo de vida próprio e podem exigir estados como `INATIVO`, `ENCERRADO`, `DESCARTADO` ou equivalentes.
 
 A implementação só deverá ocorrer após confirmar que o delete lógico agrega valor ao domínio sem conflitar com histórico, rastreabilidade ou estados já existentes.
+
+---
+
+## Etapa 9 — Testes automatizados do Frontend
+
+**Impacto:** baixo sobre o domínio / alto valor de estabilização  
+**Posição:** etapa final do bloco de pré-produção
+
+Objetivo: automatizar a validação do frontend somente depois que as alterações funcionais e visuais das etapas anteriores estiverem estabilizadas.
+
+### 9.1 Stack de testes escolhida
+
+Para o SGL, a estratégia recomendada é:
+
+```text
+Vitest + Vue Test Utils
+→ testes unitários e de componentes/lógica Vue
+
+Cypress
+→ testes End-to-End em navegador real
+```
+
+Entre Selenium e Cypress, o padrão escolhido para o frontend do SGL é **Cypress**, por ter integração direta com Vue 3 + Vite e oferecer uma experiência mais adequada ao stack atual.
+
+Selenium não fica proibido tecnicamente, mas não será a ferramenta principal do projeto enquanto Cypress atender aos cenários necessários.
+
+### 9.2 Escopo mínimo
+
+A suíte final deve cobrir, de forma automatizada, os fluxos críticos que existirem ao término das etapas anteriores, incluindo quando aplicável:
+
+- sessão/login DEV e expiração;
+- roteamento e guardas por perfil;
+- Dashboard Solicitante e Gestão;
+- criação e acompanhamento de Pedidos;
+- aprovação/entrega/cancelamento refletidos na interface;
+- Produtos, estoque e lotes;
+- Resíduos e seu ciclo operacional;
+- modelos de Resíduos e locais de armazenamento;
+- Projetos e vínculos de Estagiários;
+- relatórios e filtros;
+- Soluções dentro de Pedidos;
+- Manual do Usuário;
+- tema claro/escuro;
+- isolamento visual/funcional da Unidade conforme a sessão DEV.
+
+### 9.3 Critério de fechamento
+
+A etapa deve produzir:
+
+```text
+suíte unitária/componentes
++ suíte E2E Cypress
++ scripts npm padronizados
++ execução headless reproduzível
++ registro dos cenários críticos cobertos
+```
+
+A integração em CI pode ser realizada nesta etapa quando a infraestrutura do repositório estiver definida.
+
+Esta etapa não substitui a homologação integrada final do roadmap formal; ela cria uma rede automatizada de regressão antes do congelamento funcional e da homologação.
 
 ---
 
@@ -464,6 +522,8 @@ Etapa 6 — relatórios de Projetos/Laboratórios
 Etapa 7 — unidades + Soluções + Pedidos
    ↓
 Etapa 8 — Manual + decisão de delete lógico
+   ↓
+Etapa 9 — testes automatizados do Frontend
 ```
 
 Dependências críticas:
@@ -480,19 +540,22 @@ Pedidos com Soluções
 
 Relatório de Projetos
 → depende do novo domínio de Projetos/Estagiários estabilizado
+
+Testes automatizados finais do Frontend
+→ dependem da estabilização das interfaces e fluxos das Etapas 1 a 8
 ```
 
 ---
 
 # 4. Estado de execução
 
-No momento da criação deste documento:
+No momento da atualização deste documento:
 
 ```text
 Limpeza/revisão documental anterior             ✅ concluída
 Planejamento das etapas de pré-produção          ✅ consolidado neste documento
 Etapa 1 — refinamento visual global              ⏭ próxima etapa de implementação
-Etapas 2 a 8                                      ⏳ aguardando sequência
+Etapas 2 a 9                                      ⏳ aguardando sequência
 ```
 
 A matriz de permissões **não é a próxima etapa** enquanto este plano de pré-produção estiver aberto.
