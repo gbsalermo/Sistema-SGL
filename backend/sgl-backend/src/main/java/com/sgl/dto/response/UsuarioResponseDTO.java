@@ -31,6 +31,8 @@ public class UsuarioResponseDTO implements Serializable {
     private UUID unidadeId;
     @Schema(description = "Nome da unidade vinculada.", example = "Instituto de Química")
     private String unidadeNome;
+    @Schema(description = "Sigla da unidade vinculada.", example = "IB")
+    private String unidadeSigla;
     @Schema(description = "Identificador público UUID do laboratório vinculado, quando aplicável.", example = "550e8400-e29b-41d4-a716-446655440003")
     private UUID laboratorioId;
     @Schema(description = "Nome do laboratório vinculado, quando aplicável.", example = "Laboratório de Química Orgânica")
@@ -45,6 +47,7 @@ public class UsuarioResponseDTO implements Serializable {
         this.perfil = entity.getPerfil();
         this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
         this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
+        this.unidadeSigla = entity.getUnidade() != null ? entity.getUnidade().getSigla() : null;
         this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
         this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
         this.ativo = entity.getAtivo();
