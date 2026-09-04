@@ -19,8 +19,8 @@ public interface UnidadeRepository extends JpaRepository<Unidade, Long> {
     @Query("""
             SELECT unidade
             FROM Unidade unidade
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<Unidade> findAll();
 
