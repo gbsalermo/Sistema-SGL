@@ -22,8 +22,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     @Query("""
             SELECT usuario
             FROM Usuario usuario
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR usuario.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR usuario.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<Usuario> findAll();
 
