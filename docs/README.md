@@ -45,6 +45,7 @@ Pré-produção pós-aprovação                   🔧 em andamento
 Limpeza/revisão documental                   ✅ concluída
 Planejamento de pré-produção                 ✅ consolidado
 Etapa 1 — refinamento visual global          ⏭ próxima implementação
+Etapa 9 — testes automatizados frontend      ⏳ fechamento da pré-produção
 Matriz formal de permissões                  ⏳ após a pré-produção atual
 Congelamento/homologação final               ⏳ posterior
 Autenticação/autorização definitiva          ⏳ posterior
@@ -85,9 +86,12 @@ A sequência aprovada está detalhada em `PLANO_PRE_PRODUCAO.md`:
 6. relatórios de Projetos/Laboratórios
 7. normalização de unidades + Soluções + integração com Pedidos
 8. Manual do Usuário + avaliação opcional de delete lógico
+9. testes automatizados do Frontend — Vitest/Vue Test Utils + Cypress E2E
 ```
 
 Regra deste bloco: alterações funcionais de backend serão implementadas manualmente pelo responsável do projeto; IA pode analisar, orientar a implementação e revisar o resultado.
+
+Para testes de frontend, Cypress é a ferramenta E2E adotada no planejamento. Vitest + Vue Test Utils cobrem testes unitários e de componentes. Selenium não é a ferramenta principal prevista para o SGL.
 
 ---
 
@@ -158,7 +162,7 @@ Se algum documento histórico disser que Administração, Resíduos, Dashboard, 
 limpeza e atualização documental       ✅
 → planejamento de pré-produção         ✅
 → Etapa 1: refinamento visual          ⏭ atual
-→ Etapas 2 a 8                         ⏳ sequenciais
+→ Etapas 2 a 9                         ⏳ sequenciais
 → estabilização do bloco
 ```
 
