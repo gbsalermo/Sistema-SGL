@@ -36,6 +36,7 @@ import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -54,16 +55,19 @@ public class PedidoService {
 
     @Transactional
     public PedidoResponseDTO criar(PedidoRequestDTO dto) {
-        Usuario usuario = usuarioRepository.findByPublicId(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
+        Usuario usuario = buscarUsuarioNoTenant(dto.getUsuarioId());
 
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(dto.getLaboratorioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", dto.getLaboratorioId()));
+        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
         Projeto projeto = null;
         if (dto.getProjetoId() != null) {
             projeto = projetoRepository.findByPublicId(dto.getProjetoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Projeto", dto.getProjetoId()));
+            if (projeto.getLaboratorio() != null && projeto.getLaboratorio().getUnidade() != null) {
+                validarTenantUnidade(projeto.getLaboratorio().getUnidade().getPublicId());
+            }
         }
 
         validarConsistenciaPedido(usuario, laboratorio, projeto);
@@ -93,6 +97,11 @@ public class PedidoService {
         for (ItemPedidoRequestDTO itemDTO : dto.getItens()) {
             Produto produto = produtoRepository.findByPublicId(itemDTO.getProdutoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Produto", itemDTO.getProdutoId()));
+
+            if (TenantContext.ativo()
+                    && !produtoRepository.pertenceAUnidade(produto.getPublicId(), laboratorio.getUnidade().getPublicId())) {
+                throw new ResourceNotFoundException("Produto", itemDTO.getProdutoId());
+            }
 
             if (!produtosAdicionados.add(produto.getId())) {
                 throw new BusinessRuleException("O produto '" + produto.getNome() + "' foi informado mais de uma vez no pedido.");
@@ -124,37 +133,48 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarTodos() {
-        return pedidoRepository.findAll().stream().map(PedidoResponseDTO::new).toList();
+        List<Pedido> pedidos = TenantContext.unidadeAtual()
+                .map(pedidoRepository::findByLaboratorioUnidadePublicId)
+                .orElseGet(pedidoRepository::findAll);
+        return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public PedidoResponseDTO buscarPorId(UUID id) {
-        Pedido pedido = pedidoRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
-        return new PedidoResponseDTO(pedido);
+        return new PedidoResponseDTO(buscarPedidoNoTenant(id));
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorUsuario(UUID usuarioId) {
-        Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
-        return pedidoRepository.findByUsuarioId(usuario.getId()).stream().map(PedidoResponseDTO::new).toList();
+        Usuario usuario = buscarUsuarioNoTenant(usuarioId);
+        List<Pedido> pedidos = TenantContext.unidadeAtual()
+                .map(unidadeId -> pedidoRepository.findByUsuarioIdAndLaboratorioUnidadePublicId(usuario.getId(), unidadeId))
+                .orElseGet(() -> pedidoRepository.findByUsuarioId(usuario.getId()));
+        return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorStatus(StatusPedido status) {
-        return pedidoRepository.findByStatus(status).stream().map(PedidoResponseDTO::new).toList();
+        List<Pedido> pedidos = TenantContext.unidadeAtual()
+                .map(unidadeId -> pedidoRepository.findByLaboratorioUnidadePublicIdAndStatus(unidadeId, status))
+                .orElseGet(() -> pedidoRepository.findByStatus(status));
+        return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorUrgencia(Boolean urgente) {
-        return pedidoRepository.findByUrgente(urgente).stream().map(PedidoResponseDTO::new).toList();
+        List<Pedido> pedidos = TenantContext.unidadeAtual()
+                .map(unidadeId -> pedidoRepository.findByLaboratorioUnidadePublicIdAndUrgente(unidadeId, urgente))
+                .orElseGet(() -> pedidoRepository.findByUrgente(urgente));
+        return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorProjetoEPeriodo(UUID laboratorioId, UUID projetoId, LocalDate dataInicio, LocalDate dataFim) {
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
+
         Projeto projeto = projetoRepository.findByPublicId(projetoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 
@@ -174,8 +194,7 @@ public class PedidoService {
         UUID aprovadorId = dto.getUsuarioAprovadorId();
         if (aprovadorId == null) throw new BusinessRuleException("O usuário aprovador é obrigatório.");
 
-        Usuario usuarioAprovador = usuarioRepository.findByPublicId(aprovadorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário aprovador", aprovadorId));
+        Usuario usuarioAprovador = buscarUsuarioNoTenant(aprovadorId);
         usuarioAprovador.validateActive();
 
         Pedido pedido = buscarPedidoComBloqueio(id);
@@ -280,6 +299,58 @@ public class PedidoService {
         return new PedidoResponseDTO(pedidoRepository.save(pedido));
     }
 
+    private Pedido buscarPedidoNoTenant(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> pedidoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Pedido", id);
+                    }
+                    return pedidoRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
+                });
+    }
+
+    private Usuario buscarUsuarioNoTenant(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Usuário", id);
+                    }
+                    return usuarioRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+                });
+    }
+
+    private Pedido buscarPedidoComBloqueio(UUID publicId) {
+        Pedido referencia = buscarPedidoNoTenant(publicId);
+        return pedidoRepository.buscarPorIdComBloqueio(referencia.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", publicId));
+    }
+
+    private void validarTenantUnidade(UUID unidadeId) {
+        if (!TenantContext.pertence(unidadeId)) {
+            throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
+    }
+
+    private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
+        if (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
+            throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
+        }
+        if (usuario.getUnidade() == null || laboratorio.getUnidade() == null) {
+            throw new BusinessRuleException("Usuário e laboratório devem possuir uma unidade vinculada.");
+        }
+        if (!usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
+            throw new BusinessRuleException("O usuário e o laboratório pertencem a unidades diferentes.");
+        }
+        validarTenantUnidade(usuario.getUnidade().getPublicId());
+        if (projeto != null && (projeto.getLaboratorio() == null || !projeto.getLaboratorio().getId().equals(laboratorio.getId()))) {
+            throw new BusinessRuleException("O projeto informado não pertence ao laboratório do pedido.");
+        }
+    }
+
     private void validarFormaRetirada(ItemPedidoRequestDTO itemDTO) {
         if (itemDTO.getTipoEmbalagemSolicitada() == null
                 || itemDTO.getQuantidadeEmbalagensSolicitada() == null
@@ -300,28 +371,6 @@ public class PedidoService {
         }
         if (esperado != itemDTO.getQuantidadeSolicitada()) {
             throw new BusinessRuleException("Quantidade total inconsistente com a forma de retirada escolhida.");
-        }
-    }
-
-    private Pedido buscarPedidoComBloqueio(UUID publicId) {
-        Pedido referencia = pedidoRepository.findByPublicId(publicId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", publicId));
-        return pedidoRepository.buscarPorIdComBloqueio(referencia.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", publicId));
-    }
-
-    private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
-        if (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
-            throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
-        }
-        if (usuario.getUnidade() == null || laboratorio.getUnidade() == null) {
-            throw new BusinessRuleException("Usuário e laboratório devem possuir uma unidade vinculada.");
-        }
-        if (!usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
-            throw new BusinessRuleException("O usuário e o laboratório pertencem a unidades diferentes.");
-        }
-        if (projeto != null && (projeto.getLaboratorio() == null || !projeto.getLaboratorio().getId().equals(laboratorio.getId()))) {
-            throw new BusinessRuleException("O projeto informado não pertence ao laboratório do pedido.");
         }
     }
 
