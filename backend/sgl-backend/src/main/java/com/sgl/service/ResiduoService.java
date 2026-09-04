@@ -34,6 +34,7 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -53,8 +54,7 @@ public class ResiduoService {
         Usuario gerador = buscarUsuario(dto.getUsuarioGeradorId());
         gerador.validateActive();
 
-        Laboratorio laboratorio = laboratorioRepository.findByPublicId(dto.getLaboratorioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", dto.getLaboratorioId()));
+        Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
         laboratorio.validateActive();
         validarGeradorNoLaboratorio(gerador, laboratorio);
 
@@ -78,8 +78,6 @@ public class ResiduoService {
 
         dto.getComponentes().forEach(item -> residuo.addComponente(criarComponente(item)));
 
-        // O código SGL é a referência humana do resíduo desde o primeiro registro.
-        // O primeiro save é necessário porque o formato usa o id sequencial interno.
         Residuo salvo = residuoRepository.save(residuo);
         salvo.setCodigoRastreio(gerarCodigoRastreio(salvo));
         salvo = residuoRepository.save(salvo);
@@ -121,8 +119,6 @@ public class ResiduoService {
                 dto.getObservacaoGestor()
         );
 
-        // Compatibilidade com registros antigos criados antes de o código SGL
-        // passar a ser gerado no momento da informação do resíduo.
         if (residuo.getCodigoRastreio() == null) {
             residuo.setCodigoRastreio(gerarCodigoRastreio(residuo));
         }
@@ -187,25 +183,33 @@ public class ResiduoService {
 
     @Transactional(readOnly = true)
     public List<ResiduoResponseDTO> listarTodos() {
-        return residuoRepository.findAllByOrderByDataInformacaoDesc().stream()
+        List<Residuo> residuos = TenantContext.unidadeAtual()
+                .map(residuoRepository::findByLaboratorioUnidadePublicIdOrderByDataInformacaoDesc)
+                .orElseGet(residuoRepository::findAllByOrderByDataInformacaoDesc);
+
+        return residuos.stream()
                 .map(ResiduoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ResiduoResponseDTO> listarPorStatus(StatusResiduo status) {
-        return residuoRepository.findByStatusOrderByDataInformacaoDesc(status).stream()
+        List<Residuo> residuos = TenantContext.unidadeAtual()
+                .map(unidadeId -> residuoRepository
+                        .findByLaboratorioUnidadePublicIdAndStatusOrderByDataInformacaoDesc(unidadeId, status))
+                .orElseGet(() -> residuoRepository.findByStatusOrderByDataInformacaoDesc(status));
+
+        return residuos.stream()
                 .map(ResiduoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ResiduoResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
-        laboratorioRepository.findByPublicId(laboratorioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+        Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
 
         return residuoRepository
-                .findByLaboratorioPublicIdOrderByDataInformacaoDesc(laboratorioId)
+                .findByLaboratorioPublicIdOrderByDataInformacaoDesc(laboratorio.getPublicId())
                 .stream()
                 .map(ResiduoResponseDTO::new)
                 .toList();
@@ -240,13 +244,39 @@ public class ResiduoService {
     }
 
     private Residuo buscarEntidade(UUID id) {
-        return residuoRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Resíduo", id));
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Resíduo", id);
+                    }
+                    return residuoRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Resíduo", id));
+                });
     }
 
     private Usuario buscarUsuario(UUID id) {
-        return usuarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Usuário", id);
+                    }
+                    return usuarioRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+                });
+    }
+
+    private Laboratorio buscarLaboratorio(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> laboratorioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Laboratório", id);
+                    }
+                    return laboratorioRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
+                });
     }
 
     private Usuario buscarUsuarioGestao(UUID id) {
@@ -267,8 +297,15 @@ public class ResiduoService {
             return null;
         }
 
-        Projeto projeto = projetoRepository.findByPublicId(projetoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
+        Projeto projeto = TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(projetoId, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Projeto", projetoId);
+                    }
+                    return projetoRepository.findByPublicId(projetoId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
+                });
         projeto.validateActive();
 
         if (!projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
@@ -296,6 +333,12 @@ public class ResiduoService {
         if (dto.getProdutoId() != null) {
             produto = produtoRepository.findByPublicId(dto.getProdutoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Produto", dto.getProdutoId()));
+
+            if (TenantContext.unidadeAtual()
+                    .map(unidadeId -> !produtoRepository.pertenceAUnidade(dto.getProdutoId(), unidadeId))
+                    .orElse(false)) {
+                throw new ResourceNotFoundException("Produto", dto.getProdutoId());
+            }
 
             if (nomeComponente == null || nomeComponente.isBlank()) {
                 nomeComponente = produto.getNome();
