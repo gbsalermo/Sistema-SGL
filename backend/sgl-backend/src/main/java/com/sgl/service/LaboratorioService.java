@@ -16,6 +16,7 @@ import com.sgl.model.Usuario;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +30,8 @@ public class LaboratorioService {
 
     @Transactional
     public LaboratorioResponseDTO criar(LaboratorioRequestDTO dto) {
+        validarTenantUnidade(dto.getUnidadeId());
+
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
@@ -49,32 +52,32 @@ public class LaboratorioService {
 
     @Transactional(readOnly = true)
     public List<LaboratorioResponseDTO> listarTodos() {
-        return laboratorioRepository.findAll().stream()
+        List<Laboratorio> laboratorios = TenantContext.unidadeAtual()
+                .map(laboratorioRepository::findByUnidadePublicId)
+                .orElseGet(laboratorioRepository::findAll);
+
+        return laboratorios.stream()
                 .map(LaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<LaboratorioResponseDTO> listarPorUnidade(UUID unidadeId) {
-        Unidade unidade = unidadeRepository.findByPublicId(unidadeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Unidade", unidadeId));
-
-        return laboratorioRepository.findByUnidadeId(unidade.getId()).stream()
+        validarTenantUnidade(unidadeId);
+        return laboratorioRepository.findByUnidadePublicId(unidadeId).stream()
                 .map(LaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public LaboratorioResponseDTO buscarPorId(UUID id) {
-        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
-        return new LaboratorioResponseDTO(laboratorio);
+        return new LaboratorioResponseDTO(buscarLaboratorioNoTenant(id));
     }
 
     @Transactional
     public LaboratorioResponseDTO atualizar(UUID id, LaboratorioRequestDTO dto) {
-        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
+        Laboratorio laboratorio = buscarLaboratorioNoTenant(id);
+        validarTenantUnidade(dto.getUnidadeId());
 
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
@@ -98,19 +101,39 @@ public class LaboratorioService {
 
     @Transactional
     public void deletar(UUID id) {
-        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
-
+        Laboratorio laboratorio = buscarLaboratorioNoTenant(id);
         laboratorio.setAtivo(false);
         laboratorioRepository.save(laboratorio);
     }
 
+    private Laboratorio buscarLaboratorioNoTenant(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> laboratorioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Laboratório", id);
+                    }
+                    return laboratorioRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
+                });
+    }
+
+    private void validarTenantUnidade(UUID unidadeId) {
+        if (!TenantContext.pertence(unidadeId)) {
+            throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
+    }
+
     private Usuario buscarResponsavelCompativel(UUID responsavelId, Unidade unidade) {
-        Usuario responsavel = usuarioRepository.findByPublicId(responsavelId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuário responsável",
-                        responsavelId
-                ));
+        Usuario responsavel = TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(responsavelId, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Usuário responsável", responsavelId);
+                    }
+                    return usuarioRepository.findByPublicId(responsavelId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuário responsável", responsavelId));
+                });
 
         if (responsavel.getUnidade() == null
                 || !responsavel.getUnidade().getId().equals(unidade.getId())) {
