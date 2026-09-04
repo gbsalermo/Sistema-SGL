@@ -2,11 +2,11 @@
 
 > Cenário criado exclusivamente para demonstração do SGL. Os nomes de pessoas, e-mails, pedidos, lotes, movimentações e ocorrências são fictícios. Os nomes/áreas dos laboratórios foram inspirados na infraestrutura pública da Embrapa Mandioca e Fruticultura.
 
-## Branch
+## Integração
 
-`demo/apresentacao-embrapa-30-dias`
+A carga foi desenvolvida originalmente na branch `demo/apresentacao-embrapa-30-dias` e integrada à `main` pelo PR #15.
 
-A `main` não foi alterada.
+O conteúdo de demonstração está na `main`, mas permanece isolado pelo profile `demo`: ele não é executado no profile normal de desenvolvimento.
 
 ## Como funciona
 
@@ -23,7 +23,8 @@ No repositório `Sistema-SGL`:
 ### Git Bash / Linux / macOS
 
 ```bash
-git checkout demo/apresentacao-embrapa-30-dias
+git checkout main
+git pull origin main
 cd backend/sgl-backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
 ```
@@ -31,7 +32,8 @@ cd backend/sgl-backend
 ### Windows PowerShell / CMD
 
 ```powershell
-git checkout demo/apresentacao-embrapa-30-dias
+git checkout main
+git pull origin main
 cd backend\sgl-backend
 .\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=demo
 ```
@@ -177,4 +179,4 @@ Ao entrar como gestor, o cenário foi preparado para alimentar os indicadores re
 
 ## Observação importante
 
-Essa carga é intencionalmente isolada pelo profile `demo`. Ela não deve ser mesclada à configuração normal de desenvolvimento sem uma decisão explícita. O objetivo é permitir uma apresentação rica e repetível sem poluir o banco PostgreSQL usado no desenvolvimento.
+A carga de demonstração está integrada à `main`, porém continua isolada pelo profile `demo`. Ela não é executada no profile normal de desenvolvimento e não altera o PostgreSQL usado no dia a dia. O objetivo é permitir uma apresentação rica e repetível sem poluir o banco de desenvolvimento.
