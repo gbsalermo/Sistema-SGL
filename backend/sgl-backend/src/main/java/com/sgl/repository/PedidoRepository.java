@@ -20,6 +20,16 @@ import jakarta.persistence.LockModeType;
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Optional<Pedido> findByPublicId(UUID publicId);
+    Optional<Pedido> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
+
+    @Override
+    @Query("""
+            SELECT pedido
+            FROM Pedido pedido
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR pedido.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
+            """)
+    List<Pedido> findAll();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -30,19 +40,19 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Optional<Pedido> buscarPorIdComBloqueio(@Param("id") Long id);
 
     List<Pedido> findByUsuarioId(Long usuarioId);
+    List<Pedido> findByUsuarioIdAndLaboratorioUnidadePublicId(Long usuarioId, UUID unidadePublicId);
 
     List<Pedido> findByLaboratorioId(Long laboratorioId);
+    List<Pedido> findByLaboratorioUnidadePublicId(UUID unidadePublicId);
 
     List<Pedido> findByStatus(StatusPedido status);
+    List<Pedido> findByLaboratorioUnidadePublicIdAndStatus(UUID unidadePublicId, StatusPedido status);
 
     List<Pedido> findByUrgente(Boolean urgente);
+    List<Pedido> findByLaboratorioUnidadePublicIdAndUrgente(UUID unidadePublicId, Boolean urgente);
 
-    List<Pedido> findByLaboratorioIdAndStatus(
-            Long laboratorioId,
-            StatusPedido status
-    );
+    List<Pedido> findByLaboratorioIdAndStatus(Long laboratorioId, StatusPedido status);
 
-    // Busca pedidos de um projeto dentro do laboratório e do período informados.
     @Query("""
             SELECT pedido
             FROM Pedido pedido

@@ -5,21 +5,31 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.sgl.model.Usuario;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
-	
-	Optional<Usuario> findByPublicId(UUID publicId);
-	
-	Optional<Usuario> findByEmail(String email); //encontrar usuario com esse email
-	
-	List<Usuario> findByLaboratorioId(Long laboratorioId); //Listar os usuarios por laboratorio
-	
-	boolean existsByEmail(String email); //Verificar se existe usuario com esse email
-	
-	boolean existsByEmailAndIdNot(String email,Long id); //Papel parecido Com existsByEmail, mas aplicado para o metodo atualizar
 
+    Optional<Usuario> findByPublicId(UUID publicId);
+    Optional<Usuario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
+
+    Optional<Usuario> findByEmail(String email);
+
+    @Override
+    @Query("""
+            SELECT usuario
+            FROM Usuario usuario
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR usuario.unidade.publicId = :#{@tenantProvider.unidadeId})
+            """)
+    List<Usuario> findAll();
+
+    List<Usuario> findByLaboratorioId(Long laboratorioId);
+    List<Usuario> findByUnidadePublicId(UUID unidadePublicId);
+
+    boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, Long id);
 }

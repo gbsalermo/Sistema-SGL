@@ -19,8 +19,19 @@ import jakarta.persistence.LockModeType;
 public interface LoteRepository extends JpaRepository<Lote, Long> {
 
     Optional<Lote> findByPublicId(UUID publicId);
+    Optional<Lote> findByPublicIdAndEstoqueCentralUnidadePublicId(UUID publicId, UUID unidadePublicId);
+
+    @Override
+    @Query("""
+            SELECT lote
+            FROM Lote lote
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR lote.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
+            """)
+    List<Lote> findAll();
 
     List<Lote> findByEstoqueCentralId(Long estoqueCentralId);
+    List<Lote> findByEstoqueCentralUnidadePublicId(UUID unidadePublicId);
 
     List<Lote> findByEstoqueCentralIdAndAtivoTrue(Long estoqueCentralId);
 
@@ -44,6 +55,10 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     Integer buscarMaiorSequencialInternoPorProduto(@Param("produtoId") Long produtoId);
 
     List<Lote> findByDataValidadeBeforeAndAtivoTrue(LocalDate data);
+    List<Lote> findByEstoqueCentralUnidadePublicIdAndDataValidadeBeforeAndAtivoTrue(
+            UUID unidadePublicId,
+            LocalDate data
+    );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -53,7 +68,6 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             """)
     Optional<Lote> buscarPorIdComBloqueio(@Param("id") Long id);
 
-    // FEFO: primeiro lote válido a vencer é o primeiro a sair.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -70,7 +84,6 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             @Param("dataReferencia") LocalDate dataReferencia
     );
 
-    // FIFO: primeiro lote recebido é o primeiro a sair.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote
@@ -84,7 +97,6 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             @Param("estoqueId") Long estoqueId
     );
 
-    // Mantém os lotes vencidos reservados em ordem de vencimento para descarte.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT lote

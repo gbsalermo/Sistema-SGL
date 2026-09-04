@@ -13,6 +13,7 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Produto;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,53 +32,73 @@ public class ProdutoService {
 
     @Transactional(readOnly = true)
     public List<ProdutoResponseDTO> listarTodos() {
-        return produtoRepository.findAll().stream()
+        return produtosVisiveis().stream()
                 .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ProdutoResponseDTO> listarPorRisco(NivelRisco risco) {
-        return produtoRepository.findByRisco(risco).stream()
+        return produtosVisiveis().stream()
+                .filter(produto -> produto.getRisco() == risco)
                 .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ProdutoResponseDTO> listarPereciveis() {
-        return produtoRepository.findByPerecivelTrue().stream()
+        return produtosVisiveis().stream()
+                .filter(produto -> Boolean.TRUE.equals(produto.getPerecivel()))
                 .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ProdutoResponseDTO> buscarPorNome(String nome) {
-        return produtoRepository.findByNomeContainingIgnoreCase(nome).stream()
+        String termo = nome == null ? "" : nome.trim().toLowerCase();
+        return produtosVisiveis().stream()
+                .filter(produto -> produto.getNome() != null
+                        && produto.getNome().toLowerCase().contains(termo))
                 .map(ProdutoResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ProdutoResponseDTO buscarPorId(UUID id) {
-        Produto produto = produtoRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
+        Produto produto = buscarProdutoNoTenant(id);
         return new ProdutoResponseDTO(produto);
     }
 
     @Transactional
     public ProdutoResponseDTO atualizar(UUID id, ProdutoRequestDTO dto) {
-        Produto produto = produtoRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
-
+        Produto produto = buscarProdutoNoTenant(id);
         preencherProduto(produto, dto);
         return new ProdutoResponseDTO(produtoRepository.save(produto));
     }
 
     @Transactional
     public void deletar(UUID id) {
+        Produto produto = buscarProdutoNoTenant(id);
+        produto.setAtivo(false);
+    }
+
+    private List<Produto> produtosVisiveis() {
+        return TenantContext.unidadeAtual()
+                .map(produtoRepository::findDisponiveisNaUnidade)
+                .orElseGet(produtoRepository::findAll);
+    }
+
+    private Produto buscarProdutoNoTenant(UUID id) {
         Produto produto = produtoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
-        produto.setAtivo(false);
+
+        if (TenantContext.unidadeAtual()
+                .map(unidadeId -> !produtoRepository.pertenceAUnidade(id, unidadeId))
+                .orElse(false)) {
+            throw new ResourceNotFoundException("Produto", id);
+        }
+
+        return produto;
     }
 
     private void preencherProduto(Produto produto, ProdutoRequestDTO dto) {

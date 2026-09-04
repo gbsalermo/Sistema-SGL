@@ -18,6 +18,16 @@ import jakarta.persistence.LockModeType;
 public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, Long> {
 
     Optional<EstoqueCentral> findByPublicId(UUID publicId);
+    Optional<EstoqueCentral> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
+
+    @Override
+    @Query("""
+            SELECT estoque
+            FROM EstoqueCentral estoque
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR estoque.unidade.publicId = :#{@tenantProvider.unidadeId})
+            """)
+    List<EstoqueCentral> findAll();
 
     Optional<EstoqueCentral> findByUnidadeIdAndProdutoId(Long unidadeId, Long produtoId);
 
@@ -26,7 +36,6 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
             Long produtoId
     );
 
-    // Use quando o saldo do estoque for alterado dentro da transação.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT estoque
@@ -37,7 +46,6 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
             @Param("id") Long id
     );
 
-    // Mantém o registro de estoque reservado pela combinação de unidade e produto.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT estoque
@@ -51,8 +59,10 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
     );
 
     List<EstoqueCentral> findByUnidadeId(Long unidadeId);
+    List<EstoqueCentral> findByUnidadePublicId(UUID unidadePublicId);
 
     List<EstoqueCentral> findByUnidadeIdAndAtivoTrue(Long unidadeId);
+    List<EstoqueCentral> findByUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
 
     List<EstoqueCentral> findByAtivoTrue();
 }
