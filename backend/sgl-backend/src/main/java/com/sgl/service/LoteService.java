@@ -15,6 +15,7 @@ import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LoteRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,24 +28,23 @@ public class LoteService {
 
     @Transactional(readOnly = true)
     public List<LoteResponseDTO> listarTodos() {
-        return loteRepository.findAll()
-                .stream()
+        List<Lote> lotes = TenantContext.unidadeAtual()
+                .map(loteRepository::findByEstoqueCentralUnidadePublicId)
+                .orElseGet(loteRepository::findAll);
+
+        return lotes.stream()
                 .map(LoteResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public LoteResponseDTO buscarPorId(UUID id) {
-        Lote lote = loteRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
-
-        return new LoteResponseDTO(lote);
+        return new LoteResponseDTO(buscarLoteNoTenant(id));
     }
 
     @Transactional(readOnly = true)
     public List<LoteResponseDTO> listarPorEstoque(UUID estoqueId) {
-        EstoqueCentral estoque = estoqueCentralRepository.findByPublicId(estoqueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", estoqueId));
+        EstoqueCentral estoque = buscarEstoqueNoTenant(estoqueId);
 
         return loteRepository.findByEstoqueCentralId(estoque.getId())
                 .stream()
@@ -54,9 +54,15 @@ public class LoteService {
 
     @Transactional(readOnly = true)
     public List<LoteResponseDTO> listarVencidos() {
-        return loteRepository
-                .findByDataValidadeBeforeAndAtivoTrue(LocalDate.now())
-                .stream()
+        List<Lote> lotes = TenantContext.unidadeAtual()
+                .map(unidadeId -> loteRepository
+                        .findByEstoqueCentralUnidadePublicIdAndDataValidadeBeforeAndAtivoTrue(
+                                unidadeId,
+                                LocalDate.now()
+                        ))
+                .orElseGet(() -> loteRepository.findByDataValidadeBeforeAndAtivoTrue(LocalDate.now()));
+
+        return lotes.stream()
                 .filter(lote -> lote.getQuantidadeDisponivel() > 0)
                 .map(LoteResponseDTO::new)
                 .toList();
@@ -64,8 +70,7 @@ public class LoteService {
 
     @Transactional
     public LoteResponseDTO atualizar(UUID id, AtualizarLoteRequestDTO dto) {
-        Lote lote = loteRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
+        Lote lote = buscarLoteNoTenant(id);
 
         boolean numeroDuplicado = loteRepository
                 .existsByEstoqueCentralIdAndNumeroLote(
@@ -130,8 +135,7 @@ public class LoteService {
 
     @Transactional
     public void inativar(UUID id) {
-        Lote lote = loteRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
+        Lote lote = buscarLoteNoTenant(id);
 
         if (lote.getQuantidadeDisponivel() > 0) {
             throw new BusinessRuleException(
@@ -140,5 +144,29 @@ public class LoteService {
         }
 
         lote.setAtivo(false);
+    }
+
+    private Lote buscarLoteNoTenant(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> loteRepository.findByPublicIdAndEstoqueCentralUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Lote", id);
+                    }
+                    return loteRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
+                });
+    }
+
+    private EstoqueCentral buscarEstoqueNoTenant(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> estoqueCentralRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Estoque central", id);
+                    }
+                    return estoqueCentralRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
+                });
     }
 }
