@@ -26,8 +26,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("""
             SELECT pedido
             FROM Pedido pedido
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR pedido.laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR pedido.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<Pedido> findAll();
 
@@ -51,10 +51,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByUrgente(Boolean urgente);
     List<Pedido> findByLaboratorioUnidadePublicIdAndUrgente(UUID unidadePublicId, Boolean urgente);
 
-    List<Pedido> findByLaboratorioIdAndStatus(
-            Long laboratorioId,
-            StatusPedido status
-    );
+    List<Pedido> findByLaboratorioIdAndStatus(Long laboratorioId, StatusPedido status);
 
     @Query("""
             SELECT pedido
