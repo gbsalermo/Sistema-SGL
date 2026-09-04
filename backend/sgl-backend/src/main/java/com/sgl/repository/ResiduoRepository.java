@@ -21,8 +21,8 @@ public interface ResiduoRepository extends JpaRepository<Residuo, Long> {
     @Query("""
             SELECT residuo
             FROM Residuo residuo
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR residuo.laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR residuo.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
             ORDER BY residuo.dataInformacao DESC
             """)
     List<Residuo> findAllByOrderByDataInformacaoDesc();
@@ -33,8 +33,8 @@ public interface ResiduoRepository extends JpaRepository<Residuo, Long> {
             SELECT residuo
             FROM Residuo residuo
             WHERE residuo.status = :status
-              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR residuo.laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+              AND (:#{@tenantProvider.unidadeId} IS NULL
+               OR residuo.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
             ORDER BY residuo.dataInformacao DESC
             """)
     List<Residuo> findByStatusOrderByDataInformacaoDesc(@Param("status") StatusResiduo status);
