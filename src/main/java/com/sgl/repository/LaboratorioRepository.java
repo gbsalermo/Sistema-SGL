@@ -20,8 +20,8 @@ public interface LaboratorioRepository extends JpaRepository<Laboratorio, Long> 
     @Query("""
             SELECT laboratorio
             FROM Laboratorio laboratorio
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<Laboratorio> findAll();
 
