@@ -20,6 +20,15 @@ public interface EstoqueCentralRepository extends JpaRepository<EstoqueCentral, 
     Optional<EstoqueCentral> findByPublicId(UUID publicId);
     Optional<EstoqueCentral> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
+    @Override
+    @Query("""
+            SELECT estoque
+            FROM EstoqueCentral estoque
+            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
+               OR estoque.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            """)
+    List<EstoqueCentral> findAll();
+
     Optional<EstoqueCentral> findByUnidadeIdAndProdutoId(Long unidadeId, Long produtoId);
 
     boolean existsByUnidadeIdAndProdutoId(
