@@ -17,8 +17,8 @@ public interface EstagiarioRepository extends JpaRepository<Estagiario, Long> {
     @Query("""
             SELECT estagiario
             FROM Estagiario estagiario
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR estagiario.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR estagiario.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<Estagiario> findAll();
 
