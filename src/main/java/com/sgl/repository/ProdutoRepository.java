@@ -20,6 +20,20 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
 
     Optional<Produto> findByPublicId(UUID publicId);
 
+    @Override
+    @Query("""
+            SELECT DISTINCT produto
+            FROM Produto produto
+            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
+               OR EXISTS (
+                    SELECT estoque.id
+                    FROM EstoqueCentral estoque
+                    WHERE estoque.produto = produto
+                      AND estoque.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)}
+               ))
+            """)
+    List<Produto> findAll();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Produto p WHERE p.id = :id")
     Optional<Produto> buscarPorIdComBloqueio(@Param("id") Long id);
