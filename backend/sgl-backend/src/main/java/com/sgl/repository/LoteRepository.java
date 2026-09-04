@@ -25,8 +25,8 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     @Query("""
             SELECT lote
             FROM Lote lote
-            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
-               OR lote.estoqueCentral.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            WHERE (:#{@tenantProvider.unidadeId} IS NULL
+               OR lote.estoqueCentral.unidade.publicId = :#{@tenantProvider.unidadeId})
             """)
     List<Lote> findAll();
 
