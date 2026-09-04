@@ -1,8 +1,12 @@
 # Fluxo do Sistema SGL
 
-Este documento descreve como os módulos se conectam do cadastro inicial até a entrega de materiais.
+**Atualizado em:** 04/09/2026
 
-## 1. Preparação da estrutura
+Este documento descreve como os módulos principais se conectam no estado funcional aprovado. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação na `main`.
+
+---
+
+## 1. Contexto institucional
 
 ```text
 Unidade
@@ -14,119 +18,199 @@ Produto
   → EstoqueCentral da Unidade
 ```
 
-1. Uma Unidade é cadastrada.
-2. Um Laboratório é vinculado à Unidade.
-3. Usuários são associados à Unidade e, quando aplicável, ao Laboratório.
-4. Produtos são cadastrados no catálogo global.
-5. Cada Unidade cria seus registros de estoque para os Produtos utilizados.
+Regras atuais:
+
+1. Unidade é entidade institucional do domínio.
+2. Laboratórios pertencem a uma Unidade.
+3. Usuários pertencem a uma Unidade e, quando aplicável, a um Laboratório.
+4. Projetos pertencem ao contexto do Laboratório/Unidade.
+5. Produtos formam o catálogo.
+6. Cada Unidade possui seu próprio contexto de estoque para os produtos utilizados.
+
+No modo DEV, o frontend envia `X-SGL-Unidade-Id` e o backend usa `TenantContext` para restringir operações à Unidade corrente. Esse mecanismo ainda não substitui a futura identidade corporativa confiável.
+
+---
 
 ## 2. Entrada de estoque
 
 ```text
-Usuário responsável
-  → seleciona Unidade + Produto
-  → informa quantidade
+contexto da Unidade + Produto
+  → informar lote/apresentação/quantidade
   → Service valida o registro
-  → soma ao saldo
+  → atualiza saldo do EstoqueCentral
+  → atualiza/cria Lote
   → grava MovimentacaoEstoque
 ```
 
-A movimentação registra o saldo anterior e o saldo resultante. O tipo é `ENTRADA`; a origem informa o contexto da entrada, como compra ou ajuste.
+A movimentação registra a operação física e o lote afetado quando aplicável.
+
+---
 
 ## 3. Saída manual
 
 ```text
-Saldo atual
-  → valida quantidade solicitada
-  → impede saldo negativo
-  → subtrai quantidade
-  → registra movimentação de saída
+saldo/lotes disponíveis
+  → validar quantidade
+  → selecionar lote conforme regra aplicável
+  → impedir saldo negativo
+  → subtrair quantidade
+  → registrar movimentação
 ```
 
-A operação deve ocorrer na mesma transação que grava o histórico.
+A alteração de saldo e a movimentação pertencem à mesma operação transacional.
+
+---
 
 ## 4. Criação do pedido
 
 O usuário informa laboratório, projeto opcional e itens solicitados.
 
-Validações:
+Validações incluem:
 
 - usuário, laboratório, projeto e produtos devem existir;
-- usuário deve pertencer ao laboratório informado;
-- usuário e laboratório devem pertencer à mesma unidade;
-- projeto, quando informado, deve pertencer ao laboratório;
+- usuário e laboratório devem pertencer ao contexto institucional permitido;
+- projeto, quando informado, deve ser compatível com o laboratório;
 - entidades envolvidas devem estar ativas;
 - o mesmo produto não pode aparecer duas vezes;
-- deve existir estoque ativo do produto na unidade.
+- deve existir estoque ativo do produto no contexto da Unidade;
+- forma de retirada deve ser compatível com a apresentação do produto/lote.
 
-O saldo não é reduzido nessa etapa. O pedido é salvo como `PENDENTE`.
+O saldo **não é reduzido na criação**. O pedido é salvo como `PENDENTE`.
+
+---
 
 ## 5. Aprovação
 
 ```text
 Aprovador + Pedido PENDENTE
-  → valida cada item
-  → localiza estoque por Unidade + Produto
-  → valida vencimento e saldo
-  → calcula saldo anterior e atual
-  → reduz EstoqueCentral
+  → valida itens/quantidades
+  → localiza estoque e lotes da Unidade
+  → exclui lote vencido da seleção
+  → perecível: FEFO
+  → não perecível: FIFO
+  → reduz lotes utilizados
+  → atualiza EstoqueCentral
   → grava quantidade aprovada
-  → grava MovimentacaoEstoque
+  → grava MovimentacaoEstoque SAIDA/PEDIDO
   → altera Pedido para APROVADO
-```
-
-A movimentação usa:
-
-```text
-tipo = SAIDA
-origem = PEDIDO
-usuario = aprovador
-pedido = pedido aprovado
 ```
 
 Todo o processamento é transacional. Se um item falhar, nenhuma baixa parcial deve permanecer.
 
+Urgência não altera FIFO/FEFO.
+
+---
+
 ## 6. Rejeição
 
-Somente pedido `PENDENTE` pode ser rejeitado. A rejeição muda o status para `REJEITADO`, registra a observação e não altera o estoque.
+Somente pedido `PENDENTE` pode ser rejeitado pelo fluxo comum.
+
+```text
+PENDENTE
+→ registrar motivo/observação
+→ REJEITADO
+```
+
+Não altera estoque.
+
+---
 
 ## 7. Entrega
 
 Somente pedido `APROVADO` pode ser entregue.
 
-Para cada item aprovado, o sistema cria um `HistoricoLaboratorio` com laboratório, produto, quantidade, data e pedido. A entrega não reduz o saldo novamente, pois a baixa ocorreu na aprovação.
+```text
+APROVADO
+→ registrar HistoricoLaboratorio dos itens aprovados
+→ registrar data real de entrega
+→ ENTREGUE
+```
+
+A entrega **não reduz o estoque novamente**, porque a baixa física aconteceu na aprovação.
+
+---
 
 ## 8. Cancelamento
 
-- Pedido `PENDENTE`: cancela sem alterar estoque.
-- Pedido `APROVADO`: devolve ao estoque cada quantidade aprovada e muda para `CANCELADO`.
-- Pedido `ENTREGUE`: não pode ser cancelado pelo fluxo comum.
-- Pedido `REJEITADO` ou `CANCELADO`: já está encerrado.
+- `PENDENTE`: cancela sem alterar estoque.
+- `APROVADO`: restaura as quantidades dos **lotes exatos utilizados na aprovação** e muda para `CANCELADO`.
+- `ENTREGUE`: não pode ser cancelado pelo fluxo comum.
+- `REJEITADO` ou `CANCELADO`: já está encerrado.
 
-Pendência técnica: a devolução de pedido aprovado ainda deve gerar uma movimentação `DEVOLUCAO` para completar a auditoria.
+A restauração exata dos lotes é a garantia funcional atual. Não documentar como obrigatória uma movimentação `DEVOLUCAO` específica enquanto o fluxo corrente não garantir seu registro em todos os caminhos de cancelamento.
 
-## 9. Consulta e auditoria
+---
 
-- `EstoqueCentral` responde pelo saldo disponível.
-- `MovimentacaoEstoque` explica por que o saldo mudou.
-- `HistoricoLaboratorio` registra o que o laboratório recebeu.
-- `Pedido` registra a solicitação e as decisões do fluxo.
+## 9. Resíduos
 
-Esses conceitos não devem ser confundidos ou usados como saldos paralelos.
+Resíduo é domínio próprio:
+
+```text
+Produto != Resíduo
+```
+
+Um componente de Resíduo pode referenciar Produto apenas para rastreabilidade. Essa referência não baixa nem repõe estoque automaticamente.
+
+Fluxo:
+
+```text
+INFORMADO
+→ EM_ANALISE
+→ LIBERADO_PARA_ARMAZENAMENTO
+→ ARMAZENADO_TEMPORARIAMENTE
+→ DESPACHADO
+```
+
+---
+
+## 10. Consulta e rastreabilidade
+
+```text
+EstoqueCentral
+→ saldo consolidado operacional
+
+Lote
+→ saldo físico, validade, apresentação e rastreabilidade
+
+MovimentacaoEstoque
+→ explica operações físicas de estoque
+
+HistoricoLaboratorio
+→ registra o que o laboratório recebeu
+
+Pedido
+→ registra solicitação e decisões do fluxo
+
+Residuo + HistoricoResiduo
+→ registra ciclo do resíduo
+```
+
+Esses conceitos não devem ser usados como saldos paralelos.
+
+---
 
 ## Fluxo resumido
 
 ```text
-Cadastros
+Contexto institucional / Unidade
   ↓
-Estoque por Unidade + Produto
+Catálogo + Estoque por Unidade
+  ↓
+Lotes
   ↓
 Pedido PENDENTE
   ├─ rejeição → REJEITADO
   └─ aprovação
-       ├─ baixa de estoque
+       ├─ baixa FEFO/FIFO
        ├─ movimentação SAIDA/PEDIDO
        └─ APROVADO
             ├─ entrega → histórico → ENTREGUE
-            └─ cancelamento → devolução → CANCELADO
+            └─ cancelamento → restaura lotes usados → CANCELADO
+
+Laboratório
+  ↓
+Resíduo INFORMADO
+  → análise
+  → armazenamento
+  → despacho
 ```
