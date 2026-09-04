@@ -5,7 +5,7 @@
 
 # SGL — Sistema de Gestão de Laboratórios
 
-**Backend corporativo para pedidos, estoque por lotes, rastreabilidade, fiscalização e relatórios de laboratórios.**
+**Backend corporativo para pedidos, estoque por lotes, rastreabilidade, resíduos, fiscalização, cadastros e relatórios laboratoriais.**
 
 `Java 17` · `Spring Boot 4.1` · `PostgreSQL` · `Flyway` · `Swagger/OpenAPI` · `PDF/XLSX`
 
@@ -13,9 +13,9 @@
 
 ---
 
-## 📍 Estado atual — 31/08/2026
+## 📍 Estado atual — 03/09/2026
 
-O backend operacional do SGL está estável e os principais fluxos já estão integrados à `main`.
+O backend do primeiro protótipo está funcionalmente amplo e integrado à `main`. Desde o último handoff foram concluídos o módulo de Resíduos, os cadastros administrativos necessários ao frontend, o fluxo completo de Estagiários e novas consultas/relatórios institucionais.
 
 ```text
 Pedidos / urgência                                ✅
@@ -25,21 +25,29 @@ Embalagem / multiplicador / fracionamento         ✅
 Movimentações / rastreabilidade                   ✅
 Swagger / OpenAPI                                 ✅
 Fiscalização de produtos                          ✅
-Relatórios                                        ✅
+Relatórios operacionais                           ✅
 Exportação PDF/XLSX                               ✅
-Resíduos                                          🟡 implementação em branch antiga; reconciliar
-Autenticação/autorização/auditoria definitiva     ⏳ pós-frontend
+Resíduos — fluxo completo                         ✅
+Relatório + PDF/XLSX de Resíduos                  ✅
+Estagiários — cadastro/edição/encerramento        ✅
+Pessoas por laboratório + PDF/XLSX                ✅
+Suporte a Administração/Cadastros                 ✅
+Alteração administrativa de perfil                ✅
+Código SGL de Resíduos no registro inicial        ✅
+Autenticação/autorização definitiva               ⏳
+Integração corporativa/SSO                        ⏳
+Refactor técnico para inglês                      ⏳ pós-protótipo
 ```
 
-No produto como um todo, a próxima grande etapa é **Administração/Cadastros no frontend**, começando por Produtos.
+No produto como um todo, o frontend também concluiu **Administração/Cadastros, Resíduos, dashboards, alertas operacionais, busca global e tema claro/escuro**. O próximo bloco oficial do primeiro protótipo é consolidar as diretrizes/matriz de permissões, congelar o protótipo e executar a homologação completa.
 
-> Para outra IA ou pessoa retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md).
+> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). Para contratos HTTP, o Swagger/OpenAPI continua sendo a fonte viva.
 
 ---
 
 ## 🎯 Objetivo
 
-O SGL foi criado para substituir controles fragmentados de insumos por uma aplicação que represente o fluxo real do laboratório:
+O SGL representa o ciclo operacional de laboratórios de forma rastreável:
 
 ```text
 estrutura institucional
@@ -51,10 +59,12 @@ estrutura institucional
 → baixa física FIFO/FEFO
 → entrega
 → movimentações auditáveis
+→ geração e destinação de resíduos
 → relatórios/fiscalização
+→ administração dos dados-base
 ```
 
-O sistema mantém rastreabilidade do material físico por lote e evita que regras sensíveis sejam delegadas ao frontend.
+Regras sensíveis permanecem no backend; o frontend não deve recriar FIFO/FEFO, transições de domínio ou cálculos oficiais de relatórios.
 
 ---
 
@@ -72,8 +82,6 @@ Repository
 PostgreSQL + Flyway
 ```
 
-Responsabilidades:
-
 ```text
 Controller  → contrato HTTP e validação de entrada
 Service     → regra de negócio, transação e orquestração
@@ -84,17 +92,15 @@ DTO         → contrato público da API
 
 ### Identificadores
 
-Regra consolidada:
-
 ```text
 Long id
-→ interno: banco, JPA, FKs, locks
+→ interno: banco, JPA, FKs e locks
 
 UUID publicId
 → público: DTOs, endpoints e frontend
 ```
 
-Novos contratos públicos não devem voltar a expor IDs sequenciais apenas porque exemplos históricos ou entidades internas ainda possuem `Long`.
+Novos contratos públicos devem continuar usando UUID.
 
 ---
 
@@ -103,29 +109,31 @@ Novos contratos públicos não devem voltar a expor IDs sequenciais apenas porqu
 ```text
 Unidade
 ├── Laboratórios
-│   ├── Usuários / Estagiários
+│   ├── Usuários
+│   ├── Estagiários
 │   ├── Projetos
-│   └── Pedidos
+│   ├── Pedidos
+│   └── Resíduos gerados
 └── Estoque Central
     └── Produto
         └── Lotes
             └── Movimentações
 ```
 
-Conceitos importantes:
+Conceitos centrais:
 
 - **Produto:** catálogo e unidade-base de controle;
 - **EstoqueCentral:** saldo consolidado por produto/unidade;
 - **Lote:** quantidade física, validade, embalagem, multiplicador e rastreabilidade;
 - **MovimentacaoEstoque:** trilha das alterações de saldo;
 - **Pedido:** solicitação e ciclo de aprovação/entrega;
-- **Fiscalização:** classificação explícita de produtos controlados.
+- **Resíduo:** material gerado no laboratório e encaminhado à Gestão;
+- **Fiscalização:** classificação explícita de produtos controlados;
+- **Estagiário:** vínculo institucional auditável com unidade/laboratório e período.
 
 ---
 
 ## 📦 Estoque, FIFO e FEFO
-
-Seleção de lotes:
 
 ```text
 produto perecível     → FEFO
@@ -143,16 +151,6 @@ lote vencido não é elegível para aprovação
 movimentação registra o lote realmente utilizado
 ```
 
-### Embalagem e fracionamento
-
-O saldo permanece em unidade-base.
-
-Exemplo:
-
-```text
-2 kits × 50 reações = 100 reações
-```
-
 Formas de retirada atuais:
 
 ```text
@@ -163,7 +161,7 @@ GARRAFA
 GALAO
 ```
 
-Fracionamento já aprovado:
+Fracionamento aprovado:
 
 ```text
 false → true  permitido
@@ -174,8 +172,6 @@ true  → false não permitido
 
 ## 🧾 Pedidos
 
-Fluxo:
-
 ```text
 PENDENTE
 ├── APROVADO
@@ -184,9 +180,69 @@ PENDENTE
 └── REJEITADO
 ```
 
-A aprovação realiza a baixa de estoque. A entrega apenas registra a conclusão. Cancelar um pedido já aprovado restaura os lotes exatos consumidos.
+A aprovação realiza a baixa de estoque. A entrega registra a conclusão sem nova baixa. Cancelar pedido já aprovado restaura os lotes exatos consumidos. Urgência é atributo do pedido e não altera automaticamente FIFO/FEFO.
 
-Urgência é atributo do pedido; não altera automaticamente FIFO/FEFO.
+---
+
+## ♻️ Resíduos — integrado
+
+Decisão de domínio:
+
+```text
+Produto ≠ Resíduo
+```
+
+Um resíduo pode citar produtos/reagentes em sua composição sem alterar automaticamente EstoqueCentral, Lote ou Movimentação.
+
+Fluxo:
+
+```text
+INFORMADO
+→ EM_ANALISE
+→ LIBERADO_PARA_ARMAZENAMENTO
+→ ARMAZENADO_TEMPORARIAMENTE
+→ DESPACHADO
+```
+
+O módulo possui:
+
+- cadastro pelo laboratório/solicitante;
+- consulta “Meus resíduos” por gerador;
+- recebimento e análise pela Gestão;
+- risco informado x risco confirmado;
+- Código SGL `SGL-RES-AAAA-NNNNNN`;
+- rótulo e histórico de transições;
+- armazenamento temporário e despacho;
+- relatório com filtros;
+- exportação PDF/XLSX.
+
+Migrations atuais chegam a:
+
+```text
+V11__create_residuo_module.sql
+V12__backfill_codigo_sgl_residuos.sql
+```
+
+Detalhes: [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md).
+
+---
+
+## 👥 Estagiários e estrutura institucional
+
+O backend suporta:
+
+```text
+listar
+cadastrar
+editar
+vincular à unidade/laboratório
+registrar período e tipo de vínculo
+encerrar estágio com data efetiva
+consultar ativos
+consultar por laboratório
+```
+
+O relatório **Pessoas por laboratório** reúne responsáveis e demais usuários vinculados, incluindo dados específicos do estágio quando aplicável, e também possui PDF/XLSX.
 
 ---
 
@@ -202,7 +258,7 @@ EXERCITO
 OUTRO
 ```
 
-Campos principais:
+Campos:
 
 ```text
 fiscalizado
@@ -210,13 +266,13 @@ orgaosFiscalizadores
 observacaoFiscalizacao
 ```
 
-Não inferir fiscalização a partir de risco químico ou perecibilidade.
+Não inferir fiscalização por risco químico ou perecibilidade.
 
 ---
 
 ## 📊 Relatórios
 
-Relatórios concluídos:
+Relatórios integrados:
 
 ```text
 Estagiários
@@ -225,79 +281,51 @@ Movimentações
 Resumo operacional
 Estoque e lotes
 Fiscalização
+Resíduos
+Pessoas por laboratório
 ```
 
-**Pedidos entregues não é um relatório separado.** Esse recorte é obtido por Movimentações, usando origem `PEDIDO` e, quando aplicável, tipo `SAIDA`.
+**Pedidos entregues não é relatório separado.** Esse recorte é obtido por Movimentações, normalmente com origem `PEDIDO` e tipo `SAIDA`.
 
-Resíduos está reservado como relatório futuro após integração do módulo correspondente.
-
-Detalhes: [`docs/RELATORIOS.md`](docs/RELATORIOS.md).
+Detalhes: [`docs/RELATORIOS.md`](docs/RELATORIOS.md) e [`docs/EXPORTACAO_RELATORIOS.md`](docs/EXPORTACAO_RELATORIOS.md).
 
 ---
 
-## 📄 Exportação PDF/XLSX
+## 🧑‍💼 Administração / Cadastros
 
-A geração oficial fica no backend.
-
-```text
-prévia JSON
-PDF
-XLSX
-→ mesma consulta e mesmos filtros
-```
-
-Bibliotecas:
+O backend já oferece o suporte usado pela central administrativa do frontend para:
 
 ```text
-OpenPDF 2.0.5
-Apache POI 5.5.1
+Laboratórios
+Projetos
+Produtos
+Permissões/perfis de usuários existentes
 ```
 
-Características dos arquivos:
+Decisões vigentes:
 
-- logo SGL;
-- título, filtros e data de geração;
-- resumo do relatório;
-- A4 e orientação adaptada;
-- paginação/quebra de texto no PDF;
-- autofiltro, congelamento e configuração de impressão no XLSX.
-
-Detalhes: [`docs/EXPORTACAO_RELATORIOS.md`](docs/EXPORTACAO_RELATORIOS.md).
+- **Unidade não terá CRUD manual normal no frontend**; a origem futura será corporativa;
+- **Usuário não é cadastrado manualmente pela central administrativa**; a futura autenticação institucional deve criar/sincronizar esse cadastro;
+- a Administração pode alterar o perfil de usuários existentes por contrato específico;
+- Produto em Cadastros representa catálogo, não estoque/lotes.
 
 ---
 
-## ♻️ Resíduos
+## 🔐 Segurança — interpretação correta
 
-Decisão de domínio:
-
-```text
-Produto ≠ Resíduo
-```
-
-Resíduo representa material gerado pelo laboratório e pode conter um ou vários reagentes/produtos sem alterar automaticamente o estoque desses produtos.
-
-Existe uma implementação anterior em `feat/gestao-residuos`, porém em 31/08/2026 ela está divergente da `main` e precisa ser **reconciliada/portada**, não mergeada cegamente.
-
-O procedimento detalhado está em [`CONTINUIDADE.md`](CONTINUIDADE.md) e no [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md).
-
----
-
-## 🔐 Autenticação e segurança
-
-O projeto já possui dependências de Spring Security/OAuth2, mas isso não deve ser confundido com autenticação corporativa concluída.
-
-Estado:
+O projeto possui base de Spring Security/OAuth2, mas a autenticação corporativa definitiva ainda não está concluída.
 
 ```text
 base técnica de segurança                         ✅
-login visual/sessão DEV no frontend               ✅
-autenticação local definitiva                     ⏳
-autorização real por perfil                       ⏳
-auditoria derivada da sessão autenticada          ⏳
+regras de perfil em serviços específicos          ✅ parcial
+sessão DEV no frontend                            ✅ temporária
+autenticação definitiva                           ⏳
+autorização global baseada em sessão/token        ⏳
+auditoria derivada da identidade autenticada      ⏳
 integração corporativa/SSO                        ⏳
 ```
 
-Essa etapa permanece para depois do fechamento funcional principal do frontend.
+Não tratar a sessão DEV ou validações pontuais de perfil como segurança final de produção.
 
 ---
 
@@ -322,34 +350,17 @@ Essa etapa permanece para depois do fechamento funcional principal do frontend.
 
 ## 🚀 Execução local
 
-### Pré-requisitos
-
-```text
-Java 17+
-Maven 3.8+
-PostgreSQL
-Git
+```bash
+cd backend/sgl-backend
+mvn spring-boot:run
 ```
 
-### Banco
-
-```sql
-CREATE DATABASE sgl;
-```
-
-Variáveis opcionais:
+Variáveis usuais:
 
 ```text
 DB_URL=jdbc:postgresql://localhost:5432/sgl
 DB_USER=postgres
 DB_PASSWD=<senha>
-```
-
-### Executar
-
-```bash
-cd backend/sgl-backend
-mvn spring-boot:run
 ```
 
 Acessos locais:
@@ -360,37 +371,30 @@ Swagger    http://localhost:8080/swagger-ui/index.html
 OpenAPI    http://localhost:8080/v3/api-docs
 ```
 
-### Testes
+Testes:
 
 ```bash
 mvn test
 ```
 
-Não use um número histórico fixo de testes como critério de saúde: a suíte cresce conforme o projeto evolui. O critério é build/testes atuais concluírem sem falhas.
-
 ---
 
 ## 🗺️ Planejamento atual
 
-O backend principal já suporta os fluxos usados pelo frontend atual. A sequência do produto é:
+Sem criar novo roadmap, o fechamento do primeiro protótipo segue:
 
 ```text
-1. Administração / Cadastros no frontend            ← PRÓXIMO
-   ├── Produtos + fiscalização
-   ├── Laboratórios
-   ├── Projetos
-   ├── Usuários
-   └── Estagiários
-2. reconciliar/integrar Resíduos
-3. relatório + PDF/XLSX de Resíduos
-4. documentos/upload e rotulagem pendentes
-5. dashboard final / alertas / robustez
-6. autenticação + autorização + auditoria definitiva
-7. integração corporativa
+1. consolidar diretrizes/matriz de permissões
+2. congelar o primeiro protótipo funcional
+3. executar homologação completa integrada
+4. corrigir apenas falhas encontradas na estabilização
+5. fechar autenticação + autorização + auditoria definitiva
+6. integrar autenticação/unidade corporativa
+7. tratar documentos/upload ainda pendentes quando o contrato for definido
 8. refactor pós-protótipo para nomenclatura técnica em inglês
 ```
 
-Não criar CRUD manual de Unidade no frontend: a decisão vigente é que Unidade venha futuramente da integração corporativa.
+Funcionalidades futuras como **modelos de resíduos pré-determinados** continuam registradas como opção em estudo e não fazem parte do fluxo atual obrigatório.
 
 ---
 
@@ -399,13 +403,12 @@ Não criar CRUD manual de Unidade no frontend: a decisão vigente é que Unidade
 | Documento | Uso |
 |---|---|
 | [`CONTINUIDADE.md`](CONTINUIDADE.md) | checkpoint e próximo passo |
-| [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md) | handoff completo para humano/IA |
-| [`docs/README.md`](docs/README.md) | índice e hierarquia da documentação |
-| [`docs/RELATORIOS.md`](docs/RELATORIOS.md) | relatórios e decisões de consulta |
+| [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md) | handoff completo |
+| [`docs/README.md`](docs/README.md) | índice documental |
+| [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md) | domínio e fluxo de resíduos |
+| [`docs/RELATORIOS.md`](docs/RELATORIOS.md) | relatórios atuais |
 | [`docs/EXPORTACAO_RELATORIOS.md`](docs/EXPORTACAO_RELATORIOS.md) | PDF/XLSX |
-| [`docs/PENDENCIAS_POS_PROTOTIPO.md`](docs/PENDENCIAS_POS_PROTOTIPO.md) | refactors pós-protótipo |
-| [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md) | fluxo de domínio |
-| [`docs/GUIA_ESTRUTURAL.md`](docs/GUIA_ESTRUTURAL.md) | organização arquitetural |
+| [`docs/PENDENCIAS_POS_PROTOTIPO.md`](docs/PENDENCIAS_POS_PROTOTIPO.md) | refactors posteriores |
 
 > Payloads e endpoints devem ser confirmados no Swagger antes de copiar exemplos históricos.
 
@@ -413,5 +416,5 @@ Não criar CRUD manual de Unidade no frontend: a decisão vigente é que Unidade
 
 <div align="center">
   <strong>SGL — Sistema de Gestão de Laboratórios</strong><br/>
-  Backend operacional estável; evolução do produto concentrada no frontend e nos módulos complementares planejados.
+  Primeiro protótipo funcional próximo do congelamento e da homologação completa.
 </div>

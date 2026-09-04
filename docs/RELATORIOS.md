@@ -1,15 +1,13 @@
 # Relatórios — SGL
 
-**Atualizado em:** 31/08/2026  
-**Estado:** consultas, prévias e exportações dos relatórios atuais concluídas e integradas à `main`.
+**Atualizado em:** 03/09/2026  
+**Estado:** consultas, prévias e exportações dos relatórios do primeiro protótipo estão integradas à `main`.
 
 ## Objetivo
 
-Centralizar consultas operacionais, gerenciais e de fiscalização com filtros específicos por contexto e exportação oficial em PDF/XLSX.
+Centralizar consultas operacionais, gerenciais, institucionais e de fiscalização com filtros específicos e exportação oficial PDF/XLSX.
 
 ## Regra arquitetural
-
-O SGL utiliza endpoints/serviços específicos por relatório, em vez de um endpoint genérico com todas as combinações possíveis.
 
 ```text
 filtro do relatório
@@ -18,7 +16,7 @@ filtro do relatório
 → mesma consulta para PDF/XLSX
 ```
 
-O frontend não deve recriar os cálculos ou regras de composição do relatório.
+O frontend não recria cálculos oficiais de relatório.
 
 ---
 
@@ -26,104 +24,69 @@ O frontend não deve recriar os cálculos ou regras de composição do relatóri
 
 ### 1. Estagiários ✅
 
+```text
+GET /api/v1/relatorios/estagiarios
+GET /api/v1/relatorios/estagiarios/exportar?formato=PDF|XLSX
+```
+
 Cobertura:
 
 - todos, ativos e inativos;
-- por laboratório;
-- por período de vínculo.
-
-Endpoint:
-
-```text
-GET /api/v1/relatorios/estagiarios
-```
+- laboratório;
+- período de vínculo;
+- situação e dados do estágio conforme contrato atual.
 
 ### 2. Produtos ✅
 
-Cobertura:
-
-- todos, ativos e inativos;
-- perecíveis e não perecíveis;
-- por nível/tipo de risco conforme contrato;
-- fiscalizados e não fiscalizados;
-- por órgão fiscalizador;
-- visão geral do catálogo.
-
-Endpoint:
-
 ```text
 GET /api/v1/relatorios/produtos
+GET /api/v1/relatorios/produtos/exportar?formato=PDF|XLSX
 ```
+
+Cobertura:
+
+- ativos/inativos;
+- perecibilidade;
+- risco;
+- fiscalização;
+- órgão fiscalizador;
+- visão cadastral do catálogo.
 
 ### 3. Movimentações ✅
 
-Cobertura:
-
-- entradas;
-- saídas;
-- ajustes;
-- devoluções;
-- descartes;
-- filtros por período, produto, laboratório, lote, responsável e origem conforme contrato atual.
-
-Endpoint:
-
 ```text
 GET /api/v1/relatorios/movimentacoes
+GET /api/v1/relatorios/movimentacoes/exportar?formato=PDF|XLSX
 ```
+
+Cobertura inclui entradas, saídas, ajustes, devoluções e descartes, com filtros por período e contexto conforme Swagger.
 
 #### Pedidos entregues
 
-Pedidos entregues **não possuem relatório dedicado**.
-
-Quando a gestão precisar analisar material movimentado por pedidos, usar Movimentações com recorte semelhante a:
+**Não existe relatório dedicado.** Usar Movimentações com recorte semelhante a:
 
 ```text
 origem = PEDIDO
 tipo = SAIDA
 ```
 
-`Pedido.dataEntrega` permanece no domínio porque registra um evento real e pode ser usado em auditoria/consultas futuras.
-
 ### 4. Resumo operacional ✅
-
-Cobertura:
-
-- total de movimentações;
-- entradas;
-- saídas;
-- descartes;
-- produtos movimentados;
-- lotes movimentados;
-- principais entradas;
-- principais saídas;
-- lotes mais movimentados.
-
-Endpoint:
 
 ```text
 GET /api/v1/relatorios/resumo-operacional
+GET /api/v1/relatorios/resumo-operacional/exportar?formato=PDF|XLSX
 ```
+
+Consolida movimentações, entradas, saídas, descartes, produtos/lotes movimentados e rankings operacionais.
 
 ### 5. Estoque e lotes ✅
 
-Cobertura:
-
-- posição atual;
-- estoque baixo;
-- lotes ativos;
-- lotes próximos do vencimento;
-- lotes vencidos;
-- lotes esgotados;
-- filtros por unidade, produto e situação.
-
-Endpoint:
-
 ```text
 GET /api/v1/relatorios/estoque-lotes
+GET /api/v1/relatorios/estoque-lotes/exportar?formato=PDF|XLSX
 ```
 
-Classificações atuais:
+Situações atuais:
 
 ```text
 VALIDO
@@ -136,69 +99,88 @@ INATIVO
 
 ### 6. Fiscalização ✅
 
-É um recorte especializado apenas dos produtos explicitamente classificados como fiscalizados/controlados.
-
-Cobertura:
-
-- produto;
-- órgão fiscalizador;
-- unidade;
-- período;
-- janela de vencimento;
-- saldo atual;
-- lotes ativos/vencidos/próximos do vencimento;
-- entradas e saídas;
-- rastreabilidade por lote;
-- destino da saída: laboratório, projeto, solicitante e pedido;
-- responsável pela movimentação.
-
-Endpoint:
-
 ```text
 GET /api/v1/relatorios/fiscalizacao
+GET /api/v1/relatorios/fiscalizacao/exportar?formato=PDF|XLSX
 ```
 
-### 7. Resíduos 🟡
+É um recorte especializado de produtos explicitamente marcados como fiscalizados. Não inferir fiscalização por risco ou perecibilidade.
 
-Planejado para apresentar:
+### 7. Resíduos ✅
 
-- resíduos informados e situação atual;
-- laboratório, projeto, gerador e gestor;
-- riscos informados e confirmados;
-- recipiente e quantidade;
-- armazenamento temporário;
-- destino previsto e final;
-- datas operacionais;
-- composição do resíduo.
+```text
+GET /api/v1/relatorios/residuos
+GET /api/v1/relatorios/residuos/exportar?formato=PDF|XLSX
+```
 
-Ainda não está ativo porque depende da reconciliação e integração do módulo de Resíduos existente em `feat/gestao-residuos`.
+Filtros previstos pelo contrato atual:
 
-Essa branch está divergente da `main` e não deve ser mergeada diretamente sem portabilidade/migration adequada. Ver `../CONTINUIDADE.md` e `DOSSIE_PROJETO_SGL.md`.
+```text
+status
+laboratorioId
+nivelRisco
+dataInicio
+dataFim
+```
+
+Resumo inclui:
+
+```text
+total
+informados
+emAnalise
+liberados
+armazenados
+despachados
+altoRisco
+```
+
+Os itens preservam rastreabilidade do gerador, laboratório, status, riscos, quantidade e ciclo operacional.
+
+### 8. Pessoas por laboratório ✅
+
+```text
+GET /api/v1/relatorios/pessoas-laboratorio?laboratorioId=...
+GET /api/v1/relatorios/pessoas-laboratorio/exportar?formato=PDF|XLSX&laboratorioId=...
+```
+
+Objetivo: auditoria institucional de **todas as pessoas vinculadas ao laboratório**, não apenas estagiários.
+
+Filtros adicionais:
+
+```text
+perfil
+ativo
+```
+
+Retorno contempla:
+
+```text
+laboratório
+unidade
+responsável
+nome/e-mail
+perfil
+ativo/inativo
+marcação de responsável
+estagiário: tipo de vínculo + período
+totais por perfil
+```
 
 ---
 
 ## Produtos x Fiscalização
 
-O relatório de Produtos é a visão cadastral geral.
-
-O relatório de Fiscalização é uma visão especializada de rastreabilidade de produtos controlados.
-
 ```text
 Produtos
-→ catálogo + filtros gerais
+→ catálogo e filtros gerais
 
 Fiscalização
-→ somente produtos marcados como fiscalizados
-→ saldo + lotes + vencimentos + entradas/saídas + destino
+→ somente fiscalizados
+→ saldo/lotes/vencimentos/movimentações/rastreabilidade
 ```
 
-Não deduzir `fiscalizado` a partir de risco ou perecibilidade.
-
----
-
-## Regra de cadastro de Produto para fiscalização
-
-A classificação pertence ao cadastro do Produto:
+Campos de fiscalização pertencem ao Produto:
 
 ```text
 fiscalizado
@@ -206,34 +188,16 @@ orgaosFiscalizadores
 observacaoFiscalizacao
 ```
 
-Quando `fiscalizado = false`:
-
 ```text
-órgãos = vazio
-observação = limpa
+fiscalizado=false → órgãos vazios e observação limpa
+fiscalizado=true  → ao menos um órgão obrigatório
 ```
-
-Quando `fiscalizado = true`:
-
-```text
-pelo menos um órgão obrigatório
-```
-
-Órgãos iniciais:
-
-- Polícia Federal;
-- Vigilância Sanitária;
-- ANVISA;
-- Exército;
-- Outro.
-
-A próxima tela `Administração → Cadastros → Produtos` deve expor essa configuração na criação e edição.
 
 ---
 
-## Exportação — concluída ✅
+## Exportação
 
-Formatos oficiais:
+Formatos:
 
 ```text
 PDF  → OpenPDF 2.0.5
@@ -248,20 +212,7 @@ prévia + PDF + XLSX
 → mesmos filtros
 ```
 
-Cada arquivo representa um relatório. Relatórios compostos podem possuir várias seções ou abas internas.
-
-Endpoints:
-
-```text
-GET /api/v1/relatorios/estagiarios/exportar
-GET /api/v1/relatorios/produtos/exportar
-GET /api/v1/relatorios/movimentacoes/exportar
-GET /api/v1/relatorios/resumo-operacional/exportar
-GET /api/v1/relatorios/estoque-lotes/exportar
-GET /api/v1/relatorios/fiscalizacao/exportar
-```
-
-Usar `formato=PDF` ou `formato=XLSX` e os mesmos filtros da prévia correspondente.
+Cada arquivo representa um único tipo de relatório; um relatório composto pode possuir várias seções/abas internas.
 
 Detalhes: `EXPORTACAO_RELATORIOS.md`.
 
@@ -269,31 +220,25 @@ Detalhes: `EXPORTACAO_RELATORIOS.md`.
 
 ## Estado de validação
 
-Em 28/08/2026 foram validados manualmente:
+O ciclo base de relatórios/exportações foi validado e integrado em 28/08/2026. Resíduos e Pessoas por laboratório foram implementados/integrados depois desse ciclo.
+
+A homologação completa do primeiro protótipo deve repetir os fluxos integrados, incluindo:
 
 ```text
-Estagiários             ✅
-Produtos                ✅
-Movimentações           ✅
-Resumo operacional      ✅
-Estoque e lotes         ✅
-Fiscalização            ✅
-PDF                     ✅
-XLSX                    ✅
+prévia de Resíduos
+PDF/XLSX de Resíduos
+Pessoas por laboratório
+PDF/XLSX de Pessoas por laboratório
+combinação de filtros
+consistência entre prévia e arquivo
 ```
 
-O ciclo foi integrado à `main`; exportação não é mais uma “próxima decisão técnica”.
+Não marcar essa bateria final como substituída apenas pela existência dos commits.
 
 ---
 
-## Próxima evolução deste módulo
+## Próxima evolução
 
-A próxima expansão específica de Relatórios será feita **após a integração do domínio de Resíduos**:
+Não há novo relatório obrigatório definido antes do congelamento do primeiro protótipo.
 
-```text
-Resíduos operacional
-→ consulta/relatório de Resíduos
-→ PDF/XLSX de Resíduos
-```
-
-Não criar novos relatórios apenas por conveniência visual; primeiro confirmar a necessidade operacional e o contrato de dados.
+Qualquer novo relatório deve nascer de necessidade operacional real e contrato de dados claro, evitando duplicar telas ou criar relatórios apenas por conveniência visual.
