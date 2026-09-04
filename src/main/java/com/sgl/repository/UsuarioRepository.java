@@ -11,15 +11,15 @@ import com.sgl.model.Usuario;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
-	
-	Optional<Usuario> findByPublicId(UUID publicId);
-	
-	Optional<Usuario> findByEmail(String email); //encontrar usuario com esse email
-	
-	List<Usuario> findByLaboratorioId(Long laboratorioId); //Listar os usuarios por laboratorio
-	
-	boolean existsByEmail(String email); //Verificar se existe usuario com esse email
-	
-	boolean existsByEmailAndIdNot(String email,Long id); //Papel parecido Com existsByEmail, mas aplicado para o metodo atualizar
 
+    Optional<Usuario> findByPublicId(UUID publicId);
+    Optional<Usuario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
+
+    Optional<Usuario> findByEmail(String email);
+
+    List<Usuario> findByLaboratorioId(Long laboratorioId);
+    List<Usuario> findByUnidadePublicId(UUID unidadePublicId);
+
+    boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, Long id);
 }
