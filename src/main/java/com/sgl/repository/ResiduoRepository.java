@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sgl.model.Residuo;
@@ -16,10 +18,27 @@ public interface ResiduoRepository extends JpaRepository<Residuo, Long> {
     Optional<Residuo> findByPublicId(UUID publicId);
     Optional<Residuo> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
+    @Query("""
+            SELECT residuo
+            FROM Residuo residuo
+            WHERE (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
+               OR residuo.laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            ORDER BY residuo.dataInformacao DESC
+            """)
     List<Residuo> findAllByOrderByDataInformacaoDesc();
+
     List<Residuo> findByLaboratorioUnidadePublicIdOrderByDataInformacaoDesc(UUID unidadePublicId);
 
-    List<Residuo> findByStatusOrderByDataInformacaoDesc(StatusResiduo status);
+    @Query("""
+            SELECT residuo
+            FROM Residuo residuo
+            WHERE residuo.status = :status
+              AND (:#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)} IS NULL
+               OR residuo.laboratorio.unidade.publicId = :#{T(com.sgl.tenant.TenantContext).unidadeAtual().orElse(null)})
+            ORDER BY residuo.dataInformacao DESC
+            """)
+    List<Residuo> findByStatusOrderByDataInformacaoDesc(@Param("status") StatusResiduo status);
+
     List<Residuo> findByLaboratorioUnidadePublicIdAndStatusOrderByDataInformacaoDesc(
             UUID unidadePublicId,
             StatusResiduo status
