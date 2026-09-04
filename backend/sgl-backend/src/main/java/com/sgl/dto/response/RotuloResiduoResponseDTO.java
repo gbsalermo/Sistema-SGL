@@ -24,6 +24,9 @@ public class RotuloResiduoResponseDTO {
     private final String codigoRastreio;
     private final String qrCodeConteudo;
     private final String descricao;
+    private final UUID unidadeId;
+    private final String unidadeNome;
+    private final String unidadeSigla;
     private final String laboratorioNome;
     private final String geradorNome;
     private final String processoOrigem;
@@ -43,21 +46,20 @@ public class RotuloResiduoResponseDTO {
         this.codigoRastreio = entity.getCodigoRastreio();
         this.qrCodeConteudo = entity.getQrCodeConteudo();
         this.descricao = entity.getDescricao();
+        this.unidadeId = entity.getLaboratorio().getUnidade().getPublicId();
+        this.unidadeNome = entity.getLaboratorio().getUnidade().getNome();
+        this.unidadeSigla = entity.getLaboratorio().getUnidade().getSigla();
         this.laboratorioNome = entity.getLaboratorio().getNome();
         this.geradorNome = entity.getGerador().getNome();
         this.processoOrigem = entity.getProcessoOrigem();
         this.recipiente = entity.getRecipiente();
         this.quantidade = entity.getQuantidade();
         this.unidadeMedida = entity.getUnidadeMedida();
-        this.nivelRisco = entity.getNivelRiscoConfirmado() != null
-                ? entity.getNivelRiscoConfirmado()
-                : entity.getNivelRiscoInformado();
+        this.nivelRisco = entity.getNivelRiscoConfirmado() != null ? entity.getNivelRiscoConfirmado() : entity.getNivelRiscoInformado();
         this.riscos = !entity.getRiscosConfirmados().isEmpty()
                 ? new LinkedHashSet<>(entity.getRiscosConfirmados())
                 : new LinkedHashSet<>(entity.getRiscosInformados());
-        this.componentes = entity.getComponentes().stream()
-                .map(ComponenteResiduoResponseDTO::new)
-                .toList();
+        this.componentes = entity.getComponentes().stream().map(ComponenteResiduoResponseDTO::new).toList();
         this.localArmazenamentoTemporario = entity.getLocalArmazenamentoTemporario();
         this.destinoFinalPrevisto = entity.getDestinoFinalPrevisto();
         this.dataPrevistaDespacho = entity.getDataPrevistaDespacho();
