@@ -18,6 +18,7 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -38,6 +39,8 @@ public class EstagiarioService {
     public EstagiarioResponseDTO criar(EstagiarioRequestDTO dto) {
         Usuario usuario = buscarUsuario(dto.getUsuarioId());
         Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
+        validarTenantUnidade(usuario.getUnidade() != null ? usuario.getUnidade().getPublicId() : null);
+        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
         if (estagiarioRepository.existsById(usuario.getId())) {
             throw new BusinessRuleException("Usuário já possui cadastro de estagiário.");
@@ -73,22 +76,24 @@ public class EstagiarioService {
 
     @Transactional(readOnly = true)
     public List<EstagiarioResponseDTO> listarTodos() {
-        return estagiarioRepository.findAll().stream()
+        List<Estagiario> estagiarios = TenantContext.unidadeAtual()
+                .map(estagiarioRepository::findByUnidadePublicId)
+                .orElseGet(estagiarioRepository::findAll);
+
+        return estagiarios.stream()
                 .map(EstagiarioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public EstagiarioResponseDTO buscarPorId(UUID id) {
-        return estagiarioRepository.findByPublicId(id)
-                .map(EstagiarioResponseDTO::new)
-                .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
+        return new EstagiarioResponseDTO(buscarEstagiarioNoTenant(id));
     }
 
     @Transactional(readOnly = true)
     public List<EstagiarioResponseDTO> listarPorLaboratorio(UUID id) {
-        Laboratorio laboratorio = laboratorioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
+        Laboratorio laboratorio = buscarLaboratorio(id);
+        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
         return estagiarioRepository.findByLaboratorioId(laboratorio.getId())
                 .stream()
@@ -98,15 +103,18 @@ public class EstagiarioService {
 
     @Transactional(readOnly = true)
     public List<EstagiarioResponseDTO> listarAtivos() {
-        return estagiarioRepository.findByAtivoTrue().stream()
+        List<Estagiario> estagiarios = TenantContext.unidadeAtual()
+                .map(estagiarioRepository::findByUnidadePublicIdAndAtivoTrue)
+                .orElseGet(estagiarioRepository::findByAtivoTrue);
+
+        return estagiarios.stream()
                 .map(EstagiarioResponseDTO::new)
                 .toList();
     }
 
     @Transactional
     public EstagiarioResponseDTO atualizar(UUID id, EstagiarioRequestDTO dto) {
-        Estagiario estagiario = estagiarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
+        Estagiario estagiario = buscarEstagiarioNoTenant(id);
 
         if (!id.equals(dto.getUsuarioId())) {
             throw new BusinessRuleException(
@@ -115,6 +123,7 @@ public class EstagiarioService {
         }
 
         Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
+        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
         estagiario.validateInternProfile();
         validarUnidadeCompativel(estagiario, laboratorio);
 
@@ -127,21 +136,44 @@ public class EstagiarioService {
 
     @Transactional
     public void deletar(UUID id) {
-        Estagiario estagiario = estagiarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
-
+        Estagiario estagiario = buscarEstagiarioNoTenant(id);
         estagiario.setAtivo(false);
         estagiario.setDataFimEstagio(LocalDate.now());
     }
 
+    private Estagiario buscarEstagiarioNoTenant(UUID id) {
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> estagiarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Estagiário", id);
+                    }
+                    return estagiarioRepository.findByPublicId(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
+                });
+    }
+
     private Usuario buscarUsuario(UUID uuid) {
-        return usuarioRepository.findByPublicId(uuid)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", uuid));
+        return TenantContext.unidadeAtual()
+                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(uuid, unidadeId))
+                .orElseGet(() -> {
+                    if (TenantContext.ativo()) {
+                        throw new ResourceNotFoundException("Usuário", uuid);
+                    }
+                    return usuarioRepository.findByPublicId(uuid)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", uuid));
+                });
     }
 
     private Laboratorio buscarLaboratorio(UUID uuid) {
         return laboratorioRepository.findByPublicId(uuid)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", uuid));
+    }
+
+    private void validarTenantUnidade(UUID unidadeId) {
+        if (!TenantContext.pertence(unidadeId)) {
+            throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
     }
 
     private void validarUnidadeCompativel(Usuario usuario, Laboratorio laboratorio) {
@@ -177,8 +209,7 @@ public class EstagiarioService {
 
     @Transactional
     public EstagiarioResponseDTO encerrarEstagio(UUID id) {
-        Estagiario estagiario = estagiarioRepository.findByPublicId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
+        Estagiario estagiario = buscarEstagiarioNoTenant(id);
 
         if (!Boolean.TRUE.equals(estagiario.getAtivo())) {
             throw new BusinessRuleException("O estágio já está encerrado.");
