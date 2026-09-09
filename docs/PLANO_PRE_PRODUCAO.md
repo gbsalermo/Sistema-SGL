@@ -124,7 +124,12 @@ Revisar:
 - informações redundantes;
 - alinhamentos;
 - hierarquia visual;
-- informações realmente necessárias para identificação e operação.
+- informações realmente necessárias para identificação e operação;
+- compatibilidade de impressão do rótulo com impressoras Zebra.
+
+A impressão em impressora Zebra passa a ser requisito desta subetapa. Quando a Etapa 3 for iniciada, deve ser validado o ambiente real de impressão — modelo de impressora, dimensões do rótulo, driver/forma de envio e necessidade ou não de formato específico como ZPL — antes de definir a integração técnica definitiva.
+
+Essa compatibilidade de impressão não altera a regra de ciclo definida em 3.3: o rótulo pode existir e ser visualizado antes, mas a impressão operacional só deve ser liberada no momento previsto pelo fluxo.
 
 ### 3.3 Corrigir o ciclo de geração e impressão do rótulo
 
@@ -554,7 +559,9 @@ No momento da atualização deste documento:
 ```text
 Limpeza/revisão documental anterior             ✅ concluída
 Planejamento das etapas de pré-produção          ✅ consolidado neste documento
-Etapa 1 — refinamento visual global              ⏭ próxima etapa de implementação
+Etapa 1 — refinamento visual global              🔧 em andamento
+  1.1 — definição do padrão visual SGL           ✅ concluída
+  1.2 — fundação visual compartilhada            ⏭ etapa atual
 Etapas 2 a 9                                      ⏳ aguardando sequência
 ```
 
