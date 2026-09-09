@@ -125,9 +125,29 @@ Revisar:
 - alinhamentos;
 - hierarquia visual;
 - informações realmente necessárias para identificação e operação;
-- compatibilidade de impressão do rótulo com impressoras Zebra.
+- compatibilidade de impressão do rótulo com impressoras Zebra;
+- possibilidade de gerar e imprimir uma **Ficha/Comprovante de Lote** a partir dos dados já exibidos no detalhe de estoque.
 
 A impressão em impressora Zebra passa a ser requisito desta subetapa. Quando a Etapa 3 for iniciada, deve ser validado o ambiente real de impressão — modelo de impressora, dimensões do rótulo, driver/forma de envio e necessidade ou não de formato específico como ZPL — antes de definir a integração técnica definitiva.
+
+Como verificação complementar de impressão operacional, a Etapa 3.2 também deve avaliar uma **Ficha/Comprovante de Lote** imprimível para situações em que o material precise ser repassado acompanhado de seus dados de rastreabilidade. Esse documento não deve ser tratado ou nomeado como nota fiscal oficial; sua função é operacional e informativa.
+
+A ficha deve partir dos dados já consolidados no lote e poderá incluir, conforme validação durante a etapa:
+
+- código SGL do lote;
+- produto;
+- lote/referência do fornecedor;
+- unidade recebida e apresentação;
+- quantidade disponível ou quantidade repassada, conforme contexto;
+- multiplicador;
+- data de entrada;
+- validade;
+- condição de retirada unitária;
+- observação;
+- Unidade/laboratório;
+- demais informações de rastreabilidade consideradas úteis.
+
+Antes da implementação, deve ser decidido se essa ficha será apenas uma página própria para impressão pelo navegador, um PDF gerado pelo SGL ou ambos. O layout deve ser simples, legível e adequado para acompanhar fisicamente o material quando necessário.
 
 Essa compatibilidade de impressão não altera a regra de ciclo definida em 3.3: o rótulo pode existir e ser visualizado antes, mas a impressão operacional só deve ser liberada no momento previsto pelo fluxo.
 
@@ -622,7 +642,8 @@ Etapa 1 — refinamento visual global              🔧 em andamento
   1.4 — aplicação tela a tela                    🔧 etapa atual
     Pedidos                                      ✅ aprovado
     Dashboards                                   ✅ aprovado
-    Resíduos                                     🔧 em validação
+    Resíduos                                     ✅ aprovado
+    Estoque                                      🔧 em validação
 Etapas 2 a 9                                      ⏳ aguardando sequência
 ```
 
