@@ -328,17 +328,70 @@ PDF/XLSX devem seguir a mesma consulta/filtros da prévia, mantendo o padrão at
 ## Etapa 7 — Unidades, Soluções e integração com Pedidos
 
 **Impacto:** muito alto  
-**Origem:** itens 15, 10 e 11
+**Origem:** itens 15, 10 e 11 + decisão complementar sobre o padrão real de Pedidos do cliente
 
 Ordem interna obrigatória:
 
 ```text
-normalização de unidades
+análise do padrão atual de Pedidos do cliente
+→ síntese com o padrão atual do SGL
+→ normalização de unidades
 → entidade/cadastro de Soluções
 → Soluções dentro de Pedidos
 ```
 
-### 7.1 Normalização de unidades e apresentações
+### 7.1 Analisar e adaptar o padrão de Pedidos atual do cliente
+
+Antes de alterar o domínio, contrato ou interface de Pedidos, deve ser analisado o **padrão de pedido utilizado atualmente pelo cliente**.
+
+O objetivo não é copiar integralmente o processo atual do cliente nem preservar o SGL sem questionamento. A subetapa deve comparar os dois modelos e produzir uma **síntese operacional melhor**, aproveitando os pontos positivos de cada um e removendo redundâncias, ambiguidades ou limitações.
+
+A análise deve levantar, quando aplicável:
+
+- campos e informações presentes no pedido atual do cliente;
+- dados obrigatórios e opcionais;
+- terminologia utilizada pela equipe;
+- forma de solicitar produtos, quantidades e apresentações;
+- organização dos itens do pedido;
+- etapas do fluxo;
+- responsáveis por cada etapa;
+- aprovação, atendimento, entrega e cancelamento;
+- observações, justificativas e situações excepcionais;
+- informações que hoje ajudam a operação;
+- informações redundantes, pouco claras ou que geram retrabalho.
+
+Depois, cada ponto deve ser comparado com o Pedido atual do SGL e classificado de forma objetiva, por exemplo:
+
+```text
+manter padrão do SGL
+adotar padrão do cliente
+combinar/refinar os dois modelos
+descartar por não agregar valor
+```
+
+A decisão deve considerar principalmente:
+
+- clareza para o Solicitante;
+- facilidade operacional para a Gestão;
+- rastreabilidade;
+- redução de retrabalho;
+- consistência com Estoque e Movimentações;
+- compatibilidade com a arquitetura e regras já consolidadas no SGL;
+- preparação para a inclusão de Soluções e unidades normalizadas nas subetapas seguintes.
+
+Resultado obrigatório desta subetapa:
+
+```text
+padrão real do cliente documentado
++ comparação cliente × SGL
++ pontos positivos e negativos identificados
++ decisões de manter/adotar/refinar/descartar
++ padrão-alvo de Pedido aprovado
+```
+
+Somente após esse padrão-alvo estar fechado devem começar as alterações estruturais de Pedidos previstas nesta Etapa 7.
+
+### 7.2 Normalização de unidades e apresentações
 
 Separar conceitualmente:
 
@@ -357,7 +410,7 @@ Exemplos:
 
 Não realizar conversão genérica entre dimensões incompatíveis, como massa e volume (`g ↔ mL`), sem informação físico-química que permita essa conversão.
 
-### 7.2 Entidade/cadastro de Soluções
+### 7.3 Entidade/cadastro de Soluções
 
 Solução representa uma composição/receita reutilizável de produtos.
 
@@ -378,7 +431,7 @@ Devem existir:
 
 Uma Solução padrão é uma definição reutilizável; sua utilização em Pedido deve preservar a composição efetivamente solicitada naquele momento.
 
-### 7.3 Soluções em Pedidos
+### 7.4 Soluções em Pedidos
 
 Um Pedido deve poder conter:
 
@@ -537,6 +590,9 @@ Dependências críticas:
 Projeto–Estagiário
 → exige vínculo histórico próprio
 
+Evolução estrutural de Pedidos
+→ exige primeiro análise e síntese do padrão real utilizado pelo cliente
+
 Soluções
 → exigem primeiro uma regra consistente de unidades de medida
 
@@ -561,7 +617,12 @@ Limpeza/revisão documental anterior             ✅ concluída
 Planejamento das etapas de pré-produção          ✅ consolidado neste documento
 Etapa 1 — refinamento visual global              🔧 em andamento
   1.1 — definição do padrão visual SGL           ✅ concluída
-  1.2 — fundação visual compartilhada            ⏭ etapa atual
+  1.2 — fundação visual compartilhada            ✅ concluída
+  1.3 — componentes básicos compartilhados       ✅ concluída
+  1.4 — aplicação tela a tela                    🔧 etapa atual
+    Pedidos                                      ✅ aprovado
+    Dashboards                                   ✅ aprovado
+    Resíduos                                     🔧 em validação
 Etapas 2 a 9                                      ⏳ aguardando sequência
 ```
 
