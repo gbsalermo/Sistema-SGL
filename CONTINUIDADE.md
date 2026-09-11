@@ -73,7 +73,7 @@ Pedidos da gestão                                     ✅
 Estoque e lotes                                       ✅
 Movimentações                                         ✅
 Resíduos — solicitante e gestão                       ✅
-Rótulos de Produto e Resíduo                          ✅
+Rótulos de Produto e Resíduo                          ✅ base atual; adaptação final na Etapa 8
 Estagiários                                           ✅
 Relatórios + PDF/XLSX                                 ✅
 Pessoas por laboratório                               ✅
@@ -85,7 +85,7 @@ Busca global                                          ✅
 Tema claro/escuro com persistência                    ✅ Dark Mode definitivo concluído
 Página 404                                            ✅
 Contexto de Unidade enviado à API                     ✅
-Testes automatizados frontend                         ⏳ Etapa 9 — Vitest/Vue Test Utils + Cypress
+Testes automatizados frontend                         ⏳ Etapa 10 — Vitest/Vue Test Utils + Cypress
 Autenticação/autorização definitiva                   ⏳ roadmap formal
 ```
 
@@ -304,8 +304,9 @@ O código existe desde o registro inicial; V12 realizou backfill dos registros a
 
 Pré-produção planejada:
 
-- Etapa 3: remover redundância visual de análise, refinar o rótulo e separar geração/visualização de permissão de impressão;
-- Etapa 4: locais de armazenamento cadastráveis e modelos de Resíduos pré-cadastrados pela Gestão, com escolha entre modelo padrão e preenchimento manual pelo Solicitante.
+- Etapa 3: remover redundância visual de análise, ampliar dados/classificação/segurança/responsabilidade do Resíduo e corrigir a regra geração/visualização/permissão de impressão;
+- Etapa 4: locais de armazenamento cadastráveis e modelos de Resíduos pré-cadastrados pela Gestão, com escolha entre modelo padrão e preenchimento manual pelo Solicitante;
+- Etapa 8: padronizar rótulos e impressão operacional, com templates adaptados de Produto, Resíduo e Solução.
 
 Distinção futura obrigatória:
 
@@ -496,8 +497,9 @@ Etapa 4 — expansão operacional de Resíduos            ⏳
 Etapa 5 — Projetos + vínculos de Estagiários          ⏳
 Etapa 6 — relatórios de Projetos/Laboratórios         ⏳
 Etapa 7 — unidades + Soluções + Pedidos               ⏳
-Etapa 8 — Manual do Usuário + decisão delete lógico  ⏳
-Etapa 9 — testes automatizados do Frontend            ⏳
+Etapa 8 — Rótulos + impressão operacional              ⏳
+Etapa 9 — Manual do Usuário + decisão delete lógico   ⏳
+Etapa 10 — testes automatizados do Frontend            ⏳
 ```
 
 Dependências centrais:
@@ -507,10 +509,11 @@ padrão visual → Dark Mode
 Resíduos atuais → expansão/modelos de Resíduos
 Projetos/Estagiários → relatório de Projetos
 unidades → Soluções → Pedidos com Soluções
-Etapas 1 a 8 estabilizadas → testes automatizados frontend
+Produto/Resíduo/Solução estabilizados → rótulos adaptados + impressão
+Etapas 1 a 9 estabilizadas → testes automatizados frontend
 ```
 
-A Etapa 9 adotará `Vitest + Vue Test Utils` para testes unitários/componentes e `Cypress` como ferramenta E2E principal. Selenium não é o padrão escolhido para o SGL neste planejamento.
+A Etapa 10 adotará `Vitest + Vue Test Utils` para testes unitários/componentes e `Cypress` como ferramenta E2E principal. Selenium não é o padrão escolhido para o SGL neste planejamento.
 
 O detalhe, escopo, regras e impacto de cada etapa estão em `docs/PLANO_PRE_PRODUCAO.md`.
 
