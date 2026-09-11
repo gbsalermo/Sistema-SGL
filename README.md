@@ -13,9 +13,9 @@
 
 ---
 
-## Estado atual — 04/09/2026
+## Estado atual — 11/09/2026
 
-O SGL já passou pela aprovação funcional do primeiro protótipo e entra agora em um **bloco de ajustes de pré-produção**. Esse bloco acontece **antes** do roadmap formal de matriz de permissões, congelamento, homologação final e segurança definitiva.
+O SGL já passou pela aprovação funcional do primeiro protótipo. As Etapas 1 e 2 da pré-produção foram concluídas; a etapa atual é a **Etapa 3 — Refinamentos do fluxo atual de Resíduos**. Esse bloco acontece **antes** do roadmap formal de matriz de permissões, congelamento, homologação final e segurança definitiva.
 
 Estado consolidado do backend:
 
@@ -40,7 +40,7 @@ Integração corporativa/SSO                        ⏳ etapa formal posterior
 
 No frontend também estão integrados dashboards, busca global, alertas, tema claro/escuro, sessão DEV, rotas por perfil e propagação do contexto de Unidade.
 
-> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). Para contratos HTTP, o Swagger/OpenAPI em execução continua sendo a fonte viva.
+> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`](docs/CONTINUIDADE_ETAPA_3_2026-09-11.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). Para contratos HTTP, o Swagger/OpenAPI em execução continua sendo a fonte viva.
 
 ---
 
@@ -329,10 +329,10 @@ mvn test
 ### Agora — pré-produção pós-aprovação
 
 ```text
-1. limpeza e atualização documental
-2. levantamento dos ajustes de pré-produção
-3. implementação/refinamento dos ajustes aprovados
-4. estabilização desse bloco
+Etapa 1 — padrão visual global                 ✅
+Etapa 2 — Dark Mode definitivo                 ✅
+Etapa 3 — refinamentos do fluxo de Resíduos    🔧 atual
+Etapas 4 a 9                                   ⏳ sequenciais
 ```
 
 ### Depois — roadmap formal para produção
