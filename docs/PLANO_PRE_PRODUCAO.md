@@ -247,6 +247,12 @@ A ocorrência real do Resíduo deve preservar um **snapshot** das informações 
 
 A modelagem definitiva de segurança de Produto deverá ser feita junto desta subetapa apenas no nível necessário para sustentar essa herança, sem antecipar a reestruturação de unidades prevista na Etapa 7.
 
+#### Estado físico
+
+O Resíduo deverá registrar seu estado físico para uso operacional e no rótulo.
+
+A lista definitiva de valores deve ser fechada durante a modelagem da subetapa, evitando inferir categorias apenas a partir do layout de referência do cliente. O dado deve ser simples, estruturado e adequado aos estados realmente utilizados na operação.
+
 ### 3.3 Corrigir o ciclo de geração e disponibilidade do rótulo
 
 Regra desejada:
@@ -270,10 +276,11 @@ Antes de definir dimensões físicas ou integração Zebra, fechar quais informa
 
 O conteúdo deverá considerar, conforme disponibilidade e validação da Gestão:
 
-- logo/marca SGL/Embrapa;
-- Código SGL;
+- logos do SGL e da Embrapa;
+- Código SGL e demais informações essenciais de rastreabilidade;
 - Unidade e Laboratório;
 - descrição/identificação do Resíduo;
+- estado físico;
 - quantidade e unidade;
 - composição;
 - `processoOrigem` apresentado como procedência/uso;
@@ -281,6 +288,7 @@ O conteúdo deverá considerar, conforme disponibilidade e validação da Gestã
 - classes informadas/confirmadas;
 - riscos informados/confirmados;
 - informações de segurança/EPI;
+- palavra de advertência em destaque, quando aplicável;
 - recipiente;
 - armazenamento temporário;
 - destino previsto;
@@ -290,6 +298,12 @@ O conteúdo deverá considerar, conforme disponibilidade e validação da Gestã
 - datas operacionais realmente úteis.
 
 Evitar informação redundante e preservar legibilidade.
+
+A referência apresentada pelo cliente deve orientar **acabamento, hierarquia e seleção das informações úteis**, sem obrigar o SGL a reproduzir integralmente o modelo externo. Frases extensas de perigo/precaução ou outros blocos adicionais só entram no domínio se houver decisão específica posterior.
+
+A palavra de advertência deve ser apresentada de forma visualmente destacada e derivar de uma regra/dado confiável do domínio, evitando texto arbitrário apenas no frontend.
+
+Como padrão visual compartilhado, **todos os tipos de rótulo do SGL** devem apresentar a marca SGL junto da marca Embrapa. Isso inclui os rótulos atuais de Resíduo e Produto e deve orientar futuros rótulos.
 
 Regra conceitual:
 
@@ -315,6 +329,8 @@ Somente depois do conteúdo definitivo do rótulo estar fechado deve ser validad
 - critérios de habilitação do botão de impressão.
 
 O layout físico deve ser simples, legível e compatível com a quantidade real de informação aprovada em 3.4.
+
+O acabamento deve priorizar leitura rápida, com hierarquia clara para identificação do material, palavra de advertência quando aplicável, estado físico, responsáveis e rastreabilidade. A referência do cliente é inspiração visual, não especificação rígida de cópia.
 
 ### 3.6 Avaliar Ficha/Comprovante de Lote
 

@@ -342,10 +342,15 @@ O planejamento canônico permanece em `docs/PLANO_PRE_PRODUCAO.md`. Para Resídu
 - exigir que o Gestor recebedor conduza análise e liberação, permitindo outros Gestores nas etapas posteriores;
 - adicionar classes de Resíduo pré-cadastradas, com seleção múltipla pelo Solicitante e confirmação pela Gestão;
 - adicionar informações estruturadas de segurança/EPI;
+- adicionar estado físico estruturado para uso operacional e no rótulo;
 - permitir sugestão/herança de segurança a partir de Produtos relacionados, com edição limitada e confirmação;
 - preservar snapshot das informações confirmadas no Resíduo;
 - separar visualização antecipada do rótulo da permissão de impressão;
-- fechar conteúdo do rótulo antes da formatação física/Zebra.
+- fechar conteúdo do rótulo antes da formatação física/Zebra;
+- usar a referência de rótulo do cliente como inspiração de acabamento, sem necessidade de copiar todas as informações;
+- destacar palavra de advertência quando aplicável;
+- manter informações essenciais de rastreabilidade e responsáveis;
+- padronizar marca SGL + Embrapa nos rótulos atuais e futuros do sistema.
 
 ### Etapa 4 — modelos reutilizáveis
 
