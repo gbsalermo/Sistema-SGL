@@ -347,7 +347,7 @@ O planejamento canônico permanece em `docs/PLANO_PRE_PRODUCAO.md`. Para Resídu
 - preservar snapshot das informações confirmadas no Resíduo;
 - separar visualização antecipada do rótulo da permissão de impressão.
 
-O conteúdo visual definitivo e a infraestrutura de impressão não pertencem mais à Etapa 3. Eles serão consolidados na **Etapa 8 — Rótulos e impressão operacional**, junto dos rótulos adaptados de Produto e Solução.
+O conteúdo visual definitivo e a infraestrutura de impressão não pertencem mais à Etapa 3. Eles serão consolidados na **Etapa 10 — Rótulos e impressão operacional**, junto dos rótulos adaptados de Produto e Solução.
 
 ### Etapa 4 — modelos reutilizáveis
 
@@ -374,7 +374,7 @@ Regras:
 
 Não confundir `ModeloResiduo` com `Produto`: Produtos podem participar da composição e fornecer referências/sugestões, mas não são substituídos pelo modelo.
 
-### Etapa 8 — rótulo adaptado de Resíduo
+### Etapa 10 — rótulo adaptado de Resíduo
 
 Depois que Produto, Resíduo e Solução estiverem estabilizados, o rótulo de Resíduo será finalizado como um dos templates adaptados do padrão transversal do SGL.
 
