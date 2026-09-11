@@ -3,9 +3,23 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Snapshot:** 04/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; ajustes de pré-produção em andamento.  
+**Atualizado em:** 11/09/2026  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1 e 2 concluídas; Etapa 3 — Resíduos — em andamento.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual, sem reconstruir o histórico nem usar um roadmap antigo como tarefa imediata.
+
+## Checkpoint atual — 11/09/2026
+
+```text
+Etapa 1 — padrão visual global              ✅ concluída
+Etapa 2 — Dark Mode definitivo              ✅ concluída
+Etapa 3 — refinamentos do fluxo de Resíduos 🔧 atual
+```
+
+A próxima subetapa é **3.1 — remover redundância visual de análise**. O plano canônico está em `docs/PLANO_PRE_PRODUCAO.md` e o checkpoint específico em `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
+
+A Etapa 2 foi integrada no frontend pelo PR #50, squash merge `a3fff4fa8edb6b8900c4a5b359dbfc0245afb87c`.
+
+---
 
 ---
 
@@ -476,7 +490,7 @@ Responsável deve pertencer à mesma Unidade.
 
 ## Resíduos pré-determinados
 
-Continuam como possibilidade futura; não fazem parte do fluxo operacional obrigatório atual.
+Estão planejados para a Etapa 4; não fazem parte da Etapa 3 atual, que refina o fluxo operacional existente.
 
 ---
 
@@ -668,7 +682,7 @@ autenticação/autorização/auditoria definitiva
 integração corporativa
 upload/download documental quando houver contrato
 refactor técnico de nomenclatura para inglês
-modelos pré-determinados de resíduos, se aprovados no futuro
+modelos pré-cadastrados de resíduos — Etapa 4
 ```
 
 A interface continua em português mesmo em eventual refactor técnico.
