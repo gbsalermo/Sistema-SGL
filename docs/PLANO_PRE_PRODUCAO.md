@@ -245,7 +245,7 @@ O Solicitante poderá realizar edição limitada dessas sugestões e a Gestão d
 
 A ocorrência real do Resíduo deve preservar um **snapshot** das informações de segurança utilizadas naquele registro. Alterações futuras no Produto ou em um Modelo de Resíduo não podem modificar retroativamente a segurança de Resíduos históricos.
 
-A modelagem definitiva de segurança de Produto deverá ser feita junto desta subetapa apenas no nível necessário para sustentar essa herança, sem antecipar a reestruturação de unidades prevista na Etapa 7.
+A modelagem definitiva de segurança de Produto deverá ser feita junto desta subetapa apenas no nível necessário para sustentar essa herança, sem antecipar a reestruturação de unidades prevista na Etapa 8.
 
 #### Estado físico
 
@@ -270,7 +270,7 @@ Gerar/visualizar e permitir impressão são eventos distintos.
 
 Antes da confirmação da Gestão, a visualização pode utilizar os dados informados pelo Solicitante. Depois da análise/liberação, deve priorizar os dados confirmados.
 
-A definição visual definitiva, os templates adaptados e a infraestrutura física de impressão ficam para a **Etapa 8 — Rótulos, documento de lote e impressão operacional**. A Etapa 3 deve apenas garantir que o Resíduo possua os dados necessários e que a regra de disponibilidade/permissão de impressão esteja correta.
+A definição visual definitiva, os templates adaptados e a infraestrutura física de impressão ficam para a **Etapa 10 — Rótulos e impressão operacional**. A Etapa 3 deve apenas garantir que o Resíduo possua os dados necessários e que a regra de disponibilidade/permissão de impressão esteja correta.
 
 
 ---
@@ -349,50 +349,34 @@ Alterar um modelo no futuro não deve modificar retroativamente Resíduos já re
 
 ---
 
-## Etapa 5 — Projetos, Atividades e Estagiários
+## Etapa 5 — Projetos e Atividades
 
 **Impacto:** alto  
-**Origem:** itens 6, 7 e 8 + novas regras de Projeto e Estagiário levantadas com o cliente em 11/09/2026
+**Origem:** itens 6, 7 e 8 + novas regras de Projeto levantadas com o cliente em 11/09/2026
 
-Esta etapa deve ser tratada de forma **hierárquica e dependente**. Nenhuma subetapa que consuma Projeto, Atividade ou Estagiário deve ser iniciada antes de a estrutura anterior estar estabilizada.
+Esta etapa fecha o domínio estrutural que será consumido por Estagiários e Relatórios.
 
-Ordem obrigatória:
+Princípio de integridade:
 
 ```text
-5.0 confirmar regras institucionais ainda pendentes
-→ 5.1 consolidar domínio-base de Projeto
-→ 5.2 consolidar identificação/código SEG
-→ 5.3 modelar Atividades, se confirmadas
-→ 5.4 consolidar domínio institucional do Estagiário
-→ 5.5 modelar vínculo Estagiário ↔ Projeto/Atividade
-→ 5.6 consolidar ciclo de vida e prorrogações do Estagiário
-→ 5.7 fechar interfaces de Projetos e Estagiários
+Projeto/Atividade estabilizados
+→ só então Estagiários podem criar vínculos
+→ só então Relatórios podem consumir esses vínculos
 ```
 
-### 5.0 Portão de confirmação antes da implementação
+### 5.0 Portão de confirmação de Projeto/Atividade
 
-Antes de alterar backend, banco ou contratos da Etapa 5, confirmar com o cliente:
-
-#### Projeto / Atividade
+Antes de alterar backend, banco ou contratos desta etapa, confirmar com o cliente:
 
 - regra exata do Código SEG para Projeto e, se existir, para Atividade;
 - se Atividade é realmente uma entidade subordinada ao Projeto;
-- se um Estagiário pode possuir uma ou várias Atividades dentro do mesmo Projeto;
 - se `SCI` é apenas um tipo de Projeto ou um domínio diferente;
-- lista oficial de situações de execução do Projeto.
+- lista oficial de situações de execução do Projeto;
+- demais regras institucionais que alterem o domínio-base.
 
-#### Estagiário
+Esses pontos permanecem planejados, mas não fechados. Não antecipar enum, migration ou contrato definitivo antes da confirmação.
 
-- quem pode ser Orientador e se todo Orientador obrigatoriamente existe como `Usuario` do SGL;
-- se Orientador precisa pertencer ao mesmo Laboratório/Unidade ou se pode ser externo à estrutura;
-- se a informação chamada atualmente de **Cultura** é de fato cultura/área temática e qual sua cardinalidade por Estagiário;
-- catálogo inicial de Curso/Formação;
-- regra exata do fluxo de prorrogação e quando ela ocorre em relação à data de fim;
-- compatibilidade entre situação institucional do Estagiário e seus vínculos ativos com Projeto/Atividade.
-
-Esses pontos permanecem **planejados, porém não fechados**. Não antecipar enum, migration ou contrato definitivo para eles antes da confirmação.
-
-### 5.1 Consolidar o domínio-base de Projeto
+### 5.1 Domínio-base de Projeto
 
 A relação Laboratório–Projeto fica definida como:
 
@@ -406,11 +390,11 @@ Projeto
 
 Regras:
 
-- todo Projeto deve pertencer obrigatoriamente a **um único Laboratório**;
+- todo Projeto pertence obrigatoriamente a **um único Laboratório**;
 - um Laboratório pode possuir vários Projetos;
-- a modelagem atual `Projeto -> Laboratorio` já segue essa direção e deve ser preservada/evoluída, não substituída por N:N.
+- a modelagem atual `Projeto -> Laboratorio` deve ser preservada/evoluída, não substituída por N:N.
 
-O Projeto deverá possuir, conforme regra final da etapa:
+O Projeto deverá possuir, conforme regra final:
 
 - nome;
 - descrição;
@@ -428,9 +412,7 @@ O Projeto deverá possuir, conforme regra final da etapa:
 
 #### Líder / responsável
 
-O responsável do Projeto deve ser uma referência real a pessoa/usuário do sistema, e não apenas texto livre, sempre que a modelagem institucional permitir.
-
-Regra:
+O responsável do Projeto deve preferencialmente referenciar uma pessoa/usuário real do sistema, conforme elegibilidade institucional.
 
 ```text
 responsável do Projeto
@@ -439,19 +421,43 @@ ou
 pode ser outra pessoa elegível
 ```
 
-A elegibilidade definitiva do responsável deve ser fechada na implementação da etapa.
-
 #### Datas e duração
 
 Manter início e fim.
 
-A duração deve ser **calculada a partir das datas** quando representar apenas intervalo temporal. Só deve ser persistida separadamente se o cliente confirmar que existe uma duração planejada/contratual independente das datas reais.
+A duração deve ser calculada a partir das datas quando representar apenas intervalo temporal. Só persistir duração separadamente se o cliente confirmar que existe uma duração planejada/contratual independente das datas reais.
 
 #### Financiador
 
 Inicialmente tratar como informação do Projeto.
 
 Não criar entidade própria de Financiador sem necessidade confirmada, como catálogo institucional, múltiplos financiadores ou dados próprios de relacionamento.
+
+#### Ciclo de vida previsto
+
+```text
+CRIADO
+→ ATIVO
+→ ENCERRADO_COM_AVALIACAO_PENDENTE
+→ CONCLUIDO
+```
+
+Os nomes técnicos finais podem ser refinados, mas os quatro momentos devem permanecer semanticamente distintos.
+
+#### Situação de execução
+
+Não misturar ciclo de vida com situação operacional/resultado.
+
+Exemplos informados:
+
+```text
+EXECUTADO
+NAO_EXECUTADO
+EM_EXECUCAO
+...
+```
+
+A lista oficial permanece pendente de confirmação.
 
 ### 5.2 Código institucional SEG
 
@@ -469,23 +475,21 @@ XX   → índice base
 XXX  → índice de atividade
 ```
 
-O Código SEG é **institucional** e não substitui os identificadores/códigos gerados pelo SGL.
-
-Princípio:
+O Código SEG é institucional e **não substitui** os identificadores/códigos gerados pelo SGL.
 
 ```text
 Código SGL
-→ identificação/rastreabilidade interna do sistema
+→ identificação/rastreabilidade interna
 
 Código SEG
-→ identificação institucional do Projeto/Atividade
+→ identificação institucional
 ```
 
-A regra exata de composição entre Projeto e Atividade deve ser confirmada no portão 5.0 antes de criar validação definitiva.
+A regra exata de composição entre Projeto e Atividade deve ser confirmada no portão 5.0.
 
 ### 5.3 Atividades do Projeto — condicional à confirmação
 
-Se a relação for confirmada, a estrutura deverá seguir:
+Se confirmada:
 
 ```text
 Projeto 1
@@ -505,33 +509,69 @@ Possíveis dados, a confirmar:
 - situação/status;
 - demais dados institucionais.
 
-A Atividade deverá existir antes de qualquer vínculo de Estagiário que dependa dela.
+Se o cliente concluir que Atividade não deve existir como entidade própria, esta subetapa deve ser eliminada antes de iniciar a Etapa 6.
 
-Se o cliente concluir que Atividade não deve existir como entidade própria, esta subetapa deve ser eliminada e o vínculo do Estagiário será modelado diretamente com Projeto conforme a regra confirmada.
+### 5.4 Interface de Projetos e Atividades
 
-### 5.4 Consolidar o domínio institucional do Estagiário
+A interface só deve ser fechada depois do domínio desta etapa estar estabilizado.
 
-Esta subetapa define os dados próprios do Estagiário antes de criar os vínculos com Projeto/Atividade.
+Deverá permitir, conforme modelo final:
+
+- listar/cadastrar/editar Projeto;
+- visualizar Laboratório;
+- Código SEG;
+- Código SGL;
+- líder/responsável;
+- financiador;
+- início/fim/duração;
+- ciclo de vida;
+- situação de execução;
+- tipo, se confirmado;
+- Atividades e seus códigos, se confirmadas.
+
+Ao concluir a Etapa 5, Projeto e Atividade deixam de ser dependências abertas para a Etapa 6.
+
+---
+
+## Etapa 6 — Estagiários e vínculos
+
+**Impacto:** alto  
+**Dependência principal:** Etapa 5 concluída
+
+Esta etapa evolui Estagiários **sobre o domínio de Projeto/Atividade já estabilizado**.
+
+### 6.0 Portão de confirmação de Estagiários
+
+Antes de alterar contratos definitivos, confirmar:
+
+- quem pode ser Orientador e se todo Orientador existe como `Usuario` do SGL;
+- se Orientador precisa pertencer ao mesmo Laboratório/Unidade ou pode ser externo;
+- se a informação chamada **Cultura** é de fato cultura/área temática;
+- se um Estagiário possui uma ou várias Culturas;
+- catálogo inicial de Curso/Formação;
+- se um Estagiário pode possuir uma ou várias Atividades dentro do mesmo Projeto;
+- regra exata da prorrogação;
+- relação entre situação institucional do Estagiário e seus vínculos de Projeto/Atividade.
+
+### 6.1 Domínio institucional do Estagiário
 
 #### Orientador obrigatório
 
 Todo Estagiário deve possuir Orientador.
 
-A representação definitiva depende da confirmação do portão 5.0:
-
 ```text
 se Orientador sempre for usuário institucional do SGL
 → relação obrigatória com Usuario
 
-se Orientador puder ser externo
-→ modelagem deve permitir preservar a identidade do Orientador sem inventar Usuario artificial
+se puder ser externo
+→ preservar sua identidade sem criar Usuario artificial
 ```
 
-O Orientador é diferente do responsável do Laboratório e do líder do Projeto, embora a mesma pessoa possa ocupar mais de uma dessas funções quando permitido.
+Orientador é diferente do responsável do Laboratório e do líder do Projeto, embora a mesma pessoa possa exercer mais de uma função quando permitido.
 
 #### Cultura / área temática
 
-Planejar um cadastro auxiliar reutilizável para a informação atualmente chamada de **Cultura**, com exemplos como:
+Planejar cadastro auxiliar reutilizável, com exemplos como:
 
 - mandioca;
 - citros;
@@ -552,13 +592,13 @@ Gestão
 → seleciona para o Estagiário
 ```
 
-A cardinalidade final — uma ou várias Culturas por Estagiário — deve ser confirmada em 5.0 antes da migration definitiva.
+A cardinalidade final deve ser confirmada em 6.0.
 
 #### Bolsa ≠ Curso/Formação
 
 Não misturar financiamento/vínculo com formação acadêmica.
 
-O campo atual `TipoBolsa` representa conceitos como:
+`TipoBolsa` representa conceitos como:
 
 ```text
 BOLSA_CNPQ
@@ -568,7 +608,7 @@ VOLUNTARIO
 CONTRATUAL
 ```
 
-Já valores como:
+Curso/Formação/Nível acadêmico representa valores como:
 
 ```text
 ENSINO_MEDIO
@@ -578,11 +618,7 @@ DOUTORADO
 ...
 ```
 
-representam **Curso/Formação/Nível acadêmico** e devem ser armazenados separadamente.
-
-A interface pode agrupar visualmente essas informações em uma seção “Bolsa / Curso”, mas o domínio não deve fundi-las em um único campo.
-
-A forma definitiva de Curso/Formação — enum estável ou cadastro auxiliar — deve ser fechada no início da Etapa 5 conforme o catálogo real do cliente.
+Essas dimensões devem ser armazenadas separadamente, mesmo que apareçam juntas na interface.
 
 #### Treinamento inicial de segurança
 
@@ -592,28 +628,27 @@ Todo Estagiário deve possuir indicação explícita:
 treinamentoInicialSegurancaConcluido = true | false
 ```
 
-O requisito atual é booleano. Não adicionar data, certificado ou documento obrigatório sem nova necessidade confirmada.
+Não adicionar certificado, data ou documento sem nova necessidade confirmada.
 
-### 5.5 Vínculo Estagiário ↔ Projeto/Atividade
+### 6.2 Vínculo Estagiário ↔ Projeto/Atividade
 
-Esta subetapa depende de:
+Dependências:
 
 ```text
-5.1 Projeto estabilizado
+Projeto estabilizado
 +
-5.3 Atividade definida ou explicitamente descartada
+Atividade estabilizada ou explicitamente descartada
 +
-5.4 Estagiário institucional estabilizado
+Estagiário institucional estabilizado
 ```
 
-Regra solicitada:
+Regras:
 
 - todo Estagiário deve estar relacionado ao Projeto do qual participa;
-- quando Atividade for confirmada como entidade, o Estagiário também deve estar relacionado à Atividade da qual faz parte.
+- se Atividade existir como entidade, o Estagiário deve estar relacionado à Atividade da qual faz parte;
+- não reduzir essa relação a simples `projetoId`/`atividadeId` no Estagiário quando for necessário preservar histórico.
 
-Não adicionar simplesmente um `projetoId` e `atividadeId` diretamente no Estagiário.
-
-O vínculo deve preservar histórico e permitir, conforme regra final:
+O vínculo deve permitir, conforme regra final:
 
 - entrada em Projeto;
 - troca de Projeto/Atividade;
@@ -624,11 +659,7 @@ O vínculo deve preservar histórico e permitir, conforme regra final:
 - renovação;
 - múltiplos vínculos quando permitido.
 
-A modelagem deve preservar a história mesmo que Projeto, Atividade ou cadastro do Estagiário mudem posteriormente.
-
-### 5.6 Ciclo de vida e prorrogações do Estagiário
-
-O Estagiário passa a possuir ciclo institucional próprio.
+### 6.3 Ciclo de vida e prorrogações
 
 Requisito informado:
 
@@ -639,64 +670,24 @@ INÍCIO
 → PRORROGAÇÃO + JUSTIFICATIVA
 ```
 
-A implementação definitiva deve evitar tratar “prorrogação” apenas como sobrescrita silenciosa da data de fim.
+Prorrogação não deve sobrescrever silenciosamente a data anterior.
 
 Regra mínima:
 
-- toda prorrogação exige justificativa;
-- preservar a data de fim anterior;
-- preservar a nova data de fim;
-- registrar quando e por quem a prorrogação foi feita;
-- manter histórico suficiente para auditoria.
+- justificativa obrigatória;
+- preservar data de fim anterior;
+- preservar nova data de fim;
+- registrar quando ocorreu;
+- registrar responsável pela alteração;
+- manter histórico para auditoria.
 
-Na modelagem final, a prorrogação pode ser tratada como evento/transição que mantém ou retorna o Estagiário ao estado ativo, em vez de necessariamente virar um status terminal. Essa decisão deve ser fechada em 5.0.
+A modelagem final deverá decidir se prorrogação é evento/transição, mantendo ou retomando estado ativo, em vez de tratá-la necessariamente como status terminal.
 
-Também revisar a ação atual de encerramento para representar corretamente:
+Também revisar encerramento normal, inativações eventualmente confirmadas e encerramento definitivo.
 
-- encerramento normal;
-- inativação temporária, se ainda fizer sentido;
-- inativação por prazo indeterminado, se confirmada;
-- encerramento definitivo;
-- prorrogação;
-- demais situações institucionais aprovadas.
+### 6.4 Interface de Estagiários
 
-### 5.7 Interfaces de Projetos e Estagiários
-
-As interfaces só devem ser fechadas depois das subetapas estruturais anteriores.
-
-#### Projetos
-
-Deverá permitir, conforme o domínio final:
-
-- listar;
-- cadastrar;
-- editar;
-- visualizar Laboratório;
-- visualizar Código SEG;
-- visualizar Código SGL;
-- visualizar líder/responsável;
-- visualizar financiador;
-- visualizar início/fim/duração;
-- visualizar ciclo de vida;
-- visualizar situação de execução;
-- visualizar tipo, se confirmado;
-- visualizar Atividades, se confirmadas;
-- visualizar vínculos de pessoas/Estagiários.
-
-Ciclo administrativo previsto do Projeto:
-
-```text
-CRIADO
-→ ATIVO
-→ ENCERRADO_COM_AVALIACAO_PENDENTE
-→ CONCLUIDO
-```
-
-A situação de execução permanece separada do ciclo de vida.
-
-#### Estagiários
-
-Deverá permitir, conforme domínio final:
+A interface deverá permitir, conforme domínio final:
 
 - Orientador;
 - Laboratório;
@@ -712,30 +703,32 @@ Deverá permitir, conforme domínio final:
 - histórico de prorrogações e justificativas;
 - histórico dos vínculos de Projeto/Atividade.
 
+Ao concluir a Etapa 6, o domínio de pessoas/vínculos necessário para relatórios deve estar estabilizado.
+
 ---
 
-## Etapa 6 — Relatórios de Projetos, Estagiários e Laboratórios
+## Etapa 7 — Relatórios de Projetos, Estagiários e Laboratórios
 
-**Impacto:** médio após a estabilização integral da Etapa 5  
-**Origem:** item 9 + novas necessidades de relatórios de Estagiários
+**Impacto:** médio  
+**Dependência principal:** Etapas 5 e 6 concluídas
 
-Esta etapa deve consumir **exclusivamente o domínio definitivo estabilizado na Etapa 5**.
-
-Não alterar a Etapa 5 apenas para facilitar um relatório. Primeiro o domínio é fechado; depois as consultas e agregações são construídas sobre ele.
+Esta etapa consome os domínios anteriores sem obrigá-los a mudar apenas para facilitar relatório.
 
 Ordem interna:
 
 ```text
-5.x domínio estabilizado
-→ 6.1 definir dimensões/filtros
-→ 6.2 construir consultas e agregações
-→ 6.3 prévia/telas
-→ 6.4 PDF/XLSX
+Projetos/Atividades estabilizados
++
+Estagiários/vínculos estabilizados
+→ 7.1 dimensões/filtros
+→ 7.2 consultas/agregações
+→ 7.3 prévia/telas
+→ 7.4 PDF/XLSX
 ```
 
-### 6.1 Dimensões e filtros
+### 7.1 Dimensões e filtros
 
-Os relatórios devem permitir consultar/filtrar, quando aplicável:
+Permitir, quando aplicável:
 
 - Laboratório;
 - responsável do Laboratório;
@@ -743,151 +736,63 @@ Os relatórios devem permitir consultar/filtrar, quando aplicável:
 - Código SEG;
 - líder/responsável do Projeto;
 - Atividade, se confirmada;
-- Orientador do Estagiário;
+- Orientador;
 - Bolsa/vínculo;
 - Curso/Formação;
 - Cultura/área temática;
 - situação do Estagiário;
-- período;
-- demais dimensões consolidadas na Etapa 5.
+- período.
 
-### 6.2 Agregações de Estagiários
+### 7.2 Agregações
 
 Deve ser possível obter, conforme filtros:
 
-- quantidade de Estagiários ativos por Laboratório;
+- Estagiários ativos por Laboratório;
 - quantidade por Orientador;
 - quantidade por responsável de Laboratório;
 - quantidade por Bolsa/vínculo;
 - quantidade por Curso/Formação;
 - quantidade por Cultura/área temática;
 - quantidade por Projeto;
-- quantidade por Atividade, se confirmada;
-- combinações coerentes dessas dimensões quando necessárias.
+- quantidade por Atividade, se confirmada.
 
-Os totais devem derivar da situação real/histórica do vínculo no período consultado, e não apenas do booleano atual quando o relatório exigir recorte histórico.
+Quando houver recorte histórico, os totais devem derivar do histórico real do vínculo, e não apenas do booleano atual.
 
-### 6.3 Visões de relatório
+### 7.3 Visões de relatório
 
-Evitar multiplicar relatórios sem necessidade.
-
-Preferência inicial: consolidar as informações em uma área como:
+Preferência inicial:
 
 ```text
 Laboratórios, Projetos e Estagiários
 ```
 
-com abas/filtros/agrupamentos para diferentes análises.
+com abas/filtros/agrupamentos, evitando multiplicar relatórios sem necessidade.
 
-Possíveis dados de Projeto:
+### 7.4 Exportações
 
-- Laboratório;
-- Projeto;
-- Código SEG;
-- Código SGL;
-- líder/responsável;
-- financiador;
-- início/fim/duração;
-- ciclo de vida;
-- situação de execução;
-- tipo, se confirmado;
-- Atividades e respectivos códigos SEG, se confirmadas;
-- participantes;
-- Estagiários;
-- situação dos vínculos;
-- períodos.
-
-Possíveis dados de Estagiário:
-
-- nome;
-- Orientador;
-- Laboratório;
-- responsável do Laboratório;
-- Projeto;
-- Atividade, se confirmada;
-- Bolsa/vínculo;
-- Curso/Formação;
-- Cultura/área temática;
-- treinamento inicial de segurança;
-- situação;
-- período;
-- prorrogações relevantes.
-
-### 6.4 Exportações
-
-PDF/XLSX devem seguir a mesma consulta, filtros, período e agrupamentos da prévia.
+PDF/XLSX devem usar a mesma consulta, filtros, período e agrupamentos da prévia.
 
 Não criar lógica de cálculo diferente entre tela e exportação.
 
 ---
 
-## Etapa 7 — Unidades, Soluções e integração com Pedidos
+## Etapa 8 — Unidades e Soluções
 
-**Impacto:** muito alto  
-**Origem:** itens 15, 10 e 11 + decisão complementar sobre o padrão real de Pedidos do cliente
+**Impacto:** alto  
+**Origem:** itens 15 e 10  
+**Objetivo:** estabilizar a base quantitativa e o domínio de Soluções antes de qualquer integração com Pedidos
 
 Ordem interna obrigatória:
 
 ```text
-análise do padrão atual de Pedidos do cliente
-→ síntese com o padrão atual do SGL
-→ normalização de unidades
-→ entidade/cadastro de Soluções
-→ Soluções dentro de Pedidos
+normalização de unidades/apresentações
+→ domínio de Soluções
+→ composição e regras próprias
+→ interface/contrato de Soluções estabilizados
+→ somente então Etapa 9
 ```
 
-### 7.1 Analisar e adaptar o padrão de Pedidos atual do cliente
-
-Antes de alterar o domínio, contrato ou interface de Pedidos, deve ser analisado o **padrão de pedido utilizado atualmente pelo cliente**.
-
-O objetivo não é copiar integralmente o processo atual do cliente nem preservar o SGL sem questionamento. A subetapa deve comparar os dois modelos e produzir uma **síntese operacional melhor**, aproveitando os pontos positivos de cada um e removendo redundâncias, ambiguidades ou limitações.
-
-A análise deve levantar, quando aplicável:
-
-- campos e informações presentes no pedido atual do cliente;
-- dados obrigatórios e opcionais;
-- terminologia utilizada pela equipe;
-- forma de solicitar produtos, quantidades e apresentações;
-- organização dos itens do pedido;
-- etapas do fluxo;
-- responsáveis por cada etapa;
-- aprovação, atendimento, entrega e cancelamento;
-- observações, justificativas e situações excepcionais;
-- informações que hoje ajudam a operação;
-- informações redundantes, pouco claras ou que geram retrabalho.
-
-Depois, cada ponto deve ser comparado com o Pedido atual do SGL e classificado de forma objetiva, por exemplo:
-
-```text
-manter padrão do SGL
-adotar padrão do cliente
-combinar/refinar os dois modelos
-descartar por não agregar valor
-```
-
-A decisão deve considerar principalmente:
-
-- clareza para o Solicitante;
-- facilidade operacional para a Gestão;
-- rastreabilidade;
-- redução de retrabalho;
-- consistência com Estoque e Movimentações;
-- compatibilidade com a arquitetura e regras já consolidadas no SGL;
-- preparação para a inclusão de Soluções e unidades normalizadas nas subetapas seguintes.
-
-Resultado obrigatório desta subetapa:
-
-```text
-padrão real do cliente documentado
-+ comparação cliente × SGL
-+ pontos positivos e negativos identificados
-+ decisões de manter/adotar/refinar/descartar
-+ padrão-alvo de Pedido aprovado
-```
-
-Somente após esse padrão-alvo estar fechado devem começar as alterações estruturais de Pedidos previstas nesta Etapa 7.
-
-### 7.2 Normalização de unidades e apresentações
+### 8.1 Normalização de unidades e apresentações
 
 Separar conceitualmente:
 
@@ -899,18 +804,18 @@ apresentação física da embalagem
 
 Exemplos:
 
-- `1 L` pode equivaler a `1000 mL`;
-- `1 kg` pode equivaler a `1000 g`;
-- caixa, kit, garrafa e galão continuam representando apresentação/forma de retirada;
-- cálculos precisam utilizar unidades compatíveis/normalizadas.
+- `1 L = 1000 mL`;
+- `1 kg = 1000 g`;
+- caixa, kit, garrafa e galão representam apresentação/forma de retirada;
+- cálculos usam unidades compatíveis/normalizadas.
 
-Não realizar conversão genérica entre dimensões incompatíveis, como massa e volume (`g ↔ mL`), sem informação físico-química que permita essa conversão.
+Não realizar conversão genérica entre dimensões incompatíveis, como massa e volume (`g ↔ mL`), sem informação físico-química apropriada.
 
-### 7.3 Entidade/cadastro de Soluções
+### 8.2 Domínio/cadastro de Soluções
 
-Solução representa uma composição/receita reutilizável de produtos.
+Solução representa composição/receita reutilizável de Produtos.
 
-Exemplo conceitual:
+Exemplo:
 
 ```text
 Solução X
@@ -918,54 +823,125 @@ Solução X
 - Produto B: 50 mL
 ```
 
-Devem existir:
+Prever:
 
 - Soluções padrão cadastradas;
 - composição com Produto + quantidade + unidade;
 - CRUD/ciclo apropriado;
-- possibilidade de composição manual esporádica pelo Solicitante, conforme modelagem definitiva.
+- possibilidade de composição manual esporádica, conforme modelagem definitiva;
+- preservação da composição utilizada quando a Solução for consumida por outro fluxo.
 
-Uma Solução padrão é uma definição reutilizável; sua utilização em Pedido deve preservar a composição efetivamente solicitada naquele momento.
+### 8.3 Fechamento do contrato de Soluções
 
-### 7.4 Soluções em Pedidos
+Antes de seguir para Pedidos, estabilizar:
 
-Um Pedido deve poder conter:
+- DTOs/contratos;
+- composição;
+- unidades;
+- validações;
+- comportamento de edição/inativação;
+- interface de cadastro/consulta;
+- regra de histórico/snapshot necessária para usos futuros.
+
+A Etapa 9 não deve redefinir a entidade Solução; apenas integrá-la ao fluxo de Pedido.
+
+---
+
+## Etapa 9 — Pedidos e integração com Soluções
+
+**Impacto:** alto  
+**Dependência principal:** Etapa 8 concluída
+
+### 9.0 Portão de confirmação do escopo de Pedidos
+
+Antes de alterar Pedido, confirmar com o cliente se:
+
+- o fluxo atual do SGL será mantido e apenas receberá Soluções;
+- haverá alterações de campos/etapas;
+- existe um padrão atual do cliente que precisa ser incorporado;
+- quais pontos são obrigatórios versus apenas sugestões.
+
+Até essa confirmação, não antecipar refatoração ampla de Pedido.
+
+### 9.1 Analisar e adaptar o padrão de Pedido, se necessário
+
+Se houver mudança além da integração de Soluções, comparar o padrão real do cliente com o SGL.
+
+Levantar:
+
+- campos obrigatórios/opcionais;
+- terminologia;
+- itens e quantidades;
+- etapas;
+- responsáveis;
+- aprovação;
+- atendimento;
+- entrega;
+- cancelamento;
+- exceções;
+- informações úteis e redundantes.
+
+Classificar cada ponto:
+
+```text
+manter padrão do SGL
+adotar padrão do cliente
+combinar/refinar
+descartar
+```
+
+Resultado obrigatório, quando aplicável:
+
+```text
+padrão real documentado
++ comparação cliente × SGL
++ decisões fechadas
++ padrão-alvo aprovado
+```
+
+### 9.2 Soluções em Pedidos
+
+Um Pedido deve poder conter, conforme escopo final:
 
 ```text
 Produto
 Solução
-ou ambos simultaneamente
+ou ambos
 ```
 
-A aprovação de uma Solução precisa ser **atômica** quanto aos componentes necessários.
+A utilização de uma Solução deve preservar a composição efetivamente solicitada naquele momento.
+
+### 9.3 Estoque e aprovação atômica de Soluções
+
+A aprovação de uma Solução deve ser atômica quanto aos componentes.
 
 Exemplo:
 
 ```text
 Solução precisa de 1000 mL de Acetona
 Estoque utilizável possui 999 mL
-→ Solução não pode ser aprovada parcialmente
+→ não aprovar parcialmente
 ```
 
-Antes da baixa, o backend deverá validar todos os componentes e lotes necessários. Somente se a composição inteira puder ser atendida a transação deve realizar as baixas seguindo FIFO/FEFO e as regras de estoque.
+Antes da baixa:
 
-Também devem ser considerados:
+- validar todos os componentes;
+- validar lotes;
+- aplicar FIFO/FEFO conforme regras vigentes;
+- considerar concorrência/locks;
+- preservar rastreabilidade dos lotes consumidos;
+- definir cancelamento/devolução;
+- impedir entrega parcial que descaracterize a receita.
 
-- concorrência;
-- locks;
-- rastreabilidade dos lotes consumidos;
-- cancelamento/devolução;
-- impossibilidade de “entrega parcial” de uma receita que deixaria de representar a Solução solicitada.
+A Etapa 9 deve integrar Solução ao Pedido sem reabrir a modelagem-base já fechada na Etapa 8.
 
 ---
 
-## Etapa 8 — Rótulos e impressão operacional
+## Etapa 10 — Rótulos e impressão operacional
 
 **Impacto:** médio  
-**Dependência principal:** domínios de Produto, Resíduo e Solução estabilizados até a Etapa 7  
+**Dependência principal:** Produto, Resíduo e Solução estabilizados até a Etapa 9  
 **Origem:** refinamento de rótulos solicitado pelo cliente + necessidade de padronização transversal
-
-Esta etapa consolida uma arquitetura única de rotulagem para o SGL sem transformar todos os rótulos em cópias do mesmo conteúdo.
 
 Princípio:
 
@@ -977,191 +953,155 @@ Resíduo  → rótulo adaptado
 Solução  → rótulo adaptado
 ```
 
-Cada domínio utiliza apenas as informações pertinentes à sua operação.
+### 10.1 Padrão-base de rótulos SGL
 
-### 8.1 Padrão-base de rótulos SGL
-
-Definir os elementos compartilhados entre os tipos de rótulo:
+Definir:
 
 - marcas SGL + Embrapa;
-- identidade visual e hierarquia da informação;
-- tipografia, margens e organização;
-- Código SGL e informações essenciais de rastreabilidade;
-- posição e destaque de alertas;
+- identidade visual;
+- hierarquia;
+- tipografia/margens;
+- Código SGL/rastreabilidade;
+- alertas;
 - palavra de advertência quando aplicável;
-- comportamento de preview;
+- preview;
 - regras compartilhadas de impressão.
 
-A referência visual fornecida pelo cliente deve orientar acabamento e seleção de informações úteis, sem obrigar o SGL a reproduzir integralmente aquele modelo.
+A referência visual do cliente orienta acabamento, sem obrigar cópia integral.
 
-Frases extensas de perigo/precaução ou outros blocos regulatórios adicionais não entram automaticamente apenas porque existem no rótulo de referência; exigem decisão funcional própria.
+### 10.2 Rótulo adaptado de Produto
 
-### 8.2 Rótulo adaptado de Produto
+Priorizar informações pertinentes ao domínio:
 
-Revisar o rótulo atual de Produto sobre a base comum, priorizando apenas informações pertinentes ao domínio, como:
-
-- identificação do Produto;
-- Código SGL/rastreabilidade;
+- identificação;
+- Código SGL;
 - lote/referência;
-- validade, quando aplicável;
+- validade;
 - quantidade/unidade/apresentação;
 - riscos;
-- informações de segurança;
+- segurança;
 - armazenamento;
-- fiscalização, quando pertinente.
+- fiscalização quando pertinente.
 
-Os campos definitivos devem ser fechados a partir do domínio estabilizado até a Etapa 7.
+### 10.3 Rótulo adaptado de Resíduo
 
-### 8.3 Rótulo adaptado de Resíduo
+Consumir os dados estabilizados nas Etapas 3 e 4:
 
-Aplicar o padrão-base aos dados definidos nas Etapas 3 e 4.
-
-O rótulo poderá utilizar, conforme disponibilidade e confirmação pela Gestão:
-
-- identificação e Código SGL;
+- identificação/Código SGL;
 - Unidade/Laboratório;
-- quantidade e unidade;
+- quantidade/unidade;
 - composição;
-- procedência/uso por meio de `processoOrigem`;
+- procedência/uso;
 - estado físico;
-- tratamento realizado;
-- classes de Resíduo;
+- tratamento;
+- classes;
 - riscos;
-- informações de segurança/EPI;
-- palavra de advertência quando aplicável;
+- segurança/EPI;
+- palavra de advertência;
 - recipiente;
 - armazenamento/destino;
-- Projeto, quando houver;
+- Projeto quando houver;
 - quem informou/gerou;
 - Gestor que recebeu inicialmente;
-- datas operacionais úteis.
+- datas úteis.
 
-A regra de disponibilidade definida na Etapa 3 permanece válida:
+A regra da Etapa 3 permanece:
 
 ```text
 visualização pode existir antes da liberação
-→ impressão operacional somente após a liberação prevista pelo fluxo
+→ impressão operacional somente após liberação
 ```
 
-### 8.4 Rótulo adaptado de Solução
+### 10.4 Rótulo adaptado de Solução
 
-O template de Solução só deve ser fechado depois que o domínio de Soluções estiver estabilizado na Etapa 7.
+Fechar o template com base no domínio estabilizado da Etapa 8, considerando conforme modelo definitivo:
 
-Deve considerar, conforme a modelagem definitiva:
-
-- nome/identificação da Solução;
+- nome/identificação;
 - Código SGL;
 - composição;
 - concentração;
 - quantidade/volume;
-- data de preparo;
-- validade, quando aplicável;
+- preparo;
+- validade;
 - responsável;
 - riscos;
 - segurança;
-- armazenamento;
-- demais informações realmente necessárias.
+- armazenamento.
 
-Não antecipar campos definitivos antes da modelagem da Solução.
+### 10.5 Documento de Auditoria de Entrada de Lote
 
-### 8.5 Documento de Auditoria de Entrada de Lote
+Disponibilizar documento formal gerado pelo SGL para registrar e imprimir uma entrada de lote.
 
-Disponibilizar um documento gerado pelo SGL para registrar e imprimir os dados de uma **entrada de lote**.
-
-Objetivo:
-
-```text
-entrada de lote registrada no SGL
-→ usuário pode visualizar o documento de auditoria
-→ gerar/imprimir quando necessário
-→ documento acompanha conferência, arquivo físico ou auditoria
-```
-
-O documento deve possuir aparência formal e organizada, podendo lembrar visualmente um documento fiscal pela distribuição das informações, mas deve ser identificado de forma explícita como:
+Identificação obrigatória:
 
 ```text
 DOCUMENTO INTERNO DO SGL
 SEM VALOR FISCAL
 ```
 
-Não deve ser chamado de nota fiscal nem tentar substituir documento fiscal oficial.
+Conteúdo previsto:
 
-Conteúdo previsto, conforme disponibilidade no domínio:
-
-- identificação SGL/Embrapa;
-- número/identificador do documento;
+- SGL/Embrapa;
+- identificador do documento;
 - Código SGL do lote;
 - Produto;
 - lote/referência do fornecedor;
 - Unidade/Laboratório;
 - data/hora da entrada;
 - quantidade originalmente recebida;
-- unidade de medida;
-- apresentação/embalagem;
-- multiplicador, quando aplicável;
+- unidade;
+- apresentação;
+- multiplicador;
 - validade;
-- condições relevantes de armazenamento;
-- observações da entrada;
-- responsável pelo registro/recebimento, quando disponível;
-- demais dados necessários à rastreabilidade.
+- armazenamento;
+- observações;
+- responsável;
+- demais dados de rastreabilidade.
 
-Para fins de auditoria, o documento deve representar **a entrada realizada**, e não simplesmente o saldo atual do lote. Baixas, retiradas ou movimentações posteriores não devem alterar retroativamente o conteúdo histórico da entrada.
+O documento representa **a entrada histórica**, e não o saldo atual do lote.
 
-A implementação deve preferir dados históricos confiáveis da entrada/movimentação ou snapshot equivalente, evitando montar o documento apenas a partir de campos mutáveis do estado atual do lote.
+Deve permitir visualização, PDF/formato imprimível equivalente e impressão em papel comum.
 
-Formato desejado:
+### 10.6 Formatação física e impressão Zebra
 
-- visualização no SGL;
-- geração de PDF ou formato imprimível equivalente;
-- impressão em papel comum;
-- layout adequado para arquivo e conferência administrativa.
-
-Esse documento é diferente dos pequenos rótulos físicos de identificação e não depende de impressora Zebra.
-
-### 8.6 Formatação física e impressão Zebra
-
-Depois dos templates adaptados e do documento de auditoria estarem definidos, validar o ambiente real de impressão dos rótulos físicos:
+Depois dos templates e documento estarem definidos, validar:
 
 - modelo de impressora Zebra;
-- dimensões físicas dos rótulos;
+- dimensões;
 - orientação;
 - margens;
 - driver/forma de envio;
-- necessidade ou não de ZPL;
-- comportamento de preview;
+- necessidade de ZPL;
+- preview;
 - testes físicos;
-- possibilidade de compartilhar infraestrutura de impressão entre Produto, Resíduo e Solução.
-
-O objetivo é possuir uma base de impressão compartilhada com templates específicos por domínio, evitando três soluções técnicas independentes.
-
+- infraestrutura compartilhada entre templates.
 
 ---
 
-## Etapa 9 — Manual do Usuário e avaliação final de delete lógico
+## Etapa 11 — Manual do Usuário e avaliação final de delete lógico
 
-**Impacto:** variável  
-**Origem:** itens 16 e 5
+**Impacto:** variável
 
-### 9.1 Manual do Usuário
+### 11.1 Manual do Usuário
 
-Inicialmente disponível apenas para a interface comum/Solicitante.
+Inicialmente disponível para a interface comum/Solicitante.
 
-A seção deve organizar documentos como:
+Organizar documentos como:
 
 - como usar o SGL;
 - padrões de Soluções;
 - regras da Embrapa;
 - segurança em laboratório;
 - manuseio de produtos;
-- outros procedimentos institucionais.
+- procedimentos institucionais.
 
-A implementação definitiva de upload/armazenamento deve ser definida antes de criar contrato backend permanente. Evitar colocar binários grandes diretamente no PostgreSQL sem justificativa técnica.
+Definir estratégia de upload/armazenamento antes de criar contrato backend permanente.
 
-### 9.2 Avaliação de delete lógico
+### 11.2 Avaliação de delete lógico
 
-Esta parte permanece **opcional e propositalmente no fim das alterações funcionais**.
+Permanece opcional e propositalmente no fim das alterações funcionais.
 
-Antes de implementar, revisar entidade por entidade, incluindo exemplos como:
+Revisar entidade por entidade, incluindo:
 
 - Estagiários;
 - Produtos;
@@ -1170,70 +1110,64 @@ Antes de implementar, revisar entidade por entidade, incluindo exemplos como:
 - cadastros auxiliares;
 - demais entidades operacionais.
 
-Não aplicar um simples `ativo=true/false` indiscriminadamente. Algumas entidades já possuem ciclo de vida próprio e podem exigir estados como `INATIVO`, `ENCERRADO`, `DESCARTADO` ou equivalentes.
-
-A implementação só deverá ocorrer após confirmar que o delete lógico agrega valor ao domínio sem conflitar com histórico, rastreabilidade ou estados já existentes.
+Não aplicar `ativo=true/false` indiscriminadamente quando o domínio já possuir ciclo de vida próprio.
 
 ---
 
-## Etapa 10 — Testes automatizados do Frontend
+## Etapa 12 — Testes automatizados do Frontend
 
 **Impacto:** baixo sobre o domínio / alto valor de estabilização  
 **Posição:** etapa final do bloco de pré-produção
 
-Objetivo: automatizar a validação do frontend somente depois que as alterações funcionais e visuais das Etapas 1 a 9 estiverem estabilizadas.
+Objetivo: automatizar a validação somente depois que as Etapas 1 a 11 estiverem estabilizadas.
 
-### 10.1 Stack de testes escolhida
-
-Para o SGL, a estratégia recomendada é:
+### 12.1 Stack escolhida
 
 ```text
 Vitest + Vue Test Utils
-→ testes unitários e de componentes/lógica Vue
+→ testes unitários/componentes
 
 Cypress
-→ testes End-to-End em navegador real
+→ testes End-to-End
 ```
 
-Entre Selenium e Cypress, o padrão escolhido para o frontend do SGL é **Cypress**, por ter integração direta com Vue 3 + Vite e oferecer uma experiência mais adequada ao stack atual.
+Cypress permanece como ferramenta E2E principal.
 
-Selenium não fica proibido tecnicamente, mas não será a ferramenta principal do projeto enquanto Cypress atender aos cenários necessários.
+### 12.2 Escopo mínimo
 
-### 10.2 Escopo mínimo
-
-A suíte final deve cobrir, de forma automatizada, os fluxos críticos que existirem ao término das etapas anteriores, incluindo quando aplicável:
+Cobrir, quando aplicável:
 
 - sessão/login DEV e expiração;
-- roteamento e guardas por perfil;
-- Dashboard Solicitante e Gestão;
-- criação e acompanhamento de Pedidos;
-- aprovação/entrega/cancelamento refletidos na interface;
-- Produtos, estoque e lotes;
-- Resíduos e seu ciclo operacional;
-- modelos de Resíduos e locais de armazenamento;
-- Projetos e vínculos de Estagiários;
-- relatórios e filtros;
-- Soluções dentro de Pedidos;
-- rótulos adaptados de Produto, Resíduo e Solução + fluxos de preview/impressão;
+- roteamento/guardas;
+- Dashboards;
+- Pedidos;
+- aprovação/entrega/cancelamento;
+- Produtos/estoque/lotes;
+- Resíduos;
+- modelos de Resíduo/locais;
+- Projetos/Atividades;
+- Estagiários/vínculos/prorrogações;
+- relatórios/filtros;
+- Soluções;
+- integração Solução × Pedido;
+- rótulos e impressão;
 - Manual do Usuário;
 - tema claro/escuro;
-- isolamento visual/funcional da Unidade conforme a sessão DEV.
+- isolamento por Unidade.
 
-### 10.3 Critério de fechamento
-
-A etapa deve produzir:
+### 12.3 Critério de fechamento
 
 ```text
 suíte unitária/componentes
 + suíte E2E Cypress
-+ scripts npm padronizados
++ scripts npm
 + execução headless reproduzível
-+ registro dos cenários críticos cobertos
++ registro dos cenários críticos
 ```
 
-A integração em CI pode ser realizada nesta etapa quando a infraestrutura do repositório estiver definida.
+A integração em CI pode ocorrer nesta etapa quando a infraestrutura estiver definida.
 
-Esta etapa não substitui a homologação integrada final do roadmap formal; ela cria uma rede automatizada de regressão antes do congelamento funcional e da homologação.
+Esta etapa não substitui a homologação integrada final posterior.
 
 ---
 
@@ -1246,69 +1180,74 @@ Etapa 2 — Dark Mode
    ↓
 Etapa 3 — refinamentos do Resíduo atual
    ↓
-Etapa 4 — locais + modelos de Resíduos
+Etapa 4 — expansão operacional de Resíduos
    ↓
-Etapa 5 — Projetos + Atividades + Estagiários
+Etapa 5 — Projetos + Atividades
    ↓
-Etapa 6 — relatórios Projetos/Estagiários/Laboratórios
+Etapa 6 — Estagiários + vínculos
    ↓
-Etapa 7 — unidades + Soluções + Pedidos
+Etapa 7 — Relatórios consolidados
    ↓
-Etapa 8 — Rótulos e impressão operacional
+Etapa 8 — Unidades + Soluções
    ↓
-Etapa 9 — Manual + decisão de delete lógico
+Etapa 9 — Pedidos + integração com Soluções
    ↓
-Etapa 10 — testes automatizados do Frontend
+Etapa 10 — Rótulos + impressão operacional
+   ↓
+Etapa 11 — Manual + decisão de delete lógico
+   ↓
+Etapa 12 — testes automatizados do Frontend
 ```
 
 Dependências críticas:
 
 ```text
 Projeto base
-→ deve ser estabilizado antes de Atividades, vínculos de Estagiários e relatórios
+→ deve ser estabilizado antes de Atividades
 
 Código SEG
-→ regra Projeto × Atividade deve ser confirmada no início da Etapa 5 antes de contrato/migration definitiva
+→ regra Projeto × Atividade deve ser confirmada na Etapa 5 antes de contrato/migration definitiva
 
 Atividades
-→ são condicionais à confirmação do cliente e, se existirem, devem ser estabilizadas antes do vínculo Estagiário–Atividade
+→ se existirem, devem ser estabilizadas antes da Etapa 6
 
 Estagiário institucional
-→ Orientador, Bolsa/Curso, Cultura e treinamento devem ser estabilizados antes do vínculo operacional
+→ Orientador, Bolsa/Curso, Cultura e treinamento são fechados na Etapa 6
 
-Projeto–Estagiário
-→ exige vínculo histórico próprio e depende da definição final de Projeto/Atividade + domínio institucional do Estagiário
+Vínculo Estagiário–Projeto/Atividade
+→ depende integralmente da Etapa 5
 
-Evolução estrutural de Pedidos
-→ exige primeiro análise e síntese do padrão real utilizado pelo cliente
+Relatórios
+→ dependem das Etapas 5 e 6 estabilizadas; não devem forçar alteração retroativa desses domínios
 
 Soluções
-→ exigem primeiro uma regra consistente de unidades de medida
+→ dependem primeiro da normalização de unidades na Etapa 8
 
 Pedidos com Soluções
-→ dependem de Soluções + unidades + validação atômica de estoque
-
-Relatórios de Projetos/Estagiários/Laboratórios
-→ dependem de Projeto + Atividades (se confirmadas) + Orientadores + Cultura + Bolsa/Curso + vínculos e ciclos totalmente estabilizados
+→ dependem do domínio de Soluções já estabilizado e da confirmação do escopo de Pedido na Etapa 9
 
 Rótulos adaptados
-→ dependem dos dados de Resíduo estabilizados nas Etapas 3/4 e do domínio de Soluções estabilizado na Etapa 7
+→ dependem dos dados de Resíduo das Etapas 3/4 e do domínio de Soluções da Etapa 8
 
 Documento de auditoria de entrada de lote
-→ depende de dados históricos confiáveis da entrada e deve representar a quantidade/condição recebida, não o saldo atual
+→ depende de dados históricos confiáveis da entrada, não do saldo atual
 
 Impressão Zebra
-→ depende do fechamento dos templates adaptados de Produto, Resíduo e Solução
+→ depende do fechamento dos templates adaptados
 
-Segurança herdada de Produto/ModeloResiduo
-→ funciona como sugestão; o Resíduo real preserva snapshot próprio e validação da Gestão
-
-Modelos de Resíduos
-→ reutilizam as definições de classes/segurança da Etapa 3, sem alterar retroativamente ocorrências antigas
-
-Testes automatizados finais do Frontend
-→ dependem da estabilização das interfaces e fluxos das Etapas 1 a 9
+Testes automatizados finais
+→ dependem da estabilização das interfaces e fluxos das Etapas 1 a 11
 ```
+
+Regra estrutural deste roadmap:
+
+```text
+etapa-base
+→ estabilizar domínio/contrato
+→ somente depois iniciar etapa dependente
+```
+
+Se uma informação pendente puder alterar uma etapa-base, ela deve ser confirmada antes da implementação daquela etapa, e não corrigida posteriormente em uma etapa dependente.
 
 ---
 
@@ -1317,18 +1256,18 @@ Testes automatizados finais do Frontend
 No momento da atualização deste documento:
 
 ```text
-Limpeza/revisão documental anterior             ✅ concluída
-Planejamento das etapas de pré-produção          ✅ consolidado neste documento
-Etapa 1 — refinamento visual global              ✅ concluída
-Etapa 2 — Dark Mode definitivo                   ✅ concluída
-Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 ETAPA ATUAL
-  3.1 — remover redundância de análise           ⏭ próximo passo
-  3.2 — dados/classes/segurança/responsabilidade ⏳
-  3.3 — ciclo geração/visualização/impressão     ⏳
-Etapas 4 a 10                                    ⏳ aguardando sequência
+Limpeza/revisão documental anterior              ✅ concluída
+Planejamento das etapas de pré-produção           ✅ consolidado
+Etapa 1 — refinamento visual global               ✅ concluída
+Etapa 2 — Dark Mode definitivo                    ✅ concluída
+Etapa 3 — refinamentos do fluxo atual de Resíduos ⏭ PRÓXIMA IMPLEMENTAÇÃO
+  3.1 — remover redundância de análise            ⏭ primeiro passo
+  3.2 — dados/classes/segurança/responsabilidade  ⏳
+  3.3 — ciclo geração/visualização/impressão      ⏳
+Etapas 4 a 12                                     ⏳ aguardando sequência
 ```
 
-A matriz de permissões **não é a próxima etapa** enquanto este plano de pré-produção estiver aberto.
+A matriz de permissões não é a próxima etapa enquanto este plano de pré-produção estiver aberto.
 
 ---
 
