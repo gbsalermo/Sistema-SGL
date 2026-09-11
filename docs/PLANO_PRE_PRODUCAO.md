@@ -270,90 +270,8 @@ Gerar/visualizar e permitir impressão são eventos distintos.
 
 Antes da confirmação da Gestão, a visualização pode utilizar os dados informados pelo Solicitante. Depois da análise/liberação, deve priorizar os dados confirmados.
 
-### 3.4 Fechar o conteúdo definitivo do rótulo de Resíduo
+A definição visual definitiva, os templates adaptados e a infraestrutura física de impressão ficam para a **Etapa 8 — Rótulos e impressão operacional**. A Etapa 3 deve apenas garantir que o Resíduo possua os dados necessários e que a regra de disponibilidade/permissão de impressão esteja correta.
 
-Antes de definir dimensões físicas ou integração Zebra, fechar quais informações realmente devem aparecer no rótulo.
-
-O conteúdo deverá considerar, conforme disponibilidade e validação da Gestão:
-
-- logos do SGL e da Embrapa;
-- Código SGL e demais informações essenciais de rastreabilidade;
-- Unidade e Laboratório;
-- descrição/identificação do Resíduo;
-- estado físico;
-- quantidade e unidade;
-- composição;
-- `processoOrigem` apresentado como procedência/uso;
-- tratamento realizado e descrição, quando aplicável;
-- classes informadas/confirmadas;
-- riscos informados/confirmados;
-- informações de segurança/EPI;
-- palavra de advertência em destaque, quando aplicável;
-- recipiente;
-- armazenamento temporário;
-- destino previsto;
-- Projeto, quando houver;
-- nome de quem informou/gerou;
-- nome do Gestor que recebeu inicialmente;
-- datas operacionais realmente úteis.
-
-Evitar informação redundante e preservar legibilidade.
-
-A referência apresentada pelo cliente deve orientar **acabamento, hierarquia e seleção das informações úteis**, sem obrigar o SGL a reproduzir integralmente o modelo externo. Frases extensas de perigo/precaução ou outros blocos adicionais só entram no domínio se houver decisão específica posterior.
-
-A palavra de advertência deve ser apresentada de forma visualmente destacada e derivar de uma regra/dado confiável do domínio, evitando texto arbitrário apenas no frontend.
-
-Como padrão visual compartilhado, **todos os tipos de rótulo do SGL** devem apresentar a marca SGL junto da marca Embrapa. Isso inclui os rótulos atuais de Resíduo e Produto e deve orientar futuros rótulos.
-
-Regra conceitual:
-
-```text
-antes da análise
-→ dados declarados/informados quando ainda não houver confirmação
-
-após análise/liberação
-→ dados confirmados pela Gestão
-```
-
-### 3.5 Formatação física e impressão Zebra
-
-Somente depois do conteúdo definitivo do rótulo estar fechado deve ser validado o ambiente real de impressão:
-
-- modelo de impressora Zebra;
-- dimensões físicas do rótulo;
-- orientação;
-- margens;
-- driver/forma de envio;
-- necessidade ou não de ZPL;
-- comportamento de preview;
-- critérios de habilitação do botão de impressão.
-
-O layout físico deve ser simples, legível e compatível com a quantidade real de informação aprovada em 3.4.
-
-O acabamento deve priorizar leitura rápida, com hierarquia clara para identificação do material, palavra de advertência quando aplicável, estado físico, responsáveis e rastreabilidade. A referência do cliente é inspiração visual, não especificação rígida de cópia.
-
-### 3.6 Avaliar Ficha/Comprovante de Lote
-
-Como verificação complementar de impressão operacional, avaliar uma **Ficha/Comprovante de Lote** imprimível para situações em que material de estoque precise ser repassado acompanhado de seus dados de rastreabilidade.
-
-Esse documento não deve ser tratado ou nomeado como nota fiscal oficial; sua função é operacional e informativa.
-
-A ficha deve partir dos dados já consolidados no lote e poderá incluir, conforme validação durante a etapa:
-
-- código SGL do lote;
-- produto;
-- lote/referência do fornecedor;
-- unidade recebida e apresentação;
-- quantidade disponível ou quantidade repassada, conforme contexto;
-- multiplicador;
-- data de entrada;
-- validade;
-- condição de retirada unitária;
-- observação;
-- Unidade/laboratório;
-- demais informações de rastreabilidade consideradas úteis.
-
-Antes da implementação, decidir se essa ficha será página própria para impressão pelo navegador, PDF gerado pelo SGL ou ambos.
 
 ---
 
@@ -679,12 +597,157 @@ Também devem ser considerados:
 
 ---
 
-## Etapa 8 — Manual do Usuário e avaliação final de delete lógico
+## Etapa 8 — Rótulos e impressão operacional
+
+**Impacto:** médio  
+**Dependência principal:** domínios de Produto, Resíduo e Solução estabilizados até a Etapa 7  
+**Origem:** refinamento de rótulos solicitado pelo cliente + necessidade de padronização transversal
+
+Esta etapa consolida uma arquitetura única de rotulagem para o SGL sem transformar todos os rótulos em cópias do mesmo conteúdo.
+
+Princípio:
+
+```text
+padrão-base de rotulagem SGL
+        ↓
+Produto  → rótulo adaptado
+Resíduo  → rótulo adaptado
+Solução  → rótulo adaptado
+```
+
+Cada domínio utiliza apenas as informações pertinentes à sua operação.
+
+### 8.1 Padrão-base de rótulos SGL
+
+Definir os elementos compartilhados entre os tipos de rótulo:
+
+- marcas SGL + Embrapa;
+- identidade visual e hierarquia da informação;
+- tipografia, margens e organização;
+- Código SGL e informações essenciais de rastreabilidade;
+- posição e destaque de alertas;
+- palavra de advertência quando aplicável;
+- comportamento de preview;
+- regras compartilhadas de impressão.
+
+A referência visual fornecida pelo cliente deve orientar acabamento e seleção de informações úteis, sem obrigar o SGL a reproduzir integralmente aquele modelo.
+
+Frases extensas de perigo/precaução ou outros blocos regulatórios adicionais não entram automaticamente apenas porque existem no rótulo de referência; exigem decisão funcional própria.
+
+### 8.2 Rótulo adaptado de Produto
+
+Revisar o rótulo atual de Produto sobre a base comum, priorizando apenas informações pertinentes ao domínio, como:
+
+- identificação do Produto;
+- Código SGL/rastreabilidade;
+- lote/referência;
+- validade, quando aplicável;
+- quantidade/unidade/apresentação;
+- riscos;
+- informações de segurança;
+- armazenamento;
+- fiscalização, quando pertinente.
+
+Os campos definitivos devem ser fechados a partir do domínio estabilizado até a Etapa 7.
+
+### 8.3 Rótulo adaptado de Resíduo
+
+Aplicar o padrão-base aos dados definidos nas Etapas 3 e 4.
+
+O rótulo poderá utilizar, conforme disponibilidade e confirmação pela Gestão:
+
+- identificação e Código SGL;
+- Unidade/Laboratório;
+- quantidade e unidade;
+- composição;
+- procedência/uso por meio de `processoOrigem`;
+- estado físico;
+- tratamento realizado;
+- classes de Resíduo;
+- riscos;
+- informações de segurança/EPI;
+- palavra de advertência quando aplicável;
+- recipiente;
+- armazenamento/destino;
+- Projeto, quando houver;
+- quem informou/gerou;
+- Gestor que recebeu inicialmente;
+- datas operacionais úteis.
+
+A regra de disponibilidade definida na Etapa 3 permanece válida:
+
+```text
+visualização pode existir antes da liberação
+→ impressão operacional somente após a liberação prevista pelo fluxo
+```
+
+### 8.4 Rótulo adaptado de Solução
+
+O template de Solução só deve ser fechado depois que o domínio de Soluções estiver estabilizado na Etapa 7.
+
+Deve considerar, conforme a modelagem definitiva:
+
+- nome/identificação da Solução;
+- Código SGL;
+- composição;
+- concentração;
+- quantidade/volume;
+- data de preparo;
+- validade, quando aplicável;
+- responsável;
+- riscos;
+- segurança;
+- armazenamento;
+- demais informações realmente necessárias.
+
+Não antecipar campos definitivos antes da modelagem da Solução.
+
+### 8.5 Formatação física e impressão Zebra
+
+Depois dos três templates estarem definidos, validar o ambiente real de impressão:
+
+- modelo de impressora Zebra;
+- dimensões físicas dos rótulos;
+- orientação;
+- margens;
+- driver/forma de envio;
+- necessidade ou não de ZPL;
+- comportamento de preview;
+- testes físicos;
+- possibilidade de compartilhar infraestrutura de impressão entre Produto, Resíduo e Solução.
+
+O objetivo é possuir uma base de impressão compartilhada com templates específicos por domínio, evitando três soluções técnicas independentes.
+
+### 8.6 Outros impressos operacionais
+
+Avaliar nesta mesma etapa a **Ficha/Comprovante de Lote** para situações em que material precise ser repassado acompanhado de dados de rastreabilidade.
+
+Esse documento é operacional e informativo, não uma nota fiscal oficial.
+
+A ficha poderá utilizar dados já consolidados no lote, como:
+
+- Código SGL;
+- Produto;
+- lote/referência do fornecedor;
+- unidade recebida e apresentação;
+- quantidade;
+- multiplicador;
+- entrada;
+- validade;
+- condição de retirada unitária;
+- observação;
+- Unidade/Laboratório.
+
+Antes da implementação, decidir se será página própria para impressão pelo navegador, PDF gerado pelo SGL ou ambos.
+
+---
+
+## Etapa 9 — Manual do Usuário e avaliação final de delete lógico
 
 **Impacto:** variável  
 **Origem:** itens 16 e 5
 
-### 8.1 Manual do Usuário
+### 9.1 Manual do Usuário
 
 Inicialmente disponível apenas para a interface comum/Solicitante.
 
@@ -699,7 +762,7 @@ A seção deve organizar documentos como:
 
 A implementação definitiva de upload/armazenamento deve ser definida antes de criar contrato backend permanente. Evitar colocar binários grandes diretamente no PostgreSQL sem justificativa técnica.
 
-### 8.2 Avaliação de delete lógico
+### 9.2 Avaliação de delete lógico
 
 Esta parte permanece **opcional e propositalmente no fim das alterações funcionais**.
 
@@ -718,14 +781,14 @@ A implementação só deverá ocorrer após confirmar que o delete lógico agreg
 
 ---
 
-## Etapa 9 — Testes automatizados do Frontend
+## Etapa 10 — Testes automatizados do Frontend
 
 **Impacto:** baixo sobre o domínio / alto valor de estabilização  
 **Posição:** etapa final do bloco de pré-produção
 
-Objetivo: automatizar a validação do frontend somente depois que as alterações funcionais e visuais das etapas anteriores estiverem estabilizadas.
+Objetivo: automatizar a validação do frontend somente depois que as alterações funcionais e visuais das Etapas 1 a 9 estiverem estabilizadas.
 
-### 9.1 Stack de testes escolhida
+### 10.1 Stack de testes escolhida
 
 Para o SGL, a estratégia recomendada é:
 
@@ -741,7 +804,7 @@ Entre Selenium e Cypress, o padrão escolhido para o frontend do SGL é **Cypres
 
 Selenium não fica proibido tecnicamente, mas não será a ferramenta principal do projeto enquanto Cypress atender aos cenários necessários.
 
-### 9.2 Escopo mínimo
+### 10.2 Escopo mínimo
 
 A suíte final deve cobrir, de forma automatizada, os fluxos críticos que existirem ao término das etapas anteriores, incluindo quando aplicável:
 
@@ -756,11 +819,12 @@ A suíte final deve cobrir, de forma automatizada, os fluxos críticos que exist
 - Projetos e vínculos de Estagiários;
 - relatórios e filtros;
 - Soluções dentro de Pedidos;
+- rótulos adaptados de Produto, Resíduo e Solução + fluxos de preview/impressão;
 - Manual do Usuário;
 - tema claro/escuro;
 - isolamento visual/funcional da Unidade conforme a sessão DEV.
 
-### 9.3 Critério de fechamento
+### 10.3 Critério de fechamento
 
 A etapa deve produzir:
 
@@ -795,9 +859,11 @@ Etapa 6 — relatórios de Projetos/Laboratórios
    ↓
 Etapa 7 — unidades + Soluções + Pedidos
    ↓
-Etapa 8 — Manual + decisão de delete lógico
+Etapa 8 — Rótulos e impressão operacional
    ↓
-Etapa 9 — testes automatizados do Frontend
+Etapa 9 — Manual + decisão de delete lógico
+   ↓
+Etapa 10 — testes automatizados do Frontend
 ```
 
 Dependências críticas:
@@ -818,8 +884,11 @@ Pedidos com Soluções
 Relatório de Projetos
 → depende do novo domínio de Projetos/Estagiários estabilizado
 
-Rótulo Zebra de Resíduo
-→ depende do fechamento dos novos dados, responsabilidades, classes e segurança antes da formatação física
+Rótulos adaptados
+→ dependem dos dados de Resíduo estabilizados nas Etapas 3/4 e do domínio de Soluções estabilizado na Etapa 7
+
+Impressão Zebra
+→ depende do fechamento dos templates adaptados de Produto, Resíduo e Solução
 
 Segurança herdada de Produto/ModeloResiduo
 → funciona como sugestão; o Resíduo real preserva snapshot próprio e validação da Gestão
@@ -828,7 +897,7 @@ Modelos de Resíduos
 → reutilizam as definições de classes/segurança da Etapa 3, sem alterar retroativamente ocorrências antigas
 
 Testes automatizados finais do Frontend
-→ dependem da estabilização das interfaces e fluxos das Etapas 1 a 8
+→ dependem da estabilização das interfaces e fluxos das Etapas 1 a 9
 ```
 
 ---
@@ -846,10 +915,7 @@ Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 ETAPA ATUAL
   3.1 — remover redundância de análise           ⏭ próximo passo
   3.2 — dados/classes/segurança/responsabilidade ⏳
   3.3 — ciclo geração/visualização/impressão     ⏳
-  3.4 — conteúdo definitivo do rótulo            ⏳
-  3.5 — formatação física / Zebra                ⏳
-  3.6 — ficha/comprovante de lote                ⏳
-Etapas 4 a 9                                     ⏳ aguardando sequência
+Etapas 4 a 10                                    ⏳ aguardando sequência
 ```
 
 A matriz de permissões **não é a próxima etapa** enquanto este plano de pré-produção estiver aberto.
