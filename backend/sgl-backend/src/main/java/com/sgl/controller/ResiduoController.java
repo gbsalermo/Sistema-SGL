@@ -100,7 +100,7 @@ public class ResiduoController {
         return ResponseEntity.ok(residuoService.receber(id, dto));
     }
 
-    @Operation(summary = "Analisar e liberar resíduo", description = "Confirma os riscos, define armazenamento/destino, gera o código de rastreio e libera os dados do rótulo.")
+    @Operation(summary = "Analisar e liberar resíduo", description = "Confirma os riscos, define armazenamento/destino e libera os dados consolidados do rótulo. O código SGL já é gerado no registro inicial do resíduo.")
     @PutMapping("/{id}/analisar-liberar")
     public ResponseEntity<ResiduoResponseDTO> analisarELiberar(
             @PathVariable UUID id,
