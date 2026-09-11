@@ -356,7 +356,7 @@ Regras atuais principais:
 - usuário vinculado não é trocado durante edição;
 - encerramento grava data efetiva e não pode ser repetido.
 
-A Etapa 5 da pré-produção reestruturará Projetos e vínculos de Estagiários. O vínculo Projeto–Estagiário deverá preservar histórico, atividade exercida, período, status, encerramento e renovação, permitindo múltiplos projetos ao longo do tempo.
+A Etapa 5 da pré-produção reestruturará Projetos, Atividades condicionais e vínculos de Estagiários de forma hierárquica. O Projeto continuará obrigatoriamente N:1 com Laboratório, ganhará Código SEG institucional além da rastreabilidade SGL, líder/responsável próprio, financiador, datas, ciclo de vida e situação de execução. Antes da implementação serão confirmadas as regras ainda pendentes de Atividades, SEG Projeto × Atividade, tipo PROJETO/SCI e situações oficiais de execução. Só depois dessas definições serão modelados os vínculos de Estagiários.
 
 ---
 
@@ -383,7 +383,7 @@ Decisões vigentes:
 Alterações planejadas:
 
 - Etapa 4: liberar cadastro de modelos de Resíduos padrão e locais de armazenamento;
-- Etapa 5: ampliar Projetos com código obrigatório, ciclo de vida e vínculos de pessoas;
+- Etapa 5: reestruturar Projetos de forma hierárquica: confirmar regras pendentes → Projeto base → Código SEG → Atividades, se confirmadas → vínculos de Estagiários → ciclo institucional → interface;
 - Etapa 7: incluir cadastro de Soluções padrão.
 
 ---
@@ -494,7 +494,7 @@ Etapa 1 — refinamento visual global                   ✅ concluída
 Etapa 2 — Dark Mode definitivo                        ✅ concluída
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ⏭ ATUAL / próxima implementação
 Etapa 4 — expansão operacional de Resíduos            ⏳
-Etapa 5 — Projetos + vínculos de Estagiários          ⏳
+Etapa 5 — Projetos + Atividades + Estagiários         ⏳
 Etapa 6 — relatórios de Projetos/Laboratórios         ⏳
 Etapa 7 — unidades + Soluções + Pedidos               ⏳
 Etapa 8 — Rótulos + documento de lote + impressão      ⏳
@@ -507,7 +507,7 @@ Dependências centrais:
 ```text
 padrão visual → Dark Mode
 Resíduos atuais → expansão/modelos de Resíduos
-Projetos/Estagiários → relatório de Projetos
+Projeto base → Atividades (se confirmadas) → vínculos de Estagiários → relatório de Projetos
 unidades → Soluções → Pedidos com Soluções
 Produto/Resíduo/Solução estabilizados → rótulos adaptados + documento de lote + impressão
 Etapas 1 a 9 estabilizadas → testes automatizados frontend
