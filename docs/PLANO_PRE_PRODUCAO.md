@@ -349,83 +349,241 @@ Alterar um modelo no futuro não deve modificar retroativamente Resíduos já re
 
 ---
 
-## Etapa 5 — Reestruturação de Projetos e vínculos de Estagiários
+## Etapa 5 — Projetos, Atividades e vínculos de Estagiários
 
 **Impacto:** alto  
-**Origem:** itens 6, 7 e 8
+**Origem:** itens 6, 7 e 8 + novas regras de Projeto levantadas com o cliente em 11/09/2026
 
-Esta etapa deve ser tratada como uma única evolução de domínio.
+Esta etapa deve ser tratada de forma **hierárquica e dependente**. Nenhuma subetapa que consuma Projeto/Atividade deve ser iniciada antes de a subetapa estrutural anterior estar fechada.
 
-### 5.1 Projeto com ciclo de vida próprio
-
-Projeto passa a ter, entre os dados obrigatórios/relevantes:
-
-- código/número próprio fornecido no cadastro;
-- laboratório(s), conforme regra definitiva da modelagem;
-- status/ciclo de vida;
-- dados atuais do projeto;
-- vínculos de pessoas.
-
-Ciclo inicial proposto:
+Ordem obrigatória:
 
 ```text
-INICIADO
-→ EM_ANDAMENTO
-→ ENCERRADO
+5.0 confirmar regras institucionais ainda pendentes
+→ 5.1 consolidar domínio-base de Projeto
+→ 5.2 consolidar identificação/código SEG
+→ 5.3 modelar Atividades, se confirmadas
+→ 5.4 modelar vínculos de Estagiários sobre Projeto/Atividade
+→ 5.5 revisar ciclo institucional do Estagiário
+→ 5.6 implementar interface consolidada de Projetos
 ```
 
-Os nomes finais podem ser refinados durante a modelagem.
+### 5.0 Portão de confirmação antes da implementação
 
-### 5.2 Vínculo Estagiário ↔ Projeto
+Antes de alterar backend, banco ou contratos da Etapa 5, confirmar com o cliente:
 
-O Estagiário deve estar vinculado a projeto ativo, além de seu laboratório.
+- regra exata do código SEG para Projeto e, se existir, para Atividade;
+- se Atividade é realmente uma entidade subordinada ao Projeto;
+- se um Estagiário pode possuir uma ou várias Atividades dentro do mesmo Projeto;
+- se `SCI` é apenas um tipo de Projeto ou um domínio diferente;
+- lista oficial de situações de execução do Projeto;
+- demais regras institucionais que afetem vínculo, encerramento ou avaliação.
 
-O vínculo não deve ser apenas um `projetoId` no Estagiário. Deve preservar histórico e permitir:
+Esses pontos permanecem **planejados, porém não fechados**. Não antecipar enum, migration ou contrato definitivo para eles antes da confirmação.
 
-- mais de um projeto;
-- troca de projeto;
+### 5.1 Consolidar o domínio-base de Projeto
+
+A relação Laboratório–Projeto fica definida como:
+
+```text
+Laboratório 1
+   ↑
+   │
+   N
+Projeto
+```
+
+Regras:
+
+- todo Projeto deve pertencer obrigatoriamente a **um único Laboratório**;
+- um Laboratório pode possuir vários Projetos;
+- a modelagem atual `Projeto -> Laboratorio` já segue essa direção e deve ser preservada/evoluída, não substituída por N:N.
+
+O Projeto deverá possuir, conforme regra final da etapa:
+
+- nome;
+- descrição;
+- Laboratório obrigatório;
+- líder/responsável;
+- início;
+- fim;
+- duração derivada ou regra equivalente;
+- financiador;
+- ciclo de vida;
+- situação de execução;
+- tipo, caso `PROJETO | SCI` seja confirmado;
+- Código SEG;
+- Código SGL/rastreabilidade interna conforme padrão do sistema.
+
+#### Líder / responsável
+
+O responsável do Projeto deve ser uma referência real a pessoa/usuário do sistema, e não apenas texto livre, sempre que a modelagem institucional permitir.
+
+Regra:
+
+```text
+responsável do Projeto
+pode ser o responsável do Laboratório
+ou
+pode ser outra pessoa elegível
+```
+
+A elegibilidade definitiva do responsável deve ser fechada na implementação da etapa.
+
+#### Datas e duração
+
+Manter início e fim.
+
+A duração deve ser **calculada a partir das datas** quando representar apenas intervalo temporal. Só deve ser persistida separadamente se o cliente confirmar que existe uma duração planejada/contratual independente das datas reais.
+
+#### Financiador
+
+Inicialmente tratar como informação do Projeto.
+
+Não criar entidade própria de Financiador sem necessidade confirmada, como catálogo institucional, múltiplos financiadores ou dados próprios de relacionamento.
+
+### 5.2 Código institucional SEG
+
+O Projeto deverá possuir Código SEG obrigatório.
+
+Formato informado até o momento:
+
+```text
+AAAA.MM.DD.XX.XXX
+
+AAAA → ano
+MM   → mês
+DD   → dia
+XX   → índice base
+XXX  → índice de atividade
+```
+
+O Código SEG é **institucional** e não substitui os identificadores/códigos gerados pelo SGL.
+
+Princípio:
+
+```text
+Código SGL
+→ identificação/rastreabilidade interna do sistema
+
+Código SEG
+→ identificação institucional do Projeto/atividade
+```
+
+A regra exata de composição entre Projeto e Atividade deve ser confirmada no portão 5.0 antes de criar validação definitiva.
+
+### 5.3 Atividades do Projeto — condicional à confirmação
+
+Se a relação for confirmada, a estrutura deverá seguir:
+
+```text
+Projeto 1
+  ↓
+  N
+AtividadeProjeto
+```
+
+Atividade será subordinada ao Projeto e deverá respeitar a regra institucional de Código SEG aplicável.
+
+Possíveis dados, a confirmar:
+
+- código SEG;
+- nome/título;
+- descrição;
+- período;
+- situação/status;
+- demais dados institucionais.
+
+A Atividade deverá existir antes de qualquer vínculo de Estagiário que dependa dela.
+
+Se o cliente concluir que Atividade não deve existir como entidade própria, esta subetapa deve ser eliminada e o vínculo do Estagiário será modelado diretamente com Projeto conforme a regra confirmada.
+
+### 5.4 Vínculo de Estagiários com Projeto/Atividade
+
+Esta subetapa depende de:
+
+```text
+5.1 Projeto estabilizado
++
+5.3 Atividade definida ou explicitamente descartada
+```
+
+Não adicionar simplesmente um `projetoId` ou `atividadeId` ao Estagiário.
+
+O vínculo deve preservar histórico e permitir, conforme as regras que serão fechadas na área de Estagiários:
+
+- entrada em Projeto;
+- troca;
 - encerramento;
 - renovação;
 - períodos distintos;
-- atividade exercida no projeto;
-- status do vínculo.
+- atividade/função exercida;
+- status do vínculo;
+- múltiplos vínculos quando permitido.
 
-A modelagem deve prever uma entidade de vínculo com, no mínimo:
+A modelagem definitiva desta subetapa será complementada pelas decisões específicas da área de Estagiários antes do início da Etapa 5.
 
-- Estagiário;
-- Projeto;
-- atividade exercida;
-- início;
-- fim previsto;
-- fim efetivo;
-- status;
-- informações de renovação/encerramento quando necessárias.
+### 5.5 Revisão do ciclo institucional do Estagiário
 
-### 5.3 Tela/Seção de Projetos
-
-A interface de Projetos deve permitir:
-
-- listar;
-- cadastrar;
-- mostrar o código/número obrigatório;
-- editar;
-- visualizar laboratório(s);
-- visualizar status atual;
-- visualizar ciclo de vida;
-- listar vínculos de usuários comuns;
-- listar vínculos de Estagiários.
-
-### 5.4 Revisão da ação atual “Encerrar” Estagiário
-
-Revisar a ação para representar adequadamente situações distintas, incluindo:
+Depois de Projeto/Atividade/vínculo estabilizados, revisar a ação atual de encerramento do Estagiário para representar corretamente estados como:
 
 - inativação temporária;
 - inativação por prazo indeterminado;
-- encerramento definitivo.
+- encerramento definitivo;
+- demais situações confirmadas pelo cliente.
 
-Todas as opções devem exigir motivo detalhado e preservar histórico.
+Todas as transições relevantes devem preservar motivo, período e histórico.
 
-Antes da implementação backend, deve ser definida explicitamente a relação entre a situação institucional do Estagiário e seus vínculos ativos com Projetos.
+Antes de implementar, definir explicitamente como a situação institucional do Estagiário afeta vínculos ativos de Projeto/Atividade.
+
+### 5.6 Interface consolidada de Projetos
+
+A interface só deve ser fechada depois da estabilização das subetapas anteriores.
+
+Deverá permitir, conforme o domínio final:
+
+- listar;
+- cadastrar;
+- editar;
+- visualizar Laboratório;
+- visualizar Código SEG;
+- visualizar Código SGL;
+- visualizar líder/responsável;
+- visualizar financiador;
+- visualizar início/fim/duração;
+- visualizar ciclo de vida;
+- visualizar situação de execução;
+- visualizar tipo, se confirmado;
+- visualizar Atividades, se confirmadas;
+- visualizar vínculos de pessoas/Estagiários.
+
+#### Ciclo de vida previsto
+
+O ciclo administrativo solicitado pelo cliente é:
+
+```text
+CRIADO
+→ ATIVO
+→ ENCERRADO_COM_AVALIACAO_PENDENTE
+→ CONCLUIDO
+```
+
+Os nomes técnicos finais podem ser refinados na Etapa 5, mas os quatro momentos devem permanecer semanticamente distintos.
+
+#### Situação de execução
+
+Não misturar ciclo de vida com situação operacional/resultado.
+
+Exemplos mencionados pelo cliente:
+
+```text
+EXECUTADO
+NAO_EXECUTADO
+EM_EXECUCAO
+...
+```
+
+A lista oficial permanece pendente de confirmação.
 
 ---
 
@@ -434,7 +592,9 @@ Antes da implementação backend, deve ser definida explicitamente a relação e
 **Impacto:** médio após a estabilização da Etapa 5  
 **Origem:** item 9
 
-Criar visão de relatórios para Projetos utilizando o domínio definitivo criado na etapa anterior.
+Criar visão de relatórios para Projetos utilizando **exclusivamente o domínio definitivo estabilizado na Etapa 5**.
+
+Não antecipar no relatório campos, Atividades, tipos ou situações ainda pendentes de confirmação.
 
 Preferência inicial: evitar aumentar excessivamente a lista de relatórios. Avaliar uma entrada consolidada como:
 
@@ -444,12 +604,19 @@ Laboratórios e Projetos
 
 A interface pode separar internamente as visões por abas ou filtros.
 
-Possíveis dados:
+Possíveis dados, conforme o domínio final:
 
-- laboratório;
-- projetos;
-- código/número do projeto;
-- status;
+- Laboratório;
+- Projeto;
+- Código SEG;
+- Código SGL;
+- líder/responsável;
+- financiador;
+- início/fim/duração;
+- ciclo de vida;
+- situação de execução;
+- tipo, se confirmado;
+- Atividades e respectivos códigos SEG, se confirmadas;
 - participantes;
 - Estagiários;
 - situação dos vínculos;
@@ -886,7 +1053,7 @@ Etapa 3 — refinamentos do Resíduo atual
    ↓
 Etapa 4 — locais + modelos de Resíduos
    ↓
-Etapa 5 — Projetos + Estagiários
+Etapa 5 — Projetos + Atividades + Estagiários
    ↓
 Etapa 6 — relatórios de Projetos/Laboratórios
    ↓
@@ -902,8 +1069,17 @@ Etapa 10 — testes automatizados do Frontend
 Dependências críticas:
 
 ```text
+Projeto base
+→ deve ser estabilizado antes de Atividades, vínculos de Estagiários e relatórios
+
+Código SEG
+→ regra Projeto × Atividade deve ser confirmada no início da Etapa 5 antes de contrato/migration definitiva
+
+Atividades
+→ são condicionais à confirmação do cliente e, se existirem, devem ser estabilizadas antes do vínculo Estagiário–Atividade
+
 Projeto–Estagiário
-→ exige vínculo histórico próprio
+→ exige vínculo histórico próprio e depende da definição final de Projeto/Atividade
 
 Evolução estrutural de Pedidos
 → exige primeiro análise e síntese do padrão real utilizado pelo cliente
@@ -915,7 +1091,7 @@ Pedidos com Soluções
 → dependem de Soluções + unidades + validação atômica de estoque
 
 Relatório de Projetos
-→ depende do novo domínio de Projetos/Estagiários estabilizado
+→ depende de Projeto + Atividades (se confirmadas) + vínculos de Estagiários totalmente estabilizados
 
 Rótulos adaptados
 → dependem dos dados de Resíduo estabilizados nas Etapas 3/4 e do domínio de Soluções estabilizado na Etapa 7
