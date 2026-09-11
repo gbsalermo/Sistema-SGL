@@ -48,7 +48,7 @@ Planejamento de pré-produção                 ✅ consolidado
 Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           🔧 atual
-Etapa 10 — testes automatizados frontend     ⏳ fechamento da pré-produção
+Etapa 12 — testes automatizados frontend     ⏳ fechamento da pré-produção
 Matriz formal de permissões                  ⏳ após a pré-produção atual
 Congelamento/homologação final               ⏳ posterior
 Autenticação/autorização definitiva          ⏳ posterior
@@ -85,12 +85,14 @@ A sequência aprovada está detalhada em `PLANO_PRE_PRODUCAO.md`:
 2. Dark Mode definitivo
 3. refinamentos do fluxo atual de Resíduos
 4. expansão de Resíduos: locais + modelos pré-cadastrados
-5. Projetos + Atividades condicionais + domínio/vínculos históricos de Estagiários
-6. relatórios de Projetos/Estagiários/Laboratórios
-7. normalização de unidades + Soluções + integração com Pedidos
-8. Rótulos, Documento de Auditoria de Entrada de Lote e impressão operacional — Produto, Resíduo e Solução adaptados
-9. Manual do Usuário + avaliação opcional de delete lógico
-10. testes automatizados do Frontend — Vitest/Vue Test Utils + Cypress E2E
+5. Projetos + Atividades
+6. Estagiários + vínculos históricos
+7. relatórios de Projetos/Estagiários/Laboratórios
+8. normalização de unidades + Soluções
+9. Pedidos + integração com Soluções
+10. Rótulos, Documento de Auditoria de Entrada de Lote e impressão operacional
+11. Manual do Usuário + avaliação opcional de delete lógico
+12. testes automatizados do Frontend — Vitest/Vue Test Utils + Cypress E2E
 ```
 
 Regra deste bloco: alterações funcionais de backend serão implementadas manualmente pelo responsável do projeto; IA pode analisar, orientar a implementação e revisar o resultado.
@@ -168,7 +170,7 @@ limpeza e atualização documental       ✅
 → Etapa 1: refinamento visual          ✅
 → Etapa 2: Dark Mode definitivo        ✅
 → Etapa 3: refinamentos de Resíduos    🔧 atual
-→ Etapas 4 a 10                        ⏳ sequenciais
+→ Etapas 4 a 12                        ⏳ sequenciais
 → estabilização do bloco
 ```
 
