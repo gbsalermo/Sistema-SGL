@@ -349,12 +349,12 @@ Alterar um modelo no futuro não deve modificar retroativamente Resíduos já re
 
 ---
 
-## Etapa 5 — Projetos, Atividades e vínculos de Estagiários
+## Etapa 5 — Projetos, Atividades e Estagiários
 
 **Impacto:** alto  
-**Origem:** itens 6, 7 e 8 + novas regras de Projeto levantadas com o cliente em 11/09/2026
+**Origem:** itens 6, 7 e 8 + novas regras de Projeto e Estagiário levantadas com o cliente em 11/09/2026
 
-Esta etapa deve ser tratada de forma **hierárquica e dependente**. Nenhuma subetapa que consuma Projeto/Atividade deve ser iniciada antes de a subetapa estrutural anterior estar fechada.
+Esta etapa deve ser tratada de forma **hierárquica e dependente**. Nenhuma subetapa que consuma Projeto, Atividade ou Estagiário deve ser iniciada antes de a estrutura anterior estar estabilizada.
 
 Ordem obrigatória:
 
@@ -363,21 +363,32 @@ Ordem obrigatória:
 → 5.1 consolidar domínio-base de Projeto
 → 5.2 consolidar identificação/código SEG
 → 5.3 modelar Atividades, se confirmadas
-→ 5.4 modelar vínculos de Estagiários sobre Projeto/Atividade
-→ 5.5 revisar ciclo institucional do Estagiário
-→ 5.6 implementar interface consolidada de Projetos
+→ 5.4 consolidar domínio institucional do Estagiário
+→ 5.5 modelar vínculo Estagiário ↔ Projeto/Atividade
+→ 5.6 consolidar ciclo de vida e prorrogações do Estagiário
+→ 5.7 fechar interfaces de Projetos e Estagiários
 ```
 
 ### 5.0 Portão de confirmação antes da implementação
 
 Antes de alterar backend, banco ou contratos da Etapa 5, confirmar com o cliente:
 
-- regra exata do código SEG para Projeto e, se existir, para Atividade;
+#### Projeto / Atividade
+
+- regra exata do Código SEG para Projeto e, se existir, para Atividade;
 - se Atividade é realmente uma entidade subordinada ao Projeto;
 - se um Estagiário pode possuir uma ou várias Atividades dentro do mesmo Projeto;
 - se `SCI` é apenas um tipo de Projeto ou um domínio diferente;
-- lista oficial de situações de execução do Projeto;
-- demais regras institucionais que afetem vínculo, encerramento ou avaliação.
+- lista oficial de situações de execução do Projeto.
+
+#### Estagiário
+
+- quem pode ser Orientador e se todo Orientador obrigatoriamente existe como `Usuario` do SGL;
+- se Orientador precisa pertencer ao mesmo Laboratório/Unidade ou se pode ser externo à estrutura;
+- se a informação chamada atualmente de **Cultura** é de fato cultura/área temática e qual sua cardinalidade por Estagiário;
+- catálogo inicial de Curso/Formação;
+- regra exata do fluxo de prorrogação e quando ela ocorre em relação à data de fim;
+- compatibilidade entre situação institucional do Estagiário e seus vínculos ativos com Projeto/Atividade.
 
 Esses pontos permanecem **planejados, porém não fechados**. Não antecipar enum, migration ou contrato definitivo para eles antes da confirmação.
 
@@ -467,7 +478,7 @@ Código SGL
 → identificação/rastreabilidade interna do sistema
 
 Código SEG
-→ identificação institucional do Projeto/atividade
+→ identificação institucional do Projeto/Atividade
 ```
 
 A regra exata de composição entre Projeto e Atividade deve ser confirmada no portão 5.0 antes de criar validação definitiva.
@@ -487,7 +498,7 @@ Atividade será subordinada ao Projeto e deverá respeitar a regra institucional
 
 Possíveis dados, a confirmar:
 
-- código SEG;
+- Código SEG;
 - nome/título;
 - descrição;
 - período;
@@ -498,7 +509,92 @@ A Atividade deverá existir antes de qualquer vínculo de Estagiário que depend
 
 Se o cliente concluir que Atividade não deve existir como entidade própria, esta subetapa deve ser eliminada e o vínculo do Estagiário será modelado diretamente com Projeto conforme a regra confirmada.
 
-### 5.4 Vínculo de Estagiários com Projeto/Atividade
+### 5.4 Consolidar o domínio institucional do Estagiário
+
+Esta subetapa define os dados próprios do Estagiário antes de criar os vínculos com Projeto/Atividade.
+
+#### Orientador obrigatório
+
+Todo Estagiário deve possuir Orientador.
+
+A representação definitiva depende da confirmação do portão 5.0:
+
+```text
+se Orientador sempre for usuário institucional do SGL
+→ relação obrigatória com Usuario
+
+se Orientador puder ser externo
+→ modelagem deve permitir preservar a identidade do Orientador sem inventar Usuario artificial
+```
+
+O Orientador é diferente do responsável do Laboratório e do líder do Projeto, embora a mesma pessoa possa ocupar mais de uma dessas funções quando permitido.
+
+#### Cultura / área temática
+
+Planejar um cadastro auxiliar reutilizável para a informação atualmente chamada de **Cultura**, com exemplos como:
+
+- mandioca;
+- citros;
+- abacaxi;
+- demais culturas/áreas adotadas pela Unidade.
+
+Preferência inicial:
+
+```text
+Cultura
+- id/publicId
+- nome
+- descrição opcional
+- ativo
+
+Gestão
+→ cadastra/ativa/inativa
+→ seleciona para o Estagiário
+```
+
+A cardinalidade final — uma ou várias Culturas por Estagiário — deve ser confirmada em 5.0 antes da migration definitiva.
+
+#### Bolsa ≠ Curso/Formação
+
+Não misturar financiamento/vínculo com formação acadêmica.
+
+O campo atual `TipoBolsa` representa conceitos como:
+
+```text
+BOLSA_CNPQ
+BOLSA_CAPES
+BOLSA_INSTITUCIONAL
+VOLUNTARIO
+CONTRATUAL
+```
+
+Já valores como:
+
+```text
+ENSINO_MEDIO
+GRADUACAO
+MESTRADO
+DOUTORADO
+...
+```
+
+representam **Curso/Formação/Nível acadêmico** e devem ser armazenados separadamente.
+
+A interface pode agrupar visualmente essas informações em uma seção “Bolsa / Curso”, mas o domínio não deve fundi-las em um único campo.
+
+A forma definitiva de Curso/Formação — enum estável ou cadastro auxiliar — deve ser fechada no início da Etapa 5 conforme o catálogo real do cliente.
+
+#### Treinamento inicial de segurança
+
+Todo Estagiário deve possuir indicação explícita:
+
+```text
+treinamentoInicialSegurancaConcluido = true | false
+```
+
+O requisito atual é booleano. Não adicionar data, certificado ou documento obrigatório sem nova necessidade confirmada.
+
+### 5.5 Vínculo Estagiário ↔ Projeto/Atividade
 
 Esta subetapa depende de:
 
@@ -506,39 +602,69 @@ Esta subetapa depende de:
 5.1 Projeto estabilizado
 +
 5.3 Atividade definida ou explicitamente descartada
++
+5.4 Estagiário institucional estabilizado
 ```
 
-Não adicionar simplesmente um `projetoId` ou `atividadeId` ao Estagiário.
+Regra solicitada:
 
-O vínculo deve preservar histórico e permitir, conforme as regras que serão fechadas na área de Estagiários:
+- todo Estagiário deve estar relacionado ao Projeto do qual participa;
+- quando Atividade for confirmada como entidade, o Estagiário também deve estar relacionado à Atividade da qual faz parte.
+
+Não adicionar simplesmente um `projetoId` e `atividadeId` diretamente no Estagiário.
+
+O vínculo deve preservar histórico e permitir, conforme regra final:
 
 - entrada em Projeto;
-- troca;
+- troca de Projeto/Atividade;
+- períodos distintos;
+- função/atividade exercida;
+- status do vínculo;
 - encerramento;
 - renovação;
-- períodos distintos;
-- atividade/função exercida;
-- status do vínculo;
 - múltiplos vínculos quando permitido.
 
-A modelagem definitiva desta subetapa será complementada pelas decisões específicas da área de Estagiários antes do início da Etapa 5.
+A modelagem deve preservar a história mesmo que Projeto, Atividade ou cadastro do Estagiário mudem posteriormente.
 
-### 5.5 Revisão do ciclo institucional do Estagiário
+### 5.6 Ciclo de vida e prorrogações do Estagiário
 
-Depois de Projeto/Atividade/vínculo estabilizados, revisar a ação atual de encerramento do Estagiário para representar corretamente estados como:
+O Estagiário passa a possuir ciclo institucional próprio.
 
-- inativação temporária;
-- inativação por prazo indeterminado;
+Requisito informado:
+
+```text
+INÍCIO
+→ ATIVO
+→ FIM
+→ PRORROGAÇÃO + JUSTIFICATIVA
+```
+
+A implementação definitiva deve evitar tratar “prorrogação” apenas como sobrescrita silenciosa da data de fim.
+
+Regra mínima:
+
+- toda prorrogação exige justificativa;
+- preservar a data de fim anterior;
+- preservar a nova data de fim;
+- registrar quando e por quem a prorrogação foi feita;
+- manter histórico suficiente para auditoria.
+
+Na modelagem final, a prorrogação pode ser tratada como evento/transição que mantém ou retorna o Estagiário ao estado ativo, em vez de necessariamente virar um status terminal. Essa decisão deve ser fechada em 5.0.
+
+Também revisar a ação atual de encerramento para representar corretamente:
+
+- encerramento normal;
+- inativação temporária, se ainda fizer sentido;
+- inativação por prazo indeterminado, se confirmada;
 - encerramento definitivo;
-- demais situações confirmadas pelo cliente.
+- prorrogação;
+- demais situações institucionais aprovadas.
 
-Todas as transições relevantes devem preservar motivo, período e histórico.
+### 5.7 Interfaces de Projetos e Estagiários
 
-Antes de implementar, definir explicitamente como a situação institucional do Estagiário afeta vínculos ativos de Projeto/Atividade.
+As interfaces só devem ser fechadas depois das subetapas estruturais anteriores.
 
-### 5.6 Interface consolidada de Projetos
-
-A interface só deve ser fechada depois da estabilização das subetapas anteriores.
+#### Projetos
 
 Deverá permitir, conforme o domínio final:
 
@@ -557,9 +683,7 @@ Deverá permitir, conforme o domínio final:
 - visualizar Atividades, se confirmadas;
 - visualizar vínculos de pessoas/Estagiários.
 
-#### Ciclo de vida previsto
-
-O ciclo administrativo solicitado pelo cliente é:
+Ciclo administrativo previsto do Projeto:
 
 ```text
 CRIADO
@@ -568,43 +692,94 @@ CRIADO
 → CONCLUIDO
 ```
 
-Os nomes técnicos finais podem ser refinados na Etapa 5, mas os quatro momentos devem permanecer semanticamente distintos.
+A situação de execução permanece separada do ciclo de vida.
 
-#### Situação de execução
+#### Estagiários
 
-Não misturar ciclo de vida com situação operacional/resultado.
+Deverá permitir, conforme domínio final:
 
-Exemplos mencionados pelo cliente:
-
-```text
-EXECUTADO
-NAO_EXECUTADO
-EM_EXECUCAO
-...
-```
-
-A lista oficial permanece pendente de confirmação.
+- Orientador;
+- Laboratório;
+- Projeto;
+- Atividade, se confirmada;
+- Bolsa/vínculo;
+- Curso/Formação;
+- Cultura/área temática;
+- treinamento inicial de segurança;
+- início;
+- fim previsto/efetivo;
+- situação atual;
+- histórico de prorrogações e justificativas;
+- histórico dos vínculos de Projeto/Atividade.
 
 ---
 
-## Etapa 6 — Relatórios de Projetos e Laboratórios
+## Etapa 6 — Relatórios de Projetos, Estagiários e Laboratórios
 
-**Impacto:** médio após a estabilização da Etapa 5  
-**Origem:** item 9
+**Impacto:** médio após a estabilização integral da Etapa 5  
+**Origem:** item 9 + novas necessidades de relatórios de Estagiários
 
-Criar visão de relatórios para Projetos utilizando **exclusivamente o domínio definitivo estabilizado na Etapa 5**.
+Esta etapa deve consumir **exclusivamente o domínio definitivo estabilizado na Etapa 5**.
 
-Não antecipar no relatório campos, Atividades, tipos ou situações ainda pendentes de confirmação.
+Não alterar a Etapa 5 apenas para facilitar um relatório. Primeiro o domínio é fechado; depois as consultas e agregações são construídas sobre ele.
 
-Preferência inicial: evitar aumentar excessivamente a lista de relatórios. Avaliar uma entrada consolidada como:
+Ordem interna:
 
 ```text
-Laboratórios e Projetos
+5.x domínio estabilizado
+→ 6.1 definir dimensões/filtros
+→ 6.2 construir consultas e agregações
+→ 6.3 prévia/telas
+→ 6.4 PDF/XLSX
 ```
 
-A interface pode separar internamente as visões por abas ou filtros.
+### 6.1 Dimensões e filtros
 
-Possíveis dados, conforme o domínio final:
+Os relatórios devem permitir consultar/filtrar, quando aplicável:
+
+- Laboratório;
+- responsável do Laboratório;
+- Projeto;
+- Código SEG;
+- líder/responsável do Projeto;
+- Atividade, se confirmada;
+- Orientador do Estagiário;
+- Bolsa/vínculo;
+- Curso/Formação;
+- Cultura/área temática;
+- situação do Estagiário;
+- período;
+- demais dimensões consolidadas na Etapa 5.
+
+### 6.2 Agregações de Estagiários
+
+Deve ser possível obter, conforme filtros:
+
+- quantidade de Estagiários ativos por Laboratório;
+- quantidade por Orientador;
+- quantidade por responsável de Laboratório;
+- quantidade por Bolsa/vínculo;
+- quantidade por Curso/Formação;
+- quantidade por Cultura/área temática;
+- quantidade por Projeto;
+- quantidade por Atividade, se confirmada;
+- combinações coerentes dessas dimensões quando necessárias.
+
+Os totais devem derivar da situação real/histórica do vínculo no período consultado, e não apenas do booleano atual quando o relatório exigir recorte histórico.
+
+### 6.3 Visões de relatório
+
+Evitar multiplicar relatórios sem necessidade.
+
+Preferência inicial: consolidar as informações em uma área como:
+
+```text
+Laboratórios, Projetos e Estagiários
+```
+
+com abas/filtros/agrupamentos para diferentes análises.
+
+Possíveis dados de Projeto:
 
 - Laboratório;
 - Projeto;
@@ -622,7 +797,27 @@ Possíveis dados, conforme o domínio final:
 - situação dos vínculos;
 - períodos.
 
-PDF/XLSX devem seguir a mesma consulta/filtros da prévia, mantendo o padrão atual do SGL.
+Possíveis dados de Estagiário:
+
+- nome;
+- Orientador;
+- Laboratório;
+- responsável do Laboratório;
+- Projeto;
+- Atividade, se confirmada;
+- Bolsa/vínculo;
+- Curso/Formação;
+- Cultura/área temática;
+- treinamento inicial de segurança;
+- situação;
+- período;
+- prorrogações relevantes.
+
+### 6.4 Exportações
+
+PDF/XLSX devem seguir a mesma consulta, filtros, período e agrupamentos da prévia.
+
+Não criar lógica de cálculo diferente entre tela e exportação.
 
 ---
 
@@ -1055,7 +1250,7 @@ Etapa 4 — locais + modelos de Resíduos
    ↓
 Etapa 5 — Projetos + Atividades + Estagiários
    ↓
-Etapa 6 — relatórios de Projetos/Laboratórios
+Etapa 6 — relatórios Projetos/Estagiários/Laboratórios
    ↓
 Etapa 7 — unidades + Soluções + Pedidos
    ↓
@@ -1078,8 +1273,11 @@ Código SEG
 Atividades
 → são condicionais à confirmação do cliente e, se existirem, devem ser estabilizadas antes do vínculo Estagiário–Atividade
 
+Estagiário institucional
+→ Orientador, Bolsa/Curso, Cultura e treinamento devem ser estabilizados antes do vínculo operacional
+
 Projeto–Estagiário
-→ exige vínculo histórico próprio e depende da definição final de Projeto/Atividade
+→ exige vínculo histórico próprio e depende da definição final de Projeto/Atividade + domínio institucional do Estagiário
 
 Evolução estrutural de Pedidos
 → exige primeiro análise e síntese do padrão real utilizado pelo cliente
@@ -1090,8 +1288,8 @@ Soluções
 Pedidos com Soluções
 → dependem de Soluções + unidades + validação atômica de estoque
 
-Relatório de Projetos
-→ depende de Projeto + Atividades (se confirmadas) + vínculos de Estagiários totalmente estabilizados
+Relatórios de Projetos/Estagiários/Laboratórios
+→ dependem de Projeto + Atividades (se confirmadas) + Orientadores + Cultura + Bolsa/Curso + vínculos e ciclos totalmente estabilizados
 
 Rótulos adaptados
 → dependem dos dados de Resíduo estabilizados nas Etapas 3/4 e do domínio de Soluções estabilizado na Etapa 7
