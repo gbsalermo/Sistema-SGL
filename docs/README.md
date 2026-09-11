@@ -88,7 +88,7 @@ A sequência aprovada está detalhada em `PLANO_PRE_PRODUCAO.md`:
 5. Projetos + vínculos históricos de Estagiários
 6. relatórios de Projetos/Laboratórios
 7. normalização de unidades + Soluções + integração com Pedidos
-8. Rótulos e impressão operacional — Produto, Resíduo e Solução adaptados
+8. Rótulos, Documento de Auditoria de Entrada de Lote e impressão operacional — Produto, Resíduo e Solução adaptados
 9. Manual do Usuário + avaliação opcional de delete lógico
 10. testes automatizados do Frontend — Vitest/Vue Test Utils + Cypress E2E
 ```
