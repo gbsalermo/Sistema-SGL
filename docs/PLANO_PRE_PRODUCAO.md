@@ -1053,7 +1053,7 @@ Etapa 3 — refinamentos do Resíduo atual
    ↓
 Etapa 4 — locais + modelos de Resíduos
    ↓
-Etapa 5 — Projetos + Estagiários
+Etapa 5 — Projetos + Atividades + Estagiários
    ↓
 Etapa 6 — relatórios de Projetos/Laboratórios
    ↓
