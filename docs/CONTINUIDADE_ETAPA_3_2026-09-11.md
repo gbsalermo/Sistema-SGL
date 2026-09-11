@@ -51,7 +51,7 @@ Ordem:
 → 3.3 separar geração/visualização da permissão de impressão
 ```
 
-O acabamento visual definitivo, os templates adaptados e a infraestrutura Zebra não pertencem mais à Etapa 3. Eles foram consolidados na **Etapa 8 — Rótulos e impressão operacional**, após a estabilização de Produto, Resíduo e Solução.
+O acabamento visual definitivo, os templates adaptados e a infraestrutura Zebra não pertencem mais à Etapa 3. Eles foram consolidados na **Etapa 10 — Rótulos e impressão operacional**, após a estabilização de Produto, Resíduo e Solução.
 
 ## Próximo passo exato
 
