@@ -3,11 +3,11 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 04/09/2026  
+**Última atualização:** 11/09/2026  
 **Branch estável:** `main`  
 **Fase atual:** ajustes de pré-produção pós-aprovação funcional.  
 **Bloco atual:** planejamento consolidado → execução sequencial das etapas de pré-produção.  
-**Etapa atual:** Etapa 1 — padronização e refinamento visual global.  
+**Etapa atual:** Etapa 3 — refinamentos do fluxo atual de Resíduos.  
 **Plano oficial da pré-produção:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Roadmap formal posterior:** matriz de permissões → congelamento → homologação final → segurança/integração corporativa.  
 **Handoff completo:** `docs/DOSSIE_PROJETO_SGL.md`
@@ -82,7 +82,7 @@ Dashboard Gestão                                      ✅
 Dashboard Solicitante                                 ✅
 Alertas operacionais                                  ✅
 Busca global                                          ✅
-Tema claro/escuro com persistência                    ✅ base atual; refinamento planejado
+Tema claro/escuro com persistência                    ✅ Dark Mode definitivo concluído
 Página 404                                            ✅
 Contexto de Unidade enviado à API                     ✅
 Testes automatizados frontend                         ⏳ Etapa 9 — Vitest/Vue Test Utils + Cypress
@@ -489,9 +489,9 @@ Situação:
 ```text
 limpeza/revisão documental                            ✅ concluída
 planejamento dos ajustes                              ✅ consolidado
-Etapa 1 — refinamento visual global                   ⏭ ATUAL / próxima implementação
-Etapa 2 — Dark Mode definitivo                        ⏳
-Etapa 3 — refinamentos do fluxo atual de Resíduos     ⏳
+Etapa 1 — refinamento visual global                   ✅ concluída
+Etapa 2 — Dark Mode definitivo                        ✅ concluída
+Etapa 3 — refinamentos do fluxo atual de Resíduos     ⏭ ATUAL / próxima implementação
 Etapa 4 — expansão operacional de Resíduos            ⏳
 Etapa 5 — Projetos + vínculos de Estagiários          ⏳
 Etapa 6 — relatórios de Projetos/Laboratórios         ⏳
@@ -555,4 +555,33 @@ Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 # 18. Regra final de retomada
 
-**O SGL está funcionalmente aprovado. A fase atual é a execução do plano de pré-produção registrado em `docs/PLANO_PRE_PRODUCAO.md`, começando pela Etapa 1 — padronização/refinamento visual e terminando na Etapa 9 — testes automatizados do Frontend. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
+**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas. A retomada agora deve começar pela Etapa 3 — refinamentos do fluxo atual de Resíduos — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
+
+---
+
+# 19. Fechamento da Etapa 2 — 11/09/2026
+
+O Dark Mode definitivo foi validado e integrado no frontend.
+
+```text
+Frontend PR #50
+squash merge: a3fff4fa8edb6b8900c4a5b359dbfc0245afb87c
+```
+
+Principais decisões fechadas:
+
+- uma única fonte de verdade para tema;
+- preferência persistida em `sgl.theme`;
+- Vuetify e DOM sincronizados;
+- tokens escuros definitivos;
+- remoção de CSS legado/provisório;
+- Login/404/rótulos de impressão continuam claros;
+- nenhuma regra de negócio, payload ou contrato HTTP alterado;
+- semântica de cores consistente entre Estoque, Movimentações, Resíduos e Relatórios.
+
+Próxima etapa oficial:
+
+```text
+Etapa 3 — Refinamentos do fluxo atual de Resíduos
+→ começar por 3.1 — remover redundância de análise
+```
