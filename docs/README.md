@@ -1,6 +1,6 @@
 # Documentação — SGL Backend
 
-**Atualizado em:** 04/09/2026
+**Atualizado em:** 11/09/2026
 
 Este diretório reúne documentação vigente, decisões de domínio, material auxiliar de testes e registros históricos. O objetivo deste índice é impedir que um roteiro antigo seja interpretado como estado atual do produto.
 
@@ -11,10 +11,11 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 ```text
 1. ../CONTINUIDADE.md
 2. PLANO_PRE_PRODUCAO.md
-3. ../README.md
-4. DOSSIE_PROJETO_SGL.md
-5. Swagger/OpenAPI em execução
-6. documento específico da área em trabalho
+3. CONTINUIDADE_ETAPA_3_2026-09-11.md
+4. ../README.md
+5. DOSSIE_PROJETO_SGL.md
+6. Swagger/OpenAPI em execução
+7. documento específico da área em trabalho
 ```
 
 ---
@@ -44,7 +45,9 @@ Primeiro protótipo funcional                 ✅ aprovado
 Pré-produção pós-aprovação                   🔧 em andamento
 Limpeza/revisão documental                   ✅ concluída
 Planejamento de pré-produção                 ✅ consolidado
-Etapa 1 — refinamento visual global          ⏭ próxima implementação
+Etapa 1 — refinamento visual global          ✅ concluída
+Etapa 2 — Dark Mode definitivo               ✅ concluída
+Etapa 3 — refinamentos de Resíduos           🔧 atual
 Etapa 9 — testes automatizados frontend      ⏳ fechamento da pré-produção
 Matriz formal de permissões                  ⏳ após a pré-produção atual
 Congelamento/homologação final               ⏳ posterior
@@ -60,10 +63,10 @@ O roadmap formal não foi cancelado. Ele começa depois do bloco atual de ajuste
 
 | Documento | Papel | Estado |
 |---|---|---|
-| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 04/09** |
-| `PLANO_PRE_PRODUCAO.md` | sequência canônica das etapas atuais, dependências e regras de execução | **ATUAL — 04/09** |
-| `../README.md` | visão rápida do backend e execução | **ATUAL — 04/09** |
-| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 04/09** |
+| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 11/09** |
+| `PLANO_PRE_PRODUCAO.md` | sequência canônica das etapas atuais, dependências e regras de execução | **ATUAL — 11/09** |
+| `../README.md` | visão rápida do backend e execução | **ATUAL — 11/09** |
+| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 11/09** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **VIGENTE** |
 | `RELATORIOS.md` | cobertura de relatórios | **VIGENTE** |
 | `EXPORTACAO_RELATORIOS.md` | regras de PDF/XLSX | **VIGENTE** |
@@ -161,8 +164,10 @@ Se algum documento histórico disser que Administração, Resíduos, Dashboard, 
 ```text
 limpeza e atualização documental       ✅
 → planejamento de pré-produção         ✅
-→ Etapa 1: refinamento visual          ⏭ atual
-→ Etapas 2 a 9                         ⏳ sequenciais
+→ Etapa 1: refinamento visual          ✅
+→ Etapa 2: Dark Mode definitivo        ✅
+→ Etapa 3: refinamentos de Resíduos    🔧 atual
+→ Etapas 4 a 9                         ⏳ sequenciais
 → estabilização do bloco
 ```
 
@@ -187,11 +192,12 @@ Antes de alterar o sistema:
 
 ```text
 1. ler ../CONTINUIDADE.md
-2. ler PLANO_PRE_PRODUCAO.md durante a fase atual
-3. conferir a main atual
-4. conferir Swagger/OpenAPI quando houver contrato HTTP
-5. confirmar o documento específico da área
-6. distinguir requisito atual de registro histórico
+2. ler PLANO_PRE_PRODUCAO.md
+3. ler CONTINUIDADE_ETAPA_3_2026-09-11.md
+4. conferir a main atual
+5. conferir Swagger/OpenAPI quando houver contrato HTTP
+6. confirmar o documento específico da área
+7. distinguir requisito atual de registro histórico
 ```
 
 Não reconstruir módulos aprovados apenas porque um documento antigo descreve uma fase anterior.
