@@ -330,18 +330,47 @@ PDF/XLSX
 
 ---
 
-## 14. Modelos pré-determinados — futuro
+## 14. Evolução planejada na pré-produção
 
-A área de Administração/Informar Resíduo mostra a ideia de **Resíduos pré-determinados** apenas como opção futura “Em breve”.
+O planejamento canônico permanece em `docs/PLANO_PRE_PRODUCAO.md`. Para Resíduos, as decisões já incorporadas ao roadmap são:
 
-Se essa ideia for ativada posteriormente, o modelo poderá pré-preencher descrição, processo, recipiente, riscos e composição, mas:
+### Etapa 3 — refinamento do fluxo atual
 
-- quantidade real continua editável;
-- laboratório/projeto/gerador pertencem ao registro real;
+- manter `processoOrigem` como informação de procedência/uso, sem criar campo redundante;
+- adicionar indicação de tratamento realizado e descrição obrigatória quando houver tratamento;
+- preservar quem informou/gerou e quem recebeu inicialmente pela Gestão;
+- exigir que o Gestor recebedor conduza análise e liberação, permitindo outros Gestores nas etapas posteriores;
+- adicionar classes de Resíduo pré-cadastradas, com seleção múltipla pelo Solicitante e confirmação pela Gestão;
+- adicionar informações estruturadas de segurança/EPI;
+- permitir sugestão/herança de segurança a partir de Produtos relacionados, com edição limitada e confirmação;
+- preservar snapshot das informações confirmadas no Resíduo;
+- separar visualização antecipada do rótulo da permissão de impressão;
+- fechar conteúdo do rótulo antes da formatação física/Zebra.
+
+### Etapa 4 — modelos reutilizáveis
+
+A área de Administração/Informar Resíduo poderá oferecer **Modelos de Resíduo** reutilizáveis.
+
+O modelo poderá sugerir/preencher:
+
+- descrição;
+- processo de origem/procedência e uso;
+- recipiente;
+- riscos;
+- classes;
+- informações de segurança;
+- composição/produtos;
+- demais dados padrão aprovados.
+
+Regras:
+
+- quantidade e dados específicos da ocorrência continuam pertencendo ao Resíduo real;
+- laboratório/projeto/gerador pertencem à ocorrência real;
 - o modelo não movimenta estoque;
-- riscos do modelo não eliminam a análise da Gestão.
+- riscos/classes/segurança do modelo não eliminam a conferência da Gestão;
+- alterar o modelo posteriormente não modifica Resíduos históricos já criados.
 
-Não alterar o contrato atual até existir decisão formal de implementação.
+Não confundir `ModeloResiduo` com `Produto`: Produtos podem participar da composição e fornecer referências/sugestões, mas não são substituídos pelo modelo.
 
 ---
 
