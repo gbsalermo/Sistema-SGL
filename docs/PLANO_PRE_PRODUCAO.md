@@ -1250,7 +1250,7 @@ Etapa 4 — locais + modelos de Resíduos
    ↓
 Etapa 5 — Projetos + Atividades + Estagiários
    ↓
-Etapa 6 — relatórios de Projetos/Laboratórios
+Etapa 6 — relatórios Projetos/Estagiários/Laboratórios
    ↓
 Etapa 7 — unidades + Soluções + Pedidos
    ↓
