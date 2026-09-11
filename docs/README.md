@@ -85,7 +85,7 @@ A sequência aprovada está detalhada em `PLANO_PRE_PRODUCAO.md`:
 2. Dark Mode definitivo
 3. refinamentos do fluxo atual de Resíduos
 4. expansão de Resíduos: locais + modelos pré-cadastrados
-5. Projetos + vínculos históricos de Estagiários
+5. Projetos + Atividades condicionais + vínculos históricos de Estagiários
 6. relatórios de Projetos/Laboratórios
 7. normalização de unidades + Soluções + integração com Pedidos
 8. Rótulos, Documento de Auditoria de Entrada de Lote e impressão operacional — Produto, Resíduo e Solução adaptados
