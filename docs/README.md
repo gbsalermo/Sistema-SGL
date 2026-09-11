@@ -48,7 +48,7 @@ Planejamento de pré-produção                 ✅ consolidado
 Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           🔧 atual
-Etapa 9 — testes automatizados frontend      ⏳ fechamento da pré-produção
+Etapa 10 — testes automatizados frontend     ⏳ fechamento da pré-produção
 Matriz formal de permissões                  ⏳ após a pré-produção atual
 Congelamento/homologação final               ⏳ posterior
 Autenticação/autorização definitiva          ⏳ posterior
@@ -88,8 +88,9 @@ A sequência aprovada está detalhada em `PLANO_PRE_PRODUCAO.md`:
 5. Projetos + vínculos históricos de Estagiários
 6. relatórios de Projetos/Laboratórios
 7. normalização de unidades + Soluções + integração com Pedidos
-8. Manual do Usuário + avaliação opcional de delete lógico
-9. testes automatizados do Frontend — Vitest/Vue Test Utils + Cypress E2E
+8. Rótulos e impressão operacional — Produto, Resíduo e Solução adaptados
+9. Manual do Usuário + avaliação opcional de delete lógico
+10. testes automatizados do Frontend — Vitest/Vue Test Utils + Cypress E2E
 ```
 
 Regra deste bloco: alterações funcionais de backend serão implementadas manualmente pelo responsável do projeto; IA pode analisar, orientar a implementação e revisar o resultado.
@@ -167,7 +168,7 @@ limpeza e atualização documental       ✅
 → Etapa 1: refinamento visual          ✅
 → Etapa 2: Dark Mode definitivo        ✅
 → Etapa 3: refinamentos de Resíduos    🔧 atual
-→ Etapas 4 a 9                         ⏳ sequenciais
+→ Etapas 4 a 10                        ⏳ sequenciais
 → estabilização do bloco
 ```
 

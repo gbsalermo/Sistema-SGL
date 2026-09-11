@@ -345,12 +345,9 @@ O planejamento canônico permanece em `docs/PLANO_PRE_PRODUCAO.md`. Para Resídu
 - adicionar estado físico estruturado para uso operacional e no rótulo;
 - permitir sugestão/herança de segurança a partir de Produtos relacionados, com edição limitada e confirmação;
 - preservar snapshot das informações confirmadas no Resíduo;
-- separar visualização antecipada do rótulo da permissão de impressão;
-- fechar conteúdo do rótulo antes da formatação física/Zebra;
-- usar a referência de rótulo do cliente como inspiração de acabamento, sem necessidade de copiar todas as informações;
-- destacar palavra de advertência quando aplicável;
-- manter informações essenciais de rastreabilidade e responsáveis;
-- padronizar marca SGL + Embrapa nos rótulos atuais e futuros do sistema.
+- separar visualização antecipada do rótulo da permissão de impressão.
+
+O conteúdo visual definitivo e a infraestrutura de impressão não pertencem mais à Etapa 3. Eles serão consolidados na **Etapa 8 — Rótulos e impressão operacional**, junto dos rótulos adaptados de Produto e Solução.
 
 ### Etapa 4 — modelos reutilizáveis
 
@@ -377,7 +374,15 @@ Regras:
 
 Não confundir `ModeloResiduo` com `Produto`: Produtos podem participar da composição e fornecer referências/sugestões, mas não são substituídos pelo modelo.
 
+### Etapa 8 — rótulo adaptado de Resíduo
+
+Depois que Produto, Resíduo e Solução estiverem estabilizados, o rótulo de Resíduo será finalizado como um dos templates adaptados do padrão transversal do SGL.
+
+A referência visual do cliente servirá como inspiração de acabamento. O template poderá destacar estado físico, palavra de advertência quando aplicável, responsáveis, rastreabilidade, riscos, classes, segurança e demais dados específicos do domínio, sem obrigar a cópia integral do modelo externo.
+
 ---
+
+
 
 ## 15. Estado final do módulo no primeiro protótipo
 
