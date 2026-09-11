@@ -129,29 +129,198 @@ Frontend: PR #50, squash merge `a3fff4fa8edb6b8900c4a5b359dbfc0245afb87c`.
 
 ## Etapa 3 — Refinamentos do fluxo atual de Resíduos
 
-**Impacto:** baixo/médio  
-**Origem:** itens 3, 13 e 14
+**Impacto:** médio  
+**Origem:** itens 3, 13 e 14 + novas solicitações do cliente consolidadas em 11/09/2026
 
 ### 3.1 Remover redundância de análise
 
 Retirar a sequência visual de “pendências de análise” quando ela apenas repetir as ações já representadas por recebimento e análise.
 
-### 3.2 Refinar o rótulo de Resíduo
+A remoção deve considerar também links/filtros vindos do Dashboard para não deixar navegação quebrada.
 
-Revisar:
+### 3.2 Ampliar dados, classificação, segurança e responsabilidade do Resíduo
 
-- logo do SGL;
-- Unidade;
-- informações redundantes;
-- alinhamentos;
-- hierarquia visual;
-- informações realmente necessárias para identificação e operação;
-- compatibilidade de impressão do rótulo com impressoras Zebra;
-- possibilidade de gerar e imprimir uma **Ficha/Comprovante de Lote** a partir dos dados já exibidos no detalhe de estoque.
+Esta subetapa incorpora as novas informações solicitadas pelo cliente ao fluxo atual.
 
-A impressão em impressora Zebra passa a ser requisito desta subetapa. Quando a Etapa 3 for iniciada, deve ser validado o ambiente real de impressão — modelo de impressora, dimensões do rótulo, driver/forma de envio e necessidade ou não de formato específico como ZPL — antes de definir a integração técnica definitiva.
+#### Procedência / uso
 
-Como verificação complementar de impressão operacional, a Etapa 3.2 também deve avaliar uma **Ficha/Comprovante de Lote** imprimível para situações em que o material precise ser repassado acompanhado de seus dados de rastreabilidade. Esse documento não deve ser tratado ou nomeado como nota fiscal oficial; sua função é operacional e informativa.
+O campo atual `processoOrigem` será mantido como fonte da informação de **procedência/uso do Resíduo**.
+
+Não criar campo redundante apenas para “procedência”.
+
+Na interface, o significado deve ficar explícito, por exemplo:
+
+```text
+Procedência / uso do Resíduo
+→ informe de qual processo, atividade ou uso surgiu o Resíduo
+```
+
+O mesmo dado deve aparecer no rótulo com nomenclatura clara para o usuário.
+
+#### Tratamento realizado
+
+Ao informar um Resíduo, o Solicitante deve indicar se já foi realizado algum tratamento.
+
+Regra:
+
+```text
+tratamento realizado = não
+→ nenhuma descrição adicional obrigatória
+
+tratamento realizado = sim
+→ descrição do tratamento realizado obrigatória
+```
+
+A informação deve permanecer vinculada à ocorrência real do Resíduo e ficar disponível para o rótulo.
+
+#### Registro de responsabilidade / assinatura operacional
+
+O sistema deve preservar separadamente:
+
+```text
+quem informou/gerou o Resíduo
+quem recebeu inicialmente o Resíduo pela Gestão
+```
+
+Esses dois nomes devem poder aparecer no rótulo.
+
+Não tratar esse recurso como assinatura digital criptográfica ou certificada. A finalidade é registrar autoria e responsabilidade operacional.
+
+Regra de fluxo desejada:
+
+```text
+Solicitante informa
+→ Gestor A recebe
+→ Gestor A analisa
+→ Gestor A libera
+→ armazenamento posterior pode ser feito por Gestor A ou outro Gestor autorizado
+→ despacho final pode ser feito por Gestor A ou outro Gestor autorizado
+```
+
+Portanto, o Gestor que recebe inicialmente assume a conferência até a liberação. O responsável inicial não deve ser perdido quando outro Gestor executar armazenamento ou despacho posteriormente.
+
+O histórico continua registrando o usuário responsável por cada transição.
+
+#### Classes de Resíduo
+
+As classes serão **pré-cadastradas** e apresentadas com código, nome/descrição e estado ativo.
+
+Exemplos fornecidos pelo cliente:
+
+```text
+A — Solventes ou soluções de substâncias orgânicas que não contenham halogênios
+B — Solventes ou soluções orgânicas que contenham halogênios
+F — Resíduos sólidos de produtos químicos orgânicos
+H — Outros
+```
+
+A seleção deve permitir múltiplas classes quando aplicável, usando checkbox ou controle equivalente.
+
+Preservar a diferença entre declaração e validação:
+
+```text
+Solicitante
+→ classes informadas
+
+Gestão
+→ confere / adiciona / remove
+→ classes confirmadas
+```
+
+A descrição das classes não deve ficar rigidamente presa a um enum se o cliente precisar adicionar, alterar ou inativar classes no futuro.
+
+#### Informações de segurança
+
+O Resíduo deverá possuir informações de segurança operacional, como necessidade de:
+
+- luvas;
+- óculos de proteção;
+- máscara/proteção respiratória;
+- avental ou proteção equivalente;
+- outras medidas estruturadas que venham a ser aprovadas.
+
+Quando houver Produtos do catálogo associados aos componentes, o sistema poderá **sugerir/herdar** medidas de segurança cadastradas nesses Produtos.
+
+O Solicitante poderá realizar edição limitada dessas sugestões e a Gestão deverá poder confirmar a informação durante a análise.
+
+A ocorrência real do Resíduo deve preservar um **snapshot** das informações de segurança utilizadas naquele registro. Alterações futuras no Produto ou em um Modelo de Resíduo não podem modificar retroativamente a segurança de Resíduos históricos.
+
+A modelagem definitiva de segurança de Produto deverá ser feita junto desta subetapa apenas no nível necessário para sustentar essa herança, sem antecipar a reestruturação de unidades prevista na Etapa 7.
+
+### 3.3 Corrigir o ciclo de geração e disponibilidade do rótulo
+
+Regra desejada:
+
+```text
+Resíduo é informado
+→ Código SGL já existe
+→ rótulo pode ser gerado/visualizado pela Gestão
+→ Gestão recebe e analisa
+→ Gestão libera
+→ somente então a impressão operacional do rótulo é habilitada
+```
+
+Gerar/visualizar e permitir impressão são eventos distintos.
+
+Antes da confirmação da Gestão, a visualização pode utilizar os dados informados pelo Solicitante. Depois da análise/liberação, deve priorizar os dados confirmados.
+
+### 3.4 Fechar o conteúdo definitivo do rótulo de Resíduo
+
+Antes de definir dimensões físicas ou integração Zebra, fechar quais informações realmente devem aparecer no rótulo.
+
+O conteúdo deverá considerar, conforme disponibilidade e validação da Gestão:
+
+- logo/marca SGL/Embrapa;
+- Código SGL;
+- Unidade e Laboratório;
+- descrição/identificação do Resíduo;
+- quantidade e unidade;
+- composição;
+- `processoOrigem` apresentado como procedência/uso;
+- tratamento realizado e descrição, quando aplicável;
+- classes informadas/confirmadas;
+- riscos informados/confirmados;
+- informações de segurança/EPI;
+- recipiente;
+- armazenamento temporário;
+- destino previsto;
+- Projeto, quando houver;
+- nome de quem informou/gerou;
+- nome do Gestor que recebeu inicialmente;
+- datas operacionais realmente úteis.
+
+Evitar informação redundante e preservar legibilidade.
+
+Regra conceitual:
+
+```text
+antes da análise
+→ dados declarados/informados quando ainda não houver confirmação
+
+após análise/liberação
+→ dados confirmados pela Gestão
+```
+
+### 3.5 Formatação física e impressão Zebra
+
+Somente depois do conteúdo definitivo do rótulo estar fechado deve ser validado o ambiente real de impressão:
+
+- modelo de impressora Zebra;
+- dimensões físicas do rótulo;
+- orientação;
+- margens;
+- driver/forma de envio;
+- necessidade ou não de ZPL;
+- comportamento de preview;
+- critérios de habilitação do botão de impressão.
+
+O layout físico deve ser simples, legível e compatível com a quantidade real de informação aprovada em 3.4.
+
+### 3.6 Avaliar Ficha/Comprovante de Lote
+
+Como verificação complementar de impressão operacional, avaliar uma **Ficha/Comprovante de Lote** imprimível para situações em que material de estoque precise ser repassado acompanhado de seus dados de rastreabilidade.
+
+Esse documento não deve ser tratado ou nomeado como nota fiscal oficial; sua função é operacional e informativa.
 
 A ficha deve partir dos dados já consolidados no lote e poderá incluir, conforme validação durante a etapa:
 
@@ -168,23 +337,7 @@ A ficha deve partir dos dados já consolidados no lote e poderá incluir, confor
 - Unidade/laboratório;
 - demais informações de rastreabilidade consideradas úteis.
 
-Antes da implementação, deve ser decidido se essa ficha será apenas uma página própria para impressão pelo navegador, um PDF gerado pelo SGL ou ambos. O layout deve ser simples, legível e adequado para acompanhar fisicamente o material quando necessário.
-
-Essa compatibilidade de impressão não altera a regra de ciclo definida em 3.3: o rótulo pode existir e ser visualizado antes, mas a impressão operacional só deve ser liberada no momento previsto pelo fluxo.
-
-### 3.3 Corrigir o ciclo de geração e impressão do rótulo
-
-Regra desejada:
-
-```text
-Resíduo é informado
-→ rótulo já é gerado/visualizável para a Gestão
-→ Gestão recebe e analisa
-→ Gestão libera
-→ somente então a impressão do rótulo é habilitada
-```
-
-Gerar/visualizar e permitir impressão são eventos distintos.
+Antes da implementação, decidir se essa ficha será página própria para impressão pelo navegador, PDF gerado pelo SGL ou ambos.
 
 ---
 
@@ -224,11 +377,17 @@ Esses registros são **modelos reutilizáveis**, não ocorrências operacionais.
 Um modelo poderá concentrar informações padrão que façam sentido na modelagem, como:
 
 - nome/descrição;
+- processo de origem/procedência e uso padrão;
 - composição padrão;
 - produtos/componentes relacionados;
+- classes de Resíduo;
 - riscos conhecidos;
+- informações de segurança/EPI;
 - recipiente/acondicionamento;
+- tratamento padrão, apenas quando fizer sentido como sugestão;
 - demais informações reutilizáveis do Resíduo padrão.
+
+Essas informações funcionam como base para a nova ocorrência. O Resíduo real deve preservar seu próprio snapshot e continuar sujeito à conferência da Gestão.
 
 ### 4.3 Uso pelo Solicitante
 
@@ -643,6 +802,15 @@ Pedidos com Soluções
 Relatório de Projetos
 → depende do novo domínio de Projetos/Estagiários estabilizado
 
+Rótulo Zebra de Resíduo
+→ depende do fechamento dos novos dados, responsabilidades, classes e segurança antes da formatação física
+
+Segurança herdada de Produto/ModeloResiduo
+→ funciona como sugestão; o Resíduo real preserva snapshot próprio e validação da Gestão
+
+Modelos de Resíduos
+→ reutilizam as definições de classes/segurança da Etapa 3, sem alterar retroativamente ocorrências antigas
+
 Testes automatizados finais do Frontend
 → dependem da estabilização das interfaces e fluxos das Etapas 1 a 8
 ```
@@ -660,8 +828,11 @@ Etapa 1 — refinamento visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo                   ✅ concluída
 Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 ETAPA ATUAL
   3.1 — remover redundância de análise           ⏭ próximo passo
-  3.2 — refinar rótulo / Zebra / ficha de lote   ⏳
-  3.3 — corrigir ciclo geração × impressão       ⏳
+  3.2 — dados/classes/segurança/responsabilidade ⏳
+  3.3 — ciclo geração/visualização/impressão     ⏳
+  3.4 — conteúdo definitivo do rótulo            ⏳
+  3.5 — formatação física / Zebra                ⏳
+  3.6 — ficha/comprovante de lote                ⏳
 Etapas 4 a 9                                     ⏳ aguardando sequência
 ```
 
