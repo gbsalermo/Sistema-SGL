@@ -270,7 +270,7 @@ Gerar/visualizar e permitir impressão são eventos distintos.
 
 Antes da confirmação da Gestão, a visualização pode utilizar os dados informados pelo Solicitante. Depois da análise/liberação, deve priorizar os dados confirmados.
 
-A definição visual definitiva, os templates adaptados e a infraestrutura física de impressão ficam para a **Etapa 8 — Rótulos e impressão operacional**. A Etapa 3 deve apenas garantir que o Resíduo possua os dados necessários e que a regra de disponibilidade/permissão de impressão esteja correta.
+A definição visual definitiva, os templates adaptados e a infraestrutura física de impressão ficam para a **Etapa 8 — Rótulos, documento de lote e impressão operacional**. A Etapa 3 deve apenas garantir que o Resíduo possua os dados necessários e que a regra de disponibilidade/permissão de impressão esteja correta.
 
 
 ---
@@ -702,9 +702,63 @@ Deve considerar, conforme a modelagem definitiva:
 
 Não antecipar campos definitivos antes da modelagem da Solução.
 
-### 8.5 Formatação física e impressão Zebra
+### 8.5 Documento de Auditoria de Entrada de Lote
 
-Depois dos três templates estarem definidos, validar o ambiente real de impressão:
+Disponibilizar um documento gerado pelo SGL para registrar e imprimir os dados de uma **entrada de lote**.
+
+Objetivo:
+
+```text
+entrada de lote registrada no SGL
+→ usuário pode visualizar o documento de auditoria
+→ gerar/imprimir quando necessário
+→ documento acompanha conferência, arquivo físico ou auditoria
+```
+
+O documento deve possuir aparência formal e organizada, podendo lembrar visualmente um documento fiscal pela distribuição das informações, mas deve ser identificado de forma explícita como:
+
+```text
+DOCUMENTO INTERNO DO SGL
+SEM VALOR FISCAL
+```
+
+Não deve ser chamado de nota fiscal nem tentar substituir documento fiscal oficial.
+
+Conteúdo previsto, conforme disponibilidade no domínio:
+
+- identificação SGL/Embrapa;
+- número/identificador do documento;
+- Código SGL do lote;
+- Produto;
+- lote/referência do fornecedor;
+- Unidade/Laboratório;
+- data/hora da entrada;
+- quantidade originalmente recebida;
+- unidade de medida;
+- apresentação/embalagem;
+- multiplicador, quando aplicável;
+- validade;
+- condições relevantes de armazenamento;
+- observações da entrada;
+- responsável pelo registro/recebimento, quando disponível;
+- demais dados necessários à rastreabilidade.
+
+Para fins de auditoria, o documento deve representar **a entrada realizada**, e não simplesmente o saldo atual do lote. Baixas, retiradas ou movimentações posteriores não devem alterar retroativamente o conteúdo histórico da entrada.
+
+A implementação deve preferir dados históricos confiáveis da entrada/movimentação ou snapshot equivalente, evitando montar o documento apenas a partir de campos mutáveis do estado atual do lote.
+
+Formato desejado:
+
+- visualização no SGL;
+- geração de PDF ou formato imprimível equivalente;
+- impressão em papel comum;
+- layout adequado para arquivo e conferência administrativa.
+
+Esse documento é diferente dos pequenos rótulos físicos de identificação e não depende de impressora Zebra.
+
+### 8.6 Formatação física e impressão Zebra
+
+Depois dos templates adaptados e do documento de auditoria estarem definidos, validar o ambiente real de impressão dos rótulos físicos:
 
 - modelo de impressora Zebra;
 - dimensões físicas dos rótulos;
@@ -718,27 +772,6 @@ Depois dos três templates estarem definidos, validar o ambiente real de impress
 
 O objetivo é possuir uma base de impressão compartilhada com templates específicos por domínio, evitando três soluções técnicas independentes.
 
-### 8.6 Outros impressos operacionais
-
-Avaliar nesta mesma etapa a **Ficha/Comprovante de Lote** para situações em que material precise ser repassado acompanhado de dados de rastreabilidade.
-
-Esse documento é operacional e informativo, não uma nota fiscal oficial.
-
-A ficha poderá utilizar dados já consolidados no lote, como:
-
-- Código SGL;
-- Produto;
-- lote/referência do fornecedor;
-- unidade recebida e apresentação;
-- quantidade;
-- multiplicador;
-- entrada;
-- validade;
-- condição de retirada unitária;
-- observação;
-- Unidade/Laboratório.
-
-Antes da implementação, decidir se será página própria para impressão pelo navegador, PDF gerado pelo SGL ou ambos.
 
 ---
 
@@ -886,6 +919,9 @@ Relatório de Projetos
 
 Rótulos adaptados
 → dependem dos dados de Resíduo estabilizados nas Etapas 3/4 e do domínio de Soluções estabilizado na Etapa 7
+
+Documento de auditoria de entrada de lote
+→ depende de dados históricos confiáveis da entrada e deve representar a quantidade/condição recebida, não o saldo atual
 
 Impressão Zebra
 → depende do fechamento dos templates adaptados de Produto, Resíduo e Solução
