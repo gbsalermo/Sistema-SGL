@@ -47,9 +47,11 @@ Ordem:
 
 ```text
 3.1 remover redundância de análise
-→ 3.2 refinar rótulo + compatibilidade Zebra + ficha/comprovante de lote
+→ 3.2 ampliar dados/classes/segurança/responsabilidade do Resíduo
 → 3.3 separar geração/visualização da permissão de impressão
 ```
+
+O acabamento visual definitivo, os templates adaptados e a infraestrutura Zebra não pertencem mais à Etapa 3. Eles foram consolidados na **Etapa 8 — Rótulos e impressão operacional**, após a estabilização de Produto, Resíduo e Solução.
 
 ## Próximo passo exato
 
