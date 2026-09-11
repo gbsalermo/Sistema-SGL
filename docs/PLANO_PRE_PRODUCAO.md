@@ -2,7 +2,7 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Status:** planejamento aprovado para execução sequencial  
+**Status:** execução em andamento — Etapa 3 atual  
 **Fase:** pré-produção pós-aprovação funcional  
 **Fonte:** observações e decisões levantadas durante a apresentação com o cliente
 
@@ -57,6 +57,7 @@ Alterações apenas de frontend/documentação podem ser implementadas diretamen
 
 ## Etapa 1 — Padronização e refinamento visual global
 
+**Status:** ✅ concluída e validada  
 **Impacto:** baixo  
 **Origem:** item 1
 
@@ -83,6 +84,7 @@ Resultado esperado: componentes e telas autenticadas passam a seguir um padrão 
 
 ## Etapa 2 — Dark Mode definitivo
 
+**Status:** ✅ concluída e validada em 11/09/2026  
 **Impacto:** baixo/médio  
 **Origem:** item 2
 
@@ -103,6 +105,25 @@ Regras:
 - o Dark Mode deve seguir uma paleta definida, e não ajustes isolados por tela;
 - componentes equivalentes devem reagir ao tema da mesma forma;
 - a tela de login permanece fora do tema das interfaces autenticadas, salvo decisão futura explícita.
+
+Fechamento realizado:
+
+- fonte única de tema em `themeService.ts`;
+- persistência de `sgl.theme`;
+- DOM/body e Vuetify sincronizados;
+- paleta escura consolidada em tokens;
+- remoção das quatro camadas provisórias/legadas de Dark Mode;
+- Login, 404 e rótulos de impressão mantidos claros;
+- Gestão e Solicitante validados em Light/Dark;
+- ações primárias no Dark ajustadas para azul menos luminoso;
+- Relatórios, Resíduos, Perfil e Cadastros corrigidos para eliminar superfícies claras residuais;
+- semântica de movimentações preservada também nos Relatórios:
+  - Entrada/Devolução → verde;
+  - Saída → azul;
+  - Ajuste → âmbar;
+  - Descarte por vencimento → vermelho.
+
+Frontend: PR #50, squash merge `a3fff4fa8edb6b8900c4a5b359dbfc0245afb87c`.
 
 ---
 
@@ -635,16 +656,13 @@ No momento da atualização deste documento:
 ```text
 Limpeza/revisão documental anterior             ✅ concluída
 Planejamento das etapas de pré-produção          ✅ consolidado neste documento
-Etapa 1 — refinamento visual global              🔧 em andamento
-  1.1 — definição do padrão visual SGL           ✅ concluída
-  1.2 — fundação visual compartilhada            ✅ concluída
-  1.3 — componentes básicos compartilhados       ✅ concluída
-  1.4 — aplicação tela a tela                    🔧 etapa atual
-    Pedidos                                      ✅ aprovado
-    Dashboards                                   ✅ aprovado
-    Resíduos                                     ✅ aprovado
-    Estoque                                      🔧 em validação
-Etapas 2 a 9                                      ⏳ aguardando sequência
+Etapa 1 — refinamento visual global              ✅ concluída
+Etapa 2 — Dark Mode definitivo                   ✅ concluída
+Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 ETAPA ATUAL
+  3.1 — remover redundância de análise           ⏭ próximo passo
+  3.2 — refinar rótulo / Zebra / ficha de lote   ⏳
+  3.3 — corrigir ciclo geração × impressão       ⏳
+Etapas 4 a 9                                     ⏳ aguardando sequência
 ```
 
 A matriz de permissões **não é a próxima etapa** enquanto este plano de pré-produção estiver aberto.
