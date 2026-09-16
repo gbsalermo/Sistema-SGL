@@ -438,7 +438,7 @@ XLSX
 → mesma consulta e mesmos filtros
 ```
 
-A Etapa 7 consumirá exclusivamente as Etapas 5 e 6 estabilizadas para relatórios consolidados de Laboratórios, Projetos e Estagiários, incluindo filtros/contagens por Orientador, responsável de Laboratório, Bolsa/vínculo, Curso/Formação, Cultura/área temática, Projeto, Atividade e situação.
+A Etapa 7 consumirá exclusivamente as Etapas 5 e 6 estabilizadas para relatórios consolidados de Laboratórios, Projetos e Estagiários, incluindo filtros/contagens por Orientador, responsável de Laboratório, Bolsa/vínculo, Curso/Formação, Cultura/área temática, Projeto, Atividade e situação. Também inclui um refactor estrutural para concentrar controllers, services e DTOs de Relatórios em packages próprios, sem alterar comportamento funcional.
 
 Detalhes atuais: `docs/RELATORIOS.md` e `docs/EXPORTACAO_RELATORIOS.md`.
 
@@ -494,7 +494,7 @@ limpeza/revisão documental                            ✅ concluída
 planejamento dos ajustes                              ✅ consolidado
 Etapa 1 — refinamento visual global                   ✅ concluída
 Etapa 2 — Dark Mode definitivo                        ✅ concluída
-Etapa 3 — refinamentos do fluxo atual de Resíduos     🔧 ATUAL — 3.1 concluída / 3.2 próxima
+Etapa 3 — refinamentos do fluxo atual de Resíduos     🔧 ATUAL — 3.1 e 3.2.1 concluídas / 3.2.2 próxima
 Etapa 4 — expansão operacional de Resíduos            ⏳
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
@@ -562,7 +562,7 @@ Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 # 18. Regra final de retomada
 
-**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas e a Etapa 3 está em execução na branch `feat/etapa-3-residuos`. A subetapa 3.1 foi concluída e validada; a retomada deve começar pela 3.2 — dados/classes/segurança/responsabilidade do Resíduo — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
+**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas e a Etapa 3 está em execução na branch `feat/etapa-3-residuos`. A subetapa 3.1 e a 3.2.1 foram concluídas; a retomada deve começar pela 3.2.2 — classes de Resíduo — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
 
 ---
 
