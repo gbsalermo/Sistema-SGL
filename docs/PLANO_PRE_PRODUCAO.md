@@ -1260,9 +1260,9 @@ Limpeza/revisão documental anterior              ✅ concluída
 Planejamento das etapas de pré-produção           ✅ consolidado
 Etapa 1 — refinamento visual global               ✅ concluída
 Etapa 2 — Dark Mode definitivo                    ✅ concluída
-Etapa 3 — refinamentos do fluxo atual de Resíduos ⏭ PRÓXIMA IMPLEMENTAÇÃO
-  3.1 — remover redundância de análise            ⏭ primeiro passo
-  3.2 — dados/classes/segurança/responsabilidade  ⏳
+Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 EM EXECUÇÃO
+  3.1 — remover redundância de análise            ✅ concluída e validada
+  3.2 — dados/classes/segurança/responsabilidade  ⏭ próximo passo
   3.3 — ciclo geração/visualização/impressão      ⏳
 Etapas 4 a 12                                     ⏳ aguardando sequência
 ```
