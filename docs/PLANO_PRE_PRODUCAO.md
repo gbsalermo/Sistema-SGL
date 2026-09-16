@@ -1197,6 +1197,48 @@ Esta etapa não substitui a homologação integrada final posterior.
 
 ---
 
+## Etapa 13 — Revisão estrutural e legibilidade do código
+
+**Impacto:** técnico  
+**Posição:** última etapa do bloco de pré-produção, após os testes automatizados
+
+Objetivo: revisar classes que cresceram ao longo das etapas funcionais e melhorar a legibilidade sem alterar comportamento, contratos ou regras de negócio.
+
+Revisar especialmente:
+
+- entidades de domínio muito grandes, como `Residuo`;
+- Services com muitas responsabilidades;
+- DTOs extensos ou difíceis de navegar;
+- Controllers que possam estar concentrando operações demais;
+- métodos longos;
+- agrupamento de regras por responsabilidade;
+- comentários/Javadocs necessários para conceitos arquiteturais como snapshots;
+- nomes, organização e coesão dos packages.
+
+A revisão deve priorizar **clareza e responsabilidade**, evitando fragmentação artificial apenas para reduzir número de linhas.
+
+Possíveis técnicas:
+
+```text
+extrair value objects/objetos de domínio quando houver responsabilidade real
+extrair serviços auxiliares quando houver regra/orquestração independente
+agrupar DTOs por domínio quando isso melhorar navegação
+reduzir métodos longos
+documentar decisões não óbvias
+preservar snapshots e invariantes de domínio
+```
+
+Critério obrigatório:
+
+```text
+nenhuma mudança funcional intencional
++ contratos HTTP preservados
++ migrations históricas preservadas
++ testes da Etapa 12 reexecutados após o refactor
+```
+
+---
+
 # 3. Dependências principais
 
 ```text
@@ -1223,6 +1265,8 @@ Etapa 10 — Rótulos + impressão operacional
 Etapa 11 — Manual + decisão de delete lógico
    ↓
 Etapa 12 — testes automatizados do Frontend
+   ↓
+Etapa 13 — revisão estrutural e legibilidade
 ```
 
 Dependências críticas:
@@ -1263,6 +1307,9 @@ Impressão Zebra
 
 Testes automatizados finais
 → dependem da estabilização das interfaces e fluxos das Etapas 1 a 11
+
+Revisão estrutural final
+→ ocorre após a Etapa 12 e deve reexecutar a suíte automatizada para comprovar que o refactor não alterou comportamento
 ```
 
 Regra estrutural deste roadmap:
@@ -1290,7 +1337,7 @@ Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 EM EXECUÇÃO
   3.1 — remover redundância de análise            ✅ concluída e validada
   3.2 — dados/classes/segurança/responsabilidade  ⏭ próximo passo
   3.3 — ciclo geração/visualização/impressão      ⏳
-Etapas 4 a 12                                     ⏳ aguardando sequência
+Etapas 4 a 13                                     ⏳ aguardando sequência
 ```
 
 A matriz de permissões não é a próxima etapa enquanto este plano de pré-produção estiver aberto.
