@@ -6,7 +6,6 @@ public enum MedidaSeguranca {
     OCULOS_PROTECAO,
     PROTECAO_RESPIRATORIA,
     JALECO_AVENTAL,
-    CAPELA_EXAUSTAO,
     OUTRO
 
 }
