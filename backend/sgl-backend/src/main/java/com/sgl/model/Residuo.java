@@ -358,12 +358,14 @@ public class Residuo implements Serializable {
         this.status = StatusResiduo.DESPACHADO;
     }
 
-    public void validateLabelAvailable() {
-        if (codigoRastreio == null || qrCodeConteudo == null) {
-            throw new BusinessRuleException(
-                    "O rótulo só fica disponível após a análise e liberação do resíduo."
-            );
-        }
+    /**
+     * A prévia do rótulo pode existir desde a informação do Resíduo.
+     * A impressão física, porém, só é permitida depois da análise/liberação.
+     */
+    public boolean isImpressaoRotuloPermitida() {
+        return status == StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO
+                || status == StatusResiduo.ARMAZENADO_TEMPORARIAMENTE
+                || status == StatusResiduo.DESPACHADO;
     }
 
     private void requireStatus(StatusResiduo expected, String action) {
