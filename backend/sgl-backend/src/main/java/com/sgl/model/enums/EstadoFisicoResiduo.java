@@ -4,7 +4,7 @@ public enum EstadoFisicoResiduo {
 	
 	LIQUIDO,
 	SOLIDO,
-	SEMISOLIDO,
+	SEMISSOLIDO,
 	GASOSO,
 	OUTRO
 
