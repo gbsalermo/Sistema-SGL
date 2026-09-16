@@ -34,6 +34,8 @@ Resíduo R001
 
 *SUPONDO QUE ALGUEM ALTERE A CLASSE A, O RESIDUO R001 CONTINUARA MOSTRANDO A MESMA CLASSIFICAÇÃO
  */
+
+
 @Entity
 @Table(
         name = "residuo_classes",
@@ -72,7 +74,8 @@ public class ResiduoClasse implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private EtapaClassificacaoResiduo etapa;
-
+    
+    //NOTA: SNAPSHOT AQUI É USADO PARA REFERENCIAR A COPIA CONGELADA DO DADO, TIPO OS DADOS DE SEGURANÇA DO RESIDUO AO SER INFORMADO
     @Column(name = "codigo_snapshot", nullable = false, length = 30)
     private String codigoSnapshot;
 

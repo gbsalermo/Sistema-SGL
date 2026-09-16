@@ -2,6 +2,7 @@ package com.sgl.dto.request;
 
 import java.util.Set;
 
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.TipoPerecivel;
@@ -75,4 +76,10 @@ public class ProdutoRequestDTO {
 
     @Schema(description = "Indica se o produto está ativo no catálogo.", example = "true")
     private Boolean ativo;
+    
+    @Schema(description = "Medidas de segurança recomendadas para manipulação do produto.")
+    private Set<MedidaSeguranca> medidasSegurancaRecomendadas;
+
+    @Schema(description = "Orientação complementar de segurança.")
+    private String observacaoSeguranca;
 }

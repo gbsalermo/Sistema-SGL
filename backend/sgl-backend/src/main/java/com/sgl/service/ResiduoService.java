@@ -89,6 +89,11 @@ public class ResiduoService {
                 )
         );
         
+     // Snapshot das medidas de segurança informadas pelo solicitante
+        residuo.definirSegurancaInformada(
+                dto.getMedidasSegurancaInformadas(),
+                dto.getObservacaoSegurancaInformada()
+        );
 
         dto.getComponentes().forEach(item -> residuo.addComponente(criarComponente(item)));
 
@@ -143,9 +148,13 @@ public class ResiduoService {
                 dto.getObservacaoGestor()
         );
         
-        // 3. Registra o snapshot das classes confirmadas
+        // 3. Registra o snapshot das classes confirmadas e a segurança
         residuo.definirClassesConfirmadas(
                 classesConfirmadas
+        );
+        residuo.definirSegurancaConfirmada(
+                dto.getMedidasSegurancaConfirmadas(),
+                dto.getObservacaoSegurancaConfirmada()
         );
 
         if (residuo.getCodigoRastreio() == null) {

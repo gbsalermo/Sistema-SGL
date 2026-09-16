@@ -9,11 +9,12 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.Residuo;
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
-import com.sgl.model.enums.EstadoFisicoResiduo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -74,6 +75,12 @@ public class ResiduoResponseDTO {
     private final List<ClasseResiduoSnapshotResponseDTO>
     classesConfirmadas;
 
+    private final Set<MedidaSeguranca> medidasSegurancaInformadas;
+    private final String observacaoSegurancaInformada;
+
+    private final Set<MedidaSeguranca> medidasSegurancaConfirmadas;
+    private final String observacaoSegurancaConfirmada;
+    
     public ResiduoResponseDTO(Residuo entity) {
         this.id = entity.getPublicId();
         this.codigoRastreio = entity.getCodigoRastreio();
@@ -165,5 +172,21 @@ public class ResiduoResponseDTO {
                         .stream()
                         .map(ClasseResiduoSnapshotResponseDTO::new)
                         .toList();
+        
+        this.medidasSegurancaInformadas =
+                new LinkedHashSet<>(
+                        entity.getMedidasSegurancaInformadas()
+                );
+
+        this.observacaoSegurancaInformada =
+                entity.getObservacaoSegurancaInformada();
+
+        this.medidasSegurancaConfirmadas =
+                new LinkedHashSet<>(
+                        entity.getMedidasSegurancaConfirmadas()
+                );
+
+        this.observacaoSegurancaConfirmada =
+                entity.getObservacaoSegurancaConfirmada();
     }
 }

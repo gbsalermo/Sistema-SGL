@@ -14,6 +14,7 @@ import java.util.UUID;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.enums.EstadoFisicoResiduo;
 import com.sgl.model.enums.EtapaClassificacaoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
@@ -189,6 +190,48 @@ public class Residuo implements Serializable {
     @OneToMany(mappedBy = "residuo", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ComponenteResiduo> componentes = new ArrayList<>();
+    
+    /**
+     * Snapshot das medidas de segurança declaradas no momento
+     * em que o Resíduo foi informado.
+     *
+     * Esses dados pertencem à ocorrência real do Resíduo e não
+     * devem ser recalculados quando o cadastro dos Produtos mudar.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "residuo_medidas_seguranca_informadas",
+            joinColumns = @JoinColumn(name = "residuo_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "medida", nullable = false)
+    @Builder.Default
+    private Set<MedidaSeguranca> medidasSegurancaInformadas =
+            new LinkedHashSet<>();
+
+    @Column(name = "observacao_seguranca_informada", length = 1000)
+    private String observacaoSegurancaInformada;
+
+
+    /**
+     * Snapshot das medidas de segurança confirmadas pela Gestão.
+     *
+     * Pode diferir da informação original do Solicitante sem
+     * alterar o snapshot informado.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "residuo_medidas_seguranca_confirmadas",
+            joinColumns = @JoinColumn(name = "residuo_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "medida", nullable = false)
+    @Builder.Default
+    private Set<MedidaSeguranca> medidasSegurancaConfirmadas =
+            new LinkedHashSet<>();
+
+    @Column(name = "observacao_seguranca_confirmada", length = 1000)
+    private String observacaoSegurancaConfirmada;
     
     public void definirTratamento(Boolean tratamentoRealizado, String descricaoTratamento) {
     	
@@ -407,5 +450,65 @@ public class Residuo implements Serializable {
                                 == EtapaClassificacaoResiduo.CONFIRMADA
                 )
                 .toList();
+    }
+    
+    public void definirSegurancaInformada(
+            Set<MedidaSeguranca> medidas,
+            String observacao) {
+
+        validarSeguranca(medidas, observacao);
+
+        this.medidasSegurancaInformadas.clear();
+
+        if (medidas != null) {
+            this.medidasSegurancaInformadas.addAll(medidas);
+        }
+
+        this.observacaoSegurancaInformada =
+                normalizarObservacao(observacao);
+    }
+    
+    public void definirSegurancaConfirmada(
+            Set<MedidaSeguranca> medidas,
+            String observacao) {
+
+        validarSeguranca(medidas, observacao);
+
+        this.medidasSegurancaConfirmadas.clear();
+
+        if (medidas != null) {
+            this.medidasSegurancaConfirmadas.addAll(medidas);
+        }
+
+        this.observacaoSegurancaConfirmada =
+                normalizarObservacao(observacao);
+    }
+    
+    private void validarSeguranca(
+            Set<MedidaSeguranca> medidas,
+            String observacao) {
+
+        if (medidas == null) {
+            throw new BusinessRuleException(
+                    "Informe as medidas de segurança do resíduo."
+            );
+        }
+
+        if (medidas.contains(MedidaSeguranca.OUTRO)
+                && (observacao == null || observacao.isBlank())) {
+
+            throw new BusinessRuleException(
+                    "Descreva a medida de segurança marcada como OUTRO."
+            );
+        }
+    }
+    
+    private String normalizarObservacao(String observacao) {
+
+        if (observacao == null || observacao.isBlank()) {
+            return null;
+        }
+
+        return observacao.trim();
     }
 }

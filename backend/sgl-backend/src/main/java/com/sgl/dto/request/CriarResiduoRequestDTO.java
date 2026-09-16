@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
-import com.sgl.model.enums.EstadoFisicoResiduo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -83,4 +84,8 @@ public class CriarResiduoRequestDTO {
     	    message = "Informe pelo menos uma classe de resíduo"
     	)
     private Set<UUID> classesInformadasIds;
+    
+    @NotNull( message = "Informe as medidas de segurança do resíduo")
+    	private Set<MedidaSeguranca> medidasSegurancaInformadas;
+    	private String observacaoSegurancaInformada;
 }

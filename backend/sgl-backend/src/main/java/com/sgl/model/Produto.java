@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.TipoPerecivel;
@@ -102,6 +103,22 @@ public class Produto implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "produto_medidas_seguranca",
+            joinColumns = @JoinColumn(name = "produto_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "medida", nullable = false)
+    @Builder.Default
+    private Set<MedidaSeguranca> medidasSegurancaRecomendadas =
+            new HashSet<>();
+
+    @Column(name = "observacao_seguranca", length = 1000)
+    private String observacaoSeguranca;
+    
+    
 
     public void updateRisk(
             NivelRisco riskLevel,
@@ -204,5 +221,33 @@ public class Produto implements Serializable {
         if (orgaosFiscalizadores == null) {
             orgaosFiscalizadores = new HashSet<>();
         }
+        if (medidasSegurancaRecomendadas == null) {
+            medidasSegurancaRecomendadas = new HashSet<>();
+        }
+    }
+    
+    public void updateSeguranca(
+            Set<MedidaSeguranca> medidas,
+            String observacao) {
+
+        this.medidasSegurancaRecomendadas.clear();
+
+        if (medidas != null) {
+            this.medidasSegurancaRecomendadas.addAll(medidas);
+        }
+
+        if (this.medidasSegurancaRecomendadas
+                .contains(MedidaSeguranca.OUTRO)
+                && (observacao == null || observacao.isBlank())) {
+
+            throw new BusinessRuleException(
+                    "Descreva a medida de segurança marcada como OUTRO."
+            );
+        }
+
+        this.observacaoSeguranca =
+                observacao != null && !observacao.isBlank()
+                        ? observacao.trim()
+                        : null;
     }
 }

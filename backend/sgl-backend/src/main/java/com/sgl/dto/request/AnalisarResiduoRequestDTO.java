@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoRisco;
 
@@ -50,4 +51,9 @@ public class AnalisarResiduoRequestDTO {
     	    message = "Confirme pelo menos uma classe de resíduo"
     	)
     private Set<UUID> classesConfirmadasIds;
+    
+    @NotNull(message = "Confirme as medidas de segurança do resíduo")
+    private Set<MedidaSeguranca> medidasSegurancaConfirmadas;
+    
+    private String observacaoSegurancaConfirmada;
 }
