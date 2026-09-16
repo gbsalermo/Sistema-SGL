@@ -52,8 +52,8 @@ Ordem:
 3.1 remover redundância de análise                              ✅ concluída e validada
 → 3.2 ampliar dados/classes/segurança/responsabilidade do Resíduo 🔧 em execução
    3.2.1 tratamento + estado físico + responsabilidade inicial    ✅ concluída
-   3.2.2 classes de Resíduo                                       ⏭ próxima
-   3.2.3 segurança/EPI + snapshot                                 ⏳
+   3.2.2 classes de Resíduo                                       ✅ concluída
+   3.2.3 segurança/EPI + snapshot                                 ⏭ próxima
    3.2.4 integração dos novos dados no frontend                   ⏳
 → 3.3 separar geração/visualização da permissão de impressão      ⏳
 ```
@@ -95,17 +95,32 @@ Alterações consolidadas:
 - histórico continua registrando o ator real de cada transição;
 - contrato de resposta já utiliza a nomenclatura definitiva `gestorRecebedorInicial`.
 
+## Fechamento da 3.2.2 — 16/09/2026
+
+A subetapa de Classes de Resíduo foi concluída no backend.
+
+Alterações consolidadas:
+
+- catálogo `ClasseResiduo` por Unidade;
+- códigos e descrições editáveis, com inativação em vez de enum rígido;
+- classes iniciais A, B, F e H cadastradas pela migration `V14__create_residue_classes.sql`;
+- isolamento por tenant preservado;
+- múltiplas classes permitidas;
+- classes informadas pelo Solicitante e confirmadas pela Gestão preservadas separadamente;
+- snapshot de código/descrição mantido em `ResiduoClasse`, evitando alteração retroativa do histórico;
+- DTOs e contratos do backend preparados para `classesInformadasIds` e `classesConfirmadasIds`.
+
 ## Próximo passo exato
 
-Iniciar **3.2.2 — classes de Resíduo**.
+Iniciar **3.2.3 — segurança/EPI + snapshot**.
 
 O foco deve ser:
 
-1. catálogo pré-cadastrável e tenant-aware;
-2. código, descrição e estado ativo;
-3. múltipla seleção;
-4. separar classes informadas pelo Solicitante das classes confirmadas pela Gestão;
-5. preservar histórico sem transformar classes em enum rígido.
+1. estruturar medidas de segurança operacionais;
+2. permitir sugestões vindas dos Produtos associados aos componentes;
+3. preservar no Resíduo um snapshot independente do cadastro futuro do Produto;
+4. separar medidas informadas pelo Solicitante das medidas confirmadas pela Gestão;
+5. não antecipar a integração visual, que permanece para a 3.2.4.
 
 O plano canônico permanece:
 
