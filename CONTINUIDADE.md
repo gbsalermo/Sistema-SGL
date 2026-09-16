@@ -494,7 +494,7 @@ limpeza/revisão documental                            ✅ concluída
 planejamento dos ajustes                              ✅ consolidado
 Etapa 1 — refinamento visual global                   ✅ concluída
 Etapa 2 — Dark Mode definitivo                        ✅ concluída
-Etapa 3 — refinamentos do fluxo atual de Resíduos     🔧 ATUAL — 3.2 implementada / validação manual pendente; 3.3 ainda pendente
+Etapa 3 — refinamentos do fluxo atual de Resíduos     🧪 IMPLEMENTADA — validação integrada pendente
 Etapa 4 — expansão operacional de Resíduos            ⏳
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
@@ -566,7 +566,7 @@ Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 # 18. Regra final de retomada
 
-**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas e a Etapa 3 está em execução na branch `feat/etapa-3-residuos`. A 3.2 foi implementada integralmente no backend e frontend, com validação manual pendente. Após validar a 3.2, a retomada deve seguir para a 3.3 — separar geração/visualização da permissão de impressão — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
+**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas e a Etapa 3 foi implementada na branch `feat/etapa-3-residuos`, incluindo 3.2 e 3.3. A retomada deve começar pela validação integrada da Etapa 3. Se os testes passarem, fechar a Etapa 3 e só então iniciar a Etapa 4, seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
 
 ---
 
@@ -594,7 +594,8 @@ Fechamento adicional em 16/09/2026:
 
 ```text
 Etapa 3.1 — remover redundância de análise            ✅ concluída e validada
-Etapa 3.2 — dados/classes/segurança/responsabilidade  ⏭ próxima
+Etapa 3.2 — dados/classes/segurança/responsabilidade  🧪 implementada / validar
+Etapa 3.3 — prévia/identificação × permissão impressão 🧪 implementada / validar
 ```
 
 A 3.1 foi exclusivamente frontend: removido o pseudo-filtro `PENDENTES_ANALISE`, eliminada a navegação `filtro=pendentes-analise` e preservados os status reais do domínio. Não houve alteração funcional de backend, banco, migrations ou contratos HTTP.
