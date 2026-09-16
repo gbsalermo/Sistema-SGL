@@ -66,6 +66,7 @@ public class ResiduoService {
                 .projeto(projeto)
                 .descricao(dto.getDescricao())
                 .processoOrigem(dto.getProcessoOrigem())
+                .estadoFisico(dto.getEstadoFisico())
                 .recipiente(dto.getRecipiente())
                 .quantidade(dto.getQuantidade())
                 .unidadeMedida(dto.getUnidadeMedida())
