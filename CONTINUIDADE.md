@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 11/09/2026  
+**Última atualização:** 16/09/2026  
 **Branch estável:** `main`  
 **Fase atual:** ajustes de pré-produção pós-aprovação funcional.  
 **Bloco atual:** planejamento consolidado → execução sequencial das etapas de pré-produção.  
@@ -494,7 +494,7 @@ limpeza/revisão documental                            ✅ concluída
 planejamento dos ajustes                              ✅ consolidado
 Etapa 1 — refinamento visual global                   ✅ concluída
 Etapa 2 — Dark Mode definitivo                        ✅ concluída
-Etapa 3 — refinamentos do fluxo atual de Resíduos     ⏭ ATUAL / próxima implementação
+Etapa 3 — refinamentos do fluxo atual de Resíduos     🔧 ATUAL — 3.1 concluída / 3.2 próxima
 Etapa 4 — expansão operacional de Resíduos            ⏳
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
@@ -562,7 +562,7 @@ Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 # 18. Regra final de retomada
 
-**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas. A retomada agora deve começar pela Etapa 3 — refinamentos do fluxo atual de Resíduos — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
+**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas e a Etapa 3 está em execução na branch `feat/etapa-3-residuos`. A subetapa 3.1 foi concluída e validada; a retomada deve começar pela 3.2 — dados/classes/segurança/responsabilidade do Resíduo — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
 
 ---
 
@@ -586,9 +586,11 @@ Principais decisões fechadas:
 - nenhuma regra de negócio, payload ou contrato HTTP alterado;
 - semântica de cores consistente entre Estoque, Movimentações, Resíduos e Relatórios.
 
-Próxima etapa oficial:
+Fechamento adicional em 16/09/2026:
 
 ```text
-Etapa 3 — Refinamentos do fluxo atual de Resíduos
-→ começar por 3.1 — remover redundância de análise
+Etapa 3.1 — remover redundância de análise            ✅ concluída e validada
+Etapa 3.2 — dados/classes/segurança/responsabilidade  ⏭ próxima
 ```
+
+A 3.1 foi exclusivamente frontend: removido o pseudo-filtro `PENDENTES_ANALISE`, eliminada a navegação `filtro=pendentes-analise` e preservados os status reais do domínio. Não houve alteração funcional de backend, banco, migrations ou contratos HTTP.
