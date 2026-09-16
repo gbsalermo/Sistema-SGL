@@ -98,7 +98,7 @@ public class ResiduoService {
         dto.getComponentes().forEach(item -> residuo.addComponente(criarComponente(item)));
 
         Residuo salvo = residuoRepository.save(residuo);
-        salvo.setCodigoRastreio(gerarCodigoRastreio(salvo));
+        assegurarIdentificacaoRotulo(salvo);
         salvo = residuoRepository.save(salvo);
 
         registrarHistorico(
@@ -157,12 +157,7 @@ public class ResiduoService {
                 dto.getObservacaoSegurancaConfirmada()
         );
 
-        if (residuo.getCodigoRastreio() == null) {
-            residuo.setCodigoRastreio(gerarCodigoRastreio(residuo));
-        }
-        if (residuo.getQrCodeConteudo() == null) {
-            residuo.setQrCodeConteudo("SGL-RESIDUO:" + residuo.getPublicId());
-        }
+        assegurarIdentificacaoRotulo(residuo);
 
         Residuo salvo = residuoRepository.save(residuo);
         registrarHistorico(
@@ -273,10 +268,15 @@ public class ResiduoService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public RotuloResiduoResponseDTO gerarDadosRotulo(UUID id) {
         Residuo residuo = buscarEntidade(id);
-        residuo.validateLabelAvailable();
+
+        // Compatibilidade com Resíduos antigos criados antes da Etapa 3.3.
+        if (assegurarIdentificacaoRotulo(residuo)) {
+            residuo = residuoRepository.save(residuo);
+        }
+
         return new RotuloResiduoResponseDTO(residuo);
     }
 
@@ -425,6 +425,28 @@ public class ResiduoService {
                 .concentracaoOuQuantidade(dto.getConcentracaoOuQuantidade())
                 .observacao(dto.getObservacao())
                 .build();
+    }
+
+    /**
+     * Garante a identificação necessária para a prévia do rótulo.
+     *
+     * Código e QR pertencem à identidade do Resíduo e não representam,
+     * por si só, autorização para impressão física.
+     */
+    private boolean assegurarIdentificacaoRotulo(Residuo residuo) {
+        boolean alterado = false;
+
+        if (residuo.getCodigoRastreio() == null) {
+            residuo.setCodigoRastreio(gerarCodigoRastreio(residuo));
+            alterado = true;
+        }
+
+        if (residuo.getQrCodeConteudo() == null) {
+            residuo.setQrCodeConteudo("SGL-RESIDUO:" + residuo.getPublicId());
+            alterado = true;
+        }
+
+        return alterado;
     }
 
     private String gerarCodigoRastreio(Residuo residuo) {
