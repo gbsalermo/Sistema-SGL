@@ -504,6 +504,7 @@ Etapa 9 — Pedidos + integração com Soluções           ⏳
 Etapa 10 — Rótulos + documento de lote + impressão    ⏳
 Etapa 11 — Manual do Usuário + decisão delete lógico  ⏳
 Etapa 12 — testes automatizados do Frontend           ⏳
+Etapa 13 — revisão estrutural e legibilidade           ⏳
 ```
 
 Dependências centrais:
@@ -515,9 +516,12 @@ Projeto base → Atividades (se confirmadas) → Estagiários/vínculos → rela
 unidades → Soluções → Pedidos com Soluções
 Produto/Resíduo/Solução estabilizados → rótulos adaptados + documento de lote + impressão
 Etapas 1 a 11 estabilizadas → testes automatizados frontend
+Etapa 12 concluída → revisão estrutural/legibilidade + reexecução dos testes
 ```
 
 A Etapa 12 adotará `Vitest + Vue Test Utils` para testes unitários/componentes e `Cypress` como ferramenta E2E principal. Selenium não é o padrão escolhido para o SGL neste planejamento.
+
+A Etapa 13 será o fechamento técnico do bloco: revisar classes excessivamente grandes — com atenção especial a entidades como `Residuo` — e melhorar coesão, legibilidade e organização sem alterar regras ou contratos. Após qualquer refactor, a suíte da Etapa 12 deverá ser reexecutada.
 
 O detalhe, escopo, regras e impacto de cada etapa estão em `docs/PLANO_PRE_PRODUCAO.md`.
 
