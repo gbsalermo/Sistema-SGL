@@ -142,6 +142,15 @@ A remoção deve considerar também links/filtros vindos do Dashboard para não 
 
 Esta subetapa incorpora as novas informações solicitadas pelo cliente ao fluxo atual.
 
+Ordem interna atual:
+
+```text
+3.2.1 tratamento + estado físico + responsabilidade inicial   ✅ concluída
+→ 3.2.2 classes de Resíduo                                    ⏭ próxima
+→ 3.2.3 segurança/EPI + snapshot                              ⏳
+→ 3.2.4 integração dos novos dados no frontend                ⏳
+```
+
 #### Procedência / uso
 
 O campo atual `processoOrigem` será mantido como fonte da informação de **procedência/uso do Resíduo**.
@@ -773,6 +782,23 @@ com abas/filtros/agrupamentos, evitando multiplicar relatórios sem necessidade.
 PDF/XLSX devem usar a mesma consulta, filtros, período e agrupamentos da prévia.
 
 Não criar lógica de cálculo diferente entre tela e exportação.
+
+### 7.5 Organização estrutural do módulo de Relatórios
+
+Reorganizar as classes backend relacionadas a Relatórios para packages próprios, separando claramente o módulo do restante da aplicação.
+
+Escopo previsto:
+
+```text
+controllers de Relatórios
+services de Relatórios
+DTOs de Relatórios
+→ packages/subpackages específicos de Relatórios
+```
+
+A mudança é estrutural e não deve alterar contratos HTTP, regras de negócio, filtros, cálculos, exportações ou comportamento do frontend.
+
+O objetivo é reduzir dispersão de classes e deixar a arquitetura preparada para o crescimento dos relatórios consolidados da Etapa 7.
 
 ---
 
