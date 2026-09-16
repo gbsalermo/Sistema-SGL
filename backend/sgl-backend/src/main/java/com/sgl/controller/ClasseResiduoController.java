@@ -17,7 +17,7 @@ import com.sgl.dto.request.ClasseResiduoRequestDTO;
 import com.sgl.dto.response.ClasseResiduoResponseDTO;
 import com.sgl.service.ClasseResiduoService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
