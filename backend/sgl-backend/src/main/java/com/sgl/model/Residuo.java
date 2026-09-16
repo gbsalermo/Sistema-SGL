@@ -7,16 +7,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Objects;
 
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.EtapaClassificacaoResiduo;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
-import com.sgl.model.enums.EstadoFisicoResiduo;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -79,6 +80,15 @@ public class Residuo implements Serializable {
     @ToString.Exclude
     private Usuario gestorRecebedorInicial;
 
+    @OneToMany(
+            mappedBy = "residuo",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @Builder.Default
+    private List<ResiduoClasse> classificacoes = new ArrayList<>();
+    
+    
     @Column(nullable = false, length = 1000)
     private String descricao;
 
@@ -333,5 +343,69 @@ public class Residuo implements Serializable {
         if (status == null) {
             status = StatusResiduo.INFORMADO;
         }
+    }
+    
+    //Metodos para a classificação dos residuos
+    public void definirClassesInformadas(
+            List<ClasseResiduo> classes) {
+
+        substituirClasses(
+                EtapaClassificacaoResiduo.INFORMADA,
+                classes
+        );
+    }
+
+    public void definirClassesConfirmadas(
+            List<ClasseResiduo> classes) {
+
+        substituirClasses(
+                EtapaClassificacaoResiduo.CONFIRMADA,
+                classes
+        );
+    }
+
+    private void substituirClasses(
+            EtapaClassificacaoResiduo etapa,
+            List<ClasseResiduo> classes) {
+
+        if (classes == null || classes.isEmpty()) {
+            throw new BusinessRuleException(
+                    "Informe pelo menos uma classe de resíduo."
+            );
+        }
+
+        classificacoes.removeIf(
+                item -> item.getEtapa() == etapa
+        );
+
+        for (ClasseResiduo classe : classes) {
+            classe.validateActive();
+
+            classificacoes.add(
+                    ResiduoClasse.criar(
+                            this,
+                            classe,
+                            etapa
+                    )
+            );
+        }
+    }
+
+    public List<ResiduoClasse> getClassesInformadas() {
+        return classificacoes.stream()
+                .filter(item ->
+                        item.getEtapa()
+                                == EtapaClassificacaoResiduo.INFORMADA
+                )
+                .toList();
+    }
+
+    public List<ResiduoClasse> getClassesConfirmadas() {
+        return classificacoes.stream()
+                .filter(item ->
+                        item.getEtapa()
+                                == EtapaClassificacaoResiduo.CONFIRMADA
+                )
+                .toList();
     }
 }

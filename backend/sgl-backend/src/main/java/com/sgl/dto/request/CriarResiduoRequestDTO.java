@@ -78,4 +78,9 @@ public class CriarResiduoRequestDTO {
     @Valid
     @NotEmpty(message = "O resíduo deve possuir pelo menos um componente informado")
     private List<ComponenteResiduoRequestDTO> componentes;
+    
+    @NotEmpty(
+    	    message = "Informe pelo menos uma classe de resíduo"
+    	)
+    private Set<UUID> classesInformadasIds;
 }

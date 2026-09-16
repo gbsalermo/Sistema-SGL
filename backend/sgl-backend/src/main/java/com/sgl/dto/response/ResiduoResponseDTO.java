@@ -67,6 +67,12 @@ public class ResiduoResponseDTO {
     private final String descricaoTratamento;
 
     private final List<ComponenteResiduoResponseDTO> componentes;
+    
+    private final List<ClasseResiduoSnapshotResponseDTO>
+    classesInformadas;
+
+    private final List<ClasseResiduoSnapshotResponseDTO>
+    classesConfirmadas;
 
     public ResiduoResponseDTO(Residuo entity) {
         this.id = entity.getPublicId();
@@ -147,5 +153,17 @@ public class ResiduoResponseDTO {
                 .stream()
                 .map(ComponenteResiduoResponseDTO::new)
                 .toList();
+        
+        this.classesInformadas =
+                entity.getClassesInformadas()
+                        .stream()
+                        .map(ClasseResiduoSnapshotResponseDTO::new)
+                        .toList();
+
+        this.classesConfirmadas =
+                entity.getClassesConfirmadas()
+                        .stream()
+                        .map(ClasseResiduoSnapshotResponseDTO::new)
+                        .toList();
     }
 }

@@ -10,6 +10,7 @@ import com.sgl.model.enums.TipoRisco;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,4 +45,9 @@ public class AnalisarResiduoRequestDTO {
     private LocalDate dataPrevistaDespacho;
 
     private String observacaoGestor;
+    
+    @NotEmpty(
+    	    message = "Confirme pelo menos uma classe de resíduo"
+    	)
+    private Set<UUID> classesConfirmadasIds;
 }
