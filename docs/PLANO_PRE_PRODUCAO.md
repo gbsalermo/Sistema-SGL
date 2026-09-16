@@ -146,8 +146,8 @@ Ordem interna atual:
 
 ```text
 3.2.1 tratamento + estado físico + responsabilidade inicial   ✅ concluída
-→ 3.2.2 classes de Resíduo                                    ⏭ próxima
-→ 3.2.3 segurança/EPI + snapshot                              ⏳
+→ 3.2.2 classes de Resíduo                                    ✅ concluída
+→ 3.2.3 segurança/EPI + snapshot                              ⏭ próxima
 → 3.2.4 integração dos novos dados no frontend                ⏳
 ```
 
