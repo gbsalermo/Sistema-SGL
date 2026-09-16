@@ -55,7 +55,7 @@ Ordem:
    3.2.2 classes de Resíduo                                       ✅ concluída
    3.2.3 segurança/EPI + snapshot                                 🧪 implementada / validar
    3.2.4 integração dos novos dados no frontend                   🧪 implementada / validar
-→ 3.3 separar geração/visualização da permissão de impressão      ⏭ após validação da 3.2
+→ 3.3 separar geração/visualização da permissão de impressão      🧪 implementada / validar
 ```
 
 O acabamento visual definitivo, os templates adaptados e a infraestrutura Zebra não pertencem mais à Etapa 3. Eles foram consolidados na **Etapa 10 — Rótulos e impressão operacional**, após a estabilização de Produto, Resíduo e Solução.
@@ -131,11 +131,24 @@ Implementado no frontend:
 
 Validação manual integrada permanece pendente.
 
+## Implementação da 3.3 — 16/09/2026
+
+A identificação e a disponibilidade do rótulo foram separadas da autorização de impressão.
+
+Regras implementadas:
+
+- código SGL continua sendo gerado na criação do Resíduo;
+- QR também passa a existir desde o registro inicial;
+- Resíduos antigos sem QR recebem a identificação faltante ao abrir a prévia;
+- a Gestão pode visualizar a prévia em `INFORMADO` e `EM_ANALISE`;
+- a prévia utiliza os dados disponíveis naquele momento e identifica classificação ainda não confirmada;
+- impressão permanece bloqueada enquanto o Resíduo estiver `INFORMADO` ou `EM_ANALISE`;
+- impressão é liberada em `LIBERADO_PARA_ARMAZENAMENTO`, `ARMAZENADO_TEMPORARIAMENTE` e `DESPACHADO`;
+- template definitivo, Zebra e infraestrutura física continuam exclusivamente na Etapa 10.
+
 ## Próximo passo exato
 
-1. executar validação manual da 3.2;
-2. corrigir eventuais falhas encontradas;
-3. iniciar **3.3 — geração/visualização do rótulo separada da permissão de impressão**.
+Executar a **validação integrada da Etapa 3**. Se 3.2 e 3.3 passarem, marcar a Etapa 3 como concluída e iniciar a Etapa 4.
 
 O plano canônico permanece:
 
