@@ -53,9 +53,9 @@ Ordem:
 → 3.2 ampliar dados/classes/segurança/responsabilidade do Resíduo 🔧 em execução
    3.2.1 tratamento + estado físico + responsabilidade inicial    ✅ concluída
    3.2.2 classes de Resíduo                                       ✅ concluída
-   3.2.3 segurança/EPI + snapshot                                 ⏭ próxima
-   3.2.4 integração dos novos dados no frontend                   ⏳
-→ 3.3 separar geração/visualização da permissão de impressão      ⏳
+   3.2.3 segurança/EPI + snapshot                                 🧪 implementada / validar
+   3.2.4 integração dos novos dados no frontend                   🧪 implementada / validar
+→ 3.3 separar geração/visualização da permissão de impressão      ⏭ após validação da 3.2
 ```
 
 O acabamento visual definitivo, os templates adaptados e a infraestrutura Zebra não pertencem mais à Etapa 3. Eles foram consolidados na **Etapa 10 — Rótulos e impressão operacional**, após a estabilização de Produto, Resíduo e Solução.
@@ -110,17 +110,32 @@ Alterações consolidadas:
 - snapshot de código/descrição mantido em `ResiduoClasse`, evitando alteração retroativa do histórico;
 - DTOs e contratos do backend preparados para `classesInformadasIds` e `classesConfirmadasIds`.
 
+## Implementação da 3.2.3 e 3.2.4 — 16/09/2026
+
+Implementado no backend:
+
+- enum estruturado de medidas de segurança: luvas, óculos, proteção respiratória, jaleco/avental e outro;
+- recomendações de segurança no Produto;
+- snapshots independentes de segurança informada e confirmada no Resíduo;
+- migration `V15__add_residue_safety_information.sql`;
+- observação obrigatória quando a medida `OUTRO` é usada.
+
+Implementado no frontend:
+
+- Produto permite manter recomendações de segurança;
+- nova aba administrativa para Classes de Resíduo;
+- formulário do Solicitante inclui procedência/uso, estado físico, tratamento, classes e segurança;
+- Produtos associados aos componentes fornecem sugestões de EPI sem sobrescrever a escolha do Solicitante;
+- análise da Gestão confirma classes e segurança separadamente;
+- telas de consulta mostram valores informados e confirmados preservando o histórico.
+
+Validação manual integrada permanece pendente.
+
 ## Próximo passo exato
 
-Iniciar **3.2.3 — segurança/EPI + snapshot**.
-
-O foco deve ser:
-
-1. estruturar medidas de segurança operacionais;
-2. permitir sugestões vindas dos Produtos associados aos componentes;
-3. preservar no Resíduo um snapshot independente do cadastro futuro do Produto;
-4. separar medidas informadas pelo Solicitante das medidas confirmadas pela Gestão;
-5. não antecipar a integração visual, que permanece para a 3.2.4.
+1. executar validação manual da 3.2;
+2. corrigir eventuais falhas encontradas;
+3. iniciar **3.3 — geração/visualização do rótulo separada da permissão de impressão**.
 
 O plano canônico permanece:
 
