@@ -494,7 +494,7 @@ limpeza/revisão documental                            ✅ concluída
 planejamento dos ajustes                              ✅ consolidado
 Etapa 1 — refinamento visual global                   ✅ concluída
 Etapa 2 — Dark Mode definitivo                        ✅ concluída
-Etapa 3 — refinamentos do fluxo atual de Resíduos     🔧 ATUAL — 3.1, 3.2.1 e 3.2.2 concluídas / 3.2.3 próxima
+Etapa 3 — refinamentos do fluxo atual de Resíduos     🔧 ATUAL — 3.2 implementada / validação manual pendente; 3.3 ainda pendente
 Etapa 4 — expansão operacional de Resíduos            ⏳
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
@@ -566,7 +566,7 @@ Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
 
 # 18. Regra final de retomada
 
-**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas e a Etapa 3 está em execução na branch `feat/etapa-3-residuos`. A subetapa 3.1, a 3.2.1 e a 3.2.2 foram concluídas; a retomada deve começar pela 3.2.3 — segurança/EPI + snapshot — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
+**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas e a Etapa 3 está em execução na branch `feat/etapa-3-residuos`. A 3.2 foi implementada integralmente no backend e frontend, com validação manual pendente. Após validar a 3.2, a retomada deve seguir para a 3.3 — separar geração/visualização da permissão de impressão — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
 
 ---
 
