@@ -75,6 +75,8 @@ public class ResiduoService {
                 .status(StatusResiduo.INFORMADO)
                 .dataInformacao(LocalDateTime.now())
                 .build();
+        
+        residuo.definirTratamento(dto.getTratamentoRealizado(), dto.getDescricaoTratamento());
 
         dto.getComponentes().forEach(item -> residuo.addComponente(criarComponente(item)));
 
@@ -142,7 +144,7 @@ public class ResiduoService {
         Residuo residuo = buscarEntidade(id);
         Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
 
-        residuo.confirmarArmazenamento(gestor, dto.getLocalArmazenamentoTemporario());
+        residuo.confirmarArmazenamento(dto.getLocalArmazenamentoTemporario());
         Residuo salvo = residuoRepository.save(residuo);
         registrarHistorico(
                 salvo,
@@ -160,7 +162,6 @@ public class ResiduoService {
         Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
 
         residuo.confirmarDespacho(
-                gestor,
                 dto.getDestinoFinalConfirmado(),
                 dto.getObservacao()
         );

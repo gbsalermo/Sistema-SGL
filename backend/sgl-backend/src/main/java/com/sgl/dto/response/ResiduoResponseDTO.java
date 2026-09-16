@@ -13,6 +13,7 @@ import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.EstadoFisicoResiduo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -31,8 +32,7 @@ public class ResiduoResponseDTO {
     private final String usuarioGeradorNome;
     private final UUID projetoId;
     private final String projetoNome;
-    private final UUID gestorResponsavelId;
-    private final String gestorResponsavelNome;
+
 
     private final String descricao;
     private final String processoOrigem;
@@ -58,6 +58,13 @@ public class ResiduoResponseDTO {
     private final LocalDateTime dataArmazenamentoTemporario;
     private final LocalDate dataPrevistaDespacho;
     private final LocalDateTime dataDespacho;
+    
+    private final UUID gestorRecebedorInicialId;
+    private final String gestorRecebedorInicialNome;
+
+    private final EstadoFisicoResiduo estadoFisico;
+    private final Boolean tratamentoRealizado;
+    private final String descricaoTratamento;
 
     private final List<ComponenteResiduoResponseDTO> componentes;
 
@@ -68,43 +75,76 @@ public class ResiduoResponseDTO {
 
         this.laboratorioId = entity.getLaboratorio().getPublicId();
         this.laboratorioNome = entity.getLaboratorio().getNome();
+
         this.usuarioGeradorId = entity.getGerador().getPublicId();
         this.usuarioGeradorNome = entity.getGerador().getNome();
-        this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
-        this.projetoNome = entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
-        this.gestorResponsavelId = entity.getGestorResponsavel() != null
-                ? entity.getGestorResponsavel().getPublicId()
+
+        this.projetoId = entity.getProjeto() != null
+                ? entity.getProjeto().getPublicId()
                 : null;
-        this.gestorResponsavelNome = entity.getGestorResponsavel() != null
-                ? entity.getGestorResponsavel().getNome()
+
+        this.projetoNome = entity.getProjeto() != null
+                ? entity.getProjeto().getNome()
+                : null;
+
+        // Gestor que recebeu inicialmente o resíduo.
+        this.gestorRecebedorInicialId = entity.getGestorRecebedorInicial() != null
+                ? entity.getGestorRecebedorInicial().getPublicId()
+                : null;
+
+        this.gestorRecebedorInicialNome = entity.getGestorRecebedorInicial() != null
+                ? entity.getGestorRecebedorInicial().getNome()
                 : null;
 
         this.descricao = entity.getDescricao();
         this.processoOrigem = entity.getProcessoOrigem();
+
+        this.estadoFisico = entity.getEstadoFisico();
+        this.tratamentoRealizado = entity.getTratamentoRealizado();
+        this.descricaoTratamento = entity.getDescricaoTratamento();
+
         this.recipiente = entity.getRecipiente();
         this.quantidade = entity.getQuantidade();
         this.unidadeMedida = entity.getUnidadeMedida();
 
         this.nivelRiscoInformado = entity.getNivelRiscoInformado();
-        this.riscosInformados = new LinkedHashSet<>(entity.getRiscosInformados());
+        this.riscosInformados = new LinkedHashSet<>(
+                entity.getRiscosInformados()
+        );
+
         this.nivelRiscoConfirmado = entity.getNivelRiscoConfirmado();
-        this.riscosConfirmados = new LinkedHashSet<>(entity.getRiscosConfirmados());
+        this.riscosConfirmados = new LinkedHashSet<>(
+                entity.getRiscosConfirmados()
+        );
 
         this.observacaoGerador = entity.getObservacaoGerador();
         this.observacaoGestor = entity.getObservacaoGestor();
-        this.localArmazenamentoTemporario = entity.getLocalArmazenamentoTemporario();
-        this.destinoFinalPrevisto = entity.getDestinoFinalPrevisto();
-        this.destinoFinalConfirmado = entity.getDestinoFinalConfirmado();
+
+        this.localArmazenamentoTemporario =
+                entity.getLocalArmazenamentoTemporario();
+
+        this.destinoFinalPrevisto =
+                entity.getDestinoFinalPrevisto();
+
+        this.destinoFinalConfirmado =
+                entity.getDestinoFinalConfirmado();
+
         this.qrCodeConteudo = entity.getQrCodeConteudo();
 
         this.dataInformacao = entity.getDataInformacao();
         this.dataRecebimento = entity.getDataRecebimento();
         this.dataLiberacao = entity.getDataLiberacao();
-        this.dataArmazenamentoTemporario = entity.getDataArmazenamentoTemporario();
-        this.dataPrevistaDespacho = entity.getDataPrevistaDespacho();
+
+        this.dataArmazenamentoTemporario =
+                entity.getDataArmazenamentoTemporario();
+
+        this.dataPrevistaDespacho =
+                entity.getDataPrevistaDespacho();
+
         this.dataDespacho = entity.getDataDespacho();
 
-        this.componentes = entity.getComponentes().stream()
+        this.componentes = entity.getComponentes()
+                .stream()
                 .map(ComponenteResiduoResponseDTO::new)
                 .toList();
     }

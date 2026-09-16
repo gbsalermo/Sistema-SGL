@@ -9,12 +9,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Objects;
 
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.EstadoFisicoResiduo;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -73,9 +75,9 @@ public class Residuo implements Serializable {
     private Projeto projeto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gestor_responsavel_id")
+    @JoinColumn(name = "gestor_recebedor_inicial_id")
     @ToString.Exclude
-    private Usuario gestorResponsavel;
+    private Usuario gestorRecebedorInicial;
 
     @Column(nullable = false, length = 1000)
     private String descricao;
@@ -83,6 +85,16 @@ public class Residuo implements Serializable {
     @Column(name = "processo_origem", nullable = false, length = 1000)
     private String processoOrigem;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_fisico")
+    private EstadoFisicoResiduo estadoFisico;
+    
+    @Column(name = "tratamento_realizado")
+    private Boolean tratamentoRealizado;
+    
+    @Column(name = "descricao_tratamento", length = 1000)
+    private String descricaoTratamento;
+    
     @Column(nullable = false)
     private String recipiente;
 
@@ -167,6 +179,30 @@ public class Residuo implements Serializable {
     @OneToMany(mappedBy = "residuo", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ComponenteResiduo> componentes = new ArrayList<>();
+    
+    public void definirTratamento(Boolean tratamentoRealizado, String descricaoTratamento) {
+    	
+    	if(tratamentoRealizado == null) {
+    		throw new BusinessRuleException(
+    				"informe se o resíduo recebeu tratamento");
+    	}
+    	
+    	this.tratamentoRealizado = tratamentoRealizado;
+    	
+    	if(!tratamentoRealizado) {
+    		this.descricaoTratamento = null; //descrição é descartada se o tratamento for false
+    		return;
+    	}
+    	
+    	//caso seja o tratamento true, evita que o usuario ignore o tratamento
+    	if (descricaoTratamento == null || descricaoTratamento.isBlank()) {
+    		throw new BusinessRuleException(
+    				"A descrição do tratamento é obrigatória quando o resíduo já foi tratado"
+    				);
+    	}
+    	
+    	this.descricaoTratamento = descricaoTratamento.trim();
+    }
 
     public void addComponente(ComponenteResiduo componente) {
         componente.setResiduo(this);
@@ -175,7 +211,7 @@ public class Residuo implements Serializable {
 
     public void receber(Usuario gestor, String observacao) {
         requireStatus(StatusResiduo.INFORMADO, "recebido para análise");
-        this.gestorResponsavel = gestor;
+        this.gestorRecebedorInicial = gestor;
         this.dataRecebimento = LocalDateTime.now();
         this.status = StatusResiduo.EM_ANALISE;
 
@@ -184,6 +220,25 @@ public class Residuo implements Serializable {
         }
     }
 
+    private void validarGestorRecebedorInicial(Usuario gestor) {
+    	
+    	if(gestorRecebedorInicial == null) {
+    		
+    	throw new BusinessRuleException(
+    			"O resíduo não possui gestor de recebimento inicial"
+    			);
+    }
+    	
+    if (gestor == null || !Objects.equals(gestorRecebedorInicial.getId(), gestor.getId())){
+    	throw new BusinessRuleException(
+    			"A análise deve ser realizada pelo gestor que recebeu inicialmente o resíduo"
+    			);
+    }
+}
+    
+    
+    
+    
     public void liberarParaArmazenamento(
             Usuario gestor,
             NivelRisco nivelConfirmado,
@@ -194,6 +249,8 @@ public class Residuo implements Serializable {
             String observacao) {
 
         requireStatus(StatusResiduo.EM_ANALISE, "liberado para armazenamento");
+        
+        validarGestorRecebedorInicial(gestor);
 
         if (nivelConfirmado == null) {
             throw new BusinessRuleException("O nível de risco confirmado é obrigatório.");
@@ -207,7 +264,6 @@ public class Residuo implements Serializable {
             throw new BusinessRuleException("O destino final previsto é obrigatório.");
         }
 
-        this.gestorResponsavel = gestor;
         this.nivelRiscoConfirmado = nivelConfirmado;
         this.riscosConfirmados.clear();
         if (riscosConfirmados != null) {
@@ -221,13 +277,12 @@ public class Residuo implements Serializable {
         this.status = StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO;
     }
 
-    public void confirmarArmazenamento(Usuario gestor, String localArmazenamento) {
+    public void confirmarArmazenamento(String localArmazenamento) {
         requireStatus(
                 StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO,
                 "armazenado temporariamente"
         );
 
-        this.gestorResponsavel = gestor;
         if (localArmazenamento != null && !localArmazenamento.isBlank()) {
             this.localArmazenamentoTemporario = localArmazenamento;
         }
@@ -235,14 +290,13 @@ public class Residuo implements Serializable {
         this.status = StatusResiduo.ARMAZENADO_TEMPORARIAMENTE;
     }
 
-    public void confirmarDespacho(Usuario gestor, String destinoFinal, String observacao) {
+    public void confirmarDespacho(String destinoFinal, String observacao) {
         requireStatus(StatusResiduo.ARMAZENADO_TEMPORARIAMENTE, "despachado");
 
         if (destinoFinal == null || destinoFinal.isBlank()) {
             throw new BusinessRuleException("O destino final confirmado é obrigatório.");
         }
 
-        this.gestorResponsavel = gestor;
         this.destinoFinalConfirmado = destinoFinal;
         if (observacao != null && !observacao.isBlank()) {
             this.observacaoGestor = observacao;
