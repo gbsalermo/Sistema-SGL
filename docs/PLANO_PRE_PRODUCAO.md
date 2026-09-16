@@ -147,8 +147,8 @@ Ordem interna atual:
 ```text
 3.2.1 tratamento + estado físico + responsabilidade inicial   ✅ concluída
 → 3.2.2 classes de Resíduo                                    ✅ concluída
-→ 3.2.3 segurança/EPI + snapshot                              ⏭ próxima
-→ 3.2.4 integração dos novos dados no frontend                ⏳
+→ 3.2.3 segurança/EPI + snapshot                              🧪 implementada / validar
+→ 3.2.4 integração dos novos dados no frontend                🧪 implementada / validar
 ```
 
 #### Procedência / uso
@@ -1335,8 +1335,8 @@ Etapa 1 — refinamento visual global               ✅ concluída
 Etapa 2 — Dark Mode definitivo                    ✅ concluída
 Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 EM EXECUÇÃO
   3.1 — remover redundância de análise            ✅ concluída e validada
-  3.2 — dados/classes/segurança/responsabilidade  ⏭ próximo passo
-  3.3 — ciclo geração/visualização/impressão      ⏳
+  3.2 — dados/classes/segurança/responsabilidade  🧪 implementação concluída / validação pendente
+  3.3 — ciclo geração/visualização/impressão      ⏭ próximo após validação
 Etapas 4 a 13                                     ⏳ aguardando sequência
 ```
 
