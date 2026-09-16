@@ -50,7 +50,11 @@ Ordem:
 
 ```text
 3.1 remover redundância de análise                              ✅ concluída e validada
-→ 3.2 ampliar dados/classes/segurança/responsabilidade do Resíduo ⏭ próxima
+→ 3.2 ampliar dados/classes/segurança/responsabilidade do Resíduo 🔧 em execução
+   3.2.1 tratamento + estado físico + responsabilidade inicial    ✅ concluída
+   3.2.2 classes de Resíduo                                       ⏭ próxima
+   3.2.3 segurança/EPI + snapshot                                 ⏳
+   3.2.4 integração dos novos dados no frontend                   ⏳
 → 3.3 separar geração/visualização da permissão de impressão      ⏳
 ```
 
@@ -76,17 +80,32 @@ Frontend — commits da 3.1:
 833c59d  feat: alinhar navegação do dashboard de resíduos
 ```
 
+## Fechamento da 3.2.1 — 16/09/2026
+
+A primeira parte da 3.2 foi concluída no backend.
+
+Alterações consolidadas:
+
+- novo estado físico estruturado do Resíduo por `EstadoFisicoResiduo`;
+- registro de tratamento realizado e descrição condicional;
+- migration `V13__expand_basic_residuo_data.sql`;
+- substituição de `gestorResponsavel` por `gestorRecebedorInicial`;
+- o Gestor que recebe inicialmente passa a ser o mesmo responsável por analisar/liberar;
+- armazenamento e despacho podem ser executados por outros Gestores sem perder o responsável inicial;
+- histórico continua registrando o ator real de cada transição;
+- contrato de resposta já utiliza a nomenclatura definitiva `gestorRecebedorInicial`.
+
 ## Próximo passo exato
 
-Iniciar **3.2 — ampliar dados, classes, segurança e responsabilidade do Resíduo**.
+Iniciar **3.2.2 — classes de Resíduo**.
 
-Antes de implementar:
+O foco deve ser:
 
-1. revisar a modelagem atual do backend e frontend;
-2. fechar a proposta mínima de banco/domínio/contratos;
-3. separar claramente Produto, Resíduo real e sugestões/snapshots;
-4. preservar tenant e histórico;
-5. o responsável do projeto implementará manualmente qualquer alteração funcional de backend.
+1. catálogo pré-cadastrável e tenant-aware;
+2. código, descrição e estado ativo;
+3. múltipla seleção;
+4. separar classes informadas pelo Solicitante das classes confirmadas pela Gestão;
+5. preservar histórico sem transformar classes em enum rígido.
 
 O plano canônico permanece:
 
