@@ -2,7 +2,7 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Status:** execução em andamento — Etapa 3 atual  
+**Status:** Etapa 3 implementada — validação integrada pendente  
 **Fase:** pré-produção pós-aprovação funcional  
 **Fonte:** observações e decisões levantadas durante a apresentação com o cliente
 
@@ -1335,8 +1335,8 @@ Etapa 1 — refinamento visual global               ✅ concluída
 Etapa 2 — Dark Mode definitivo                    ✅ concluída
 Etapa 3 — refinamentos do fluxo atual de Resíduos 🔧 EM EXECUÇÃO
   3.1 — remover redundância de análise            ✅ concluída e validada
-  3.2 — dados/classes/segurança/responsabilidade  🧪 implementação concluída / validação pendente
-  3.3 — ciclo geração/visualização/impressão      ⏭ próximo após validação
+  3.2 — dados/classes/segurança/responsabilidade  🧪 implementada / validar
+  3.3 — ciclo geração/visualização/impressão      🧪 implementada / validar
 Etapas 4 a 13                                     ⏳ aguardando sequência
 ```
 
