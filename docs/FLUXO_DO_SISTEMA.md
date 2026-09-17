@@ -1,8 +1,9 @@
 # Fluxo do Sistema SGL
 
-**Atualizado em:** 17/09/2026
+**Atualizado em:** 17/09/2026  
+**Checkpoint:** Etapa 4 iniciada; 4.1 — locais de armazenamento em andamento.
 
-Este documento descreve como os módulos principais se conectam no estado funcional aprovado e nas etapas de pré-produção já validadas. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação no código da branch integrada à `main`.
+Este documento descreve como os módulos principais se conectam no estado funcional aprovado e nas etapas de pré-produção já validadas. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação no código da branch integrada/validada.
 
 ---
 
@@ -25,7 +26,8 @@ Regras atuais:
 3. Usuários pertencem a uma Unidade e, quando aplicável, a um Laboratório.
 4. Projetos pertencem ao contexto do Laboratório/Unidade.
 5. Produtos formam o catálogo.
-6. Cada Unidade possui seu próprio contexto de estoque para os produtos utilizados.
+6. Cada Unidade possui seu próprio contexto de estoque.
+7. Catálogos operacionais adicionados ao domínio, como Classes de Resíduo e futuramente Locais de Armazenamento, também respeitam a Unidade.
 
 No modo DEV, o frontend envia `X-SGL-Unidade-Id` e o backend usa `TenantContext` para restringir operações à Unidade corrente. Esse mecanismo ainda não substitui a futura identidade corporativa confiável.
 
@@ -41,8 +43,6 @@ contexto da Unidade + Produto
   → atualiza/cria Lote
   → grava MovimentacaoEstoque
 ```
-
-A movimentação registra a operação física e o lote afetado quando aplicável.
 
 ---
 
@@ -65,16 +65,6 @@ A alteração de saldo e a movimentação pertencem à mesma operação transaci
 
 O usuário informa laboratório, projeto opcional e itens solicitados.
 
-Validações incluem:
-
-- usuário, laboratório, projeto e produtos devem existir;
-- usuário e laboratório devem pertencer ao contexto institucional permitido;
-- projeto, quando informado, deve ser compatível com o laboratório;
-- entidades envolvidas devem estar ativas;
-- o mesmo produto não pode aparecer duas vezes;
-- deve existir estoque ativo do produto no contexto da Unidade;
-- forma de retirada deve ser compatível com a apresentação do produto/lote.
-
 O saldo **não é reduzido na criação**. O pedido é salvo como `PENDENTE`.
 
 ---
@@ -85,73 +75,56 @@ O saldo **não é reduzido na criação**. O pedido é salvo como `PENDENTE`.
 Aprovador + Pedido PENDENTE
   → valida itens/quantidades
   → localiza estoque e lotes da Unidade
-  → exclui lote vencido da seleção
+  → exclui lote vencido
   → perecível: FEFO
   → não perecível: FIFO
   → reduz lotes utilizados
   → atualiza EstoqueCentral
-  → grava quantidade aprovada
   → grava MovimentacaoEstoque SAIDA/PEDIDO
   → altera Pedido para APROVADO
 ```
 
-Todo o processamento é transacional. Se um item falhar, nenhuma baixa parcial deve permanecer.
-
-Urgência não altera FIFO/FEFO.
+Todo o processamento é transacional. Urgência não altera FIFO/FEFO.
 
 ---
 
-## 6. Rejeição
-
-Somente pedido `PENDENTE` pode ser rejeitado pelo fluxo comum.
+## 6. Rejeição e entrega
 
 ```text
-PENDENTE
-→ registrar motivo/observação
-→ REJEITADO
+PENDENTE → REJEITADO
 ```
 
-Não altera estoque.
-
----
-
-## 7. Entrega
-
-Somente pedido `APROVADO` pode ser entregue.
+Rejeição não altera estoque.
 
 ```text
 APROVADO
-→ registrar HistoricoLaboratorio dos itens aprovados
+→ registrar HistoricoLaboratorio
 → registrar data real de entrega
 → ENTREGUE
 ```
 
-A entrega **não reduz o estoque novamente**, porque a baixa física aconteceu na aprovação.
+A entrega **não reduz o estoque novamente**.
 
 ---
 
-## 8. Cancelamento de Pedido
+## 7. Cancelamento de Pedido
 
 - `PENDENTE`: cancela sem alterar estoque.
-- `APROVADO`: restaura as quantidades dos **lotes exatos utilizados na aprovação** e muda para `CANCELADO`.
+- `APROVADO`: restaura os lotes exatos utilizados e muda para `CANCELADO`.
 - `ENTREGUE`: não pode ser cancelado pelo fluxo comum.
 - `REJEITADO` ou `CANCELADO`: já está encerrado.
-
-A restauração exata dos lotes é a garantia funcional atual.
 
 Esse cancelamento de Pedido não deve ser usado como modelo automático para Resíduos; cada domínio possui regras próprias.
 
 ---
 
-## 9. Resíduos — fluxo validado na Etapa 3
-
-Resíduo é domínio próprio:
+## 8. Resíduos — fluxo validado na Etapa 3
 
 ```text
 Produto != Resíduo
 ```
 
-Um componente de Resíduo pode referenciar Produto para rastreabilidade e sugestão de segurança. Essa referência não baixa nem repõe estoque automaticamente.
+Um componente de Resíduo pode referenciar Produto para rastreabilidade e sugestão de segurança sem baixar ou repor estoque.
 
 Fluxo operacional atual:
 
@@ -163,9 +136,9 @@ INFORMADO
 EM_ANALISE
       ↓ Gestão confirma risco/classes/segurança e libera
 LIBERADO_PARA_ARMAZENAMENTO
-      ↓ qualquer Gestor autorizado pode confirmar armazenamento
+      ↓ Gestor autorizado confirma armazenamento
 ARMAZENADO_TEMPORARIAMENTE
-      ↓ qualquer Gestor autorizado pode confirmar destinação
+      ↓ Gestor autorizado confirma destinação
 DESPACHADO
 ```
 
@@ -182,11 +155,9 @@ HistoricoResiduo
 → preserva quem executou cada transição real
 ```
 
-Portanto, armazenamento ou despacho por outro Gestor não sobrescreve o responsável inicial.
-
 ---
 
-## 10. Dados de Resíduo
+## 9. Dados de Resíduo
 
 A ocorrência real preserva dados próprios, incluindo:
 
@@ -205,11 +176,19 @@ armazenamento / destino
 
 Classes e segurança possuem separação entre declaração e confirmação.
 
-Snapshots impedem que mudanças futuras em catálogos modifiquem Resíduos históricos.
+Regra arquitetural:
+
+```text
+cadastro atual/editável
+≠
+snapshot histórico da ocorrência
+```
+
+Mudanças futuras em catálogos não podem modificar retroativamente os dados históricos preservados no Resíduo.
 
 ---
 
-## 11. Identificação, prévia e impressão de Resíduo
+## 10. Identificação, prévia e impressão de Resíduo
 
 Código:
 
@@ -218,8 +197,6 @@ SGL-RES-AAAA-NNNNNN
 ```
 
 A identificação existe desde a criação.
-
-A Etapa 3 separou:
 
 ```text
 identificação
@@ -233,7 +210,7 @@ Fluxo:
 
 ```text
 INFORMADO
-→ código + QR
+→ código + QR técnico
 → prévia permitida
 → impressão bloqueada
 
@@ -245,28 +222,84 @@ LIBERADO_PARA_ARMAZENAMENTO ou posterior
 → impressão permitida
 ```
 
-A prévia anterior à análise usa os dados informados. Depois da liberação, os dados confirmados pela Gestão têm precedência.
-
-Template definitivo, Zebra e infraestrutura física ficam para a Etapa 10.
+O QR técnico pode existir no contrato sem ser renderizado pelo template físico atual. O padrão final, Zebra e infraestrutura física ficam para a Etapa 10.
 
 ---
 
-## 12. Próxima expansão de Resíduos — Etapa 4
+## 11. Etapa 4.1 — expansão do armazenamento 🔧
 
-A Etapa 3 foi encerrada em 17/09/2026.
+A Etapa 4 já foi iniciada e a 4.1 está em andamento.
 
-A Etapa 4 seguirá esta ordem:
+Modelagem aprovada:
 
 ```text
-4.1 locais de armazenamento cadastráveis
-→ 4.2 modelos de Resíduos reutilizáveis
-→ 4.3 escolha modelo x preenchimento manual pelo Solicitante
-→ 4.4 correções administrativas do ciclo, após definição das regras
+LocalArmazenamentoResiduo
+= catálogo mutável por Unidade
+
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico completo
 ```
 
-A 4.4 avaliará cancelamento operacional e retorno para análise/liberação com justificativa e histórico.
+Fluxo futuro após integração completa da 4.1:
 
-Isso não deve ser confundido com a decisão geral de delete lógico da Etapa 11.
+```text
+EM_ANALISE
+→ Gestão escolhe:
+   local cadastrado + complemento opcional
+   OU texto manual
+→ sistema forma/preserva snapshot textual
+→ LIBERADO_PARA_ARMAZENAMENTO
+
+LIBERADO_PARA_ARMAZENAMENTO
+→ confirmação física
+→ manter local planejado
+   OU corrigir catálogo/complemento/manual
+→ registrar mudança no histórico
+→ ARMAZENADO_TEMPORARIAMENTE
+```
+
+Regras:
+
+- local cadastrado pertence à Unidade;
+- cadastro possui ativação/inativação;
+- inativação não apaga nem invalida histórico;
+- renomear cadastro não altera snapshot de ocorrências antigas;
+- catálogo e texto manual são caminhos alternativos;
+- lookup deve validar tenant/Unidade do Resíduo;
+- rótulo e relatório continuam inicialmente usando `localArmazenamentoTemporario`.
+
+Implementação planejada:
+
+```text
+4.1-A V16 + entidade + repository
+4.1-B CRUD + tenant
+4.1-C integração com análise/liberação
+4.1-D confirmação física/correção
+4.1-E revisão backend
+4.1-F frontend Cadastros
+4.1-G frontend Gestão
+4.1-H regressão e fechamento
+```
+
+Próximo passo: **4.1-A**.
+
+---
+
+## 12. Etapas 4.2–4.4 — ainda não implementar
+
+```text
+4.2 modelos de Resíduos reutilizáveis
+4.3 escolha modelo x preenchimento manual pelo Solicitante
+4.4 correções administrativas do ciclo
+```
+
+A 4.4 avaliará cancelamento operacional e retorno para análise/liberação com justificativa e histórico. Isso não deve ser confundido com a decisão geral de delete lógico da Etapa 11.
 
 ---
 
