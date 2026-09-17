@@ -7,10 +7,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.EtapaClassificacaoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
@@ -73,16 +77,35 @@ public class Residuo implements Serializable {
     private Projeto projeto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gestor_responsavel_id")
+    @JoinColumn(name = "gestor_recebedor_inicial_id")
     @ToString.Exclude
-    private Usuario gestorResponsavel;
+    private Usuario gestorRecebedorInicial;
 
+    @OneToMany(
+            mappedBy = "residuo",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @Builder.Default
+    private List<ResiduoClasse> classificacoes = new ArrayList<>();
+    
+    
     @Column(nullable = false, length = 1000)
     private String descricao;
 
     @Column(name = "processo_origem", nullable = false, length = 1000)
     private String processoOrigem;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_fisico")
+    private EstadoFisicoResiduo estadoFisico;
+    
+    @Column(name = "tratamento_realizado")
+    private Boolean tratamentoRealizado;
+    
+    @Column(name = "descricao_tratamento", length = 1000)
+    private String descricaoTratamento;
+    
     @Column(nullable = false)
     private String recipiente;
 
@@ -167,6 +190,72 @@ public class Residuo implements Serializable {
     @OneToMany(mappedBy = "residuo", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ComponenteResiduo> componentes = new ArrayList<>();
+    
+    /**
+     * Snapshot das medidas de segurança declaradas no momento
+     * em que o Resíduo foi informado.
+     *
+     * Esses dados pertencem à ocorrência real do Resíduo e não
+     * devem ser recalculados quando o cadastro dos Produtos mudar.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "residuo_medidas_seguranca_informadas",
+            joinColumns = @JoinColumn(name = "residuo_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "medida", nullable = false)
+    @Builder.Default
+    private Set<MedidaSeguranca> medidasSegurancaInformadas =
+            new LinkedHashSet<>();
+
+    @Column(name = "observacao_seguranca_informada", length = 1000)
+    private String observacaoSegurancaInformada;
+
+
+    /**
+     * Snapshot das medidas de segurança confirmadas pela Gestão.
+     *
+     * Pode diferir da informação original do Solicitante sem
+     * alterar o snapshot informado.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "residuo_medidas_seguranca_confirmadas",
+            joinColumns = @JoinColumn(name = "residuo_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "medida", nullable = false)
+    @Builder.Default
+    private Set<MedidaSeguranca> medidasSegurancaConfirmadas =
+            new LinkedHashSet<>();
+
+    @Column(name = "observacao_seguranca_confirmada", length = 1000)
+    private String observacaoSegurancaConfirmada;
+    
+    public void definirTratamento(Boolean tratamentoRealizado, String descricaoTratamento) {
+    	
+    	if(tratamentoRealizado == null) {
+    		throw new BusinessRuleException(
+    				"informe se o resíduo recebeu tratamento");
+    	}
+    	
+    	this.tratamentoRealizado = tratamentoRealizado;
+    	
+    	if(!tratamentoRealizado) {
+    		this.descricaoTratamento = null; //descrição é descartada se o tratamento for false
+    		return;
+    	}
+    	
+    	//caso seja o tratamento true, evita que o usuario ignore o tratamento
+    	if (descricaoTratamento == null || descricaoTratamento.isBlank()) {
+    		throw new BusinessRuleException(
+    				"A descrição do tratamento é obrigatória quando o resíduo já foi tratado"
+    				);
+    	}
+    	
+    	this.descricaoTratamento = descricaoTratamento.trim();
+    }
 
     public void addComponente(ComponenteResiduo componente) {
         componente.setResiduo(this);
@@ -175,7 +264,7 @@ public class Residuo implements Serializable {
 
     public void receber(Usuario gestor, String observacao) {
         requireStatus(StatusResiduo.INFORMADO, "recebido para análise");
-        this.gestorResponsavel = gestor;
+        this.gestorRecebedorInicial = gestor;
         this.dataRecebimento = LocalDateTime.now();
         this.status = StatusResiduo.EM_ANALISE;
 
@@ -184,6 +273,25 @@ public class Residuo implements Serializable {
         }
     }
 
+    private void validarGestorRecebedorInicial(Usuario gestor) {
+    	
+    	if(gestorRecebedorInicial == null) {
+    		
+    	throw new BusinessRuleException(
+    			"O resíduo não possui gestor de recebimento inicial"
+    			);
+    }
+    	
+    if (gestor == null || !Objects.equals(gestorRecebedorInicial.getId(), gestor.getId())){
+    	throw new BusinessRuleException(
+    			"A análise deve ser realizada pelo gestor que recebeu inicialmente o resíduo"
+    			);
+    }
+}
+    
+    
+    
+    
     public void liberarParaArmazenamento(
             Usuario gestor,
             NivelRisco nivelConfirmado,
@@ -194,6 +302,8 @@ public class Residuo implements Serializable {
             String observacao) {
 
         requireStatus(StatusResiduo.EM_ANALISE, "liberado para armazenamento");
+        
+        validarGestorRecebedorInicial(gestor);
 
         if (nivelConfirmado == null) {
             throw new BusinessRuleException("O nível de risco confirmado é obrigatório.");
@@ -207,7 +317,6 @@ public class Residuo implements Serializable {
             throw new BusinessRuleException("O destino final previsto é obrigatório.");
         }
 
-        this.gestorResponsavel = gestor;
         this.nivelRiscoConfirmado = nivelConfirmado;
         this.riscosConfirmados.clear();
         if (riscosConfirmados != null) {
@@ -221,13 +330,12 @@ public class Residuo implements Serializable {
         this.status = StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO;
     }
 
-    public void confirmarArmazenamento(Usuario gestor, String localArmazenamento) {
+    public void confirmarArmazenamento(String localArmazenamento) {
         requireStatus(
                 StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO,
                 "armazenado temporariamente"
         );
 
-        this.gestorResponsavel = gestor;
         if (localArmazenamento != null && !localArmazenamento.isBlank()) {
             this.localArmazenamentoTemporario = localArmazenamento;
         }
@@ -235,14 +343,13 @@ public class Residuo implements Serializable {
         this.status = StatusResiduo.ARMAZENADO_TEMPORARIAMENTE;
     }
 
-    public void confirmarDespacho(Usuario gestor, String destinoFinal, String observacao) {
+    public void confirmarDespacho(String destinoFinal, String observacao) {
         requireStatus(StatusResiduo.ARMAZENADO_TEMPORARIAMENTE, "despachado");
 
         if (destinoFinal == null || destinoFinal.isBlank()) {
             throw new BusinessRuleException("O destino final confirmado é obrigatório.");
         }
 
-        this.gestorResponsavel = gestor;
         this.destinoFinalConfirmado = destinoFinal;
         if (observacao != null && !observacao.isBlank()) {
             this.observacaoGestor = observacao;
@@ -251,12 +358,14 @@ public class Residuo implements Serializable {
         this.status = StatusResiduo.DESPACHADO;
     }
 
-    public void validateLabelAvailable() {
-        if (codigoRastreio == null || qrCodeConteudo == null) {
-            throw new BusinessRuleException(
-                    "O rótulo só fica disponível após a análise e liberação do resíduo."
-            );
-        }
+    /**
+     * A prévia do rótulo pode existir desde a informação do Resíduo.
+     * A impressão física, porém, só é permitida depois da análise/liberação.
+     */
+    public boolean isImpressaoRotuloPermitida() {
+        return status == StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO
+                || status == StatusResiduo.ARMAZENADO_TEMPORARIAMENTE
+                || status == StatusResiduo.DESPACHADO;
     }
 
     private void requireStatus(StatusResiduo expected, String action) {
@@ -279,5 +388,129 @@ public class Residuo implements Serializable {
         if (status == null) {
             status = StatusResiduo.INFORMADO;
         }
+    }
+    
+    //Metodos para a classificação dos residuos
+    public void definirClassesInformadas(
+            List<ClasseResiduo> classes) {
+
+        substituirClasses(
+                EtapaClassificacaoResiduo.INFORMADA,
+                classes
+        );
+    }
+
+    public void definirClassesConfirmadas(
+            List<ClasseResiduo> classes) {
+
+        substituirClasses(
+                EtapaClassificacaoResiduo.CONFIRMADA,
+                classes
+        );
+    }
+
+    private void substituirClasses(
+            EtapaClassificacaoResiduo etapa,
+            List<ClasseResiduo> classes) {
+
+        if (classes == null || classes.isEmpty()) {
+            throw new BusinessRuleException(
+                    "Informe pelo menos uma classe de resíduo."
+            );
+        }
+
+        classificacoes.removeIf(
+                item -> item.getEtapa() == etapa
+        );
+
+        for (ClasseResiduo classe : classes) {
+            classe.validateActive();
+
+            classificacoes.add(
+                    ResiduoClasse.criar(
+                            this,
+                            classe,
+                            etapa
+                    )
+            );
+        }
+    }
+
+    public List<ResiduoClasse> getClassesInformadas() {
+        return classificacoes.stream()
+                .filter(item ->
+                        item.getEtapa()
+                                == EtapaClassificacaoResiduo.INFORMADA
+                )
+                .toList();
+    }
+
+    public List<ResiduoClasse> getClassesConfirmadas() {
+        return classificacoes.stream()
+                .filter(item ->
+                        item.getEtapa()
+                                == EtapaClassificacaoResiduo.CONFIRMADA
+                )
+                .toList();
+    }
+    
+    public void definirSegurancaInformada(
+            Set<MedidaSeguranca> medidas,
+            String observacao) {
+
+        validarSeguranca(medidas, observacao);
+
+        this.medidasSegurancaInformadas.clear();
+
+        if (medidas != null) {
+            this.medidasSegurancaInformadas.addAll(medidas);
+        }
+
+        this.observacaoSegurancaInformada =
+                normalizarObservacao(observacao);
+    }
+    
+    public void definirSegurancaConfirmada(
+            Set<MedidaSeguranca> medidas,
+            String observacao) {
+
+        validarSeguranca(medidas, observacao);
+
+        this.medidasSegurancaConfirmadas.clear();
+
+        if (medidas != null) {
+            this.medidasSegurancaConfirmadas.addAll(medidas);
+        }
+
+        this.observacaoSegurancaConfirmada =
+                normalizarObservacao(observacao);
+    }
+    
+    private void validarSeguranca(
+            Set<MedidaSeguranca> medidas,
+            String observacao) {
+
+        if (medidas == null) {
+            throw new BusinessRuleException(
+                    "Informe as medidas de segurança do resíduo."
+            );
+        }
+
+        if (medidas.contains(MedidaSeguranca.OUTRO)
+                && (observacao == null || observacao.isBlank())) {
+
+            throw new BusinessRuleException(
+                    "Descreva a medida de segurança marcada como OUTRO."
+            );
+        }
+    }
+    
+    private String normalizarObservacao(String observacao) {
+
+        if (observacao == null || observacao.isBlank()) {
+            return null;
+        }
+
+        return observacao.trim();
     }
 }

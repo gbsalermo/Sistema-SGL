@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
@@ -43,6 +45,16 @@ public class CriarResiduoRequestDTO {
     @NotBlank(message = "O processo de origem é obrigatório")
     @Schema(example = "Extração de DNA vegetal")
     private String processoOrigem;
+    
+    @NotNull(message = "O estado físico do resíduo é obrigatório")
+    private EstadoFisicoResiduo estadoFisico;
+    
+    @NotNull(message = "Informe se o resíduo recebeu tratamento")
+    private Boolean tratamentoRealizado;
+    
+    @Schema(description = "Descrição do tratamento já realizado no resíduo. Obrigatória quando tratamento Realizado for verdadeiro")
+    private String descricaoTratamento;
+    
 
     @NotBlank(message = "O recipiente é obrigatório")
     @Schema(example = "Bombona plástica de 5 L")
@@ -67,4 +79,13 @@ public class CriarResiduoRequestDTO {
     @Valid
     @NotEmpty(message = "O resíduo deve possuir pelo menos um componente informado")
     private List<ComponenteResiduoRequestDTO> componentes;
+    
+    @NotEmpty(
+    	    message = "Informe pelo menos uma classe de resíduo"
+    	)
+    private Set<UUID> classesInformadasIds;
+    
+    @NotNull( message = "Informe as medidas de segurança do resíduo")
+    	private Set<MedidaSeguranca> medidasSegurancaInformadas;
+    	private String observacaoSegurancaInformada;
 }

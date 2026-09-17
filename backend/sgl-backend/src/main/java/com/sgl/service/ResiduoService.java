@@ -3,6 +3,7 @@ package com.sgl.service;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import com.sgl.dto.response.ResiduoResponseDTO;
 import com.sgl.dto.response.RotuloResiduoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.ClasseResiduo;
 import com.sgl.model.ComponenteResiduo;
 import com.sgl.model.HistoricoResiduo;
 import com.sgl.model.Laboratorio;
@@ -28,6 +30,7 @@ import com.sgl.model.Residuo;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusResiduo;
+import com.sgl.repository.ClasseResiduoRepository;
 import com.sgl.repository.HistoricoResiduoRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProdutoRepository;
@@ -48,6 +51,7 @@ public class ResiduoService {
     private final LaboratorioRepository laboratorioRepository;
     private final ProjetoRepository projetoRepository;
     private final ProdutoRepository produtoRepository;
+    private final ClasseResiduoRepository classeResiduoRepository;
 
     @Transactional
     public ResiduoResponseDTO criar(CriarResiduoRequestDTO dto) {
@@ -66,6 +70,7 @@ public class ResiduoService {
                 .projeto(projeto)
                 .descricao(dto.getDescricao())
                 .processoOrigem(dto.getProcessoOrigem())
+                .estadoFisico(dto.getEstadoFisico())
                 .recipiente(dto.getRecipiente())
                 .quantidade(dto.getQuantidade())
                 .unidadeMedida(dto.getUnidadeMedida())
@@ -75,11 +80,25 @@ public class ResiduoService {
                 .status(StatusResiduo.INFORMADO)
                 .dataInformacao(LocalDateTime.now())
                 .build();
+        
+        residuo.definirTratamento(dto.getTratamentoRealizado(), dto.getDescricaoTratamento());
+        residuo.definirClassesInformadas(
+        		buscarClassesAtivasDaUnidade(
+                        dto.getClassesInformadasIds(),
+                        laboratorio.getUnidade().getPublicId()
+                )
+        );
+        
+     // Snapshot das medidas de segurança informadas pelo solicitante
+        residuo.definirSegurancaInformada(
+                dto.getMedidasSegurancaInformadas(),
+                dto.getObservacaoSegurancaInformada()
+        );
 
         dto.getComponentes().forEach(item -> residuo.addComponente(criarComponente(item)));
 
         Residuo salvo = residuoRepository.save(residuo);
-        salvo.setCodigoRastreio(gerarCodigoRastreio(salvo));
+        assegurarIdentificacaoRotulo(salvo);
         salvo = residuoRepository.save(salvo);
 
         registrarHistorico(
@@ -108,7 +127,17 @@ public class ResiduoService {
     public ResiduoResponseDTO analisarELiberar(UUID id, AnalisarResiduoRequestDTO dto) {
         Residuo residuo = buscarEntidade(id);
         Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
+        
+        // 1. Busca e valida as classes escolhidas pela Gestão
+        List<ClasseResiduo> classesConfirmadas =
+        		buscarClassesAtivasDaUnidade(
+                        dto.getClassesConfirmadasIds(),
+                        residuo.getLaboratorio()
+                                .getUnidade()
+                                .getPublicId()
+                );
 
+        // 2. Executa a análise/liberação
         residuo.liberarParaArmazenamento(
                 gestor,
                 dto.getNivelRiscoConfirmado(),
@@ -118,13 +147,17 @@ public class ResiduoService {
                 dto.getDataPrevistaDespacho(),
                 dto.getObservacaoGestor()
         );
+        
+        // 3. Registra o snapshot das classes confirmadas e a segurança
+        residuo.definirClassesConfirmadas(
+                classesConfirmadas
+        );
+        residuo.definirSegurancaConfirmada(
+                dto.getMedidasSegurancaConfirmadas(),
+                dto.getObservacaoSegurancaConfirmada()
+        );
 
-        if (residuo.getCodigoRastreio() == null) {
-            residuo.setCodigoRastreio(gerarCodigoRastreio(residuo));
-        }
-        if (residuo.getQrCodeConteudo() == null) {
-            residuo.setQrCodeConteudo("SGL-RESIDUO:" + residuo.getPublicId());
-        }
+        assegurarIdentificacaoRotulo(residuo);
 
         Residuo salvo = residuoRepository.save(residuo);
         registrarHistorico(
@@ -142,7 +175,7 @@ public class ResiduoService {
         Residuo residuo = buscarEntidade(id);
         Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
 
-        residuo.confirmarArmazenamento(gestor, dto.getLocalArmazenamentoTemporario());
+        residuo.confirmarArmazenamento(dto.getLocalArmazenamentoTemporario());
         Residuo salvo = residuoRepository.save(residuo);
         registrarHistorico(
                 salvo,
@@ -160,7 +193,6 @@ public class ResiduoService {
         Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
 
         residuo.confirmarDespacho(
-                gestor,
                 dto.getDestinoFinalConfirmado(),
                 dto.getObservacao()
         );
@@ -236,10 +268,15 @@ public class ResiduoService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public RotuloResiduoResponseDTO gerarDadosRotulo(UUID id) {
         Residuo residuo = buscarEntidade(id);
-        residuo.validateLabelAvailable();
+
+        // Compatibilidade com Resíduos antigos criados antes da Etapa 3.3.
+        if (assegurarIdentificacaoRotulo(residuo)) {
+            residuo = residuoRepository.save(residuo);
+        }
+
         return new RotuloResiduoResponseDTO(residuo);
     }
 
@@ -325,6 +362,36 @@ public class ResiduoService {
             );
         }
     }
+    
+    private List<ClasseResiduo> buscarClassesAtivasDaUnidade(
+            Set<UUID> ids,
+            UUID unidadeId) {
+
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessRuleException(
+                    "Informe pelo menos uma classe de resíduo."
+            );
+        }
+
+        List<ClasseResiduo> classes =
+                classeResiduoRepository
+                        .findByPublicIdInAndUnidadePublicId(
+                                ids,
+                                unidadeId
+                        );
+
+        if (classes.size() != ids.size()) {
+            throw new BusinessRuleException(
+                    "Uma ou mais classes de resíduo são inválidas para esta unidade."
+            );
+        }
+
+        for (ClasseResiduo classe : classes) {
+            classe.validateActive();
+        }
+
+        return classes;
+    }
 
     private ComponenteResiduo criarComponente(ComponenteResiduoRequestDTO dto) {
         Produto produto = null;
@@ -360,6 +427,28 @@ public class ResiduoService {
                 .build();
     }
 
+    /**
+     * Garante a identificação necessária para a prévia do rótulo.
+     *
+     * Código e QR pertencem à identidade do Resíduo e não representam,
+     * por si só, autorização para impressão física.
+     */
+    private boolean assegurarIdentificacaoRotulo(Residuo residuo) {
+        boolean alterado = false;
+
+        if (residuo.getCodigoRastreio() == null) {
+            residuo.setCodigoRastreio(gerarCodigoRastreio(residuo));
+            alterado = true;
+        }
+
+        if (residuo.getQrCodeConteudo() == null) {
+            residuo.setQrCodeConteudo("SGL-RESIDUO:" + residuo.getPublicId());
+            alterado = true;
+        }
+
+        return alterado;
+    }
+
     private String gerarCodigoRastreio(Residuo residuo) {
         int ano = residuo.getDataInformacao().getYear();
         return String.format("SGL-RES-%d-%06d", ano, residuo.getId());
@@ -382,4 +471,8 @@ public class ResiduoService {
                         .build()
         );
     }
+    
+    
+
+    
 }

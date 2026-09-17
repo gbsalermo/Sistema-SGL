@@ -1015,7 +1015,7 @@ public class DemoDataInitializer implements CommandLineRunner {
 
         if (atingiu(statusFinal, StatusResiduo.EM_ANALISE)) {
             LocalDateTime recebimento = dataInformacao.plusHours(4);
-            residuo.setGestorResponsavel(gestor);
+            residuo.setGestorRecebedorInicial(gestor);
             residuo.setDataRecebimento(recebimento);
             residuo.setStatus(StatusResiduo.EM_ANALISE);
             salvarHistorico(

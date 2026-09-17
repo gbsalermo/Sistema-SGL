@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.Produto;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.TipoPerecivel;
@@ -51,6 +52,8 @@ public class ProdutoResponseDTO {
     private final String observacaoFiscalizacao;
     @Schema(description = "Indica se o produto está ativo no catálogo.", example = "true")
     private final Boolean ativo;
+    private final Set<MedidaSeguranca> medidasSegurancaRecomendadas;
+    private final String observacaoSeguranca;
 
     public ProdutoResponseDTO(Produto entity) {
         this.id = entity.getPublicId();
@@ -70,5 +73,7 @@ public class ProdutoResponseDTO {
         this.orgaosFiscalizadores = Set.copyOf(entity.getOrgaosFiscalizadores());
         this.observacaoFiscalizacao = entity.getObservacaoFiscalizacao();
         this.ativo = entity.getAtivo();
+        this.medidasSegurancaRecomendadas = Set.copyOf(entity.getMedidasSegurancaRecomendadas());
+        this.observacaoSeguranca = entity.getObservacaoSeguranca();
     }
 }

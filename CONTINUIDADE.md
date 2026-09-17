@@ -3,16 +3,16 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 11/09/2026  
+**Última atualização:** 17/09/2026  
 **Branch estável:** `main`  
-**Fase atual:** ajustes de pré-produção pós-aprovação funcional.  
-**Bloco atual:** planejamento consolidado → execução sequencial das etapas de pré-produção.  
-**Etapa atual:** Etapa 3 — refinamentos do fluxo atual de Resíduos.  
-**Plano oficial da pré-produção:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Roadmap formal posterior:** matriz de permissões → congelamento → homologação final → segurança/integração corporativa.  
-**Handoff completo:** `docs/DOSSIE_PROJETO_SGL.md`
+**Branch recém-concluída:** `feat/etapa-3-residuos`  
+**Fase atual:** pré-produção pós-aprovação funcional  
+**Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
+**Próxima etapa:** Etapa 4 — expansão operacional de Resíduos  
+**Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
+**Handoff da próxima etapa:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
-Este arquivo é o checkpoint principal de retomada. Para o fluxo detalhado do bloco atual, ler `docs/PLANO_PRE_PRODUCAO.md`. Para contratos HTTP, usar sempre o Swagger/OpenAPI em execução.
+Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
 
 ---
 
@@ -25,12 +25,24 @@ branch própria
 → refinamento
 → Pull Request
 → main
-→ atualizar documentação afetada
+→ atualizar documentação
 ```
 
-Não reabrir módulos aprovados sem uma necessidade concreta. Mudanças de pré-produção devem preservar o comportamento funcional aprovado, salvo decisão explícita em contrário.
+Regra especial do projeto:
 
-**Regra especial deste bloco:** alterações funcionais de backend serão implementadas manualmente pelo responsável do projeto. O apoio de IA deve analisar, modelar, orientar a implementação e revisar o resultado; não aplicar diretamente código funcional de backend sem nova autorização explícita.
+- alterações funcionais de backend são implementadas **manualmente pelo responsável do projeto**;
+- a IA deve analisar, modelar, explicar, fornecer código de referência e revisar;
+- não aplicar diretamente código funcional de backend sem autorização explícita;
+- frontend/documentação podem ser alterados diretamente quando autorizado;
+- não antecipar etapas futuras.
+
+Ao iniciar a Etapa 4, confirmar primeiro que a Etapa 3 foi integrada à `main` nos dois repositórios e criar uma branch nova a partir dessa `main` atualizada.
+
+Branch sugerida:
+
+```text
+feat/etapa-4-residuos
+```
 
 ---
 
@@ -50,14 +62,13 @@ Embalagens / multiplicador / fracionamento            ✅
 Pedidos e urgência                                    ✅
 Swagger / OpenAPI                                     ✅
 Movimentações                                         ✅
-Relatórios consolidados                               ✅
+Relatórios consolidados                               ✅ base atual
 Produtos fiscalizados                                 ✅
 PDF / XLSX                                            ✅
-Resíduos — fluxo operacional completo                 ✅
-Estagiários — vínculo + encerramento                   ✅
+Resíduos — fluxo atual refinado                       ✅ Etapa 3 concluída
+Estagiários — base atual                              ✅ evolução na Etapa 6
 Pessoas por laboratório                               ✅
-Suporte a Administração/Cadastros                     ✅
-Alteração administrativa de perfil                    ✅
+Administração / Cadastros                             ✅
 Isolamento operacional por Unidade                    ✅
 Autenticação/autorização/auditoria definitiva         ⏳ roadmap formal
 Integração corporativa                                ⏳ roadmap formal
@@ -72,9 +83,12 @@ Pedidos do solicitante                                ✅
 Pedidos da gestão                                     ✅
 Estoque e lotes                                       ✅
 Movimentações                                         ✅
-Resíduos — solicitante e gestão                       ✅
-Rótulos de Produto e Resíduo                          ✅ base atual; adaptação final na Etapa 10
-Estagiários                                           ✅
+Resíduos — solicitante e gestão                       ✅ Etapa 3 concluída
+Classes de Resíduo em Cadastros                       ✅
+Segurança/EPI de Produto/Resíduo                      ✅
+Prévia antecipada do rótulo                           ✅
+Impressão bloqueada até liberação                     ✅
+Estagiários                                           ✅ base atual
 Relatórios + PDF/XLSX                                 ✅
 Pessoas por laboratório                               ✅
 Administração / Cadastros                             ✅
@@ -82,14 +96,12 @@ Dashboard Gestão                                      ✅
 Dashboard Solicitante                                 ✅
 Alertas operacionais                                  ✅
 Busca global                                          ✅
-Tema claro/escuro com persistência                    ✅ Dark Mode definitivo concluído
+Dark Mode definitivo                                  ✅
 Página 404                                            ✅
 Contexto de Unidade enviado à API                     ✅
-Testes automatizados frontend                         ⏳ Etapa 12 — Vitest/Vue Test Utils + Cypress
+Testes automatizados frontend                         ⏳ Etapa 12
 Autenticação/autorização definitiva                   ⏳ roadmap formal
 ```
-
-O produto foi aprovado funcionalmente. O trabalho atual é de pré-produção e refinamento, não de reconstrução do primeiro protótipo.
 
 ---
 
@@ -99,15 +111,16 @@ Quando houver conflito entre documentos:
 
 ```text
 1. código da main
-2. Swagger/OpenAPI para contratos HTTP
+2. Swagger/OpenAPI
 3. CONTINUIDADE.md do repositório em trabalho
-4. docs/PLANO_PRE_PRODUCAO.md durante o bloco atual
-5. docs/DOSSIE_PROJETO_SGL.md
-6. documentos específicos de decisão/módulo
-7. roteiros, exemplos e documentos históricos
+4. docs/PLANO_PRE_PRODUCAO.md
+5. handoff da etapa atual
+6. docs/DOSSIE_PROJETO_SGL.md
+7. documentos específicos de módulo
+8. documentos históricos
 ```
 
-Datas de upload/commit de documentos históricos não transformam conteúdo antigo em fonte de verdade.
+Documentos históricos podem permanecer para rastreabilidade, mas não devem comandar a tarefa atual quando houver checkpoint mais recente.
 
 ---
 
@@ -129,16 +142,10 @@ Long id
 → banco, JPA, FKs e locks
 
 UUID publicId
-→ DTOs, endpoints e frontend
+→ endpoints, DTOs e frontend
 ```
 
-Fluxo padrão:
-
-```text
-Controller recebe UUID
-→ Service resolve por publicId
-→ domínio usa Long internamente
-```
+Não introduzir ID numérico em contratos públicos sem necessidade explícita.
 
 ---
 
@@ -152,103 +159,74 @@ spring.jpa.hibernate.ddl-auto=validate
 spring.flyway.enabled=true
 ```
 
-O Hibernate valida o schema; quem evolui o banco é o Flyway.
+O Hibernate valida; o Flyway evolui o schema.
 
-Migrations atuais:
+Migrations relevantes já aplicadas no domínio de Resíduos:
 
 ```text
-V1 ... V12
+V11 — módulo de Resíduos
+V12 — backfill Código SGL
+V13 — estado físico, tratamento e responsabilidade inicial
+V14 — Classes de Resíduo
+V15 — segurança/EPI
 ```
 
-Regra obrigatória: migration já aplicada é imutável. Nova alteração de schema recebe uma nova versão.
+Regra obrigatória:
+
+```text
+migration aplicada = imutável
+nova alteração de schema = V16+
+```
 
 ---
 
-# 5. Multitenancy por Unidade — estado atual
-
-O isolamento por Unidade já está integrado à `main`.
+# 5. Multitenancy por Unidade
 
 Backend:
 
 ```text
-TenantRequestFilter
-→ lê X-SGL-Unidade-Id
-→ valida UUID
-→ define TenantContext durante a requisição
-→ limpa o contexto no final
+X-SGL-Unidade-Id
+→ TenantRequestFilter
+→ TenantContext
+→ services/repositories restringem dados
+→ contexto limpo ao final
 ```
-
-`TenantProvider` e consultas/services usam a Unidade atual para restringir dados em áreas como usuários, laboratórios, projetos, produtos, estoque, lotes, pedidos, movimentações, estagiários e resíduos.
 
 Frontend:
 
 ```text
-sessão DEV contém unidadeId/unidadeSigla
-→ interceptor HTTP lê unidadeId
-→ envia X-SGL-Unidade-Id em chamadas à API
+sessão DEV contém unidadeId
+→ interceptor envia X-SGL-Unidade-Id
 ```
 
 Interpretação correta:
 
 ```text
 isolamento funcional por Unidade              ✅
-validação de cenários multitenant              ✅
-fronteira definitiva de segurança              ❌ ainda não
+segurança definitiva por identidade            ❌ ainda não
 ```
 
-Enquanto a Unidade vier de um header controlado pelo cliente e a autenticação definitiva não existir, esse mecanismo não deve ser tratado como autorização segura de produção. Na integração corporativa, Unidade/tenant deve ser derivado da identidade autenticada.
+A autenticação futura deve derivar Unidade/tenant da identidade autenticada confiável.
 
 ---
 
-# 6. Estoque, lotes e pedidos
+# 6. Estoque, lotes e Pedidos
 
 ```text
 Produto = catálogo
 EstoqueCentral = saldo consolidado por produto/Unidade
-Lote = validade + saldo + embalagem + rastreabilidade
-MovimentacaoEstoque = trilha das operações físicas
+Lote = validade + saldo + apresentação + rastreabilidade
+MovimentacaoEstoque = trilha de operações físicas
 ```
 
-Seleção de lotes:
+Seleção:
 
 ```text
 perecível     → FEFO
 não perecível → FIFO
 ```
 
-Invariantes:
-
-```text
-EstoqueCentral.quantidadeAtual acompanha os lotes
-aprovação baixa estoque
-entrega NÃO baixa novamente
-cancelamento aprovado restaura os lotes exatos utilizados
-lote vencido não participa da aprovação
-movimentação identifica o lote efetivamente afetado
-```
-
-Formas de retirada:
-
-```text
-UNITARIO
-KIT
-CAIXA
-GARRAFA
-GALAO
-```
-
-Fracionamento:
-
-```text
-false → true  permitido
-true  → false não permitido
-```
-
-A Etapa 8 da pré-produção revisará a representação de unidades de medida e apresentações físicas antes da consolidação de Soluções. Até lá, preservar as regras atuais.
-
----
-
-# 7. Pedidos
+Pedidos:
 
 ```text
 PENDENTE
@@ -258,23 +236,19 @@ PENDENTE
 └── REJEITADO
 ```
 
-Regras consolidadas:
+Regras:
 
-```text
-criação → não baixa estoque
-aprovação → baixa física
-entrega → conclusão sem segunda baixa
-cancelamento aprovado → restaura quantidades dos lotes utilizados
-urgência → não altera FIFO/FEFO
-```
+- criação não baixa estoque;
+- aprovação executa a baixa;
+- entrega não baixa novamente;
+- cancelamento aprovado restaura os lotes efetivamente usados;
+- urgência não altera FIFO/FEFO.
 
-`Pedido.dataEntrega` registra o evento real de entrega.
-
-A introdução de Soluções em Pedidos está planejada para a Etapa 9 e depende da Etapa 8 — Unidades e Soluções — estar estabilizada.
+Unidades/apresentações serão refinadas na Etapa 8 antes de Soluções.
 
 ---
 
-# 8. Resíduos
+# 7. Resíduos — estado após a Etapa 3
 
 Decisão central:
 
@@ -282,9 +256,9 @@ Decisão central:
 Produto != Resíduo
 ```
 
-Componente de Resíduo pode referenciar Produto para rastreabilidade sem alterar estoque automaticamente.
+Componente de Resíduo pode referenciar Produto para rastreabilidade e sugestão de segurança sem movimentar estoque.
 
-Fluxo atual:
+Fluxo validado:
 
 ```text
 INFORMADO
@@ -300,295 +274,239 @@ Código SGL:
 SGL-RES-AAAA-NNNNNN
 ```
 
-O código existe desde o registro inicial; V12 realizou backfill dos registros anteriores.
+O código e o QR técnico existem desde o registro inicial.
 
-Pré-produção planejada:
+## Dados incorporados na Etapa 3
 
-- Etapa 3: remover redundância visual de análise, ampliar dados/classificação/segurança/responsabilidade do Resíduo e corrigir a regra geração/visualização/permissão de impressão;
-- Etapa 4: locais de armazenamento cadastráveis e modelos de Resíduos pré-cadastrados pela Gestão, com escolha entre modelo padrão e preenchimento manual pelo Solicitante;
-- Etapa 10: padronizar rótulos e impressão operacional, com templates adaptados de Produto, Resíduo e Solução, além de Documento de Auditoria de Entrada de Lote imprimível e sem valor fiscal.
+- Procedência/uso preservada em `processoOrigem`;
+- estado físico;
+- tratamento realizado + descrição;
+- `gestorRecebedorInicial`;
+- Classes de Resíduo informadas/confirmadas;
+- snapshots de classes;
+- Segurança/EPI informada/confirmada;
+- recomendações de segurança em Produto;
+- snapshots de segurança;
+- comparação visual informado x aprovado;
+- identificação do Gestor que liberou pelo histórico.
 
-Distinção futura obrigatória:
+## Rótulo
 
 ```text
-ModeloResiduo = definição reutilizável/padrão
-Residuo       = ocorrência operacional real
+INFORMADO / EM_ANALISE
+→ prévia disponível
+→ impressão bloqueada
+
+LIBERADO_PARA_ARMAZENAMENTO ou posterior
+→ impressão liberada
 ```
 
-Alterações posteriores no modelo não devem modificar retroativamente Resíduos já registrados.
+Visualização e impressão são eventos distintos.
 
-Detalhes do plano: `docs/PLANO_PRE_PRODUCAO.md`. Detalhes do domínio atual: `docs/MODULO_RESIDUOS.md`.
+Template definitivo/Zebra continuam na Etapa 10.
+
+## Responsabilidade
+
+```text
+usuarioGerador
+→ quem informou
+
+gestorRecebedorInicial
+→ quem recebeu inicialmente e conduziu a conferência
+
+HistoricoResiduo
+→ ator real de cada transição
+```
+
+Armazenamento e despacho podem ser executados por outro Gestor sem perder o histórico anterior. Isso foi validado manualmente.
+
+Detalhes: `docs/MODULO_RESIDUOS.md`.
 
 ---
 
-# 9. Estagiários e estrutura institucional
+# 8. Etapa 3 — fechamento
 
-Cobertura atual:
-
-```text
-listar / consultar
-cadastrar
-editar
-ativos
-por laboratório
-unidade explícita no vínculo
-período de estágio
-tipo de vínculo
-encerramento com data efetiva
-```
-
-Tipos atuais:
+Fechada e validada em **17/09/2026**.
 
 ```text
-BOLSA_CNPQ
-BOLSA_CAPES
-BOLSA_INSTITUCIONAL
-VOLUNTARIO
-CONTRATUAL
+3.1 redundância de análise                            ✅
+3.2.1 estado físico/tratamento/responsabilidade       ✅
+3.2.2 Classes de Resíduo                              ✅
+3.2.3 Segurança/EPI + snapshot                        ✅
+3.2.4 integração frontend                             ✅
+3.3 identificação/prévia/permissão de impressão       ✅
 ```
 
-Regras atuais principais:
+A validação final cobriu criação, análise, armazenamento, despacho, Gestores diferentes, histórico, prévia, bloqueio/liberação de impressão, comparação informado/aprovado e legibilidade da tela.
 
-- usuário precisa ter perfil `ESTAGIARIO`;
-- não há dois registros de estágio para o mesmo usuário;
-- laboratório e usuário precisam pertencer à mesma Unidade;
-- data final não pode anteceder a inicial;
-- usuário vinculado não é trocado durante edição;
-- encerramento grava data efetiva e não pode ser repetido.
-
-A pré-produção passa a separar os domínios para preservar dependências. A Etapa 5 fecha Projetos e Atividades: Projeto continua N:1 com Laboratório e ganha Código SEG institucional, líder/responsável, financiador, datas, ciclo de vida e situação de execução. Só depois, a Etapa 6 evolui Estagiários com Orientador obrigatório, Projeto/Atividade, Bolsa/vínculo separado de Curso/Formação, Cultura/área temática, treinamento inicial de segurança e histórico de prorrogações justificadas.
+Checkpoint: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 ---
 
-# 10. Administração / Cadastros
+# 9. Etapa 4 — próxima etapa
 
-A central administrativa usa suporte backend para:
+Handoff canônico:
+
+`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+
+Ordem prevista:
 
 ```text
-Laboratórios
-Projetos
-Produtos
-Permissões/perfis de usuários existentes
+4.1 Locais de armazenamento cadastráveis
+→ 4.2 Modelos de Resíduos pré-cadastrados pela Gestão
+→ 4.3 Uso de modelo ou preenchimento manual pelo Solicitante
+→ 4.4 Correções administrativas do ciclo de vida
 ```
 
-Decisões vigentes:
+## 4.1 Local de armazenamento
 
-- Unidade é dado institucional; não há CRUD manual normal no frontend;
-- usuário não é criado manualmente na central administrativa;
-- Administração pode alterar perfil de usuários existentes;
-- Produto em Cadastros é catálogo, não estoque;
-- responsável de Laboratório deve pertencer à mesma Unidade;
-- `ESTAGIARIO` com vínculo ativo não deve perder esse perfil antes do encerramento.
+Planejar catálogo reutilizável por Unidade, mantendo possibilidade de complemento/texto manual.
 
-Alterações planejadas:
+Antes de codar, decidir como preservar histórico caso o local seja renomeado futuramente.
 
-- Etapa 4: liberar cadastro de modelos de Resíduos padrão e locais de armazenamento;
-- Etapa 5: confirmar regras de Projeto/Atividade → Projeto base → Código SEG → Atividades, se confirmadas → interface;
-- Etapa 6: confirmar regras de Estagiário → domínio institucional → vínculos Projeto/Atividade → ciclo/prorrogações → interface;
-- Etapa 8: normalizar unidades e consolidar cadastro/domínio de Soluções;
-- Etapa 9: confirmar escopo de Pedidos e integrar Soluções sem reabrir o domínio-base.
+## 4.2 ModeloResiduo
+
+```text
+ModeloResiduo = padrão reutilizável
+Residuo       = ocorrência real
+```
+
+Modelo pode sugerir descrição, procedência, composição, classes, riscos, segurança, recipiente e outros dados reutilizáveis.
+
+Alterar o modelo depois não pode modificar Resíduos históricos.
+
+## 4.3 Solicitante
+
+Na criação, permitir escolha entre modelo pré-cadastrado e preenchimento manual.
+
+## 4.4 Correções administrativas
+
+Necessidade levantada ao fechar a Etapa 3:
+
+```text
+ADMINISTRADOR
+→ cancelar Resíduo com justificativa
+→ ou retornar para análise/liberação quando permitido
+→ preservar histórico
+```
+
+Antes de implementar, fechar regras de status, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, efeitos no rótulo e necessidade de nova liberação.
+
+Não confundir com delete lógico. A decisão geral de delete lógico continua na Etapa 11.
 
 ---
 
-# 11. Fiscalização
+# 10. Projetos, Estagiários e Relatórios — etapas futuras
 
-Campos:
+## Etapa 5 — Projetos + Atividades
 
-```text
-fiscalizado
-orgaosFiscalizadores
-observacaoFiscalizacao
-```
+Antes de modelagem definitiva, confirmar:
 
-Órgãos atuais:
+- Código SEG;
+- se Atividade é entidade subordinada ao Projeto;
+- se `SCI` é tipo de Projeto ou domínio separado;
+- situações de execução.
 
-```text
-POLICIA_FEDERAL
-VIGILANCIA_SANITARIA
-ANVISA
-EXERCITO
-OUTRO
-```
+Projeto continua N:1 com Laboratório.
 
-Se `fiscalizado=true`, pelo menos um órgão deve existir. Não inferir fiscalização por risco ou perecibilidade.
+## Etapa 6 — Estagiários
 
----
+Planejado:
 
-# 12. Relatórios e exportações
+- Orientador obrigatório;
+- Projeto/Atividade;
+- Bolsa/vínculo separado de Curso/Formação;
+- Cultura/área temática;
+- treinamento inicial de segurança;
+- prorrogações justificadas e históricas.
 
-Relatórios integrados atualmente:
+## Etapa 7 — Relatórios consolidados
 
-```text
-1. Estagiários
-2. Produtos
-3. Movimentações
-4. Resumo operacional
-5. Estoque e lotes
-6. Fiscalização
-7. Resíduos
-8. Pessoas por laboratório
-```
-
-Pedidos entregues são recorte de Movimentações, não relatório próprio.
-
-```text
-prévia JSON
-PDF
-XLSX
-→ mesma consulta e mesmos filtros
-```
-
-A Etapa 7 consumirá exclusivamente as Etapas 5 e 6 estabilizadas para relatórios consolidados de Laboratórios, Projetos e Estagiários, incluindo filtros/contagens por Orientador, responsável de Laboratório, Bolsa/vínculo, Curso/Formação, Cultura/área temática, Projeto, Atividade e situação.
-
-Detalhes atuais: `docs/RELATORIOS.md` e `docs/EXPORTACAO_RELATORIOS.md`.
+Depende das Etapas 5 e 6 estabilizadas. Inclui filtros/agregações, telas, PDF/XLSX e organização estrutural do módulo de relatórios.
 
 ---
 
-# 13. Dashboard, alertas e busca
+# 11. Unidades, Soluções e Pedidos
 
-O frontend compõe dados reais já expostos por pedidos, estoque, lotes, resíduos, movimentações, laboratórios e usuários.
+## Etapa 8
 
-Indicadores usados incluem:
+Normalizar:
 
 ```text
-pedidos pendentes/urgentes
-estoque baixo
-lotes vencidos
-lotes vencendo em 7/30 dias
-resíduos INFORMADO/EM_ANALISE
-movimentações recentes
-resumo por laboratório
+unidade de medida
+≠
+apresentação física
 ```
 
-Novo KPI com regra oficial complexa deve preferir endpoint/serviço backend próprio, evitando duplicação de regra no frontend.
+Conversões compatíveis:
+
+```text
+1 L = 1000 mL
+1 kg = 1000 g
+```
+
+Não converter massa ↔ volume genericamente sem densidade.
+
+Depois estabilizar domínio de Soluções.
+
+## Etapa 9
+
+Integrar Soluções aos Pedidos sem redefinir a entidade Solução. Aprovação deve validar atomicamente todos os componentes.
 
 ---
 
-# 14. Segurança e sessão
+# 12. Rótulos, Manual, Testes e Refactor
 
-Estado correto:
+## Etapa 10 — Rótulos e impressão
+
+- padrão-base SGL;
+- rótulos adaptados de Produto/Resíduo/Solução;
+- documento interno de auditoria de entrada de lote;
+- Zebra/ZPL/testes físicos.
+
+## Etapa 11 — Manual + delete lógico
+
+- Manual do Usuário;
+- avaliação de delete lógico entidade por entidade;
+- não substituir ciclos de vida por `ativo` indiscriminadamente.
+
+## Etapa 12 — testes frontend
 
 ```text
-Spring Security como base técnica                    ✅
-guardas de rota no frontend                          ✅ UX
-sessão DEV com expiração                             ✅ temporária
-isolamento por Unidade via header                    ✅ desenvolvimento
-autenticação definitiva                              ⏳
-autorização global real                              ⏳
-auditoria por identidade autenticada                 ⏳
-integração corporativa/SSO                           ⏳
+Vitest + Vue Test Utils
+Cypress
 ```
 
-A configuração atual do backend ainda usa `permitAll()` de forma temporária. A futura autenticação deverá retirar dos payloads e headers controláveis pelo cliente a responsabilidade por identidade, perfil e tenant sempre que esses dados puderem vir da sessão/token confiável.
+## Etapa 13 — revisão estrutural e legibilidade
+
+Revisar classes grandes, com atenção especial a `Residuo`, Services, DTOs e Controllers.
+
+Não fazer refactor grande agora apenas para reduzir linhas. O refactor final deve ocorrer depois da suíte da Etapa 12 e reexecutar os testes.
 
 ---
 
-# 15. Fase atual — pré-produção pós-aprovação
-
-O primeiro protótipo foi funcionalmente aprovado. O levantamento realizado durante a apresentação com o cliente foi consolidado em `docs/PLANO_PRE_PRODUCAO.md`.
-
-Situação:
+# 13. Situação da pré-produção
 
 ```text
-limpeza/revisão documental                            ✅ concluída
-planejamento dos ajustes                              ✅ consolidado
-Etapa 1 — refinamento visual global                   ✅ concluída
-Etapa 2 — Dark Mode definitivo                        ✅ concluída
-Etapa 3 — refinamentos do fluxo atual de Resíduos     ⏭ ATUAL / próxima implementação
-Etapa 4 — expansão operacional de Resíduos            ⏳
+Etapa 1 — refinamento visual global                   ✅
+Etapa 2 — Dark Mode definitivo                        ✅
+Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
+Etapa 4 — expansão operacional de Resíduos            ⏭ próxima
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
-Etapa 9 — Pedidos + integração com Soluções           ⏳
-Etapa 10 — Rótulos + documento de lote + impressão    ⏳
-Etapa 11 — Manual do Usuário + decisão delete lógico  ⏳
-Etapa 12 — testes automatizados do Frontend           ⏳
+Etapa 9 — Pedidos + Soluções                          ⏳
+Etapa 10 — Rótulos + impressão operacional            ⏳
+Etapa 11 — Manual + decisão delete lógico             ⏳
+Etapa 12 — testes automatizados frontend              ⏳
+Etapa 13 — revisão estrutural e legibilidade           ⏳
 ```
 
-Dependências centrais:
-
-```text
-padrão visual → Dark Mode
-Resíduos atuais → expansão/modelos de Resíduos
-Projeto base → Atividades (se confirmadas) → Estagiários/vínculos → relatórios consolidados
-unidades → Soluções → Pedidos com Soluções
-Produto/Resíduo/Solução estabilizados → rótulos adaptados + documento de lote + impressão
-Etapas 1 a 11 estabilizadas → testes automatizados frontend
-```
-
-A Etapa 12 adotará `Vitest + Vue Test Utils` para testes unitários/componentes e `Cypress` como ferramenta E2E principal. Selenium não é o padrão escolhido para o SGL neste planejamento.
-
-O detalhe, escopo, regras e impacto de cada etapa estão em `docs/PLANO_PRE_PRODUCAO.md`.
+Matriz de permissões, congelamento funcional e autenticação definitiva continuam posteriores ao bloco atual.
 
 ---
 
-# 16. Roadmap formal posterior
+# 14. Regra final de retomada
 
-Depois de concluído o bloco atual de pré-produção:
-
-```text
-1. consolidar diretrizes/matriz de permissões
-2. congelar o comportamento funcional
-3. executar homologação integrada final
-4. corrigir falhas encontradas
-5. autenticação + autorização + auditoria definitiva
-6. integração corporativa / SSO / Unidade confiável
-7. demais contratos/documentos de produção necessários
-8. refactors técnicos planejados
-```
-
-Esse roadmap continua válido; apenas não é o bloco em execução neste momento.
-
----
-
-# 17. Documentação de referência
-
-Começar por:
-
-```text
-README.md
-CONTINUIDADE.md
-docs/PLANO_PRE_PRODUCAO.md
-docs/DOSSIE_PROJETO_SGL.md
-docs/README.md
-```
-
-Depois consultar o documento específico da área em trabalho.
-
-Para endpoints e payloads, confirmar sempre no Swagger/OpenAPI.
-
----
-
-# 18. Regra final de retomada
-
-**O SGL está funcionalmente aprovado. As Etapas 1 e 2 da pré-produção foram concluídas. A retomada agora deve começar pela Etapa 3 — refinamentos do fluxo atual de Resíduos — seguindo `docs/PLANO_PRE_PRODUCAO.md`. Não tratar a matriz de permissões como tarefa imediata até que as etapas atuais sejam encerradas. Preservar regras consolidadas, usar a `main` como verdade e lembrar que alterações funcionais de backend neste bloco serão implementadas manualmente pelo responsável do projeto.**
-
----
-
-# 19. Fechamento da Etapa 2 — 11/09/2026
-
-O Dark Mode definitivo foi validado e integrado no frontend.
-
-```text
-Frontend PR #50
-squash merge: a3fff4fa8edb6b8900c4a5b359dbfc0245afb87c
-```
-
-Principais decisões fechadas:
-
-- uma única fonte de verdade para tema;
-- preferência persistida em `sgl.theme`;
-- Vuetify e DOM sincronizados;
-- tokens escuros definitivos;
-- remoção de CSS legado/provisório;
-- Login/404/rótulos de impressão continuam claros;
-- nenhuma regra de negócio, payload ou contrato HTTP alterado;
-- semântica de cores consistente entre Estoque, Movimentações, Resíduos e Relatórios.
-
-Próxima etapa oficial:
-
-```text
-Etapa 3 — Refinamentos do fluxo atual de Resíduos
-→ começar por 3.1 — remover redundância de análise
-```
+**A Etapa 3 está encerrada e validada. A próxima janela deve confirmar que `feat/etapa-3-residuos` foi integrada à `main` nos dois repositórios e, somente depois, iniciar a Etapa 4 em branch própria criada a partir da `main` atualizada. Ler `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md` antes de qualquer implementação. Começar pela modelagem da 4.1 — locais de armazenamento cadastráveis — e preservar a regra de que o usuário implementa manualmente o backend funcional.**

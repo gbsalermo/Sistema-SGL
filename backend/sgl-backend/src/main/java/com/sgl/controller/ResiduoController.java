@@ -124,7 +124,7 @@ public class ResiduoController {
         return ResponseEntity.ok(residuoService.despachar(id, dto));
     }
 
-    @Operation(summary = "Obter dados do rótulo", description = "Retorna os dados consolidados para montagem e impressão do rótulo físico do resíduo.")
+    @Operation(summary = "Obter prévia do rótulo", description = "Retorna os dados do rótulo desde o registro inicial. A impressão física só é permitida após análise e liberação.")
     @GetMapping("/{id}/rotulo")
     public ResponseEntity<RotuloResiduoResponseDTO> gerarRotulo(@PathVariable UUID id) {
         return ResponseEntity.ok(residuoService.gerarDadosRotulo(id));

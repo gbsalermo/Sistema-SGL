@@ -1,8 +1,8 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Estado em 03/09/2026:** ✅ módulo reconciliado, implementado e integrado à `main`.  
-**Migrations:** `V11__create_residuo_module.sql` e `V12__backfill_codigo_sgl_residuos.sql`.  
-**Branches `feat/gestao-residuos` / `feat/residuos`:** histórico de desenvolvimento; não representam trabalho pendente.
+**Estado em 17/09/2026:** ✅ fluxo atual refinado e validado até a Etapa 3 da pré-produção.  
+**Migrations principais:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql` e `V15__add_residue_safety_information.sql`.  
+**Próxima evolução:** Etapa 4 — expansão operacional de Resíduos.
 
 ## 1. Regra central
 
@@ -12,11 +12,11 @@ Produto != Resíduo
 
 Produto representa catálogo/estoque. Resíduo representa material gerado no laboratório e encaminhado à Gestão.
 
-Um componente pode referenciar opcionalmente um Produto para rastreabilidade, mas isso **não baixa, repõe ou altera EstoqueCentral, Lote ou MovimentacaoEstoque**.
+Um componente pode referenciar opcionalmente um Produto para rastreabilidade e para sugestões de segurança, mas isso **não baixa, repõe ou altera EstoqueCentral, Lote ou MovimentacaoEstoque**.
 
 ---
 
-## 2. Fluxo inverso a Pedidos
+## 2. Fluxo operacional
 
 ```text
 PEDIDO
@@ -31,35 +31,12 @@ laboratório gera
 → recipiente chega à Gestão
 → Gestão recebe/confere
 → analisa/classifica
-→ libera e rotula
+→ libera
 → armazena temporariamente
 → despacha/destina
 ```
 
----
-
-## 3. Experiências de interface
-
-### Solicitante
-
-```text
-/residuos/novo   → Informar resíduo
-/meus-residuos   → acompanhar resíduos do usuário
-```
-
-O usuário informa o material efetivamente gerado. Ele não define a classificação técnica final nem executa as transições operacionais da Gestão.
-
-### Gestão
-
-```text
-/residuos
-```
-
-A Gestão recebe, confere, confirma/corrige riscos, libera rótulo, registra armazenamento temporário e despacho.
-
----
-
-## 4. Status
+O fluxo de status permanece:
 
 ```text
 INFORMADO
@@ -77,13 +54,40 @@ Transições fora de ordem são rejeitadas.
 
 ---
 
-## 5. Criação
+## 3. Experiências de interface
+
+### Solicitante
+
+```text
+/residuos/novo   → Informar resíduo
+/meus-residuos   → acompanhar resíduos do usuário
+```
+
+O Solicitante informa a ocorrência real. A Gestão pode confirmar/corrigir classificação, classes e segurança sem apagar a declaração original.
+
+### Gestão
+
+```text
+/residuos
+```
+
+A Gestão recebe, confere, analisa/classifica, libera, consulta rótulo, registra armazenamento temporário e despacho.
+
+### Administração
+
+A área de Cadastros já permite manter **Classes de Resíduo** e recomendações de segurança em Produtos.
+
+A Etapa 4 adicionará locais de armazenamento e modelos reutilizáveis de Resíduo.
+
+---
+
+## 4. Criação do Resíduo
 
 ```text
 POST /api/v1/residuos
 ```
 
-Dados principais:
+Dados principais consolidados:
 
 ```text
 usuarioGeradorId
@@ -91,13 +95,41 @@ laboratorioId
 projetoId opcional
 descricao
 processoOrigem
+estadoFisico
+tratamentoRealizado
+descricaoTratamento condicional
 recipiente
 quantidade
 unidadeMedida
 nivelRiscoInformado
 riscosInformados[]
+classesInformadasIds[]
+medidasSegurancaInformadas[]
+observacaoSegurancaInformada
 observacaoGerador
 componentes[]
+```
+
+Na interface, `processoOrigem` é apresentado como **Procedência / uso do Resíduo**. Não existe campo redundante de procedência.
+
+Tratamento:
+
+```text
+tratamentoRealizado = false
+→ descricaoTratamento não é obrigatória
+
+tratamentoRealizado = true
+→ descricaoTratamento obrigatória
+```
+
+Estado físico atual:
+
+```text
+LIQUIDO
+SOLIDO
+SEMISSOLIDO
+GASOSO
+OUTRO
 ```
 
 Componente:
@@ -114,9 +146,27 @@ observacao
 
 ---
 
+## 5. Responsabilidade operacional
+
+O sistema preserva separadamente:
+
+```text
+usuarioGerador
+→ quem informou/gerou a ocorrência
+
+gestorRecebedorInicial
+→ Gestor que recebeu inicialmente o Resíduo
+```
+
+O Gestor recebedor inicial conduz a análise/liberação. Após a liberação, armazenamento e despacho podem ser executados por outro Gestor autorizado.
+
+O histórico registra o ator real de cada transição, portanto trocar o executor nas etapas posteriores não apaga responsabilidades anteriores.
+
+---
+
 ## 6. Risco declarado x confirmado
 
-A declaração original do laboratório permanece separada da classificação da Gestão.
+A declaração original permanece separada da classificação da Gestão.
 
 ```text
 Laboratório
@@ -147,7 +197,80 @@ PERIGO_AMBIENTAL
 
 ---
 
-## 7. Operações da Gestão
+## 7. Classes de Resíduo e snapshot
+
+Classes são catálogo editável por Unidade, não enum rígido.
+
+Catálogo inicial:
+
+```text
+A — Solventes ou soluções de substâncias orgânicas que não contenham halogênios
+B — Solventes ou soluções orgânicas que contenham halogênios
+F — Resíduos sólidos de produtos químicos orgânicos
+H — Outros
+```
+
+Fluxo:
+
+```text
+Solicitante
+→ classes informadas
+
+Gestão
+→ confirma/adiciona/remove
+→ classes confirmadas
+```
+
+`ResiduoClasse` mantém snapshot de código e descrição.
+
+Regra arquitetural:
+
+```text
+ClasseResiduo
+= catálogo atual/editável
+
+ResiduoClasse
+= fotografia histórica da classificação usada naquela ocorrência
+```
+
+Renomear ou inativar uma classe não altera a classificação de Resíduos antigos.
+
+---
+
+## 8. Segurança/EPI e snapshot
+
+Medidas estruturadas atuais:
+
+```text
+LUVAS
+OCULOS_PROTECAO
+PROTECAO_RESPIRATORIA
+JALECO_AVENTAL
+OUTRO
+```
+
+Quando `OUTRO` é utilizado, uma observação descritiva é obrigatória.
+
+Produto pode manter **recomendações** de segurança. Quando um Produto participa da composição, o frontend pode sugerir essas medidas ao Solicitante.
+
+Isso não cria dependência histórica:
+
+```text
+Produto
+→ recomendação atual
+
+Residuo.medidasSegurancaInformadas
+→ snapshot do que foi registrado pelo Solicitante
+
+Residuo.medidasSegurancaConfirmadas
+→ snapshot do que foi confirmado pela Gestão
+```
+
+Alterar as recomendações do Produto depois não altera Resíduos históricos.
+
+---
+
+## 9. Operações da Gestão
 
 ```text
 PUT /api/v1/residuos/{id}/receber
@@ -156,54 +279,94 @@ PUT /api/v1/residuos/{id}/armazenar
 PUT /api/v1/residuos/{id}/despachar
 ```
 
-Enquanto a autenticação definitiva não existe, contratos ainda podem receber identificadores de usuário responsável. O domínio exige perfil compatível para ações de Gestão.
+Na análise/liberação, a Gestão confirma:
 
-A autenticação futura deve derivar a identidade da sessão/token sempre que possível.
+- nível de risco;
+- riscos;
+- Classes de Resíduo;
+- Segurança/EPI;
+- local de armazenamento temporário;
+- destino previsto;
+- observação técnica;
+- data prevista de despacho, quando informada.
+
+Enquanto a autenticação definitiva não existe, contratos ainda podem receber identificadores do usuário responsável. A autenticação futura deve derivar identidade e tenant da sessão/token confiável.
 
 ---
 
-## 8. Código SGL, rótulo e rastreabilidade
+## 10. Código SGL, QR, prévia e impressão
 
-Código atual:
+Código:
 
 ```text
 SGL-RES-AAAA-NNNNNN
 ```
 
-Desde 02/09/2026 ele é gerado **no registro inicial do Resíduo**, não apenas após análise/liberação. `V12` realizou backfill para registros anteriores.
+O Código SGL existe desde o registro inicial.
 
-Rótulo:
+A Etapa 3 separou três conceitos:
+
+```text
+identificação
+≠
+pré-visualização
+≠
+autorização para impressão
+```
+
+Regra final:
+
+```text
+INFORMADO / EM_ANALISE
+→ código + QR existem
+→ prévia disponível à Gestão
+→ impressão bloqueada
+
+LIBERADO_PARA_ARMAZENAMENTO ou posterior
+→ impressão liberada
+```
+
+Endpoint:
 
 ```text
 GET /api/v1/residuos/{id}/rotulo
 ```
 
-O primeiro protótipo imprime/exibe:
+A resposta informa, além dos dados do rótulo, se a impressão está autorizada.
 
-```text
-código SGL
-pictogramas de riscos confirmados
-classificação confirmada
-composição
-laboratório e gerador
-processo de origem
-recipiente
-armazenamento/destino
-quantidade
-marca Embrapa/SGL
-```
+Resíduos antigos sem QR podem receber a identificação técnica faltante ao abrir a prévia.
 
-O campo técnico de QR pode existir por compatibilidade, mas **QR Code não faz parte do rótulo visual atual**.
+A tela de rótulo bloqueia tanto o botão quanto a impressão pelo navegador enquanto o Resíduo ainda estiver apenas em prévia.
 
-Rota frontend:
-
-```text
-/residuos/:id/rotulo
-```
+A definição visual definitiva, templates finais e infraestrutura Zebra permanecem na **Etapa 10**.
 
 ---
 
-## 9. Histórico
+## 11. Visualização comparativa da análise
+
+A interface da Gestão consolida a conferência em dois blocos:
+
+```text
+Informado pelo laboratório
+→ classes
+→ risco
+→ segurança/EPI
+→ observação do gerador
+
+Aprovado pela Gestão
+→ classes confirmadas
+→ risco confirmado
+→ segurança/EPI confirmada
+→ observação técnica
+→ Gestor que liberou
+→ data/hora da liberação
+```
+
+O Gestor que liberou é identificado pelo evento histórico `RISCO_CONFERIDO_E_RESIDUO_LIBERADO`, evitando inferência baseada no usuário atual ou em etapas posteriores.
+
+---
+
+## 12. Histórico
 
 ```text
 GET /api/v1/residuos/{id}/historico
@@ -211,9 +374,11 @@ GET /api/v1/residuos/{id}/historico
 
 Cada transição registra usuário responsável, status resultante, ação, observação e data/hora.
 
+A validação da Etapa 3 confirmou que armazenamento e despacho podem ser executados por Gestores diferentes e o histórico permanece correto.
+
 ---
 
-## 10. Consultas
+## 13. Consultas
 
 ```text
 GET /api/v1/residuos
@@ -227,7 +392,7 @@ GET /api/v1/residuos/por-gerador?usuarioGeradorId=...
 
 ---
 
-## 11. Relatório de Resíduos
+## 14. Relatório de Resíduos
 
 Preview:
 
@@ -235,7 +400,7 @@ Preview:
 GET /api/v1/relatorios/residuos
 ```
 
-Filtros:
+Filtros atuais:
 
 ```text
 status
@@ -272,132 +437,73 @@ Frontend:
 
 ---
 
-## 12. Reconciliação histórica
+## 15. Validação da Etapa 3
 
-A antiga `feat/gestao-residuos` estava muito atrás da `main` e possuía migration incompatível com a evolução de Lotes.
+Em 17/09/2026 foi considerada satisfatória a validação manual integrada da Etapa 3.
 
-A decisão correta foi aplicada:
+Foram verificados:
 
-```text
-não mergear a branch antiga cegamente
-portar apenas código específico do domínio
-preservar Pedido/Produto/Lote atuais
-criar V11 para o módulo
-integrar sobre a main atual
-```
+- criação com novos dados;
+- estado físico e tratamento;
+- Classes de Resíduo;
+- EPI/segurança;
+- análise/liberação;
+- comparação informado x aprovado;
+- identificação do Gestor que liberou;
+- armazenamento e despacho por outro Gestor;
+- histórico/rastreabilidade;
+- prévia antecipada do rótulo;
+- bloqueio/liberação de impressão;
+- escala/legibilidade do formulário em 100% de zoom.
 
-Esse trabalho está concluído. Não voltar a tratar “reconciliar Resíduos” como etapa futura.
-
----
-
-## 13. Validações já registradas
-
-Antes do fechamento completo foram registrados testes positivos para:
-
-```text
-mvn clean test
-PostgreSQL + Flyway até V11
-Hibernate validate
-Swagger
-POST de Resíduo
-Meus resíduos
-recebimento
-análise/liberação
-Código SGL
-rótulo
-armazenamento
-despacho + histórico
-transição inválida rejeitada
-perfil comum bloqueado em ação de Gestão
-mistura com Produto + componente livre
-```
-
-Depois foram adicionados relatório/exportações, frontend completo e `V12`.
-
-Portanto, a homologação geral do primeiro protótipo deve repetir o fluxo ponta a ponta e conferir explicitamente:
-
-```text
-V1 → V12 em banco limpo
-Código SGL já no registro inicial
-estoque antes/depois de componente ligado a Produto
-rótulo e print preview
-armazenamento
-despacho
-histórico visual
-relatório
-PDF/XLSX
-```
+**Etapa 3 encerrada.**
 
 ---
 
-## 14. Evolução planejada na pré-produção
+## 16. Etapa 4 — próxima evolução
 
-O planejamento canônico permanece em `docs/PLANO_PRE_PRODUCAO.md`. Para Resíduos, as decisões já incorporadas ao roadmap são:
+A próxima etapa expande o domínio sem reabrir o que foi validado.
 
-### Etapa 3 — refinamento do fluxo atual
+### 4.1 Locais de armazenamento cadastráveis
 
-- manter `processoOrigem` como informação de procedência/uso, sem criar campo redundante;
-- adicionar indicação de tratamento realizado e descrição obrigatória quando houver tratamento;
-- preservar quem informou/gerou e quem recebeu inicialmente pela Gestão;
-- exigir que o Gestor recebedor conduza análise e liberação, permitindo outros Gestores nas etapas posteriores;
-- adicionar classes de Resíduo pré-cadastradas, com seleção múltipla pelo Solicitante e confirmação pela Gestão;
-- adicionar informações estruturadas de segurança/EPI;
-- adicionar estado físico estruturado para uso operacional e no rótulo;
-- permitir sugestão/herança de segurança a partir de Produtos relacionados, com edição limitada e confirmação;
-- preservar snapshot das informações confirmadas no Resíduo;
-- separar visualização antecipada do rótulo da permissão de impressão.
+Permitir local reutilizável + complemento livre, preservando opção manual.
 
-O conteúdo visual definitivo e a infraestrutura de impressão não pertencem mais à Etapa 3. Eles serão consolidados na **Etapa 10 — Rótulos e impressão operacional**, junto dos rótulos adaptados de Produto e Solução.
+### 4.2 Modelos de Resíduo
 
-### Etapa 4 — modelos reutilizáveis
+Criar definição reutilizável para padrões recorrentes.
 
-A área de Administração/Informar Resíduo poderá oferecer **Modelos de Resíduo** reutilizáveis.
+```text
+ModeloResiduo = definição/padrão
+Residuo       = ocorrência real
+```
 
-O modelo poderá sugerir/preencher:
+Alterar o modelo depois não pode alterar ocorrências históricas.
 
-- descrição;
-- processo de origem/procedência e uso;
-- recipiente;
-- riscos;
-- classes;
-- informações de segurança;
-- composição/produtos;
-- demais dados padrão aprovados.
+### 4.3 Uso do modelo pelo Solicitante
 
-Regras:
+Permitir escolha entre modelo pré-cadastrado e preenchimento manual.
 
-- quantidade e dados específicos da ocorrência continuam pertencendo ao Resíduo real;
-- laboratório/projeto/gerador pertencem à ocorrência real;
-- o modelo não movimenta estoque;
-- riscos/classes/segurança do modelo não eliminam a conferência da Gestão;
-- alterar o modelo posteriormente não modifica Resíduos históricos já criados.
+### 4.4 Correções administrativas do ciclo
 
-Não confundir `ModeloResiduo` com `Produto`: Produtos podem participar da composição e fornecer referências/sugestões, mas não são substituídos pelo modelo.
+Avaliar ações administrativas específicas, com justificativa e histórico:
 
-### Etapa 10 — rótulo adaptado de Resíduo
+```text
+cancelar Resíduo
+retornar para análise/liberação
+```
 
-Depois que Produto, Resíduo e Solução estiverem estabilizados, o rótulo de Resíduo será finalizado como um dos templates adaptados do padrão transversal do SGL.
+Antes de implementar, definir status permitidos, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, efeitos no rótulo e necessidade de nova liberação.
 
-A referência visual do cliente servirá como inspiração de acabamento. O template poderá destacar estado físico, palavra de advertência quando aplicável, responsáveis, rastreabilidade, riscos, classes, segurança e demais dados específicos do domínio, sem obrigar a cópia integral do modelo externo.
+Isso não substitui a decisão geral de delete lógico, que permanece na **Etapa 11**.
+
+Detalhes: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 
 ---
 
+## 17. Refactor estrutural futuro
 
+`Residuo.java` cresceu significativamente com as novas regras.
 
-## 15. Estado final do módulo no primeiro protótipo
+A revisão de tamanho, coesão e legibilidade foi deliberadamente movida para a **Etapa 13**, depois dos testes automatizados da Etapa 12.
 
-```text
-R1 contrato/consultas                 ✅
-R2 Informar Resíduo                   ✅
-R3 Meus Resíduos                      ✅
-R4 Gestão de Resíduos                 ✅
-R5 análise/classificação              ✅
-R6 rótulo/print sem QR visual         ✅
-R7 armazenamento                      ✅
-R8 despacho                           ✅
-R9 histórico                          ✅
-R10 relatório                         ✅
-R11 PDF/XLSX                          ✅
-R12 integração à main                 ✅
-R13 homologação geral do protótipo    ⏳ junto ao congelamento
-```
+O objetivo será refatorar sem alterar comportamento ou contratos e reexecutar a suíte de regressão após as mudanças.

@@ -110,6 +110,7 @@ public class ProdutoService {
         produto.setUnidadeMedida(dto.getUnidadeMedida());
         produto.setLocalizacaoFisica(dto.getLocalizacaoFisica());
         produto.updateRisk(dto.getRisco(), dto.getTipoRisco(), dto.getDescricaoRisco());
+        produto.updateSeguranca(dto.getMedidasSegurancaRecomendadas(), dto.getObservacaoSeguranca());
         produto.updatePerishability(dto.getPerecivel(), dto.getTipoPerecivel());
         produto.setCondicoesArmazenamento(dto.getCondicoesArmazenamento());
         produto.setUnidadeArmazenamento(dto.getUnidadeArmazenamento());
