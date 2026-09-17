@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
 **Última atualização:** 17/09/2026  
-**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 é a próxima  
+**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 iniciada; 4.1 em andamento  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -149,7 +149,7 @@ Regra final:
 
 ```text
 INFORMADO / EM_ANALISE
-→ código SGL + QR existem
+→ código SGL + QR técnico existem
 → prévia disponível
 → impressão bloqueada
 
@@ -159,7 +159,7 @@ LIBERADO_PARA_ARMAZENAMENTO ou posterior
 
 Gerar/visualizar e permitir impressão são eventos distintos.
 
-Template definitivo, Zebra e infraestrutura física continuam na Etapa 10.
+O QR técnico pertence à identificação/contrato. O template físico atual do frontend pode não renderizá-lo. Template definitivo, Zebra e infraestrutura física continuam na Etapa 10.
 
 Validação confirmou criação, análise, armazenamento, despacho, uso de Gestores diferentes, histórico, prévia, bloqueio/liberação de impressão e legibilidade.
 
@@ -167,17 +167,31 @@ Detalhes: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 ---
 
-## Etapa 4 — Expansão operacional de Resíduos ⏭ PRÓXIMA
+## Etapa 4 — Expansão operacional de Resíduos 🔧 EM ANDAMENTO
 
 **Impacto:** médio.
 
 Handoff: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 
-### 4.1 Locais de armazenamento cadastráveis
+### 4.1 Locais de armazenamento cadastráveis 🔧 ATUAL
 
-Criar locais reutilizáveis por Unidade, preservando flexibilidade.
+A modelagem foi fechada antes da implementação.
 
-Uso desejado:
+```text
+LocalArmazenamentoResiduo
+= catálogo atual/editável por Unidade
+
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico completo
+```
+
+Uso esperado:
 
 ```text
 local cadastrado
@@ -193,15 +207,49 @@ Almoxarifado Químico
 
 Também permitir texto manual quando necessário.
 
-Antes de implementar, fechar:
+Regras fechadas:
 
-- entidade/catálogo por Unidade;
-- ativação/inativação;
-- comportamento quando local for renomeado;
-- necessidade de snapshot no Resíduo;
-- combinação local + complemento.
+- catálogo por Unidade;
+- `ativo` para seleção/inativação sem apagar histórico;
+- local inativo não aparece em novas seleções;
+- alteração futura do nome do catálogo não altera o snapshot histórico;
+- caminho por catálogo e caminho manual coexistem;
+- modo catálogo aceita complemento opcional;
+- modo manual usa o texto histórico existente;
+- payload ambíguo com catálogo e manual ao mesmo tempo deve ser rejeitado;
+- lookup deve validar a Unidade do Resíduo;
+- análise/liberação define o local planejado;
+- confirmação física pode manter ou corrigir o local;
+- correção deve permanecer rastreável no histórico;
+- rótulo/relatório continuam inicialmente usando `localArmazenamentoTemporario`;
+- não fazer refactor amplo de `Residuo` durante esta etapa.
 
-### 4.2 Modelos de Resíduos pré-cadastrados
+Plano em passos pequenos:
+
+```text
+4.1-A V16 + LocalArmazenamentoResiduo + repository
+4.1-B CRUD + tenant
+4.1-C integração com análise/liberação
+4.1-D confirmação física/correção estruturada
+4.1-E revisão e fechamento do backend
+4.1-F frontend Administração/Cadastros
+4.1-G frontend Gestão
+4.1-H regressão integrada e fechamento
+```
+
+**Próxima implementação:** 4.1-A.
+
+Na 4.1-A criar somente:
+
+```text
+V16__create_residue_storage_locations.sql
+LocalArmazenamentoResiduo.java
+LocalArmazenamentoResiduoRepository.java
+```
+
+Não criar service/controller/DTO nem alterar `Residuo.java` ainda.
+
+### 4.2 Modelos de Resíduos pré-cadastrados ⏳
 
 Criar definição reutilizável para resíduos recorrentes.
 
@@ -225,7 +273,7 @@ Modelo poderá sugerir/preencher:
 
 Regra central: alterar um modelo futuramente não modifica Resíduos históricos.
 
-### 4.3 Uso pelo Solicitante
+### 4.3 Uso pelo Solicitante ⏳
 
 Ao informar:
 
@@ -237,7 +285,7 @@ preencher manualmente
 
 O modelo preenche sugestões; o Resíduo real continua sendo uma ocorrência independente e sujeita à conferência da Gestão.
 
-### 4.4 Correções administrativas do ciclo de vida
+### 4.4 Correções administrativas do ciclo de vida ⏳
 
 Necessidade levantada ao validar a Etapa 3.
 
@@ -544,7 +592,9 @@ Planejamento de pré-produção                        ✅
 Etapa 1 — refinamento visual global                 ✅
 Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos          ⏭ próxima
+Etapa 4 — expansão operacional de Resíduos          🔧 em andamento
+  4.1 — locais de armazenamento                     🔧 atual
+  4.1-A — fundação backend                          ⏭ próxima implementação
 Etapas 5–13                                         ⏳
 ```
 
@@ -554,7 +604,7 @@ A matriz de permissões não é a próxima tarefa enquanto este bloco estiver ab
 
 # 5. Regra de continuidade
 
-Ao encerrar cada etapa, registrar:
+Ao encerrar cada etapa/subetapa, registrar:
 
 ```text
 status
@@ -567,4 +617,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Próximo handoff: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
+Handoff atual: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
