@@ -13,11 +13,34 @@
 
 ---
 
-## Estado atual — 11/09/2026
+## Estado atual — 17/09/2026
 
-O SGL já passou pela aprovação funcional do primeiro protótipo. As Etapas 1 e 2 da pré-produção foram concluídas; a etapa atual é a **Etapa 3 — Refinamentos do fluxo atual de Resíduos**. Esse bloco acontece **antes** do roadmap formal de matriz de permissões, congelamento, homologação final e segurança definitiva.
+O primeiro protótipo do SGL foi funcionalmente aprovado. As Etapas 1, 2 e 3 da pré-produção foram concluídas e validadas. A **Etapa 4 — Expansão operacional de Resíduos** foi iniciada na branch `feat/etapa-4-residuos`.
 
-Estado consolidado do backend:
+Subetapa atual:
+
+```text
+4.1 Locais de armazenamento cadastráveis      🔧 em andamento
+4.1-A Fundação do catálogo no backend          ⏭ próxima implementação
+```
+
+A modelagem da 4.1 já foi aprovada antes da implementação:
+
+```text
+LocalArmazenamentoResiduo
+→ catálogo mutável por Unidade
+
+Residuo.localArmazenamentoResiduo
+→ referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+→ complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+→ snapshot textual histórico completo
+```
+
+Estado consolidado:
 
 ```text
 Pedidos / urgência                                ✅
@@ -29,8 +52,13 @@ Swagger / OpenAPI                                 ✅
 Fiscalização de produtos                          ✅
 Relatórios operacionais                           ✅
 Exportação PDF/XLSX                               ✅
-Resíduos — fluxo completo                         ✅
-Estagiários — vínculo/edição/encerramento         ✅
+Resíduos — fluxo atual refinado                   ✅ Etapa 3
+Classes de Resíduo + snapshots                    ✅
+Segurança/EPI + snapshots                         ✅
+Código SGL + QR técnico de Resíduo                ✅
+Prévia antecipada do rótulo                       ✅
+Impressão condicionada à liberação                ✅
+Estagiários — vínculo/edição/encerramento         ✅ base atual
 Pessoas por laboratório                           ✅
 Administração / Cadastros                         ✅
 Isolamento operacional por Unidade                ✅
@@ -38,9 +66,7 @@ Autenticação/autorização definitiva               ⏳ etapa formal posterior
 Integração corporativa/SSO                        ⏳ etapa formal posterior
 ```
 
-No frontend também estão integrados dashboards, busca global, alertas, tema claro/escuro, sessão DEV, rotas por perfil e propagação do contexto de Unidade.
-
-> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`](docs/CONTINUIDADE_ETAPA_3_2026-09-11.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). Para contratos HTTP, o Swagger/OpenAPI em execução continua sendo a fonte viva.
+> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`](docs/CONTINUIDADE_ETAPA_4_2026-09-17.md), [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). Para contratos HTTP, o Swagger/OpenAPI em execução continua sendo a fonte viva.
 
 ---
 
@@ -107,8 +133,6 @@ Novos contratos públicos devem continuar usando UUID.
 
 ## Multitenancy por Unidade
 
-A `main` possui isolamento operacional por Unidade.
-
 Fluxo atual:
 
 ```text
@@ -119,9 +143,7 @@ frontend lê unidadeId da sessão DEV
 → services/repositories restringem os dados da Unidade
 ```
 
-Esse mecanismo é importante para validar a separação entre Unidades durante o desenvolvimento, mas **ainda não é a fronteira definitiva de segurança**, porque o cabeçalho é informado pelo cliente e o backend ainda não deriva a Unidade de uma identidade autenticada confiável.
-
-Na etapa de autenticação corporativa, o tenant deverá vir da sessão/token institucional.
+Esse mecanismo suporta o isolamento funcional em desenvolvimento, mas não substitui a segurança definitiva. A autenticação corporativa deverá derivar tenant/Unidade da identidade autenticada confiável.
 
 ---
 
@@ -148,7 +170,9 @@ Conceitos centrais:
 - **Lote:** quantidade física, validade, embalagem, multiplicador e rastreabilidade;
 - **MovimentacaoEstoque:** trilha das operações físicas;
 - **Pedido:** solicitação e ciclo de aprovação/entrega;
-- **Resíduo:** material gerado no laboratório e encaminhado à Gestão;
+- **Resíduo:** ocorrência operacional real gerada no laboratório;
+- **ClasseResiduo:** catálogo atual/editável por Unidade;
+- **LocalArmazenamentoResiduo:** catálogo de locais da Unidade planejado na Etapa 4.1;
 - **Estagiário:** vínculo institucional com Unidade/Laboratório e período;
 - **Fiscalização:** classificação explícita de produtos controlados.
 
@@ -170,23 +194,6 @@ entrega não baixa novamente
 cancelamento aprovado restaura os lotes exatos
 lote vencido não é elegível para aprovação
 movimentação identifica o lote efetivamente afetado
-```
-
-Formas de retirada atuais:
-
-```text
-UNITARIO
-KIT
-CAIXA
-GARRAFA
-GALAO
-```
-
-Fracionamento:
-
-```text
-false → true  permitido
-true  → false não permitido
 ```
 
 ---
@@ -213,7 +220,7 @@ Decisão de domínio:
 Produto != Resíduo
 ```
 
-Uma composição de Resíduo pode referenciar Produto para rastreabilidade, sem movimentar estoque automaticamente.
+Uma composição de Resíduo pode referenciar Produto para rastreabilidade e sugestão de segurança, sem movimentar estoque automaticamente.
 
 Fluxo:
 
@@ -231,45 +238,9 @@ Código SGL:
 SGL-RES-AAAA-NNNNNN
 ```
 
+O código e o QR técnico existem desde a criação. No template físico atual do frontend, o QR técnico pode existir no contrato sem necessariamente ser renderizado; a definição final de template/Zebra permanece na Etapa 10.
+
 Detalhes: [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md).
-
----
-
-## Relatórios
-
-Relatórios atualmente integrados:
-
-```text
-Estagiários
-Produtos
-Movimentações
-Resumo operacional
-Estoque e lotes
-Fiscalização
-Resíduos
-Pessoas por laboratório
-```
-
-Prévia, PDF e XLSX devem representar a mesma consulta e os mesmos filtros.
-
-Pedidos entregues continuam sendo um recorte de Movimentações, não um relatório separado.
-
----
-
-## Segurança — estado correto
-
-```text
-Spring Security como base técnica                   ✅
-sessão DEV no frontend                              ✅ temporária
-isolamento operacional por Unidade                  ✅ desenvolvimento
-guardas de rota por perfil                          ✅ UX
-autenticação definitiva                             ⏳
-autorização global no servidor                      ⏳
-auditoria derivada da identidade autenticada        ⏳
-integração corporativa/SSO                          ⏳
-```
-
-A configuração atual ainda permite requisições sem autenticação definitiva. Não tratar sessão DEV, perfil no frontend ou `X-SGL-Unidade-Id` como segurança final de produção.
 
 ---
 
@@ -283,13 +254,70 @@ Hibernate ddl-auto=validate
 Flyway habilitado
 ```
 
-A evolução do schema é responsabilidade do Flyway. Migrations aplicadas são imutáveis; novas alterações de banco devem usar uma nova versão.
-
-Sequência atual:
+Migrations aplicadas são imutáveis. No domínio de Resíduos:
 
 ```text
-V1 ... V12
+V11 — módulo base de Resíduos
+V12 — backfill Código SGL
+V13 — estado físico, tratamento e responsabilidade inicial
+V14 — Classes de Resíduo
+V15 — segurança/EPI
+V16 — próxima migration planejada para locais de armazenamento
 ```
+
+A V16 ainda não foi implementada neste checkpoint.
+
+---
+
+## Sequência de trabalho
+
+### Pré-produção pós-aprovação
+
+```text
+Etapa 1 — padrão visual global                 ✅
+Etapa 2 — Dark Mode definitivo                 ✅
+Etapa 3 — refinamentos do fluxo de Resíduos    ✅
+Etapa 4 — expansão operacional de Resíduos     🔧 atual
+Etapa 5 — Projetos + Atividades                ⏳
+Etapa 6 — Estagiários + vínculos               ⏳
+Etapa 7 — relatórios consolidados              ⏳
+Etapa 8 — unidades + Soluções                  ⏳
+Etapa 9 — Pedidos + Soluções                   ⏳
+Etapa 10 — rótulos + impressão operacional     ⏳
+Etapa 11 — Manual + delete lógico              ⏳
+Etapa 12 — testes automatizados frontend       ⏳
+Etapa 13 — revisão estrutural/legibilidade     ⏳
+```
+
+Etapa 4:
+
+```text
+4.1 Locais de armazenamento cadastráveis       🔧 atual
+4.2 Modelos de Resíduos                        ⏳
+4.3 modelo x preenchimento manual              ⏳
+4.4 correções administrativas do ciclo         ⏳
+```
+
+Não antecipar 4.2–4.4 durante a implementação da 4.1.
+
+---
+
+## Regra de trabalho do backend
+
+Alterações funcionais de backend são implementadas manualmente pelo responsável do projeto.
+
+Fluxo:
+
+```text
+IA analisa/modela/explica
+→ fornece passos e código de referência
+→ responsável implementa manualmente
+→ IA revisa
+→ validar
+→ commit lógico
+```
+
+Frontend e documentação podem ser alterados diretamente quando autorizado.
 
 ---
 
@@ -324,51 +352,23 @@ mvn test
 
 ---
 
-## Sequência de trabalho
-
-### Agora — pré-produção pós-aprovação
-
-```text
-Etapa 1 — padrão visual global                 ✅
-Etapa 2 — Dark Mode definitivo                 ✅
-Etapa 3 — refinamentos do fluxo de Resíduos    🔧 atual
-Etapas 4 a 9                                   ⏳ sequenciais
-```
-
-### Depois — roadmap formal para produção
-
-```text
-1. matriz/diretrizes de permissões
-2. congelamento funcional
-3. homologação integrada final
-4. correção de falhas de homologação
-5. autenticação + autorização + auditoria definitiva
-6. integração corporativa / SSO / resolução confiável de Unidade
-7. documentos/upload quando o contrato estiver definido
-8. refactors técnicos planejados
-```
-
-O roadmap formal não foi descartado; ele apenas começa **depois** do bloco atual de pré-produção.
-
----
-
 ## Documentação
 
 | Documento | Uso |
 |---|---|
 | [`CONTINUIDADE.md`](CONTINUIDADE.md) | checkpoint atual e regra de retomada |
+| [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md) | roadmap canônico |
+| [`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`](docs/CONTINUIDADE_ETAPA_4_2026-09-17.md) | handoff e plano operacional da Etapa 4 |
 | [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md) | visão consolidada do sistema |
 | [`docs/README.md`](docs/README.md) | índice e classificação documental |
-| [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md) | domínio de resíduos |
-| [`docs/RELATORIOS.md`](docs/RELATORIOS.md) | relatórios atuais |
-| [`docs/EXPORTACAO_RELATORIOS.md`](docs/EXPORTACAO_RELATORIOS.md) | exportações PDF/XLSX |
-| [`docs/PENDENCIAS_POS_PROTOTIPO.md`](docs/PENDENCIAS_POS_PROTOTIPO.md) | pendências/refactors posteriores |
+| [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md) | domínio de Resíduos |
+| [`docs/FLUXO_DO_SISTEMA.md`](docs/FLUXO_DO_SISTEMA.md) | fluxo operacional consolidado |
 
-> Exemplos e documentos históricos são auxiliares. Em caso de conflito, prevalecem `main`, Swagger/OpenAPI e os documentos atuais indicados acima.
+Documentos históricos permanecem para rastreabilidade e não devem ser interpretados como checkpoint atual.
 
 ---
 
 <div align="center">
   <strong>SGL — Sistema de Gestão de Laboratórios</strong><br/>
-  Sistema funcionalmente aprovado em preparação para o ciclo formal de produção.
+  Etapa 4 de pré-produção iniciada — 4.1 em andamento.
 </div>
