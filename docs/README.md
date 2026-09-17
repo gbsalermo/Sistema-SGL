@@ -1,8 +1,8 @@
 # Documentação — SGL Backend
 
-**Atualizado em:** 11/09/2026
+**Atualizado em:** 17/09/2026
 
-Este diretório reúne documentação vigente, decisões de domínio, material auxiliar de testes e registros históricos. O objetivo deste índice é impedir que um roteiro antigo seja interpretado como estado atual do produto.
+Este diretório reúne documentação vigente, decisões de domínio, material auxiliar e registros históricos. O objetivo deste índice é impedir que documentos antigos sejam interpretados como estado atual do projeto.
 
 ---
 
@@ -11,30 +11,29 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 ```text
 1. ../CONTINUIDADE.md
 2. PLANO_PRE_PRODUCAO.md
-3. CONTINUIDADE_ETAPA_3_2026-09-11.md
-4. ../README.md
+3. CONTINUIDADE_ETAPA_4_2026-09-17.md
+4. MODULO_RESIDUOS.md
 5. DOSSIE_PROJETO_SGL.md
 6. Swagger/OpenAPI em execução
 7. documento específico da área em trabalho
 ```
 
+O arquivo `CONTINUIDADE_ETAPA_3_2026-09-11.md` permanece como registro de fechamento da Etapa 3.
+
 ---
 
 ## Fonte de verdade
 
-Em caso de conflito:
-
 ```text
 código da main
-→ Swagger/OpenAPI para contrato HTTP
+→ Swagger/OpenAPI
 → ../CONTINUIDADE.md
-→ PLANO_PRE_PRODUCAO.md durante o bloco atual
+→ PLANO_PRE_PRODUCAO.md
+→ handoff da etapa atual
 → DOSSIE_PROJETO_SGL.md
-→ decisões/documentos específicos
-→ exemplos, roteiros e snapshots históricos
+→ documentos específicos
+→ documentos históricos
 ```
-
-A data de um arquivo histórico não prevalece sobre uma implementação mais recente.
 
 ---
 
@@ -47,15 +46,14 @@ Limpeza/revisão documental                   ✅ concluída
 Planejamento de pré-produção                 ✅ consolidado
 Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
-Etapa 3 — refinamentos de Resíduos           🔧 atual
-Etapa 12 — testes automatizados frontend     ⏳ fechamento da pré-produção
-Matriz formal de permissões                  ⏳ após a pré-produção atual
+Etapa 3 — refinamentos de Resíduos           ✅ concluída e validada
+Etapa 4 — expansão operacional de Resíduos   ⏭ próxima
+Etapas 5 a 13                                ⏳
+Matriz formal de permissões                  ⏳ após pré-produção
 Congelamento/homologação final               ⏳ posterior
 Autenticação/autorização definitiva          ⏳ posterior
 Integração corporativa                       ⏳ posterior
 ```
-
-O roadmap formal não foi cancelado. Ele começa depois do bloco atual de ajustes de pré-produção.
 
 ---
 
@@ -63,129 +61,128 @@ O roadmap formal não foi cancelado. Ele começa depois do bloco atual de ajuste
 
 | Documento | Papel | Estado |
 |---|---|---|
-| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 11/09** |
-| `PLANO_PRE_PRODUCAO.md` | sequência canônica das etapas atuais, dependências e regras de execução | **ATUAL — 11/09** |
-| `../README.md` | visão rápida do backend e execução | **ATUAL — 11/09** |
-| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 11/09** |
-| `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **VIGENTE** |
+| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 17/09** |
+| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 17/09** |
+| `CONTINUIDADE_ETAPA_4_2026-09-17.md` | handoff operacional da próxima etapa | **ATUAL — 17/09** |
+| `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **FECHADO — 17/09** |
+| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 17/09** |
+| `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 17/09** |
+| `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **ATUAL — 17/09** |
 | `RELATORIOS.md` | cobertura de relatórios | **VIGENTE** |
 | `EXPORTACAO_RELATORIOS.md` | regras de PDF/XLSX | **VIGENTE** |
 | `PENDENCIAS_POS_PROTOTIPO.md` | refactors e pendências posteriores | **REFERÊNCIA VIGENTE** |
-| `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **REFERÊNCIA**; conferir `main` quando houver detalhe de implementação |
 | `GUIA_ESTRUTURAL.md` | organização arquitetural | **REFERÊNCIA** |
 
 ---
 
-## Plano atual de pré-produção
-
-A sequência aprovada está detalhada em `PLANO_PRE_PRODUCAO.md`:
+## Roadmap atual de pré-produção
 
 ```text
-1. padronização e refinamento visual global
-2. Dark Mode definitivo
-3. refinamentos do fluxo atual de Resíduos
-4. expansão de Resíduos: locais + modelos pré-cadastrados
-5. Projetos + Atividades
-6. Estagiários + vínculos históricos
-7. relatórios de Projetos/Estagiários/Laboratórios
-8. normalização de unidades + Soluções
-9. Pedidos + integração com Soluções
-10. Rótulos, Documento de Auditoria de Entrada de Lote e impressão operacional
-11. Manual do Usuário + avaliação opcional de delete lógico
-12. testes automatizados do Frontend — Vitest/Vue Test Utils + Cypress E2E
+1. padronização visual                              ✅
+2. Dark Mode                                        ✅
+3. refinamentos do fluxo atual de Resíduos          ✅
+4. expansão de Resíduos                             ⏭ próxima
+5. Projetos + Atividades                            ⏳
+6. Estagiários + vínculos                           ⏳
+7. relatórios consolidados                          ⏳
+8. normalização de unidades + Soluções              ⏳
+9. Pedidos + integração com Soluções                ⏳
+10. rótulos + documento de lote + impressão         ⏳
+11. Manual do Usuário + delete lógico               ⏳
+12. testes frontend — Vitest/Vue Test Utils/Cypress ⏳
+13. revisão estrutural e legibilidade               ⏳
 ```
 
-Regra deste bloco: alterações funcionais de backend serão implementadas manualmente pelo responsável do projeto; IA pode analisar, orientar a implementação e revisar o resultado.
-
-Para testes de frontend, Cypress é a ferramenta E2E adotada no planejamento. Vitest + Vue Test Utils cobrem testes unitários e de componentes. Selenium não é a ferramenta principal prevista para o SGL.
+Regra deste bloco: alterações funcionais de backend são implementadas manualmente pelo responsável do projeto; IA pode analisar, orientar e revisar.
 
 ---
 
-## Decisões atuais que precisam ser preservadas
+## Etapa 3 — estado fechado
+
+Consolidado:
+
+- estado físico e tratamento;
+- responsabilidade inicial da Gestão;
+- Classes de Resíduo por Unidade;
+- snapshots de classes;
+- Segurança/EPI e recomendações em Produto;
+- snapshots de segurança;
+- integração frontend;
+- visão informado x aprovado;
+- identificação do Gestor que liberou;
+- Código SGL/QR desde criação;
+- prévia antes da liberação;
+- impressão bloqueada até liberação;
+- validação de armazenamento/despacho por Gestores diferentes;
+- revisão de escala visual do formulário.
+
+Detalhes: `CONTINUIDADE_ETAPA_3_2026-09-11.md`.
+
+---
+
+## Etapa 4 — próxima
+
+```text
+4.1 locais de armazenamento cadastráveis
+→ 4.2 Modelos de Resíduo
+→ 4.3 modelo x preenchimento manual pelo Solicitante
+→ 4.4 correções administrativas do ciclo
+```
+
+Na 4.4 será avaliado cancelar/retornar Resíduo com justificativa e histórico. Isso não substitui a decisão geral de delete lógico da Etapa 11.
+
+Detalhes: `CONTINUIDADE_ETAPA_4_2026-09-17.md`.
+
+---
+
+## Decisões que precisam ser preservadas
 
 ```text
 Long interno + UUID público
 Produto != Resíduo
+ModeloResiduo != Residuo
 perecível → FEFO
 não perecível → FIFO
 aprovação baixa estoque
 entrega não baixa novamente
-cancelamento aprovado restaura os lotes utilizados
-Unidade não possui CRUD manual normal no frontend
-usuário será sincronizado pela futura identidade corporativa
+cancelamento aprovado restaura lotes utilizados
 migrations Flyway aplicadas são imutáveis
+Unidade não possui CRUD manual normal
+snapshot histórico não depende de cadastro mutável
 ```
 
 ### Isolamento por Unidade
-
-Desde 04/09 a `main` possui isolamento operacional multitenant por Unidade:
 
 ```text
 frontend
 → X-SGL-Unidade-Id
 → TenantRequestFilter / TenantContext
-→ services e repositories filtrados por Unidade
+→ services/repositories por Unidade
 ```
 
-Isso valida separação funcional em desenvolvimento, mas ainda não substitui a futura autenticação/autorização que deverá derivar a Unidade de uma identidade confiável.
+É isolamento funcional em desenvolvimento; autenticação/autorização definitiva ainda virá no roadmap formal.
 
 ---
 
 ## Contratos e material auxiliar
 
-Os arquivos abaixo continuam úteis, mas não devem ser usados como fonte superior ao Swagger/OpenAPI ou à `main`:
+Documentos auxiliares não prevalecem sobre Swagger/OpenAPI ou código atual:
 
 | Documento | Uso correto |
 |---|---|
 | `ENDPOINTS_INTERNOS.md` | inventário auxiliar de endpoints |
-| `JSON_EXEMPLOS.md` | exemplos de payload; conferir Swagger antes de copiar |
-| `REQUISICOES_POSTMAN_LOTES.md` | roteiro de testes de lotes |
-| `CODIGOS_REFERENCIA_TESTES.md` | roteiro de testes de códigos/referências |
+| `JSON_EXEMPLOS.md` | exemplos de payload; conferir Swagger |
+| `REQUISICOES_POSTMAN_LOTES.md` | testes de lotes |
+| `CODIGOS_REFERENCIA_TESTES.md` | testes de códigos/referências |
 | `testes.md` | histórico e cenários de validação |
-| `SGL_Relacao_Completa_Classes.pdf` | snapshot documental de classes |
 
 ---
 
-## Documentos históricos / snapshots
+## Documentos históricos
 
-Esses arquivos são mantidos para rastrear decisões ou demonstrações antigas. Eles **não representam planejamento vigente**:
+Arquivos de auditoria, demonstrações e snapshots antigos são mantidos para rastreabilidade e não representam planejamento vigente.
 
-| Documento | Interpretação |
-|---|---|
-| `API_AUDITORIA_PRE_SWAGGER.md` | auditoria anterior ao Swagger consolidado |
-| `DEMO_APRESENTACAO_EMBRAPA.md` | roteiro de demonstração/apresentação |
-| exemplos antigos dentro de arquivos de teste | usar apenas como referência histórica |
-
-Se algum documento histórico disser que Administração, Resíduos, Dashboard, isolamento por Unidade ou outro bloco já integrado “ainda será feito”, essa afirmação deve ser ignorada.
-
----
-
-## Fase atual e roadmap
-
-### Agora
-
-```text
-limpeza e atualização documental       ✅
-→ planejamento de pré-produção         ✅
-→ Etapa 1: refinamento visual          ✅
-→ Etapa 2: Dark Mode definitivo        ✅
-→ Etapa 3: refinamentos de Resíduos    🔧 atual
-→ Etapas 4 a 12                        ⏳ sequenciais
-→ estabilização do bloco
-```
-
-### Depois
-
-```text
-matriz de permissões
-→ congelamento funcional
-→ homologação integrada final
-→ autenticação/autorização/auditoria
-→ integração corporativa
-→ demais etapas formais de produção
-```
-
-Não classificar a matriz de permissões como “próximo passo imediato” enquanto a fase atual de pré-produção estiver aberta.
+Se um documento histórico disser que um módulo já integrado “ainda será feito”, prevalece o checkpoint atual.
 
 ---
 
@@ -196,11 +193,11 @@ Antes de alterar o sistema:
 ```text
 1. ler ../CONTINUIDADE.md
 2. ler PLANO_PRE_PRODUCAO.md
-3. ler CONTINUIDADE_ETAPA_3_2026-09-11.md
-4. conferir a main atual
-5. conferir Swagger/OpenAPI quando houver contrato HTTP
-6. confirmar o documento específico da área
+3. ler CONTINUIDADE_ETAPA_4_2026-09-17.md
+4. confirmar que Etapa 3 foi integrada à main
+5. conferir Swagger/OpenAPI
+6. ler o documento específico da área
 7. distinguir requisito atual de registro histórico
 ```
 
-Não reconstruir módulos aprovados apenas porque um documento antigo descreve uma fase anterior.
+Não iniciar a Etapa 4 sobre uma branch antiga da Etapa 3. Criar branch própria a partir da `main` atualizada.
