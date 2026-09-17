@@ -1,8 +1,8 @@
 # Fluxo do Sistema SGL
 
-**Atualizado em:** 04/09/2026
+**Atualizado em:** 17/09/2026
 
-Este documento descreve como os módulos principais se conectam no estado funcional aprovado. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação na `main`.
+Este documento descreve como os módulos principais se conectam no estado funcional aprovado e nas etapas de pré-produção já validadas. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação no código da branch integrada à `main`.
 
 ---
 
@@ -130,18 +130,20 @@ A entrega **não reduz o estoque novamente**, porque a baixa física aconteceu n
 
 ---
 
-## 8. Cancelamento
+## 8. Cancelamento de Pedido
 
 - `PENDENTE`: cancela sem alterar estoque.
 - `APROVADO`: restaura as quantidades dos **lotes exatos utilizados na aprovação** e muda para `CANCELADO`.
 - `ENTREGUE`: não pode ser cancelado pelo fluxo comum.
 - `REJEITADO` ou `CANCELADO`: já está encerrado.
 
-A restauração exata dos lotes é a garantia funcional atual. Não documentar como obrigatória uma movimentação `DEVOLUCAO` específica enquanto o fluxo corrente não garantir seu registro em todos os caminhos de cancelamento.
+A restauração exata dos lotes é a garantia funcional atual.
+
+Esse cancelamento de Pedido não deve ser usado como modelo automático para Resíduos; cada domínio possui regras próprias.
 
 ---
 
-## 9. Resíduos
+## 9. Resíduos — fluxo validado na Etapa 3
 
 Resíduo é domínio próprio:
 
@@ -149,21 +151,126 @@ Resíduo é domínio próprio:
 Produto != Resíduo
 ```
 
-Um componente de Resíduo pode referenciar Produto apenas para rastreabilidade. Essa referência não baixa nem repõe estoque automaticamente.
+Um componente de Resíduo pode referenciar Produto para rastreabilidade e sugestão de segurança. Essa referência não baixa nem repõe estoque automaticamente.
+
+Fluxo operacional atual:
+
+```text
+Laboratório informa
+      ↓
+INFORMADO
+      ↓ Gestão recebe
+EM_ANALISE
+      ↓ Gestão confirma risco/classes/segurança e libera
+LIBERADO_PARA_ARMAZENAMENTO
+      ↓ qualquer Gestor autorizado pode confirmar armazenamento
+ARMAZENADO_TEMPORARIAMENTE
+      ↓ qualquer Gestor autorizado pode confirmar destinação
+DESPACHADO
+```
+
+Responsabilidade:
+
+```text
+usuarioGerador
+→ preserva quem informou/gerou
+
+gestorRecebedorInicial
+→ preserva quem recebeu e conduziu a conferência inicial
+
+HistoricoResiduo
+→ preserva quem executou cada transição real
+```
+
+Portanto, armazenamento ou despacho por outro Gestor não sobrescreve o responsável inicial.
+
+---
+
+## 10. Dados de Resíduo
+
+A ocorrência real preserva dados próprios, incluindo:
+
+```text
+procedência/uso (processoOrigem)
+estado físico
+tratamento realizado
+composição
+risco informado / confirmado
+classes informadas / confirmadas
+segurança informada / confirmada
+recipiente / quantidade
+observações
+armazenamento / destino
+```
+
+Classes e segurança possuem separação entre declaração e confirmação.
+
+Snapshots impedem que mudanças futuras em catálogos modifiquem Resíduos históricos.
+
+---
+
+## 11. Identificação, prévia e impressão de Resíduo
+
+Código:
+
+```text
+SGL-RES-AAAA-NNNNNN
+```
+
+A identificação existe desde a criação.
+
+A Etapa 3 separou:
+
+```text
+identificação
+≠
+visualização do rótulo
+≠
+permissão de impressão
+```
 
 Fluxo:
 
 ```text
 INFORMADO
-→ EM_ANALISE
-→ LIBERADO_PARA_ARMAZENAMENTO
-→ ARMAZENADO_TEMPORARIAMENTE
-→ DESPACHADO
+→ código + QR
+→ prévia permitida
+→ impressão bloqueada
+
+EM_ANALISE
+→ prévia permitida
+→ impressão bloqueada
+
+LIBERADO_PARA_ARMAZENAMENTO ou posterior
+→ impressão permitida
 ```
+
+A prévia anterior à análise usa os dados informados. Depois da liberação, os dados confirmados pela Gestão têm precedência.
+
+Template definitivo, Zebra e infraestrutura física ficam para a Etapa 10.
 
 ---
 
-## 10. Consulta e rastreabilidade
+## 12. Próxima expansão de Resíduos — Etapa 4
+
+A Etapa 3 foi encerrada em 17/09/2026.
+
+A Etapa 4 seguirá esta ordem:
+
+```text
+4.1 locais de armazenamento cadastráveis
+→ 4.2 modelos de Resíduos reutilizáveis
+→ 4.3 escolha modelo x preenchimento manual pelo Solicitante
+→ 4.4 correções administrativas do ciclo, após definição das regras
+```
+
+A 4.4 avaliará cancelamento operacional e retorno para análise/liberação com justificativa e histórico.
+
+Isso não deve ser confundido com a decisão geral de delete lógico da Etapa 11.
+
+---
+
+## 13. Consulta e rastreabilidade
 
 ```text
 EstoqueCentral
@@ -182,7 +289,7 @@ Pedido
 → registra solicitação e decisões do fluxo
 
 Residuo + HistoricoResiduo
-→ registra ciclo do resíduo
+→ registra ciclo e responsáveis do Resíduo
 ```
 
 Esses conceitos não devem ser usados como saldos paralelos.
@@ -210,7 +317,12 @@ Pedido PENDENTE
 Laboratório
   ↓
 Resíduo INFORMADO
-  → análise
-  → armazenamento
-  → despacho
+  ↓ receber
+EM_ANALISE
+  ↓ analisar/liberar
+LIBERADO_PARA_ARMAZENAMENTO
+  ↓ armazenar
+ARMAZENADO_TEMPORARIAMENTE
+  ↓ despachar
+DESPACHADO
 ```
