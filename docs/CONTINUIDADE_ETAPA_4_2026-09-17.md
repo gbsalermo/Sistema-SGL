@@ -1,19 +1,23 @@
 # Continuidade SGL — Etapa 4
 
-**Criado em:** 17/09/2026  
+**Atualizado em:** 17/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
-**Próxima etapa:** Etapa 4 — Expansão operacional de Resíduos
+**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧  
+**Subetapa atual:** 4.1 — Locais de armazenamento cadastráveis  
+**Próxima implementação:** 4.1-A — Fundação do catálogo no backend  
+**Branch:** `feat/etapa-4-residuos`
 
-## 1. Antes de iniciar
+## 1. Antes de continuar
 
 Ler nesta ordem:
 
 ```text
 CONTINUIDADE.md
 docs/PLANO_PRE_PRODUCAO.md
-docs/CONTINUIDADE_ETAPA_3_2026-09-11.md
-docs/MODULO_RESIDUOS.md
 este arquivo
+docs/MODULO_RESIDUOS.md
+docs/DOSSIE_PROJETO_SGL.md
+docs/FLUXO_DO_SISTEMA.md
 ```
 
 Também revisar no frontend:
@@ -22,15 +26,7 @@ Também revisar no frontend:
 gbsalermo/SGL-FRONTEND/CONTINUIDADE.md
 ```
 
-Confirmar que a Etapa 3 foi integrada à `main` nos dois repositórios antes de abrir a branch da Etapa 4.
-
-Branch sugerida:
-
-```text
-feat/etapa-4-residuos
-```
-
-Criar a branch a partir da `main` atualizada. Não continuar a Etapa 4 sobre uma branch antiga da Etapa 3.
+A Etapa 3 já foi integrada à `main` nos dois repositórios e a branch `feat/etapa-4-residuos` já foi criada a partir da `main` atualizada.
 
 ---
 
@@ -75,9 +71,20 @@ Código SGL:
 SGL-RES-AAAA-NNNNNN
 ```
 
-A identificação existe desde a criação.
+A identificação existe desde a criação. Código e QR técnico existem desde o registro inicial.
 
-A prévia do rótulo pode ser aberta em `INFORMADO` e `EM_ANALISE`, mas a impressão só é permitida a partir de `LIBERADO_PARA_ARMAZENAMENTO`.
+Regra de prévia/impressão:
+
+```text
+INFORMADO / EM_ANALISE
+→ prévia disponível
+→ impressão bloqueada
+
+LIBERADO_PARA_ARMAZENAMENTO ou posterior
+→ impressão permitida
+```
+
+O QR técnico pertence à identificação/contrato. O template físico atual do frontend pode não renderizá-lo; o padrão final e Zebra permanecem na Etapa 10.
 
 Produto continua diferente de Resíduo:
 
@@ -109,10 +116,10 @@ O Resíduo já possui:
 - histórico de todas as transições;
 - código SGL;
 - QR técnico;
-- armazenamento temporário;
+- armazenamento temporário textual;
 - destino previsto/confirmado.
 
-Migrations relevantes:
+Migrations relevantes já aplicadas:
 
 ```text
 V11 — módulo de Resíduos
@@ -122,11 +129,11 @@ V14 — Classes de Resíduo
 V15 — segurança/EPI
 ```
 
-Migrations aplicadas são imutáveis. Novas alterações devem usar V16+.
+Migrations aplicadas são imutáveis. A próxima alteração de schema será V16.
 
 ---
 
-## 5. Snapshot — regra arquitetural importante
+## 5. Snapshot — regra arquitetural
 
 Dados históricos de uma ocorrência real não devem depender de cadastros mutáveis.
 
@@ -140,145 +147,237 @@ Produto = recomendações atuais de segurança
 Residuo = segurança efetivamente informada/confirmada naquela ocorrência
 ```
 
-Alterar Classe, Produto ou futuramente ModeloResiduo não pode modificar retroativamente Resíduos existentes.
-
-Preservar essa regra durante toda a Etapa 4.
+A Etapa 4.1 seguirá a mesma regra para local de armazenamento.
 
 ---
 
 # 6. Escopo da Etapa 4
 
-## 4.1 — Locais de armazenamento cadastráveis
+```text
+4.1 Locais de armazenamento cadastráveis          🔧 atual
+→ 4.2 Modelos de Resíduos pré-cadastrados          ⏳
+→ 4.3 Uso de modelo ou preenchimento manual        ⏳
+→ 4.4 Correções administrativas do ciclo           ⏳
+```
 
-Objetivo: substituir dependência exclusiva de texto livre por locais reutilizáveis, sem perder flexibilidade.
+Não antecipar 4.2–4.4 durante a 4.1.
 
-Uso esperado:
+---
+
+# 7. Etapa 4.1 — decisão arquitetural aprovada
+
+Objetivo: substituir a dependência exclusiva de texto livre por locais reutilizáveis, sem perder flexibilidade nem histórico.
+
+Modelagem aprovada:
+
+```text
+LocalArmazenamentoResiduo
+= catálogo atual/editável por Unidade
+
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico completo
+```
+
+Exemplos:
+
+```text
+Catálogo:
+Almoxarifado Químico
+
+Catálogo + complemento:
+Almoxarifado Químico - Prateleira B2
+
+Manual:
+Área externa provisória junto ao abrigo técnico
+```
+
+Regras fechadas:
+
+1. `LocalArmazenamentoResiduo` pertence obrigatoriamente a uma `Unidade`.
+2. O catálogo é mutável e possui `ativo`.
+3. Local inativo não deve aparecer em novas seleções.
+4. Inativação não pode quebrar Resíduos antigos.
+5. Alterar o nome do catálogo futuramente não modifica o snapshot histórico do Resíduo.
+6. `localArmazenamentoTemporario` continua sendo o texto histórico completo e continua atendendo rótulo/relatório.
+7. O vínculo estruturado com o catálogo será opcional para manter compatibilidade com caminho manual e resíduos legados.
+8. O complemento é opcional e pertence à ocorrência, não ao catálogo.
+9. Modo catálogo: `localArmazenamentoId` preenchido, complemento opcional, texto manual ausente.
+10. Modo manual: `localArmazenamentoId` ausente, complemento ausente e texto manual obrigatório.
+11. Payload ambíguo com catálogo e texto manual simultaneamente deve ser rejeitado.
+12. Lookup do catálogo deve validar UUID + Unidade do Resíduo e `ativo=true` para novas seleções.
+13. A análise/liberação define o local planejado.
+14. A confirmação física pode manter ou corrigir o local.
+15. Correção física deve permanecer rastreável no histórico.
+16. Não fazer refactor amplo de `Residuo` durante a 4.1.
+17. Não alterar rótulo/relatório inicialmente: ambos podem continuar usando `localArmazenamentoTemporario`.
+18. Validar comprimento do snapshot final para respeitar o limite existente do campo.
+
+---
+
+# 8. Plano de implementação da 4.1
+
+## 4.1-A — Fundação do catálogo no backend
+
+Criar somente:
+
+```text
+V16__create_residue_storage_locations.sql
+LocalArmazenamentoResiduo.java
+LocalArmazenamentoResiduoRepository.java
+```
+
+V16 planejada:
+
+```text
+nova tabela locais_armazenamento_residuo
+→ id
+→ public_id
+→ unidade_id
+→ nome
+→ ativo
+
+residuos
+→ local_armazenamento_residuo_id nullable
+→ complemento_local_armazenamento nullable
+```
+
+Não fazer ainda:
+
+```text
+service
+controller
+DTOs
+alteração de Residuo.java
+alteração de ResiduoService
+frontend
+dados demo
+```
+
+Critério de saída:
+
+```text
+Flyway aplica V16
+Hibernate ddl-auto=validate passa
+aplicação sobe normalmente
+```
+
+Commit sugerido:
+
+```text
+feat: criar catálogo de locais de armazenamento de resíduos
+```
+
+## 4.1-B — CRUD + tenant
+
+Criar request/response/service/controller e validar:
+
+- criar;
+- listar;
+- listar ativos;
+- editar;
+- inativar;
+- duplicidade por Unidade;
+- acesso fora da Unidade.
+
+Commit sugerido:
+
+```text
+feat: adicionar gerenciamento de locais de armazenamento
+```
+
+## 4.1-C — Integração com análise/liberação
+
+Adicionar referência estruturada e complemento ao `Residuo`, adaptar DTO de análise e resolver modo catálogo x manual.
+
+Testar catálogo, catálogo + complemento, manual, nenhum, ambos, outra Unidade e local inativo.
+
+Commit sugerido:
+
+```text
+feat: integrar local cadastrado à liberação de resíduos
+```
+
+## 4.1-D — Confirmação física/correção
+
+Adaptar confirmação de armazenamento para manter ou corrigir o local planejado e registrar mudança no histórico.
+
+Commit sugerido:
+
+```text
+feat: permitir correção estruturada do armazenamento de resíduos
+```
+
+## 4.1-E — Revisão backend
+
+Validar Swagger, PostgreSQL/Flyway, tenant, fluxo completo, rótulo, relatório, histórico e resíduos antigos. Só então fechar contrato backend.
+
+## 4.1-F — Frontend Administração/Cadastros
+
+Adicionar catálogo de locais de armazenamento à central administrativa.
+
+## 4.1-G — Frontend Gestão
+
+Na análise e confirmação física, permitir:
 
 ```text
 local cadastrado
-+ complemento livre
++ complemento
+ou
+local manual
 ```
 
-Exemplo:
+## 4.1-H — Regressão integrada
 
-```text
-Almoxarifado Químico
-+ Prateleira B2
-```
+Validar fluxo completo, Gestores diferentes, histórico, rótulo, relatório, isolamento por Unidade, local renomeado/inativado, resíduos antigos e caminho manual.
 
-Também deve ser possível informar local manualmente quando necessário.
-
-Regra:
-
-```text
-etapa que exige armazenamento
-→ precisa terminar com um local válido
-```
-
-Antes de implementar, definir:
-
-- entidade/catálogo por Unidade;
-- ativação/inativação;
-- como preservar histórico se o local for renomeado depois;
-- se será necessário snapshot de nome do local no Resíduo;
-- como combinar local cadastrado + complemento livre.
-
-Não antecipar layout definitivo antes da modelagem.
+Somente depois fechar 4.1 e iniciar 4.2.
 
 ---
 
-## 4.2 — Modelos de Resíduos pré-cadastrados pela Gestão
+# 9. Etapas 4.2–4.4 — ainda não implementar
 
-Criar `ModeloResiduo` ou estrutura equivalente para padrões recorrentes.
-
-Modelo é definição reutilizável; não é ocorrência.
+## 4.2 — ModeloResiduo
 
 ```text
-ModeloResiduo
-= padrão reutilizável
-
-Residuo
-= ocorrência real
+ModeloResiduo = definição reutilizável
+Residuo       = ocorrência real
 ```
 
-Um modelo poderá sugerir/preencher, conforme a modelagem final:
-
-- nome/descrição;
-- procedência/uso padrão;
-- composição padrão;
-- Produtos/componentes relacionados;
-- Classes de Resíduo;
-- riscos conhecidos;
-- segurança/EPI;
-- recipiente/acondicionamento;
-- tratamento padrão quando fizer sentido como sugestão;
-- outros dados reutilizáveis aprovados.
-
-Regras obrigatórias:
-
-- modelo não movimenta estoque;
-- alteração futura do modelo não altera Resíduos históricos;
-- Solicitante ainda cria uma ocorrência real;
-- classificação/segurança continuam sujeitas à conferência da Gestão;
-- dados específicos da ocorrência não devem ficar presos ao modelo.
-
----
+Modelo pode sugerir descrição, origem/uso, composição, Produtos, classes, riscos, EPI, recipiente e tratamento padrão. Alterar modelo não pode alterar Resíduos históricos.
 
 ## 4.3 — Uso pelo Solicitante
 
-Na tela Informar Resíduo, permitir escolha clara entre:
+Na tela Informar Resíduo, permitir escolha entre modelo pré-cadastrado e preenchimento manual. O modelo preenche sugestões; a ocorrência permanece independente.
 
-```text
-usar modelo pré-cadastrado
-ou
-preencher manualmente
-```
+## 4.4 — Correções administrativas
 
-Selecionar modelo deve preencher sugestões iniciais. O usuário deve poder completar/ajustar o que pertence à ocorrência real, respeitando as regras definidas.
-
-Não transformar o modelo em referência viva para o histórico.
-
----
-
-## 4.4 — Correções administrativas do ciclo de vida
-
-Necessidade levantada na validação final da Etapa 3.
-
-Objetivo: permitir correções operacionais sem apagar a trilha histórica.
-
-Avaliar para perfil `ADMINISTRADOR`:
+Avaliar para Administrador:
 
 ```text
 Cancelar Resíduo
 → justificativa obrigatória
-→ preserva registro
-→ preserva histórico
-→ registra ator/data/motivo
+→ preservar registro/histórico
 
 Retornar para análise/liberação
 → justificativa obrigatória
-→ preserva eventos anteriores
-→ exige nova validação antes de liberar novamente
-→ impressão deve voltar a ser bloqueada quando aplicável
+→ preservar eventos anteriores
+→ exigir nova validação
+→ reavaliar permissão de impressão
 ```
 
-Antes de implementar, fechar explicitamente:
+Antes de implementar, fechar status permitidos, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, comportamento dos dados confirmados, novo evento de liberação, efeito no rótulo e permissões.
 
-1. de quais status pode retornar;
-2. se `DESPACHADO` é irreversível no fluxo comum;
-3. se será criado status `CANCELADO`;
-4. quais dados confirmados permanecem visíveis após retorno;
-5. se uma nova liberação cria novo evento sem apagar a anterior;
-6. efeitos sobre rótulo e permissão de impressão;
-7. permissões exatas da ação administrativa.
-
-Não confundir com delete lógico.
-
-A avaliação geral de delete lógico permanece na **Etapa 11**.
+Não confundir com delete lógico; decisão geral continua na Etapa 11.
 
 ---
 
-## 7. Fora do escopo da Etapa 4
+## 10. Fora do escopo da Etapa 4
 
 Não antecipar:
 
@@ -287,43 +386,25 @@ Não antecipar:
 - Relatórios consolidados → Etapa 7;
 - normalização g/mL/unidades e Soluções → Etapa 8;
 - Soluções em Pedidos → Etapa 9;
-- Zebra/template final/infraestrutura física de impressão → Etapa 10;
-- Manual do Usuário e decisão geral de delete lógico → Etapa 11;
+- Zebra/template final/infraestrutura física → Etapa 10;
+- Manual e decisão geral de delete lógico → Etapa 11;
 - testes automatizados frontend → Etapa 12;
-- refactor final de classes grandes, inclusive `Residuo` → Etapa 13.
+- refactor final de classes grandes → Etapa 13.
 
 ---
 
-## 8. Observação sobre tamanho das classes
+## 11. Observação sobre tamanho das classes
 
 `Residuo.java` cresceu significativamente durante a Etapa 3.
 
-Não realizar refactor estrutural grande agora apenas para reduzir linhas, pois isso pode aumentar risco durante as etapas funcionais.
-
-A **Etapa 13 — revisão estrutural e legibilidade** já foi criada para:
-
-- revisar `Residuo`;
-- revisar Services/DTOs/Controllers extensos;
-- extrair responsabilidades reais quando necessário;
-- documentar conceitos como snapshot;
-- preservar contratos e comportamento;
-- reexecutar os testes automatizados da Etapa 12 após o refactor.
+Não realizar refactor estrutural grande agora apenas para reduzir linhas. A Etapa 13 já foi reservada para revisar `Residuo`, Services, DTOs, Controllers, métodos longos e organização de packages, preservando contratos e comportamento.
 
 ---
 
-## 9. Próximo passo ao abrir a nova janela
-
-Não começar codando imediatamente.
-
-Primeiro:
+## 12. Próximo passo real
 
 ```text
-1. confirmar main atualizada nos dois repositórios;
-2. ler documentação canônica;
-3. revisar o estado real de Residuo/Services/DTOs/frontend;
-4. criar branch feat/etapa-4-residuos a partir da main atualizada;
-5. detalhar a Etapa 4 em passos pequenos;
-6. iniciar somente a 4.1;
+4.1-A — Fundação do catálogo no backend
 ```
 
-O usuário fará as mudanças funcionais do backend manualmente.
+O usuário fará manualmente as mudanças funcionais. Criar apenas V16 + entidade + repository, subir o backend, revisar e só então commitar/avançar para 4.1-B.
