@@ -5,12 +5,14 @@
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Última atualização:** 17/09/2026  
 **Branch estável:** `main`  
-**Branch recém-concluída:** `feat/etapa-3-residuos`  
+**Branch atual de trabalho:** `feat/etapa-4-residuos`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
-**Próxima etapa:** Etapa 4 — expansão operacional de Resíduos  
+**Etapa atual:** Etapa 4 — expansão operacional de Resíduos 🔧  
+**Subetapa atual:** 4.1 — locais de armazenamento cadastráveis  
+**Próxima implementação:** 4.1-A — fundação do catálogo no backend  
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Handoff da próxima etapa:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+**Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
 
@@ -34,15 +36,10 @@ Regra especial do projeto:
 - a IA deve analisar, modelar, explicar, fornecer código de referência e revisar;
 - não aplicar diretamente código funcional de backend sem autorização explícita;
 - frontend/documentação podem ser alterados diretamente quando autorizado;
-- não antecipar etapas futuras.
+- trabalhar em passos pequenos e commits lógicos;
+- não antecipar 4.2, 4.3 ou 4.4 durante a 4.1.
 
-Ao iniciar a Etapa 4, confirmar primeiro que a Etapa 3 foi integrada à `main` nos dois repositórios e criar uma branch nova a partir dessa `main` atualizada.
-
-Branch sugerida:
-
-```text
-feat/etapa-4-residuos
-```
+A Etapa 3 já foi integrada à `main` nos dois repositórios e a branch `feat/etapa-4-residuos` já foi criada a partir da `main` atualizada.
 
 ---
 
@@ -66,6 +63,8 @@ Relatórios consolidados                               ✅ base atual
 Produtos fiscalizados                                 ✅
 PDF / XLSX                                            ✅
 Resíduos — fluxo atual refinado                       ✅ Etapa 3 concluída
+Classes de Resíduo + snapshots                        ✅
+Segurança/EPI + snapshots                             ✅
 Estagiários — base atual                              ✅ evolução na Etapa 6
 Pessoas por laboratório                               ✅
 Administração / Cadastros                             ✅
@@ -110,7 +109,7 @@ Autenticação/autorização definitiva                   ⏳ roadmap formal
 Quando houver conflito entre documentos:
 
 ```text
-1. código da main
+1. código da main / branch atual validada
 2. Swagger/OpenAPI
 3. CONTINUIDADE.md do repositório em trabalho
 4. docs/PLANO_PRE_PRODUCAO.md
@@ -171,11 +170,19 @@ V14 — Classes de Resíduo
 V15 — segurança/EPI
 ```
 
+Próxima migration planejada:
+
+```text
+V16 — locais de armazenamento de Resíduos
+```
+
+A V16 ainda não foi implementada neste checkpoint.
+
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = V16+
+nova alteração de schema = nova migration
 ```
 
 ---
@@ -301,9 +308,7 @@ LIBERADO_PARA_ARMAZENAMENTO ou posterior
 → impressão liberada
 ```
 
-Visualização e impressão são eventos distintos.
-
-Template definitivo/Zebra continuam na Etapa 10.
+Visualização e impressão são eventos distintos. O QR técnico faz parte da identificação/contrato; o template visual físico atual do frontend não precisa renderizá-lo. Template definitivo/Zebra continuam na Etapa 10.
 
 ## Responsabilidade
 
@@ -339,30 +344,68 @@ Fechada e validada em **17/09/2026**.
 
 A validação final cobriu criação, análise, armazenamento, despacho, Gestores diferentes, histórico, prévia, bloqueio/liberação de impressão, comparação informado/aprovado e legibilidade da tela.
 
-Checkpoint: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
+Checkpoint histórico: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 ---
 
-# 9. Etapa 4 — próxima etapa
+# 9. Etapa 4 — em andamento
 
 Handoff canônico:
 
 `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
-Ordem prevista:
+Ordem:
 
 ```text
-4.1 Locais de armazenamento cadastráveis
-→ 4.2 Modelos de Resíduos pré-cadastrados pela Gestão
-→ 4.3 Uso de modelo ou preenchimento manual pelo Solicitante
-→ 4.4 Correções administrativas do ciclo de vida
+4.1 Locais de armazenamento cadastráveis          🔧 atual
+→ 4.2 Modelos de Resíduos pré-cadastrados          ⏳
+→ 4.3 Uso de modelo ou preenchimento manual        ⏳
+→ 4.4 Correções administrativas do ciclo de vida   ⏳
 ```
 
-## 4.1 Local de armazenamento
+## 4.1 — decisão arquitetural fechada
 
-Planejar catálogo reutilizável por Unidade, mantendo possibilidade de complemento/texto manual.
+```text
+LocalArmazenamentoResiduo
+= catálogo atual/editável por Unidade
 
-Antes de codar, decidir como preservar histórico caso o local seja renomeado futuramente.
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico completo
+```
+
+Regras aprovadas:
+
+- local cadastrado pertence a uma Unidade;
+- catálogo possui ativação/inativação;
+- inativo não aparece para novas seleções, mas não quebra Resíduos antigos;
+- caminho por catálogo e caminho manual coexistem;
+- payload ambíguo com catálogo + texto manual deve ser rejeitado;
+- nome do catálogo pode mudar no futuro sem alterar o snapshot histórico do Resíduo;
+- análise define o local planejado e confirmação física pode manter ou corrigir;
+- `localArmazenamentoTemporario` continua atendendo rótulo/relatório como snapshot textual;
+- novos vínculos devem respeitar a Unidade do Resíduo;
+- não transformar a 4.1 em refactor amplo de `Residuo`.
+
+Plano de implementação:
+
+```text
+4.1-A fundação backend: V16 + entidade + repository
+4.1-B CRUD + tenant
+4.1-C integração com análise/liberação
+4.1-D confirmação física/correção estruturada
+4.1-E revisão e fechamento do contrato backend
+4.1-F frontend Administração/Cadastros
+4.1-G frontend Gestão
+4.1-H regressão integrada e fechamento da 4.1
+```
+
+**Próximo passo real:** 4.1-A. Nesta subetapa criar apenas a migration V16, `LocalArmazenamentoResiduo` e `LocalArmazenamentoResiduoRepository`. Não criar service/controller/DTO nem alterar `Residuo.java` ainda.
 
 ## 4.2 ModeloResiduo
 
@@ -371,9 +414,7 @@ ModeloResiduo = padrão reutilizável
 Residuo       = ocorrência real
 ```
 
-Modelo pode sugerir descrição, procedência, composição, classes, riscos, segurança, recipiente e outros dados reutilizáveis.
-
-Alterar o modelo depois não pode modificar Resíduos históricos.
+Modelo pode sugerir descrição, procedência, composição, classes, riscos, segurança, recipiente e outros dados reutilizáveis. Alterar o modelo depois não pode modificar Resíduos históricos.
 
 ## 4.3 Solicitante
 
@@ -381,16 +422,7 @@ Na criação, permitir escolha entre modelo pré-cadastrado e preenchimento manu
 
 ## 4.4 Correções administrativas
 
-Necessidade levantada ao fechar a Etapa 3:
-
-```text
-ADMINISTRADOR
-→ cancelar Resíduo com justificativa
-→ ou retornar para análise/liberação quando permitido
-→ preservar histórico
-```
-
-Antes de implementar, fechar regras de status, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, efeitos no rótulo e necessidade de nova liberação.
+Avaliar para Administrador cancelamento/retorno para análise com justificativa e histórico. Antes de implementar, fechar regras de status, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, efeitos no rótulo e necessidade de nova liberação.
 
 Não confundir com delete lógico. A decisão geral de delete lógico continua na Etapa 11.
 
@@ -400,29 +432,15 @@ Não confundir com delete lógico. A decisão geral de delete lógico continua n
 
 ## Etapa 5 — Projetos + Atividades
 
-Antes de modelagem definitiva, confirmar:
-
-- Código SEG;
-- se Atividade é entidade subordinada ao Projeto;
-- se `SCI` é tipo de Projeto ou domínio separado;
-- situações de execução.
-
-Projeto continua N:1 com Laboratório.
+Antes de modelagem definitiva, confirmar Código SEG, relação de Atividade, significado de SCI e situações de execução.
 
 ## Etapa 6 — Estagiários
 
-Planejado:
-
-- Orientador obrigatório;
-- Projeto/Atividade;
-- Bolsa/vínculo separado de Curso/Formação;
-- Cultura/área temática;
-- treinamento inicial de segurança;
-- prorrogações justificadas e históricas.
+Planejado: Orientador obrigatório, Projeto/Atividade, Bolsa separada de Curso/Formação, Cultura/área temática, treinamento inicial de segurança e prorrogações justificadas/históricas.
 
 ## Etapa 7 — Relatórios consolidados
 
-Depende das Etapas 5 e 6 estabilizadas. Inclui filtros/agregações, telas, PDF/XLSX e organização estrutural do módulo de relatórios.
+Depende das Etapas 5 e 6 estabilizadas.
 
 ---
 
@@ -436,52 +454,29 @@ Normalizar:
 unidade de medida
 ≠
 apresentação física
-```
 
-Conversões compatíveis:
-
-```text
 1 L = 1000 mL
 1 kg = 1000 g
 ```
 
 Não converter massa ↔ volume genericamente sem densidade.
 
-Depois estabilizar domínio de Soluções.
-
 ## Etapa 9
 
-Integrar Soluções aos Pedidos sem redefinir a entidade Solução. Aprovação deve validar atomicamente todos os componentes.
+Integrar Soluções aos Pedidos com validação atômica dos componentes.
 
 ---
 
 # 12. Rótulos, Manual, Testes e Refactor
 
-## Etapa 10 — Rótulos e impressão
-
-- padrão-base SGL;
-- rótulos adaptados de Produto/Resíduo/Solução;
-- documento interno de auditoria de entrada de lote;
-- Zebra/ZPL/testes físicos.
-
-## Etapa 11 — Manual + delete lógico
-
-- Manual do Usuário;
-- avaliação de delete lógico entidade por entidade;
-- não substituir ciclos de vida por `ativo` indiscriminadamente.
-
-## Etapa 12 — testes frontend
-
 ```text
-Vitest + Vue Test Utils
-Cypress
+Etapa 10 — Rótulos + Zebra/ZPL + documento de lote
+Etapa 11 — Manual + avaliação de delete lógico
+Etapa 12 — Vitest + Vue Test Utils + Cypress
+Etapa 13 — revisão estrutural e legibilidade
 ```
 
-## Etapa 13 — revisão estrutural e legibilidade
-
-Revisar classes grandes, com atenção especial a `Residuo`, Services, DTOs e Controllers.
-
-Não fazer refactor grande agora apenas para reduzir linhas. O refactor final deve ocorrer depois da suíte da Etapa 12 e reexecutar os testes.
+Não fazer refactor grande agora apenas para reduzir linhas. `Residuo` e classes grandes serão revisitados na Etapa 13 após a suíte da Etapa 12.
 
 ---
 
@@ -491,7 +486,9 @@ Não fazer refactor grande agora apenas para reduzir linhas. O refactor final de
 Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos            ⏭ próxima
+Etapa 4 — expansão operacional de Resíduos            🔧 em andamento
+  4.1 — locais de armazenamento                       🔧 atual
+  4.1-A — fundação backend                            ⏭ próxima implementação
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
@@ -509,4 +506,4 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**A Etapa 3 está encerrada e validada. A próxima janela deve confirmar que `feat/etapa-3-residuos` foi integrada à `main` nos dois repositórios e, somente depois, iniciar a Etapa 4 em branch própria criada a partir da `main` atualizada. Ler `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md` antes de qualquer implementação. Começar pela modelagem da 4.1 — locais de armazenamento cadastráveis — e preservar a regra de que o usuário implementa manualmente o backend funcional.**
+**A Etapa 4 já foi iniciada na branch `feat/etapa-4-residuos`. A modelagem da 4.1 está fechada e o próximo passo é a 4.1-A: criar manualmente no backend a V16, `LocalArmazenamentoResiduo` e `LocalArmazenamentoResiduoRepository`, sem antecipar CRUD, integração com `Residuo` ou frontend.**
