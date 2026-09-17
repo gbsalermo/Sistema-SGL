@@ -14,18 +14,19 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 3. CONTINUIDADE_ETAPA_4_2026-09-17.md
 4. MODULO_RESIDUOS.md
 5. DOSSIE_PROJETO_SGL.md
-6. Swagger/OpenAPI em execução
-7. documento específico da área em trabalho
+6. FLUXO_DO_SISTEMA.md
+7. Swagger/OpenAPI em execução
+8. documento específico da área em trabalho
 ```
 
-O arquivo `CONTINUIDADE_ETAPA_3_2026-09-11.md` permanece como registro de fechamento da Etapa 3.
+O arquivo `CONTINUIDADE_ETAPA_3_2026-09-11.md` permanece como registro histórico de fechamento da Etapa 3.
 
 ---
 
 ## Fonte de verdade
 
 ```text
-código da main
+código da main / branch atual validada
 → Swagger/OpenAPI
 → ../CONTINUIDADE.md
 → PLANO_PRE_PRODUCAO.md
@@ -47,7 +48,9 @@ Planejamento de pré-produção                 ✅ consolidado
 Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos   ⏭ próxima
+Etapa 4 — expansão operacional de Resíduos   🔧 iniciada
+  4.1 — locais de armazenamento              🔧 em andamento
+  4.1-A — fundação backend                   ⏭ próxima implementação
 Etapas 5 a 13                                ⏳
 Matriz formal de permissões                  ⏳ após pré-produção
 Congelamento/homologação final               ⏳ posterior
@@ -61,17 +64,64 @@ Integração corporativa                       ⏳ posterior
 
 | Documento | Papel | Estado |
 |---|---|---|
-| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 17/09** |
-| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 17/09** |
-| `CONTINUIDADE_ETAPA_4_2026-09-17.md` | handoff operacional da próxima etapa | **ATUAL — 17/09** |
-| `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **FECHADO — 17/09** |
-| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 17/09** |
-| `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 17/09** |
-| `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **ATUAL — 17/09** |
+| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — Etapa 4.1** |
+| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — Etapa 4.1** |
+| `CONTINUIDADE_ETAPA_4_2026-09-17.md` | handoff operacional da etapa atual | **ATUAL — Etapa 4.1** |
+| `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **HISTÓRICO FECHADO** |
+| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL** |
+| `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 4.1** |
+| `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **ATUAL — 4.1** |
 | `RELATORIOS.md` | cobertura de relatórios | **VIGENTE** |
 | `EXPORTACAO_RELATORIOS.md` | regras de PDF/XLSX | **VIGENTE** |
 | `PENDENCIAS_POS_PROTOTIPO.md` | refactors e pendências posteriores | **REFERÊNCIA VIGENTE** |
 | `GUIA_ESTRUTURAL.md` | organização arquitetural | **REFERÊNCIA** |
+
+---
+
+## Etapa 4.1 — decisão já fechada
+
+A modelagem de locais de armazenamento foi aprovada antes da implementação:
+
+```text
+LocalArmazenamentoResiduo
+= catálogo mutável por Unidade
+
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico completo
+```
+
+Regras associadas:
+
+- catálogo por Unidade;
+- ativação/inativação;
+- local inativo deixa de ser elegível para novas seleções sem quebrar histórico;
+- seleção por catálogo + complemento opcional;
+- caminho manual continua permitido;
+- catálogo e texto manual não podem ser enviados simultaneamente de forma ambígua;
+- renomear o cadastro não altera `localArmazenamentoTemporario` de Resíduos antigos;
+- correção física posterior deve preservar rastreabilidade;
+- rótulo/relatório continuam consumindo o snapshot textual existente.
+
+Implementação planejada:
+
+```text
+4.1-A V16 + entidade + repository
+4.1-B CRUD + tenant
+4.1-C análise/liberação
+4.1-D confirmação física/correção
+4.1-E revisão backend
+4.1-F Administração/Cadastros frontend
+4.1-G Gestão frontend
+4.1-H regressão e fechamento
+```
+
+Próxima implementação: **4.1-A**.
 
 ---
 
@@ -81,7 +131,7 @@ Integração corporativa                       ⏳ posterior
 1. padronização visual                              ✅
 2. Dark Mode                                        ✅
 3. refinamentos do fluxo atual de Resíduos          ✅
-4. expansão de Resíduos                             ⏭ próxima
+4. expansão de Resíduos                             🔧 atual
 5. Projetos + Atividades                            ⏳
 6. Estagiários + vínculos                           ⏳
 7. relatórios consolidados                          ⏳
@@ -97,41 +147,18 @@ Regra deste bloco: alterações funcionais de backend são implementadas manualm
 
 ---
 
-## Etapa 3 — estado fechado
-
-Consolidado:
-
-- estado físico e tratamento;
-- responsabilidade inicial da Gestão;
-- Classes de Resíduo por Unidade;
-- snapshots de classes;
-- Segurança/EPI e recomendações em Produto;
-- snapshots de segurança;
-- integração frontend;
-- visão informado x aprovado;
-- identificação do Gestor que liberou;
-- Código SGL/QR desde criação;
-- prévia antes da liberação;
-- impressão bloqueada até liberação;
-- validação de armazenamento/despacho por Gestores diferentes;
-- revisão de escala visual do formulário.
-
-Detalhes: `CONTINUIDADE_ETAPA_3_2026-09-11.md`.
-
----
-
-## Etapa 4 — próxima
+## Migrations de Resíduos
 
 ```text
-4.1 locais de armazenamento cadastráveis
-→ 4.2 Modelos de Resíduo
-→ 4.3 modelo x preenchimento manual pelo Solicitante
-→ 4.4 correções administrativas do ciclo
+V11 — módulo base de Resíduos
+V12 — Código SGL
+V13 — estado físico/tratamento/responsabilidade
+V14 — Classes de Resíduo
+V15 — segurança/EPI
+V16 — próxima migration planejada para locais de armazenamento
 ```
 
-Na 4.4 será avaliado cancelar/retornar Resíduo com justificativa e histórico. Isso não substitui a decisão geral de delete lógico da Etapa 11.
-
-Detalhes: `CONTINUIDADE_ETAPA_4_2026-09-17.md`.
+Migrations aplicadas são imutáveis. A V16 ainda não foi implementada neste checkpoint.
 
 ---
 
@@ -164,23 +191,9 @@ frontend
 
 ---
 
-## Contratos e material auxiliar
+## Documentos auxiliares e históricos
 
-Documentos auxiliares não prevalecem sobre Swagger/OpenAPI ou código atual:
-
-| Documento | Uso correto |
-|---|---|
-| `ENDPOINTS_INTERNOS.md` | inventário auxiliar de endpoints |
-| `JSON_EXEMPLOS.md` | exemplos de payload; conferir Swagger |
-| `REQUISICOES_POSTMAN_LOTES.md` | testes de lotes |
-| `CODIGOS_REFERENCIA_TESTES.md` | testes de códigos/referências |
-| `testes.md` | histórico e cenários de validação |
-
----
-
-## Documentos históricos
-
-Arquivos de auditoria, demonstrações e snapshots antigos são mantidos para rastreabilidade e não representam planejamento vigente.
+Documentos auxiliares não prevalecem sobre Swagger/OpenAPI ou código atual. Documentos de etapas já encerradas permanecem para rastreabilidade e não devem ter suas afirmações temporais reescritas apenas porque o projeto avançou.
 
 Se um documento histórico disser que um módulo já integrado “ainda será feito”, prevalece o checkpoint atual.
 
@@ -194,10 +207,10 @@ Antes de alterar o sistema:
 1. ler ../CONTINUIDADE.md
 2. ler PLANO_PRE_PRODUCAO.md
 3. ler CONTINUIDADE_ETAPA_4_2026-09-17.md
-4. confirmar que Etapa 3 foi integrada à main
+4. conferir a branch atual
 5. conferir Swagger/OpenAPI
 6. ler o documento específico da área
 7. distinguir requisito atual de registro histórico
 ```
 
-Não iniciar a Etapa 4 sobre uma branch antiga da Etapa 3. Criar branch própria a partir da `main` atualizada.
+Na situação atual, iniciar somente pela **4.1-A** e manter o responsável do projeto como autor das mudanças funcionais de backend.
