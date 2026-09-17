@@ -1,155 +1,213 @@
 # Continuidade SGL — Etapa 3
 
 **Checkpoint inicial:** 11/09/2026  
-**Atualizado em:** 16/09/2026
+**Fechamento:** 17/09/2026
 
-## Estado atual
+## Estado final
 
-As Etapas 1 e 2 da pré-produção foram concluídas e validadas.
-
-```text
-Etapa 1 — padrão visual global       ✅
-Etapa 2 — Dark Mode definitivo       ✅
-Etapa 3 — Resíduos                   ⏭ atual
-```
-
-## Fechamento da Etapa 2
-
-Frontend:
+As Etapas 1, 2 e 3 da pré-produção foram concluídas e validadas.
 
 ```text
-repositório: gbsalermo/SGL-FRONTEND
-PR: #50
-squash merge: a3fff4fa8edb6b8900c4a5b359dbfc0245afb87c
+Etapa 1 — padrão visual global       ✅ concluída
+Etapa 2 — Dark Mode definitivo       ✅ concluída
+Etapa 3 — Resíduos                   ✅ concluída e validada
+Etapa 4 — expansão de Resíduos       ⏭ próxima
 ```
 
-O fechamento incluiu:
+O acabamento visual definitivo dos rótulos, templates adaptados e infraestrutura Zebra continua fora deste escopo e permanece na **Etapa 10 — Rótulos e impressão operacional**.
 
-- arquitetura única de tema por `themeService.ts`;
-- persistência de `sgl.theme`;
-- sincronização DOM/body + Vuetify;
-- paleta Dark em tokens;
-- cobertura completa das interfaces autenticadas;
-- Login, 404 e rótulos de impressão preservados em Light;
-- remoção de `dark-mode.css`, `dark-mode-runtime.css`, `dark-mode-coverage.css` e `dark-mode-consistency.css`;
-- correção de cards/estados vazios claros remanescentes;
-- azul de ações primárias escurecido no Dark;
-- semântica final de movimentações também em Relatórios:
-  - Entrada/Devolução → verde;
-  - Saída → azul;
-  - Ajuste → âmbar;
-  - Descarte por vencimento → vermelho.
+---
 
-Nenhuma regra de negócio, contrato HTTP ou payload do backend foi alterado.
+## 3.1 — Remover redundância de análise ✅
 
-## Etapa atual
-
-**Etapa 3 — Refinamentos do fluxo atual de Resíduos.**
-
-Ordem:
-
-```text
-3.1 remover redundância de análise                              ✅ concluída e validada
-→ 3.2 ampliar dados/classes/segurança/responsabilidade do Resíduo 🔧 em execução
-   3.2.1 tratamento + estado físico + responsabilidade inicial    ✅ concluída
-   3.2.2 classes de Resíduo                                       ✅ concluída
-   3.2.3 segurança/EPI + snapshot                                 🧪 implementada / validar
-   3.2.4 integração dos novos dados no frontend                   🧪 implementada / validar
-→ 3.3 separar geração/visualização da permissão de impressão      🧪 implementada / validar
-```
-
-O acabamento visual definitivo, os templates adaptados e a infraestrutura Zebra não pertencem mais à Etapa 3. Eles foram consolidados na **Etapa 10 — Rótulos e impressão operacional**, após a estabilização de Produto, Resíduo e Solução.
-
-## Fechamento da 3.1 — 16/09/2026
-
-A subetapa 3.1 foi implementada no frontend e validada manualmente na interface.
+Fechada e validada em 16/09/2026.
 
 Alterações consolidadas:
 
 - removido o pseudo-filtro `PENDENTES_ANALISE` da Gestão de Resíduos;
 - removida a navegação `filtro=pendentes-analise`;
 - preservadas as abas baseadas nos status reais `INFORMADO`, `EM_ANALISE`, `LIBERADO_PARA_ARMAZENAMENTO`, `ARMAZENADO_TEMPORARIAMENTE` e `DESPACHADO`;
-- Dashboard preserva o KPI agregado de resíduos pendentes/em análise, mas navega para a tela geral ou usa `status=<StatusResiduo>` quando aponta para um resíduo específico;
-- nenhum código funcional de backend foi alterado;
-- nenhum DTO, contrato HTTP, migration ou regra de domínio foi alterado.
+- Dashboard preserva o KPI agregado de resíduos pendentes/em análise;
+- nenhum DTO, migration ou regra de domínio foi alterado nesta subetapa.
 
-Frontend — commits da 3.1:
+Frontend:
 
 ```text
 11f420c  feat: remover redundância da análise de resíduos
 833c59d  feat: alinhar navegação do dashboard de resíduos
 ```
 
-## Fechamento da 3.2.1 — 16/09/2026
+---
 
-A primeira parte da 3.2 foi concluída no backend.
+## 3.2 — Dados, classes, segurança e responsabilidade ✅
 
-Alterações consolidadas:
+### 3.2.1 — Tratamento, estado físico e responsabilidade inicial
 
-- novo estado físico estruturado do Resíduo por `EstadoFisicoResiduo`;
-- registro de tratamento realizado e descrição condicional;
+Implementado e validado:
+
+- `EstadoFisicoResiduo` estruturado;
+- tratamento realizado + descrição condicional;
 - migration `V13__expand_basic_residuo_data.sql`;
-- substituição de `gestorResponsavel` por `gestorRecebedorInicial`;
-- o Gestor que recebe inicialmente passa a ser o mesmo responsável por analisar/liberar;
-- armazenamento e despacho podem ser executados por outros Gestores sem perder o responsável inicial;
-- histórico continua registrando o ator real de cada transição;
-- contrato de resposta já utiliza a nomenclatura definitiva `gestorRecebedorInicial`.
+- `gestorResponsavel` substituído por `gestorRecebedorInicial`;
+- Gestor que recebe inicialmente é preservado como responsável inicial da conferência;
+- armazenamento e despacho podem ser executados posteriormente por outro Gestor;
+- histórico continua registrando o ator real de cada transição.
 
-## Fechamento da 3.2.2 — 16/09/2026
+### 3.2.2 — Classes de Resíduo
 
-A subetapa de Classes de Resíduo foi concluída no backend.
-
-Alterações consolidadas:
+Implementado e validado:
 
 - catálogo `ClasseResiduo` por Unidade;
-- códigos e descrições editáveis, com inativação em vez de enum rígido;
-- classes iniciais A, B, F e H cadastradas pela migration `V14__create_residue_classes.sql`;
-- isolamento por tenant preservado;
-- múltiplas classes permitidas;
-- classes informadas pelo Solicitante e confirmadas pela Gestão preservadas separadamente;
-- snapshot de código/descrição mantido em `ResiduoClasse`, evitando alteração retroativa do histórico;
-- DTOs e contratos do backend preparados para `classesInformadasIds` e `classesConfirmadasIds`.
+- código, descrição e estado ativo;
+- classes iniciais A, B, F e H pela migration `V14__create_residue_classes.sql`;
+- isolamento por tenant;
+- múltiplas classes por Resíduo;
+- classes informadas pelo Solicitante e classes confirmadas pela Gestão separadas;
+- snapshot de código/descrição em `ResiduoClasse` para preservar histórico;
+- CRUD/inativação disponível na Administração.
 
-## Implementação da 3.2.3 e 3.2.4 — 16/09/2026
+### 3.2.3 — Segurança/EPI + snapshot
 
-Implementado no backend:
+Implementado e validado:
 
-- enum estruturado de medidas de segurança: luvas, óculos, proteção respiratória, jaleco/avental e outro;
+- medidas estruturadas: `LUVAS`, `OCULOS_PROTECAO`, `PROTECAO_RESPIRATORIA`, `JALECO_AVENTAL`, `OUTRO`;
 - recomendações de segurança no Produto;
 - snapshots independentes de segurança informada e confirmada no Resíduo;
 - migration `V15__add_residue_safety_information.sql`;
-- observação obrigatória quando a medida `OUTRO` é usada.
+- `OUTRO` exige observação;
+- Produtos associados aos componentes podem sugerir EPI, mas não sobrescrevem a decisão do usuário;
+- alterações futuras no Produto não modificam Resíduos históricos.
 
-Implementado no frontend:
+### 3.2.4 — Integração frontend
 
-- Produto permite manter recomendações de segurança;
-- nova aba administrativa para Classes de Resíduo;
-- formulário do Solicitante inclui procedência/uso, estado físico, tratamento, classes e segurança;
-- Produtos associados aos componentes fornecem sugestões de EPI sem sobrescrever a escolha do Solicitante;
-- análise da Gestão confirma classes e segurança separadamente;
-- telas de consulta mostram valores informados e confirmados preservando o histórico.
+Implementado e validado:
 
-Validação manual integrada permanece pendente.
+- `processoOrigem` apresentado como **Procedência / uso do Resíduo**;
+- estado físico;
+- tratamento realizado;
+- Classes de Resíduo;
+- Segurança/EPI;
+- sugestões de EPI vindas dos Produtos;
+- confirmação independente pela Gestão;
+- visão comparativa consolidada em dois cards:
+  - Informado pelo laboratório;
+  - Aprovado pela Gestão;
+- card da Gestão mostra o Gestor que realmente liberou e a data/hora, obtidos do evento `RISCO_CONFERIDO_E_RESIDUO_LIBERADO`;
+- formulário de informar Resíduo teve escala visual revisada para uso em 100% de zoom, com maior largura útil, tipografia e campos.
 
-## Implementação da 3.3 — 16/09/2026
+A validação também confirmou que armazenamento e despacho podem ser feitos por outro Gestor sem perder a rastreabilidade dos responsáveis anteriores.
 
-A identificação e a disponibilidade do rótulo foram separadas da autorização de impressão.
+---
 
-Regras implementadas:
+## 3.3 — Identificação, prévia e permissão de impressão ✅
 
-- código SGL continua sendo gerado na criação do Resíduo;
-- QR também passa a existir desde o registro inicial;
+A identificação do Resíduo foi separada da autorização de impressão.
+
+Regras finais:
+
+```text
+INFORMADO
+→ Código SGL disponível
+→ QR disponível
+→ prévia disponível
+→ impressão bloqueada
+
+EM_ANALISE
+→ prévia disponível
+→ impressão bloqueada
+
+LIBERADO_PARA_ARMAZENAMENTO
+→ impressão liberada
+
+ARMAZENADO_TEMPORARIAMENTE
+→ impressão liberada
+
+DESPACHADO
+→ impressão liberada
+```
+
+Detalhes:
+
+- Código SGL continua sendo gerado no registro inicial;
+- QR passa a existir desde o registro inicial;
 - Resíduos antigos sem QR recebem a identificação faltante ao abrir a prévia;
-- a Gestão pode visualizar a prévia em `INFORMADO` e `EM_ANALISE`;
-- a prévia utiliza os dados disponíveis naquele momento e identifica classificação ainda não confirmada;
-- impressão permanece bloqueada enquanto o Resíduo estiver `INFORMADO` ou `EM_ANALISE`;
-- impressão é liberada em `LIBERADO_PARA_ARMAZENAMENTO`, `ARMAZENADO_TEMPORARIAMENTE` e `DESPACHADO`;
-- template definitivo, Zebra e infraestrutura física continuam exclusivamente na Etapa 10.
+- a prévia usa dados informados enquanto a classificação ainda não foi confirmada;
+- depois da análise, o rótulo prioriza os dados confirmados;
+- botão de impressão permanece desabilitado antes da liberação;
+- impressão via navegador também é bloqueada enquanto o Resíduo estiver apenas em prévia;
+- texto da análise foi corrigido para deixar claro que a liberação **autoriza a impressão**, e não gera o código;
+- template definitivo, Zebra e infraestrutura física permanecem na Etapa 10.
+
+---
+
+## Validação final da Etapa 3 — 17/09/2026
+
+Validação manual considerada satisfatória pelo responsável do projeto.
+
+Foram conferidos:
+
+- criação de Resíduo com os novos campos;
+- classes e EPI;
+- análise e liberação;
+- comparação entre declaração original e dados aprovados;
+- identificação do Gestor que liberou;
+- armazenamento por outro Gestor;
+- despacho por outro Gestor;
+- rastreabilidade/histórico atualizado;
+- prévia do rótulo antes da liberação;
+- bloqueio de impressão antes da liberação;
+- liberação de impressão após análise;
+- ajustes de escala e legibilidade do formulário.
+
+**Etapa 3 encerrada.**
+
+---
+
+## Decisão para etapa futura — correções administrativas do ciclo
+
+Durante a validação surgiu a necessidade de avaliar ações administrativas para corrigir o ciclo de um Resíduo sem apagar seu histórico.
+
+Isso **não pertence à Etapa 3** e não deve ser resolvido como simples delete.
+
+Levar para a Etapa 4 como refinamento operacional:
+
+```text
+ADMINISTRADOR
+→ cancelar Resíduo com justificativa
+→ ou retornar para análise/liberação quando a regra permitir
+→ preservar histórico
+→ registrar ator, data/hora e motivo
+```
+
+Pontos a definir antes de implementar:
+
+- de quais status é permitido retornar;
+- se `DESPACHADO` pode ou não ser revertido;
+- status e semântica de `CANCELADO`, se adotado;
+- efeito sobre permissão de impressão;
+- necessidade de revalidação pela Gestão após retorno.
+
+A **decisão geral sobre delete lógico** continua na Etapa 11. Cancelamento operacional de Resíduo e delete lógico são conceitos diferentes.
+
+---
 
 ## Próximo passo exato
 
-Executar a **validação integrada da Etapa 3**. Se 3.2 e 3.3 passarem, marcar a Etapa 3 como concluída e iniciar a Etapa 4.
+Iniciar **Etapa 4 — Expansão operacional de Resíduos** em branch própria, depois que a Etapa 3 estiver integrada à `main`.
 
-O plano canônico permanece:
+Ordem prevista:
+
+```text
+4.1 locais de armazenamento cadastráveis
+→ 4.2 modelos de Resíduos pré-cadastrados pela Gestão
+→ 4.3 uso de modelo ou preenchimento manual pelo Solicitante
+→ 4.4 correções administrativas do ciclo de vida (cancelar/retornar), após fechar regras
+```
+
+Handoff da próxima etapa:
+
+`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+
+Plano canônico:
 
 `docs/PLANO_PRE_PRODUCAO.md`
