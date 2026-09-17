@@ -4,8 +4,11 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 17/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 da pré-produção concluídas; Etapa 4 é a próxima.  
-**Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 iniciada; 4.1 em andamento.  
+**Branch atual:** `feat/etapa-4-residuos`  
+**Próxima implementação:** 4.1-A — fundação do catálogo de locais de armazenamento.
+
+Este documento resume o estado real atual do SGL para retomada humana ou por IA.
 
 ## Checkpoint atual
 
@@ -13,7 +16,9 @@
 Etapa 1 — padrão visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos  ⏭ próxima
+Etapa 4 — expansão operacional de Resíduos  🔧 em andamento
+  4.1 — locais de armazenamento             🔧 atual
+  4.1-A — fundação backend                  ⏭ próxima implementação
 ```
 
 Handoff imediato:
@@ -28,12 +33,10 @@ Plano canônico:
 
 # 1. Ordem de precedência
 
-Quando houver conflito:
-
 ```text
-1. código da main
+1. código da main / branch atual validada
 2. Swagger/OpenAPI
-3. CONTINUIDADE.md do repositório em trabalho
+3. CONTINUIDADE.md
 4. docs/PLANO_PRE_PRODUCAO.md
 5. handoff da etapa atual
 6. este DOSSIE_PROJETO_SGL.md
@@ -41,15 +44,9 @@ Quando houver conflito:
 8. documentos históricos
 ```
 
-Antes de iniciar a Etapa 4, confirmar que a branch da Etapa 3 foi integrada à `main` nos dois repositórios.
-
 ---
 
 # 2. Regra de trabalho
-
-O responsável do projeto usa o SGL também como processo de aprendizado.
-
-Portanto:
 
 ```text
 backend funcional
@@ -61,42 +58,11 @@ backend funcional
 
 Não aplicar backend funcional diretamente sem autorização explícita.
 
-Frontend/documentação podem ser alterados diretamente quando autorizado.
-
-Trabalhar sempre em branch própria e em etapas pequenas.
+Frontend/documentação podem ser alterados diretamente quando autorizado. Trabalhar em branch própria, passos pequenos e commits lógicos.
 
 ---
 
-# 3. Objetivo do SGL
-
-O SGL cobre:
-
-- pedidos de materiais;
-- estoque central por Unidade;
-- lotes e validade;
-- FIFO/FEFO;
-- movimentações;
-- fiscalização;
-- resíduos laboratoriais;
-- estagiários e vínculos;
-- administração de dados-base;
-- relatórios e exportações;
-- dashboards, alertas e busca;
-- futura autenticação/autorização/auditoria corporativa.
-
-Repos:
-
-```text
-gbsalermo/Sistema-SGL
-→ Spring API, domínio, persistência, Flyway, Swagger, relatórios/exportações
-
-gbsalermo/SGL-FRONTEND
-→ Vue SPA, UX de Solicitante, Gestão e Administração
-```
-
----
-
-# 4. Stack
+# 3. Stack
 
 ## Backend
 
@@ -130,7 +96,7 @@ Node >= 20.19
 
 ---
 
-# 5. Estado executivo
+# 4. Estado executivo
 
 ## Backend
 
@@ -146,6 +112,8 @@ Swagger/OpenAPI                                   ✅
 Fiscalização                                      ✅
 Relatórios + PDF/XLSX                             ✅
 Resíduos — Etapa 3 refinada                       ✅
+Classes de Resíduo + snapshots                    ✅
+Segurança/EPI + snapshots                         ✅
 Estagiários — base atual                          ✅
 Pessoas por laboratório                           ✅
 Administração/Cadastros                           ✅
@@ -182,38 +150,26 @@ Autenticação/autorização definitiva               ⏳
 
 ---
 
-# 6. Arquitetura backend
+# 5. Arquitetura backend
 
 ```text
-Controller
-→ contrato HTTP
-
-Service
-→ regras, transações e orquestração
-
-Repository
-→ persistência/consultas
-
-Model
-→ estado de domínio
-
-RequestDTO / ResponseDTO
-→ contratos públicos
+Controller → contrato HTTP
+Service → regras, transações e orquestração
+Repository → persistência/consultas
+Model → estado de domínio
+RequestDTO / ResponseDTO → contratos públicos
 ```
 
 Identificadores:
 
 ```text
-Long id
-→ interno
-
-UUID publicId
-→ público
+Long id → interno
+UUID publicId → público
 ```
 
 ---
 
-# 7. PostgreSQL e Flyway
+# 6. PostgreSQL e Flyway
 
 ```text
 PostgreSQL
@@ -231,51 +187,34 @@ V12 backfill Código SGL
 V13 estado físico/tratamento/responsabilidade
 V14 Classes de Resíduo
 V15 segurança/EPI
+V16 próxima migration planejada para locais de armazenamento
 ```
 
-Próxima alteração de schema: V16+.
+A V16 ainda não foi implementada neste checkpoint.
 
 ---
 
-# 8. Multitenancy por Unidade
-
-Backend:
+# 7. Multitenancy por Unidade
 
 ```text
-X-SGL-Unidade-Id
+frontend
+→ X-SGL-Unidade-Id
 → TenantRequestFilter
 → TenantContext
-→ services/repositories
-```
-
-Frontend:
-
-```text
-sessão DEV com unidadeId
-→ interceptor Axios
-→ header X-SGL-Unidade-Id
+→ services/repositories por Unidade
 ```
 
 Isso representa isolamento funcional em desenvolvimento, não autorização definitiva de produção.
 
 ---
 
-# 9. Estoque e Pedidos
-
-Domínio:
+# 8. Estoque e Pedidos
 
 ```text
-Produto
-→ catálogo
-
-EstoqueCentral
-→ saldo agregado por Unidade
-
-Lote
-→ saldo físico, validade, apresentação
-
-MovimentacaoEstoque
-→ rastreabilidade
+Produto → catálogo
+EstoqueCentral → saldo agregado por Unidade
+Lote → saldo físico, validade, apresentação
+MovimentacaoEstoque → rastreabilidade
 ```
 
 FIFO/FEFO:
@@ -299,17 +238,13 @@ Criação não baixa estoque; aprovação baixa; entrega não baixa novamente; c
 
 ---
 
-# 10. Resíduos — estado atual
-
-Decisão:
+# 9. Resíduos — estado atual
 
 ```text
 Produto != Resíduo
 ```
 
 Produto é catálogo/estoque. Resíduo é ocorrência real.
-
-Componente pode referenciar Produto para rastreabilidade e sugestão de segurança sem movimentar estoque.
 
 Fluxo:
 
@@ -327,7 +262,7 @@ Código:
 SGL-RES-AAAA-NNNNNN
 ```
 
-## Dados consolidados na Etapa 3
+Dados consolidados na Etapa 3:
 
 - procedência/uso em `processoOrigem`;
 - estado físico;
@@ -344,21 +279,7 @@ SGL-RES-AAAA-NNNNNN
 - armazenamento/destino;
 - histórico por ator.
 
-Classes são catálogo editável por Unidade, não enum rígido.
-
-Segurança estruturada:
-
-```text
-LUVAS
-OCULOS_PROTECAO
-PROTECAO_RESPIRATORIA
-JALECO_AVENTAL
-OUTRO
-```
-
-## Snapshot
-
-Regra arquitetural importante:
+Regra arquitetural:
 
 ```text
 cadastro atual/editável
@@ -366,9 +287,9 @@ cadastro atual/editável
 dado histórico da ocorrência
 ```
 
-Alterar Produto, Classe ou futuramente ModeloResiduo não modifica Resíduos antigos.
+Alterar Produto, Classe, Local ou futuramente ModeloResiduo não pode modificar retroativamente o que já foi registrado como snapshot da ocorrência.
 
-## Rótulo
+Rótulo:
 
 ```text
 INFORMADO / EM_ANALISE
@@ -379,174 +300,89 @@ LIBERADO_PARA_ARMAZENAMENTO ou posterior
 → impressão ✅
 ```
 
-Código e QR técnico existem desde a criação.
-
-Template definitivo/Zebra ficam na Etapa 10.
-
-## Gestão
-
-A tela compara:
-
-```text
-Informado pelo laboratório
-vs
-Aprovado pela Gestão
-```
-
-O Gestor que liberou é identificado no histórico por `RISCO_CONFERIDO_E_RESIDUO_LIBERADO`.
-
-Armazenamento e despacho podem ser feitos por outro Gestor, preservando rastreabilidade.
-
-Detalhes: `docs/MODULO_RESIDUOS.md`.
+Código e QR técnico existem desde a criação. O template físico atual pode não renderizar o QR; padrão final/Zebra ficam na Etapa 10.
 
 ---
 
-# 11. Etapa 3 — fechada
-
-Validada em 17/09/2026.
+# 10. Etapa 4.1 — decisão fechada
 
 ```text
-3.1 redundância visual                       ✅
-3.2 dados/classes/segurança/responsabilidade ✅
-3.3 prévia x impressão                       ✅
+LocalArmazenamentoResiduo
+= catálogo mutável por Unidade
+
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico completo
 ```
 
-A validação incluiu fluxo ponta a ponta, Gestores diferentes, histórico, classes, EPI, comparação informado/aprovado, prévia, bloqueio/liberação da impressão e escala visual da tela.
+Regras:
+
+- catálogo por Unidade;
+- ativação/inativação;
+- local inativo não entra em novas seleções;
+- histórico antigo permanece válido;
+- alteração de nome do cadastro não altera snapshot antigo;
+- catálogo + complemento e caminho manual coexistem;
+- modos catálogo/manual são mutuamente exclusivos no payload;
+- validação de tenant pelo contexto da Unidade do Resíduo;
+- análise define local planejado;
+- confirmação física pode manter ou corrigir;
+- correção deve permanecer rastreável;
+- rótulo/relatório continuam consumindo `localArmazenamentoTemporario`.
+
+Plano:
+
+```text
+4.1-A V16 + entidade + repository
+4.1-B CRUD + tenant
+4.1-C análise/liberação
+4.1-D confirmação física/correção
+4.1-E revisão backend
+4.1-F frontend Cadastros
+4.1-G frontend Gestão
+4.1-H regressão e fechamento
+```
+
+Próximo passo: **4.1-A**.
+
+Criar somente:
+
+```text
+V16__create_residue_storage_locations.sql
+LocalArmazenamentoResiduo.java
+LocalArmazenamentoResiduoRepository.java
+```
+
+Não criar service/controller/DTO nem alterar `Residuo.java` nessa subetapa.
 
 ---
 
-# 12. Etapa 4 — próxima
-
-Handoff:
-
-`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
-
-Ordem:
+# 11. Etapas futuras
 
 ```text
-4.1 locais de armazenamento
-→ 4.2 modelos de Resíduo
-→ 4.3 uso modelo x manual
-→ 4.4 correções administrativas do ciclo
+4.2 Modelos de Resíduo
+4.3 modelo x preenchimento manual
+4.4 correções administrativas do ciclo
+5 Projetos + Atividades
+6 Estagiários + vínculos
+7 Relatórios consolidados
+8 unidades + Soluções
+9 Pedidos + Soluções
+10 Rótulos + impressão operacional
+11 Manual + delete lógico
+12 testes automatizados frontend
+13 revisão estrutural/legibilidade
 ```
 
-## 4.1
-
-Catálogo reutilizável por Unidade + complemento livre + opção manual.
-
-Fechar antes de implementar como preservar histórico se o local mudar.
-
-## 4.2
-
-```text
-ModeloResiduo = padrão reutilizável
-Residuo = ocorrência real
-```
-
-Modelo não movimenta estoque e não deve ser referência viva para histórico.
-
-## 4.3
-
-Solicitante escolhe modelo ou preenchimento manual.
-
-## 4.4
-
-Avaliar:
-
-```text
-ADMINISTRADOR
-→ cancelar com motivo
-→ retornar para análise/liberação com motivo
-→ preservar histórico
-```
-
-Definir status permitidos e efeitos sobre rótulo/impressão antes de codar.
-
-Não confundir com delete lógico, que continua na Etapa 11.
+Não antecipar 4.2–4.4 durante a 4.1.
 
 ---
 
-# 13. Estagiários, Projetos e Relatórios futuros
+# 12. Regra final de retomada
 
-Etapa 5 estabiliza Projetos/Atividades e Código SEG.
-
-Etapa 6 evolui Estagiários com:
-
-- Orientador obrigatório;
-- Projeto/Atividade;
-- Bolsa separada de Curso/Formação;
-- Cultura/área temática;
-- treinamento de segurança;
-- histórico de prorrogações.
-
-Etapa 7 consome Etapas 5/6 em relatórios consolidados e inclui organização estrutural do módulo de Relatórios.
-
----
-
-# 14. Unidades, Soluções e Pedidos
-
-Etapa 8:
-
-- separar unidade de medida de apresentação física;
-- `1 L = 1000 mL`;
-- `1 kg = 1000 g`;
-- não converter massa/volume sem densidade;
-- estabilizar domínio de Soluções.
-
-Etapa 9 integra Soluções aos Pedidos com aprovação atômica dos componentes.
-
----
-
-# 15. Rótulos, Manual, testes e refactor
-
-Etapa 10:
-
-- padrão-base de rótulos;
-- Produto/Resíduo/Solução;
-- documento interno de lote;
-- Zebra/ZPL/testes físicos.
-
-Etapa 11:
-
-- Manual do Usuário;
-- avaliação geral de delete lógico.
-
-Etapa 12:
-
-```text
-Vitest + Vue Test Utils
-Cypress
-```
-
-Etapa 13:
-
-- revisão estrutural/legibilidade;
-- atenção especial a `Residuo` e Services grandes;
-- sem alterar comportamento;
-- reexecutar testes depois do refactor.
-
----
-
-# 16. Situação da pré-produção
-
-```text
-Etapa 1 ✅
-Etapa 2 ✅
-Etapa 3 ✅
-Etapa 4 ⏭ próxima
-Etapa 5 ⏳
-Etapa 6 ⏳
-Etapa 7 ⏳
-Etapa 8 ⏳
-Etapa 9 ⏳
-Etapa 10 ⏳
-Etapa 11 ⏳
-Etapa 12 ⏳
-Etapa 13 ⏳
-```
-
----
-
-# 17. Regra final de retomada
-
-**Antes de iniciar a Etapa 4, confirmar que `feat/etapa-3-residuos` foi integrada à `main` no backend e frontend. Criar `feat/etapa-4-residuos` a partir da `main` atualizada. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md`, `docs/MODULO_RESIDUOS.md` e `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`. Começar somente pela 4.1 e manter o usuário como autor das mudanças funcionais de backend.**
+**A Etapa 4 já foi iniciada. A modelagem da 4.1 está fechada. O próximo passo é a 4.1-A, implementada manualmente no backend: V16 + `LocalArmazenamentoResiduo` + repository, seguida de revisão antes de avançar.**
