@@ -1,8 +1,9 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Estado em 17/09/2026:** ✅ fluxo atual refinado e validado até a Etapa 3 da pré-produção.  
-**Migrations principais:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql` e `V15__add_residue_safety_information.sql`.  
-**Próxima evolução:** Etapa 4 — expansão operacional de Resíduos.
+**Estado em 17/09/2026:** Etapa 3 ✅ concluída e validada; Etapa 4 🔧 iniciada; 4.1 — locais de armazenamento em andamento.  
+**Migrations aplicadas:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql` e `V15__add_residue_safety_information.sql`.  
+**Próxima migration planejada:** V16 — locais de armazenamento de Resíduos.  
+**Branch atual:** `feat/etapa-4-residuos`.
 
 ## 1. Regra central
 
@@ -10,33 +11,13 @@
 Produto != Resíduo
 ```
 
-Produto representa catálogo/estoque. Resíduo representa material gerado no laboratório e encaminhado à Gestão.
+Produto representa catálogo/estoque. Resíduo representa uma ocorrência operacional real gerada no laboratório e encaminhada à Gestão.
 
-Um componente pode referenciar opcionalmente um Produto para rastreabilidade e para sugestões de segurança, mas isso **não baixa, repõe ou altera EstoqueCentral, Lote ou MovimentacaoEstoque**.
+Um componente pode referenciar opcionalmente um Produto para rastreabilidade e sugestões de segurança, mas isso **não baixa, repõe ou altera EstoqueCentral, Lote ou MovimentacaoEstoque**.
 
 ---
 
 ## 2. Fluxo operacional
-
-```text
-PEDIDO
-usuário solicita
-→ Gestão atende
-→ material sai do estoque
-→ material chega ao laboratório
-
-RESÍDUO
-laboratório gera
-→ usuário informa
-→ recipiente chega à Gestão
-→ Gestão recebe/confere
-→ analisa/classifica
-→ libera
-→ armazena temporariamente
-→ despacha/destina
-```
-
-O fluxo de status permanece:
 
 ```text
 INFORMADO
@@ -77,7 +58,7 @@ A Gestão recebe, confere, analisa/classifica, libera, consulta rótulo, registr
 
 A área de Cadastros já permite manter **Classes de Resíduo** e recomendações de segurança em Produtos.
 
-A Etapa 4 adicionará locais de armazenamento e modelos reutilizáveis de Resíduo.
+A Etapa 4.1 adicionará **locais de armazenamento**. A Etapa 4.2 adicionará **Modelos de Resíduo** reutilizáveis.
 
 ---
 
@@ -148,25 +129,22 @@ observacao
 
 ## 5. Responsabilidade operacional
 
-O sistema preserva separadamente:
-
 ```text
 usuarioGerador
 → quem informou/gerou a ocorrência
 
 gestorRecebedorInicial
 → Gestor que recebeu inicialmente o Resíduo
+
+HistoricoResiduo
+→ ator real de cada transição
 ```
 
-O Gestor recebedor inicial conduz a análise/liberação. Após a liberação, armazenamento e despacho podem ser executados por outro Gestor autorizado.
-
-O histórico registra o ator real de cada transição, portanto trocar o executor nas etapas posteriores não apaga responsabilidades anteriores.
+O Gestor recebedor inicial conduz a análise/liberação. Após a liberação, armazenamento e despacho podem ser executados por outro Gestor autorizado sem apagar responsabilidades anteriores.
 
 ---
 
 ## 6. Risco declarado x confirmado
-
-A declaração original permanece separada da classificação da Gestão.
 
 ```text
 Laboratório
@@ -223,8 +201,6 @@ Gestão
 
 `ResiduoClasse` mantém snapshot de código e descrição.
 
-Regra arquitetural:
-
 ```text
 ClasseResiduo
 = catálogo atual/editável
@@ -251,9 +227,7 @@ OUTRO
 
 Quando `OUTRO` é utilizado, uma observação descritiva é obrigatória.
 
-Produto pode manter **recomendações** de segurança. Quando um Produto participa da composição, o frontend pode sugerir essas medidas ao Solicitante.
-
-Isso não cria dependência histórica:
+Produto pode manter recomendações de segurança. Quando um Produto participa da composição, o frontend pode sugerir essas medidas ao Solicitante.
 
 ```text
 Produto
@@ -279,16 +253,7 @@ PUT /api/v1/residuos/{id}/armazenar
 PUT /api/v1/residuos/{id}/despachar
 ```
 
-Na análise/liberação, a Gestão confirma:
-
-- nível de risco;
-- riscos;
-- Classes de Resíduo;
-- Segurança/EPI;
-- local de armazenamento temporário;
-- destino previsto;
-- observação técnica;
-- data prevista de despacho, quando informada.
+Na análise/liberação, a Gestão confirma risco, Classes, Segurança/EPI, armazenamento temporário, destino previsto, observação técnica e data prevista quando informada.
 
 Enquanto a autenticação definitiva não existe, contratos ainda podem receber identificadores do usuário responsável. A autenticação futura deve derivar identidade e tenant da sessão/token confiável.
 
@@ -302,9 +267,7 @@ Código:
 SGL-RES-AAAA-NNNNNN
 ```
 
-O Código SGL existe desde o registro inicial.
-
-A Etapa 3 separou três conceitos:
+O Código SGL e o QR técnico existem desde o registro inicial.
 
 ```text
 identificação
@@ -318,7 +281,7 @@ Regra final:
 
 ```text
 INFORMADO / EM_ANALISE
-→ código + QR existem
+→ código + QR técnico existem
 → prévia disponível à Gestão
 → impressão bloqueada
 
@@ -332,19 +295,11 @@ Endpoint:
 GET /api/v1/residuos/{id}/rotulo
 ```
 
-A resposta informa, além dos dados do rótulo, se a impressão está autorizada.
-
-Resíduos antigos sem QR podem receber a identificação técnica faltante ao abrir a prévia.
-
-A tela de rótulo bloqueia tanto o botão quanto a impressão pelo navegador enquanto o Resíduo ainda estiver apenas em prévia.
-
-A definição visual definitiva, templates finais e infraestrutura Zebra permanecem na **Etapa 10**.
+O contrato pode transportar `qrCodeConteudo`. O template físico atual do frontend não precisa renderizar o QR; definição visual final e infraestrutura Zebra permanecem na **Etapa 10**.
 
 ---
 
 ## 11. Visualização comparativa da análise
-
-A interface da Gestão consolida a conferência em dois blocos:
 
 ```text
 Informado pelo laboratório
@@ -362,7 +317,7 @@ Aprovado pela Gestão
 → data/hora da liberação
 ```
 
-O Gestor que liberou é identificado pelo evento histórico `RISCO_CONFERIDO_E_RESIDUO_LIBERADO`, evitando inferência baseada no usuário atual ou em etapas posteriores.
+O Gestor que liberou é identificado pelo evento histórico `RISCO_CONFERIDO_E_RESIDUO_LIBERADO`.
 
 ---
 
@@ -374,7 +329,7 @@ GET /api/v1/residuos/{id}/historico
 
 Cada transição registra usuário responsável, status resultante, ação, observação e data/hora.
 
-A validação da Etapa 3 confirmou que armazenamento e despacho podem ser executados por Gestores diferentes e o histórico permanece correto.
+A validação da Etapa 3 confirmou armazenamento e despacho por Gestores diferentes sem perda de rastreabilidade.
 
 ---
 
@@ -410,18 +365,6 @@ dataInicio
 dataFim
 ```
 
-Resumo:
-
-```text
-total
-informados
-emAnalise
-liberados
-armazenados
-despachados
-altoRisco
-```
-
 Exportação:
 
 ```text
@@ -437,40 +380,104 @@ Frontend:
 
 ---
 
-## 15. Validação da Etapa 3
+## 15. Etapa 3 — encerrada
 
-Em 17/09/2026 foi considerada satisfatória a validação manual integrada da Etapa 3.
-
-Foram verificados:
-
-- criação com novos dados;
-- estado físico e tratamento;
-- Classes de Resíduo;
-- EPI/segurança;
-- análise/liberação;
-- comparação informado x aprovado;
-- identificação do Gestor que liberou;
-- armazenamento e despacho por outro Gestor;
-- histórico/rastreabilidade;
-- prévia antecipada do rótulo;
-- bloqueio/liberação de impressão;
-- escala/legibilidade do formulário em 100% de zoom.
-
-**Etapa 3 encerrada.**
+Validada em 17/09/2026 com criação, análise/liberação, armazenamento, despacho, Gestores diferentes, histórico, Classes, EPI, comparação informado/aprovado, prévia antecipada, bloqueio/liberação de impressão e revisão de escala visual.
 
 ---
 
-## 16. Etapa 4 — próxima evolução
+## 16. Etapa 4.1 — locais de armazenamento 🔧
 
-A próxima etapa expande o domínio sem reabrir o que foi validado.
+A modelagem já foi aprovada.
 
-### 4.1 Locais de armazenamento cadastráveis
+```text
+LocalArmazenamentoResiduo
+= catálogo mutável por Unidade
 
-Permitir local reutilizável + complemento livre, preservando opção manual.
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento opcional da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico completo
+```
+
+Exemplos:
+
+```text
+catálogo: Almoxarifado Químico
+complemento: Prateleira B2
+snapshot: Almoxarifado Químico - Prateleira B2
+```
+
+Ou caminho manual:
+
+```text
+localArmazenamentoResiduo = null
+complementoLocalArmazenamento = null
+localArmazenamentoTemporario = texto manual
+```
+
+Regras:
+
+- catálogo pertence à Unidade;
+- cadastro pode ser ativado/inativado;
+- local inativo sai das novas seleções sem invalidar ocorrências antigas;
+- renomear o catálogo não altera snapshots antigos;
+- catálogo + complemento e caminho manual são modos alternativos;
+- payload ambíguo deve ser rejeitado;
+- lookup deve restringir pelo tenant/Unidade do Resíduo;
+- análise define armazenamento planejado;
+- confirmação física pode manter ou corrigir;
+- correções precisam permanecer rastreáveis;
+- rótulo/relatório continuam usando o snapshot textual existente.
+
+### Implementação 4.1-A — próxima
+
+Criar manualmente apenas:
+
+```text
+V16__create_residue_storage_locations.sql
+LocalArmazenamentoResiduo.java
+LocalArmazenamentoResiduoRepository.java
+```
+
+V16 planejada:
+
+```text
+locais_armazenamento_residuo
+→ id
+→ public_id
+→ unidade_id
+→ nome
+→ ativo
+
+residuos
+→ local_armazenamento_residuo_id nullable
+→ complemento_local_armazenamento nullable
+```
+
+Não criar service/controller/DTO nem alterar `Residuo.java` ainda.
+
+Sequência posterior:
+
+```text
+4.1-B CRUD + tenant
+4.1-C análise/liberação
+4.1-D confirmação física/correção
+4.1-E revisão backend
+4.1-F frontend Cadastros
+4.1-G frontend Gestão
+4.1-H regressão/fechamento
+```
+
+---
+
+## 17. Etapas 4.2–4.4 — não antecipar
 
 ### 4.2 Modelos de Resíduo
-
-Criar definição reutilizável para padrões recorrentes.
 
 ```text
 ModeloResiduo = definição/padrão
@@ -483,27 +490,14 @@ Alterar o modelo depois não pode alterar ocorrências históricas.
 
 Permitir escolha entre modelo pré-cadastrado e preenchimento manual.
 
-### 4.4 Correções administrativas do ciclo
+### 4.4 Correções administrativas
 
-Avaliar ações administrativas específicas, com justificativa e histórico:
+Avaliar cancelamento/retorno para análise com justificativa, ator, data e histórico. Regras de status, `DESPACHADO`, eventual `CANCELADO`, dados confirmados e rótulo devem ser fechadas antes de codar.
 
-```text
-cancelar Resíduo
-retornar para análise/liberação
-```
-
-Antes de implementar, definir status permitidos, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, efeitos no rótulo e necessidade de nova liberação.
-
-Isso não substitui a decisão geral de delete lógico, que permanece na **Etapa 11**.
-
-Detalhes: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
+Isso não substitui a decisão geral de delete lógico da Etapa 11.
 
 ---
 
-## 17. Refactor estrutural futuro
+## 18. Refactor estrutural futuro
 
-`Residuo.java` cresceu significativamente com as novas regras.
-
-A revisão de tamanho, coesão e legibilidade foi deliberadamente movida para a **Etapa 13**, depois dos testes automatizados da Etapa 12.
-
-O objetivo será refatorar sem alterar comportamento ou contratos e reexecutar a suíte de regressão após as mudanças.
+`Residuo.java` cresceu significativamente. A revisão de tamanho, coesão e legibilidade foi deliberadamente movida para a **Etapa 13**, depois dos testes automatizados da Etapa 12.
