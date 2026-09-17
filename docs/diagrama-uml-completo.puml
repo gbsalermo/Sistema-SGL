@@ -1,0 +1,143 @@
+@startuml
+title SGL — Modelo de Domínio Atual
+skinparam classAttributeIconSize 0
+hide methods
+
+class Unidade {
+  +Long id
+  +String nome
+  +String sigla
+}
+
+class Laboratorio {
+  +Long id
+  +String nome
+  +String descricao
+  +Boolean ativo
+}
+
+class Usuario {
+  +Long id
+  +String nome
+  +String email
+  +String senha
+  +Perfil perfil
+  +Boolean ativo
+}
+
+class Estagiario
+
+class Projeto {
+  +Long id
+  +String nome
+  +String descricao
+  +LocalDate dataInicio
+  +LocalDate dataFim
+  +String responsavel
+  +Boolean ativo
+}
+
+class Produto {
+  +Long id
+  +String nome
+  +String codigoReferencia
+  +UnidadeMedida unidadeMedida
+  +String localizacaoFisica
+  +NivelRisco risco
+  +TipoRisco tipoRisco
+  +String descricaoRisco
+  +Boolean perecivel
+  +TipoPerecivel tipoPerecivel
+  +LocalDate dataValidade
+  +String unidadeArmazenamento
+  +Boolean ativo
+}
+
+class EstoqueCentral {
+  +Long id
+  +Integer quantidadeAtual
+  +Integer quantidadeMinima
+  +Boolean ativo
+}
+
+class MovimentacaoEstoque {
+  +Long id
+  +TipoMovimentacao tipoMovimentacao
+  +OrigemMovimentacao origem
+  +Integer quantidadeMovimentada
+  +Integer quantidadeAnterior
+  +Integer quantidadeAtual
+  +LocalDateTime dataMovimentacao
+  +String observacao
+}
+
+class Pedido {
+  +Long id
+  +LocalDateTime dataSolicitacao
+  +StatusPedido status
+  +String observacao
+  +String arquivoDocumento
+}
+
+class ItemPedido {
+  +Long id
+  +Integer quantidadeSolicitada
+  +Integer quantidadeAprovada
+}
+
+class HistoricoLaboratorio {
+  +Long id
+  +Integer quantidade
+  +LocalDate dataRecebimento
+  +Boolean ativo
+}
+
+enum Perfil
+enum StatusPedido
+enum UnidadeMedida
+enum TipoPerecivel
+enum TipoRisco
+enum NivelRisco
+enum TipoMovimentacao
+enum OrigemMovimentacao
+
+Usuario <|-- Estagiario
+Unidade "1" -- "0..*" Laboratorio
+Unidade "1" -- "0..*" Usuario
+Unidade "1" -- "0..*" EstoqueCentral
+Laboratorio "1" -- "0..*" Usuario
+Laboratorio "1" -- "0..*" Projeto
+Laboratorio "1" -- "0..*" Pedido
+Laboratorio "1" -- "0..*" HistoricoLaboratorio
+Laboratorio "0..1" -- "0..*" MovimentacaoEstoque
+
+Produto "1" -- "0..*" EstoqueCentral
+Produto "1" -- "0..*" ItemPedido
+Produto "1" -- "0..*" HistoricoLaboratorio
+Produto "1" -- "0..*" MovimentacaoEstoque
+
+Pedido "1" *-- "1..*" ItemPedido
+Pedido "0..1" -- "0..*" MovimentacaoEstoque
+Pedido "1" -- "0..*" HistoricoLaboratorio
+Usuario "1" -- "0..*" Pedido : solicitante
+Usuario "1" -- "0..*" MovimentacaoEstoque : responsável
+Projeto "0..1" -- "0..*" Pedido
+EstoqueCentral "1" -- "0..*" MovimentacaoEstoque
+
+note right of EstoqueCentral
+  Saldo de um Produto em uma Unidade.
+  UNIQUE(unidade_id, produto_id)
+end note
+
+note right of MovimentacaoEstoque
+  Auditoria da alteração de saldo:
+  quantidade anterior, movimentada e atual.
+end note
+
+note bottom of Pedido
+  PENDENTE -> APROVADO -> ENTREGUE
+  PENDENTE -> REJEITADO
+  APROVADO -> CANCELADO
+end note
+
+@enduml
