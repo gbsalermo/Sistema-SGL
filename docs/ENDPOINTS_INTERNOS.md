@@ -1,5 +1,7 @@
 # Endpoints Internos — SGL
 
+**Atualizado em:** 18/09/2026  
+
 > Documento de acompanhamento técnico do backend.
 >
 > **Visibilidade:** este arquivo acompanha a visibilidade do repositório. Como o repositório atual é público, este documento também é público.
