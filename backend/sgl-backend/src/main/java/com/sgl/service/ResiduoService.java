@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+import com.sgl.dto.request.AdministrarResiduoRequestDTO;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
 import com.sgl.dto.request.ArmazenarResiduoRequestDTO;
 import com.sgl.dto.request.ComponenteResiduoRequestDTO;
@@ -30,6 +31,7 @@ import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.repository.ClasseResiduoRepository;
@@ -232,6 +234,50 @@ public class ResiduoService {
 
 		Residuo salvo = residuoRepository.save(residuo);
 		registrarHistorico(salvo, gestor, "DESPACHO_CONFIRMADO", dto.getDestinoFinalConfirmado());
+
+		return new ResiduoResponseDTO(salvo);
+	}
+
+	@Transactional
+	public ResiduoResponseDTO administrarCiclo(UUID id, AdministrarResiduoRequestDTO dto) {
+		Residuo residuo = buscarEntidade(id);
+		Usuario administrador = buscarUsuarioAdministrador(dto.getUsuarioAdministradorId());
+
+		String justificativa = dto.getJustificativa().trim();
+
+		if (dto.getAcao() == AcaoAdministrativaResiduo.CANCELAR) {
+			residuo.cancelarAdministrativamente();
+
+			Residuo salvo = residuoRepository.save(residuo);
+			registrarHistorico(
+					salvo,
+					administrador,
+					"RESIDUO_CANCELADO_ADMINISTRATIVAMENTE",
+					justificativa
+			);
+
+			return new ResiduoResponseDTO(salvo);
+		}
+
+		StatusResiduo etapaAnterior = residuo.getStatus();
+		StatusResiduo novaEtapa = residuo.retornarEtapaAdministrativamente();
+
+		Residuo salvo = residuoRepository.save(residuo);
+
+		String observacao =
+				"Retorno administrativo de "
+				+ etapaAnterior
+				+ " para "
+				+ novaEtapa
+				+ ". Justificativa: "
+				+ justificativa;
+
+		registrarHistorico(
+				salvo,
+				administrador,
+				"RETORNO_ADMINISTRATIVO_DE_ETAPA",
+				limitarObservacaoHistorico(observacao)
+		);
 
 		return new ResiduoResponseDTO(salvo);
 	}
