@@ -32,3 +32,25 @@ logs/
 
 # Java compilado
 *.class
+
+# Maven / Spring Boot (trazido de backend/sgl-backend/.gitignore ao voltar
+# para a estrutura umbrella)
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+.worktrees/
