@@ -4,9 +4,9 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 17/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 iniciada; 4.1 em andamento.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 em andamento; 4.1 concluída; 4.2 atual.  
 **Branch atual:** `feat/etapa-4-residuos`  
-**Próxima implementação:** 4.1-A — fundação do catálogo de locais de armazenamento.
+**Próxima implementação:** 4.2 — ModeloResiduo.
 
 Este documento resume o estado real atual do SGL para retomada humana ou por IA.
 
@@ -17,8 +17,8 @@ Etapa 1 — padrão visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  🔧 em andamento
-  4.1 — locais de armazenamento             🔧 atual
-  4.1-A — fundação backend                  ⏭ próxima implementação
+  4.1 — locais de armazenamento             ✅ concluída
+  4.2 — Modelos de Resíduo                  🔧 atual
 ```
 
 Handoff imediato:
@@ -187,7 +187,7 @@ V12 backfill Código SGL
 V13 estado físico/tratamento/responsabilidade
 V14 Classes de Resíduo
 V15 segurança/EPI
-V16 próxima migration planejada para locais de armazenamento
+V16 locais de armazenamento aplicada e imutável
 ```
 
 A V16 ainda não foi implementada neste checkpoint.
@@ -338,17 +338,17 @@ Regras:
 Plano:
 
 ```text
-4.1-A V16 + entidade + repository
-4.1-B CRUD + tenant
-4.1-C análise/liberação
-4.1-D confirmação física/correção
-4.1-E revisão backend
-4.1-F frontend Cadastros
-4.1-G frontend Gestão
-4.1-H regressão e fechamento
+4.1-A V16 + entidade + repository ✅
+4.1-B CRUD + tenant ✅
+4.1-C análise/liberação ✅
+4.1-D confirmação física/correção ✅
+4.1-E revisão backend ✅
+4.1-F frontend Cadastros ✅
+4.1-G frontend Gestão ✅
+4.1-H regressão e fechamento ✅
 ```
 
-Próximo passo: **4.1-A**.
+Próximo passo: **4.2 — ModeloResiduo**.
 
 Criar somente:
 
@@ -379,10 +379,10 @@ Não criar service/controller/DTO nem alterar `Residuo.java` nessa subetapa.
 13 revisão estrutural/legibilidade
 ```
 
-Não antecipar 4.2–4.4 durante a 4.1.
+A 4.1 foi concluída. A sequência atual inicia pela 4.2, sem antecipar 4.3/4.4.
 
 ---
 
 # 12. Regra final de retomada
 
-**A Etapa 4 já foi iniciada. A modelagem da 4.1 está fechada. O próximo passo é a 4.1-A, implementada manualmente no backend: V16 + `LocalArmazenamentoResiduo` + repository, seguida de revisão antes de avançar.**
+**A Etapa 4 está em andamento. A 4.1 foi concluída e validada. O próximo passo é a 4.2 — ModeloResiduo, preservando tenant e snapshot histórico.**
