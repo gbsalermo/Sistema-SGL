@@ -1,7 +1,7 @@
 # Fluxo do Sistema SGL
 
 **Atualizado em:** 18/09/2026  
-**Checkpoint:** Etapa 4 em andamento; 4.1 concluída; 4.2 — Modelos de Resíduo é o foco atual.
+**Checkpoint:** Etapa 4 implementada na branch; validação integrada pendente antes do merge.
 
 Este documento descreve como os módulos principais se conectam no estado funcional aprovado e nas etapas de pré-produção já validadas. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação no código da branch integrada/validada.
 
@@ -27,7 +27,7 @@ Regras atuais:
 4. Projetos pertencem ao contexto do Laboratório/Unidade.
 5. Produtos formam o catálogo.
 6. Cada Unidade possui seu próprio contexto de estoque.
-7. Catálogos operacionais adicionados ao domínio, como Classes de Resíduo e Locais de Armazenamento, também respeitam a Unidade.
+7. Catálogos operacionais adicionados ao domínio, como Classes de Resíduo, Locais de Armazenamento e Modelos de Resíduo, também respeitam a Unidade.
 
 No modo DEV, o frontend envia `X-SGL-Unidade-Id` e o backend usa `TenantContext` para restringir operações à Unidade corrente. Esse mecanismo ainda não substitui a futura identidade corporativa confiável.
 
@@ -140,6 +140,10 @@ LIBERADO_PARA_ARMAZENAMENTO
 ARMAZENADO_TEMPORARIAMENTE
       ↓ Gestor autorizado confirma destinação
 DESPACHADO
+
+Administrador
+      ├─ pode retornar exatamente uma etapa com justificativa
+      └─ pode cancelar ocorrência elegível → CANCELADO
 ```
 
 Responsabilidade:
@@ -287,19 +291,23 @@ Implementação concluída:
 4.1-H regressão e fechamento ✅
 ```
 
-Próximo passo: **4.2 — ModeloResiduo**.
+A expansão de armazenamento integra-se aos Modelos de Resíduo e às correções administrativas concluídas nas etapas seguintes.
 
 ---
 
-## 12. Etapas 4.2–4.4 — sequência atual
+## 12. Etapas 4.2–4.4 — implementadas
 
 ```text
-4.2 modelos de Resíduos reutilizáveis
-4.3 escolha modelo x preenchimento manual pelo Solicitante
-4.4 correções administrativas do ciclo
+4.2 ModeloResiduo por Unidade                         ✅
+4.3 modelo pré-cadastrado ou preenchimento manual     ✅
+4.4 cancelamento/retorno administrativo + histórico   ✅
 ```
 
-A 4.4 avaliará cancelamento operacional e retorno para análise/liberação com justificativa e histórico. Isso não deve ser confundido com a decisão geral de delete lógico da Etapa 11.
+O modelo apenas preenche sugestões no formulário e não é persistido como dependência da ocorrência.
+
+Na 4.4, `CANCELADO` encerra administrativamente a ocorrência sem apagar histórico. O retorno administrativo volta exatamente uma etapa e sempre exige justificativa.
+
+Roteiro de homologação: `VALIDACAO_ETAPA_4.md`.
 
 ---
 
@@ -358,4 +366,8 @@ LIBERADO_PARA_ARMAZENAMENTO
 ARMAZENADO_TEMPORARIAMENTE
   ↓ despachar
 DESPACHADO
+
+Administrador:
+  retorno de uma etapa
+  OU cancelamento elegível → CANCELADO
 ```
