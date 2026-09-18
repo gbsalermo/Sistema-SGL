@@ -1,9 +1,9 @@
 # Etapa 4.2 — ModeloResiduo
 
 **Criado em:** 18/09/2026  
-**Status:** 4.2-A — contrato/modelagem em revisão  
+**Status:** 4.2-A — contrato/modelagem aprovado ✅  
 **Branch:** feat/etapa-4-residuos  
-**Próxima subetapa após aprovação:** 4.2-B — V17 + entidades + repositories
+**Próxima subetapa:** 4.2-B — V17 + entidades + repositories
 
 ---
 
@@ -318,14 +318,14 @@ Esses pontos pertencem à **4.3 — uso de modelo ou preenchimento manual**.
 
 ## 11. Subetapas
 
-    4.2-A contrato/modelagem                    🧭 em revisão
+    4.2-A contrato/modelagem                    ✅ aprovado
     4.2-B V17 + entidades + repositories        ⏳
     4.2-C CRUD + tenant + validações            ⏳
     4.2-D testes/revisão backend                ⏳
     4.2-E Administração/Cadastros frontend      ⏳
     4.2-F validação e fechamento                ⏳
 
-Critério para fechar a 4.2-A:
+Critério de fechamento da 4.2-A — atendido em 18/09/2026:
 
 - campos do modelo aprovados;
 - campos explicitamente excluídos aprovados;
@@ -338,7 +338,7 @@ Critério para fechar a 4.2-A:
 
 ## 12. Próximo passo após aprovação
 
-Somente depois da aprovação desta modelagem:
+Modelagem aprovada. Próxima subetapa:
 
     4.2-B
     → V17__create_residue_models.sql
