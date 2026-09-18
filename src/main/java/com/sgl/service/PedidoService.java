@@ -98,8 +98,15 @@ public class PedidoService {
             Produto produto = produtoRepository.findByPublicId(itemDTO.getProdutoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Produto", itemDTO.getProdutoId()));
 
-            if (TenantContext.ativo()
-                    && !produtoRepository.pertenceAUnidade(produto.getPublicId(), laboratorio.getUnidade().getPublicId())) {
+            // Correção de bug: essa validação checa se o produto realmente
+            // tem estoque cadastrado na unidade do laboratório do pedido —
+            // isso não depende de "quem está fazendo a chamada" (tenant),
+            // e sim do laboratório já resolvido acima. O "if
+            // (TenantContext.ativo() && ...)" antigo pulava essa checagem
+            // por completo quando a requisição não enviava o header de
+            // tenant, permitindo criar pedido com produto de outra unidade.
+            // A validação agora roda sempre.
+            if (!produtoRepository.pertenceAUnidade(produto.getPublicId(), laboratorio.getUnidade().getPublicId())) {
                 throw new ResourceNotFoundException("Produto", itemDTO.getProdutoId());
             }
 
@@ -133,9 +140,13 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarTodos() {
-        List<Pedido> pedidos = TenantContext.unidadeAtual()
-                .map(pedidoRepository::findByLaboratorioUnidadePublicId)
-                .orElseGet(pedidoRepository::findAll);
+        // Correção de segurança: sem tenant ativo, caía num "findAll" que
+        // devolvia pedidos de todas as unidades. Agora o header
+        // X-SGL-Unidade-Id é exigido também para listar.
+        exigirTenantAtivo();
+
+        List<Pedido> pedidos = pedidoRepository
+                .findByLaboratorioUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
         return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
@@ -147,25 +158,28 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorUsuario(UUID usuarioId) {
         Usuario usuario = buscarUsuarioNoTenant(usuarioId);
-        List<Pedido> pedidos = TenantContext.unidadeAtual()
-                .map(unidadeId -> pedidoRepository.findByUsuarioIdAndLaboratorioUnidadePublicId(usuario.getId(), unidadeId))
-                .orElseGet(() -> pedidoRepository.findByUsuarioId(usuario.getId()));
+        exigirTenantAtivo();
+
+        List<Pedido> pedidos = pedidoRepository
+                .findByUsuarioIdAndLaboratorioUnidadePublicId(usuario.getId(), TenantContext.unidadeAtual().orElseThrow());
         return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorStatus(StatusPedido status) {
-        List<Pedido> pedidos = TenantContext.unidadeAtual()
-                .map(unidadeId -> pedidoRepository.findByLaboratorioUnidadePublicIdAndStatus(unidadeId, status))
-                .orElseGet(() -> pedidoRepository.findByStatus(status));
+        exigirTenantAtivo();
+
+        List<Pedido> pedidos = pedidoRepository
+                .findByLaboratorioUnidadePublicIdAndStatus(TenantContext.unidadeAtual().orElseThrow(), status);
         return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorUrgencia(Boolean urgente) {
-        List<Pedido> pedidos = TenantContext.unidadeAtual()
-                .map(unidadeId -> pedidoRepository.findByLaboratorioUnidadePublicIdAndUrgente(unidadeId, urgente))
-                .orElseGet(() -> pedidoRepository.findByUrgente(urgente));
+        exigirTenantAtivo();
+
+        List<Pedido> pedidos = pedidoRepository
+                .findByLaboratorioUnidadePublicIdAndUrgente(TenantContext.unidadeAtual().orElseThrow(), urgente);
         return pedidos.stream().map(PedidoResponseDTO::new).toList();
     }
 
@@ -214,10 +228,26 @@ public class PedidoService {
                         + item.getQuantidadeSolicitada() + ", aprovada: " + quantidadeAprovada);
             }
 
-            if (item.getTipoEmbalagemSolicitada() != TipoEmbalagem.UNITARIO
-                    && quantidadeAprovada % item.getMultiplicadorSolicitado() != 0) {
-                throw new BusinessRuleException("A quantidade aprovada deve respeitar a embalagem solicitada. "
-                        + item.getTipoEmbalagemSolicitada() + " = " + item.getMultiplicadorSolicitado() + " unit.");
+            if (item.getTipoEmbalagemSolicitada() != TipoEmbalagem.UNITARIO) {
+                // Correção de bug: "multiplicadorSolicitado" é um Integer
+                // (objeto), que pode ser nulo — por exemplo, num item que
+                // foi persistido antes desse campo existir, ou criado sem
+                // passar pelo @PrePersist que normalmente preenche o valor
+                // padrão. Antes, "quantidadeAprovada % null" desembrulhava
+                // o Integer nulo e lançava NullPointerException, devolvendo
+                // um erro 500 (interno) em vez de um erro de negócio 400
+                // claro para quem está aprovando o pedido.
+                Integer multiplicador = item.getMultiplicadorSolicitado();
+                if (multiplicador == null || multiplicador <= 0) {
+                    throw new BusinessRuleException("O item de embalagem "
+                            + item.getTipoEmbalagemSolicitada()
+                            + " não possui um multiplicador de embalagem válido e não pode ser aprovado.");
+                }
+
+                if (quantidadeAprovada % multiplicador != 0) {
+                    throw new BusinessRuleException("A quantidade aprovada deve respeitar a embalagem solicitada. "
+                            + item.getTipoEmbalagemSolicitada() + " = " + multiplicador + " unit.");
+                }
             }
 
             Produto produto = item.getProduto();
@@ -300,27 +330,22 @@ public class PedidoService {
     }
 
     private Pedido buscarPedidoNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> pedidoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Pedido", id);
-                    }
-                    return pedidoRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
-                });
+        // Correção de segurança: antes, sem tenant ativo, buscava sem
+        // filtro de unidade (findByPublicId), vazando o pedido de outra
+        // unidade para quem não enviasse o header.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return pedidoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", id));
     }
 
     private Usuario buscarUsuarioNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Usuário", id);
-                    }
-                    return usuarioRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
-                });
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
     }
 
     private Pedido buscarPedidoComBloqueio(UUID publicId) {
@@ -332,6 +357,18 @@ public class PedidoService {
     private void validarTenantUnidade(UUID unidadeId) {
         if (!TenantContext.pertence(unidadeId)) {
             throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
         }
     }
 

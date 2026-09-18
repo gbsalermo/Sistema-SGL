@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,7 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
@@ -43,6 +45,7 @@ import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
@@ -159,15 +162,33 @@ class PedidoServiceTest {
                 .pedido(pedido)
                 .produto(produto)
                 .quantidadeSolicitada(5)
+                // Sem isso, tipoEmbalagemSolicitada fica nulo (!= UNITARIO),
+                // e PedidoService.aprovar() tenta validar o multiplicador de
+                // embalagem do item — que também não foi definido aqui. Os
+                // testes deste arquivo não testam essa regra de embalagem,
+                // então marcamos como UNITARIO para não cair nela.
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
                 .build();
         pedido.getItens().add(item);
+
+        // A partir da correção de segurança em TenantContext.pertence()
+        // (fail-closed), os métodos do service passaram a exigir que exista
+        // um tenant (unidade) ativo — como aconteceria numa requisição HTTP
+        // real, onde o TenantRequestFilter já define isso antes de chamar o
+        // service. Aqui simulamos a mesma coisa manualmente.
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+    }
+
+    @AfterEach
+    void limparTenant() {
+        TenantContext.limpar();
     }
 
     @Test
     void deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService() {
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
-        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
         when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
                 .thenReturn(Optional.of(estoque));
@@ -181,6 +202,13 @@ class PedidoServiceTest {
         assertEquals(3, item.getQuantidadeAprovada());
         assertEquals("Aprovação parcial", pedido.getObservacao());
 
+        // PedidoService.aprovar() sempre chama a sobrecarga de 9 argumentos
+        // de registrarSaida (inclui tipo de embalagem e multiplicador do
+        // item aprovado). Este teste estava verificando a sobrecarga antiga
+        // de 7 argumentos, que não existe mais nesse ponto do código — o
+        // Mockito não reconhecia a chamada real e o teste passava só porque
+        // uma NullPointerException (bug corrigido em outro ponto) interrompia
+        // o método antes de chegar aqui.
         verify(movimentacaoEstoqueService).registrarSaida(
                 6L,
                 3,
@@ -188,7 +216,9 @@ class PedidoServiceTest {
                 OrigemMovimentacao.PEDIDO,
                 pedido,
                 laboratorio,
-                "Aprovação parcial"
+                "Aprovação parcial",
+                TipoEmbalagem.UNITARIO,
+                null
         );
         verify(pedidoRepository).save(pedido);
     }
@@ -198,7 +228,7 @@ class PedidoServiceTest {
         pedido.setStatus(StatusPedido.APROVADO);
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
-        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
 
         BusinessRuleException exception = assertThrows(
@@ -218,7 +248,7 @@ class PedidoServiceTest {
     void deveImpedirQuantidadeAprovadaMaiorQueSolicitada() {
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(6);
 
-        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
 
         BusinessRuleException exception = assertThrows(
@@ -239,11 +269,13 @@ class PedidoServiceTest {
     void devePropagarFalhaQuandoNaoHaLotesValidosSuficientes() {
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
-        when(usuarioRepository.findByPublicId(APROVADOR_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
         prepararBuscaPedidoComBloqueio();
         when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
                 .thenReturn(Optional.of(estoque));
 
+        // Mesmo ajuste de assinatura explicado no teste
+        // deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService acima.
         when(movimentacaoEstoqueService.registrarSaida(
                 6L,
                 3,
@@ -251,7 +283,9 @@ class PedidoServiceTest {
                 OrigemMovimentacao.PEDIDO,
                 pedido,
                 laboratorio,
-                "Aprovação parcial"
+                "Aprovação parcial",
+                TipoEmbalagem.UNITARIO,
+                null
         )).thenThrow(new BusinessRuleException(
                 "Estoque utilizável insuficiente. Disponível nos lotes válidos: 2, solicitado: 3"
         ));
@@ -414,7 +448,7 @@ class PedidoServiceTest {
     }
 
     private void prepararBuscaPedidoComBloqueio() {
-        when(pedidoRepository.findByPublicId(PEDIDO_PUBLIC_ID)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PEDIDO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.buscarPorIdComBloqueio(7L)).thenReturn(Optional.of(pedido));
     }
 
