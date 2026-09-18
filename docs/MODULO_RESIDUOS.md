@@ -1,6 +1,6 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Estado em 18/09/2026:** Etapa 3 ✅ concluída e validada; Etapa 4 🔧 em andamento; backend 4.1-A–E ✅; frontend 4.1-F/G ✅; regressão 4.1-H é o próximo foco.  
+**Estado em 18/09/2026:** Etapa 3 ✅ concluída e validada; Etapa 4 🔧 em andamento; 4.1 ✅ concluída; 4.2 — ModeloResiduo é o próximo foco.  
 **Migrations aplicadas:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql`, `V15__add_residue_safety_information.sql` e `V16__create_residue_storage_locations.sql`.  
 **Migration da 4.1:** V16 — locais de armazenamento de Resíduos ✅ aplicada e imutável.  
 **Branch atual:** `feat/etapa-4-residuos`.
@@ -386,7 +386,7 @@ Validada em 17/09/2026 com criação, análise/liberação, armazenamento, despa
 
 ---
 
-## 16. Etapa 4.1 — locais de armazenamento 🔧
+## 16. Etapa 4.1 — locais de armazenamento ✅
 
 A modelagem já foi aprovada.
 
@@ -474,12 +474,12 @@ Sequência atual:
 4.1-E revisão backend ✅
 4.1-F frontend Cadastros ✅
 4.1-G frontend Gestão ✅
-4.1-H regressão/fechamento ⏭
+4.1-H regressão/fechamento ✅
 ```
 
 ---
 
-## 17. Etapas 4.2–4.4 — não antecipar
+## 17. Etapas 4.2–4.4 — sequência atual
 
 ### 4.2 Modelos de Resíduo
 
