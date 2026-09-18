@@ -341,17 +341,36 @@ public class Residuo implements Serializable {
         this.status = StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO;
     }
 
-    public void confirmarArmazenamento(String localArmazenamento) {
+    public void confirmarArmazenamento(
+            LocalArmazenamentoResiduo localCadastrado,
+            String complemento,
+            String localManual) {
+
         requireStatus(
                 StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO,
                 "armazenado temporariamente"
         );
 
-        if (localArmazenamento != null && !localArmazenamento.isBlank()) {
-            this.localArmazenamentoTemporario = localArmazenamento;
+        boolean solicitouCorrecao =
+                localCadastrado != null
+                        || (complemento != null
+                            && !complemento.isBlank())
+                        || (localManual != null
+                            && !localManual.isBlank());
+
+        if (solicitouCorrecao) {
+            definirLocalArmazenamento(
+                    localCadastrado,
+                    complemento,
+                    localManual
+            );
         }
-        this.dataArmazenamentoTemporario = LocalDateTime.now();
-        this.status = StatusResiduo.ARMAZENADO_TEMPORARIAMENTE;
+
+        this.dataArmazenamentoTemporario =
+                LocalDateTime.now();
+
+        this.status =
+                StatusResiduo.ARMAZENADO_TEMPORARIAMENTE;
     }
 
     public void confirmarDespacho(String destinoFinal, String observacao) {
@@ -529,6 +548,26 @@ public class Residuo implements Serializable {
             LocalArmazenamentoResiduo localCadastrado,
             String complemento,
             String localManual) {
+    	
+    	boolean informouManual =
+    	        localManual != null
+    	                && !localManual.isBlank();
+
+    	boolean informouComplemento =
+    	        complemento != null
+    	                && !complemento.isBlank();
+
+    	if (localCadastrado != null && informouManual) {
+    	    throw new BusinessRuleException(
+    	            "Informe o local cadastrado ou o local manual, não ambos."
+    	    );
+    	}
+
+    	if (localCadastrado == null && informouComplemento) {
+    	    throw new BusinessRuleException(
+    	            "O complemento só pode ser informado junto a um local cadastrado."
+    	    );
+    	}
 
         if (localCadastrado != null) {
 

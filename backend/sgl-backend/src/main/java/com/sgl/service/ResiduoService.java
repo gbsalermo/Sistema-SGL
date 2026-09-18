@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
 import com.sgl.dto.request.ArmazenarResiduoRequestDTO;
 import com.sgl.dto.request.ComponenteResiduoRequestDTO;
@@ -151,16 +152,75 @@ public class ResiduoService {
 	}
 
 	@Transactional
-	public ResiduoResponseDTO confirmarArmazenamento(UUID id, ArmazenarResiduoRequestDTO dto) {
-		Residuo residuo = buscarEntidade(id);
-		Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
+	public ResiduoResponseDTO confirmarArmazenamento(
+	        UUID id,
+	        ArmazenarResiduoRequestDTO dto) {
 
-		residuo.confirmarArmazenamento(dto.getLocalArmazenamentoTemporario());
-		Residuo salvo = residuoRepository.save(residuo);
-		registrarHistorico(salvo, gestor, "ARMAZENAMENTO_TEMPORARIO_CONFIRMADO",
-				salvo.getLocalArmazenamentoTemporario());
+	    Residuo residuo = buscarEntidade(id);
 
-		return new ResiduoResponseDTO(salvo);
+	    Usuario gestor =
+	            buscarUsuarioGestao(
+	                    dto.getUsuarioGestorId()
+	            );
+
+	    String localPlanejado =
+	            residuo.getLocalArmazenamentoTemporario();
+
+	    LocalArmazenamentoResiduo localArmazenamento =
+	            buscarLocalArmazenamentoAtivo(
+	                    dto.getLocalArmazenamentoResiduoId(),
+	                    residuo.getLaboratorio()
+	                            .getUnidade()
+	                            .getPublicId()
+	            );
+
+	    residuo.confirmarArmazenamento(
+	            localArmazenamento,
+	            dto.getComplementoLocalArmazenamento(),
+	            dto.getLocalArmazenamentoTemporario()
+	    );
+
+	    Residuo salvo =
+	            residuoRepository.save(residuo);
+
+	    String localConfirmado =
+	            salvo.getLocalArmazenamentoTemporario();
+
+	    boolean localCorrigido =
+	            !Objects.equals(
+	                    localPlanejado,
+	                    localConfirmado
+	            );
+
+	    String acao = localCorrigido
+	            ? "ARMAZENAMENTO_TEMPORARIO_CORRIGIDO"
+	            : "ARMAZENAMENTO_TEMPORARIO_CONFIRMADO";
+
+	    String observacaoHistorico;
+
+	    if (localCorrigido) {
+
+	        observacaoHistorico =
+	                "Local planejado: "
+	                + localPlanejado
+	                + " | Local confirmado: "
+	                + localConfirmado;
+
+	    } else {
+
+	        observacaoHistorico =
+	                "Local confirmado: "
+	                + localConfirmado;
+	    }
+
+	    registrarHistorico(
+	            salvo,
+	            gestor,
+	            acao,
+	            observacaoHistorico
+	    );
+
+	    return new ResiduoResponseDTO(salvo);
 	}
 
 	@Transactional
