@@ -2,8 +2,8 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 17/09/2026  
-**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 iniciada; 4.1 em andamento  
+**Última atualização:** 18/09/2026  
+**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 iniciada; backend da 4.1 concluído; frontend da 4.1 em andamento  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -227,17 +227,17 @@ Regras fechadas:
 Plano em passos pequenos:
 
 ```text
-4.1-A V16 + LocalArmazenamentoResiduo + repository
-4.1-B CRUD + tenant
-4.1-C integração com análise/liberação
-4.1-D confirmação física/correção estruturada
-4.1-E revisão e fechamento do backend
-4.1-F frontend Administração/Cadastros
-4.1-G frontend Gestão
-4.1-H regressão integrada e fechamento
+4.1-A V16 + LocalArmazenamentoResiduo + repository ✅
+4.1-B CRUD + tenant ✅
+4.1-C integração com análise/liberação ✅
+4.1-D confirmação física/correção estruturada ✅
+4.1-E revisão e fechamento do backend ✅
+4.1-F frontend Administração/Cadastros ⏭
+4.1-G frontend Gestão ⏳
+4.1-H regressão integrada e fechamento ⏳
 ```
 
-**Próxima implementação:** 4.1-A.
+**Próxima implementação:** 4.1-F — frontend Administração/Cadastros.
 
 Na 4.1-A criar somente:
 
@@ -594,7 +594,8 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          🔧 em andamento
   4.1 — locais de armazenamento                     🔧 atual
-  4.1-A — fundação backend                          ⏭ próxima implementação
+  4.1-A–E — backend                                ✅ concluído
+  4.1-F — frontend Administração/Cadastros            ⏭ próxima implementação
 Etapas 5–13                                         ⏳
 ```
 
