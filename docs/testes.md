@@ -1,5 +1,7 @@
 # Testes — SGL
 
+**Atualizado em:** 18/09/2026  
+
 Este arquivo reúne os testes automatizados e roteiros manuais/Postman para validar a arquitetura atual em PostgreSQL/Flyway.
 
 ## 1. Executar testes automatizados
