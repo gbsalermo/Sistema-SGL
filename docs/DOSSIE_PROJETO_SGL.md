@@ -4,9 +4,9 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 18/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 em andamento; 4.1 concluída; 4.2 atual.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 implementada e aguardando validação integrada.  
 **Branch atual:** `feat/etapa-4-residuos`  
-**Próxima implementação:** 4.2 — ModeloResiduo.
+**Próximo passo:** executar `docs/VALIDACAO_ETAPA_4.md`; passando, iniciar a Etapa 5.
 
 Este documento resume o estado real atual do SGL para retomada humana ou por IA.
 
@@ -16,9 +16,11 @@ Este documento resume o estado real atual do SGL para retomada humana ou por IA.
 Etapa 1 — padrão visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos  🔧 em andamento
-  4.1 — locais de armazenamento             ✅ concluída
-  4.2 — Modelos de Resíduo                  🔧 atual
+Etapa 4 — expansão operacional de Resíduos  ✅ implementada; validação pendente
+  4.1 — locais de armazenamento             ✅
+  4.2 — Modelos de Resíduo                  ✅
+  4.3 — modelo ou preenchimento manual      ✅
+  4.4 — correções administrativas           ✅
 ```
 
 Handoff imediato:
@@ -113,6 +115,10 @@ Fiscalização                                      ✅
 Relatórios + PDF/XLSX                             ✅
 Resíduos — Etapa 3 refinada                       ✅
 Classes de Resíduo + snapshots                    ✅
+Locais de armazenamento + snapshot                ✅ Etapa 4.1
+Modelos de Resíduo por Unidade                    ✅ Etapa 4.2
+Modelo ou preenchimento manual                    ✅ Etapa 4.3
+Correções administrativas + histórico            ✅ Etapa 4.4
 Segurança/EPI + snapshots                         ✅
 Estagiários — base atual                          ✅
 Pessoas por laboratório                           ✅
@@ -130,7 +136,9 @@ Pedidos Solicitante/Gestão                        ✅
 Estoque / lotes                                   ✅
 Movimentações                                     ✅
 Relatórios                                        ✅
-Resíduos Solicitante/Gestão                       ✅ Etapa 3 concluída
+Resíduos Solicitante/Gestão                       ✅ Etapa 4 implementada
+Modelos de Resíduo / Administração                ✅
+Correções administrativas do ciclo               ✅
 Classes de Resíduo                                ✅
 Segurança/EPI                                     ✅
 Prévia de rótulo                                  ✅
