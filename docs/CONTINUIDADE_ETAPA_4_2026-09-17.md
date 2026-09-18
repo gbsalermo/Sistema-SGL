@@ -222,9 +222,9 @@ Regras fechadas:
 
 # 8. Plano de implementação da 4.1
 
-## 4.1-A — Fundação do catálogo no backend
+## 4.1-A — Fundação do catálogo no backend ✅
 
-Criar somente:
+Implementado nesta subetapa:
 
 ```text
 V16__create_residue_storage_locations.sql
@@ -232,7 +232,7 @@ LocalArmazenamentoResiduo.java
 LocalArmazenamentoResiduoRepository.java
 ```
 
-V16 planejada:
+Estrutura aplicada pela V16:
 
 ```text
 nova tabela locais_armazenamento_residuo
@@ -247,35 +247,11 @@ residuos
 → complemento_local_armazenamento nullable
 ```
 
-Não fazer ainda:
+Critérios de saída cumpridos: Flyway aplicou V16, `ddl-auto=validate` passou e a aplicação subiu normalmente. O escopo adicional foi tratado nas subetapas seguintes.
 
-```text
-service
-controller
-DTOs
-alteração de Residuo.java
-alteração de ResiduoService
-frontend
-dados demo
-```
+## 4.1-B — CRUD + tenant ✅
 
-Critério de saída:
-
-```text
-Flyway aplica V16
-Hibernate ddl-auto=validate passa
-aplicação sobe normalmente
-```
-
-Commit sugerido:
-
-```text
-feat: criar catálogo de locais de armazenamento de resíduos
-```
-
-## 4.1-B — CRUD + tenant
-
-Criar request/response/service/controller e validar:
+Implementado request/response/service/controller e validado:
 
 - criar;
 - listar;
@@ -285,33 +261,13 @@ Criar request/response/service/controller e validar:
 - duplicidade por Unidade;
 - acesso fora da Unidade.
 
-Commit sugerido:
+## 4.1-C — Integração com análise/liberação ✅
 
-```text
-feat: adicionar gerenciamento de locais de armazenamento
-```
+Referência estruturada e complemento foram adicionados ao `Residuo`, o DTO de análise foi adaptado e o modo catálogo x manual foi validado com casos válidos e inválidos.
 
-## 4.1-C — Integração com análise/liberação
+## 4.1-D — Confirmação física/correção ✅
 
-Adicionar referência estruturada e complemento ao `Residuo`, adaptar DTO de análise e resolver modo catálogo x manual.
-
-Testar catálogo, catálogo + complemento, manual, nenhum, ambos, outra Unidade e local inativo.
-
-Commit sugerido:
-
-```text
-feat: integrar local cadastrado à liberação de resíduos
-```
-
-## 4.1-D — Confirmação física/correção
-
-Adaptar confirmação de armazenamento para manter ou corrigir o local planejado e registrar mudança no histórico.
-
-Commit sugerido:
-
-```text
-feat: permitir correção estruturada do armazenamento de resíduos
-```
+A confirmação de armazenamento foi adaptada para manter ou corrigir o local planejado e registrar a mudança no histórico.
 
 ## 4.1-E — Revisão backend ✅
 
