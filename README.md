@@ -13,18 +13,18 @@
 
 ---
 
-## Estado atual — 17/09/2026
+## Estado atual — 18/09/2026
 
-O primeiro protótipo do SGL foi funcionalmente aprovado. As Etapas 1, 2 e 3 da pré-produção foram concluídas e validadas. A **Etapa 4 — Expansão operacional de Resíduos** foi iniciada na branch `feat/etapa-4-residuos`.
+O primeiro protótipo do SGL foi funcionalmente aprovado. As Etapas 1, 2 e 3 da pré-produção foram concluídas e validadas. A **Etapa 4 — Expansão operacional de Resíduos** está em andamento na branch `feat/etapa-4-residuos`; a 4.1 foi concluída e a 4.2 é o foco atual.
 
 Subetapa atual:
 
 ```text
-4.1 Locais de armazenamento cadastráveis      🔧 em andamento
-4.1-A Fundação do catálogo no backend          ⏭ próxima implementação
+4.1 Locais de armazenamento cadastráveis      ✅ concluída
+4.2 Modelos de Resíduo                         🔧 atual
 ```
 
-A modelagem da 4.1 já foi aprovada antes da implementação:
+A 4.1 foi implementada e validada com a seguinte modelagem:
 
 ```text
 LocalArmazenamentoResiduo
@@ -54,6 +54,7 @@ Relatórios operacionais                           ✅
 Exportação PDF/XLSX                               ✅
 Resíduos — fluxo atual refinado                   ✅ Etapa 3
 Classes de Resíduo + snapshots                    ✅
+Locais de armazenamento + snapshot histórico       ✅ Etapa 4.1
 Segurança/EPI + snapshots                         ✅
 Código SGL + QR técnico de Resíduo                ✅
 Prévia antecipada do rótulo                       ✅
@@ -172,7 +173,7 @@ Conceitos centrais:
 - **Pedido:** solicitação e ciclo de aprovação/entrega;
 - **Resíduo:** ocorrência operacional real gerada no laboratório;
 - **ClasseResiduo:** catálogo atual/editável por Unidade;
-- **LocalArmazenamentoResiduo:** catálogo de locais da Unidade planejado na Etapa 4.1;
+- **LocalArmazenamentoResiduo:** catálogo ativo/editável de locais de armazenamento por Unidade;
 - **Estagiário:** vínculo institucional com Unidade/Laboratório e período;
 - **Fiscalização:** classificação explícita de produtos controlados.
 
@@ -262,10 +263,10 @@ V12 — backfill Código SGL
 V13 — estado físico, tratamento e responsabilidade inicial
 V14 — Classes de Resíduo
 V15 — segurança/EPI
-V16 — próxima migration planejada para locais de armazenamento
+V16 — locais de armazenamento de Resíduos
 ```
 
-A V16 ainda não foi implementada neste checkpoint.
+A V16 está aplicada e é imutável; qualquer nova alteração de schema deve usar V17 ou superior.
 
 ---
 
@@ -292,13 +293,13 @@ Etapa 13 — revisão estrutural/legibilidade     ⏳
 Etapa 4:
 
 ```text
-4.1 Locais de armazenamento cadastráveis       🔧 atual
-4.2 Modelos de Resíduos                        ⏳
+4.1 Locais de armazenamento cadastráveis       ✅ concluída
+4.2 Modelos de Resíduos                        🔧 atual
 4.3 modelo x preenchimento manual              ⏳
 4.4 correções administrativas do ciclo         ⏳
 ```
 
-Não antecipar 4.2–4.4 durante a implementação da 4.1.
+A 4.1 foi encerrada. Durante a 4.2, não antecipar 4.3/4.4 antes de fechar o contrato de `ModeloResiduo`.
 
 ---
 
@@ -370,5 +371,5 @@ Documentos históricos permanecem para rastreabilidade e não devem ser interpre
 
 <div align="center">
   <strong>SGL — Sistema de Gestão de Laboratórios</strong><br/>
-  Etapa 4 de pré-produção iniciada — 4.1 em andamento.
+  Etapa 4 de pré-produção em andamento — 4.1 concluída; 4.2 atual.
 </div>
