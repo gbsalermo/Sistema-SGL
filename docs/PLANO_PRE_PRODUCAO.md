@@ -239,15 +239,7 @@ Plano em passos pequenos:
 
 **Próxima implementação:** 4.2 — ModeloResiduo.
 
-Na 4.1-A criar somente:
-
-```text
-V16__create_residue_storage_locations.sql
-LocalArmazenamentoResiduo.java
-LocalArmazenamentoResiduoRepository.java
-```
-
-Não criar service/controller/DTO nem alterar `Residuo.java` ainda.
+A 4.1 foi concluída e validada. A partir deste checkpoint, a implementação corrente é a 4.2 — `ModeloResiduo`; a integração modelo x preenchimento manual permanece reservada para a 4.3.
 
 ### 4.2 Modelos de Resíduos pré-cadastrados 🔧 ATUAL
 
