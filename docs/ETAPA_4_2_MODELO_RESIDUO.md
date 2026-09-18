@@ -1,9 +1,9 @@
 # Etapa 4.2 — ModeloResiduo
 
 **Criado em:** 18/09/2026  
-**Status:** 4.2-A — contrato/modelagem aprovado ✅  
+**Status:** 4.2 — implementação concluída ✅; validação integrada da Etapa 4 pendente  
 **Branch:** feat/etapa-4-residuos  
-**Próxima subetapa:** 4.2-B — V17 + entidades + repositories
+**Validação:** `VALIDACAO_ETAPA_4.md`
 
 ---
 
@@ -236,11 +236,11 @@ Na 4.2, criação e edição sempre exigem dependências ativas.
 
 ---
 
-## 9. Estrutura planejada da V17
+## 9. Estrutura aplicada pela V17
 
-A migration ainda não é criada na 4.2-A. A modelagem aprovada servirá de base para a 4.2-B.
+A migration `V17__create_residue_models.sql` foi implementada conforme a modelagem aprovada.
 
-Estrutura prevista:
+Estrutura aplicada:
 
     modelos_residuo
     → id
@@ -280,7 +280,7 @@ Estrutura prevista:
     → concentracao_ou_quantidade
     → observacao
 
-Índices/constraints mínimos previstos:
+Índices/constraints aplicados:
 
 - UUID público único;
 - nome único por (unidade_id, nome) no banco;
@@ -288,7 +288,7 @@ Estrutura prevista:
 - índice por unidade_id;
 - FKs para Unidade, ClasseResiduo e Produto.
 
-A V17 será imutável depois de aplicada.
+A V17 está aplicada e passa a ser imutável.
 
 ---
 
@@ -318,12 +318,12 @@ Esses pontos pertencem à **4.3 — uso de modelo ou preenchimento manual**.
 
 ## 11. Subetapas
 
-    4.2-A contrato/modelagem                    ✅ aprovado
-    4.2-B V17 + entidades + repositories        ⏳
-    4.2-C CRUD + tenant + validações            ⏳
-    4.2-D testes/revisão backend                ⏳
-    4.2-E Administração/Cadastros frontend      ⏳
-    4.2-F validação e fechamento                ⏳
+    4.2-A contrato/modelagem                    ✅
+    4.2-B V17 + entidades + repositories        ✅
+    4.2-C CRUD + tenant + validações            ✅
+    4.2-D testes/revisão backend                ✅ testes adicionados
+    4.2-E Administração/Cadastros frontend      ✅
+    4.2-F fechamento de implementação           ✅
 
 Critério de fechamento da 4.2-A — atendido em 18/09/2026:
 
@@ -336,14 +336,10 @@ Critério de fechamento da 4.2-A — atendido em 18/09/2026:
 
 ---
 
-## 12. Próximo passo após aprovação
+## 12. Fechamento
 
-Modelagem aprovada. Próxima subetapa:
+A 4.2 foi implementada preservando a separação arquitetural aprovada.
 
-    4.2-B
-    → V17__create_residue_models.sql
-    → ModeloResiduo.java
-    → ComponenteModeloResiduo.java
-    → ModeloResiduoRepository.java
+A 4.3 também foi implementada posteriormente: o Solicitante pode aplicar um modelo ao formulário ou preencher manualmente, sempre gerando um `Residuo` independente.
 
-Sem Service, Controller, DTOs, alterações em Residuo ou frontend nesta subetapa.
+A validação integrada está centralizada em `VALIDACAO_ETAPA_4.md`.
