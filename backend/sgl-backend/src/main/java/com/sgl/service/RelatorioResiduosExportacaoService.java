@@ -86,6 +86,7 @@ public class RelatorioResiduosExportacaoService {
                             + " | Liberados: " + relatorio.getLiberados()
                             + " | Armazenados: " + relatorio.getArmazenados()
                             + " | Despachados: " + relatorio.getDespachados()
+                            + " | Cancelados: " + relatorio.getCancelados()
                             + " | Alto risco: " + relatorio.getAltoRisco(),
                     metaFonte));
 
@@ -157,6 +158,8 @@ public class RelatorioResiduosExportacaoService {
             resumo.createCell(9).setCellValue(relatorio.getArmazenados());
             resumo.createCell(10).setCellValue("Despachados");
             resumo.createCell(11).setCellValue(relatorio.getDespachados());
+            resumo.createCell(12).setCellValue("Cancelados");
+            resumo.createCell(13).setCellValue(relatorio.getCancelados());
 
             String[] cabecalhos = {
                     "Código", "Resíduo", "Laboratório", "Gerador", "Projeto", "Status",
