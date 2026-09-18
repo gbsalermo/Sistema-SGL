@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
 **Última atualização:** 18/09/2026  
-**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 em andamento; 4.1 concluída; 4.2 atual  
+**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 implementada e aguardando validação integrada; Etapa 5 é a próxima após homologação  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -237,60 +237,41 @@ Plano em passos pequenos:
 4.1-H regressão integrada e fechamento ✅
 ```
 
-**Próxima implementação:** 4.2-B — V17 + entidades + repositories.
+A 4.1 foi concluída e validada. As 4.2, 4.3 e 4.4 foram implementadas na branch da Etapa 4; a regressão final está documentada em `VALIDACAO_ETAPA_4.md`.
 
-A 4.1 foi concluída e validada. A partir deste checkpoint, a implementação corrente é a 4.2 — `ModeloResiduo`; a integração modelo x preenchimento manual permanece reservada para a 4.3.
-
-### 4.2 Modelos de Resíduos pré-cadastrados 🔧 ATUAL
+### 4.2 Modelos de Resíduos pré-cadastrados ✅ IMPLEMENTADA
 
 Documento canônico da modelagem: `ETAPA_4_2_MODELO_RESIDUO.md`.
 
-Criar definição reutilizável para resíduos recorrentes.
-
 ```text
-ModeloResiduo = definição reutilizável
-Residuo       = ocorrência operacional real
+ModeloResiduo = definição reutilizável/editável da Unidade
+Residuo       = ocorrência operacional real e independente
 ```
 
-Modelo poderá sugerir/preencher:
+Entregue:
 
-- nome/descrição;
-- procedência/uso;
-- composição;
-- Produtos/componentes;
-- Classes;
-- riscos;
-- segurança/EPI;
-- recipiente;
-- tratamento padrão quando fizer sentido;
-- demais dados reutilizáveis aprovados.
+- V17 e entidades `ModeloResiduo` / `ComponenteModeloResiduo`;
+- CRUD por Unidade com inativação lógica;
+- validação de nome, classes, Produtos, tratamento e segurança;
+- Administração frontend para criar, editar, consultar e inativar modelos;
+- testes backend das regras centrais.
 
-Regra central: alterar um modelo futuramente não modifica Resíduos históricos.
+Não foi criada FK de `Residuo` para `ModeloResiduo`. Alterar um modelo não modifica Resíduos históricos.
 
 Subetapas:
 
 ```text
-4.2-A contrato/modelagem                    ✅ aprovado
-4.2-B V17 + entidades + repositories        ⏳
-4.2-C CRUD + tenant + validações            ⏳
-4.2-D testes/revisão backend                ⏳
-4.2-E Administração/Cadastros frontend      ⏳
-4.2-F validação e fechamento                ⏳
+4.2-A contrato/modelagem                    ✅
+4.2-B V17 + entidades + repositories        ✅
+4.2-C CRUD + tenant + validações            ✅
+4.2-D testes/revisão backend                ✅ testes adicionados
+4.2-E Administração/Cadastros frontend      ✅
+4.2-F fechamento de implementação           ✅
 ```
 
-A 4.2 não altera `Residuo` nem `CriarResiduoRequestDTO`; o uso do modelo pelo Solicitante permanece reservado para a 4.3.
+### 4.3 Uso pelo Solicitante ✅ IMPLEMENTADA
 
-Workflow acordado:
-
-```text
-4.2-B → assistente fornece referência; responsável implementa manualmente
-4.2-C → assistente fornece referência; responsável implementa manualmente
-4.2-D em diante → assistente pode executar diretamente, com revisão entre subetapas
-```
-
-### 4.3 Uso pelo Solicitante ⏳
-
-Ao informar:
+Ao informar um Resíduo:
 
 ```text
 usar modelo pré-cadastrado
@@ -298,37 +279,43 @@ ou
 preencher manualmente
 ```
 
-O modelo preenche sugestões; o Resíduo real continua sendo uma ocorrência independente e sujeita à conferência da Gestão.
+O modelo preenche somente dados reutilizáveis. Quantidade, projeto e demais dados específicos continuam pertencendo à ocorrência. O usuário revisa os valores antes do envio, e o backend cria um `Residuo` normal, independente do modelo.
 
-### 4.4 Correções administrativas do ciclo de vida ⏳
+### 4.4 Correções administrativas do ciclo de vida ✅ IMPLEMENTADA
 
-Necessidade levantada ao validar a Etapa 3.
+Foi adotado `CANCELADO` como status operacional para cancelamento administrativo, sem apagar o registro.
 
-Avaliar para Administrador:
+Ações exclusivas do Administrador no fluxo atual:
 
 ```text
-Cancelar Resíduo
-→ motivo obrigatório
-→ preservar registro/histórico
-
-Retornar para análise/liberação
-→ motivo obrigatório
-→ preservar eventos anteriores
-→ exigir nova validação
-→ bloquear impressão novamente quando aplicável
+CANCELAR
+RETORNAR_ETAPA
 ```
 
-Antes de implementar, definir:
+Ambas exigem justificativa e geram histórico auditável.
 
-- de quais status pode retornar;
-- se `DESPACHADO` é irreversível;
-- se haverá status `CANCELADO`;
-- o que ocorre com dados já confirmados;
-- se nova liberação cria novo evento preservando o anterior;
-- efeito sobre rótulo/impressão;
-- permissões exatas.
+Retorno de uma etapa:
 
-Isso **não é delete lógico**. A decisão geral de delete lógico permanece na Etapa 11.
+```text
+EM_ANALISE                   → INFORMADO
+LIBERADO_PARA_ARMAZENAMENTO → EM_ANALISE
+ARMAZENADO_TEMPORARIAMENTE  → LIBERADO_PARA_ARMAZENAMENTO
+DESPACHADO                   → ARMAZENADO_TEMPORARIAMENTE
+```
+
+Regras:
+
+- `INFORMADO` já é a primeira etapa e não retorna;
+- `CANCELADO` não retorna;
+- `DESPACHADO` não pode ser cancelado diretamente: precisa retornar para `ARMAZENADO_TEMPORARIAMENTE` primeiro;
+- retorno preserva eventos históricos anteriores e limpa apenas dados que representam conclusão da etapa desfeita;
+- nova execução da etapa gera novos eventos;
+- cancelados são reconhecidos em filtros, dashboards e relatórios;
+- isso não substitui a avaliação geral de delete lógico da Etapa 11.
+
+**Validação integrada da Etapa 4:** `VALIDACAO_ETAPA_4.md`.
+
+**Próxima etapa após validação:** Etapa 5 — Projetos e Atividades.
 
 ---
 
