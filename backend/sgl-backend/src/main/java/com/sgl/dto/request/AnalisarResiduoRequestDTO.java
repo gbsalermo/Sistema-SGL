@@ -34,9 +34,20 @@ public class AnalisarResiduoRequestDTO {
     @NotNull(message = "Os riscos confirmados são obrigatórios")
     private Set<TipoRisco> riscosConfirmados;
 
-    @NotBlank(message = "O local de armazenamento temporário é obrigatório")
-    @Schema(example = "Abrigo de resíduos - setor químico A")
+   
+    @Schema(description = "Local manual usado quando não houver local cadastrado.")
     private String localArmazenamentoTemporario;
+    
+    @Schema(
+            description = "UUID do local de armazenamento cadastrado."
+    )
+    private UUID localArmazenamentoResiduoId;
+
+    @Schema(
+            description = "Complemento opcional do local cadastrado.",
+            example = "Prateleira B2"
+    )
+    private String complementoLocalArmazenamento;
 
     @NotBlank(message = "O destino final previsto é obrigatório")
     @Schema(example = "Empresa licenciada para tratamento de resíduos químicos")

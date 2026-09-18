@@ -152,6 +152,14 @@ public class Residuo implements Serializable {
 
     @Column(name = "local_armazenamento_temporario")
     private String localArmazenamentoTemporario;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "local_armazenamento_residuo_id")
+    @ToString.Exclude
+    private LocalArmazenamentoResiduo localArmazenamentoResiduo;
+    
+    @Column(name = "complemento_local_armazenamento", length = 150)
+    private String complementoLocalArmazenamento;
 
     @Column(name = "destino_final_previsto", length = 500)
     private String destinoFinalPrevisto;
@@ -296,7 +304,9 @@ public class Residuo implements Serializable {
             Usuario gestor,
             NivelRisco nivelConfirmado,
             Set<TipoRisco> riscosConfirmados,
-            String localArmazenamento,
+            LocalArmazenamentoResiduo localCadastrado,
+            String complementoLocalArmazenamento,
+            String localArmazenamentoManual,
             String destinoPrevisto,
             LocalDate dataPrevistaDespacho,
             String observacao) {
@@ -309,10 +319,12 @@ public class Residuo implements Serializable {
             throw new BusinessRuleException("O nível de risco confirmado é obrigatório.");
         }
 
-        if (localArmazenamento == null || localArmazenamento.isBlank()) {
-            throw new BusinessRuleException("O local de armazenamento temporário é obrigatório.");
-        }
-
+        definirLocalArmazenamento(
+                localCadastrado,
+                complementoLocalArmazenamento,
+                localArmazenamentoManual
+        );
+        
         if (destinoPrevisto == null || destinoPrevisto.isBlank()) {
             throw new BusinessRuleException("O destino final previsto é obrigatório.");
         }
@@ -322,7 +334,6 @@ public class Residuo implements Serializable {
         if (riscosConfirmados != null) {
             this.riscosConfirmados.addAll(riscosConfirmados);
         }
-        this.localArmazenamentoTemporario = localArmazenamento;
         this.destinoFinalPrevisto = destinoPrevisto;
         this.dataPrevistaDespacho = dataPrevistaDespacho;
         this.observacaoGestor = observacao;
@@ -512,5 +523,36 @@ public class Residuo implements Serializable {
         }
 
         return observacao.trim();
+    }
+    
+    private void definirLocalArmazenamento( LocalArmazenamentoResiduo localCadastrado, String complemento, String localManual) {
+    	
+    	if(localCadastrado != null) {
+    		
+    		localCadastrado.validateActive();
+    		
+    		String complementoNormalizado = normalizarObservacao(complemento);
+    		
+    		this.localArmazenamentoResiduo = localCadastrado;
+    		this.complementoLocalArmazenamento = complementoNormalizado;
+    		this.localArmazenamentoTemporario = localCadastrado.getNome();
+    		
+    		if(complementoNormalizado != null) {
+    			this.localArmazenamentoTemporario += " - " + complementoNormalizado;
+    		}
+    		
+    		return;
+    	}
+    	
+    	if(localManual == null || localManual.isBlank()) {
+    		
+    		throw new BusinessRuleException(
+    				"Informe um local de armazenamento cadastrado ou um local manual."
+    				);
+    	}
+    	
+    	this.localArmazenamentoResiduo = null;
+    	this.complementoLocalArmazenamento = null;
+    	this.localArmazenamentoTemporario = localManual.trim();
     }
 }

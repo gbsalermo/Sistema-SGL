@@ -81,6 +81,10 @@ public class ResiduoResponseDTO {
     private final Set<MedidaSeguranca> medidasSegurancaConfirmadas;
     private final String observacaoSegurancaConfirmada;
     
+    private final UUID localArmazenamentoResiduoId;
+    private final String complementoLocalArmazenamento;
+    
+    
     public ResiduoResponseDTO(Residuo entity) {
         this.id = entity.getPublicId();
         this.codigoRastreio = entity.getCodigoRastreio();
@@ -132,9 +136,6 @@ public class ResiduoResponseDTO {
 
         this.observacaoGerador = entity.getObservacaoGerador();
         this.observacaoGestor = entity.getObservacaoGestor();
-
-        this.localArmazenamentoTemporario =
-                entity.getLocalArmazenamentoTemporario();
 
         this.destinoFinalPrevisto =
                 entity.getDestinoFinalPrevisto();
@@ -188,5 +189,17 @@ public class ResiduoResponseDTO {
 
         this.observacaoSegurancaConfirmada =
                 entity.getObservacaoSegurancaConfirmada();
+        
+        this.localArmazenamentoResiduoId =
+                entity.getLocalArmazenamentoResiduo() != null
+                        ? entity.getLocalArmazenamentoResiduo()
+                                .getPublicId()
+                        : null;
+
+        this.complementoLocalArmazenamento =
+                entity.getComplementoLocalArmazenamento();
+
+        this.localArmazenamentoTemporario =
+                entity.getLocalArmazenamentoTemporario();
     }
 }
