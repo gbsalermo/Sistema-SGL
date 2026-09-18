@@ -147,6 +147,23 @@ Regras:
 
 ---
 
+## Modelos de Resíduo
+
+Base: `/api/v1/modelos-residuo`
+
+| Método | Endpoint | Função |
+|---|---|---|
+| GET | `/api/v1/modelos-residuo` | Lista modelos visíveis no contexto da Unidade, inclusive inativos. |
+| GET | `/api/v1/modelos-residuo/ativos` | Lista modelos ativos para novas ocorrências. |
+| GET | `/api/v1/modelos-residuo/{id}` | Busca modelo por UUID público. |
+| POST | `/api/v1/modelos-residuo` | Cria modelo reutilizável na Unidade. |
+| PUT | `/api/v1/modelos-residuo/{id}` | Atualiza dados reutilizáveis do modelo. |
+| DELETE | `/api/v1/modelos-residuo/{id}` | Inativa logicamente o modelo. |
+
+Modelos não movimentam estoque e não possuem vínculo histórico obrigatório com `Residuo`.
+
+---
+
 ## Resíduo
 
 Base: `/api/v1/residuos`
@@ -163,6 +180,7 @@ Base: `/api/v1/residuos`
 | PUT | `/api/v1/residuos/{id}/analisar-liberar` | Confirma classificação, segurança, local planejado e libera para armazenamento. |
 | PUT | `/api/v1/residuos/{id}/armazenar` | Confirma armazenamento físico; pode manter ou corrigir o local. |
 | PUT | `/api/v1/residuos/{id}/despachar` | Confirma despacho/destinação. |
+| PUT | `/api/v1/residuos/{id}/administrar` | Administrador cancela ou retorna exatamente uma etapa, com justificativa. |
 | GET | `/api/v1/residuos/{id}/rotulo` | Retorna dados da prévia/rótulo. |
 | GET | `/api/v1/residuos/{id}/historico` | Retorna histórico operacional do Resíduo. |
 
