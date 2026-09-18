@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.request.AdministrarResiduoRequestDTO;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
 import com.sgl.dto.request.ArmazenarResiduoRequestDTO;
 import com.sgl.dto.request.CriarResiduoRequestDTO;
@@ -122,6 +123,17 @@ public class ResiduoController {
             @PathVariable UUID id,
             @Valid @RequestBody DespacharResiduoRequestDTO dto) {
         return ResponseEntity.ok(residuoService.despachar(id, dto));
+    }
+
+    @Operation(
+            summary = "Administrar ciclo do resíduo",
+            description = "Permite ao Administrador cancelar um resíduo ou retornar uma etapa operacional, sempre com justificativa registrada no histórico."
+    )
+    @PutMapping("/{id}/administrar")
+    public ResponseEntity<ResiduoResponseDTO> administrarCiclo(
+            @PathVariable UUID id,
+            @Valid @RequestBody AdministrarResiduoRequestDTO dto) {
+        return ResponseEntity.ok(residuoService.administrarCiclo(id, dto));
     }
 
     @Operation(summary = "Obter prévia do rótulo", description = "Retorna os dados do rótulo desde o registro inicial. A impressão física só é permitida após análise e liberação.")
