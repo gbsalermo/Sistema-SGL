@@ -687,7 +687,140 @@ GET /api/v1/estoque-central/estoque-baixo?unidadeId={id}
 
 ---
 
-## 20. Ordem prática para testar um fluxo completo
+## 20. Local de armazenamento de Resíduo
+
+### Criar local cadastrado
+
+```http
+POST /api/v1/locais-armazenamento-residuo
+X-SGL-Unidade-Id: {unidadePublicId}
+Content-Type: application/json
+```
+
+```json
+{
+  "unidadeId": "cb09ba48-d244-46bc-8324-037b8529b3a9",
+  "nome": "Almoxarifado Químico",
+  "ativo": true
+}
+```
+
+### Atualizar local
+
+```http
+PUT /api/v1/locais-armazenamento-residuo/{localId}
+X-SGL-Unidade-Id: {unidadePublicId}
+Content-Type: application/json
+```
+
+Use o mesmo formato da criação. `DELETE` faz inativação lógica e não possui body.
+
+Consultas úteis:
+
+```http
+GET /api/v1/locais-armazenamento-residuo
+GET /api/v1/locais-armazenamento-residuo/ativos
+GET /api/v1/locais-armazenamento-residuo/{localId}
+```
+
+---
+
+## 21. Resíduos — análise e armazenamento com local estruturado
+
+### Analisar/liberar usando local cadastrado
+
+```http
+PUT /api/v1/residuos/{residuoId}/analisar-liberar
+X-SGL-Unidade-Id: {unidadePublicId}
+Content-Type: application/json
+```
+
+```json
+{
+  "usuarioGestorId": "11111111-1111-1111-1111-111111111111",
+  "nivelRiscoConfirmado": "MEDIO",
+  "riscosConfirmados": ["INFLAMAVEL", "PERIGO_SAUDE"],
+  "localArmazenamentoResiduoId": "22222222-2222-2222-2222-222222222222",
+  "complementoLocalArmazenamento": "Prateleira B2",
+  "localArmazenamentoTemporario": null,
+  "destinoFinalPrevisto": "Empresa licenciada para tratamento",
+  "dataPrevistaDespacho": "2026-09-30",
+  "observacaoGestor": "Classificação conferida",
+  "classesConfirmadasIds": [
+    "33333333-3333-3333-3333-333333333333"
+  ],
+  "medidasSegurancaConfirmadas": [
+    "LUVAS",
+    "OCULOS_PROTECAO"
+  ],
+  "observacaoSegurancaConfirmada": "Manter recipiente fechado"
+}
+```
+
+O snapshot histórico resultante fica no formato:
+
+```text
+Almoxarifado Químico - Prateleira B2
+```
+
+### Analisar/liberar usando local manual
+
+Envie `localArmazenamentoResiduoId = null`, sem complemento, e preencha:
+
+```json
+{
+  "localArmazenamentoTemporario": "Área provisória externa"
+}
+```
+
+Os demais campos obrigatórios da análise continuam iguais ao exemplo anterior.
+
+### Confirmar armazenamento sem corrigir o local
+
+```http
+PUT /api/v1/residuos/{residuoId}/armazenar
+X-SGL-Unidade-Id: {unidadePublicId}
+Content-Type: application/json
+```
+
+```json
+{
+  "usuarioGestorId": "11111111-1111-1111-1111-111111111111",
+  "localArmazenamentoResiduoId": null,
+  "complementoLocalArmazenamento": null,
+  "localArmazenamentoTemporario": null
+}
+```
+
+O local planejado é mantido.
+
+### Corrigir para outro local cadastrado
+
+```json
+{
+  "usuarioGestorId": "11111111-1111-1111-1111-111111111111",
+  "localArmazenamentoResiduoId": "44444444-4444-4444-4444-444444444444",
+  "complementoLocalArmazenamento": "Estante A1",
+  "localArmazenamentoTemporario": null
+}
+```
+
+### Corrigir manualmente
+
+```json
+{
+  "usuarioGestorId": "11111111-1111-1111-1111-111111111111",
+  "localArmazenamentoResiduoId": null,
+  "complementoLocalArmazenamento": null,
+  "localArmazenamentoTemporario": "Área provisória externa"
+}
+```
+
+Não envie catálogo e texto manual ao mesmo tempo. Complemento só é válido com local cadastrado.
+
+---
+
+## 22. Ordem prática para testar um fluxo completo
 
 ```text
 1. Criar/consultar Unidade
