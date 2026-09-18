@@ -190,7 +190,7 @@ V15 segurança/EPI
 V16 locais de armazenamento aplicada e imutável
 ```
 
-A V16 ainda não foi implementada neste checkpoint.
+A V16 está aplicada e é imutável; qualquer nova alteração de schema deve usar V17 ou superior.
 
 ---
 
