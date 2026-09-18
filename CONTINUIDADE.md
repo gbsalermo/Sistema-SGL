@@ -9,8 +9,8 @@
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
 **Etapa atual:** Etapa 4 — expansão operacional de Resíduos 🔧  
-**Subetapa atual:** 4.1 — locais de armazenamento cadastráveis  
-**Próxima implementação:** 4.1-H — regressão integrada e fechamento  
+**Subetapa atual:** 4.2 — Modelos de Resíduo pré-cadastrados  
+**Próxima implementação:** 4.2 — ModeloResiduo  
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
@@ -357,8 +357,8 @@ Handoff canônico:
 Ordem:
 
 ```text
-4.1 Locais de armazenamento cadastráveis          🔧 atual
-→ 4.2 Modelos de Resíduos pré-cadastrados          ⏳
+4.1 Locais de armazenamento cadastráveis          ✅ concluída
+→ 4.2 Modelos de Resíduos pré-cadastrados          🔧 atual
 → 4.3 Uso de modelo ou preenchimento manual        ⏳
 → 4.4 Correções administrativas do ciclo de vida   ⏳
 ```
@@ -402,10 +402,10 @@ Plano de implementação:
 4.1-E revisão e fechamento do contrato backend ✅
 4.1-F frontend Administração/Cadastros ✅
 4.1-G frontend Gestão ✅
-4.1-H regressão integrada e fechamento da 4.1 ⏭
+4.1-H regressão integrada e fechamento da 4.1 ✅
 ```
 
-**Próximo passo real:** 4.1-H. Backend e frontend da 4.1 estão implementados; falta build, regressão integrada e validação visual/end-to-end antes do fechamento.
+**Próximo passo real:** 4.2 — ModeloResiduo. A 4.1 foi concluída após validação funcional do catálogo, análise/liberação, confirmação física/correção e histórico. A auditoria tipográfica global do frontend foi adiada para a Etapa 13.
 
 ## 4.2 ModeloResiduo
 
@@ -487,10 +487,8 @@ Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            🔧 em andamento
-  4.1 — locais de armazenamento                       🔧 atual
-  4.1-A–E — backend                                  ✅ concluído
-  4.1-F/G — frontend                                ✅ implementado
-  4.1-H — regressão integrada                        ⏭ próxima validação
+  4.1 — locais de armazenamento                       ✅ concluída
+  4.2 — Modelos de Resíduo                            🔧 atual
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
@@ -508,4 +506,4 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**A Etapa 4 segue na branch `feat/etapa-4-residuos`. Backend 4.1-A–E e frontend 4.1-F/G estão implementados; o próximo passo é a 4.1-H — regressão integrada e fechamento.**
+**A Etapa 4 segue na branch `feat/etapa-4-residuos`. A 4.1 foi concluída e validada. O próximo passo é a 4.2 — ModeloResiduo.**
