@@ -1,6 +1,6 @@
 # Testes — SGL
 
-Este arquivo reúne os testes automatizados e o roteiro manual no Postman para validar a arquitetura atual antes da migração para PostgreSQL.
+Este arquivo reúne os testes automatizados e roteiros manuais/Postman para validar a arquitetura atual em PostgreSQL/Flyway.
 
 ## 1. Executar testes automatizados
 
@@ -9,7 +9,7 @@ cd backend/sgl-backend
 mvn test
 ```
 
-A suíte atual cobre três áreas principais.
+A suíte atual cobre, entre outras áreas, estoque/pedidos, histórico e regras de armazenamento de Resíduos.
 
 ### `MovimentacaoEstoqueServiceTest`
 
@@ -39,6 +39,16 @@ A suíte atual cobre três áreas principais.
 - consulta materiais efetivamente recebidos por um projeto em determinado laboratório e período;
 - rejeita projeto pertencente a outro laboratório;
 - rejeita período invertido.
+
+### `ResiduoArmazenamentoTest`
+
+- libera Resíduo com local cadastrado + complemento e preserva snapshot textual;
+- permite caminho manual;
+- rejeita catálogo + manual simultaneamente;
+- rejeita complemento sem local cadastrado;
+- mantém o local planejado quando a confirmação física não corrige o local;
+- permite corrigir para local manual limpando referência estruturada;
+- rejeita novo uso de local inativo.
 
 ## 2. Regras que os testes precisam preservar
 
@@ -519,13 +529,15 @@ GET /api/v1/estoque-central/{estoqueId}
 GET /api/v1/pedidos/por-status?status=PENDENTE
 GET /api/v1/projetos/por-laboratorio?laboratorioId={laboratorioId}
 GET /api/v1/historico-laboratorio/laboratorio/{laboratorioId}
+GET /api/v1/locais-armazenamento-residuo/ativos
+GET /api/v1/residuos/por-status?status=LIBERADO_PARA_ARMAZENAMENTO
 ```
 
 O inventário completo da API está em [`ENDPOINTS_INTERNOS.md`](ENDPOINTS_INTERNOS.md).
 
 ---
 
-# Checklist antes do PostgreSQL
+# Checklist de regressão backend
 
 ```text
 [ ] mvn test executa sem falhas
@@ -543,6 +555,13 @@ O inventário completo da API está em [`ENDPOINTS_INTERNOS.md`](ENDPOINTS_INTER
 [ ] entrega não reduz estoque novamente
 [ ] consulta de pedidos por projeto/período retorna somente o projeto correto
 [ ] projeto de outro laboratório é rejeitado
+[ ] CRUD de locais de armazenamento respeita Unidade/tenant
+[ ] local inativo não é elegível para nova seleção
+[ ] análise aceita local cadastrado + complemento
+[ ] análise aceita caminho manual alternativo
+[ ] confirmação física sem correção mantém o local planejado
+[ ] correção física registra planejado x confirmado no histórico
+[ ] `ResiduoArmazenamentoTest` passa sem falhas
 [ ] período invertido é rejeitado
 [ ] histórico por projeto/período mostra somente materiais efetivamente entregues
 [ ] histórico geral do laboratório e histórico específico do projeto apresentam resultados coerentes
