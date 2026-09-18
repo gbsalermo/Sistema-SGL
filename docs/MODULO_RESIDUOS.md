@@ -56,9 +56,9 @@ A Gestão recebe, confere, analisa/classifica, libera, consulta rótulo, registr
 
 ### Administração
 
-A área de Cadastros já permite manter **Classes de Resíduo** e recomendações de segurança em Produtos.
+A área de Cadastros já permite manter **Classes de Resíduo**, **Locais de armazenamento** e recomendações de segurança em Produtos.
 
-A Etapa 4.1 adicionará **locais de armazenamento**. A Etapa 4.2 adicionará **Modelos de Resíduo** reutilizáveis.
+A Etapa 4.1 adicionou os **locais de armazenamento**. A Etapa 4.2 adicionará **Modelos de Resíduo** reutilizáveis.
 
 ---
 
