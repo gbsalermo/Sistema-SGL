@@ -17,12 +17,15 @@ public interface LocalArmazenamentoResiduoRepository extends JpaRepository<Local
 	
 	Optional<LocalArmazenamentoResiduo> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
 	
-	List<LocalArmazenamentoResiduo> findByUnidadePublicIdOrderByNomeAsc(UUID unidadePublicID);
+	List<LocalArmazenamentoResiduo> findByUnidadePublicIdOrderByNomeAsc(UUID unidadePublicId);
 	
 	List<LocalArmazenamentoResiduo> findByUnidadePublicIdAndAtivoTrueOrderByNomeAsc(UUID unidadePublicId);
+	
+	List <LocalArmazenamentoResiduo> findByAtivoTrueOrderByNomeAsc();
 	
 	boolean existsByUnidadeIdAndNomeIgnoreCase(Long unidadeId, String nome);
 	
 	boolean existsByUnidadeIdAndNomeIgnoreCaseAndIdNot(Long unidadeId, String nome, Long id);
 
+	
 }
