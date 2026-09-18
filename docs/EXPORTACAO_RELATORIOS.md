@@ -103,7 +103,7 @@ Diretrizes do primeiro protótipo:
 - orientação paisagem para relatórios largos;
 - paginação e cabeçalhos adequados para impressão.
 
-O relatório de Resíduos também inclui resumo operacional e rastreabilidade do ciclo.
+O relatório de Resíduos também inclui resumo operacional e rastreabilidade do ciclo. Desde a Etapa 4, o resumo inclui a contagem de Resíduos `CANCELADO` tanto na prévia quanto nas exportações PDF/XLSX.
 
 ---
 
