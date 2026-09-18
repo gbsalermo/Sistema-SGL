@@ -13,9 +13,11 @@
 
 ---
 
-## Estado atual — 11/09/2026
+## Estado atual — 18/09/2026
 
-O SGL já passou pela aprovação funcional do primeiro protótipo. As Etapas 1 e 2 da pré-produção foram concluídas; a etapa atual é a **Etapa 3 — Refinamentos do fluxo atual de Resíduos**. Esse bloco acontece **antes** do roadmap formal de matriz de permissões, congelamento, homologação final e segurança definitiva.
+O SGL já passou pela aprovação funcional do primeiro protótipo. As Etapas 1, 2 e 3 da pré-produção foram concluídas e validadas. A etapa atual do projeto é a **Etapa 4 — Expansão operacional de Resíduos**: a **4.1 — Locais de armazenamento** foi concluída e a **4.2 — ModeloResiduo** é o foco atual.
+
+> O desenvolvimento da Etapa 4 está na branch `feat/etapa-4-residuos`; a `main` permanece como baseline estável até o fechamento/integração da etapa.
 
 Estado consolidado do backend:
 
@@ -331,8 +333,13 @@ mvn test
 ```text
 Etapa 1 — padrão visual global                 ✅
 Etapa 2 — Dark Mode definitivo                 ✅
-Etapa 3 — refinamentos do fluxo de Resíduos    🔧 atual
-Etapas 4 a 9                                   ⏳ sequenciais
+Etapa 3 — refinamentos do fluxo de Resíduos    ✅
+Etapa 4 — expansão operacional de Resíduos     🔧 atual
+  4.1 — locais de armazenamento                ✅ concluída
+  4.2 — ModeloResiduo                          🔧 atual
+  4.3 — modelo x preenchimento manual          ⏳
+  4.4 — correções administrativas              ⏳
+Etapas 5 a 13                                  ⏳ sequenciais
 ```
 
 ### Depois — roadmap formal para produção
