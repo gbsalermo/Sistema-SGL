@@ -483,12 +483,16 @@ Sequência atual:
 
 ### 4.2 Modelos de Resíduo
 
+Contrato detalhado em `ETAPA_4_2_MODELO_RESIDUO.md`.
+
 ```text
-ModeloResiduo = definição/padrão
-Residuo       = ocorrência real
+ModeloResiduo = definição/padrão reutilizável por Unidade
+Residuo       = ocorrência real e independente
 ```
 
-Alterar o modelo depois não pode alterar ocorrências históricas.
+A 4.2-A define campos, componentes, tenant, ciclo de vida e limites do modelo. Alterar o modelo depois não pode alterar ocorrências históricas.
+
+Na 4.2 não haverá FK `Residuo -> ModeloResiduo`; a seleção e aplicação do modelo pertencem à 4.3.
 
 ### 4.3 Uso do modelo pelo Solicitante
 
