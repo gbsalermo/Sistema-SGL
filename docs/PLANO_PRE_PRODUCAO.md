@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
 **Última atualização:** 18/09/2026  
-**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 iniciada; backend da 4.1 concluído; frontend da 4.1 em andamento  
+**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 em andamento; 4.1 concluída; 4.2 atual  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -173,7 +173,7 @@ Detalhes: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 Handoff: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 
-### 4.1 Locais de armazenamento cadastráveis 🔧 ATUAL
+### 4.1 Locais de armazenamento cadastráveis ✅ CONCLUÍDA
 
 A modelagem foi fechada antes da implementação.
 
@@ -234,10 +234,10 @@ Plano em passos pequenos:
 4.1-E revisão e fechamento do backend ✅
 4.1-F frontend Administração/Cadastros ✅
 4.1-G frontend Gestão ✅
-4.1-H regressão integrada e fechamento ⏭
+4.1-H regressão integrada e fechamento ✅
 ```
 
-**Próxima implementação:** 4.1-H — regressão integrada e fechamento.
+**Próxima implementação:** 4.2 — ModeloResiduo.
 
 Na 4.1-A criar somente:
 
@@ -249,7 +249,7 @@ LocalArmazenamentoResiduoRepository.java
 
 Não criar service/controller/DTO nem alterar `Residuo.java` ainda.
 
-### 4.2 Modelos de Resíduos pré-cadastrados ⏳
+### 4.2 Modelos de Resíduos pré-cadastrados 🔧 ATUAL
 
 Criar definição reutilizável para resíduos recorrentes.
 
@@ -597,10 +597,8 @@ Etapa 1 — refinamento visual global                 ✅
 Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          🔧 em andamento
-  4.1 — locais de armazenamento                     🔧 atual
-  4.1-A–E — backend                                ✅ concluído
-  4.1-F/G — frontend                              ✅ implementado
-  4.1-H — regressão integrada                      ⏭ próxima validação
+  4.1 — locais de armazenamento                     ✅ concluída
+  4.2 — Modelos de Resíduo                          🔧 atual
 Etapas 5–13                                         ⏳
 ```
 
