@@ -17,11 +17,23 @@ public interface HistoricoLaboratorioRepository extends JpaRepository<HistoricoL
 
     Optional<HistoricoLaboratorio> findByPublicId(UUID publicId);
 
+    // Correção de segurança: antes o service só tinha o "findByPublicId"
+    // acima (sem filtro de unidade) para buscar um registro específico, e
+    // "findAll"/"findByProdutoId"/"findByPedidoId" abaixo também não tinham
+    // filtro nenhum de unidade. Como HistoricoLaboratorio guarda o material
+    // que cada laboratório efetivamente recebeu, isso deixava o histórico
+    // de consumo de QUALQUER laboratório de QUALQUER unidade visível para
+    // todo mundo. Os métodos abaixo, com "UnidadePublicId" no nome, passam
+    // a ser os usados pelo service para aplicar o filtro por unidade.
+    Optional<HistoricoLaboratorio> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
+
+    List<HistoricoLaboratorio> findByLaboratorioUnidadePublicId(UUID unidadePublicId);
+
     List<HistoricoLaboratorio> findByLaboratorioId(Long laboratorioId);
 
-    List<HistoricoLaboratorio> findByProdutoId(Long produtoId);
+    List<HistoricoLaboratorio> findByProdutoIdAndLaboratorioUnidadePublicId(Long produtoId, UUID unidadePublicId);
 
-    List<HistoricoLaboratorio> findByPedidoId(Long pedidoId);
+    List<HistoricoLaboratorio> findByPedidoIdAndLaboratorioUnidadePublicId(Long pedidoId, UUID unidadePublicId);
 
     @Query("""
             SELECT historico

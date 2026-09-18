@@ -20,8 +20,10 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.repository.EstagiarioRepository;
+import com.sgl.exception.BusinessRuleException;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,7 +41,18 @@ public class RelatorioPessoasLaboratorioService {
             Perfil perfil,
             Boolean ativo) {
 
-        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
+        // Correção de segurança: antes buscava o laboratório sem checar a
+        // unidade de quem está chamando. Bastava trocar o "laboratorioId"
+        // na URL para gerar (e exportar em PDF/XLSX) o relatório de pessoas
+        // — nomes, emails, perfil, dados de estagiário — de um laboratório
+        // de OUTRA unidade.
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
+
+        Laboratorio laboratorio = laboratorioRepository
+                .findByPublicIdAndUnidadePublicId(laboratorioId, TenantContext.unidadeAtual().orElseThrow())
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
         List<Usuario> vinculados = new ArrayList<>(usuarioRepository.findByLaboratorioId(laboratorio.getId()));

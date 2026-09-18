@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.tenant.TenantContext;
 
 @ExtendWith(MockitoExtension.class)
 class HistoricoLaboratorioServiceTest {
@@ -119,6 +121,16 @@ class HistoricoLaboratorioServiceTest {
                 .pedido(pedido)
                 .ativo(true)
                 .build();
+
+        // Correção de segurança em TenantContext.pertence() / buscarLaboratorio()
+        // (fail-closed): os métodos deste service agora exigem um tenant
+        // ativo, como uma requisição HTTP real teria via TenantRequestFilter.
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+    }
+
+    @AfterEach
+    void limparTenant() {
+        TenantContext.limpar();
     }
 
     @Test
@@ -126,7 +138,7 @@ class HistoricoLaboratorioServiceTest {
         LocalDate inicio = LocalDate.of(2026, 6, 1);
         LocalDate fim = LocalDate.of(2026, 6, 30);
 
-        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
         when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
         when(historicoLaboratorioRepository.findByLaboratorioProjetoEPeriodo(
                 2L,
@@ -189,7 +201,7 @@ class HistoricoLaboratorioServiceTest {
                 .ativo(true)
                 .build();
 
-        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
         when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID)).thenReturn(Optional.of(produto));
         when(historicoLaboratorioRepository.findByLaboratorioProdutoEPeriodo(
                 2L,
@@ -221,7 +233,7 @@ class HistoricoLaboratorioServiceTest {
         LocalDate inicio = LocalDate.of(2026, 6, 1);
         LocalDate fim = LocalDate.of(2026, 6, 30);
 
-        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
         when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID)).thenReturn(Optional.of(produto));
         when(historicoLaboratorioRepository.findByLaboratorioProdutoEPeriodo(
                 2L,
@@ -256,7 +268,7 @@ class HistoricoLaboratorioServiceTest {
 
         projeto.setLaboratorio(outroLaboratorio);
 
-        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
         when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
 
         BusinessRuleException exception = assertThrows(
@@ -279,7 +291,7 @@ class HistoricoLaboratorioServiceTest {
 
     @Test
     void deveImpedirHistoricoComPeriodoInvertido() {
-        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
         when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
 
         BusinessRuleException exception = assertThrows(

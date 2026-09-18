@@ -25,6 +25,7 @@ import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,14 +41,26 @@ public class HistoricoLaboratorioService {
 
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioResponseDTO> listarTodos() {
-        return historicoLaboratorioRepository.findAll().stream()
+        // Correção de segurança: este método fazia "findAll()" sem
+        // NENHUM filtro de unidade — diferente dos outros services do
+        // sistema, este nunca tinha sido adaptado para multitenancy.
+        // Qualquer chamada devolvia o histórico de recebimento de material
+        // de todos os laboratórios de todas as unidades.
+        exigirTenantAtivo();
+
+        return historicoLaboratorioRepository
+                .findByLaboratorioUnidadePublicId(TenantContext.unidadeAtual().orElseThrow())
+                .stream()
                 .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public HistoricoLaboratorioResponseDTO buscarPorId(UUID id) {
-        return historicoLaboratorioRepository.findByPublicId(id)
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return historicoLaboratorioRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId)
                 .map(HistoricoLaboratorioResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Histórico de laboratório", id));
     }
@@ -63,9 +76,16 @@ public class HistoricoLaboratorioService {
 
     @Transactional(readOnly = true)
     public List<HistoricoLaboratorioResponseDTO> listarPorProduto(UUID produtoId) {
+        // Produto é um catálogo compartilhado entre unidades (ver
+        // ProdutoService), então buscarProduto() continua sem filtro de
+        // unidade. Mas o HISTÓRICO em si pertence a um laboratório de uma
+        // unidade específica, então a consulta abaixo precisa do tenant.
         Produto produto = buscarProduto(produtoId);
+        exigirTenantAtivo();
 
-        return historicoLaboratorioRepository.findByProdutoId(produto.getId()).stream()
+        return historicoLaboratorioRepository
+                .findByProdutoIdAndLaboratorioUnidadePublicId(produto.getId(), TenantContext.unidadeAtual().orElseThrow())
+                .stream()
                 .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
@@ -74,8 +94,11 @@ public class HistoricoLaboratorioService {
     public List<HistoricoLaboratorioResponseDTO> listarPorPedido(UUID pedidoId) {
         Pedido pedido = pedidoRepository.findByPublicId(pedidoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
+        exigirTenantAtivo();
 
-        return historicoLaboratorioRepository.findByPedidoId(pedido.getId()).stream()
+        return historicoLaboratorioRepository
+                .findByPedidoIdAndLaboratorioUnidadePublicId(pedido.getId(), TenantContext.unidadeAtual().orElseThrow())
+                .stream()
                 .map(HistoricoLaboratorioResponseDTO::new)
                 .toList();
     }
@@ -189,8 +212,27 @@ public class HistoricoLaboratorioService {
     }
 
     private Laboratorio buscarLaboratorio(UUID laboratorioId) {
-        return laboratorioRepository.findByPublicId(laboratorioId)
+        // Correção de segurança: antes buscava o laboratório sem checar se
+        // ele pertence à unidade de quem está chamando, permitindo consultar
+        // o histórico de qualquer laboratório de outra unidade só sabendo o
+        // id dele.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return laboratorioRepository.findByPublicIdAndUnidadePublicId(laboratorioId, unidadeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
     }
 
     private Produto buscarProduto(UUID produtoId) {

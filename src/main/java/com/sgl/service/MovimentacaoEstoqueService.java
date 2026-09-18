@@ -33,6 +33,7 @@ import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,18 +51,33 @@ public class MovimentacaoEstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarTodos() {
+        // Correção de segurança: o repositório já filtra por tenant nas
+        // suas consultas (via "@tenantProvider.unidadeId"), mas só quando
+        // existe um tenant ativo — a query em si permite tudo quando esse
+        // valor é nulo. Exigir o tenant aqui garante que essa "porta aberta"
+        // não seja alcançada por uma chamada sem o header de unidade.
+        exigirTenantAtivo();
         return movimentacaoRepository.findAll().stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public MovimentacaoEstoqueResponseDTO buscarPorId(UUID id) {
-        return movimentacaoRepository.findByPublicId(id)
+        // Correção de segurança (vazamento entre unidades): este método
+        // usava "findByPublicId", uma busca SEM filtro de unidade, mesmo
+        // já existindo no repositório o método correto
+        // "findByPublicIdAndEstoqueCentralUnidadePublicId" (usado em outros
+        // pontos do sistema). Ou seja, qualquer um podia ler os detalhes de
+        // uma movimentação de estoque de OUTRA unidade só sabendo o id.
+        exigirTenantAtivo();
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return movimentacaoRepository.findByPublicIdAndEstoqueCentralUnidadePublicId(id, unidadeId)
                 .map(MovimentacaoEstoqueResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Movimentação", id));
     }
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorProduto(UUID produtoId) {
+        exigirTenantAtivo();
         Produto produto = produtoRepository.findByPublicId(produtoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
         return movimentacaoRepository.findByProdutoId(produto.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
@@ -69,6 +85,7 @@ public class MovimentacaoEstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
+        exigirTenantAtivo();
         Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
         return movimentacaoRepository.findByLaboratorioId(laboratorio.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
@@ -76,6 +93,7 @@ public class MovimentacaoEstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorUsuario(UUID usuarioId) {
+        exigirTenantAtivo();
         Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
         return movimentacaoRepository.findByUsuarioId(usuario.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
@@ -83,6 +101,7 @@ public class MovimentacaoEstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorPedido(UUID pedidoId) {
+        exigirTenantAtivo();
         Pedido pedido = pedidoRepository.findByPublicId(pedidoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
         return movimentacaoRepository.findByPedidoId(pedido.getId()).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
@@ -90,6 +109,7 @@ public class MovimentacaoEstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorLote(UUID loteId) {
+        exigirTenantAtivo();
         Lote lote = loteRepository.findByPublicId(loteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", loteId));
         return movimentacaoRepository.findByLoteIdOrderByDataMovimentacaoDesc(lote.getId()).stream()
@@ -99,6 +119,7 @@ public class MovimentacaoEstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoEstoqueResponseDTO> listarPorTipo(TipoMovimentacao tipo) {
+        exigirTenantAtivo();
         return movimentacaoRepository.findByTipoMovimentacao(tipo).stream().map(MovimentacaoEstoqueResponseDTO::new).toList();
     }
 
@@ -388,5 +409,17 @@ public class MovimentacaoEstoqueService {
 
     private void validarQuantidade(Integer quantidade) {
         if (quantidade == null || quantidade <= 0) throw new BusinessRuleException("A quantidade deve ser maior que zero.");
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
     }
 }
