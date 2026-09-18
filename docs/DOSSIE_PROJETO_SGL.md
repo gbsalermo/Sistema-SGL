@@ -3,7 +3,7 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Atualizado em:** 17/09/2026  
+**Atualizado em:** 18/09/2026  
 **Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 em andamento; 4.1 concluída; 4.2 atual.  
 **Branch atual:** `feat/etapa-4-residuos`  
 **Próxima implementação:** 4.2 — ModeloResiduo.
@@ -350,15 +350,7 @@ Plano:
 
 Próximo passo: **4.2 — ModeloResiduo**.
 
-Criar somente:
-
-```text
-V16__create_residue_storage_locations.sql
-LocalArmazenamentoResiduo.java
-LocalArmazenamentoResiduoRepository.java
-```
-
-Não criar service/controller/DTO nem alterar `Residuo.java` nessa subetapa.
+A V16 e toda a 4.1 estão concluídas. Na 4.2, definir primeiro o contrato do modelo reutilizável, seu isolamento por Unidade e os snapshots necessários antes de integrar a escolha do modelo ao formulário do Solicitante.
 
 ---
 
