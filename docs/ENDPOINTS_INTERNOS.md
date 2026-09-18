@@ -122,6 +122,60 @@ Base: `/api/v1/projetos`
 
 ---
 
+## Local de Armazenamento de Resíduo
+
+Base: `/api/v1/locais-armazenamento-residuo`
+
+| Método | Endpoint | Função |
+|---|---|---|
+| GET | `/api/v1/locais-armazenamento-residuo` | Lista os locais visíveis no contexto da Unidade. |
+| GET | `/api/v1/locais-armazenamento-residuo/ativos` | Lista apenas locais ativos, usados em novas seleções de Resíduo. |
+| GET | `/api/v1/locais-armazenamento-residuo/{id}` | Busca local pelo UUID público. |
+| POST | `/api/v1/locais-armazenamento-residuo` | Cria local para uma Unidade. |
+| PUT | `/api/v1/locais-armazenamento-residuo/{id}` | Atualiza nome/estado do local sem transferi-lo para outra Unidade. |
+| DELETE | `/api/v1/locais-armazenamento-residuo/{id}` | Inativa logicamente o local. |
+
+Regras:
+
+- nome obrigatório, até 150 caracteres;
+- nome duplicado na mesma Unidade é rejeitado de forma case-insensitive;
+- o mesmo nome pode existir em Unidades diferentes;
+- local inativo não pode ser escolhido em novas operações;
+- renomear/inativar o catálogo não altera o snapshot histórico já salvo no Resíduo.
+
+---
+
+## Resíduo
+
+Base: `/api/v1/residuos`
+
+| Método | Endpoint | Função |
+|---|---|---|
+| GET | `/api/v1/residuos` | Lista resíduos visíveis no contexto atual. |
+| GET | `/api/v1/residuos/{id}` | Busca Resíduo pelo UUID público. |
+| GET | `/api/v1/residuos/por-status?status={status}` | Lista por status operacional. |
+| GET | `/api/v1/residuos/por-laboratorio?laboratorioId={id}` | Lista por laboratório. |
+| GET | `/api/v1/residuos/por-gerador?usuarioGeradorId={id}` | Lista resíduos do gerador. |
+| POST | `/api/v1/residuos` | Informa nova ocorrência de Resíduo. |
+| PUT | `/api/v1/residuos/{id}/receber` | Gestão recebe o Resíduo e inicia análise. |
+| PUT | `/api/v1/residuos/{id}/analisar-liberar` | Confirma classificação, segurança, local planejado e libera para armazenamento. |
+| PUT | `/api/v1/residuos/{id}/armazenar` | Confirma armazenamento físico; pode manter ou corrigir o local. |
+| PUT | `/api/v1/residuos/{id}/despachar` | Confirma despacho/destinação. |
+| GET | `/api/v1/residuos/{id}/rotulo` | Retorna dados da prévia/rótulo. |
+| GET | `/api/v1/residuos/{id}/historico` | Retorna histórico operacional do Resíduo. |
+
+Na análise/liberação, o local pode ser informado de duas formas mutuamente exclusivas:
+
+```text
+localArmazenamentoResiduoId + complementoLocalArmazenamento opcional
+OU
+localArmazenamentoTemporario manual
+```
+
+Na confirmação física, omitir todos os campos de localização significa **manter o local planejado**. Se houver correção, o histórico registra o valor planejado e o confirmado.
+
+---
+
 ## Estoque Central
 
 Base: `/api/v1/estoque-central`
