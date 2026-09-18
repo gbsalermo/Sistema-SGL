@@ -1,8 +1,8 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Estado em 18/09/2026:** Etapa 3 ✅ concluída e validada; Etapa 4 🔧 em andamento; 4.1 ✅ concluída; 4.2 — ModeloResiduo é o próximo foco.  
-**Migrations aplicadas:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql`, `V15__add_residue_safety_information.sql` e `V16__create_residue_storage_locations.sql`.  
-**Migration da 4.1:** V16 — locais de armazenamento de Resíduos ✅ aplicada e imutável.  
+**Estado em 18/09/2026:** Etapa 4 ✅ implementada na branch; validação integrada/manual pendente.  
+**Migrations aplicadas:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql`, `V15__add_residue_safety_information.sql`, `V16__create_residue_storage_locations.sql` e `V17__create_residue_models.sql`.  
+**Migrations da Etapa 4:** V16 — locais de armazenamento; V17 — Modelos de Resíduo. Ambas são imutáveis após aplicação.  
 **Branch atual:** `feat/etapa-4-residuos`.
 
 ## 1. Regra central
@@ -29,9 +29,12 @@ LIBERADO_PARA_ARMAZENAMENTO
 ARMAZENADO_TEMPORARIAMENTE
    ↓ despachar
 DESPACHADO
+
+CANCELADO
+= encerramento administrativo preservado em histórico
 ```
 
-Transições fora de ordem são rejeitadas.
+Transições operacionais fora de ordem são rejeitadas. Administradores também podem retornar exatamente uma etapa ou cancelar, conforme as regras da 4.4.
 
 ---
 
@@ -58,7 +61,7 @@ A Gestão recebe, confere, analisa/classifica, libera, consulta rótulo, registr
 
 A área de Cadastros já permite manter **Classes de Resíduo**, **Locais de armazenamento** e recomendações de segurança em Produtos.
 
-A Etapa 4.1 adicionou os **locais de armazenamento**. A Etapa 4.2 adicionará **Modelos de Resíduo** reutilizáveis.
+A Etapa 4 adicionou **locais de armazenamento**, **Modelos de Resíduo** reutilizáveis e correções administrativas do ciclo.
 
 ---
 
@@ -479,7 +482,7 @@ Sequência atual:
 
 ---
 
-## 17. Etapas 4.2–4.4 — sequência atual
+## 17. Etapas 4.2–4.4 — implementadas
 
 ### 4.2 Modelos de Resíduo
 
@@ -490,19 +493,37 @@ ModeloResiduo = definição/padrão reutilizável por Unidade
 Residuo       = ocorrência real e independente
 ```
 
-A 4.2-A define campos, componentes, tenant, ciclo de vida e limites do modelo. Alterar o modelo depois não pode alterar ocorrências históricas.
-
-Na 4.2 não haverá FK `Residuo -> ModeloResiduo`; a seleção e aplicação do modelo pertencem à 4.3.
+A V17 criou o catálogo, componentes e relacionamentos de classes/riscos/segurança. O CRUD aplica tenant, inativação lógica e validações de dependências. A Administração possui tela própria para manutenção dos modelos.
 
 ### 4.3 Uso do modelo pelo Solicitante
 
-Permitir escolha entre modelo pré-cadastrado e preenchimento manual.
+A tela `/residuos/novo` permite escolher um modelo ativo ou manter o preenchimento manual.
+
+O modelo copia sugestões para o formulário, mas não cria vínculo histórico com a ocorrência. Quantidade, projeto e ajustes feitos pelo usuário pertencem ao `Residuo` real.
 
 ### 4.4 Correções administrativas
 
-Avaliar cancelamento/retorno para análise com justificativa, ator, data e histórico. Regras de status, `DESPACHADO`, eventual `CANCELADO`, dados confirmados e rótulo devem ser fechadas antes de codar.
+Administradores possuem duas ações com justificativa obrigatória:
+
+```text
+CANCELAR
+RETORNAR_ETAPA
+```
+
+Retorno de uma etapa:
+
+```text
+EM_ANALISE                   → INFORMADO
+LIBERADO_PARA_ARMAZENAMENTO → EM_ANALISE
+ARMAZENADO_TEMPORARIAMENTE  → LIBERADO_PARA_ARMAZENAMENTO
+DESPACHADO                   → ARMAZENADO_TEMPORARIAMENTE
+```
+
+`CANCELADO` preserva a ocorrência e seu histórico. Um `DESPACHADO` precisa retornar uma etapa antes de poder ser cancelado. Os eventos administrativos registram ator, data e justificativa.
 
 Isso não substitui a decisão geral de delete lógico da Etapa 11.
+
+Roteiro de regressão: `VALIDACAO_ETAPA_4.md`.
 
 ---
 
