@@ -67,6 +67,7 @@ public class RelatorioResiduosService {
                 contar(filtrados, StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO),
                 contar(filtrados, StatusResiduo.ARMAZENADO_TEMPORARIAMENTE),
                 contar(filtrados, StatusResiduo.DESPACHADO),
+                contar(filtrados, StatusResiduo.CANCELADO),
                 (int) filtrados.stream().filter(residuo -> riscoEfetivo(residuo) == NivelRisco.ALTO).count(),
                 itens
         );
