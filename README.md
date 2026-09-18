@@ -377,5 +377,5 @@ Documentos históricos permanecem para rastreabilidade e não devem ser interpre
 
 <div align="center">
   <strong>SGL — Sistema de Gestão de Laboratórios</strong><br/>
-  Etapa 4 de pré-produção em andamento — 4.1 concluída; 4.2 atual.
+  Etapa 4 implementada na branch — validação integrada pendente antes do merge e da Etapa 5.
 </div>
