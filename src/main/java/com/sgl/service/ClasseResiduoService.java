@@ -59,11 +59,15 @@ public class ClasseResiduoService {
     @Transactional(readOnly = true)
     public List<ClasseResiduoResponseDTO> listarTodos() {
 
-        List<ClasseResiduo> classes =
-                TenantContext.unidadeAtual()
-                        .map(classeResiduoRepository::
-                                findByUnidadePublicIdOrderByCodigoAsc)
-                        .orElseGet(classeResiduoRepository::findAll);
+        // Correção de segurança (mesmo achado #2 da revisão de 2026-09-18,
+        // aplicado aqui porque este service nasceu depois daquela correção):
+        // sem tenant ativo, caía num "findAll" que devolvia classes de
+        // resíduo de todas as unidades. Agora o header X-SGL-Unidade-Id é
+        // exigido também para listar.
+        exigirTenantAtivo();
+
+        List<ClasseResiduo> classes = classeResiduoRepository
+                .findByUnidadePublicIdOrderByCodigoAsc(TenantContext.unidadeAtual().orElseThrow());
 
         return classes.stream()
                 .map(ClasseResiduoResponseDTO::new)
@@ -73,12 +77,10 @@ public class ClasseResiduoService {
     @Transactional(readOnly = true)
     public List<ClasseResiduoResponseDTO> listarAtivos() {
 
-        List<ClasseResiduo> classes =
-                TenantContext.unidadeAtual()
-                        .map(classeResiduoRepository::
-                                findByUnidadePublicIdAndAtivoTrueOrderByCodigoAsc)
-                        .orElseGet(classeResiduoRepository::
-                                findByAtivoTrueOrderByCodigoAsc);
+        exigirTenantAtivo();
+
+        List<ClasseResiduo> classes = classeResiduoRepository
+                .findByUnidadePublicIdAndAtivoTrueOrderByCodigoAsc(TenantContext.unidadeAtual().orElseThrow());
 
         return classes.stream()
                 .map(ClasseResiduoResponseDTO::new)
@@ -146,32 +148,27 @@ public class ClasseResiduoService {
 
     private ClasseResiduo buscarClasseNoTenant(UUID id) {
 
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId ->
-                        classeResiduoRepository
-                                .findByPublicIdAndUnidadePublicId(
-                                        id,
-                                        unidadeId
-                                )
-                )
-                .orElseGet(() -> {
+        // Correção de segurança: antes, sem tenant ativo, buscava sem
+        // filtro de unidade (findByPublicId), vazando a classe de resíduo
+        // de outra unidade para quem não enviasse o header.
+        exigirTenantAtivo();
 
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException(
-                                "Classe de resíduo",
-                                id
-                        );
-                    }
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return classeResiduoRepository
+                .findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Classe de resíduo", id));
+    }
 
-                    return classeResiduoRepository
-                            .findByPublicId(id)
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Classe de resíduo",
-                                            id
-                                    )
-                            );
-                });
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
     }
 
     private Unidade buscarUnidade(UUID unidadeId) {
