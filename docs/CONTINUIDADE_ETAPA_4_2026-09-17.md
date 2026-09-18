@@ -160,7 +160,7 @@ A Etapa 4.1 seguirá a mesma regra para local de armazenamento.
 → 4.4 Correções administrativas do ciclo           ⏳
 ```
 
-Não antecipar 4.2–4.4 durante a 4.1.
+A 4.1 foi concluída. Durante a 4.2, não antecipar a 4.3/4.4 antes de fechar o contrato de `ModeloResiduo`.
 
 ---
 
