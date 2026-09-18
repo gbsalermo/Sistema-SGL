@@ -1,5 +1,7 @@
 # Exemplos JSON — API SGL
 
+**Atualizado em:** 18/09/2026  
+
 Documento de apoio para testes manuais no Postman e desenvolvimento do frontend.
 
 Base local:
