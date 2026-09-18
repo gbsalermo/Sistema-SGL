@@ -7,16 +7,15 @@
 **Branch estável:** `main`  
 **Branch atual de trabalho:** `feat/etapa-4-residuos`  
 **Fase atual:** pré-produção pós-aprovação funcional  
-**Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
-**Etapa atual:** Etapa 4 — expansão operacional de Resíduos 🔧  
-**Subetapa atual:** 4.2-B — V17 + entidades + repositories  
-**Próxima implementação:** 4.2-B — implementação manual pelo responsável, com orientação do assistente  
+**Etapa concluída em código:** Etapa 4 — expansão operacional de Resíduos ✅  
+**Validação pendente:** regressão integrada/manual da Etapa 4  
+**Próxima etapa após validação:** Etapa 5 — Projetos e Atividades  
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
 
-**Sincronização documental:** auditada em 18/09/2026 nos repositórios backend e frontend. Documentos vigentes apontam para a 4.2; documentos históricos permanecem preservados como registro de etapa.
+**Sincronização documental:** atualizada em 18/09/2026 após a implementação das 4.2, 4.3 e 4.4. O roteiro de homologação está em `docs/VALIDACAO_ETAPA_4.md`.
 
 ---
 
@@ -39,7 +38,7 @@ Regra especial do projeto:
 - não aplicar diretamente código funcional de backend sem autorização explícita;
 - frontend/documentação podem ser alterados diretamente quando autorizado;
 - trabalhar em passos pequenos e commits lógicos;
-- durante a 4.2, fechar primeiro o contrato de `ModeloResiduo`; não antecipar a experiência modelo x manual da 4.3 nem as correções administrativas da 4.4.
+- a autorização excepcional para finalizar a Etapa 4 permitiu implementação direta da 4.2-D em diante; novas etapas voltam a seguir o fluxo normal de confirmação.
 
 A Etapa 3 já foi integrada à `main` nos dois repositórios e a branch `feat/etapa-4-residuos` já foi criada a partir da `main` atualizada.
 
@@ -350,89 +349,82 @@ Checkpoint histórico: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 ---
 
-# 9. Etapa 4 — em andamento
+# 9. Etapa 4 — implementação concluída ✅
 
-Handoff canônico:
+A Etapa 4 está implementada na branch `feat/etapa-4-residuos`. Falta apenas a validação integrada/manual descrita em `docs/VALIDACAO_ETAPA_4.md` antes de integrar à `main`.
 
-`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
-
-Ordem:
+Ordem concluída:
 
 ```text
-4.1 Locais de armazenamento cadastráveis          ✅ concluída
-→ 4.2 Modelos de Resíduos pré-cadastrados          🔧 atual
-→ 4.3 Uso de modelo ou preenchimento manual        ⏳
-→ 4.4 Correções administrativas do ciclo de vida   ⏳
+4.1 Locais de armazenamento cadastráveis          ✅
+4.2 Modelos de Resíduos pré-cadastrados            ✅
+4.3 Uso de modelo ou preenchimento manual          ✅
+4.4 Correções administrativas do ciclo de vida     ✅
 ```
 
-## 4.1 — decisão arquitetural fechada
+## 4.1 Locais de armazenamento
 
-```text
-LocalArmazenamentoResiduo
-= catálogo atual/editável por Unidade
-
-Residuo.localArmazenamentoResiduo
-= referência opcional ao catálogo
-
-Residuo.complementoLocalArmazenamento
-= complemento opcional da ocorrência
-
-Residuo.localArmazenamentoTemporario
-= snapshot textual histórico completo
-```
-
-Regras aprovadas:
-
-- local cadastrado pertence a uma Unidade;
-- catálogo possui ativação/inativação;
-- inativo não aparece para novas seleções, mas não quebra Resíduos antigos;
-- caminho por catálogo e caminho manual coexistem;
-- payload ambíguo com catálogo + texto manual deve ser rejeitado;
-- nome do catálogo pode mudar no futuro sem alterar o snapshot histórico do Resíduo;
-- análise define o local planejado e confirmação física pode manter ou corrigir;
-- `localArmazenamentoTemporario` continua atendendo rótulo/relatório como snapshot textual;
-- novos vínculos devem respeitar a Unidade do Resíduo;
-- não transformar a 4.1 em refactor amplo de `Residuo`.
-
-Plano de implementação:
-
-```text
-4.1-A fundação backend: V16 + entidade + repository ✅
-4.1-B CRUD + tenant ✅
-4.1-C integração com análise/liberação ✅
-4.1-D confirmação física/correção estruturada ✅
-4.1-E revisão e fechamento do contrato backend ✅
-4.1-F frontend Administração/Cadastros ✅
-4.1-G frontend Gestão ✅
-4.1-H regressão integrada e fechamento da 4.1 ✅
-```
-
-**Próximo passo real:** 4.2-B. O assistente fornece a implementação de referência e o responsável aplica manualmente no backend. A 4.2-C seguirá o mesmo padrão. A partir da 4.2-D, o assistente volta a executar diretamente, sempre aguardando revisão entre subetapas. A auditoria tipográfica global do frontend permanece adiada para a Etapa 13.
+`LocalArmazenamentoResiduo` permanece como catálogo mutável por Unidade, enquanto `Residuo.localArmazenamentoTemporario` preserva o snapshot textual histórico. A Gestão pode planejar e corrigir fisicamente o local sem perder rastreabilidade.
 
 ## 4.2 ModeloResiduo
 
-Contrato detalhado em `docs/ETAPA_4_2_MODELO_RESIDUO.md`.
+Implementado:
 
 ```text
-4.2-A contrato/modelagem                    ✅ aprovado
-4.2-B V17 + entidades + repositories        ⏳
-4.2-C CRUD + tenant + validações            ⏳
-4.2-D testes/revisão backend                ⏳
-4.2-E Administração/Cadastros frontend      ⏳
-4.2-F validação e fechamento                ⏳
+V17 + ModeloResiduo + ComponenteModeloResiduo
+CRUD por Unidade
+validações de classes/produtos/segurança
+inativação lógica
+Administração frontend
+testes backend de regras centrais
 ```
 
-Regra central: `ModeloResiduo` é uma definição reutilizável; `Residuo` é a ocorrência real e independente. Alterar o modelo depois nunca modifica Resíduos históricos.
+Regra preservada:
 
-## 4.3 Solicitante
+```text
+ModeloResiduo = definição reutilizável/editável
+Residuo       = ocorrência real independente
+```
 
-Na criação, permitir escolha entre modelo pré-cadastrado e preenchimento manual.
+Não existe FK `Residuo -> ModeloResiduo`; alterações futuras no modelo não reescrevem ocorrências históricas.
+
+## 4.3 Uso pelo Solicitante
+
+`/residuos/novo` oferece:
+
+```text
+modelo pré-cadastrado
+ou
+preenchimento manual
+```
+
+O modelo apenas preenche sugestões. Quantidade, projeto e demais dados da ocorrência continuam sob revisão do usuário, e o envio usa o fluxo normal de criação de `Residuo`.
 
 ## 4.4 Correções administrativas
 
-Avaliar para Administrador cancelamento/retorno para análise com justificativa e histórico. Antes de implementar, fechar regras de status, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, efeitos no rótulo e necessidade de nova liberação.
+Foi adicionado o status `CANCELADO` e a ação administrativa com justificativa obrigatória.
 
-Não confundir com delete lógico. A decisão geral de delete lógico continua na Etapa 11.
+Retorno permitido de exatamente uma etapa:
+
+```text
+EM_ANALISE                   → INFORMADO
+LIBERADO_PARA_ARMAZENAMENTO → EM_ANALISE
+ARMAZENADO_TEMPORARIAMENTE  → LIBERADO_PARA_ARMAZENAMENTO
+DESPACHADO                   → ARMAZENADO_TEMPORARIAMENTE
+```
+
+Cancelamento:
+
+- permitido para Resíduos ainda não despachados;
+- `DESPACHADO` precisa retornar uma etapa antes de cancelar;
+- `CANCELADO` não retorna de etapa;
+- ator, data e justificativa ficam no histórico;
+- relatórios e filtros reconhecem cancelados;
+- cancelados deixam de contar como ativos.
+
+Isso não substitui a avaliação geral de delete lógico da Etapa 11.
+
+**Próximo passo:** executar `docs/VALIDACAO_ETAPA_4.md`. Passando a regressão, integrar a branch e iniciar a Etapa 5.
 
 ---
 
@@ -494,9 +486,11 @@ Não fazer refactor grande agora apenas para reduzir linhas. `Residuo` e classes
 Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos            🔧 em andamento
-  4.1 — locais de armazenamento                       ✅ concluída
-  4.2 — Modelos de Resíduo                            🔧 atual
+Etapa 4 — expansão operacional de Resíduos            ✅ implementada; validação manual pendente
+  4.1 — locais de armazenamento                       ✅
+  4.2 — Modelos de Resíduo                            ✅
+  4.3 — modelo ou preenchimento manual                ✅
+  4.4 — correções administrativas                     ✅
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
