@@ -52,9 +52,13 @@ public class LaboratorioService {
 
     @Transactional(readOnly = true)
     public List<LaboratorioResponseDTO> listarTodos() {
-        List<Laboratorio> laboratorios = TenantContext.unidadeAtual()
-                .map(laboratorioRepository::findByUnidadePublicId)
-                .orElseGet(laboratorioRepository::findAll);
+        // Correção de segurança: sem tenant ativo, este método devolvia os
+        // laboratórios de TODAS as unidades (findAll). Agora exigimos o
+        // header X-SGL-Unidade-Id também para listar.
+        exigirTenantAtivo();
+
+        List<Laboratorio> laboratorios = laboratorioRepository
+                .findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
         return laboratorios.stream()
                 .map(LaboratorioResponseDTO::new)
@@ -107,15 +111,14 @@ public class LaboratorioService {
     }
 
     private Laboratorio buscarLaboratorioNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> laboratorioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Laboratório", id);
-                    }
-                    return laboratorioRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
-                });
+        // Correção de segurança: antes, sem tenant ativo, buscava sem
+        // filtro de unidade (findByPublicId), vazando dados de outra
+        // unidade para quem não enviasse o header.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return laboratorioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
     }
 
     private void validarTenantUnidade(UUID unidadeId) {
@@ -124,16 +127,24 @@ public class LaboratorioService {
         }
     }
 
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
+    }
+
     private Usuario buscarResponsavelCompativel(UUID responsavelId, Unidade unidade) {
-        Usuario responsavel = TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(responsavelId, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Usuário responsável", responsavelId);
-                    }
-                    return usuarioRepository.findByPublicId(responsavelId)
-                            .orElseThrow(() -> new ResourceNotFoundException("Usuário responsável", responsavelId));
-                });
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        Usuario responsavel = usuarioRepository.findByPublicIdAndUnidadePublicId(responsavelId, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário responsável", responsavelId));
 
         if (responsavel.getUnidade() == null
                 || !responsavel.getUnidade().getId().equals(unidade.getId())) {

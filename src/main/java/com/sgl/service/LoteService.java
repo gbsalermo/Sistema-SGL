@@ -28,9 +28,13 @@ public class LoteService {
 
     @Transactional(readOnly = true)
     public List<LoteResponseDTO> listarTodos() {
-        List<Lote> lotes = TenantContext.unidadeAtual()
-                .map(loteRepository::findByEstoqueCentralUnidadePublicId)
-                .orElseGet(loteRepository::findAll);
+        // Correção de segurança: sem tenant ativo, caía num "findAll" que
+        // devolvia lotes de todas as unidades. Agora o header
+        // X-SGL-Unidade-Id é exigido também para listar.
+        exigirTenantAtivo();
+
+        List<Lote> lotes = loteRepository
+                .findByEstoqueCentralUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
         return lotes.stream()
                 .map(LoteResponseDTO::new)
@@ -54,13 +58,13 @@ public class LoteService {
 
     @Transactional(readOnly = true)
     public List<LoteResponseDTO> listarVencidos() {
-        List<Lote> lotes = TenantContext.unidadeAtual()
-                .map(unidadeId -> loteRepository
-                        .findByEstoqueCentralUnidadePublicIdAndDataValidadeBeforeAndAtivoTrue(
-                                unidadeId,
-                                LocalDate.now()
-                        ))
-                .orElseGet(() -> loteRepository.findByDataValidadeBeforeAndAtivoTrue(LocalDate.now()));
+        exigirTenantAtivo();
+
+        List<Lote> lotes = loteRepository
+                .findByEstoqueCentralUnidadePublicIdAndDataValidadeBeforeAndAtivoTrue(
+                        TenantContext.unidadeAtual().orElseThrow(),
+                        LocalDate.now()
+                );
 
         return lotes.stream()
                 .filter(lote -> lote.getQuantidadeDisponivel() > 0)
@@ -147,26 +151,33 @@ public class LoteService {
     }
 
     private Lote buscarLoteNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> loteRepository.findByPublicIdAndEstoqueCentralUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Lote", id);
-                    }
-                    return loteRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
-                });
+        // Correção de segurança: antes, sem tenant ativo, buscava sem
+        // filtro de unidade (findByPublicId), vazando o lote de outra
+        // unidade para quem não enviasse o header.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return loteRepository.findByPublicIdAndEstoqueCentralUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
     }
 
     private EstoqueCentral buscarEstoqueNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> estoqueCentralRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Estoque central", id);
-                    }
-                    return estoqueCentralRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
-                });
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return estoqueCentralRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
     }
 }

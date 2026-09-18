@@ -64,6 +64,19 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarTodos() {
+        // ATENÇÃO — exceção deliberada, ligada ao achado de segurança #1
+        // (ainda não existe autenticação real no sistema): o "login de
+        // desenvolvimento" do frontend (sgl-web/src/stores/session.ts,
+        // entrarDesenvolvimento()) precisa listar usuários de TODAS as
+        // unidades, sem header de tenant, para descobrir a qual unidade o
+        // usuário pertence antes de existir qualquer sessão. Por isso este
+        // método específico continua permitindo listagem sem tenant.
+        //
+        // Todos os outros métodos deste service (buscarPorId, atualizar,
+        // alterarPerfil, Inativar, listarPorLaboratorio) já exigem tenant
+        // normalmente. Quando a autenticação real for implementada, este
+        // método deve ser substituído por um endpoint de login dedicado que
+        // não exponha a lista completa de usuários de todas as unidades.
         List<Usuario> usuarios = TenantContext.unidadeAtual()
                 .map(usuarioRepository::findByUnidadePublicId)
                 .orElseGet(usuarioRepository::findAll);
@@ -147,15 +160,19 @@ public class UsuarioService {
     }
 
     private Usuario buscarUsuarioNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Usuário", id);
-                    }
-                    return usuarioRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
-                });
+        // Correção de segurança: antes, sem tenant ativo, buscava sem
+        // filtro de unidade (findByPublicId), vazando o usuário de outra
+        // unidade para quem não enviasse o header. Diferente de
+        // listarTodos() acima, aqui NÃO existe motivo de login para manter
+        // esse método aberto — a busca por id específico é sempre exigida.
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
     }
 
     private void validarTenantUnidade(UUID unidadeId) {

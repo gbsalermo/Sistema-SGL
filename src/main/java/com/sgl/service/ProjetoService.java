@@ -41,9 +41,13 @@ public class ProjetoService {
 
     @Transactional(readOnly = true)
     public List<ProjetoResponseDTO> listarTodos() {
-        List<Projeto> projetos = TenantContext.unidadeAtual()
-                .map(projetoRepository::findByLaboratorioUnidadePublicId)
-                .orElseGet(projetoRepository::findAll);
+        // Correção de segurança: sem tenant ativo, caía num "findAll" que
+        // devolvia projetos de todas as unidades. Agora o header
+        // X-SGL-Unidade-Id é exigido também para listar.
+        exigirTenantAtivo();
+
+        List<Projeto> projetos = projetoRepository
+                .findByLaboratorioUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
         return projetos.stream().map(ProjetoResponseDTO::new).toList();
     }
 
@@ -80,22 +84,22 @@ public class ProjetoService {
 
     @Transactional(readOnly = true)
     public List<ProjetoResponseDTO> listarAtivos() {
-        List<Projeto> projetos = TenantContext.unidadeAtual()
-                .map(projetoRepository::findByLaboratorioUnidadePublicIdAndAtivoTrue)
-                .orElseGet(projetoRepository::findByAtivoTrue);
+        exigirTenantAtivo();
+
+        List<Projeto> projetos = projetoRepository
+                .findByLaboratorioUnidadePublicIdAndAtivoTrue(TenantContext.unidadeAtual().orElseThrow());
         return projetos.stream().map(ProjetoResponseDTO::new).toList();
     }
 
     private Projeto buscarProjetoNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Projeto", id);
-                    }
-                    return projetoRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
-                });
+        // Correção de segurança: antes, sem tenant ativo, buscava sem
+        // filtro de unidade (findByPublicId), vazando o projeto de outra
+        // unidade para quem não enviasse o header.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
     }
 
     private void preencherProjeto(Projeto projeto, ProjetoRequestDTO dto) {
@@ -112,15 +116,12 @@ public class ProjetoService {
     }
 
     private Laboratorio buscarLaboratorio(UUID laboratorioId) {
-        Laboratorio laboratorio = TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> laboratorioRepository.findByPublicIdAndUnidadePublicId(laboratorioId, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Laboratório", laboratorioId);
-                    }
-                    return laboratorioRepository.findByPublicId(laboratorioId)
-                            .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
-                });
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        Laboratorio laboratorio = laboratorioRepository
+                .findByPublicIdAndUnidadePublicId(laboratorioId, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
         laboratorio.validateActive();
         return laboratorio;
@@ -129,6 +130,18 @@ public class ProjetoService {
     private void validarTenantUnidade(UUID unidadeId) {
         if (!TenantContext.pertence(unidadeId)) {
             throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
         }
     }
 }

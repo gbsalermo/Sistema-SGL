@@ -59,9 +59,13 @@ public class EstoqueCentralService {
 
     @Transactional(readOnly = true)
     public List<EstoqueCentralResponseDTO> listarTodos() {
-        List<EstoqueCentral> estoques = TenantContext.unidadeAtual()
-                .map(estoqueCentralRepository::findByUnidadePublicId)
-                .orElseGet(estoqueCentralRepository::findAll);
+        // Correção de segurança: antes, se a requisição chegasse sem o header
+        // X-SGL-Unidade-Id, caíamos no "findAll" e devolvíamos o estoque de
+        // TODAS as unidades. Agora exigimos o tenant também para listar.
+        exigirTenantAtivo();
+
+        List<EstoqueCentral> estoques = estoqueCentralRepository
+                .findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
         return estoques.stream()
                 .map(EstoqueCentralResponseDTO::new)
@@ -129,20 +133,38 @@ public class EstoqueCentralService {
     }
 
     private EstoqueCentral buscarEstoqueNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> estoqueCentralRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Estoque central", id);
-                    }
-                    return estoqueCentralRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
-                });
+        // Correção de segurança: o "else" antigo caía para uma busca sem
+        // filtro de unidade (findByPublicId) quando não havia tenant ativo,
+        // permitindo que qualquer um lesse o estoque de outra unidade só
+        // deixando de enviar o header. Agora exigimos o tenant primeiro.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return estoqueCentralRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
     }
 
     private void validarTenantUnidade(UUID unidadeId) {
         if (!TenantContext.pertence(unidadeId)) {
             throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual, ou seja, que o header X-SGL-Unidade-Id foi enviado e é válido.
+     *
+     * Antes desta correção, vários métodos deste service tinham um "modo sem
+     * tenant": se o header não viesse, a consulta virava uma busca global,
+     * devolvendo dados de todas as unidades. Como o sistema ainda não tem
+     * autenticação de verdade (ver TenantContext.pertence), esse "modo sem
+     * tenant" era, na prática, uma porta aberta para vazar dados entre
+     * unidades. Agora, sem tenant definido, a operação é negada.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
         }
     }
 
