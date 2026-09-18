@@ -237,11 +237,13 @@ Plano em passos pequenos:
 4.1-H regressão integrada e fechamento ✅
 ```
 
-**Próxima implementação:** 4.2 — ModeloResiduo.
+**Próxima implementação:** 4.2-A — contrato/modelagem; 4.2-B somente após aprovação.
 
 A 4.1 foi concluída e validada. A partir deste checkpoint, a implementação corrente é a 4.2 — `ModeloResiduo`; a integração modelo x preenchimento manual permanece reservada para a 4.3.
 
 ### 4.2 Modelos de Resíduos pré-cadastrados 🔧 ATUAL
+
+Documento canônico da modelagem: `ETAPA_4_2_MODELO_RESIDUO.md`.
 
 Criar definição reutilizável para resíduos recorrentes.
 
@@ -264,6 +266,19 @@ Modelo poderá sugerir/preencher:
 - demais dados reutilizáveis aprovados.
 
 Regra central: alterar um modelo futuramente não modifica Resíduos históricos.
+
+Subetapas:
+
+```text
+4.2-A contrato/modelagem                    🧭 em revisão
+4.2-B V17 + entidades + repositories        ⏳
+4.2-C CRUD + tenant + validações            ⏳
+4.2-D testes/revisão backend                ⏳
+4.2-E Administração/Cadastros frontend      ⏳
+4.2-F validação e fechamento                ⏳
+```
+
+A 4.2 não altera `Residuo` nem `CriarResiduoRequestDTO`; o uso do modelo pelo Solicitante permanece reservado para a 4.3.
 
 ### 4.3 Uso pelo Solicitante ⏳
 
