@@ -237,7 +237,7 @@ Plano em passos pequenos:
 4.1-H regressão integrada e fechamento ✅
 ```
 
-**Próxima implementação:** 4.2-A — contrato/modelagem; 4.2-B somente após aprovação.
+**Próxima implementação:** 4.2-B — V17 + entidades + repositories.
 
 A 4.1 foi concluída e validada. A partir deste checkpoint, a implementação corrente é a 4.2 — `ModeloResiduo`; a integração modelo x preenchimento manual permanece reservada para a 4.3.
 
@@ -270,7 +270,7 @@ Regra central: alterar um modelo futuramente não modifica Resíduos históricos
 Subetapas:
 
 ```text
-4.2-A contrato/modelagem                    🧭 em revisão
+4.2-A contrato/modelagem                    ✅ aprovado
 4.2-B V17 + entidades + repositories        ⏳
 4.2-C CRUD + tenant + validações            ⏳
 4.2-D testes/revisão backend                ⏳
@@ -279,6 +279,14 @@ Subetapas:
 ```
 
 A 4.2 não altera `Residuo` nem `CriarResiduoRequestDTO`; o uso do modelo pelo Solicitante permanece reservado para a 4.3.
+
+Workflow acordado:
+
+```text
+4.2-B → assistente fornece referência; responsável implementa manualmente
+4.2-C → assistente fornece referência; responsável implementa manualmente
+4.2-D em diante → assistente pode executar diretamente, com revisão entre subetapas
+```
 
 ### 4.3 Uso pelo Solicitante ⏳
 
