@@ -53,9 +53,23 @@ public class RotuloResiduoResponseDTO {
         this.impressaoPermitida = entity.isImpressaoRotuloPermitida();
         this.classificacaoConfirmada = entity.getNivelRiscoConfirmado() != null;
         this.descricao = entity.getDescricao();
-        this.unidadeId = entity.getLaboratorio().getUnidade().getPublicId();
-        this.unidadeNome = entity.getLaboratorio().getUnidade().getNome();
-        this.unidadeSigla = entity.getLaboratorio().getUnidade().getSigla();
+        // Correção de bug: antes lia sempre a unidade ATUAL do laboratório
+        // (entity.getLaboratorio().getUnidade()...), que pode ter mudado
+        // depois que o resíduo foi criado. Agora usa o snapshot guardado no
+        // momento da criação (ver Residuo.java e ResiduoService.criar()).
+        // O "fallback" para o vínculo ao vivo é só para resíduos antigos que
+        // por algum motivo não tenham o snapshot preenchido (não deveria
+        // acontecer após a migração V13, mas evita um NullPointerException
+        // caso aconteça).
+        this.unidadeId = entity.getUnidadeIdSnapshot() != null
+                ? entity.getUnidadeIdSnapshot()
+                : entity.getLaboratorio().getUnidade().getPublicId();
+        this.unidadeNome = entity.getUnidadeNomeSnapshot() != null
+                ? entity.getUnidadeNomeSnapshot()
+                : entity.getLaboratorio().getUnidade().getNome();
+        this.unidadeSigla = entity.getUnidadeSiglaSnapshot() != null
+                ? entity.getUnidadeSiglaSnapshot()
+                : entity.getLaboratorio().getUnidade().getSigla();
         this.laboratorioNome = entity.getLaboratorio().getNome();
         this.geradorNome = entity.getGerador().getNome();
         this.processoOrigem = entity.getProcessoOrigem();

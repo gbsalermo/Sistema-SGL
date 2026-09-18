@@ -68,6 +68,13 @@ public class ResiduoService {
                 .laboratorio(laboratorio)
                 .gerador(gerador)
                 .projeto(projeto)
+                // Correção de bug: guarda a unidade do laboratório no
+                // momento da criação (snapshot), para o rótulo não mudar de
+                // unidade sozinho se o laboratório for movido depois. Ver
+                // comentário completo nos campos em Residuo.java.
+                .unidadeIdSnapshot(laboratorio.getUnidade().getPublicId())
+                .unidadeNomeSnapshot(laboratorio.getUnidade().getNome())
+                .unidadeSiglaSnapshot(laboratorio.getUnidade().getSigla())
                 .descricao(dto.getDescricao())
                 .processoOrigem(dto.getProcessoOrigem())
                 .estadoFisico(dto.getEstadoFisico())
@@ -215,9 +222,13 @@ public class ResiduoService {
 
     @Transactional(readOnly = true)
     public List<ResiduoResponseDTO> listarTodos() {
-        List<Residuo> residuos = TenantContext.unidadeAtual()
-                .map(residuoRepository::findByLaboratorioUnidadePublicIdOrderByDataInformacaoDesc)
-                .orElseGet(residuoRepository::findAllByOrderByDataInformacaoDesc);
+        // Correção de segurança: sem tenant ativo, caía num "findAll" que
+        // devolvia resíduos de todas as unidades. Agora o header
+        // X-SGL-Unidade-Id é exigido também para listar.
+        exigirTenantAtivo();
+
+        List<Residuo> residuos = residuoRepository
+                .findByLaboratorioUnidadePublicIdOrderByDataInformacaoDesc(TenantContext.unidadeAtual().orElseThrow());
 
         return residuos.stream()
                 .map(ResiduoResponseDTO::new)
@@ -226,10 +237,11 @@ public class ResiduoService {
 
     @Transactional(readOnly = true)
     public List<ResiduoResponseDTO> listarPorStatus(StatusResiduo status) {
-        List<Residuo> residuos = TenantContext.unidadeAtual()
-                .map(unidadeId -> residuoRepository
-                        .findByLaboratorioUnidadePublicIdAndStatusOrderByDataInformacaoDesc(unidadeId, status))
-                .orElseGet(() -> residuoRepository.findByStatusOrderByDataInformacaoDesc(status));
+        exigirTenantAtivo();
+
+        List<Residuo> residuos = residuoRepository
+                .findByLaboratorioUnidadePublicIdAndStatusOrderByDataInformacaoDesc(
+                        TenantContext.unidadeAtual().orElseThrow(), status);
 
         return residuos.stream()
                 .map(ResiduoResponseDTO::new)
@@ -281,39 +293,30 @@ public class ResiduoService {
     }
 
     private Residuo buscarEntidade(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Resíduo", id);
-                    }
-                    return residuoRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Resíduo", id));
-                });
+        // Correção de segurança: antes, sem tenant ativo, buscava sem
+        // filtro de unidade (findByPublicId), vazando o resíduo de outra
+        // unidade para quem não enviasse o header.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resíduo", id));
     }
 
     private Usuario buscarUsuario(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Usuário", id);
-                    }
-                    return usuarioRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
-                });
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
     }
 
     private Laboratorio buscarLaboratorio(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> laboratorioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Laboratório", id);
-                    }
-                    return laboratorioRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
-                });
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return laboratorioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
     }
 
     private Usuario buscarUsuarioGestao(UUID id) {
@@ -334,15 +337,11 @@ public class ResiduoService {
             return null;
         }
 
-        Projeto projeto = TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(projetoId, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Projeto", projetoId);
-                    }
-                    return projetoRepository.findByPublicId(projetoId)
-                            .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
-                });
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        Projeto projeto = projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(projetoId, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
         projeto.validateActive();
 
         if (!projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
@@ -401,9 +400,14 @@ public class ResiduoService {
             produto = produtoRepository.findByPublicId(dto.getProdutoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Produto", dto.getProdutoId()));
 
-            if (TenantContext.unidadeAtual()
-                    .map(unidadeId -> !produtoRepository.pertenceAUnidade(dto.getProdutoId(), unidadeId))
-                    .orElse(false)) {
+            // Correção de bug: antes, sem tenant ativo, o ".orElse(false)"
+            // fazia essa checagem ser simplesmente ignorada, permitindo
+            // registrar um componente com produto de qualquer unidade.
+            // Como a criação de resíduo sempre acontece dentro de um
+            // laboratório (que já exige tenant via buscarLaboratorio acima),
+            // aqui também exigimos o tenant explicitamente.
+            exigirTenantAtivo();
+            if (!produtoRepository.pertenceAUnidade(dto.getProdutoId(), TenantContext.unidadeAtual().orElseThrow())) {
                 throw new ResourceNotFoundException("Produto", dto.getProdutoId());
             }
 
@@ -447,6 +451,18 @@ public class ResiduoService {
         }
 
         return alterado;
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe.
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+        }
     }
 
     private String gerarCodigoRastreio(Residuo residuo) {

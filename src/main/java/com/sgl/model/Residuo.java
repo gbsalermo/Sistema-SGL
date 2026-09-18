@@ -66,6 +66,22 @@ public class Residuo implements Serializable {
     @ToString.Exclude
     private Laboratorio laboratorio;
 
+    // Correção de bug: antes, o rótulo do resíduo (RotuloResiduoResponseDTO)
+    // lia a unidade sempre "ao vivo" via laboratorio.getUnidade(). Como um
+    // laboratório pode trocar de unidade depois (ver LaboratorioService),
+    // isso fazia resíduos antigos mudarem de unidade sozinhos no rótulo e
+    // nas listagens, sem nenhum histórico da mudança. Estes três campos
+    // guardam uma "foto" da unidade no momento em que o resíduo foi criado
+    // (preenchidos em ResiduoService.criar(), nunca mais alterados depois).
+    @Column(name = "unidade_id_snapshot")
+    private UUID unidadeIdSnapshot;
+
+    @Column(name = "unidade_nome_snapshot")
+    private String unidadeNomeSnapshot;
+
+    @Column(name = "unidade_sigla_snapshot")
+    private String unidadeSiglaSnapshot;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gerador_id", nullable = false)
     @ToString.Exclude
