@@ -15,13 +15,13 @@
 
 ## Estado atual — 18/09/2026
 
-O primeiro protótipo do SGL foi funcionalmente aprovado. As Etapas 1, 2 e 3 da pré-produção foram concluídas e validadas. A **Etapa 4 — Expansão operacional de Resíduos** está em andamento na branch `feat/etapa-4-residuos`; a 4.1 foi concluída e a 4.2 é o foco atual.
-
-Subetapa atual:
+O primeiro protótipo do SGL foi funcionalmente aprovado. As Etapas 1, 2 e 3 da pré-produção foram concluídas e validadas. A **Etapa 4 — Expansão operacional de Resíduos** está implementada na branch `feat/etapa-4-residuos` e aguarda apenas validação integrada/manual antes do merge.
 
 ```text
-4.1 Locais de armazenamento cadastráveis      ✅ concluída
-4.2 Modelos de Resíduo                         🔧 atual
+4.1 Locais de armazenamento cadastráveis      ✅
+4.2 Modelos de Resíduo                         ✅
+4.3 Modelo ou preenchimento manual             ✅
+4.4 Correções administrativas                  ✅
 ```
 
 A 4.1 foi implementada e validada com a seguinte modelagem:
@@ -55,7 +55,10 @@ Exportação PDF/XLSX                               ✅
 Resíduos — fluxo atual refinado                   ✅ Etapa 3
 Classes de Resíduo + snapshots                    ✅
 Locais de armazenamento + snapshot histórico       ✅ Etapa 4.1
-Segurança/EPI + snapshots                         ✅
+Modelos de Resíduo por Unidade                      ✅ Etapa 4.2
+Modelo ou preenchimento manual                      ✅ Etapa 4.3
+Cancelamento/retorno administrativo + histórico     ✅ Etapa 4.4
+Segurança/EPI + snapshots                           ✅
 Código SGL + QR técnico de Resíduo                ✅
 Prévia antecipada do rótulo                       ✅
 Impressão condicionada à liberação                ✅
@@ -231,6 +234,8 @@ INFORMADO
 → LIBERADO_PARA_ARMAZENAMENTO
 → ARMAZENADO_TEMPORARIAMENTE
 → DESPACHADO
+
+CANCELADO = encerramento administrativo preservado em histórico
 ```
 
 Código SGL:
@@ -264,6 +269,7 @@ V13 — estado físico, tratamento e responsabilidade inicial
 V14 — Classes de Resíduo
 V15 — segurança/EPI
 V16 — locais de armazenamento de Resíduos
+V17 — Modelos de Resíduo
 ```
 
 A V16 está aplicada e é imutável; qualquer nova alteração de schema deve usar V17 ou superior.
