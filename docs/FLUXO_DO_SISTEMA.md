@@ -1,7 +1,7 @@
 # Fluxo do Sistema SGL
 
-**Atualizado em:** 17/09/2026  
-**Checkpoint:** Etapa 4 iniciada; 4.1 — locais de armazenamento em andamento.
+**Atualizado em:** 18/09/2026  
+**Checkpoint:** Etapa 4 em andamento; 4.1 concluída; 4.2 — Modelos de Resíduo é o foco atual.
 
 Este documento descreve como os módulos principais se conectam no estado funcional aprovado e nas etapas de pré-produção já validadas. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação no código da branch integrada/validada.
 
@@ -27,7 +27,7 @@ Regras atuais:
 4. Projetos pertencem ao contexto do Laboratório/Unidade.
 5. Produtos formam o catálogo.
 6. Cada Unidade possui seu próprio contexto de estoque.
-7. Catálogos operacionais adicionados ao domínio, como Classes de Resíduo e futuramente Locais de Armazenamento, também respeitam a Unidade.
+7. Catálogos operacionais adicionados ao domínio, como Classes de Resíduo e Locais de Armazenamento, também respeitam a Unidade.
 
 No modo DEV, o frontend envia `X-SGL-Unidade-Id` e o backend usa `TenantContext` para restringir operações à Unidade corrente. Esse mecanismo ainda não substitui a futura identidade corporativa confiável.
 
@@ -226,9 +226,9 @@ O QR técnico pode existir no contrato sem ser renderizado pelo template físico
 
 ---
 
-## 11. Etapa 4.1 — expansão do armazenamento 🔧
+## 11. Etapa 4.1 — expansão do armazenamento ✅
 
-A Etapa 4 já foi iniciada e a 4.1 está em andamento.
+A 4.1 foi concluída e validada.
 
 Modelagem aprovada:
 
@@ -246,7 +246,7 @@ Residuo.localArmazenamentoTemporario
 = snapshot textual histórico completo
 ```
 
-Fluxo futuro após integração completa da 4.1:
+Fluxo implementado na 4.1:
 
 ```text
 EM_ANALISE
@@ -274,24 +274,24 @@ Regras:
 - lookup deve validar tenant/Unidade do Resíduo;
 - rótulo e relatório continuam inicialmente usando `localArmazenamentoTemporario`.
 
-Implementação planejada:
+Implementação concluída:
 
 ```text
-4.1-A V16 + entidade + repository
-4.1-B CRUD + tenant
-4.1-C integração com análise/liberação
-4.1-D confirmação física/correção
-4.1-E revisão backend
-4.1-F frontend Cadastros
-4.1-G frontend Gestão
-4.1-H regressão e fechamento
+4.1-A V16 + entidade + repository ✅
+4.1-B CRUD + tenant ✅
+4.1-C integração com análise/liberação ✅
+4.1-D confirmação física/correção ✅
+4.1-E revisão backend ✅
+4.1-F frontend Cadastros ✅
+4.1-G frontend Gestão ✅
+4.1-H regressão e fechamento ✅
 ```
 
-Próximo passo: **4.1-A**.
+Próximo passo: **4.2 — ModeloResiduo**.
 
 ---
 
-## 12. Etapas 4.2–4.4 — ainda não implementar
+## 12. Etapas 4.2–4.4 — sequência atual
 
 ```text
 4.2 modelos de Resíduos reutilizáveis
