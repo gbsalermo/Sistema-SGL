@@ -3,14 +3,14 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 17/09/2026  
+**Última atualização:** 18/09/2026  
 **Branch estável:** `main`  
 **Branch atual de trabalho:** `feat/etapa-4-residuos`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
 **Etapa atual:** Etapa 4 — expansão operacional de Resíduos 🔧  
 **Subetapa atual:** 4.1 — locais de armazenamento cadastráveis  
-**Próxima implementação:** 4.1-A — fundação do catálogo no backend  
+**Próxima implementação:** 4.1-F — frontend Administração/Cadastros  
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
@@ -170,13 +170,13 @@ V14 — Classes de Resíduo
 V15 — segurança/EPI
 ```
 
-Próxima migration planejada:
+Migration da 4.1 aplicada:
 
 ```text
 V16 — locais de armazenamento de Resíduos
 ```
 
-A V16 ainda não foi implementada neste checkpoint.
+A V16 está aplicada e é imutável. Qualquer ajuste futuro de schema deve usar V17 ou superior.
 
 Regra obrigatória:
 
@@ -395,17 +395,17 @@ Regras aprovadas:
 Plano de implementação:
 
 ```text
-4.1-A fundação backend: V16 + entidade + repository
-4.1-B CRUD + tenant
-4.1-C integração com análise/liberação
-4.1-D confirmação física/correção estruturada
-4.1-E revisão e fechamento do contrato backend
-4.1-F frontend Administração/Cadastros
-4.1-G frontend Gestão
-4.1-H regressão integrada e fechamento da 4.1
+4.1-A fundação backend: V16 + entidade + repository ✅
+4.1-B CRUD + tenant ✅
+4.1-C integração com análise/liberação ✅
+4.1-D confirmação física/correção estruturada ✅
+4.1-E revisão e fechamento do contrato backend ✅
+4.1-F frontend Administração/Cadastros ⏭
+4.1-G frontend Gestão ⏳
+4.1-H regressão integrada e fechamento da 4.1 ⏳
 ```
 
-**Próximo passo real:** 4.1-A. Nesta subetapa criar apenas a migration V16, `LocalArmazenamentoResiduo` e `LocalArmazenamentoResiduoRepository`. Não criar service/controller/DTO nem alterar `Residuo.java` ainda.
+**Próximo passo real:** 4.1-F. O backend da 4.1 foi fechado após CRUD, integração com análise/liberação, correção física, histórico e validação manual. A próxima implementação é o catálogo no frontend Administração/Cadastros.
 
 ## 4.2 ModeloResiduo
 
@@ -488,7 +488,8 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            🔧 em andamento
   4.1 — locais de armazenamento                       🔧 atual
-  4.1-A — fundação backend                            ⏭ próxima implementação
+  4.1-A–E — backend                                  ✅ concluído
+  4.1-F — frontend Administração/Cadastros              ⏭ próxima implementação
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
@@ -506,4 +507,4 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**A Etapa 4 já foi iniciada na branch `feat/etapa-4-residuos`. A modelagem da 4.1 está fechada e o próximo passo é a 4.1-A: criar manualmente no backend a V16, `LocalArmazenamentoResiduo` e `LocalArmazenamentoResiduoRepository`, sem antecipar CRUD, integração com `Residuo` ou frontend.**
+**A Etapa 4 segue na branch `feat/etapa-4-residuos`. O backend da 4.1 (A–E) está concluído e validado; o próximo passo é a 4.1-F no frontend Administração/Cadastros.**
