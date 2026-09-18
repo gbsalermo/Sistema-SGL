@@ -52,6 +52,23 @@ A suíte atual cobre, entre outras áreas, estoque/pedidos, histórico e regras 
 - permite corrigir para local manual limpando referência estruturada;
 - rejeita novo uso de local inativo.
 
+### `ModeloResiduoServiceTest`
+
+- cria Modelo de Resíduo no tenant correto;
+- rejeita operação em outra Unidade;
+- rejeita nome duplicado na mesma Unidade;
+- exige observação para medida de segurança `OUTRO`;
+- DELETE realiza inativação lógica.
+
+### `ResiduoAdministracaoTest`
+
+- cancela ocorrência elegível;
+- exige retorno antes de cancelar `DESPACHADO`;
+- retorna `DESPACHADO → ARMAZENADO_TEMPORARIAMENTE`;
+- retorna `ARMAZENADO_TEMPORARIAMENTE → LIBERADO_PARA_ARMAZENAMENTO`;
+- retorna `LIBERADO_PARA_ARMAZENAMENTO → EM_ANALISE`;
+- rejeita retorno de `INFORMADO` e `CANCELADO`.
+
 ## 2. Regras que os testes precisam preservar
 
 ```text
@@ -564,9 +581,13 @@ O inventário completo da API está em [`ENDPOINTS_INTERNOS.md`](ENDPOINTS_INTER
 [ ] confirmação física sem correção mantém o local planejado
 [ ] correção física registra planejado x confirmado no histórico
 [ ] `ResiduoArmazenamentoTest` passa sem falhas
+[ ] `ModeloResiduoServiceTest` passa sem falhas
+[ ] `ResiduoAdministracaoTest` passa sem falhas
+[ ] CRUD de ModeloResiduo respeita tenant/inativação
+[ ] cancelamento/retorno administrativo registra justificativa no histórico
 [ ] período invertido é rejeitado
 [ ] histórico por projeto/período mostra somente materiais efetivamente entregues
 [ ] histórico geral do laboratório e histórico específico do projeto apresentam resultados coerentes
 ```
 
-Com todos os itens confirmados, o modelo estará suficientemente estabilizado para iniciar PostgreSQL e Flyway.
+Para a homologação específica da Etapa 4, seguir também `VALIDACAO_ETAPA_4.md`.
