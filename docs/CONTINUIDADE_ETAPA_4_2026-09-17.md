@@ -4,7 +4,7 @@
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧  
 **Subetapa atual:** 4.1 — Locais de armazenamento cadastráveis  
-**Próxima implementação:** 4.1-F — Frontend Administração/Cadastros  
+**Próxima implementação:** 4.1-H — Regressão integrada e fechamento  
 **Branch:** `feat/etapa-4-residuos`
 
 ## 1. Antes de continuar
@@ -317,11 +317,11 @@ feat: permitir correção estruturada do armazenamento de resíduos
 
 Revisão concluída em 18/09/2026. O contrato backend da 4.1 foi fechado após validação do catálogo, tenant, integração com análise/liberação, confirmação física/correção, snapshot histórico e histórico de mudança. Também foi adicionado teste automatizado de domínio para proteger as regras centrais de armazenamento.
 
-## 4.1-F — Frontend Administração/Cadastros
+## 4.1-F — Frontend Administração/Cadastros ✅
 
-Adicionar catálogo de locais de armazenamento à central administrativa.
+Catálogo integrado à central administrativa com listagem, busca, criação, edição e ativação/inativação.
 
-## 4.1-G — Frontend Gestão
+## 4.1-G — Frontend Gestão ✅
 
 Na análise e confirmação física, permitir:
 
@@ -404,7 +404,7 @@ Não realizar refactor estrutural grande agora apenas para reduzir linhas. A Eta
 ## 12. Próximo passo real
 
 ```text
-4.1-F — Frontend Administração/Cadastros
+4.1-H — Regressão integrada e fechamento
 ```
 
-O backend da 4.1-A até 4.1-E está concluído. A partir deste checkpoint, o usuário autorizou execução direta pelo assistente, acompanhando e revisando as mudanças. Próximo foco: catálogo de locais no frontend Administração/Cadastros.
+Backend 4.1-A–E e frontend 4.1-F/G estão implementados. O responsável autorizou execução direta pelo assistente e acompanhará a validação final no ambiente local.
