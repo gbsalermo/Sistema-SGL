@@ -12,6 +12,7 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 1. ../CONTINUIDADE.md
 2. PLANO_PRE_PRODUCAO.md
 3. CONTINUIDADE_ETAPA_4_2026-09-17.md
+4. ETAPA_4_2_MODELO_RESIDUO.md
 4. MODULO_RESIDUOS.md
 5. DOSSIE_PROJETO_SGL.md
 6. FLUXO_DO_SISTEMA.md
@@ -67,6 +68,7 @@ Integração corporativa                       ⏳ posterior
 | `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — Etapa 4.2** |
 | `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — Etapa 4.2** |
 | `CONTINUIDADE_ETAPA_4_2026-09-17.md` | handoff operacional da etapa atual | **ATUAL — Etapa 4.2** |
+| `ETAPA_4_2_MODELO_RESIDUO.md` | contrato/modelagem de `ModeloResiduo` | **ATUAL — 4.2-A EM REVISÃO** |
 | `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **HISTÓRICO FECHADO** |
 | `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 4.2** |
@@ -124,7 +126,7 @@ Implementação concluída:
 4.1-H regressão e fechamento ✅
 ```
 
-Próxima implementação: **4.2 — ModeloResiduo**.
+Próxima implementação: **aprovar a 4.2-A e então iniciar 4.2-B — V17 + entidades + repositories**.
 
 ---
 
@@ -216,4 +218,4 @@ Antes de alterar o sistema:
 7. distinguir requisito atual de registro histórico
 ```
 
-Na situação atual, iniciar pela **4.2 — ModeloResiduo**. Não antecipar a experiência modelo x manual da 4.3 antes de fechar o contrato da 4.2.
+Na situação atual, revisar `ETAPA_4_2_MODELO_RESIDUO.md`. Não antecipar a 4.2-B antes da aprovação do contrato e não antecipar a experiência modelo x manual da 4.3.
