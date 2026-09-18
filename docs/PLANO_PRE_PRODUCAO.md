@@ -232,12 +232,12 @@ Plano em passos pequenos:
 4.1-C integração com análise/liberação ✅
 4.1-D confirmação física/correção estruturada ✅
 4.1-E revisão e fechamento do backend ✅
-4.1-F frontend Administração/Cadastros ⏭
-4.1-G frontend Gestão ⏳
-4.1-H regressão integrada e fechamento ⏳
+4.1-F frontend Administração/Cadastros ✅
+4.1-G frontend Gestão ✅
+4.1-H regressão integrada e fechamento ⏭
 ```
 
-**Próxima implementação:** 4.1-F — frontend Administração/Cadastros.
+**Próxima implementação:** 4.1-H — regressão integrada e fechamento.
 
 Na 4.1-A criar somente:
 
@@ -595,7 +595,8 @@ Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          🔧 em andamento
   4.1 — locais de armazenamento                     🔧 atual
   4.1-A–E — backend                                ✅ concluído
-  4.1-F — frontend Administração/Cadastros            ⏭ próxima implementação
+  4.1-F/G — frontend                              ✅ implementado
+  4.1-H — regressão integrada                      ⏭ próxima validação
 Etapas 5–13                                         ⏳
 ```
 
