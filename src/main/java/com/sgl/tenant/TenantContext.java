@@ -24,9 +24,23 @@ public final class TenantContext {
         return UNIDADE_ATUAL.get() != null;
     }
 
+    /**
+     * Verifica se {@code unidadeId} é a mesma unidade do tenant atual.
+     *
+     * IMPORTANTE (correção de segurança): antes, quando nenhum tenant estava
+     * definido (nenhum header X-SGL-Unidade-Id chegou na requisição), este
+     * método retornava {@code true} para qualquer unidade — ou seja, "sem
+     * tenant" era tratado como "pode acessar tudo". Isso é uma falha grave:
+     * como hoje não existe autenticação real, bastava o cliente NÃO enviar o
+     * header para pular toda checagem de isolamento entre unidades.
+     *
+     * Agora o método falha fechado: sem tenant definido, a resposta é sempre
+     * {@code false} (não pertence a ninguém), obrigando quem chama a tratar
+     * a ausência de tenant como acesso negado, e não como acesso livre.
+     */
     public static boolean pertence(UUID unidadeId) {
         UUID atual = UNIDADE_ATUAL.get();
-        return atual == null || (unidadeId != null && atual.equals(unidadeId));
+        return atual != null && atual.equals(unidadeId);
     }
 
     public static void limpar() {
