@@ -3,8 +3,8 @@
 **Atualizado em:** 18/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧  
-**Subetapa atual:** 4.2-A — contrato/modelagem de ModeloResiduo  
-**Próxima implementação:** 4.2-B — V17 + entidades + repositories, após aprovação da 4.2-A  
+**Subetapa atual:** 4.2-B — V17 + entidades + repositories  
+**Próxima implementação:** 4.2-B — implementação manual pelo responsável com referência do assistente  
 **Branch:** `feat/etapa-4-residuos`
 
 ## 1. Antes de continuar
@@ -301,7 +301,7 @@ Concluída em 18/09/2026. Foram validados o catálogo administrativo, seleção 
 Contrato canônico da modelagem: `ETAPA_4_2_MODELO_RESIDUO.md`.
 
 ```text
-4.2-A contrato/modelagem                    🧭 em revisão
+4.2-A contrato/modelagem                    ✅ aprovado
 4.2-B V17 + entidades + repositories        ⏳
 4.2-C CRUD + tenant + validações            ⏳
 4.2-D testes/revisão backend                ⏳
@@ -367,4 +367,4 @@ Não realizar refactor estrutural grande agora apenas para reduzir linhas. A Eta
 4.2 — ModeloResiduo
 ```
 
-A 4.1 está concluída e validada. O foco atual é revisar/aprovar a 4.2-A. Depois disso, iniciar somente a fundação da 4.2-B.
+A 4.1 está concluída e validada. A 4.2-A foi aprovada. O foco atual é a 4.2-B; a 4.2-C seguirá o mesmo padrão de implementação manual pelo responsável. Não antecipar a 4.2-D antes da revisão dessas duas subetapas.
