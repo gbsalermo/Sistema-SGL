@@ -9,8 +9,8 @@
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
 **Etapa atual:** Etapa 4 — expansão operacional de Resíduos 🔧  
-**Subetapa atual:** 4.2-A — contrato/modelagem de ModeloResiduo  
-**Próxima implementação:** 4.2-B — V17 + entidades + repositories, após aprovação da 4.2-A  
+**Subetapa atual:** 4.2-B — V17 + entidades + repositories  
+**Próxima implementação:** 4.2-B — implementação manual pelo responsável, com orientação do assistente  
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
@@ -407,14 +407,14 @@ Plano de implementação:
 4.1-H regressão integrada e fechamento da 4.1 ✅
 ```
 
-**Próximo passo real:** revisar e aprovar a 4.2-A em `docs/ETAPA_4_2_MODELO_RESIDUO.md`. Depois iniciar a 4.2-B com V17 + entidades + repositories, sem antecipar CRUD ou uso do modelo no Solicitante. A auditoria tipográfica global do frontend permanece adiada para a Etapa 13.
+**Próximo passo real:** 4.2-B. O assistente fornece a implementação de referência e o responsável aplica manualmente no backend. A 4.2-C seguirá o mesmo padrão. A partir da 4.2-D, o assistente volta a executar diretamente, sempre aguardando revisão entre subetapas. A auditoria tipográfica global do frontend permanece adiada para a Etapa 13.
 
 ## 4.2 ModeloResiduo
 
 Contrato detalhado em `docs/ETAPA_4_2_MODELO_RESIDUO.md`.
 
 ```text
-4.2-A contrato/modelagem                    🧭 em revisão
+4.2-A contrato/modelagem                    ✅ aprovado
 4.2-B V17 + entidades + repositories        ⏳
 4.2-C CRUD + tenant + validações            ⏳
 4.2-D testes/revisão backend                ⏳
