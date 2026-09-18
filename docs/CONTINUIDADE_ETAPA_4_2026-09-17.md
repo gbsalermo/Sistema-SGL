@@ -3,8 +3,8 @@
 **Atualizado em:** 18/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧  
-**Subetapa atual:** 4.2 — Modelos de Resíduo pré-cadastrados  
-**Próxima implementação:** 4.2 — ModeloResiduo  
+**Subetapa atual:** 4.2-A — contrato/modelagem de ModeloResiduo  
+**Próxima implementação:** 4.2-B — V17 + entidades + repositories, após aprovação da 4.2-A  
 **Branch:** `feat/etapa-4-residuos`
 
 ## 1. Antes de continuar
@@ -298,12 +298,18 @@ Concluída em 18/09/2026. Foram validados o catálogo administrativo, seleção 
 
 ## 4.2 — ModeloResiduo
 
+Contrato canônico da modelagem: `ETAPA_4_2_MODELO_RESIDUO.md`.
+
 ```text
-ModeloResiduo = definição reutilizável
-Residuo       = ocorrência real
+4.2-A contrato/modelagem                    🧭 em revisão
+4.2-B V17 + entidades + repositories        ⏳
+4.2-C CRUD + tenant + validações            ⏳
+4.2-D testes/revisão backend                ⏳
+4.2-E Administração/Cadastros frontend      ⏳
+4.2-F validação e fechamento                ⏳
 ```
 
-Modelo pode sugerir descrição, origem/uso, composição, Produtos, classes, riscos, EPI, recipiente e tratamento padrão. Alterar modelo não pode alterar Resíduos históricos.
+Modelo pode sugerir descrição, origem/uso, composição, Produtos, classes, riscos, EPI, recipiente e tratamento padrão. Alterar modelo não pode alterar Resíduos históricos. A 4.2 não cria vínculo com `Residuo`; isso pertence à 4.3.
 
 ## 4.3 — Uso pelo Solicitante
 
@@ -361,4 +367,4 @@ Não realizar refactor estrutural grande agora apenas para reduzir linhas. A Eta
 4.2 — ModeloResiduo
 ```
 
-A 4.1 está concluída e validada. O próximo foco é a definição e implementação de modelos de Resíduo reutilizáveis, mantendo snapshot histórico e isolamento por Unidade.
+A 4.1 está concluída e validada. O foco atual é revisar/aprovar a 4.2-A. Depois disso, iniciar somente a fundação da 4.2-B.
