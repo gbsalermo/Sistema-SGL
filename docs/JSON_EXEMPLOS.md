@@ -839,3 +839,86 @@ Não envie catálogo e texto manual ao mesmo tempo. Complemento só é válido c
 ```
 
 Para o inventário completo de endpoints, consulte também `docs/ENDPOINTS_INTERNOS.md`.
+
+---
+
+## 22. Modelos de Resíduo
+
+### Criar modelo
+
+```http
+POST /api/v1/modelos-residuo
+X-SGL-Unidade-Id: {unidadePublicId}
+Content-Type: application/json
+```
+
+```json
+{
+  "unidadeId": "cb09ba48-d244-46bc-8324-037b8529b3a9",
+  "nome": "Resíduo de extração de DNA",
+  "descricao": "Resíduo líquido de rotina",
+  "processoOrigem": "Extração de DNA vegetal",
+  "estadoFisico": "LIQUIDO",
+  "tratamentoRealizado": false,
+  "descricaoTratamento": null,
+  "recipiente": "Bombona plástica",
+  "unidadeMedida": "ML",
+  "nivelRisco": "MEDIO",
+  "riscos": ["INFLAMAVEL"],
+  "classesIds": ["33333333-3333-3333-3333-333333333333"],
+  "medidasSeguranca": ["LUVAS", "OCULOS_PROTECAO"],
+  "observacaoSeguranca": null,
+  "componentes": [
+    {
+      "produtoId": null,
+      "nomeComponente": "Solução tampão",
+      "principal": true,
+      "concentracaoOuQuantidade": "aprox. 100 mL",
+      "observacao": null
+    }
+  ],
+  "ativo": true
+}
+```
+
+Consultas:
+
+```http
+GET /api/v1/modelos-residuo
+GET /api/v1/modelos-residuo/ativos
+GET /api/v1/modelos-residuo/{modeloId}
+```
+
+`PUT` usa o mesmo formato da criação. `DELETE` inativa o modelo.
+
+---
+
+## 23. Administração do ciclo de Resíduos
+
+### Retornar exatamente uma etapa
+
+```http
+PUT /api/v1/residuos/{residuoId}/administrar
+X-SGL-Unidade-Id: {unidadePublicId}
+Content-Type: application/json
+```
+
+```json
+{
+  "usuarioAdministradorId": "11111111-1111-1111-1111-111111111111",
+  "acao": "RETORNAR_ETAPA",
+  "justificativa": "Correção necessária após conferência administrativa."
+}
+```
+
+### Cancelar
+
+```json
+{
+  "usuarioAdministradorId": "11111111-1111-1111-1111-111111111111",
+  "acao": "CANCELAR",
+  "justificativa": "Registro cancelado por duplicidade operacional."
+}
+```
+
+`DESPACHADO` não pode ser cancelado diretamente: primeiro deve retornar uma etapa.
