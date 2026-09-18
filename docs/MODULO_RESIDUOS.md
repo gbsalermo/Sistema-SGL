@@ -1,8 +1,8 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Estado em 17/09/2026:** Etapa 3 ✅ concluída e validada; Etapa 4 🔧 iniciada; 4.1 — locais de armazenamento em andamento.  
-**Migrations aplicadas:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql` e `V15__add_residue_safety_information.sql`.  
-**Próxima migration planejada:** V16 — locais de armazenamento de Resíduos.  
+**Estado em 18/09/2026:** Etapa 3 ✅ concluída e validada; Etapa 4 🔧 em andamento; backend da 4.1 ✅ concluído; frontend da 4.1 é o próximo foco.  
+**Migrations aplicadas:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql`, `V15__add_residue_safety_information.sql` e `V16__create_residue_storage_locations.sql`.  
+**Migration da 4.1:** V16 — locais de armazenamento de Resíduos ✅ aplicada e imutável.  
 **Branch atual:** `feat/etapa-4-residuos`.
 
 ## 1. Regra central
@@ -434,17 +434,21 @@ Regras:
 - correções precisam permanecer rastreáveis;
 - rótulo/relatório continuam usando o snapshot textual existente.
 
-### Implementação 4.1-A — próxima
+### Implementação 4.1-A–E — backend concluído ✅
 
-Criar manualmente apenas:
+Implementado no backend:
 
 ```text
 V16__create_residue_storage_locations.sql
 LocalArmazenamentoResiduo.java
 LocalArmazenamentoResiduoRepository.java
+CRUD + tenant
+integração com análise/liberação
+confirmação física/correção
+histórico da correção
 ```
 
-V16 planejada:
+Estrutura aplicada pela V16:
 
 ```text
 locais_armazenamento_residuo
@@ -459,18 +463,18 @@ residuos
 → complemento_local_armazenamento nullable
 ```
 
-Não criar service/controller/DTO nem alterar `Residuo.java` ainda.
+Backend da 4.1 revisado e fechado em 18/09/2026.
 
-Sequência posterior:
+Sequência atual:
 
 ```text
-4.1-B CRUD + tenant
-4.1-C análise/liberação
-4.1-D confirmação física/correção
-4.1-E revisão backend
-4.1-F frontend Cadastros
-4.1-G frontend Gestão
-4.1-H regressão/fechamento
+4.1-B CRUD + tenant ✅
+4.1-C análise/liberação ✅
+4.1-D confirmação física/correção ✅
+4.1-E revisão backend ✅
+4.1-F frontend Cadastros ⏭
+4.1-G frontend Gestão ⏳
+4.1-H regressão/fechamento ⏳
 ```
 
 ---
