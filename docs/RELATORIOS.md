@@ -132,10 +132,11 @@ emAnalise
 liberados
 armazenados
 despachados
+cancelados
 altoRisco
 ```
 
-Os itens preservam rastreabilidade do gerador, laboratório, status, riscos, quantidade e ciclo operacional.
+Os itens preservam rastreabilidade do gerador, laboratório, status, riscos, quantidade e ciclo operacional. O filtro `status=CANCELADO` e a contagem `cancelados` fazem parte do fechamento da Etapa 4.
 
 ### 8. Pessoas por laboratório ✅
 
