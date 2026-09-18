@@ -549,7 +549,11 @@ Revisar especialmente:
 - Controllers concentrados;
 - métodos longos;
 - organização de packages;
-- documentação de snapshots/invariantes.
+- documentação de snapshots/invariantes;
+- padronização tipográfica global do frontend conforme os tokens oficiais do SGL;
+- remoção/consolidação de CSS legado que sobrescreve a escala tipográfica;
+- revisão de textos operacionais abaixo de 12 px, preservando exceções justificadas de rótulos/impressão;
+- adicionar checagem preventiva para evitar novos `font-size` fora do padrão sem justificativa.
 
 Critério:
 
