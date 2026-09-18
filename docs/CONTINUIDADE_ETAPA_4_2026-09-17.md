@@ -3,8 +3,8 @@
 **Atualizado em:** 18/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧  
-**Subetapa atual:** 4.1 — Locais de armazenamento cadastráveis  
-**Próxima implementação:** 4.1-H — Regressão integrada e fechamento  
+**Subetapa atual:** 4.2 — Modelos de Resíduo pré-cadastrados  
+**Próxima implementação:** 4.2 — ModeloResiduo  
 **Branch:** `feat/etapa-4-residuos`
 
 ## 1. Antes de continuar
@@ -154,8 +154,8 @@ A Etapa 4.1 seguirá a mesma regra para local de armazenamento.
 # 6. Escopo da Etapa 4
 
 ```text
-4.1 Locais de armazenamento cadastráveis          🔧 atual
-→ 4.2 Modelos de Resíduos pré-cadastrados          ⏳
+4.1 Locais de armazenamento cadastráveis          ✅ concluída
+→ 4.2 Modelos de Resíduos pré-cadastrados          🔧 atual
 → 4.3 Uso de modelo ou preenchimento manual        ⏳
 → 4.4 Correções administrativas do ciclo           ⏳
 ```
@@ -332,15 +332,13 @@ ou
 local manual
 ```
 
-## 4.1-H — Regressão integrada
+## 4.1-H — Regressão integrada ✅
 
-Validar fluxo completo, Gestores diferentes, histórico, rótulo, relatório, isolamento por Unidade, local renomeado/inativado, resíduos antigos e caminho manual.
-
-Somente depois fechar 4.1 e iniciar 4.2.
+Concluída em 18/09/2026. Foram validados o catálogo administrativo, seleção de local cadastrado/manual na análise, complemento, confirmação física, correção do local e histórico planejado x confirmado. As validações de regra do backend já haviam sido cobertas por Postman e teste de domínio. A auditoria tipográfica global do frontend foi registrada para a Etapa 13 e não bloqueia o fechamento funcional da 4.1.
 
 ---
 
-# 9. Etapas 4.2–4.4 — ainda não implementar
+# 9. Etapas 4.2–4.4 — sequência atual
 
 ## 4.2 — ModeloResiduo
 
@@ -404,7 +402,7 @@ Não realizar refactor estrutural grande agora apenas para reduzir linhas. A Eta
 ## 12. Próximo passo real
 
 ```text
-4.1-H — Regressão integrada e fechamento
+4.2 — ModeloResiduo
 ```
 
-Backend 4.1-A–E e frontend 4.1-F/G estão implementados. O responsável autorizou execução direta pelo assistente e acompanhará a validação final no ambiente local.
+A 4.1 está concluída e validada. O próximo foco é a definição e implementação de modelos de Resíduo reutilizáveis, mantendo snapshot histórico e isolamento por Unidade.
