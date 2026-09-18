@@ -76,9 +76,13 @@ public class EstagiarioService {
 
     @Transactional(readOnly = true)
     public List<EstagiarioResponseDTO> listarTodos() {
-        List<Estagiario> estagiarios = TenantContext.unidadeAtual()
-                .map(estagiarioRepository::findByUnidadePublicId)
-                .orElseGet(estagiarioRepository::findAll);
+        // Correção de segurança: sem tenant definido, este método caía num
+        // "findAll" que devolvia estagiários de todas as unidades. Agora
+        // exigimos o header X-SGL-Unidade-Id também para listar.
+        exigirTenantAtivo();
+
+        List<Estagiario> estagiarios = estagiarioRepository
+                .findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
         return estagiarios.stream()
                 .map(EstagiarioResponseDTO::new)
@@ -103,9 +107,12 @@ public class EstagiarioService {
 
     @Transactional(readOnly = true)
     public List<EstagiarioResponseDTO> listarAtivos() {
-        List<Estagiario> estagiarios = TenantContext.unidadeAtual()
-                .map(estagiarioRepository::findByUnidadePublicIdAndAtivoTrue)
-                .orElseGet(estagiarioRepository::findByAtivoTrue);
+        // Mesma correção: exigir tenant em vez de cair para "todas as
+        // unidades" quando o header não é enviado.
+        exigirTenantAtivo();
+
+        List<Estagiario> estagiarios = estagiarioRepository
+                .findByUnidadePublicIdAndAtivoTrue(TenantContext.unidadeAtual().orElseThrow());
 
         return estagiarios.stream()
                 .map(EstagiarioResponseDTO::new)
@@ -137,32 +144,41 @@ public class EstagiarioService {
     @Transactional
     public void deletar(UUID id) {
         Estagiario estagiario = buscarEstagiarioNoTenant(id);
-        estagiario.setAtivo(false);
+
+        // Correção de bug de lógica: "Estagiario" é uma extensão de "Usuario"
+        // (mesma tabela de login, herança JOINED) e as duas classes
+        // compartilham a coluna "ativo". Antes, este método fazia
+        // "estagiario.setAtivo(false)", que é EXATAMENTE o mesmo efeito de
+        // desativar a conta de usuário (bloqueando login) — igual ao que
+        // acontece em encerrarEstagio(). Ou seja, "excluir o estagiário"
+        // (uma ação que devia só encerrar o vínculo de estágio) também
+        // desligava a pessoa do sistema inteiro, sem avisar.
+        //
+        // Aqui só marcamos o fim do estágio (dataFimEstagio), sem tocar em
+        // "ativo". Se o objetivo for realmente desativar o login da pessoa,
+        // isso deve ser feito de forma explícita chamando encerrarEstagio()
+        // (que já documenta esse efeito) ou o endpoint de inativar usuário.
         estagiario.setDataFimEstagio(LocalDate.now());
     }
 
     private Estagiario buscarEstagiarioNoTenant(UUID id) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> estagiarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Estagiário", id);
-                    }
-                    return estagiarioRepository.findByPublicId(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
-                });
+        // Correção de segurança: antes, sem tenant ativo, caía numa busca
+        // sem filtro de unidade (findByPublicId), permitindo ler o
+        // estagiário de outra unidade só por não enviar o header.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return estagiarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estagiário", id));
     }
 
     private Usuario buscarUsuario(UUID uuid) {
-        return TenantContext.unidadeAtual()
-                .flatMap(unidadeId -> usuarioRepository.findByPublicIdAndUnidadePublicId(uuid, unidadeId))
-                .orElseGet(() -> {
-                    if (TenantContext.ativo()) {
-                        throw new ResourceNotFoundException("Usuário", uuid);
-                    }
-                    return usuarioRepository.findByPublicId(uuid)
-                            .orElseThrow(() -> new ResourceNotFoundException("Usuário", uuid));
-                });
+        // Mesma correção de segurança aplicada à busca de usuário.
+        exigirTenantAtivo();
+
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+        return usuarioRepository.findByPublicIdAndUnidadePublicId(uuid, unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", uuid));
     }
 
     private Laboratorio buscarLaboratorio(UUID uuid) {
@@ -173,6 +189,19 @@ public class EstagiarioService {
     private void validarTenantUnidade(UUID unidadeId) {
         if (!TenantContext.pertence(unidadeId)) {
             throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+        }
+    }
+
+    /**
+     * Garante que existe uma unidade (tenant) definida para a requisição
+     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
+     * completa do porquê essa checagem existe (correção do "modo sem
+     * tenant" que vazava dados entre unidades).
+     */
+    private void exigirTenantAtivo() {
+        if (!TenantContext.ativo()) {
+            throw new BusinessRuleException(
+                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
         }
     }
 
