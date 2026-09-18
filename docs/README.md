@@ -71,6 +71,9 @@ Integração corporativa                       ⏳ posterior
 | `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 4.2** |
 | `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **ATUAL — 4.2** |
+| `ENDPOINTS_INTERNOS.md` | inventário técnico complementar de endpoints | **VIGENTE** |
+| `JSON_EXEMPLOS.md` | payloads de apoio para Postman/frontend | **VIGENTE** |
+| `testes.md` | suíte automatizada e roteiros de regressão | **VIGENTE** |
 | `RELATORIOS.md` | cobertura de relatórios | **VIGENTE** |
 | `EXPORTACAO_RELATORIOS.md` | regras de PDF/XLSX | **VIGENTE** |
 | `PENDENCIAS_POS_PROTOTIPO.md` | refactors e pendências posteriores | **REFERÊNCIA VIGENTE** |
