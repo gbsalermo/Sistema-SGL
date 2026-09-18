@@ -16,6 +16,8 @@
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
 
+**Sincronização documental:** auditada em 18/09/2026 nos repositórios backend e frontend. Documentos vigentes apontam para a 4.2; documentos históricos permanecem preservados como registro de etapa.
+
 ---
 
 # 0. Regra de trabalho
