@@ -356,19 +356,15 @@ Plano:
 4.1-H regressão e fechamento ✅
 ```
 
-Próximo passo: **4.2 — ModeloResiduo**.
-
-A V16 e toda a 4.1 estão concluídas. Na 4.2, definir primeiro o contrato do modelo reutilizável, seu isolamento por Unidade e os snapshots necessários antes de integrar a escolha do modelo ao formulário do Solicitante.
+A 4.1 permanece concluída e integrada ao restante da Etapa 4.
 
 ---
 
 # 11. Etapas futuras
 
 ```text
-4.2 Modelos de Resíduo
-4.3 modelo x preenchimento manual
-4.4 correções administrativas do ciclo
-5 Projetos + Atividades
+4 Expansão operacional de Resíduos  ✅ implementada; validação integrada pendente
+5 Projetos + Atividades             ⏳ próxima após validação
 6 Estagiários + vínculos
 7 Relatórios consolidados
 8 unidades + Soluções
@@ -379,10 +375,10 @@ A V16 e toda a 4.1 estão concluídas. Na 4.2, definir primeiro o contrato do mo
 13 revisão estrutural/legibilidade
 ```
 
-A 4.1 foi concluída. A sequência atual inicia pela 4.2, sem antecipar 4.3/4.4.
+A implementação das 4.2, 4.3 e 4.4 está concluída na branch. O roteiro de homologação é `docs/VALIDACAO_ETAPA_4.md`.
 
 ---
 
 # 12. Regra final de retomada
 
-**A Etapa 4 está em andamento. A 4.1 foi concluída e validada. O próximo passo é a 4.2 — ModeloResiduo, preservando tenant e snapshot histórico.**
+**Executar a validação integrada da Etapa 4. Se passar, integrar `feat/etapa-4-residuos` à `main` e iniciar a Etapa 5 respeitando o portão de requisitos do plano canônico.**
