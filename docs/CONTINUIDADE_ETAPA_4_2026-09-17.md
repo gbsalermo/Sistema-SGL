@@ -1,10 +1,10 @@
 # Continuidade SGL — Etapa 4
 
-**Atualizado em:** 17/09/2026  
+**Atualizado em:** 18/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧  
 **Subetapa atual:** 4.1 — Locais de armazenamento cadastráveis  
-**Próxima implementação:** 4.1-A — Fundação do catálogo no backend  
+**Próxima implementação:** 4.1-F — Frontend Administração/Cadastros  
 **Branch:** `feat/etapa-4-residuos`
 
 ## 1. Antes de continuar
@@ -129,7 +129,7 @@ V14 — Classes de Resíduo
 V15 — segurança/EPI
 ```
 
-Migrations aplicadas são imutáveis. A próxima alteração de schema será V16.
+Migrations aplicadas são imutáveis. A V16 foi aplicada na 4.1-A; qualquer nova alteração de schema deve usar V17 ou superior.
 
 ---
 
@@ -313,9 +313,9 @@ Commit sugerido:
 feat: permitir correção estruturada do armazenamento de resíduos
 ```
 
-## 4.1-E — Revisão backend
+## 4.1-E — Revisão backend ✅
 
-Validar Swagger, PostgreSQL/Flyway, tenant, fluxo completo, rótulo, relatório, histórico e resíduos antigos. Só então fechar contrato backend.
+Revisão concluída em 18/09/2026. O contrato backend da 4.1 foi fechado após validação do catálogo, tenant, integração com análise/liberação, confirmação física/correção, snapshot histórico e histórico de mudança. Também foi adicionado teste automatizado de domínio para proteger as regras centrais de armazenamento.
 
 ## 4.1-F — Frontend Administração/Cadastros
 
@@ -404,7 +404,7 @@ Não realizar refactor estrutural grande agora apenas para reduzir linhas. A Eta
 ## 12. Próximo passo real
 
 ```text
-4.1-A — Fundação do catálogo no backend
+4.1-F — Frontend Administração/Cadastros
 ```
 
-O usuário fará manualmente as mudanças funcionais. Criar apenas V16 + entidade + repository, subir o backend, revisar e só então commitar/avançar para 4.1-B.
+O backend da 4.1-A até 4.1-E está concluído. A partir deste checkpoint, o usuário autorizou execução direta pelo assistente, acompanhando e revisando as mudanças. Próximo foco: catálogo de locais no frontend Administração/Cadastros.
