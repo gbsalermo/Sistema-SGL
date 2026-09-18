@@ -13,6 +13,7 @@ import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,6 +36,10 @@ public class AnalisarResiduoRequestDTO {
     private Set<TipoRisco> riscosConfirmados;
 
    
+    @Size(
+            max = 255,
+            message = "O local de armazenamento manual deve possuir no máximo 255 caracteres"
+    )
     @Schema(description = "Local manual usado quando não houver local cadastrado.")
     private String localArmazenamentoTemporario;
     
@@ -43,6 +48,10 @@ public class AnalisarResiduoRequestDTO {
     )
     private UUID localArmazenamentoResiduoId;
 
+    @Size(
+            max = 150,
+            message = "O complemento do local deve possuir no máximo 150 caracteres"
+    )
     @Schema(
             description = "Complemento opcional do local cadastrado.",
             example = "Prateleira B2"

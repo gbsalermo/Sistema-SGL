@@ -525,34 +525,55 @@ public class Residuo implements Serializable {
         return observacao.trim();
     }
     
-    private void definirLocalArmazenamento( LocalArmazenamentoResiduo localCadastrado, String complemento, String localManual) {
-    	
-    	if(localCadastrado != null) {
-    		
-    		localCadastrado.validateActive();
-    		
-    		String complementoNormalizado = normalizarObservacao(complemento);
-    		
-    		this.localArmazenamentoResiduo = localCadastrado;
-    		this.complementoLocalArmazenamento = complementoNormalizado;
-    		this.localArmazenamentoTemporario = localCadastrado.getNome();
-    		
-    		if(complementoNormalizado != null) {
-    			this.localArmazenamentoTemporario += " - " + complementoNormalizado;
-    		}
-    		
-    		return;
-    	}
-    	
-    	if(localManual == null || localManual.isBlank()) {
-    		
-    		throw new BusinessRuleException(
-    				"Informe um local de armazenamento cadastrado ou um local manual."
-    				);
-    	}
-    	
-    	this.localArmazenamentoResiduo = null;
-    	this.complementoLocalArmazenamento = null;
-    	this.localArmazenamentoTemporario = localManual.trim();
+    private void definirLocalArmazenamento(
+            LocalArmazenamentoResiduo localCadastrado,
+            String complemento,
+            String localManual) {
+
+        if (localCadastrado != null) {
+
+            localCadastrado.validateActive();
+
+            String complementoNormalizado =
+                    normalizarObservacao(complemento);
+
+            String snapshot = localCadastrado.getNome();
+
+            if (complementoNormalizado != null) {
+                snapshot += " - " + complementoNormalizado;
+            }
+
+            if (snapshot.length() > 255) {
+                throw new BusinessRuleException(
+                        "O local de armazenamento completo deve possuir no máximo 255 caracteres."
+                );
+            }
+
+            this.localArmazenamentoResiduo = localCadastrado;
+            this.complementoLocalArmazenamento =
+                    complementoNormalizado;
+            this.localArmazenamentoTemporario = snapshot;
+
+            return;
+        }
+
+        if (localManual == null || localManual.isBlank()) {
+            throw new BusinessRuleException(
+                    "Informe um local de armazenamento cadastrado ou um local manual."
+            );
+        }
+
+        String localNormalizado = localManual.trim();
+
+        if (localNormalizado.length() > 255) {
+            throw new BusinessRuleException(
+                    "O local de armazenamento deve possuir no máximo 255 caracteres."
+            );
+        }
+
+        this.localArmazenamentoResiduo = null;
+        this.complementoLocalArmazenamento = null;
+        this.localArmazenamentoTemporario =
+                localNormalizado;
     }
 }
