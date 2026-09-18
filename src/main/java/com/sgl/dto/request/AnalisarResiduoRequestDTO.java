@@ -31,7 +31,11 @@ public class AnalisarResiduoRequestDTO {
     @NotNull(message = "O nível de risco confirmado é obrigatório")
     private NivelRisco nivelRiscoConfirmado;
 
-    @NotNull(message = "Os riscos confirmados são obrigatórios")
+    // Correção de bug: mesma situação de CriarResiduoRequestDTO.
+    // riscosInformados — @NotNull deixava passar uma lista vazia. Na etapa
+    // de análise técnica, isso permitiria confirmar um nível de risco (por
+    // exemplo, ALTO) sem nenhum risco específico marcado.
+    @NotEmpty(message = "Os riscos confirmados são obrigatórios")
     private Set<TipoRisco> riscosConfirmados;
 
     @NotBlank(message = "O local de armazenamento temporário é obrigatório")

@@ -70,7 +70,13 @@ public class CriarResiduoRequestDTO {
     @NotNull(message = "O nível de risco informado é obrigatório")
     private NivelRisco nivelRiscoInformado;
 
-    @NotNull(message = "Os riscos informados são obrigatórios")
+    // Correção de bug: estava como @NotNull, que só rejeita "riscosInformados"
+    // ausente — mas deixava passar uma lista VAZIA (riscosInformados = []).
+    // Isso permitia, por exemplo, informar nivelRiscoInformado = ALTO sem
+    // nenhum risco específico marcado, e o rótulo físico do resíduo saía
+    // dizendo "risco alto" sem nenhum pictograma de perigo. @NotEmpty exige
+    // que a lista exista E tenha pelo menos um item.
+    @NotEmpty(message = "Os riscos informados são obrigatórios")
     private Set<TipoRisco> riscosInformados;
 
     @Schema(description = "Observação do usuário que gerou ou entregou o resíduo.")
