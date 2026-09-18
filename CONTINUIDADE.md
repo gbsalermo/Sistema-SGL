@@ -37,7 +37,7 @@ Regra especial do projeto:
 - não aplicar diretamente código funcional de backend sem autorização explícita;
 - frontend/documentação podem ser alterados diretamente quando autorizado;
 - trabalhar em passos pequenos e commits lógicos;
-- não antecipar 4.2, 4.3 ou 4.4 durante a 4.1.
+- durante a 4.2, fechar primeiro o contrato de `ModeloResiduo`; não antecipar a experiência modelo x manual da 4.3 nem as correções administrativas da 4.4.
 
 A Etapa 3 já foi integrada à `main` nos dois repositórios e a branch `feat/etapa-4-residuos` já foi criada a partir da `main` atualizada.
 
