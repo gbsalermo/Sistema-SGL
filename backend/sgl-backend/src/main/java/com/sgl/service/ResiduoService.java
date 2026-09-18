@@ -389,6 +389,19 @@ public class ResiduoService {
 		return usuario;
 	}
 
+	private Usuario buscarUsuarioAdministrador(UUID id) {
+		Usuario usuario = buscarUsuario(id);
+		usuario.validateActive();
+
+		if (usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+			throw new BusinessRuleException(
+					"A correção administrativa do ciclo de resíduos exige perfil ADMINISTRADOR."
+			);
+		}
+
+		return usuario;
+	}
+
 	private Projeto buscarProjeto(UUID projetoId, Laboratorio laboratorio) {
 		if (projetoId == null) {
 			return null;
@@ -496,6 +509,14 @@ public class ResiduoService {
 
 		historicoResiduoRepository.save(HistoricoResiduo.builder().residuo(residuo).usuario(usuario)
 				.status(residuo.getStatus()).acao(acao).observacao(observacao).dataHora(LocalDateTime.now()).build());
+	}
+
+	private String limitarObservacaoHistorico(String observacao) {
+		if (observacao == null || observacao.length() <= 1000) {
+			return observacao;
+		}
+
+		return observacao.substring(0, 1000);
 	}
 
 	private LocalArmazenamentoResiduo buscarLocalArmazenamentoAtivo(UUID localId, UUID unidadeId) {
