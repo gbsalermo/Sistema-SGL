@@ -56,7 +56,10 @@ public class AnalisarResiduoRequestDTO {
     	)
     private Set<UUID> classesConfirmadasIds;
     
-    @NotNull(message = "Confirme as medidas de segurança do resíduo")
+    // Correção de bug: mesma situação de riscosConfirmados (achado #7) —
+    // @NotNull deixava passar uma lista vazia. @NotEmpty exige pelo menos
+    // uma medida de segurança confirmada.
+    @NotEmpty(message = "Confirme as medidas de segurança do resíduo")
     private Set<MedidaSeguranca> medidasSegurancaConfirmadas;
     
     private String observacaoSegurancaConfirmada;

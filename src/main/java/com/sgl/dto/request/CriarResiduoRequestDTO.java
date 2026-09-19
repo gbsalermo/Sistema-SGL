@@ -91,7 +91,11 @@ public class CriarResiduoRequestDTO {
     	)
     private Set<UUID> classesInformadasIds;
     
-    @NotNull( message = "Informe as medidas de segurança do resíduo")
+    // Correção de bug: mesma situação de riscosInformados (achado #7) —
+    // @NotNull só rejeita o campo ausente, deixando passar uma lista vazia
+    // (medidasSegurancaInformadas = []), o que não faz sentido para uma
+    // declaração de segurança do resíduo. @NotEmpty exige pelo menos um item.
+    @NotEmpty(message = "Informe as medidas de segurança do resíduo")
     	private Set<MedidaSeguranca> medidasSegurancaInformadas;
     	private String observacaoSegurancaInformada;
 }
