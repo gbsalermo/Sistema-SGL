@@ -1,0 +1,67 @@
+name: Sync collab branches to GitLab
+
+on:
+  push:
+    branches:
+      - 'collab/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitlab-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync-gitlab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${GITHUB_REF_NAME}" in
+            collab/*) ;;
+            *)
+              echo "Refusing to sync non-collab branch: ${GITHUB_REF_NAME}"
+              exit 1
+              ;;
+          esac
+
+      - name: Configure GitLab remote
+        shell: bash
+        env:
+          GITLAB_PUSH_TOKEN: ${{ secrets.GITLAB_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          git remote remove gitlab 2>/dev/null || true
+          git remote add gitlab "https://oauth2:${GITLAB_PUSH_TOKEN}@git-cnpmf.nuvem.ti.embrapa.br/nti/sgl-api.git"
+
+      - name: Refuse divergent GitLab branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF_NAME}"
+          REMOTE_SHA="$(git ls-remote --heads gitlab "refs/heads/${BRANCH}" | awk '{print $1}')"
+
+          if [ -n "${REMOTE_SHA}" ]; then
+            git fetch --no-tags gitlab "refs/heads/${BRANCH}:refs/remotes/gitlab/${BRANCH}"
+
+            if ! git merge-base --is-ancestor "refs/remotes/gitlab/${BRANCH}" HEAD; then
+              echo "GitLab branch ${BRANCH} contains commits not present on GitHub."
+              echo "Sync aborted to avoid overwriting divergent history."
+              exit 1
+            fi
+          fi
+
+      - name: Push collab branch to GitLab
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push gitlab "HEAD:refs/heads/${GITHUB_REF_NAME}"
