@@ -1,0 +1,23 @@
+name: Check GitLab connectivity
+
+on:
+  push:
+    branches:
+      - 'collab/**'
+  workflow_dispatch:
+
+jobs:
+  check-gitlab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check GitLab HTTPS reachability
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Testing GitLab reachability from GitHub-hosted runner..."
+          curl --fail --show-error --silent --location \
+            --connect-timeout 10 \
+            --max-time 20 \
+            --output /dev/null \
+            --write-out 'HTTP %{http_code}\n' \
+            https://git-cnpmf.nuvem.ti.embrapa.br/users/sign_in
