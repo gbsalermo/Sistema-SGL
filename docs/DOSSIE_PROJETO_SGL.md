@@ -3,8 +3,8 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Atualizado em:** 17/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 da pré-produção concluídas; Etapa 4 é a próxima.  
+**Atualizado em:** 22/09/2026  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 em reconciliação sobre as `main` corrigidas pelo supervisor antes da revalidação.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -13,7 +13,7 @@
 Etapa 1 — padrão visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos  ⏭ próxima
+Etapa 4 — expansão operacional de Resíduos  🔧 reconciliação + revalidação
 ```
 
 Handoff imediato:
@@ -26,6 +26,71 @@ Plano canônico:
 
 ---
 
+# 0. Infraestrutura Git e sincronização — obrigatório
+
+A arquitetura de colaboração foi reorganizada em 22/09/2026 para impedir que o GitHub sobrescreva trabalho do supervisor no GitLab.
+
+Documento detalhado:
+
+`docs/SINCRONIZACAO_GITLAB_GITHUB.md`
+
+Resumo:
+
+```text
+GitLab/main = fonte canônica
+
+GitLab/main
+    ↓ GitHub Actions a cada 15 min / manual
+GitHub/main
+
+GitHub/collab/*
+    ↓ GitHub Actions em cada push
+GitLab/collab/*
+    ↓ Merge Request
+GitLab/main
+```
+
+Regras obrigatórias:
+
+- o supervisor pode avançar a `main` diretamente pelo fluxo institucional no GitLab;
+- `GitHub/main` é espelho, não origem de trabalho;
+- usuário e IA colaboram em `GitHub/collab/*`;
+- a mesma `collab/*` é replicada automaticamente para o GitLab;
+- integração final acontece por MR no GitLab;
+- nenhum workflow usa `--force`;
+- divergência faz o workflow falhar em vez de sobrescrever histórico;
+- não editar a mesma branch independentemente nos dois remotes;
+- os remotes locais esperados se chamam `github` e `gitlab`; a antiga configuração de `origin` com múltiplos push URLs foi removida.
+
+Credencial dos workflows:
+
+```text
+GitHub Actions Secret: GITLAB_PUSH_TOKEN
+```
+
+O valor nunca deve ser documentado. A solução usa Git-over-HTTPS; SSH foi descartado após timeout da porta 22.
+
+Workflows backend:
+
+```text
+.github/workflows/check-gitlab-connectivity.yml
+→ nome exibido: Sync collab branches to GitLab
+→ GitHub/collab/* → GitLab/collab/*
+
+.github/workflows/sync-gitlab-main-to-github.yml
+→ GitLab/main → GitHub/main
+```
+
+O primeiro arquivo manteve nome legado; não confundir o nome do arquivo com sua função atual.
+
+O fluxo foi validado nos dois sentidos e os `main` chegaram a `0 0` pelo comando:
+
+```bash
+git rev-list --left-right --count gitlab/main...github/main
+```
+
+---
+
 # 1. Ordem de precedência
 
 Quando houver conflito:
@@ -34,14 +99,15 @@ Quando houver conflito:
 1. código da main
 2. Swagger/OpenAPI
 3. CONTINUIDADE.md do repositório em trabalho
-4. docs/PLANO_PRE_PRODUCAO.md
-5. handoff da etapa atual
-6. este DOSSIE_PROJETO_SGL.md
-7. documento específico do módulo
-8. documentos históricos
+4. docs/SINCRONIZACAO_GITLAB_GITHUB.md para Git/remotes
+5. docs/PLANO_PRE_PRODUCAO.md
+6. handoff da etapa atual
+7. este DOSSIE_PROJETO_SGL.md
+8. documento específico do módulo
+9. documentos históricos
 ```
 
-Antes de iniciar a Etapa 4, confirmar que a branch da Etapa 3 foi integrada à `main` nos dois repositórios.
+Os `main` já foram reconciliados em 22/09/2026. Antes de continuar a Etapa 4, confirmar que a branch `collab/etapa-4-residuos-reconcile` está atualizada com `gitlab/main` e nunca usar a antiga `feat/etapa-4-residuos` como base de merge.
 
 ---
 
@@ -64,6 +130,8 @@ Não aplicar backend funcional diretamente sem autorização explícita.
 Frontend/documentação podem ser alterados diretamente quando autorizado.
 
 Trabalhar sempre em branch própria e em etapas pequenas.
+
+A antiga `feat/etapa-4-residuos` contém a implementação histórica dos blocos 4.1–4.4, mas está baseada em uma árvore anterior às correções do supervisor. Ela é fonte de referência. A branch operacional é `collab/etapa-4-residuos-reconcile`, criada sobre a `gitlab/main` canônica.
 
 ---
 
