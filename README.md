@@ -13,9 +13,9 @@
 
 ---
 
-## Estado atual — 11/09/2026
+## Estado atual — 22/09/2026
 
-O SGL já passou pela aprovação funcional do primeiro protótipo. As Etapas 1 e 2 da pré-produção foram concluídas; a etapa atual é a **Etapa 3 — Refinamentos do fluxo atual de Resíduos**. Esse bloco acontece **antes** do roadmap formal de matriz de permissões, congelamento, homologação final e segurança definitiva.
+O SGL já passou pela aprovação funcional do primeiro protótipo. As Etapas 1, 2 e 3 da pré-produção foram concluídas. A **Etapa 4 — Expansão operacional de Resíduos** possui implementação histórica, mas está sendo reconciliada com as correções recentes do supervisor antes da revalidação integrada.
 
 Estado consolidado do backend:
 
@@ -40,7 +40,7 @@ Integração corporativa/SSO                        ⏳ etapa formal posterior
 
 No frontend também estão integrados dashboards, busca global, alertas, tema claro/escuro, sessão DEV, rotas por perfil e propagação do contexto de Unidade.
 
-> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`](docs/CONTINUIDADE_ETAPA_3_2026-09-11.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). Para contratos HTTP, o Swagger/OpenAPI em execução continua sendo a fonte viva.
+> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/SINCRONIZACAO_GITLAB_GITHUB.md`](docs/SINCRONIZACAO_GITLAB_GITHUB.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`](docs/CONTINUIDADE_ETAPA_4_2026-09-17.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). O GitLab é a fonte canônica de `main`; contratos HTTP continuam pertencendo ao Swagger/OpenAPI em execução.
 
 ---
 
