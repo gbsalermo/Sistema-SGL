@@ -1,0 +1,72 @@
+name: Sync GitLab main to GitHub
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-gitlab-main-to-github
+  cancel-in-progress: false
+
+jobs:
+  sync-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure GitLab remote
+        shell: bash
+        env:
+          GITLAB_PUSH_TOKEN: ${{ secrets.GITLAB_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          git remote remove gitlab 2>/dev/null || true
+          git remote add gitlab "https://oauth2:${GITLAB_PUSH_TOKEN}@git-cnpmf.nuvem.ti.embrapa.br/nti/sgl-api.git"
+
+      - name: Fetch canonical GitLab main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags gitlab main
+
+      - name: Validate fast-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+          GITHUB_SHA="$(git rev-parse origin/main)"
+          GITLAB_SHA="$(git rev-parse gitlab/main)"
+
+          echo "GitHub main: ${GITHUB_SHA}"
+          echo "GitLab main: ${GITLAB_SHA}"
+
+          if [ "${GITHUB_SHA}" = "${GITLAB_SHA}" ]; then
+            echo "Main branches already synchronized."
+            exit 0
+          fi
+
+          if ! git merge-base --is-ancestor origin/main gitlab/main; then
+            echo "GitHub/main is not an ancestor of GitLab/main."
+            echo "Sync aborted to avoid overwriting divergent history."
+            exit 1
+          fi
+
+      - name: Fast-forward GitHub main
+        shell: bash
+        run: |
+          set -euo pipefail
+          GITHUB_SHA="$(git rev-parse origin/main)"
+          GITLAB_SHA="$(git rev-parse gitlab/main)"
+
+          if [ "${GITHUB_SHA}" = "${GITLAB_SHA}" ]; then
+            exit 0
+          fi
+
+          git push origin refs/remotes/gitlab/main:refs/heads/main
