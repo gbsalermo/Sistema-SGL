@@ -3,16 +3,19 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 17/09/2026  
-**Branch estável:** `main`  
-**Branch recém-concluída:** `feat/etapa-3-residuos`  
+**Última atualização:** 22/09/2026  
+**Branch estável:** `main` do GitLab institucional  
+**Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
+**Branch atual de reconciliação:** `collab/etapa-4-residuos-reconcile`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
-**Próxima etapa:** Etapa 4 — expansão operacional de Resíduos  
+**Etapa atual:** Etapa 4 — implementação histórica concluída, reconciliação com a `main` corrigida pelo supervisor e revalidação em andamento  
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da próxima etapa:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
+
+> **Infraestrutura Git obrigatória:** antes de qualquer alteração, ler `docs/SINCRONIZACAO_GITLAB_GITHUB.md`. Desde 22/09/2026 o GitLab é a fonte canônica de `main`; o GitHub espelha `main` automaticamente e é o ponto de colaboração para `collab/*`. Não usar `--force` e não editar `GitHub/main` diretamente.
 
 ---
 
@@ -36,13 +39,15 @@ Regra especial do projeto:
 - frontend/documentação podem ser alterados diretamente quando autorizado;
 - não antecipar etapas futuras.
 
-Ao iniciar a Etapa 4, confirmar primeiro que a Etapa 3 foi integrada à `main` nos dois repositórios e criar uma branch nova a partir dessa `main` atualizada.
+A Etapa 4 já possui uma implementação histórica em `feat/etapa-4-residuos`, mas essa branch nasceu antes das correções recentes do supervisor e não pode ser mergeada integralmente. A retomada deve ocorrer em uma branch `collab/*` criada/atualizada a partir da `gitlab/main`.
 
-Branch sugerida:
+Branch atual:
 
 ```text
-feat/etapa-4-residuos
+collab/etapa-4-residuos-reconcile
 ```
+
+A branch antiga serve somente como fonte para portar, bloco por bloco, o que ainda é válido.
 
 ---
 
@@ -113,11 +118,12 @@ Quando houver conflito entre documentos:
 1. código da main
 2. Swagger/OpenAPI
 3. CONTINUIDADE.md do repositório em trabalho
-4. docs/PLANO_PRE_PRODUCAO.md
-5. handoff da etapa atual
-6. docs/DOSSIE_PROJETO_SGL.md
-7. documentos específicos de módulo
-8. documentos históricos
+4. docs/SINCRONIZACAO_GITLAB_GITHUB.md para fluxo Git/remotes
+5. docs/PLANO_PRE_PRODUCAO.md
+6. handoff da etapa atual
+7. docs/DOSSIE_PROJETO_SGL.md
+8. documentos específicos de módulo
+9. documentos históricos
 ```
 
 Documentos históricos podem permanecer para rastreabilidade, mas não devem comandar a tarefa atual quando houver checkpoint mais recente.
@@ -169,13 +175,14 @@ V12 — backfill Código SGL
 V13 — estado físico, tratamento e responsabilidade inicial
 V14 — Classes de Resíduo
 V15 — segurança/EPI
+V16 — snapshot de Unidade do Resíduo, incorporado pelo supervisor
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = V16+
+nova alteração de schema = próxima versão livre após V16
 ```
 
 ---
@@ -343,11 +350,13 @@ Checkpoint: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 ---
 
-# 9. Etapa 4 — próxima etapa
+# 9. Etapa 4 — em reconciliação
 
 Handoff canônico:
 
 `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+
+A implementação histórica dos blocos 4.1–4.4 existe na antiga `feat/etapa-4-residuos`, mas deve ser portada seletivamente sobre a `main` atual. A validação integrada fica suspensa até essa reconciliação terminar. No backend, a antiga migration V16 de locais deve virar V17 e a antiga V17 de modelos deve virar V18, preservando a V16 canônica de snapshot de Unidade.
 
 Ordem prevista:
 
@@ -491,7 +500,7 @@ Não fazer refactor grande agora apenas para reduzir linhas. O refactor final de
 Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos            ⏭ próxima
+Etapa 4 — expansão operacional de Resíduos            🔧 reconciliação + revalidação
 Etapa 5 — Projetos + Atividades                       ⏳
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
@@ -509,4 +518,4 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**A Etapa 3 está encerrada e validada. A próxima janela deve confirmar que `feat/etapa-3-residuos` foi integrada à `main` nos dois repositórios e, somente depois, iniciar a Etapa 4 em branch própria criada a partir da `main` atualizada. Ler `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md` antes de qualquer implementação. Começar pela modelagem da 4.1 — locais de armazenamento cadastráveis — e preservar a regra de que o usuário implementa manualmente o backend funcional.**
+**A Etapa 3 está encerrada e validada. Em 22/09/2026 os `main` de GitLab/GitHub foram reconciliados e passaram a usar sincronização automática. A Etapa 4 deve continuar em `collab/etapa-4-residuos-reconcile`, sempre a partir da `gitlab/main` atual, portando seletivamente a implementação histórica de `feat/etapa-4-residuos`. Ler primeiro `docs/SINCRONIZACAO_GITLAB_GITHUB.md` e depois `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`. O usuário continua implementando manualmente o backend funcional.**
