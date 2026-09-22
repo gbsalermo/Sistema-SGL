@@ -1,8 +1,8 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Estado em 17/09/2026:** ✅ fluxo atual refinado e validado até a Etapa 3 da pré-produção.  
-**Migrations principais:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql` e `V15__add_residue_safety_information.sql`.  
-**Próxima evolução:** Etapa 4 — expansão operacional de Resíduos.
+**Estado em 22/09/2026:** ✅ Etapa 3 validada; 🔧 Etapa 4 em reconciliação com a `main` corrigida pelo supervisor antes da revalidação.  
+**Migrations principais atuais:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql`, `V15__add_residue_safety_information.sql` e `V16__add_residuo_unidade_snapshot.sql`.  
+**Evolução atual:** Etapa 4 — port seletivo da implementação histórica para `collab/etapa-4-residuos-reconcile`. Na reconciliação, locais usarão V17 e modelos V18; a V16 atual é imutável.
 
 ## 1. Regra central
 
@@ -77,7 +77,7 @@ A Gestão recebe, confere, analisa/classifica, libera, consulta rótulo, registr
 
 A área de Cadastros já permite manter **Classes de Resíduo** e recomendações de segurança em Produtos.
 
-A Etapa 4 adicionará locais de armazenamento e modelos reutilizáveis de Resíduo.
+A Etapa 4 adicionará locais de armazenamento e modelos reutilizáveis de Resíduo. Esses recursos já existiram na implementação histórica de `feat/etapa-4-residuos`, mas ainda precisam ser portados para a base atual antes de serem tratados como vigentes.
 
 ---
 
