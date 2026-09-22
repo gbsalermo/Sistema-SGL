@@ -1,6 +1,6 @@
 # Documentação — SGL Backend
 
-**Atualizado em:** 17/09/2026
+**Atualizado em:** 22/09/2026
 
 Este diretório reúne documentação vigente, decisões de domínio, material auxiliar e registros históricos. O objetivo deste índice é impedir que documentos antigos sejam interpretados como estado atual do projeto.
 
@@ -10,12 +10,13 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 
 ```text
 1. ../CONTINUIDADE.md
-2. PLANO_PRE_PRODUCAO.md
-3. CONTINUIDADE_ETAPA_4_2026-09-17.md
-4. MODULO_RESIDUOS.md
-5. DOSSIE_PROJETO_SGL.md
-6. Swagger/OpenAPI em execução
-7. documento específico da área em trabalho
+2. SINCRONIZACAO_GITLAB_GITHUB.md
+3. PLANO_PRE_PRODUCAO.md
+4. CONTINUIDADE_ETAPA_4_2026-09-17.md
+5. MODULO_RESIDUOS.md
+6. DOSSIE_PROJETO_SGL.md
+7. Swagger/OpenAPI em execução
+8. documento específico da área em trabalho
 ```
 
 O arquivo `CONTINUIDADE_ETAPA_3_2026-09-11.md` permanece como registro de fechamento da Etapa 3.
@@ -28,6 +29,7 @@ O arquivo `CONTINUIDADE_ETAPA_3_2026-09-11.md` permanece como registro de fecham
 código da main
 → Swagger/OpenAPI
 → ../CONTINUIDADE.md
+→ SINCRONIZACAO_GITLAB_GITHUB.md
 → PLANO_PRE_PRODUCAO.md
 → handoff da etapa atual
 → DOSSIE_PROJETO_SGL.md
@@ -47,7 +49,7 @@ Planejamento de pré-produção                 ✅ consolidado
 Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos   ⏭ próxima
+Etapa 4 — expansão operacional de Resíduos   🔧 reconciliação + revalidação
 Etapas 5 a 13                                ⏳
 Matriz formal de permissões                  ⏳ após pré-produção
 Congelamento/homologação final               ⏳ posterior
@@ -61,11 +63,12 @@ Integração corporativa                       ⏳ posterior
 
 | Documento | Papel | Estado |
 |---|---|---|
-| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 17/09** |
-| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 17/09** |
-| `CONTINUIDADE_ETAPA_4_2026-09-17.md` | handoff operacional da próxima etapa | **ATUAL — 17/09** |
+| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 22/09** |
+| `SINCRONIZACAO_GITLAB_GITHUB.md` | fonte canônica para remotes, branches, Actions, push/pull e regras de sincronização | **ATUAL — 22/09** |
+| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 22/09** |
+| `CONTINUIDADE_ETAPA_4_2026-09-17.md` | handoff operacional da Etapa 4 em reconciliação | **ATUAL — 22/09** |
 | `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **FECHADO — 17/09** |
-| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 17/09** |
+| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 22/09** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 17/09** |
 | `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **ATUAL — 17/09** |
 | `RELATORIOS.md` | cobertura de relatórios | **VIGENTE** |
@@ -81,7 +84,7 @@ Integração corporativa                       ⏳ posterior
 1. padronização visual                              ✅
 2. Dark Mode                                        ✅
 3. refinamentos do fluxo atual de Resíduos          ✅
-4. expansão de Resíduos                             ⏭ próxima
+4. expansão de Resíduos                             🔧 reconciliação + revalidação
 5. Projetos + Atividades                            ⏳
 6. Estagiários + vínculos                           ⏳
 7. relatórios consolidados                          ⏳
