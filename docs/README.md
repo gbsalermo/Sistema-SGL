@@ -67,6 +67,7 @@ Integração corporativa                       ⏳ posterior
 | `SINCRONIZACAO_GITLAB_GITHUB.md` | fonte canônica para remotes, branches, Actions, push/pull e regras de sincronização | **ATUAL — 22/09** |
 | `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 22/09** |
 | `CONTINUIDADE_ETAPA_4_2026-09-17.md` | handoff operacional da Etapa 4 em reconciliação | **ATUAL — 22/09** |
+| `VALIDACAO_ETAPA_4.md` | roteiro de homologação após o port seletivo dos blocos 4.1–4.4 | **ATUAL — 22/09** |
 | `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **FECHADO — 17/09** |
 | `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 22/09** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 17/09** |
