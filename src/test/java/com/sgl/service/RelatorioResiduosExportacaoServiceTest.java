@@ -86,6 +86,6 @@ class RelatorioResiduosExportacaoServiceTest {
 
     private RelatorioResiduosResponseDTO relatorioValido(List<ResiduoResponseDTO> itens) {
         return new RelatorioResiduosResponseDTO(
-                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, 0, itens);
+                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, 0, 0, itens);
     }
 }
