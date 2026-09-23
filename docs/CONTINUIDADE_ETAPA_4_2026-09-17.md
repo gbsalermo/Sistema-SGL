@@ -3,7 +3,8 @@
 **Criado originalmente em:** 17/09/2026  
 **Atualizado em:** 22/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
-**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧 reconciliação + revalidação  
+**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧 reconciliação + revalidação
+**Bloco atual:** 4.1 — Locais de armazenamento 🔧 port manual em andamento  
 **Branch histórica da implementação:** `feat/etapa-4-residuos`  
 **Branch atual de trabalho:** `collab/etapa-4-residuos-reconcile`  
 **Fonte canônica de `main`:** GitLab institucional  
@@ -18,7 +19,7 @@ Este arquivo substitui a interpretação anterior de “Etapa 4 ainda não inici
 A implementação histórica cobre:
 
 ```text
-4.1 Locais de armazenamento cadastráveis          ✅ implementado na branch antiga
+4.1 Locais de armazenamento cadastráveis          🔧 implementado na branch antiga; port para main atual em andamento
 4.2 Modelos de Resíduos pré-cadastrados            ✅ implementado na branch antiga
 4.3 Uso de modelo ou preenchimento manual          ✅ implementado na branch antiga
 4.4 Correções administrativas do ciclo             ✅ implementado na branch antiga
@@ -187,6 +188,8 @@ Residuo.localArmazenamentoTemporario
 A Gestão pode selecionar local cadastrado ou informar manualmente. Na confirmação física pode manter ou corrigir o local.
 
 Ao portar:
+
+> **Regra de segurança da retomada:** não copiar o `ResiduoService` antigo inteiro. A implementação histórica da 4.1 foi feita antes das correções fail-closed/cross-tenant do supervisor. Devem ser portados somente os trechos funcionais de local de armazenamento para o service atual.
 
 - adaptar paths para a estrutura atual `src/...`;
 - usar V17;
