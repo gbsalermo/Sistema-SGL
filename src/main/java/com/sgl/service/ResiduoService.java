@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.dto.request.AdministrarResiduoRequestDTO;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
 import com.sgl.dto.request.ArmazenarResiduoRequestDTO;
 import com.sgl.dto.request.ComponenteResiduoRequestDTO;
@@ -30,6 +31,7 @@ import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.repository.ClasseResiduoRepository;
@@ -193,6 +195,58 @@ public class ResiduoService {
 		return new ResiduoResponseDTO(salvo);
 	}
 
+	@Transactional
+	public ResiduoResponseDTO administrarCiclo(UUID id, AdministrarResiduoRequestDTO dto) {
+
+		if (dto == null || dto.getAcao() == null) {
+			throw new BusinessRuleException("A ação administrativa é obrigatória.");
+		}
+
+		if (dto.getJustificativa() == null || dto.getJustificativa().isBlank()) {
+			throw new BusinessRuleException("A justificativa da ação administrativa é obrigatória.");
+		}
+
+		Residuo residuo = buscarEntidade(id);
+		Usuario administrador = buscarUsuarioAdministrador(dto.getUsuarioAdministradorId());
+		String justificativa = dto.getJustificativa().trim();
+
+		if (dto.getAcao() == AcaoAdministrativaResiduo.CANCELAR) {
+			residuo.cancelarAdministrativamente();
+
+			Residuo salvo = residuoRepository.save(residuo);
+			registrarHistorico(
+					salvo,
+					administrador,
+					"RESIDUO_CANCELADO_ADMINISTRATIVAMENTE",
+					limitarObservacaoHistorico("Justificativa: " + justificativa)
+			);
+
+			return new ResiduoResponseDTO(salvo);
+		}
+
+		StatusResiduo etapaAnterior = residuo.getStatus();
+		StatusResiduo novaEtapa = residuo.retornarEtapaAdministrativamente();
+
+		Residuo salvo = residuoRepository.save(residuo);
+
+		String observacao =
+				"Retorno administrativo de "
+				+ etapaAnterior
+				+ " para "
+				+ novaEtapa
+				+ ". Justificativa: "
+				+ justificativa;
+
+		registrarHistorico(
+				salvo,
+				administrador,
+				"RETORNO_ADMINISTRATIVO_DE_ETAPA",
+				limitarObservacaoHistorico(observacao)
+		);
+
+		return new ResiduoResponseDTO(salvo);
+	}
+
 	@Transactional(readOnly = true)
 	public ResiduoResponseDTO buscarPorId(UUID id) {
 		return new ResiduoResponseDTO(buscarEntidade(id));
@@ -290,6 +344,18 @@ public class ResiduoService {
 
 		if (usuario.getPerfil() != Perfil.GESTOR && usuario.getPerfil() != Perfil.ADMINISTRADOR) {
 			throw new BusinessRuleException("A operação de gestão de resíduos exige perfil GESTOR ou ADMINISTRADOR.");
+		}
+
+		return usuario;
+	}
+
+	private Usuario buscarUsuarioAdministrador(UUID id) {
+		Usuario usuario = buscarUsuario(id);
+		usuario.validateActive();
+
+		if (usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+			throw new BusinessRuleException(
+					"A correção administrativa do ciclo de resíduos exige perfil ADMINISTRADOR.");
 		}
 
 		return usuario;
@@ -414,6 +480,14 @@ public class ResiduoService {
 
 		historicoResiduoRepository.save(HistoricoResiduo.builder().residuo(residuo).usuario(usuario)
 				.status(residuo.getStatus()).acao(acao).observacao(observacao).dataHora(LocalDateTime.now()).build());
+	}
+
+	private String limitarObservacaoHistorico(String observacao) {
+		if (observacao == null || observacao.length() <= 1000) {
+			return observacao;
+		}
+
+		return observacao.substring(0, 1000);
 	}
 
 	private LocalArmazenamentoResiduo buscarLocalArmazenamentoAtivo(UUID localId, UUID unidadeId) {
