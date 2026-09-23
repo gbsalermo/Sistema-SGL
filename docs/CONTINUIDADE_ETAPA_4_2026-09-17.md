@@ -1,232 +1,238 @@
 # Continuidade SGL — Etapa 4
 
-**Criado em:** 17/09/2026  
+**Criado originalmente em:** 17/09/2026  
+**Atualizado em:** 22/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
-**Próxima etapa:** Etapa 4 — Expansão operacional de Resíduos
+**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧 reconciliação + revalidação  
+**Branch histórica da implementação:** `feat/etapa-4-residuos`  
+**Branch atual de trabalho:** `collab/etapa-4-residuos-reconcile`  
+**Fonte canônica de `main`:** GitLab institucional  
+**Documento de infraestrutura:** `docs/SINCRONIZACAO_GITLAB_GITHUB.md`
 
-## 1. Antes de iniciar
-
-Ler nesta ordem:
-
-```text
-CONTINUIDADE.md
-docs/PLANO_PRE_PRODUCAO.md
-docs/CONTINUIDADE_ETAPA_3_2026-09-11.md
-docs/MODULO_RESIDUOS.md
-este arquivo
-```
-
-Também revisar no frontend:
-
-```text
-gbsalermo/SGL-FRONTEND/CONTINUIDADE.md
-```
-
-Confirmar que a Etapa 3 foi integrada à `main` nos dois repositórios antes de abrir a branch da Etapa 4.
-
-Branch sugerida:
-
-```text
-feat/etapa-4-residuos
-```
-
-Criar a branch a partir da `main` atualizada. Não continuar a Etapa 4 sobre uma branch antiga da Etapa 3.
+Este arquivo substitui a interpretação anterior de “Etapa 4 ainda não iniciada”. A Etapa 4 chegou a ser implementada integralmente em uma branch antiga, porém essa branch foi construída antes das correções mais recentes do supervisor no GitLab. Portanto, a implementação histórica será portada seletivamente para a base atual e só depois revalidada.
 
 ---
 
-## 2. Regra de trabalho
+## 1. Estado real em 22/09/2026
 
-O responsável do projeto quer aprender e implementar o backend manualmente.
-
-Portanto:
+A implementação histórica cobre:
 
 ```text
-backend funcional
-→ IA analisa
-→ explica a modelagem
+4.1 Locais de armazenamento cadastráveis          ✅ implementado na branch antiga
+4.2 Modelos de Resíduos pré-cadastrados            ✅ implementado na branch antiga
+4.3 Uso de modelo ou preenchimento manual          ✅ implementado na branch antiga
+4.4 Correções administrativas do ciclo             ✅ implementado na branch antiga
+Validação integrada na base corrigida              ⏳ pendente após reconciliação
+```
+
+A antiga `feat/etapa-4-residuos` **não deve ser mergeada integralmente**.
+
+Motivos:
+
+- backend antigo ainda usava a estrutura `backend/sgl-backend/...`;
+- `main` atual do GitLab avançou com correções do supervisor;
+- houve alterações de segurança/tenant/testes que não podem ser sobrescritas;
+- a numeração Flyway antiga conflita com a nova V16 canônica;
+- `ResiduoService` sofreu mudanças relevantes em ambos os históricos.
+
+Regra da reconciliação:
+
+```text
+gitlab/main atual
++ correções do supervisor
++ port seletivo da Etapa 4 antiga
+= nova Etapa 4 reconciliada
+```
+
+---
+
+## 2. Infraestrutura Git obrigatória
+
+Antes de trabalhar nesta etapa, ler:
+
+`docs/SINCRONIZACAO_GITLAB_GITHUB.md`
+
+Resumo:
+
+```text
+GitLab/main
+= fonte canônica
+
+GitHub/collab/*
+→ sincroniza automaticamente
+→ GitLab/collab/*
+→ MR
+→ GitLab/main
+
+GitLab/main
+→ sincroniza automaticamente
+→ GitHub/main
+```
+
+Não usar `--force`. Não editar `GitHub/main` diretamente.
+
+Se a IA criar commits na branch GitHub enquanto o usuário trabalha localmente:
+
+```bash
+git pull --rebase github collab/etapa-4-residuos-reconcile
+```
+
+Antes de portar qualquer bloco, atualizar a branch com a base canônica quando for fast-forward possível:
+
+```bash
+git fetch gitlab --prune
+git merge --ff-only gitlab/main
+git push github collab/etapa-4-residuos-reconcile
+```
+
+---
+
+## 3. Regra de trabalho
+
+O responsável do projeto implementa manualmente o backend funcional.
+
+Fluxo:
+
+```text
+IA analisa implementação antiga + main atual
+→ explica o que deve ser preservado
+→ adapta modelagem/arquivos/migrations
 → fornece passos e código de referência
 → usuário implementa manualmente
-→ IA revisa o resultado
+→ IA revisa
+→ testes
+→ próximo bloco
 ```
 
-Não aplicar diretamente código funcional de backend sem autorização explícita.
+Frontend e documentação podem ser alterados diretamente quando autorizado.
 
-Frontend/documentação podem ser alterados diretamente quando o usuário autorizar, sempre explicando antes o impacto.
-
-Executar em passos pequenos, com commits lógicos e sem antecipar etapas futuras.
+Não portar todos os arquivos de uma vez.
 
 ---
 
-## 3. Estado atual do domínio de Resíduos
-
-Fluxo preservado ao final da Etapa 3:
+## 4. Ordem de reconciliação
 
 ```text
-INFORMADO
-→ EM_ANALISE
-→ LIBERADO_PARA_ARMAZENAMENTO
-→ ARMAZENADO_TEMPORARIAMENTE
-→ DESPACHADO
+4.1 Locais de armazenamento
+→ validar compilação/testes
+→ 4.2 ModeloResiduo
+→ validar compilação/testes
+→ 4.3 uso pelo Solicitante + frontend
+→ validar integração
+→ 4.4 correções administrativas
+→ validar integração
+→ bateria completa da Etapa 4
 ```
 
-Código SGL:
-
-```text
-SGL-RES-AAAA-NNNNNN
-```
-
-A identificação existe desde a criação.
-
-A prévia do rótulo pode ser aberta em `INFORMADO` e `EM_ANALISE`, mas a impressão só é permitida a partir de `LIBERADO_PARA_ARMAZENAMENTO`.
-
-Produto continua diferente de Resíduo:
-
-```text
-Produto = catálogo/estoque
-Residuo = ocorrência operacional real
-```
-
-Componentes podem referenciar Produtos apenas para rastreabilidade/sugestões. Isso não movimenta estoque automaticamente.
+A antiga branch serve como referência de comportamento e código, não como fonte de verdade estrutural.
 
 ---
 
-## 4. Dados consolidados na Etapa 3
+## 5. Flyway — decisão obrigatória
 
-O Resíduo já possui:
-
-- descrição;
-- `processoOrigem`, exibido como Procedência / uso do Resíduo;
-- estado físico;
-- tratamento realizado + descrição;
-- recipiente;
-- quantidade/unidade;
-- componentes;
-- risco informado e risco confirmado;
-- classes informadas e classes confirmadas;
-- segurança/EPI informada e confirmada;
-- observações do Solicitante e da Gestão;
-- Gestor recebedor inicial;
-- histórico de todas as transições;
-- código SGL;
-- QR técnico;
-- armazenamento temporário;
-- destino previsto/confirmado.
-
-Migrations relevantes:
+No `main` atual existe:
 
 ```text
-V11 — módulo de Resíduos
-V12 — backfill Código SGL
-V13 — estado físico, tratamento e responsabilidade inicial
-V14 — Classes de Resíduo
-V15 — segurança/EPI
+V16__add_residuo_unidade_snapshot.sql
 ```
 
-Migrations aplicadas são imutáveis. Novas alterações devem usar V16+.
+Essa migration veio das correções do supervisor e é canônica.
+
+Na implementação antiga da Etapa 4 existiam:
+
+```text
+V16__create_residue_storage_locations.sql
+V17__create_residue_models.sql
+```
+
+Na reconciliação devem virar:
+
+```text
+V16 = add_residuo_unidade_snapshot        ✅ preservar
+V17 = create_residue_storage_locations    ⏳ portar
+V18 = create_residue_models               ⏳ portar
+```
+
+Migration já aplicada é imutável. Nunca substituir a V16 do supervisor.
 
 ---
 
-## 5. Snapshot — regra arquitetural importante
+## 6. Etapa 4.1 — Locais de armazenamento
 
-Dados históricos de uma ocorrência real não devem depender de cadastros mutáveis.
-
-Exemplos já implementados:
-
-```text
-ClasseResiduo = catálogo atual/editável
-ResiduoClasse = snapshot histórico da classificação
-
-Produto = recomendações atuais de segurança
-Residuo = segurança efetivamente informada/confirmada naquela ocorrência
-```
-
-Alterar Classe, Produto ou futuramente ModeloResiduo não pode modificar retroativamente Resíduos existentes.
-
-Preservar essa regra durante toda a Etapa 4.
-
----
-
-# 6. Escopo da Etapa 4
-
-## 4.1 — Locais de armazenamento cadastráveis
-
-Objetivo: substituir dependência exclusiva de texto livre por locais reutilizáveis, sem perder flexibilidade.
-
-Uso esperado:
+Objetivo preservado:
 
 ```text
 local cadastrado
 + complemento livre
++ possibilidade manual quando permitido
++ snapshot textual no Resíduo
 ```
 
-Exemplo:
+Arquitetura histórica de referência:
 
 ```text
-Almoxarifado Químico
-+ Prateleira B2
+LocalArmazenamentoResiduo
+= catálogo mutável por Unidade
+
+Residuo.localArmazenamentoResiduo
+= referência opcional ao catálogo
+
+Residuo.complementoLocalArmazenamento
+= complemento da ocorrência
+
+Residuo.localArmazenamentoTemporario
+= snapshot textual histórico
 ```
 
-Também deve ser possível informar local manualmente quando necessário.
+A Gestão pode selecionar local cadastrado ou informar manualmente. Na confirmação física pode manter ou corrigir o local.
 
-Regra:
+Ao portar:
 
-```text
-etapa que exige armazenamento
-→ precisa terminar com um local válido
-```
-
-Antes de implementar, definir:
-
-- entidade/catálogo por Unidade;
-- ativação/inativação;
-- como preservar histórico se o local for renomeado depois;
-- se será necessário snapshot de nome do local no Resíduo;
-- como combinar local cadastrado + complemento livre.
-
-Não antecipar layout definitivo antes da modelagem.
+- adaptar paths para a estrutura atual `src/...`;
+- usar V17;
+- manter isolamento de tenant da base corrigida;
+- não reintroduzir lógica fail-open;
+- revisar `Residuo`, DTOs, Controller e Service contra o `main` atual;
+- preservar testes novos do supervisor.
 
 ---
 
-## 4.2 — Modelos de Resíduos pré-cadastrados pela Gestão
+## 7. Etapa 4.2 — ModeloResiduo
 
-Criar `ModeloResiduo` ou estrutura equivalente para padrões recorrentes.
-
-Modelo é definição reutilizável; não é ocorrência.
+Regra principal:
 
 ```text
-ModeloResiduo
-= padrão reutilizável
-
-Residuo
-= ocorrência real
+ModeloResiduo = definição reutilizável/editável
+Residuo       = ocorrência real independente
 ```
 
-Um modelo poderá sugerir/preencher, conforme a modelagem final:
+A implementação histórica continha:
 
-- nome/descrição;
-- procedência/uso padrão;
-- composição padrão;
-- Produtos/componentes relacionados;
-- Classes de Resíduo;
-- riscos conhecidos;
-- segurança/EPI;
-- recipiente/acondicionamento;
-- tratamento padrão quando fizer sentido como sugestão;
-- outros dados reutilizáveis aprovados.
+- `ModeloResiduo`;
+- `ComponenteModeloResiduo`;
+- repositories;
+- DTOs;
+- Service;
+- Controller;
+- CRUD por Unidade;
+- nome único por Unidade;
+- classes ativas da mesma Unidade;
+- Produto opcional;
+- tratamento padrão;
+- Segurança/EPI;
+- inativação lógica;
+- tela administrativa no frontend;
+- testes backend.
 
-Regras obrigatórias:
+Não existe relação viva `Residuo -> ModeloResiduo` que altere ocorrência histórica.
 
-- modelo não movimenta estoque;
-- alteração futura do modelo não altera Resíduos históricos;
-- Solicitante ainda cria uma ocorrência real;
-- classificação/segurança continuam sujeitas à conferência da Gestão;
-- dados específicos da ocorrência não devem ficar presos ao modelo.
+Migration reconciliada: **V18**.
 
 ---
 
-## 4.3 — Uso pelo Solicitante
+## 8. Etapa 4.3 — Uso pelo Solicitante
 
-Na tela Informar Resíduo, permitir escolha clara entre:
+Na criação do Resíduo:
 
 ```text
 usar modelo pré-cadastrado
@@ -234,96 +240,103 @@ ou
 preencher manualmente
 ```
 
-Selecionar modelo deve preencher sugestões iniciais. O usuário deve poder completar/ajustar o que pertence à ocorrência real, respeitando as regras definidas.
+Modelo sugere/preenche dados reutilizáveis. Permanecem específicos da ocorrência:
 
-Não transformar o modelo em referência viva para o histórico.
+- quantidade;
+- usuário;
+- laboratório;
+- projeto;
+- observação do gerador;
+- demais dados que dependam do evento real.
+
+O payload final continua sendo o contrato normal de criação de `Residuo`, preservando snapshot e independência histórica.
+
+Frontend deve ser reconciliado somente depois do contrato backend do bloco estar estável.
 
 ---
 
-## 4.4 — Correções administrativas do ciclo de vida
+## 9. Etapa 4.4 — Correções administrativas
 
-Necessidade levantada na validação final da Etapa 3.
-
-Objetivo: permitir correções operacionais sem apagar a trilha histórica.
-
-Avaliar para perfil `ADMINISTRADOR`:
+Comportamento histórico planejado/implementado:
 
 ```text
-Cancelar Resíduo
-→ justificativa obrigatória
-→ preserva registro
-→ preserva histórico
-→ registra ator/data/motivo
-
-Retornar para análise/liberação
-→ justificativa obrigatória
-→ preserva eventos anteriores
-→ exige nova validação antes de liberar novamente
-→ impressão deve voltar a ser bloqueada quando aplicável
+CANCELAR
+RETORNAR_ETAPA
 ```
 
-Antes de implementar, fechar explicitamente:
-
-1. de quais status pode retornar;
-2. se `DESPACHADO` é irreversível no fluxo comum;
-3. se será criado status `CANCELADO`;
-4. quais dados confirmados permanecem visíveis após retorno;
-5. se uma nova liberação cria novo evento sem apagar a anterior;
-6. efeitos sobre rótulo e permissão de impressão;
-7. permissões exatas da ação administrativa.
-
-Não confundir com delete lógico.
-
-A avaliação geral de delete lógico permanece na **Etapa 11**.
-
----
-
-## 7. Fora do escopo da Etapa 4
-
-Não antecipar:
-
-- Projetos/Atividades → Etapa 5;
-- evolução institucional de Estagiários → Etapa 6;
-- Relatórios consolidados → Etapa 7;
-- normalização g/mL/unidades e Soluções → Etapa 8;
-- Soluções em Pedidos → Etapa 9;
-- Zebra/template final/infraestrutura física de impressão → Etapa 10;
-- Manual do Usuário e decisão geral de delete lógico → Etapa 11;
-- testes automatizados frontend → Etapa 12;
-- refactor final de classes grandes, inclusive `Residuo` → Etapa 13.
-
----
-
-## 8. Observação sobre tamanho das classes
-
-`Residuo.java` cresceu significativamente durante a Etapa 3.
-
-Não realizar refactor estrutural grande agora apenas para reduzir linhas, pois isso pode aumentar risco durante as etapas funcionais.
-
-A **Etapa 13 — revisão estrutural e legibilidade** já foi criada para:
-
-- revisar `Residuo`;
-- revisar Services/DTOs/Controllers extensos;
-- extrair responsabilidades reais quando necessário;
-- documentar conceitos como snapshot;
-- preservar contratos e comportamento;
-- reexecutar os testes automatizados da Etapa 12 após o refactor.
-
----
-
-## 9. Próximo passo ao abrir a nova janela
-
-Não começar codando imediatamente.
-
-Primeiro:
+Perfil:
 
 ```text
-1. confirmar main atualizada nos dois repositórios;
-2. ler documentação canônica;
-3. revisar o estado real de Residuo/Services/DTOs/frontend;
-4. criar branch feat/etapa-4-residuos a partir da main atualizada;
-5. detalhar a Etapa 4 em passos pequenos;
-6. iniciar somente a 4.1;
+ADMINISTRADOR
 ```
 
-O usuário fará as mudanças funcionais do backend manualmente.
+Regras históricas:
+
+- justificativa obrigatória;
+- trilha no histórico;
+- `CANCELADO` como estado terminal para retorno;
+- `DESPACHADO` não cancela diretamente;
+- retorno administrativo ocorre uma etapa por vez;
+- nova execução da etapa cria novo evento e não apaga eventos anteriores.
+
+Essas regras devem ser conferidas novamente contra as correções atuais de autorização/tenant antes da homologação.
+
+---
+
+## 10. Validação
+
+Roteiro:
+
+`docs/VALIDACAO_ETAPA_4.md`
+
+Importante:
+
+A bateria não deve ser executada como validação final enquanto os quatro blocos ainda não tiverem sido portados para a branch reconciliada.
+
+Validação final esperada:
+
+```text
+backend test/build                          ⏳
+frontend build/type-check                  ⏳
+4.1 locais                                 ⏳
+4.2 CRUD de modelos                        ⏳
+4.3 modelo + manual                        ⏳
+4.4 cancelar/retornar + histórico          ⏳
+tenant entre Unidades                      ⏳
+relatórios/cancelados                      ⏳
+regressão do fluxo normal de Resíduos      ⏳
+```
+
+---
+
+## 11. Achados do supervisor
+
+As correções de segurança/tenant/testes feitas pelo supervisor na `main` têm precedência sobre a implementação antiga da Etapa 4.
+
+Não desfazer durante o port:
+
+- isolamento de tenant fail-closed;
+- correções cross-tenant;
+- snapshots de Unidade;
+- testes adicionados pelo supervisor;
+- alterações atuais de repositories/services;
+- demais correções já integradas à `main`.
+
+Quando houver conflito entre a feature antiga e a `main`, adaptar a funcionalidade da Etapa 4 ao código novo — nunca o contrário.
+
+---
+
+## 12. Próximo passo
+
+Antes de continuar código:
+
+```text
+1. confirmar branches collab atualizadas com gitlab/main;
+2. revisar 4.1 antiga contra main atual;
+3. renumerar migration de locais para V17;
+4. portar 4.1 manualmente no backend;
+5. executar testes;
+6. somente então avançar para 4.2.
+```
+
+A validação da Etapa 4 será retomada depois que a implementação antiga tiver sido integralmente reconciliada com a base atual.
