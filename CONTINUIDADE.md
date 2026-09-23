@@ -10,7 +10,7 @@
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
 **Etapa atual:** Etapa 4 — implementação histórica concluída, reconciliação com a `main` corrigida pelo supervisor e revalidação em andamento  
-**Bloco atual da Etapa 4:** 4.3 — Uso de modelo ou preenchimento manual
+**Bloco atual da Etapa 4:** 4.4 — Correções administrativas do ciclo de vida
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da próxima etapa:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
@@ -364,7 +364,7 @@ Ordem prevista:
 ```text
 4.1 Locais de armazenamento cadastráveis
 → 4.2 Modelos de Resíduos pré-cadastrados pela Gestão
-→ 4.3 Uso de modelo ou preenchimento manual pelo Solicitante
+→ 4.3 Uso de modelo ou preenchimento manual ✅ concluído e validado
 → 4.4 Correções administrativas do ciclo de vida
 ```
 
