@@ -4,7 +4,7 @@
 **Atualizado em:** 22/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧 reconciliação + revalidação
-**Bloco atual:** 4.3 — Uso de modelo ou preenchimento manual 🔧
+**Bloco atual:** 4.4 — Correções administrativas do ciclo de vida 🔧
 **Branch histórica da implementação:** `feat/etapa-4-residuos`  
 **Branch atual de trabalho:** `collab/etapa-4-residuos-reconcile`  
 **Fonte canônica de `main`:** GitLab institucional  
@@ -21,7 +21,7 @@ A implementação histórica cobre:
 ```text
 4.1 Locais de armazenamento cadastráveis          ✅ reconciliado, testado e validado ponta a ponta
 4.2 Modelos de Resíduos pré-cadastrados            ✅ implementado na branch antiga
-4.3 Uso de modelo ou preenchimento manual        🔧 próximo bloco
+4.3 Uso de modelo ou preenchimento manual        ✅ reconciliado, testado e validado ponta a ponta
 4.4 Correções administrativas do ciclo             ✅ implementado na branch antiga
 Validação integrada na base corrigida              ⏳ pendente após reconciliação
 ```
