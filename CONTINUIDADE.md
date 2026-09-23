@@ -10,6 +10,7 @@
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
 **Etapa atual:** Etapa 4 — implementação histórica concluída, reconciliação com a `main` corrigida pelo supervisor e revalidação em andamento  
+**Bloco atual da Etapa 4:** 4.1 — Locais de armazenamento, port manual para a base atual  
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da próxima etapa:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
