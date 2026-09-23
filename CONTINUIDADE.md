@@ -10,7 +10,7 @@
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 3 — refinamentos do fluxo atual de Resíduos ✅  
 **Etapa atual:** Etapa 4 — implementação histórica concluída, reconciliação com a `main` corrigida pelo supervisor e revalidação em andamento  
-**Bloco atual da Etapa 4:** 4.4 — Correções administrativas do ciclo de vida
+**Bloco atual da Etapa 4:** 4.4 — Correções administrativas do ciclo de vida — implementado, validação funcional pendente
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da próxima etapa:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
@@ -520,3 +520,17 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 # 14. Regra final de retomada
 
 **A Etapa 3 está encerrada e validada. Em 22/09/2026 os `main` de GitLab/GitHub foram reconciliados e passaram a usar sincronização automática. A Etapa 4 deve continuar em `collab/etapa-4-residuos-reconcile`, sempre a partir da `gitlab/main` atual, portando seletivamente a implementação histórica de `feat/etapa-4-residuos`. Ler primeiro `docs/SINCRONIZACAO_GITLAB_GITHUB.md` e depois `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`. O usuário continua implementando manualmente o backend funcional.**
+
+### Estado do 4.4
+
+Implementado na branch de reconciliação:
+- status `CANCELADO`;
+- ações administrativas `CANCELAR` e `RETORNAR_ETAPA`;
+- justificativa obrigatória e registro em histórico;
+- retorno de exatamente uma etapa por ação;
+- `DESPACHADO` não pode ser cancelado diretamente, mas pode retornar para `ARMAZENADO_TEMPORARIAMENTE`;
+- operação restrita no service ao perfil `ADMINISTRADOR` e ao tenant atual;
+- cancelados incluídos em relatórios e exportações;
+- testes unitários/service/controller adicionados.
+
+A Etapa 4 só deve ser marcada como concluída após a validação funcional do frontend e do fluxo integrado.
