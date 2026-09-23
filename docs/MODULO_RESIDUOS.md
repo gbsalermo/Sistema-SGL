@@ -507,3 +507,15 @@ Detalhes: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 A revisão de tamanho, coesão e legibilidade foi deliberadamente movida para a **Etapa 13**, depois dos testes automatizados da Etapa 12.
 
 O objetivo será refatorar sem alterar comportamento ou contratos e reexecutar a suíte de regressão após as mudanças.
+
+## Correções administrativas do ciclo
+
+O perfil `ADMINISTRADOR` pode corrigir o ciclo de um Resíduo sempre com justificativa auditável.
+
+Fluxo normal:
+`INFORMADO -> EM_ANALISE -> LIBERADO_PARA_ARMAZENAMENTO -> ARMAZENADO_TEMPORARIAMENTE -> DESPACHADO`.
+
+Retorno administrativo ocorre uma etapa por vez:
+`DESPACHADO -> ARMAZENADO_TEMPORARIAMENTE -> LIBERADO_PARA_ARMAZENAMENTO -> EM_ANALISE -> INFORMADO`.
+
+O cancelamento gera o status terminal `CANCELADO`. Um Resíduo em `DESPACHADO` deve retornar ao menos uma etapa antes de poder ser cancelado. As ações são registradas como `RESIDUO_CANCELADO_ADMINISTRATIVAMENTE` ou `RETORNO_ADMINISTRATIVO_DE_ETAPA` no histórico.
