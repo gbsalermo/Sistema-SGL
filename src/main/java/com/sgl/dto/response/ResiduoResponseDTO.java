@@ -23,170 +23,146 @@ import lombok.Getter;
 @Getter
 public class ResiduoResponseDTO {
 
-    private final UUID id;
-    private final String codigoRastreio;
-    private final StatusResiduo status;
+	private final UUID id;
+	private final String codigoRastreio;
+	private final StatusResiduo status;
 
-    private final UUID laboratorioId;
-    private final String laboratorioNome;
-    private final UUID usuarioGeradorId;
-    private final String usuarioGeradorNome;
-    private final UUID projetoId;
-    private final String projetoNome;
+	private final UUID laboratorioId;
+	private final String laboratorioNome;
+	private final UUID usuarioGeradorId;
+	private final String usuarioGeradorNome;
+	private final UUID projetoId;
+	private final String projetoNome;
 
+	private final String descricao;
+	private final String processoOrigem;
+	private final String recipiente;
+	private final BigDecimal quantidade;
+	private final UnidadeMedida unidadeMedida;
 
-    private final String descricao;
-    private final String processoOrigem;
-    private final String recipiente;
-    private final BigDecimal quantidade;
-    private final UnidadeMedida unidadeMedida;
+	private final NivelRisco nivelRiscoInformado;
+	private final Set<TipoRisco> riscosInformados;
+	private final NivelRisco nivelRiscoConfirmado;
+	private final Set<TipoRisco> riscosConfirmados;
 
-    private final NivelRisco nivelRiscoInformado;
-    private final Set<TipoRisco> riscosInformados;
-    private final NivelRisco nivelRiscoConfirmado;
-    private final Set<TipoRisco> riscosConfirmados;
+	private final String observacaoGerador;
+	private final String observacaoGestor;
+	private final String localArmazenamentoTemporario;
+	private final String destinoFinalPrevisto;
+	private final String destinoFinalConfirmado;
+	private final String qrCodeConteudo;
 
-    private final String observacaoGerador;
-    private final String observacaoGestor;
-    private final String localArmazenamentoTemporario;
-    private final String destinoFinalPrevisto;
-    private final String destinoFinalConfirmado;
-    private final String qrCodeConteudo;
+	private final LocalDateTime dataInformacao;
+	private final LocalDateTime dataRecebimento;
+	private final LocalDateTime dataLiberacao;
+	private final LocalDateTime dataArmazenamentoTemporario;
+	private final LocalDate dataPrevistaDespacho;
+	private final LocalDateTime dataDespacho;
 
-    private final LocalDateTime dataInformacao;
-    private final LocalDateTime dataRecebimento;
-    private final LocalDateTime dataLiberacao;
-    private final LocalDateTime dataArmazenamentoTemporario;
-    private final LocalDate dataPrevistaDespacho;
-    private final LocalDateTime dataDespacho;
-    
-    private final UUID gestorRecebedorInicialId;
-    private final String gestorRecebedorInicialNome;
+	private final UUID gestorRecebedorInicialId;
+	private final String gestorRecebedorInicialNome;
 
-    private final EstadoFisicoResiduo estadoFisico;
-    private final Boolean tratamentoRealizado;
-    private final String descricaoTratamento;
+	private final EstadoFisicoResiduo estadoFisico;
+	private final Boolean tratamentoRealizado;
+	private final String descricaoTratamento;
 
-    private final List<ComponenteResiduoResponseDTO> componentes;
-    
-    private final List<ClasseResiduoSnapshotResponseDTO>
-    classesInformadas;
+	private final List<ComponenteResiduoResponseDTO> componentes;
 
-    private final List<ClasseResiduoSnapshotResponseDTO>
-    classesConfirmadas;
+	private final List<ClasseResiduoSnapshotResponseDTO> classesInformadas;
 
-    private final Set<MedidaSeguranca> medidasSegurancaInformadas;
-    private final String observacaoSegurancaInformada;
+	private final List<ClasseResiduoSnapshotResponseDTO> classesConfirmadas;
 
-    private final Set<MedidaSeguranca> medidasSegurancaConfirmadas;
-    private final String observacaoSegurancaConfirmada;
-    
-    public ResiduoResponseDTO(Residuo entity) {
-        this.id = entity.getPublicId();
-        this.codigoRastreio = entity.getCodigoRastreio();
-        this.status = entity.getStatus();
+	private final Set<MedidaSeguranca> medidasSegurancaInformadas;
+	private final String observacaoSegurancaInformada;
 
-        this.laboratorioId = entity.getLaboratorio().getPublicId();
-        this.laboratorioNome = entity.getLaboratorio().getNome();
+	private final Set<MedidaSeguranca> medidasSegurancaConfirmadas;
+	private final String observacaoSegurancaConfirmada;
 
-        this.usuarioGeradorId = entity.getGerador().getPublicId();
-        this.usuarioGeradorNome = entity.getGerador().getNome();
+	private final UUID localArmazenamentoResiduoId;
+	private final String complementoLocalArmazenamento;
 
-        this.projetoId = entity.getProjeto() != null
-                ? entity.getProjeto().getPublicId()
-                : null;
+	public ResiduoResponseDTO(Residuo entity) {
+		this.id = entity.getPublicId();
+		this.codigoRastreio = entity.getCodigoRastreio();
+		this.status = entity.getStatus();
 
-        this.projetoNome = entity.getProjeto() != null
-                ? entity.getProjeto().getNome()
-                : null;
+		this.laboratorioId = entity.getLaboratorio().getPublicId();
+		this.laboratorioNome = entity.getLaboratorio().getNome();
 
-        // Gestor que recebeu inicialmente o resíduo.
-        this.gestorRecebedorInicialId = entity.getGestorRecebedorInicial() != null
-                ? entity.getGestorRecebedorInicial().getPublicId()
-                : null;
+		this.usuarioGeradorId = entity.getGerador().getPublicId();
+		this.usuarioGeradorNome = entity.getGerador().getNome();
 
-        this.gestorRecebedorInicialNome = entity.getGestorRecebedorInicial() != null
-                ? entity.getGestorRecebedorInicial().getNome()
-                : null;
+		this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
 
-        this.descricao = entity.getDescricao();
-        this.processoOrigem = entity.getProcessoOrigem();
+		this.projetoNome = entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
 
-        this.estadoFisico = entity.getEstadoFisico();
-        this.tratamentoRealizado = entity.getTratamentoRealizado();
-        this.descricaoTratamento = entity.getDescricaoTratamento();
+		// Gestor que recebeu inicialmente o resíduo.
+		this.gestorRecebedorInicialId = entity.getGestorRecebedorInicial() != null
+				? entity.getGestorRecebedorInicial().getPublicId()
+				: null;
 
-        this.recipiente = entity.getRecipiente();
-        this.quantidade = entity.getQuantidade();
-        this.unidadeMedida = entity.getUnidadeMedida();
+		this.gestorRecebedorInicialNome = entity.getGestorRecebedorInicial() != null
+				? entity.getGestorRecebedorInicial().getNome()
+				: null;
 
-        this.nivelRiscoInformado = entity.getNivelRiscoInformado();
-        this.riscosInformados = new LinkedHashSet<>(
-                entity.getRiscosInformados()
-        );
+		this.descricao = entity.getDescricao();
+		this.processoOrigem = entity.getProcessoOrigem();
 
-        this.nivelRiscoConfirmado = entity.getNivelRiscoConfirmado();
-        this.riscosConfirmados = new LinkedHashSet<>(
-                entity.getRiscosConfirmados()
-        );
+		this.estadoFisico = entity.getEstadoFisico();
+		this.tratamentoRealizado = entity.getTratamentoRealizado();
+		this.descricaoTratamento = entity.getDescricaoTratamento();
 
-        this.observacaoGerador = entity.getObservacaoGerador();
-        this.observacaoGestor = entity.getObservacaoGestor();
+		this.recipiente = entity.getRecipiente();
+		this.quantidade = entity.getQuantidade();
+		this.unidadeMedida = entity.getUnidadeMedida();
 
-        this.localArmazenamentoTemporario =
-                entity.getLocalArmazenamentoTemporario();
+		this.nivelRiscoInformado = entity.getNivelRiscoInformado();
+		this.riscosInformados = new LinkedHashSet<>(entity.getRiscosInformados());
 
-        this.destinoFinalPrevisto =
-                entity.getDestinoFinalPrevisto();
+		this.nivelRiscoConfirmado = entity.getNivelRiscoConfirmado();
+		this.riscosConfirmados = new LinkedHashSet<>(entity.getRiscosConfirmados());
 
-        this.destinoFinalConfirmado =
-                entity.getDestinoFinalConfirmado();
+		this.observacaoGerador = entity.getObservacaoGerador();
+		this.observacaoGestor = entity.getObservacaoGestor();
 
-        this.qrCodeConteudo = entity.getQrCodeConteudo();
+		this.localArmazenamentoTemporario = entity.getLocalArmazenamentoTemporario();
 
-        this.dataInformacao = entity.getDataInformacao();
-        this.dataRecebimento = entity.getDataRecebimento();
-        this.dataLiberacao = entity.getDataLiberacao();
+		this.destinoFinalPrevisto = entity.getDestinoFinalPrevisto();
 
-        this.dataArmazenamentoTemporario =
-                entity.getDataArmazenamentoTemporario();
+		this.destinoFinalConfirmado = entity.getDestinoFinalConfirmado();
 
-        this.dataPrevistaDespacho =
-                entity.getDataPrevistaDespacho();
+		this.qrCodeConteudo = entity.getQrCodeConteudo();
 
-        this.dataDespacho = entity.getDataDespacho();
+		this.dataInformacao = entity.getDataInformacao();
+		this.dataRecebimento = entity.getDataRecebimento();
+		this.dataLiberacao = entity.getDataLiberacao();
 
-        this.componentes = entity.getComponentes()
-                .stream()
-                .map(ComponenteResiduoResponseDTO::new)
-                .toList();
-        
-        this.classesInformadas =
-                entity.getClassesInformadas()
-                        .stream()
-                        .map(ClasseResiduoSnapshotResponseDTO::new)
-                        .toList();
+		this.dataArmazenamentoTemporario = entity.getDataArmazenamentoTemporario();
 
-        this.classesConfirmadas =
-                entity.getClassesConfirmadas()
-                        .stream()
-                        .map(ClasseResiduoSnapshotResponseDTO::new)
-                        .toList();
-        
-        this.medidasSegurancaInformadas =
-                new LinkedHashSet<>(
-                        entity.getMedidasSegurancaInformadas()
-                );
+		this.dataPrevistaDespacho = entity.getDataPrevistaDespacho();
 
-        this.observacaoSegurancaInformada =
-                entity.getObservacaoSegurancaInformada();
+		this.dataDespacho = entity.getDataDespacho();
 
-        this.medidasSegurancaConfirmadas =
-                new LinkedHashSet<>(
-                        entity.getMedidasSegurancaConfirmadas()
-                );
+		this.componentes = entity.getComponentes().stream().map(ComponenteResiduoResponseDTO::new).toList();
 
-        this.observacaoSegurancaConfirmada =
-                entity.getObservacaoSegurancaConfirmada();
-    }
+		this.classesInformadas = entity.getClassesInformadas().stream().map(ClasseResiduoSnapshotResponseDTO::new)
+				.toList();
+
+		this.classesConfirmadas = entity.getClassesConfirmadas().stream().map(ClasseResiduoSnapshotResponseDTO::new)
+				.toList();
+
+		this.medidasSegurancaInformadas = new LinkedHashSet<>(entity.getMedidasSegurancaInformadas());
+
+		this.observacaoSegurancaInformada = entity.getObservacaoSegurancaInformada();
+
+		this.medidasSegurancaConfirmadas = new LinkedHashSet<>(entity.getMedidasSegurancaConfirmadas());
+
+		this.observacaoSegurancaConfirmada = entity.getObservacaoSegurancaConfirmada();
+
+		this.localArmazenamentoResiduoId = entity.getLocalArmazenamentoResiduo() != null
+				? entity.getLocalArmazenamentoResiduo().getPublicId()
+				: null;
+
+		this.complementoLocalArmazenamento = entity.getComplementoLocalArmazenamento();
+	}
 }

@@ -13,6 +13,7 @@ import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,42 +26,47 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AnalisarResiduoRequestDTO {
 
-    @NotNull(message = "O usuário gestor é obrigatório")
-    private UUID usuarioGestorId;
+	@NotNull(message = "O usuário gestor é obrigatório")
+	private UUID usuarioGestorId;
 
-    @NotNull(message = "O nível de risco confirmado é obrigatório")
-    private NivelRisco nivelRiscoConfirmado;
+	@NotNull(message = "O nível de risco confirmado é obrigatório")
+	private NivelRisco nivelRiscoConfirmado;
 
-    // Correção de bug: mesma situação de CriarResiduoRequestDTO.
-    // riscosInformados — @NotNull deixava passar uma lista vazia. Na etapa
-    // de análise técnica, isso permitiria confirmar um nível de risco (por
-    // exemplo, ALTO) sem nenhum risco específico marcado.
-    @NotEmpty(message = "Os riscos confirmados são obrigatórios")
-    private Set<TipoRisco> riscosConfirmados;
+	// Correção de bug: mesma situação de CriarResiduoRequestDTO.
+	// riscosInformados — @NotNull deixava passar uma lista vazia. Na etapa
+	// de análise técnica, isso permitiria confirmar um nível de risco (por
+	// exemplo, ALTO) sem nenhum risco específico marcado.
+	@NotEmpty(message = "Os riscos confirmados são obrigatórios")
+	private Set<TipoRisco> riscosConfirmados;
 
-    @NotBlank(message = "O local de armazenamento temporário é obrigatório")
-    @Schema(example = "Abrigo de resíduos - setor químico A")
-    private String localArmazenamentoTemporario;
+	@Size(max = 255, message = "O local de armazenamento manual deve possuir no máximo 255 caracteres")
+	@Schema(description = "Local manual usado quando não houver local cadastrado.")
+	private String localArmazenamentoTemporario;
 
-    @NotBlank(message = "O destino final previsto é obrigatório")
-    @Schema(example = "Empresa licenciada para tratamento de resíduos químicos")
-    private String destinoFinalPrevisto;
+	@Schema(description = "UUID do local de armazenamento cadastrado.")
+	private UUID localArmazenamentoResiduoId;
 
-    @FutureOrPresent(message = "A data prevista de despacho não pode estar no passado")
-    private LocalDate dataPrevistaDespacho;
+	@Size(max = 150, message = "O complemento do local deve possuir no máximo 150 caracteres")
+	@Schema(description = "Complemento opcional do local cadastrado.", example = "Prateleira B2")
+	private String complementoLocalArmazenamento;
 
-    private String observacaoGestor;
-    
-    @NotEmpty(
-    	    message = "Confirme pelo menos uma classe de resíduo"
-    	)
-    private Set<UUID> classesConfirmadasIds;
-    
-    // Correção de bug: mesma situação de riscosConfirmados (achado #7) —
-    // @NotNull deixava passar uma lista vazia. @NotEmpty exige pelo menos
-    // uma medida de segurança confirmada.
-    @NotEmpty(message = "Confirme as medidas de segurança do resíduo")
-    private Set<MedidaSeguranca> medidasSegurancaConfirmadas;
-    
-    private String observacaoSegurancaConfirmada;
+	@NotBlank(message = "O destino final previsto é obrigatório")
+	@Schema(example = "Empresa licenciada para tratamento de resíduos químicos")
+	private String destinoFinalPrevisto;
+
+	@FutureOrPresent(message = "A data prevista de despacho não pode estar no passado")
+	private LocalDate dataPrevistaDespacho;
+
+	private String observacaoGestor;
+
+	@NotEmpty(message = "Confirme pelo menos uma classe de resíduo")
+	private Set<UUID> classesConfirmadasIds;
+
+	// Correção de bug: mesma situação de riscosConfirmados (achado #7) —
+	// @NotNull deixava passar uma lista vazia. @NotEmpty exige pelo menos
+	// uma medida de segurança confirmada.
+	@NotEmpty(message = "Confirme as medidas de segurança do resíduo")
+	private Set<MedidaSeguranca> medidasSegurancaConfirmadas;
+
+	private String observacaoSegurancaConfirmada;
 }

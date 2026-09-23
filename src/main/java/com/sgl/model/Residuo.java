@@ -52,481 +52,460 @@ import lombok.ToString;
 @Builder
 public class Residuo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-    private UUID publicId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "laboratorio_id", nullable = false)
-    @ToString.Exclude
-    private Laboratorio laboratorio;
-
-    // Correção de bug: antes, o rótulo do resíduo (RotuloResiduoResponseDTO)
-    // lia a unidade sempre "ao vivo" via laboratorio.getUnidade(). Como um
-    // laboratório pode trocar de unidade depois (ver LaboratorioService),
-    // isso fazia resíduos antigos mudarem de unidade sozinhos no rótulo e
-    // nas listagens, sem nenhum histórico da mudança. Estes três campos
-    // guardam uma "foto" da unidade no momento em que o resíduo foi criado
-    // (preenchidos em ResiduoService.criar(), nunca mais alterados depois).
-    @Column(name = "unidade_id_snapshot")
-    private UUID unidadeIdSnapshot;
-
-    @Column(name = "unidade_nome_snapshot")
-    private String unidadeNomeSnapshot;
-
-    @Column(name = "unidade_sigla_snapshot")
-    private String unidadeSiglaSnapshot;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gerador_id", nullable = false)
-    @ToString.Exclude
-    private Usuario gerador;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "projeto_id")
-    @ToString.Exclude
-    private Projeto projeto;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gestor_recebedor_inicial_id")
-    @ToString.Exclude
-    private Usuario gestorRecebedorInicial;
-
-    @OneToMany(
-            mappedBy = "residuo",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    @Builder.Default
-    private List<ResiduoClasse> classificacoes = new ArrayList<>();
-    
-    
-    @Column(nullable = false, length = 1000)
-    private String descricao;
-
-    @Column(name = "processo_origem", nullable = false, length = 1000)
-    private String processoOrigem;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_fisico")
-    private EstadoFisicoResiduo estadoFisico;
-    
-    @Column(name = "tratamento_realizado")
-    private Boolean tratamentoRealizado;
-    
-    @Column(name = "descricao_tratamento", length = 1000)
-    private String descricaoTratamento;
-    
-    @Column(nullable = false)
-    private String recipiente;
-
-    @Column(nullable = false, precision = 12, scale = 3)
-    private BigDecimal quantidade;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "unidade_medida", nullable = false)
-    private UnidadeMedida unidadeMedida;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "nivel_risco_informado", nullable = false)
-    private NivelRisco nivelRiscoInformado;
-
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "residuo_riscos_informados",
-            joinColumns = @JoinColumn(name = "residuo_id")
-    )
-    @Enumerated(EnumType.STRING)
-    @Column(name = "risco", nullable = false)
-    @Builder.Default
-    private Set<TipoRisco> riscosInformados = new LinkedHashSet<>();
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "nivel_risco_confirmado")
-    private NivelRisco nivelRiscoConfirmado;
-
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "residuo_riscos_confirmados",
-            joinColumns = @JoinColumn(name = "residuo_id")
-    )
-    @Enumerated(EnumType.STRING)
-    @Column(name = "risco", nullable = false)
-    @Builder.Default
-    private Set<TipoRisco> riscosConfirmados = new LinkedHashSet<>();
-
-    @Column(name = "observacao_gerador", length = 1000)
-    private String observacaoGerador;
-
-    @Column(name = "observacao_gestor", length = 1000)
-    private String observacaoGestor;
-
-    @Column(name = "local_armazenamento_temporario")
-    private String localArmazenamentoTemporario;
-
-    @Column(name = "destino_final_previsto", length = 500)
-    private String destinoFinalPrevisto;
-
-    @Column(name = "destino_final_confirmado", length = 500)
-    private String destinoFinalConfirmado;
-
-    @Column(name = "codigo_rastreio", unique = true, length = 80)
-    private String codigoRastreio;
-
-    @Column(name = "qr_code_conteudo", length = 500)
-    private String qrCodeConteudo;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StatusResiduo status;
-
-    @Column(name = "data_informacao", nullable = false)
-    private LocalDateTime dataInformacao;
-
-    @Column(name = "data_recebimento")
-    private LocalDateTime dataRecebimento;
-
-    @Column(name = "data_liberacao")
-    private LocalDateTime dataLiberacao;
-
-    @Column(name = "data_armazenamento_temporario")
-    private LocalDateTime dataArmazenamentoTemporario;
-
-    @Column(name = "data_prevista_despacho")
-    private LocalDate dataPrevistaDespacho;
-
-    @Column(name = "data_despacho")
-    private LocalDateTime dataDespacho;
-
-    @OneToMany(mappedBy = "residuo", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<ComponenteResiduo> componentes = new ArrayList<>();
-    
-    /**
-     * Snapshot das medidas de segurança declaradas no momento
-     * em que o Resíduo foi informado.
-     *
-     * Esses dados pertencem à ocorrência real do Resíduo e não
-     * devem ser recalculados quando o cadastro dos Produtos mudar.
-     */
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "residuo_medidas_seguranca_informadas",
-            joinColumns = @JoinColumn(name = "residuo_id")
-    )
-    @Enumerated(EnumType.STRING)
-    @Column(name = "medida", nullable = false)
-    @Builder.Default
-    private Set<MedidaSeguranca> medidasSegurancaInformadas =
-            new LinkedHashSet<>();
-
-    @Column(name = "observacao_seguranca_informada", length = 1000)
-    private String observacaoSegurancaInformada;
-
-
-    /**
-     * Snapshot das medidas de segurança confirmadas pela Gestão.
-     *
-     * Pode diferir da informação original do Solicitante sem
-     * alterar o snapshot informado.
-     */
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "residuo_medidas_seguranca_confirmadas",
-            joinColumns = @JoinColumn(name = "residuo_id")
-    )
-    @Enumerated(EnumType.STRING)
-    @Column(name = "medida", nullable = false)
-    @Builder.Default
-    private Set<MedidaSeguranca> medidasSegurancaConfirmadas =
-            new LinkedHashSet<>();
-
-    @Column(name = "observacao_seguranca_confirmada", length = 1000)
-    private String observacaoSegurancaConfirmada;
-    
-    public void definirTratamento(Boolean tratamentoRealizado, String descricaoTratamento) {
-    	
-    	if(tratamentoRealizado == null) {
-    		throw new BusinessRuleException(
-    				"informe se o resíduo recebeu tratamento");
-    	}
-    	
-    	this.tratamentoRealizado = tratamentoRealizado;
-    	
-    	if(!tratamentoRealizado) {
-    		this.descricaoTratamento = null; //descrição é descartada se o tratamento for false
-    		return;
-    	}
-    	
-    	//caso seja o tratamento true, evita que o usuario ignore o tratamento
-    	if (descricaoTratamento == null || descricaoTratamento.isBlank()) {
-    		throw new BusinessRuleException(
-    				"A descrição do tratamento é obrigatória quando o resíduo já foi tratado"
-    				);
-    	}
-    	
-    	this.descricaoTratamento = descricaoTratamento.trim();
-    }
-
-    public void addComponente(ComponenteResiduo componente) {
-        componente.setResiduo(this);
-        componentes.add(componente);
-    }
-
-    public void receber(Usuario gestor, String observacao) {
-        requireStatus(StatusResiduo.INFORMADO, "recebido para análise");
-        this.gestorRecebedorInicial = gestor;
-        this.dataRecebimento = LocalDateTime.now();
-        this.status = StatusResiduo.EM_ANALISE;
-
-        if (observacao != null && !observacao.isBlank()) {
-            this.observacaoGestor = observacao;
-        }
-    }
-
-    private void validarGestorRecebedorInicial(Usuario gestor) {
-    	
-    	if(gestorRecebedorInicial == null) {
-    		
-    	throw new BusinessRuleException(
-    			"O resíduo não possui gestor de recebimento inicial"
-    			);
-    }
-    	
-    if (gestor == null || !Objects.equals(gestorRecebedorInicial.getId(), gestor.getId())){
-    	throw new BusinessRuleException(
-    			"A análise deve ser realizada pelo gestor que recebeu inicialmente o resíduo"
-    			);
-    }
-}
-    
-    
-    
-    
-    public void liberarParaArmazenamento(
-            Usuario gestor,
-            NivelRisco nivelConfirmado,
-            Set<TipoRisco> riscosConfirmados,
-            String localArmazenamento,
-            String destinoPrevisto,
-            LocalDate dataPrevistaDespacho,
-            String observacao) {
-
-        requireStatus(StatusResiduo.EM_ANALISE, "liberado para armazenamento");
-        
-        validarGestorRecebedorInicial(gestor);
-
-        if (nivelConfirmado == null) {
-            throw new BusinessRuleException("O nível de risco confirmado é obrigatório.");
-        }
-
-        if (localArmazenamento == null || localArmazenamento.isBlank()) {
-            throw new BusinessRuleException("O local de armazenamento temporário é obrigatório.");
-        }
-
-        if (destinoPrevisto == null || destinoPrevisto.isBlank()) {
-            throw new BusinessRuleException("O destino final previsto é obrigatório.");
-        }
-
-        this.nivelRiscoConfirmado = nivelConfirmado;
-        this.riscosConfirmados.clear();
-        if (riscosConfirmados != null) {
-            this.riscosConfirmados.addAll(riscosConfirmados);
-        }
-        this.localArmazenamentoTemporario = localArmazenamento;
-        this.destinoFinalPrevisto = destinoPrevisto;
-        this.dataPrevistaDespacho = dataPrevistaDespacho;
-        this.observacaoGestor = observacao;
-        this.dataLiberacao = LocalDateTime.now();
-        this.status = StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO;
-    }
-
-    public void confirmarArmazenamento(String localArmazenamento) {
-        requireStatus(
-                StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO,
-                "armazenado temporariamente"
-        );
-
-        if (localArmazenamento != null && !localArmazenamento.isBlank()) {
-            this.localArmazenamentoTemporario = localArmazenamento;
-        }
-        this.dataArmazenamentoTemporario = LocalDateTime.now();
-        this.status = StatusResiduo.ARMAZENADO_TEMPORARIAMENTE;
-    }
-
-    public void confirmarDespacho(String destinoFinal, String observacao) {
-        requireStatus(StatusResiduo.ARMAZENADO_TEMPORARIAMENTE, "despachado");
-
-        if (destinoFinal == null || destinoFinal.isBlank()) {
-            throw new BusinessRuleException("O destino final confirmado é obrigatório.");
-        }
-
-        this.destinoFinalConfirmado = destinoFinal;
-        if (observacao != null && !observacao.isBlank()) {
-            this.observacaoGestor = observacao;
-        }
-        this.dataDespacho = LocalDateTime.now();
-        this.status = StatusResiduo.DESPACHADO;
-    }
-
-    /**
-     * A prévia do rótulo pode existir desde a informação do Resíduo.
-     * A impressão física, porém, só é permitida depois da análise/liberação.
-     */
-    public boolean isImpressaoRotuloPermitida() {
-        return status == StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO
-                || status == StatusResiduo.ARMAZENADO_TEMPORARIAMENTE
-                || status == StatusResiduo.DESPACHADO;
-    }
-
-    private void requireStatus(StatusResiduo expected, String action) {
-        if (status != expected) {
-            throw new BusinessRuleException(
-                    "O resíduo só pode ser " + action + " quando estiver em " + expected
-                            + ". Status atual: " + status
-            );
-        }
-    }
-
-    @PrePersist
-    private void generateDefaults() {
-        if (publicId == null) {
-            publicId = UUID.randomUUID();
-        }
-        if (dataInformacao == null) {
-            dataInformacao = LocalDateTime.now();
-        }
-        if (status == null) {
-            status = StatusResiduo.INFORMADO;
-        }
-    }
-    
-    //Metodos para a classificação dos residuos
-    public void definirClassesInformadas(
-            List<ClasseResiduo> classes) {
-
-        substituirClasses(
-                EtapaClassificacaoResiduo.INFORMADA,
-                classes
-        );
-    }
-
-    public void definirClassesConfirmadas(
-            List<ClasseResiduo> classes) {
-
-        substituirClasses(
-                EtapaClassificacaoResiduo.CONFIRMADA,
-                classes
-        );
-    }
-
-    private void substituirClasses(
-            EtapaClassificacaoResiduo etapa,
-            List<ClasseResiduo> classes) {
-
-        if (classes == null || classes.isEmpty()) {
-            throw new BusinessRuleException(
-                    "Informe pelo menos uma classe de resíduo."
-            );
-        }
-
-        classificacoes.removeIf(
-                item -> item.getEtapa() == etapa
-        );
-
-        for (ClasseResiduo classe : classes) {
-            classe.validateActive();
-
-            classificacoes.add(
-                    ResiduoClasse.criar(
-                            this,
-                            classe,
-                            etapa
-                    )
-            );
-        }
-    }
-
-    public List<ResiduoClasse> getClassesInformadas() {
-        return classificacoes.stream()
-                .filter(item ->
-                        item.getEtapa()
-                                == EtapaClassificacaoResiduo.INFORMADA
-                )
-                .toList();
-    }
-
-    public List<ResiduoClasse> getClassesConfirmadas() {
-        return classificacoes.stream()
-                .filter(item ->
-                        item.getEtapa()
-                                == EtapaClassificacaoResiduo.CONFIRMADA
-                )
-                .toList();
-    }
-    
-    public void definirSegurancaInformada(
-            Set<MedidaSeguranca> medidas,
-            String observacao) {
-
-        validarSeguranca(medidas, observacao);
-
-        this.medidasSegurancaInformadas.clear();
-
-        if (medidas != null) {
-            this.medidasSegurancaInformadas.addAll(medidas);
-        }
-
-        this.observacaoSegurancaInformada =
-                normalizarObservacao(observacao);
-    }
-    
-    public void definirSegurancaConfirmada(
-            Set<MedidaSeguranca> medidas,
-            String observacao) {
-
-        validarSeguranca(medidas, observacao);
-
-        this.medidasSegurancaConfirmadas.clear();
-
-        if (medidas != null) {
-            this.medidasSegurancaConfirmadas.addAll(medidas);
-        }
-
-        this.observacaoSegurancaConfirmada =
-                normalizarObservacao(observacao);
-    }
-    
-    private void validarSeguranca(
-            Set<MedidaSeguranca> medidas,
-            String observacao) {
-
-        if (medidas == null) {
-            throw new BusinessRuleException(
-                    "Informe as medidas de segurança do resíduo."
-            );
-        }
-
-        if (medidas.contains(MedidaSeguranca.OUTRO)
-                && (observacao == null || observacao.isBlank())) {
-
-            throw new BusinessRuleException(
-                    "Descreva a medida de segurança marcada como OUTRO."
-            );
-        }
-    }
-    
-    private String normalizarObservacao(String observacao) {
-
-        if (observacao == null || observacao.isBlank()) {
-            return null;
-        }
-
-        return observacao.trim();
-    }
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "laboratorio_id", nullable = false)
+	@ToString.Exclude
+	private Laboratorio laboratorio;
+
+	@Column(name = "unidade_id_snapshot")
+	private UUID unidadeIdSnapshot;
+
+	@Column(name = "unidade_nome_snapshot")
+	private String unidadeNomeSnapshot;
+
+	@Column(name = "unidade_sigla_snapshot")
+	private String unidadeSiglaSnapshot;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "gerador_id", nullable = false)
+	@ToString.Exclude
+	private Usuario gerador;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "projeto_id")
+	@ToString.Exclude
+	private Projeto projeto;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "gestor_recebedor_inicial_id")
+	@ToString.Exclude
+	private Usuario gestorRecebedorInicial;
+
+	@OneToMany(mappedBy = "residuo", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
+	private List<ResiduoClasse> classificacoes = new ArrayList<>();
+
+	@Column(nullable = false, length = 1000)
+	private String descricao;
+
+	@Column(name = "processo_origem", nullable = false, length = 1000)
+	private String processoOrigem;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "estado_fisico")
+	private EstadoFisicoResiduo estadoFisico;
+
+	@Column(name = "tratamento_realizado")
+	private Boolean tratamentoRealizado;
+
+	@Column(name = "descricao_tratamento", length = 1000)
+	private String descricaoTratamento;
+
+	@Column(nullable = false)
+	private String recipiente;
+
+	@Column(nullable = false, precision = 12, scale = 3)
+	private BigDecimal quantidade;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "unidade_medida", nullable = false)
+	private UnidadeMedida unidadeMedida;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "nivel_risco_informado", nullable = false)
+	private NivelRisco nivelRiscoInformado;
+
+	@ElementCollection(fetch = FetchType.LAZY)
+	@CollectionTable(name = "residuo_riscos_informados", joinColumns = @JoinColumn(name = "residuo_id"))
+	@Enumerated(EnumType.STRING)
+	@Column(name = "risco", nullable = false)
+	@Builder.Default
+	private Set<TipoRisco> riscosInformados = new LinkedHashSet<>();
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "nivel_risco_confirmado")
+	private NivelRisco nivelRiscoConfirmado;
+
+	@ElementCollection(fetch = FetchType.LAZY)
+	@CollectionTable(name = "residuo_riscos_confirmados", joinColumns = @JoinColumn(name = "residuo_id"))
+	@Enumerated(EnumType.STRING)
+	@Column(name = "risco", nullable = false)
+	@Builder.Default
+	private Set<TipoRisco> riscosConfirmados = new LinkedHashSet<>();
+
+	@Column(name = "observacao_gerador", length = 1000)
+	private String observacaoGerador;
+
+	@Column(name = "observacao_gestor", length = 1000)
+	private String observacaoGestor;
+
+	@Column(name = "local_armazenamento_temporario")
+	private String localArmazenamentoTemporario;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "local_armazenamento_residuo_id")
+	@ToString.Exclude
+	private LocalArmazenamentoResiduo localArmazenamentoResiduo;
+
+	@Column(name = "complemento_local_armazenamento", length = 150)
+	private String complementoLocalArmazenamento;
+
+	@Column(name = "destino_final_previsto", length = 500)
+	private String destinoFinalPrevisto;
+
+	@Column(name = "destino_final_confirmado", length = 500)
+	private String destinoFinalConfirmado;
+
+	@Column(name = "codigo_rastreio", unique = true, length = 80)
+	private String codigoRastreio;
+
+	@Column(name = "qr_code_conteudo", length = 500)
+	private String qrCodeConteudo;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private StatusResiduo status;
+
+	@Column(name = "data_informacao", nullable = false)
+	private LocalDateTime dataInformacao;
+
+	@Column(name = "data_recebimento")
+	private LocalDateTime dataRecebimento;
+
+	@Column(name = "data_liberacao")
+	private LocalDateTime dataLiberacao;
+
+	@Column(name = "data_armazenamento_temporario")
+	private LocalDateTime dataArmazenamentoTemporario;
+
+	@Column(name = "data_prevista_despacho")
+	private LocalDate dataPrevistaDespacho;
+
+	@Column(name = "data_despacho")
+	private LocalDateTime dataDespacho;
+
+	@OneToMany(mappedBy = "residuo", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
+	private List<ComponenteResiduo> componentes = new ArrayList<>();
+
+	/**
+	 * Snapshot das medidas de segurança declaradas no momento em que o Resíduo foi
+	 * informado.
+	 *
+	 * Esses dados pertencem à ocorrência real do Resíduo e não devem ser
+	 * recalculados quando o cadastro dos Produtos mudar.
+	 */
+	@ElementCollection(fetch = FetchType.LAZY)
+	@CollectionTable(name = "residuo_medidas_seguranca_informadas", joinColumns = @JoinColumn(name = "residuo_id"))
+	@Enumerated(EnumType.STRING)
+	@Column(name = "medida", nullable = false)
+	@Builder.Default
+	private Set<MedidaSeguranca> medidasSegurancaInformadas = new LinkedHashSet<>();
+
+	@Column(name = "observacao_seguranca_informada", length = 1000)
+	private String observacaoSegurancaInformada;
+
+	/**
+	 * Snapshot das medidas de segurança confirmadas pela Gestão.
+	 *
+	 * Pode diferir da informação original do Solicitante sem alterar o snapshot
+	 * informado.
+	 */
+	@ElementCollection(fetch = FetchType.LAZY)
+	@CollectionTable(name = "residuo_medidas_seguranca_confirmadas", joinColumns = @JoinColumn(name = "residuo_id"))
+	@Enumerated(EnumType.STRING)
+	@Column(name = "medida", nullable = false)
+	@Builder.Default
+	private Set<MedidaSeguranca> medidasSegurancaConfirmadas = new LinkedHashSet<>();
+
+	@Column(name = "observacao_seguranca_confirmada", length = 1000)
+	private String observacaoSegurancaConfirmada;
+
+	public void definirTratamento(Boolean tratamentoRealizado, String descricaoTratamento) {
+
+		if (tratamentoRealizado == null) {
+			throw new BusinessRuleException("informe se o resíduo recebeu tratamento");
+		}
+
+		this.tratamentoRealizado = tratamentoRealizado;
+
+		if (!tratamentoRealizado) {
+			this.descricaoTratamento = null; // descrição é descartada se o tratamento for false
+			return;
+		}
+
+		// caso seja o tratamento true, evita que o usuario ignore o tratamento
+		if (descricaoTratamento == null || descricaoTratamento.isBlank()) {
+			throw new BusinessRuleException("A descrição do tratamento é obrigatória quando o resíduo já foi tratado");
+		}
+
+		this.descricaoTratamento = descricaoTratamento.trim();
+	}
+
+	public void addComponente(ComponenteResiduo componente) {
+		componente.setResiduo(this);
+		componentes.add(componente);
+	}
+
+	public void receber(Usuario gestor, String observacao) {
+		requireStatus(StatusResiduo.INFORMADO, "recebido para análise");
+		this.gestorRecebedorInicial = gestor;
+		this.dataRecebimento = LocalDateTime.now();
+		this.status = StatusResiduo.EM_ANALISE;
+
+		if (observacao != null && !observacao.isBlank()) {
+			this.observacaoGestor = observacao;
+		}
+	}
+
+	private void validarGestorRecebedorInicial(Usuario gestor) {
+
+		if (gestorRecebedorInicial == null) {
+
+			throw new BusinessRuleException("O resíduo não possui gestor de recebimento inicial");
+		}
+
+		if (gestor == null || !Objects.equals(gestorRecebedorInicial.getId(), gestor.getId())) {
+			throw new BusinessRuleException(
+					"A análise deve ser realizada pelo gestor que recebeu inicialmente o resíduo");
+		}
+	}
+
+	public void liberarParaArmazenamento(Usuario gestor, NivelRisco nivelConfirmado, Set<TipoRisco> riscosConfirmados,
+			LocalArmazenamentoResiduo localCadastrado, String complementoLocalArmazenamento,
+			String localArmazenamentoManual, String destinoPrevisto, LocalDate dataPrevistaDespacho,
+			String observacao) {
+
+		requireStatus(StatusResiduo.EM_ANALISE, "liberado para armazenamento");
+
+		validarGestorRecebedorInicial(gestor);
+
+		if (nivelConfirmado == null) {
+			throw new BusinessRuleException("O nível de risco confirmado é obrigatório.");
+		}
+
+		definirLocalArmazenamento(localCadastrado, complementoLocalArmazenamento, localArmazenamentoManual);
+
+		if (destinoPrevisto == null || destinoPrevisto.isBlank()) {
+			throw new BusinessRuleException("O destino final previsto é obrigatório.");
+		}
+
+		this.nivelRiscoConfirmado = nivelConfirmado;
+		this.riscosConfirmados.clear();
+		if (riscosConfirmados != null) {
+			this.riscosConfirmados.addAll(riscosConfirmados);
+		}
+		this.destinoFinalPrevisto = destinoPrevisto;
+		this.dataPrevistaDespacho = dataPrevistaDespacho;
+		this.observacaoGestor = observacao;
+		this.dataLiberacao = LocalDateTime.now();
+		this.status = StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO;
+	}
+
+	public void confirmarArmazenamento(LocalArmazenamentoResiduo localCadastrado, String complemento,
+			String localManual) {
+
+		requireStatus(StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO, "armazenado temporariamente");
+
+		boolean solicitouCorrecao = localCadastrado != null || (complemento != null && !complemento.isBlank())
+				|| (localManual != null && !localManual.isBlank());
+
+		if (solicitouCorrecao) {
+			definirLocalArmazenamento(localCadastrado, complemento, localManual);
+		}
+
+		this.dataArmazenamentoTemporario = LocalDateTime.now();
+
+		this.status = StatusResiduo.ARMAZENADO_TEMPORARIAMENTE;
+	}
+
+	public void confirmarDespacho(String destinoFinal, String observacao) {
+		requireStatus(StatusResiduo.ARMAZENADO_TEMPORARIAMENTE, "despachado");
+
+		if (destinoFinal == null || destinoFinal.isBlank()) {
+			throw new BusinessRuleException("O destino final confirmado é obrigatório.");
+		}
+
+		this.destinoFinalConfirmado = destinoFinal;
+		if (observacao != null && !observacao.isBlank()) {
+			this.observacaoGestor = observacao;
+		}
+		this.dataDespacho = LocalDateTime.now();
+		this.status = StatusResiduo.DESPACHADO;
+	}
+
+	/**
+	 * A prévia do rótulo pode existir desde a informação do Resíduo. A impressão
+	 * física, porém, só é permitida depois da análise/liberação.
+	 */
+	public boolean isImpressaoRotuloPermitida() {
+		return status == StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO || status == StatusResiduo.ARMAZENADO_TEMPORARIAMENTE
+				|| status == StatusResiduo.DESPACHADO;
+	}
+
+	private void requireStatus(StatusResiduo expected, String action) {
+		if (status != expected) {
+			throw new BusinessRuleException(
+					"O resíduo só pode ser " + action + " quando estiver em " + expected + ". Status atual: " + status);
+		}
+	}
+
+	@PrePersist
+	private void generateDefaults() {
+		if (publicId == null) {
+			publicId = UUID.randomUUID();
+		}
+		if (dataInformacao == null) {
+			dataInformacao = LocalDateTime.now();
+		}
+		if (status == null) {
+			status = StatusResiduo.INFORMADO;
+		}
+	}
+
+	// Metodos para a classificação dos residuos
+	public void definirClassesInformadas(List<ClasseResiduo> classes) {
+
+		substituirClasses(EtapaClassificacaoResiduo.INFORMADA, classes);
+	}
+
+	public void definirClassesConfirmadas(List<ClasseResiduo> classes) {
+
+		substituirClasses(EtapaClassificacaoResiduo.CONFIRMADA, classes);
+	}
+
+	private void substituirClasses(EtapaClassificacaoResiduo etapa, List<ClasseResiduo> classes) {
+
+		if (classes == null || classes.isEmpty()) {
+			throw new BusinessRuleException("Informe pelo menos uma classe de resíduo.");
+		}
+
+		classificacoes.removeIf(item -> item.getEtapa() == etapa);
+
+		for (ClasseResiduo classe : classes) {
+			classe.validateActive();
+
+			classificacoes.add(ResiduoClasse.criar(this, classe, etapa));
+		}
+	}
+
+	public List<ResiduoClasse> getClassesInformadas() {
+		return classificacoes.stream().filter(item -> item.getEtapa() == EtapaClassificacaoResiduo.INFORMADA).toList();
+	}
+
+	public List<ResiduoClasse> getClassesConfirmadas() {
+		return classificacoes.stream().filter(item -> item.getEtapa() == EtapaClassificacaoResiduo.CONFIRMADA).toList();
+	}
+
+	public void definirSegurancaInformada(Set<MedidaSeguranca> medidas, String observacao) {
+
+		validarSeguranca(medidas, observacao);
+
+		this.medidasSegurancaInformadas.clear();
+
+		if (medidas != null) {
+			this.medidasSegurancaInformadas.addAll(medidas);
+		}
+
+		this.observacaoSegurancaInformada = normalizarObservacao(observacao);
+	}
+
+	public void definirSegurancaConfirmada(Set<MedidaSeguranca> medidas, String observacao) {
+
+		validarSeguranca(medidas, observacao);
+
+		this.medidasSegurancaConfirmadas.clear();
+
+		if (medidas != null) {
+			this.medidasSegurancaConfirmadas.addAll(medidas);
+		}
+
+		this.observacaoSegurancaConfirmada = normalizarObservacao(observacao);
+	}
+
+	private void validarSeguranca(Set<MedidaSeguranca> medidas, String observacao) {
+
+		if (medidas == null) {
+			throw new BusinessRuleException("Informe as medidas de segurança do resíduo.");
+		}
+
+		if (medidas.contains(MedidaSeguranca.OUTRO) && (observacao == null || observacao.isBlank())) {
+
+			throw new BusinessRuleException("Descreva a medida de segurança marcada como OUTRO.");
+		}
+	}
+
+	private String normalizarObservacao(String observacao) {
+
+		if (observacao == null || observacao.isBlank()) {
+			return null;
+		}
+
+		return observacao.trim();
+	}
+
+	private void definirLocalArmazenamento(LocalArmazenamentoResiduo localCadastrado, String complemento,
+			String localManual) {
+
+		boolean informouManual = localManual != null && !localManual.isBlank();
+
+		boolean informouComplemento = complemento != null && !complemento.isBlank();
+
+		if (localCadastrado != null && informouManual) {
+			throw new BusinessRuleException("Informe o local cadastrado ou o local manual, não ambos.");
+		}
+
+		if (localCadastrado == null && informouComplemento) {
+			throw new BusinessRuleException("O complemento só pode ser informado junto a um local cadastrado.");
+		}
+
+		if (localCadastrado != null) {
+
+			localCadastrado.validateActive();
+
+			String complementoNormalizado = normalizarObservacao(complemento);
+
+			String snapshot = localCadastrado.getNome();
+
+			if (complementoNormalizado != null) {
+				snapshot += " - " + complementoNormalizado;
+			}
+
+			if (snapshot.length() > 255) {
+				throw new BusinessRuleException(
+						"O local de armazenamento completo deve possuir no máximo 255 caracteres.");
+			}
+
+			this.localArmazenamentoResiduo = localCadastrado;
+
+			this.complementoLocalArmazenamento = complementoNormalizado;
+
+			this.localArmazenamentoTemporario = snapshot;
+
+			return;
+		}
+
+		if (!informouManual) {
+			throw new BusinessRuleException("Informe um local de armazenamento cadastrado ou um local manual.");
+		}
+
+		String localNormalizado = localManual.trim();
+
+		if (localNormalizado.length() > 255) {
+			throw new BusinessRuleException("O local de armazenamento deve possuir no máximo 255 caracteres.");
+		}
+
+		this.localArmazenamentoResiduo = null;
+		this.complementoLocalArmazenamento = null;
+		this.localArmazenamentoTemporario = localNormalizado;
+	}
 }

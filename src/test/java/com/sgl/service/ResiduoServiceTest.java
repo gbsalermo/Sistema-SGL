@@ -63,6 +63,7 @@ import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 
 /**
  * Testes unitários de {@link ResiduoService}.
@@ -87,6 +88,7 @@ import com.sgl.tenant.TenantContext;
 @ExtendWith(MockitoExtension.class)
 class ResiduoServiceTest {
 
+	
     private static final UUID UNIDADE_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID LABORATORIO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID LABORATORIO_OUTRO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
@@ -119,6 +121,10 @@ class ResiduoServiceTest {
 
     @Mock
     private ClasseResiduoRepository classeResiduoRepository;
+    
+    @Mock
+    private LocalArmazenamentoResiduoRepository
+            localArmazenamentoResiduoRepository;
 
     @InjectMocks
     private ResiduoService residuoService;
