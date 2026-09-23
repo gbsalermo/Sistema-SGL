@@ -4,7 +4,7 @@
 **Atualizado em:** 22/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧 reconciliação + revalidação
-**Bloco atual:** 4.4 — Correções administrativas do ciclo de vida 🔧
+**Bloco atual:** 4.4 — Correções administrativas do ciclo de vida ✅ implementado / 🧪 validação pendente
 **Branch histórica da implementação:** `feat/etapa-4-residuos`  
 **Branch atual de trabalho:** `collab/etapa-4-residuos-reconcile`  
 **Fonte canônica de `main`:** GitLab institucional  
@@ -343,3 +343,15 @@ Antes de continuar código:
 ```
 
 A validação da Etapa 4 será retomada depois que a implementação antiga tiver sido integralmente reconciliada com a base atual.
+
+#### Reconciliação 4.4 — implementação atual
+
+- `CANCELAR`: permitido para estados anteriores ao despacho; gera `CANCELADO`.
+- `RETORNAR_ETAPA`: retorna exatamente uma etapa operacional por ação.
+- `DESPACHADO -> ARMAZENADO_TEMPORARIAMENTE` antes de eventual cancelamento.
+- `CANCELADO` é terminal e não pode retornar.
+- justificativa obrigatória, limitada a 1000 caracteres e registrada no histórico.
+- somente perfil `ADMINISTRADOR` no service; busca do Resíduo e do Administrador permanece tenant-safe/fail-closed.
+- relatórios PDF/XLSX e resumo operacional incluem cancelados.
+- frontend exibe ações administrativas apenas para Administrador, com modal local de justificativa.
+- validação funcional integrada ainda pendente.
