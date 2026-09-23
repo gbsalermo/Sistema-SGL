@@ -343,6 +343,63 @@ public class Residuo implements Serializable {
 		this.status = StatusResiduo.DESPACHADO;
 	}
 
+	public void cancelarAdministrativamente() {
+
+		if (status == StatusResiduo.CANCELADO) {
+			throw new BusinessRuleException("O resíduo já está cancelado.");
+		}
+
+		if (status == StatusResiduo.DESPACHADO) {
+			throw new BusinessRuleException(
+					"Um resíduo já despachado não pode ser cancelado. Retorne a etapa antes de cancelar.");
+		}
+
+		this.status = StatusResiduo.CANCELADO;
+	}
+
+	public StatusResiduo retornarEtapaAdministrativamente() {
+
+		if (status == null || status == StatusResiduo.INFORMADO) {
+			throw new BusinessRuleException(
+					"O resíduo já está na primeira etapa operacional.");
+		}
+
+		if (status == StatusResiduo.CANCELADO) {
+			throw new BusinessRuleException(
+					"Um resíduo cancelado não pode retornar de etapa.");
+		}
+
+		if (status == StatusResiduo.EM_ANALISE) {
+			this.status = StatusResiduo.INFORMADO;
+			this.gestorRecebedorInicial = null;
+			this.dataRecebimento = null;
+			this.observacaoGestor = null;
+			return this.status;
+		}
+
+		if (status == StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO) {
+			this.status = StatusResiduo.EM_ANALISE;
+			this.dataLiberacao = null;
+			return this.status;
+		}
+
+		if (status == StatusResiduo.ARMAZENADO_TEMPORARIAMENTE) {
+			this.status = StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO;
+			this.dataArmazenamentoTemporario = null;
+			return this.status;
+		}
+
+		if (status == StatusResiduo.DESPACHADO) {
+			this.status = StatusResiduo.ARMAZENADO_TEMPORARIAMENTE;
+			this.dataDespacho = null;
+			this.destinoFinalConfirmado = null;
+			return this.status;
+		}
+
+		throw new BusinessRuleException(
+				"Não foi possível determinar a etapa anterior do resíduo.");
+	}
+
 	/**
 	 * A prévia do rótulo pode existir desde a informação do Resíduo. A impressão
 	 * física, porém, só é permitida depois da análise/liberação.
