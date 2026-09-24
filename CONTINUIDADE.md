@@ -378,12 +378,12 @@ A implementação histórica de `feat/etapa-4-residuos` foi portada seletivament
 - relatórios/exportações reconhecem `CANCELADO`;
 - validações funcionais da Etapa 4 foram concluídas.
 
-A próxima etapa canônica é a **Etapa 5 — Projetos e Atividades**.
+A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.1 — Projeto base**.
 
 
-# 10. Projetos, Estagiários e Relatórios — etapas futuras
+# 10. Projetos, Estagiários e Relatórios — evolução atual e próximas etapas
 
-## Etapa 5 — Projetos + Atividades
+## Etapa 5 — Projetos + Atividades 🔧 ATUAL
 
 Portão 5.0 fechado em 24/09/2026:
 
@@ -481,7 +481,7 @@ Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
-Etapa 5 — Projetos + Atividades                       ⏭ próxima
+Etapa 5 — Projetos + Atividades                       🔧 atual — 5.1 Projeto base
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
@@ -498,7 +498,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–4 estão encerradas e validadas. Após o merge da branch `collab/etapa-4-residuos-reconcile` no GitLab, a retomada deve ocorrer pela Etapa 5 — Projetos e Atividades, começando pelo portão 5.0 do `docs/PLANO_PRE_PRODUCAO.md`. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com o portão 5.0 fechado e o bloco 5.1 — Projeto base como próximo trabalho funcional. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
