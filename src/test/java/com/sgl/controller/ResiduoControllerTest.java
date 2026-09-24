@@ -449,6 +449,17 @@ class ResiduoControllerTest {
     }
 
     @Test
+    void deveBuscarHistoricoDaUnidadeERetornar200() throws Exception {
+        when(residuoService.buscarHistoricoDaUnidade())
+                .thenReturn(List.of(new HistoricoResiduoResponseDTO(montarHistorico())));
+
+        mockMvc.perform(get(BASE_URL + "/historico/unidade"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].residuoId").value(RESIDUO_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].acao").value("RESIDUO_INFORMADO"));
+    }
+
+    @Test
     void deveBuscarHistoricoPorGeradorERetornar200() throws Exception {
         when(residuoService.buscarHistoricoPorGerador(GERADOR_PUBLIC_ID))
                 .thenReturn(List.of(new HistoricoResiduoResponseDTO(montarHistorico())));
