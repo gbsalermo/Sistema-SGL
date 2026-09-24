@@ -2,8 +2,8 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 22/09/2026  
-**Status:** Etapas 1, 2 e 3 concluídas; Etapa 4 em reconciliação com as `main` corrigidas pelo supervisor  
+**Última atualização:** 24/09/2026  
+**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 é a próxima etapa  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -169,7 +169,7 @@ Detalhes: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 ---
 
-## Etapa 4 — Expansão operacional de Resíduos ⏭ PRÓXIMA
+## Etapa 4 — Expansão operacional de Resíduos ✅ CONCLUÍDA E VALIDADA
 
 **Impacto:** médio.
 
@@ -546,8 +546,9 @@ Planejamento de pré-produção                        ✅
 Etapa 1 — refinamento visual global                 ✅
 Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos          ⏭ próxima
-Etapas 5–13                                         ⏳
+Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
+Etapa 5 — Projetos e Atividades                    ⏭ próxima
+Etapas 6–13                                         ⏳
 ```
 
 A matriz de permissões não é a próxima tarefa enquanto este bloco estiver aberto.
