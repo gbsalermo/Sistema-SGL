@@ -342,7 +342,7 @@ Antes de continuar código:
 6. somente então avançar para 4.2.
 ```
 
-A validação da Etapa 4 será retomada depois que a implementação antiga tiver sido integralmente reconciliada com a base atual.
+A implementação histórica foi integralmente reconciliada de forma seletiva com a base atual e a validação da Etapa 4 foi concluída.
 
 #### Reconciliação 4.4 — implementação atual
 
@@ -354,4 +354,4 @@ A validação da Etapa 4 será retomada depois que a implementação antiga tive
 - somente perfil `ADMINISTRADOR` no service; busca do Resíduo e do Administrador permanece tenant-safe/fail-closed.
 - relatórios PDF/XLSX e resumo operacional incluem cancelados.
 - frontend exibe ações administrativas apenas para Administrador, com modal local de justificativa.
-- validação funcional integrada ainda pendente.
+- validação funcional integrada concluída ✅.
