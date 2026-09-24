@@ -50,7 +50,7 @@ Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos   ✅ concluída e validada
-Etapa 5 — Projetos e Atividades              🔧 atual — 5.0
+Etapa 5 — Projetos e Atividades              🔧 atual — 5.1 Projeto base
 Etapas 6 a 13                                ⏳
 Matriz formal de permissões                  ⏳ após pré-produção
 Congelamento/homologação final               ⏳ posterior
@@ -87,7 +87,7 @@ Integração corporativa                       ⏳ posterior
 2. Dark Mode                                        ✅
 3. refinamentos do fluxo atual de Resíduos          ✅
 4. expansão de Resíduos                             ✅ concluída e validada
-5. Projetos + Atividades                            ⏭ próxima
+5. Projetos + Atividades                            🔧 atual — 5.1
 6. Estagiários + vínculos                           ⏳
 7. relatórios consolidados                          ⏳
 8. normalização de unidades + Soluções              ⏳
@@ -136,7 +136,7 @@ Detalhes: `CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 A Etapa 4 foi reconciliada sobre a base corrigida pelo supervisor, testada e validada funcionalmente. Detalhes: `CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 
-A etapa atual é **Etapa 5 — Projetos e Atividades**, iniciada pelo **5.0 — Portão de confirmação**.
+A etapa atual é **Etapa 5 — Projetos e Atividades**. O **5.0 — Portão de confirmação está fechado** e o bloco atual é **5.1 — Projeto base**.
 
 ---
 
@@ -201,8 +201,9 @@ Antes de alterar o sistema:
 3. usar CONTINUIDADE_ETAPA_4_2026-09-17.md apenas como fechamento da Etapa 4
 4. confirmar o estado da main canônica no GitLab
 5. conferir Swagger/OpenAPI
-6. iniciar a Etapa 5 pelo portão 5.0
+6. ler CONTINUIDADE_ETAPA_5_2026-09-24.md
+7. continuar pelo 5.1 — Projeto base
 7. distinguir requisito atual de registro histórico
 ```
 
-Não reutilizar a branch da Etapa 4 como base de desenvolvimento da Etapa 5 após o merge. Criar a branch da Etapa 5 a partir da `gitlab/main` atualizada.
+A branch de trabalho da Etapa 5 é `collab/etapa-5-projetos-atividades`, criada a partir da `main` contendo a Etapa 4. Não iniciar alterações funcionais fora dela.
