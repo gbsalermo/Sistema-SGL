@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 22/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 — Projetos e Atividades está iniciada no bloco 5.0 — Portão de confirmação.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 — Projetos e Atividades em andamento no bloco 5.1 — Projeto base.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -107,7 +107,7 @@ Quando houver conflito:
 9. documentos históricos
 ```
 
-Os `main` foram reconciliados em 22/09/2026 e a Etapa 4 foi concluída em 24/09/2026 na branch `collab/etapa-4-residuos-reconcile`. Após o merge no GitLab, a Etapa 5 deve nascer da `gitlab/main` atualizada; a antiga `feat/etapa-4-residuos` permanece apenas como referência histórica.
+A Etapa 4 foi integrada e a Etapa 5 nasceu da `main` atualizada. A branch operacional atual é `collab/etapa-5-projetos-atividades`; a antiga `feat/etapa-4-residuos` permanece apenas como referência histórica.
 
 ---
 
@@ -534,7 +534,29 @@ Não confundir com delete lógico, que continua na Etapa 11.
 
 ---
 
-# 13. Estagiários, Projetos e Relatórios futuros
+# 13. Projetos/SCI/Atividades atuais; Estagiários e Relatórios seguintes
+
+Etapa 5 estabiliza a hierarquia:
+
+```text
+Laboratório responsável/contextual
+└── Projeto
+    └── SCI
+        └── Atividade
+```
+
+**Projeto é o eixo operacional principal**. Laboratório continua útil como contexto institucional, filtro e vínculo responsável, sem obrigar navegação por Laboratório para acessar Projeto.
+
+Código SEG:
+
+```text
+Projeto   XX.XX.XX.XXX.XX.00
+SCI       XX.XX.XX.XXX.XX.SS
+Atividade XX.XX.XX.XXX.XX.SS.AAA
+```
+
+A numeração é cadastrada nesta primeira versão; o SGL valida a hierarquia.
+
 
 Etapa 5 estabiliza Projetos/Atividades e Código SEG.
 
@@ -602,7 +624,7 @@ Etapa 1 ✅
 Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
-Etapa 5 🔧 atual — 5.0
+Etapa 5 🔧 atual — 5.1 Projeto base
 Etapa 6 ⏳
 Etapa 7 ⏳
 Etapa 8 ⏳
