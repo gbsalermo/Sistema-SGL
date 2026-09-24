@@ -6,13 +6,13 @@
 **Última atualização:** 24/09/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
-**Branch atual de reconciliação:** `collab/etapa-4-residuos-reconcile`  
+**Branch atual de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 4 — expansão operacional de Resíduos ✅  
-**Etapa atual:** Etapa 5 — Projetos e Atividades ⏭ próxima  
+**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Referência de fechamento da Etapa 4:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+**Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
 
