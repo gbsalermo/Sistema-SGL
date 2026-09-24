@@ -251,11 +251,11 @@ Template definitivo, Zebra e infraestrutura física ficam para a Etapa 10.
 
 ---
 
-## 12. Próxima expansão de Resíduos — Etapa 4
+## 12. Expansão de Resíduos — Etapa 4 concluída
 
 A Etapa 3 foi encerrada em 17/09/2026.
 
-A Etapa 4 seguirá esta ordem:
+A Etapa 4 foi concluída nesta ordem:
 
 ```text
 4.1 locais de armazenamento cadastráveis
@@ -264,7 +264,7 @@ A Etapa 4 seguirá esta ordem:
 → 4.4 correções administrativas do ciclo, após definição das regras
 ```
 
-A 4.4 avaliará cancelamento operacional e retorno para análise/liberação com justificativa e histórico.
+A 4.4 implementou cancelamento operacional e retorno para análise/liberação com justificativa obrigatória e histórico auditável.
 
 Isso não deve ser confundido com a decisão geral de delete lógico da Etapa 11.
 
