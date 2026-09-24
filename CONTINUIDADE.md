@@ -534,3 +534,12 @@ Implementado na branch de reconciliação:
 - testes unitários/service/controller adicionados.
 
 A Etapa 4 só deve ser marcada como concluída após a validação funcional do frontend e do fluxo integrado.
+
+### Ajustes após validação do 4.4
+
+- histórico administrativo passou a usar nomes legíveis de status;
+- corrigida a reanálise de Resíduo retornado: classes confirmadas existentes são reaproveitadas em vez de removidas/reinseridas, evitando conflito com `uk_residuo_classe_etapa`;
+- criado histórico agregado por gerador para alimentar as atualizações do dashboard sem inferir eventos pelo status atual;
+- testes adicionados para reconfirmação da mesma classe, histórico por gerador e texto humanizado do retorno.
+
+Validação pendente apenas dos ajustes acima antes do fechamento definitivo da Etapa 4.
