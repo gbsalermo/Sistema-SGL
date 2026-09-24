@@ -201,6 +201,31 @@ class ResiduoAdministracaoServiceTest {
     }
 
     @Test
+    void deveBuscarHistoricoDaUnidadeAtual() {
+        Residuo residuo = residuo(StatusResiduo.CANCELADO);
+
+        HistoricoResiduo evento = HistoricoResiduo.builder()
+                .id(201L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000421"))
+                .residuo(residuo)
+                .usuario(administrador)
+                .status(StatusResiduo.CANCELADO)
+                .acao("RESIDUO_CANCELADO_ADMINISTRATIVAMENTE")
+                .observacao("Justificativa: cadastro indevido")
+                .dataHora(LocalDateTime.now())
+                .build();
+
+        when(historicoResiduoRepository
+                .findByResiduoLaboratorioUnidadePublicIdOrderByDataHoraDesc(UNIDADE_ID))
+                .thenReturn(List.of(evento));
+
+        var resposta = service.buscarHistoricoDaUnidade();
+
+        assertEquals(1, resposta.size());
+        assertEquals(RESIDUO_ID, resposta.get(0).getResiduoId());
+    }
+
+    @Test
     void deveBuscarHistoricoDoGeradorDaUnidade() {
         Residuo residuo = residuo(StatusResiduo.CANCELADO);
 
