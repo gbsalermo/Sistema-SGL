@@ -275,22 +275,33 @@ Isso **não é delete lógico**. A decisão geral de delete lógico permanece na
 
 **Impacto:** alto.
 
-### 5.0 Portão de confirmação
+### 5.0 Portão de confirmação 🔧 quase fechado
 
-Confirmar antes de alterar domínio:
+Confirmado em 24/09/2026:
 
-- regra exata do Código SEG;
-- se Atividade é entidade subordinada;
-- se `SCI` é tipo de Projeto ou domínio distinto;
-- lista oficial de situações de execução.
+- Código SEG cadastrado e hierárquico: Projeto `XX.XX.XX.XXX.XX.00`, SCI `XX.XX.XX.XXX.XX.SS`, Atividade `XX.XX.XX.XXX.XX.SS.AAA`;
+- `Projeto 1 → N SCI 1 → N Atividades`;
+- SCI é entidade própria subordinada ao Projeto;
+- Atividade é entidade própria subordinada ao SCI e possui status independente;
+- Projeto: `ATIVO → ENCERRADO_COM_AVALIACAO_PENDENTE → CONCLUIDO`;
+- coluna ambígua da planilha indica existência de recurso externo;
+- Estagiário executa Atividade e possui Orientador PESQUISADOR ou ANALISTA.
+
+Pendências antes da migration:
+
+- decidir definitivamente a cardinalidade Projeto ↔ Laboratório;
+- recuperar/confirmar os campos obrigatórios completos de Atividade e seu conjunto oficial de estados.
 
 ### 5.1 Projeto base
 
-Relação:
+Relação de domínio confirmada:
 
 ```text
-Laboratório 1 → N Projetos
+Projeto 1 → N SCI
+SCI 1 → N Atividades
 ```
+
+A relação Projeto ↔ Laboratório permanece em decisão no portão 5.0; a base atual usa `Laboratório 1 → N Projetos`.
 
 Planejado:
 
@@ -305,32 +316,36 @@ Planejado:
 - Código SEG;
 - Código SGL/rastreabilidade interna.
 
-Ciclo previsto:
+Ciclo confirmado pelo cliente:
 
 ```text
-CRIADO
-→ ATIVO
+ATIVO
 → ENCERRADO_COM_AVALIACAO_PENDENTE
 → CONCLUIDO
 ```
 
 ### 5.2 Código SEG
 
-Formato informado até o momento:
+Formato institucional confirmado:
 
 ```text
-AAAA.MM.DD.XX.XXX
+Projeto   XX.XX.XX.XXX.XX.00
+SCI       XX.XX.XX.XXX.XX.SS
+Atividade XX.XX.XX.XXX.XX.SS.AAA
 ```
 
-Código SEG é institucional e não substitui Código SGL.
+Código SEG será inicialmente cadastrado. SCI usa sufixo sequencial dentro do Projeto e Atividade acrescenta três dígitos ao código do SCI.
 
-### 5.3 Atividades — condicional
-
-Se confirmadas:
+### 5.3 SCI e Atividades
 
 ```text
-Projeto 1 → N Atividades
+Projeto 1 → N SCI
+SCI     1 → N Atividades
 ```
+
+SCI é solução/contribuição para inovação ligada à gestão dos recursos do Projeto.
+
+Atividade é entidade própria, nunca fica solta do Projeto e possui status independente.
 
 ### 5.4 Interface
 
