@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
 **Última atualização:** 24/09/2026  
-**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 é a próxima etapa  
+**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 em andamento — bloco 5.1 Projeto base  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -329,7 +329,23 @@ ATIVO
 → CONCLUIDO
 ```
 
-### 5.2 Código SEG
+### 5.2 SCI
+
+```text
+Projeto 1 → N SCI
+```
+
+SCI é uma solução/contribuição para inovação ligada à gestão dos recursos do Projeto. É entidade própria e nunca existe sem Projeto.
+
+### 5.3 Atividades
+
+```text
+SCI 1 → N Atividades
+```
+
+Atividade é entidade própria, nunca fica solta do Projeto e possui status independente. Pode ser encerrada antes do Projeto.
+
+### 5.4 Código SEG — validação hierárquica
 
 Formato institucional confirmado:
 
@@ -339,22 +355,13 @@ SCI       XX.XX.XX.XXX.XX.SS
 Atividade XX.XX.XX.XXX.XX.SS.AAA
 ```
 
-Código SEG será inicialmente cadastrado. SCI usa sufixo sequencial dentro do Projeto e Atividade acrescenta três dígitos ao código do SCI.
+O Código SEG será cadastrado, não gerado automaticamente nesta versão. O SGL validará formato, coerência com o pai e duplicidade segundo a regra institucional.
 
-### 5.3 SCI e Atividades
+### 5.5 Interface e integração
 
-```text
-Projeto 1 → N SCI
-SCI     1 → N Atividades
-```
+Só fechar depois de Projeto → SCI → Atividade estabilizados no backend.
 
-SCI é solução/contribuição para inovação ligada à gestão dos recursos do Projeto.
-
-Atividade é entidade própria, nunca fica solta do Projeto e possui status independente.
-
-### 5.4 Interface
-
-Só fechar depois do domínio estabilizado.
+A navegação deve dar protagonismo ao Projeto. Laboratório continua vínculo/contexto e filtro, mas não deve ser uma etapa obrigatória de navegação para trabalhar com Projeto.
 
 ---
 
@@ -585,4 +592,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Próximo handoff: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
+Handoff atual: `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`.
