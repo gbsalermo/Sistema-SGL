@@ -275,7 +275,7 @@ Isso **não é delete lógico**. A decisão geral de delete lógico permanece na
 
 **Impacto:** alto.
 
-### 5.0 Portão de confirmação 🔧 quase fechado
+### 5.0 Portão de confirmação ✅ FECHADO
 
 Confirmado em 24/09/2026:
 
@@ -287,10 +287,14 @@ Confirmado em 24/09/2026:
 - coluna ambígua da planilha indica existência de recurso externo;
 - Estagiário executa Atividade e possui Orientador PESQUISADOR ou ANALISTA.
 
-Pendências antes da migration:
+Decisões adicionais fechadas:
 
-- decidir definitivamente a cardinalidade Projeto ↔ Laboratório;
-- recuperar/confirmar os campos obrigatórios completos de Atividade e seu conjunto oficial de estados.
+- Projeto mantém vínculo com um Laboratório responsável/contextual, mas é o eixo operacional principal;
+- Laboratório funciona principalmente como contexto/filtro para pessoas, Projetos e Atividades;
+- Projeto/SCI/Atividade possuem Código SEG, título, líder/responsável, início, fim, duração opcional/derivável, status e situação de execução;
+- "Figura = Projeto/SCI/Atividade" é atributo da planilha e não será persistido como campo genérico;
+- recurso externo pertence ao Projeto e exige empresa quando marcado;
+- dados pessoais de Estagiário devem vir preferencialmente de Usuario/autenticação institucional.
 
 ### 5.1 Projeto base
 
@@ -301,20 +305,21 @@ Projeto 1 → N SCI
 SCI 1 → N Atividades
 ```
 
-A relação Projeto ↔ Laboratório permanece em decisão no portão 5.0; a base atual usa `Laboratório 1 → N Projetos`.
+Projeto mantém um Laboratório responsável/contextual (`Laboratório 1 → N Projetos`), mas Projeto é o eixo funcional para SCI, Atividades e vínculos. A interface não deve obrigar navegação pelo Laboratório para trabalhar com Projeto.
 
 Planejado:
 
-- nome/descrição;
-- Laboratório obrigatório;
+- título/descrição;
+- Laboratório responsável/contextual;
 - líder/responsável;
 - início/fim;
-- financiador;
-- ciclo de vida;
+- duração opcional/derivável;
+- status principal;
 - situação de execução;
-- tipo, se confirmado;
 - Código SEG;
-- Código SGL/rastreabilidade interna.
+- Código SGL/rastreabilidade interna;
+- possui recurso externo;
+- empresa do recurso externo quando aplicável.
 
 Ciclo confirmado pelo cliente:
 
@@ -357,24 +362,19 @@ Só fechar depois do domínio estabilizado.
 
 **Dependência:** Etapa 5.
 
-Confirmar antes de implementar:
+Confirmado para a Etapa 6:
 
-- elegibilidade do Orientador;
-- Orientador interno/externo;
-- significado/cardinalidade de Cultura;
-- Curso/Formação;
-- múltiplas Atividades;
-- regras de prorrogação.
-
-Planejado:
-
-- Orientador obrigatório;
-- Projeto/Atividade;
-- Bolsa/vínculo separado de Curso/Formação;
-- Cultura/área temática;
-- treinamento inicial de segurança;
-- histórico de vínculos;
-- prorrogações justificadas.
+- Orientador obrigatório e com perfil PESQUISADOR ou ANALISTA;
+- Atividade obrigatória; Projeto é derivado de Atividade → SCI → Projeto;
+- Estagiário pode migrar entre Atividades/Projetos, exigindo histórico de vínculos;
+- Cultura representa a cultura da pesquisa e deve ser tratada como catálogo administrável por Unidade;
+- Bolsa/vínculo separado de Curso/Formação/nível;
+- início/fim do estágio;
+- prorrogações com histórico;
+- situação: EM_ANDAMENTO, FINALIZADO ou PRORROGADO;
+- treinamento de segurança booleano;
+- dados pessoais devem vir preferencialmente de Usuario/autenticação institucional;
+- código interno SGL do vínculo pode ser adotado sem substituir identidade institucional.
 
 ---
 
@@ -562,7 +562,7 @@ Etapa 1 — refinamento visual global                 ✅
 Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
-Etapa 5 — Projetos e Atividades                    ⏭ próxima
+Etapa 5 — Projetos e Atividades                     🔧 atual — 5.1 Projeto base
 Etapas 6–13                                         ⏳
 ```
 
