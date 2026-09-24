@@ -446,10 +446,34 @@ public class Residuo implements Serializable {
 			throw new BusinessRuleException("Informe pelo menos uma classe de resíduo.");
 		}
 
-		classificacoes.removeIf(item -> item.getEtapa() == etapa);
-
 		for (ClasseResiduo classe : classes) {
 			classe.validateActive();
+		}
+
+		Set<UUID> classesSelecionadas = classes.stream()
+				.map(ClasseResiduo::getPublicId)
+				.collect(java.util.stream.Collectors.toSet());
+
+		classificacoes.removeIf(item ->
+				item.getEtapa() == etapa
+						&& !classesSelecionadas.contains(item.getClasseResiduo().getPublicId()));
+
+		for (ClasseResiduo classe : classes) {
+
+			ResiduoClasse existente = classificacoes.stream()
+					.filter(item -> item.getEtapa() == etapa)
+					.filter(item -> Objects.equals(
+							item.getClasseResiduo().getPublicId(),
+							classe.getPublicId()))
+					.findFirst()
+					.orElse(null);
+
+			if (existente != null) {
+				existente.setClasseResiduo(classe);
+				existente.setCodigoSnapshot(classe.getCodigo());
+				existente.setDescricaoSnapshot(classe.getDescricao());
+				continue;
+			}
 
 			classificacoes.add(ResiduoClasse.criar(this, classe, etapa));
 		}
