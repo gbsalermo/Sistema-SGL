@@ -230,10 +230,10 @@ public class ResiduoService {
 		Residuo salvo = residuoRepository.save(residuo);
 
 		String observacao =
-				"Retorno administrativo de "
-				+ etapaAnterior
-				+ " para "
-				+ novaEtapa
+				"Retorno administrativo: "
+				+ rotuloStatus(etapaAnterior)
+				+ " → "
+				+ rotuloStatus(novaEtapa)
 				+ ". Justificativa: "
 				+ justificativa;
 
@@ -297,6 +297,22 @@ public class ResiduoService {
 		Residuo residuo = buscarEntidade(id);
 		return historicoResiduoRepository.findByResiduoIdOrderByDataHoraAsc(residuo.getId()).stream()
 				.map(HistoricoResiduoResponseDTO::new).toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<HistoricoResiduoResponseDTO> buscarHistoricoPorGerador(UUID usuarioGeradorId) {
+		Usuario gerador = buscarUsuario(usuarioGeradorId);
+		gerador.validateActive();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		return historicoResiduoRepository
+				.findByResiduoGeradorPublicIdAndResiduoLaboratorioUnidadePublicIdOrderByDataHoraDesc(
+						usuarioGeradorId,
+						unidadeId)
+				.stream()
+				.map(HistoricoResiduoResponseDTO::new)
+				.toList();
 	}
 
 	@Transactional
@@ -488,6 +504,21 @@ public class ResiduoService {
 		}
 
 		return observacao.substring(0, 1000);
+	}
+
+	private String rotuloStatus(StatusResiduo status) {
+		if (status == null) {
+			return "Etapa não identificada";
+		}
+
+		return switch (status) {
+			case INFORMADO -> "Informado";
+			case EM_ANALISE -> "Em análise";
+			case LIBERADO_PARA_ARMAZENAMENTO -> "Liberado para armazenamento";
+			case ARMAZENADO_TEMPORARIAMENTE -> "Armazenado temporariamente";
+			case DESPACHADO -> "Despachado";
+			case CANCELADO -> "Cancelado";
+		};
 	}
 
 	private LocalArmazenamentoResiduo buscarLocalArmazenamentoAtivo(UUID localId, UUID unidadeId) {
