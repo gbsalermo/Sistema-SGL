@@ -3,7 +3,7 @@
 **Criado em:** 24/09/2026  
 **Etapa anterior:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
-**Bloco atual:** 5.0 — Portão de confirmação — regras centrais confirmadas; 2 pontos pendentes  
+**Bloco atual:** 5.1 — Projeto base 🔧 atual; 5.0 ✅ fechado  
 **Branch de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fonte canônica de `main`:** GitLab institucional  
 
@@ -111,7 +111,22 @@ Regra confirmada:
 - Atividade possui ciclo/status independente do Projeto e pode ser encerrada antes dele;
 - Estagiário executa uma Atividade; a própria Atividade representa sua responsabilidade no Projeto.
 
-**Pendente:** recuperar/confirmar a lista completa de campos obrigatórios da Atividade. Ela não está preservada de forma suficiente na documentação atual.
+Dados cadastrais informados para Projeto/SCI/Atividade:
+
+```text
+Código SEG
+Título
+Líder/responsável
+Início
+Fim
+Duração — opcional/derivável quando aplicável
+Status principal
+Situação de execução
+```
+
+A coluna "Figura = Projeto/SCI/Atividade" da planilha não vira um campo de domínio: o tipo da própria entidade já representa essa informação.
+
+Recurso externo pertence ao contexto do Projeto e não deve ser duplicado em SCI/Atividade.
 
 ### 3.4 Ciclo de vida ✅ confirmado para Projeto
 
@@ -143,58 +158,142 @@ Na modelagem isso deve virar um dado explícito, não manter o nome ambíguo da 
 - Cultura representa a cultura da pesquisa, com exemplos: mandioca, maracujá, abacaxi, citros, banana, mamão e outras;
 - Bolsa/vínculo e Curso/Formação permanecem conceitos separados.
 
-### 3.7 Ponto estrutural ainda aberto — Projeto x Laboratório ⚠️
+### 3.7 Projeto x Laboratório ✅ interpretação fechada
 
-Em 11/09 havia sido definido:
+A relação física atual será preservada:
 
 ```text
-Projeto obrigatoriamente ligado a 1 Laboratório
 Laboratório 1 → N Projetos
+Projeto → 1 Laboratório responsável/contextual
 ```
 
-Na retomada da Etapa 5 surgiu a percepção de que Projeto deve ter maior independência estrutural que Laboratório.
+Porém, **Projeto é o eixo operacional principal**, não um simples cadastro subordinado ao Laboratório.
 
-Não remover nem alterar a FK atual até decidir explicitamente entre:
+Uso esperado:
 
 ```text
-A) Projeto continua com 1 Laboratório responsável
-ou
-B) Projeto passa a ser independente/multilaboratorial
+Projeto
+→ SCI
+→ Atividades
+→ Estagiários vinculados
+
+Laboratório
+→ serve como contexto institucional/filtro
+→ permite localizar funcionários
+→ permite localizar Projetos e respectivas Atividades
 ```
 
-A hierarquia Projeto → SCI → Atividade não depende dessa decisão, mas a migration do Projeto sim.
+Ou seja: manter a FK atual evita quebra de compatibilidade, mas a UI e os fluxos da Etapa 5 devem dar maior protagonismo ao Projeto. Não criar hierarquia visual que faça o usuário precisar "entrar no Laboratório" para trabalhar com Projeto.
 
 ---
 
-## 4. Projeto base planejado
+## 4. Projeto base — contrato para 5.1
 
-Após o portão:
+O `Projeto` existente será evoluído, sem criação de entidade paralela.
 
-- nome/descrição;
-- Laboratório obrigatório;
-- líder/responsável;
-- início/fim;
-- financiador;
-- ciclo de vida;
-- situação de execução;
-- tipo, se confirmado;
-- Código SEG;
-- Código SGL/rastreabilidade interna.
-
-Ciclo inicialmente proposto no roadmap:
+Campos de domínio previstos:
 
 ```text
-CRIADO
-→ ATIVO
+Projeto
+├── publicId / Código SGL interno
+├── codigoSeg
+├── titulo
+├── descricao
+├── laboratorioResponsavel
+├── liderResponsavel
+├── dataInicio
+├── dataFim
+├── duracao (preferencialmente derivada; não duplicar sem necessidade)
+├── status
+├── situacaoExecucao
+├── possuiRecursoExterno
+├── empresaRecursoExterno
+└── ativo técnico/cadastral, somente se ainda necessário
+```
+
+### Status principal do Projeto
+
+Confirmado:
+
+```text
+ATIVO
 → ENCERRADO_COM_AVALIACAO_PENDENTE
 → CONCLUIDO
 ```
 
-Esse ciclo ainda deve ser tratado como proposta até o fechamento do 5.0.
+### Situação de execução
+
+Segundo indicador existente na fonte do cliente:
+
+```text
+NAO_INFORMADO
+EM_ANDAMENTO_NO_PRAZO
+EM_ANDAMENTO_ATRASADO
+EXECUCAO_CANCELADA
+```
+
+Esse indicador é distinto do ciclo principal.
+
+Como ele aparenta depender de início/fim/duração, **não automatizar nem derivar definitivamente nesta primeira migration sem validar a semântica completa**. Inicialmente o contrato deve preservar os valores oficiais; uma regra automática pode ser adicionada depois sem mudar o significado do dado.
+
+### Recurso externo
+
+```text
+possuiRecursoExterno = false
+→ empresaRecursoExterno = null
+
+possuiRecursoExterno = true
+→ empresaRecursoExterno obrigatória
+```
+
+A antiga coluna "Projeto = sim/não" da planilha não será reproduzida com esse nome ambíguo.
 
 ---
 
-## 5. Regras de implementação
+## 5. Preparação para Estagiários — Etapa 6
+
+A Etapa 5 deve criar Projeto/SCI/Atividade já pensando nos vínculos da Etapa 6, mas **não duplicar dados pessoais**.
+
+Já pertencem ao domínio atual de `Usuario`:
+
+```text
+nome
+email
+Unidade
+Laboratório
+perfil
+ativo
+```
+
+Já pertencem ao `Estagiario` atual:
+
+```text
+dataInicioEstagio
+dataFimEstagio
+tipoBolsa (campo legado)
+observacao
+```
+
+A Etapa 6 deverá acrescentar/evoluir:
+
+- Código SGL interno do vínculo, se necessário;
+- Orientador obrigatório, limitado a PESQUISADOR ou ANALISTA;
+- Atividade obrigatória; Projeto é obtido por Atividade → SCI → Projeto;
+- histórico de mudança/migração entre Atividades em vez de apenas sobrescrever a FK;
+- Cultura como catálogo administrável por Unidade, semelhante ao conceito de catálogo reutilizável;
+- prorrogações com histórico, não apenas alteração silenciosa da data final;
+- situação do estágio: EM_ANDAMENTO, FINALIZADO, PRORROGADO;
+- treinamento de segurança booleano;
+- telefone/celular apenas se não vier da identidade institucional;
+- separar **formação/nível** de **bolsa/vínculo**.
+
+Exemplos de Cultura informados: mandioca, maracujá, abacaxi, citros, banana, mamão e outras.
+
+A autenticação institucional será fonte preferencial para dados pessoais. O SGL deve guardar apenas os dados necessários ao vínculo acadêmico/operacional.
+
+---
+
+## 6. Regras de implementação
 
 - partir da `main` já contendo a Etapa 4;
 - preservar isolamento por Unidade;
@@ -207,19 +306,21 @@ Esse ciclo ainda deve ser tratado como proposta até o fechamento do 5.0.
 
 ---
 
-## 6. Próximo passo exato
+## 7. Próximo passo exato
 
-Fechar as quatro decisões do **5.0**.
+O **5.0 está fechado**.
 
-Somente depois:
+Próximo bloco:
 
 ```text
-analisar schema atual
-→ definir migration seguinte
-→ evoluir Projeto
+5.1 Projeto base
+→ revisar migration atual de projetos
+→ definir a próxima migration Flyway
+→ evoluir Projeto existente
 → DTOs
 → Repository/Service
 → Controller
 → testes
-→ frontend
 ```
+
+Depois estabilizar Projeto antes de iniciar SCI.
