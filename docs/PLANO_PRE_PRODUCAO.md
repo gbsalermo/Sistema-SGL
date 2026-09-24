@@ -271,7 +271,7 @@ Isso **não é delete lógico**. A decisão geral de delete lógico permanece na
 
 ---
 
-## Etapa 5 — Projetos e Atividades
+## Etapa 5 — Projetos e Atividades 🔧 ATUAL
 
 **Impacto:** alto.
 
