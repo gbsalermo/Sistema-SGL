@@ -1,7 +1,7 @@
 # Validação integrada — Etapa 4
 
-**Atualizado em:** 22/09/2026  
-**Estado:** roteiro preservado; execução final pendente da reconciliação da implementação antiga com a `main` atual.  
+**Atualizado em:** 24/09/2026  
+**Estado:** ✅ bateria executada; Etapa 4 reconciliada e validada funcionalmente.  
 **Branch alvo de validação:** `collab/etapa-4-residuos-reconcile`
 
 > Não usar a antiga `feat/etapa-4-residuos` como base de homologação. Ela é somente referência de implementação.
@@ -174,4 +174,4 @@ relatórios/cancelados                      ✅
 regressão do fluxo normal de Resíduos      ✅
 ```
 
-Somente depois dessa bateria a Etapa 4 pode ser considerada concluída e integrada.
+A bateria acima foi executada durante a reconciliação e os ajustes encontrados foram corrigidos e revalidados. A Etapa 4 está concluída; resta apenas a integração da branch validada à `main` canônica pelo Merge Request do GitLab.
