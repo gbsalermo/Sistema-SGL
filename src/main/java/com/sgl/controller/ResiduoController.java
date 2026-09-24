@@ -142,6 +142,12 @@ public class ResiduoController {
         return ResponseEntity.ok(residuoService.gerarDadosRotulo(id));
     }
 
+    @Operation(summary = "Consultar histórico operacional dos resíduos da unidade", description = "Retorna os eventos de rastreabilidade dos resíduos da unidade atual, do mais recente para o mais antigo.")
+    @GetMapping("/historico/unidade")
+    public ResponseEntity<List<HistoricoResiduoResponseDTO>> buscarHistoricoDaUnidade() {
+        return ResponseEntity.ok(residuoService.buscarHistoricoDaUnidade());
+    }
+
     @Operation(summary = "Consultar histórico dos resíduos do gerador", description = "Retorna os eventos de rastreabilidade dos resíduos pertencentes ao gerador da unidade atual, do mais recente para o mais antigo.")
     @GetMapping("/historico/por-gerador")
     public ResponseEntity<List<HistoricoResiduoResponseDTO>> buscarHistoricoPorGerador(
