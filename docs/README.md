@@ -12,11 +12,11 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 1. ../CONTINUIDADE.md
 2. SINCRONIZACAO_GITLAB_GITHUB.md
 3. PLANO_PRE_PRODUCAO.md
-4. CONTINUIDADE_ETAPA_4_2026-09-17.md
-5. MODULO_RESIDUOS.md
-6. DOSSIE_PROJETO_SGL.md
-7. Swagger/OpenAPI em execução
-8. documento específico da área em trabalho
+4. CONTINUIDADE_ETAPA_5_2026-09-24.md
+5. DOSSIE_PROJETO_SGL.md
+6. Swagger/OpenAPI em execução
+7. documento específico da área em trabalho
+8. documentos fechados de etapas anteriores, quando necessários
 ```
 
 O arquivo `CONTINUIDADE_ETAPA_3_2026-09-11.md` permanece como registro de fechamento da Etapa 3.
