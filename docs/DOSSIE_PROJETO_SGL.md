@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 22/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2 e 3 concluídas; Etapa 4 em reconciliação sobre as `main` corrigidas pelo supervisor antes da revalidação.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 é a próxima etapa.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -13,7 +13,7 @@
 Etapa 1 — padrão visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos  🔧 reconciliação + revalidação
+Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 ```
 
 Handoff imediato:
@@ -483,7 +483,7 @@ A validação incluiu fluxo ponta a ponta, Gestores diferentes, histórico, clas
 
 ---
 
-# 12. Etapa 4 — próxima
+# 12. Etapa 4 — concluída
 
 Handoff:
 
@@ -601,8 +601,8 @@ Etapa 13:
 Etapa 1 ✅
 Etapa 2 ✅
 Etapa 3 ✅
-Etapa 4 ⏭ próxima
-Etapa 5 ⏳
+Etapa 4 ✅ concluída
+Etapa 5 ⏭ próxima
 Etapa 6 ⏳
 Etapa 7 ⏳
 Etapa 8 ⏳
