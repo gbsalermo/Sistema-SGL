@@ -2,9 +2,12 @@ package com.sgl.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
@@ -124,4 +127,33 @@ class ResiduoAdministracaoTest {
                 residuo::retornarEtapaAdministrativamente
         );
     }
+    @Test
+    void deveReconfirmarMesmaClasseSemDuplicarVinculo() {
+        ClasseResiduo classe = ClasseResiduo.builder()
+                .id(10L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000410"))
+                .codigo("A")
+                .descricao("Solventes sem halogênios")
+                .ativo(true)
+                .build();
+
+        Residuo residuo = Residuo.builder()
+                .status(StatusResiduo.EM_ANALISE)
+                .build();
+
+        residuo.definirClassesConfirmadas(List.of(classe));
+
+        ResiduoClasse vinculoOriginal = residuo.getClassesConfirmadas().get(0);
+
+        classe.setDescricao("Solventes orgânicos sem halogênios");
+        residuo.definirClassesConfirmadas(List.of(classe));
+
+        assertEquals(1, residuo.getClassesConfirmadas().size());
+        assertSame(vinculoOriginal, residuo.getClassesConfirmadas().get(0));
+        assertEquals(
+                "Solventes orgânicos sem halogênios",
+                residuo.getClassesConfirmadas().get(0).getDescricaoSnapshot()
+        );
+    }
+
 }
