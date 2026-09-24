@@ -13,17 +13,18 @@
 
 A Etapa 5 estabiliza o domínio de Projetos e, se confirmado, introduz Atividades subordinadas.
 
-Roadmap:
+Roadmap canônico:
 
 ```text
-5.0 Portão de confirmação
-→ 5.1 Projeto base
-→ 5.2 Código SEG
-→ 5.3 Atividades — condicional
-→ 5.4 Interface
+5.0 Portão de confirmação                         ✅ fechado
+→ 5.1 Projeto base                               🔧 atual
+→ 5.2 SCI
+→ 5.3 Atividades
+→ 5.4 Código SEG — validação hierárquica
+→ 5.5 Interface e integração
 ```
 
-Nenhuma alteração estrutural de domínio deve ser feita antes do fechamento do 5.0.
+O backend deve estabilizar Projeto → SCI → Atividade antes do fechamento da interface. O Código SEG é cadastrado pelo usuário/gestão nesta etapa; o SGL valida formato e coerência hierárquica, sem gerar a numeração automaticamente.
 
 ---
 
@@ -306,21 +307,108 @@ A autenticação institucional será fonte preferencial para dados pessoais. O S
 
 ---
 
-## 7. Próximo passo exato
+## 7. Plano de execução canônico
 
-O **5.0 está fechado**.
+### 5.1 — Projeto base 🔧 ATUAL
 
-Próximo bloco:
+A tabela `projetos` nasceu na V1 e hoje contém Laboratório, nome, descrição, início/fim, responsável e ativo. A próxima migration disponível é **V19**.
+
+Ordem obrigatória:
 
 ```text
-5.1 Projeto base
-→ revisar migration atual de projetos
-→ definir a próxima migration Flyway
-→ evoluir Projeto existente
-→ DTOs
-→ Repository/Service
-→ Controller
-→ testes
+5.1.1 auditar tabela/entidade/DTOs/testes atuais
+→ 5.1.2 desenhar V19 sem destruir dados existentes
+→ 5.1.3 criar enums do domínio do Projeto
+→ 5.1.4 evoluir Projeto.java
+→ 5.1.5 evoluir Request/Response DTOs
+→ 5.1.6 evoluir Repository/Service mantendo tenant fail-closed
+→ 5.1.7 ajustar Controller/OpenAPI
+→ 5.1.8 atualizar DemoDataInitializer quando necessário
+→ 5.1.9 adicionar/ajustar testes
+→ validar backend
 ```
 
-Depois estabilizar Projeto antes de iniciar SCI.
+Decisões para o 5.1:
+
+- manter `laboratorio_id` obrigatório como laboratório responsável/contextual;
+- tratar o campo atual `nome` como **Título**; evitar rename destrutivo só por nomenclatura;
+- manter `responsavel` textual inicialmente como líder/responsável, sem criar FK prematura com Usuario;
+- `codigoSeg` é dado institucional cadastrado;
+- não gerar Código SEG automaticamente;
+- duração deve ser **derivada de início/fim** sempre que isso representar apenas intervalo de datas; não persistir informação duplicada sem necessidade;
+- criar status principal: `ATIVO`, `ENCERRADO_COM_AVALIACAO_PENDENTE`, `CONCLUIDO`;
+- criar situação de execução separada: `NAO_INFORMADO`, `EM_ANDAMENTO_NO_PRAZO`, `EM_ANDAMENTO_ATRASADO`, `EXECUCAO_CANCELADA`;
+- nesta primeira evolução, não inferir automaticamente a situação de execução apenas pelas datas;
+- adicionar `possuiRecursoExterno`;
+- quando `possuiRecursoExterno=true`, exigir empresa do recurso externo;
+- preservar `ativo` enquanto compatibilidade/delete lógico não forem tratados na Etapa 11; ele não substitui o status de negócio;
+- preservar todos os filtros por tenant já existentes;
+- preservar compatibilidade com Pedido, Resíduo e demais referências atuais a Projeto.
+
+### 5.2 — SCI
+
+Somente após Projeto estabilizado:
+
+```text
+Projeto 1 → N SCI
+```
+
+SCI será entidade própria. Dados previstos: Código SEG, título, líder/responsável, início/fim, status/situação conforme a fonte institucional e vínculo obrigatório ao Projeto. Não duplicar Laboratório se ele puder ser obtido do Projeto sem perda de regra de negócio.
+
+### 5.3 — Atividades
+
+Somente após SCI estabilizado:
+
+```text
+SCI 1 → N Atividades
+```
+
+Atividade será entidade própria, vinculada obrigatoriamente ao SCI. Ela possui ciclo independente e pode encerrar antes do Projeto. A própria Atividade representa a responsabilidade executada pelo Estagiário.
+
+### 5.4 — Código SEG e validações hierárquicas
+
+Formato canônico:
+
+```text
+Projeto   XX.XX.XX.XXX.XX.00
+SCI       XX.XX.XX.XXX.XX.SS
+Atividade XX.XX.XX.XXX.XX.SS.AAA
+```
+
+Nesta etapa:
+
+- validar formato;
+- validar Projeto terminando em `00`;
+- validar SCI com a mesma raiz do Projeto e sufixo próprio;
+- validar Atividade com o código completo do SCI + três dígitos;
+- validar duplicidade conforme o escopo institucional definido no domínio;
+- não gerar sequências automaticamente nesta primeira versão.
+
+### 5.5 — Interface e integração
+
+A interface deve refletir a importância funcional de Projeto:
+
+```text
+Projetos
+→ SCI do Projeto
+→ Atividades do SCI
+→ participantes/vínculos quando aplicável
+```
+
+Laboratório permanece filtro/contexto, mas o usuário não deve precisar navegar por Laboratório para acessar Projeto.
+
+O CRUD atual de Projeto em Administração permanece compatível durante a evolução. Só substituir/reorganizar a experiência após contratos de Projeto/SCI/Atividade estabilizados.
+
+### Critério de avanço
+
+Não iniciar 5.2 enquanto 5.1 não tiver:
+
+```text
+migration aplicada
++ backend compilando
++ testes verdes
++ CRUD atual sem regressão
++ tenant validado
++ documentação atualizada
+```
+
