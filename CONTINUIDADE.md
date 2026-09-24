@@ -9,7 +9,7 @@
 **Branch atual de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 4 — expansão operacional de Resíduos ✅  
-**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
+**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 5.1 Projeto base  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
@@ -385,14 +385,18 @@ A próxima etapa canônica é a **Etapa 5 — Projetos e Atividades**.
 
 ## Etapa 5 — Projetos + Atividades
 
-Antes de modelagem definitiva, confirmar:
+Portão 5.0 fechado em 24/09/2026:
 
-- Código SEG;
-- se Atividade é entidade subordinada ao Projeto;
-- se `SCI` é tipo de Projeto ou domínio separado;
-- situações de execução.
+- Projeto 1 → N SCI 1 → N Atividades;
+- Código SEG hierárquico confirmado;
+- SCI é entidade própria subordinada ao Projeto;
+- Atividade é entidade própria subordinada ao SCI;
+- Projeto mantém Laboratório responsável/contextual, mas é o eixo funcional principal;
+- status do Projeto: ATIVO → ENCERRADO_COM_AVALIACAO_PENDENTE → CONCLUIDO;
+- situação de execução separada;
+- recurso externo + empresa quando aplicável.
 
-Projeto continua N:1 com Laboratório.
+Bloco atual: **5.1 Projeto base**.
 
 ## Etapa 6 — Estagiários
 
