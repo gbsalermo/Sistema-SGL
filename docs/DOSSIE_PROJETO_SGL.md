@@ -107,7 +107,7 @@ Quando houver conflito:
 9. documentos históricos
 ```
 
-Os `main` já foram reconciliados em 22/09/2026. Antes de continuar a Etapa 4, confirmar que a branch `collab/etapa-4-residuos-reconcile` está atualizada com `gitlab/main` e nunca usar a antiga `feat/etapa-4-residuos` como base de merge.
+Os `main` foram reconciliados em 22/09/2026 e a Etapa 4 foi concluída em 24/09/2026 na branch `collab/etapa-4-residuos-reconcile`. Após o merge no GitLab, a Etapa 5 deve nascer da `gitlab/main` atualizada; a antiga `feat/etapa-4-residuos` permanece apenas como referência histórica.
 
 ---
 
