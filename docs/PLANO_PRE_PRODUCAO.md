@@ -8,7 +8,7 @@
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
-> **Checkpoint de infraestrutura — 22/09/2026:** GitLab é a fonte canônica de `main` nos dois repositórios; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. O fluxo e os comandos estão em `docs/SINCRONIZACAO_GITLAB_GITHUB.md`. A antiga `feat/etapa-4-residuos` não deve ser mergeada integralmente: seus blocos 4.1–4.4 serão portados seletivamente para `collab/etapa-4-residuos-reconcile` sobre a `gitlab/main` atual.
+> **Checkpoint de infraestrutura — 24/09/2026:** GitLab continua sendo a fonte canônica de `main` nos dois repositórios; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A Etapa 4 foi integrada. A branch atual é `collab/etapa-5-projetos-atividades`, criada a partir da `main` já contendo a Etapa 4.
 
 Roadmap formal posterior:
 
