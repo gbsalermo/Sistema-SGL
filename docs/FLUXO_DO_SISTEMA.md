@@ -23,7 +23,7 @@ Regras atuais:
 1. Unidade é entidade institucional do domínio.
 2. Laboratórios pertencem a uma Unidade.
 3. Usuários pertencem a uma Unidade e, quando aplicável, a um Laboratório.
-4. Projetos pertencem ao contexto do Laboratório/Unidade.
+4. Projetos mantêm um Laboratório responsável/contextual e pertencem à Unidade, mas são o eixo operacional para SCI e Atividades.
 5. Produtos formam o catálogo.
 6. Cada Unidade possui seu próprio contexto de estoque para os produtos utilizados.
 
@@ -326,3 +326,20 @@ ARMAZENADO_TEMPORARIAMENTE
   ↓ despachar
 DESPACHADO
 ```
+
+## Hierarquia de Projetos — Etapa 5
+
+```text
+Laboratório responsável/contextual
+└── Projeto
+    ├── Código SEG ...00
+    └── SCI
+        ├── Código SEG ...SS
+        └── Atividade
+            └── Código SEG ...SS.AAA
+```
+
+Projeto é o eixo funcional. Laboratório serve como contexto/filtro institucional; não é necessário entrar no Laboratório para navegar por Projeto.
+
+Toda Atividade pertence a um SCI e, portanto, a um Projeto. Atividades podem encerrar antes do Projeto.
+
