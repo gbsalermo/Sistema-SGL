@@ -14,6 +14,9 @@ import lombok.Getter;
 public class HistoricoResiduoResponseDTO {
 
     private final UUID id;
+    private final UUID residuoId;
+    private final String residuoCodigoRastreio;
+    private final String residuoDescricao;
     private final UUID usuarioId;
     private final String usuarioNome;
     private final StatusResiduo status;
@@ -23,6 +26,9 @@ public class HistoricoResiduoResponseDTO {
 
     public HistoricoResiduoResponseDTO(HistoricoResiduo entity) {
         this.id = entity.getPublicId();
+        this.residuoId = entity.getResiduo().getPublicId();
+        this.residuoCodigoRastreio = entity.getResiduo().getCodigoRastreio();
+        this.residuoDescricao = entity.getResiduo().getDescricao();
         this.usuarioId = entity.getUsuario().getPublicId();
         this.usuarioNome = entity.getUsuario().getNome();
         this.status = entity.getStatus();

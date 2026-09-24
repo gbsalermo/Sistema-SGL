@@ -1,9 +1,10 @@
 # Continuidade SGL — Etapa 4
 
 **Criado originalmente em:** 17/09/2026  
-**Atualizado em:** 22/09/2026  
+**Atualizado em:** 24/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
-**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧 reconciliação + revalidação  
+**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada
+**Bloco atual:** 4.1–4.4 ✅ reconciliados, testados e validados
 **Branch histórica da implementação:** `feat/etapa-4-residuos`  
 **Branch atual de trabalho:** `collab/etapa-4-residuos-reconcile`  
 **Fonte canônica de `main`:** GitLab institucional  
@@ -18,11 +19,11 @@ Este arquivo substitui a interpretação anterior de “Etapa 4 ainda não inici
 A implementação histórica cobre:
 
 ```text
-4.1 Locais de armazenamento cadastráveis          ✅ implementado na branch antiga
-4.2 Modelos de Resíduos pré-cadastrados            ✅ implementado na branch antiga
-4.3 Uso de modelo ou preenchimento manual          ✅ implementado na branch antiga
-4.4 Correções administrativas do ciclo             ✅ implementado na branch antiga
-Validação integrada na base corrigida              ⏳ pendente após reconciliação
+4.1 Locais de armazenamento cadastráveis          ✅ reconciliado, testado e validado ponta a ponta
+4.2 Modelos de Resíduos pré-cadastrados            ✅ reconciliado, testado e validado ponta a ponta
+4.3 Uso de modelo ou preenchimento manual        ✅ reconciliado, testado e validado ponta a ponta
+4.4 Correções administrativas do ciclo             ✅ reconciliado, testado e validado ponta a ponta
+Validação integrada na base corrigida              ✅ concluída
 ```
 
 A antiga `feat/etapa-4-residuos` **não deve ser mergeada integralmente**.
@@ -188,6 +189,8 @@ A Gestão pode selecionar local cadastrado ou informar manualmente. Na confirma�
 
 Ao portar:
 
+> **Regra de segurança da retomada:** não copiar o `ResiduoService` antigo inteiro. A implementação histórica da 4.1 foi feita antes das correções fail-closed/cross-tenant do supervisor. Devem ser portados somente os trechos funcionais de local de armazenamento para o service atual.
+
 - adaptar paths para a estrutura atual `src/...`;
 - usar V17;
 - manter isolamento de tenant da base corrigida;
@@ -339,4 +342,16 @@ Antes de continuar código:
 6. somente então avançar para 4.2.
 ```
 
-A validação da Etapa 4 será retomada depois que a implementação antiga tiver sido integralmente reconciliada com a base atual.
+A implementação histórica foi integralmente reconciliada de forma seletiva com a base atual e a validação da Etapa 4 foi concluída.
+
+#### Reconciliação 4.4 — implementação atual
+
+- `CANCELAR`: permitido para estados anteriores ao despacho; gera `CANCELADO`.
+- `RETORNAR_ETAPA`: retorna exatamente uma etapa operacional por ação.
+- `DESPACHADO -> ARMAZENADO_TEMPORARIAMENTE` antes de eventual cancelamento.
+- `CANCELADO` é terminal e não pode retornar.
+- justificativa obrigatória, limitada a 1000 caracteres e registrada no histórico.
+- somente perfil `ADMINISTRADOR` no service; busca do Resíduo e do Administrador permanece tenant-safe/fail-closed.
+- relatórios PDF/XLSX e resumo operacional incluem cancelados.
+- frontend exibe ações administrativas apenas para Administrador, com modal local de justificativa.
+- validação funcional integrada concluída ✅.

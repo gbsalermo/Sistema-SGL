@@ -10,11 +10,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import com.sgl.model.ClasseResiduo;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Lote;
+import com.sgl.model.LocalArmazenamentoResiduo;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
@@ -27,10 +29,12 @@ import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.ClasseResiduoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
+import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -53,12 +57,15 @@ public class DataInitializer implements CommandLineRunner {
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final EstagiarioRepository estagiarioRepository;
+    private final ClasseResiduoRepository classeResiduoRepository;
+    private final LocalArmazenamentoResiduoRepository localArmazenamentoResiduoRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
         if (unidadeRepository.count() > 0) {
-            System.out.println("=== Dados de desenvolvimento já existem. DataInitializer ignorado. ===");
+            garantirCadastrosResiduos();
+            System.out.println("=== Dados de desenvolvimento já existem. Catálogos de resíduos conferidos. ===");
             return;
         }
 
@@ -263,8 +270,78 @@ public class DataInitializer implements CommandLineRunner {
         pedido2.getItens().add(item3);
         pedidoRepository.save(pedido2);
 
+        garantirCadastrosResiduos();
+
         System.out.println("=== Dados de teste injetados com sucesso! ===");
         System.out.println("=== Estoques iniciais criados com lotes correspondentes ===");
+    }
+
+    private void garantirCadastrosResiduos() {
+        for (Unidade unidade : unidadeRepository.findAll()) {
+            garantirClasseResiduo(
+                    unidade,
+                    "A",
+                    "Solventes ou soluções de substâncias orgânicas que não contenham halogênios"
+            );
+            garantirClasseResiduo(
+                    unidade,
+                    "B",
+                    "Solventes ou soluções orgânicas que contenham halogênios"
+            );
+            garantirClasseResiduo(
+                    unidade,
+                    "F",
+                    "Resíduos sólidos de produtos químicos orgânicos"
+            );
+            garantirClasseResiduo(
+                    unidade,
+                    "H",
+                    "Outros"
+            );
+
+            garantirLocalArmazenamento(unidade, "Abrigo de resíduos");
+            garantirLocalArmazenamento(unidade, "Almoxarifado químico");
+        }
+    }
+
+    private void garantirClasseResiduo(
+            Unidade unidade,
+            String codigo,
+            String descricao) {
+
+        if (classeResiduoRepository.existsByUnidadeIdAndCodigoIgnoreCase(
+                unidade.getId(),
+                codigo)) {
+            return;
+        }
+
+        classeResiduoRepository.save(
+                ClasseResiduo.builder()
+                        .unidade(unidade)
+                        .codigo(codigo)
+                        .descricao(descricao)
+                        .ativo(true)
+                        .build()
+        );
+    }
+
+    private void garantirLocalArmazenamento(
+            Unidade unidade,
+            String nome) {
+
+        if (localArmazenamentoResiduoRepository.existsByUnidadeIdAndNomeIgnoreCase(
+                unidade.getId(),
+                nome)) {
+            return;
+        }
+
+        localArmazenamentoResiduoRepository.save(
+                LocalArmazenamentoResiduo.builder()
+                        .unidade(unidade)
+                        .nome(nome)
+                        .ativo(true)
+                        .build()
+        );
     }
 
     private EstoqueCentral criarEstoque(

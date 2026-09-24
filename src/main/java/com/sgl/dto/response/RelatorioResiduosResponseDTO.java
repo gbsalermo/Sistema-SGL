@@ -19,6 +19,7 @@ public class RelatorioResiduosResponseDTO {
     private Integer liberados;
     private Integer armazenados;
     private Integer despachados;
+    private Integer cancelados;
     private Integer altoRisco;
     private List<ResiduoResponseDTO> itens;
 }

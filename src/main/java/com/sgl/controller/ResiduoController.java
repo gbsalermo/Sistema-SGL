@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.request.AdministrarResiduoRequestDTO;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
 import com.sgl.dto.request.ArmazenarResiduoRequestDTO;
 import com.sgl.dto.request.CriarResiduoRequestDTO;
@@ -124,10 +125,34 @@ public class ResiduoController {
         return ResponseEntity.ok(residuoService.despachar(id, dto));
     }
 
+    @Operation(
+            summary = "Administrar ciclo do resíduo",
+            description = "Permite ao Administrador cancelar um resíduo ou retornar uma etapa operacional, sempre com justificativa registrada no histórico."
+    )
+    @PutMapping("/{id}/administrar")
+    public ResponseEntity<ResiduoResponseDTO> administrarCiclo(
+            @PathVariable UUID id,
+            @Valid @RequestBody AdministrarResiduoRequestDTO dto) {
+        return ResponseEntity.ok(residuoService.administrarCiclo(id, dto));
+    }
+
     @Operation(summary = "Obter prévia do rótulo", description = "Retorna os dados do rótulo desde o registro inicial. A impressão física só é permitida após análise e liberação.")
     @GetMapping("/{id}/rotulo")
     public ResponseEntity<RotuloResiduoResponseDTO> gerarRotulo(@PathVariable UUID id) {
         return ResponseEntity.ok(residuoService.gerarDadosRotulo(id));
+    }
+
+    @Operation(summary = "Consultar histórico operacional dos resíduos da unidade", description = "Retorna os eventos de rastreabilidade dos resíduos da unidade atual, do mais recente para o mais antigo.")
+    @GetMapping("/historico/unidade")
+    public ResponseEntity<List<HistoricoResiduoResponseDTO>> buscarHistoricoDaUnidade() {
+        return ResponseEntity.ok(residuoService.buscarHistoricoDaUnidade());
+    }
+
+    @Operation(summary = "Consultar histórico dos resíduos do gerador", description = "Retorna os eventos de rastreabilidade dos resíduos pertencentes ao gerador da unidade atual, do mais recente para o mais antigo.")
+    @GetMapping("/historico/por-gerador")
+    public ResponseEntity<List<HistoricoResiduoResponseDTO>> buscarHistoricoPorGerador(
+            @RequestParam UUID usuarioGeradorId) {
+        return ResponseEntity.ok(residuoService.buscarHistoricoPorGerador(usuarioGeradorId));
     }
 
     @Operation(summary = "Consultar histórico do resíduo")

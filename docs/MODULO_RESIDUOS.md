@@ -1,8 +1,8 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
-**Estado em 22/09/2026:** ✅ Etapa 3 validada; 🔧 Etapa 4 em reconciliação com a `main` corrigida pelo supervisor antes da revalidação.  
+**Estado em 24/09/2026:** ✅ Etapas 3 e 4 concluídas e validadas na base reconciliada.  
 **Migrations principais atuais:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql`, `V15__add_residue_safety_information.sql` e `V16__add_residuo_unidade_snapshot.sql`.  
-**Evolução atual:** Etapa 4 — port seletivo da implementação histórica para `collab/etapa-4-residuos-reconcile`. Na reconciliação, locais usarão V17 e modelos V18; a V16 atual é imutável.
+**Evolução atual:** Etapa 4 concluída. Locais usam V17, modelos usam V18 e a V16 canônica do supervisor permanece imutável.
 
 ## 1. Regra central
 
@@ -77,7 +77,7 @@ A Gestão recebe, confere, analisa/classifica, libera, consulta rótulo, registr
 
 A área de Cadastros já permite manter **Classes de Resíduo** e recomendações de segurança em Produtos.
 
-A Etapa 4 adicionará locais de armazenamento e modelos reutilizáveis de Resíduo. Esses recursos já existiram na implementação histórica de `feat/etapa-4-residuos`, mas ainda precisam ser portados para a base atual antes de serem tratados como vigentes.
+A Etapa 4 adicionou locais de armazenamento, modelos reutilizáveis de Resíduo, uso modelo/manual e correções administrativas do ciclo de vida. Esses recursos estão vigentes na base reconciliada e foram validados funcionalmente.
 
 ---
 
@@ -460,7 +460,7 @@ Foram verificados:
 
 ---
 
-## 16. Etapa 4 — próxima evolução
+## 16. Etapa 4 — evolução concluída
 
 A próxima etapa expande o domínio sem reabrir o que foi validado.
 
@@ -507,3 +507,15 @@ Detalhes: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 A revisão de tamanho, coesão e legibilidade foi deliberadamente movida para a **Etapa 13**, depois dos testes automatizados da Etapa 12.
 
 O objetivo será refatorar sem alterar comportamento ou contratos e reexecutar a suíte de regressão após as mudanças.
+
+## Correções administrativas do ciclo
+
+O perfil `ADMINISTRADOR` pode corrigir o ciclo de um Resíduo sempre com justificativa auditável.
+
+Fluxo normal:
+`INFORMADO -> EM_ANALISE -> LIBERADO_PARA_ARMAZENAMENTO -> ARMAZENADO_TEMPORARIAMENTE -> DESPACHADO`.
+
+Retorno administrativo ocorre uma etapa por vez:
+`DESPACHADO -> ARMAZENADO_TEMPORARIAMENTE -> LIBERADO_PARA_ARMAZENAMENTO -> EM_ANALISE -> INFORMADO`.
+
+O cancelamento gera o status terminal `CANCELADO`. Um Resíduo em `DESPACHADO` deve retornar ao menos uma etapa antes de poder ser cancelado. As ações são registradas como `RESIDUO_CANCELADO_ADMINISTRATIVAMENTE` ou `RETORNO_ADMINISTRATIVO_DE_ETAPA` no histórico.

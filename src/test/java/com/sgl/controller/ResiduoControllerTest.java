@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sgl.config.SecurityConfig;
+import com.sgl.dto.request.AdministrarResiduoRequestDTO;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
 import com.sgl.dto.request.ArmazenarResiduoRequestDTO;
 import com.sgl.dto.request.ComponenteResiduoRequestDTO;
@@ -45,6 +46,7 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Residuo;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.EstadoFisicoResiduo;
 import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
@@ -242,6 +244,14 @@ class ResiduoControllerTest {
         return dto;
     }
 
+    private AdministrarResiduoRequestDTO montarAdministrarRequestDTO() {
+        return new AdministrarResiduoRequestDTO(
+                GESTOR_PUBLIC_ID,
+                AcaoAdministrativaResiduo.CANCELAR,
+                "Registro realizado por engano"
+        );
+    }
+
     @Test
     void deveInformarResiduoERetornar201() throws Exception {
         when(residuoService.criar(any(CriarResiduoRequestDTO.class)))
@@ -384,6 +394,34 @@ class ResiduoControllerTest {
     }
 
     @Test
+    void deveAdministrarCicloERetornar200() throws Exception {
+        Residuo residuoCancelado = montarResiduo();
+        residuoCancelado.setStatus(StatusResiduo.CANCELADO);
+
+        when(residuoService.administrarCiclo(
+                eq(RESIDUO_PUBLIC_ID),
+                any(AdministrarResiduoRequestDTO.class)))
+                .thenReturn(new ResiduoResponseDTO(residuoCancelado));
+
+        mockMvc.perform(put(BASE_URL + "/{id}/administrar", RESIDUO_PUBLIC_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(montarAdministrarRequestDTO())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELADO"));
+    }
+
+    @Test
+    void deveRetornar400AoAdministrarSemJustificativa() throws Exception {
+        AdministrarResiduoRequestDTO dto = montarAdministrarRequestDTO();
+        dto.setJustificativa(" ");
+
+        mockMvc.perform(put(BASE_URL + "/{id}/administrar", RESIDUO_PUBLIC_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void deveRetornar400AoTransicionarStatusInvalido() throws Exception {
         // Delega a exceção que Residuo.receber() lançaria de verdade se o
         // resíduo não estivesse mais em INFORMADO (máquina de estados
@@ -408,6 +446,29 @@ class ResiduoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.residuoId").value(RESIDUO_PUBLIC_ID.toString()))
                 .andExpect(jsonPath("$.impressaoPermitida").value(false));
+    }
+
+    @Test
+    void deveBuscarHistoricoDaUnidadeERetornar200() throws Exception {
+        when(residuoService.buscarHistoricoDaUnidade())
+                .thenReturn(List.of(new HistoricoResiduoResponseDTO(montarHistorico())));
+
+        mockMvc.perform(get(BASE_URL + "/historico/unidade"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].residuoId").value(RESIDUO_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].acao").value("RESIDUO_INFORMADO"));
+    }
+
+    @Test
+    void deveBuscarHistoricoPorGeradorERetornar200() throws Exception {
+        when(residuoService.buscarHistoricoPorGerador(GERADOR_PUBLIC_ID))
+                .thenReturn(List.of(new HistoricoResiduoResponseDTO(montarHistorico())));
+
+        mockMvc.perform(get(BASE_URL + "/historico/por-gerador")
+                        .param("usuarioGeradorId", GERADOR_PUBLIC_ID.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].residuoId").value(RESIDUO_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].acao").value("RESIDUO_INFORMADO"));
     }
 
     @Test
