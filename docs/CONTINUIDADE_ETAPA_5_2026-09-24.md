@@ -11,7 +11,7 @@
 
 ## 1. Objetivo
 
-A Etapa 5 estabiliza o domínio de Projetos e, se confirmado, introduz Atividades subordinadas.
+A Etapa 5 estabiliza o domínio de Projetos e introduz a hierarquia confirmada Projeto → SCI → Atividade.
 
 Roadmap canônico:
 
