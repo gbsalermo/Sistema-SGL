@@ -26,4 +26,14 @@ public interface HistoricoResiduoRepository extends JpaRepository<HistoricoResid
             @Param("geradorPublicId") UUID geradorPublicId,
             @Param("unidadePublicId") UUID unidadePublicId
     );
+
+    @Query("""
+            SELECT historico
+            FROM HistoricoResiduo historico
+            WHERE historico.residuo.laboratorio.unidade.publicId = :unidadePublicId
+            ORDER BY historico.dataHora DESC
+            """)
+    List<HistoricoResiduo> findByResiduoLaboratorioUnidadePublicIdOrderByDataHoraDesc(
+            @Param("unidadePublicId") UUID unidadePublicId
+    );
 }
