@@ -50,7 +50,7 @@ Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos   ✅ concluída e validada
-Etapa 5 — Projetos e Atividades              ⏭ próxima
+Etapa 5 — Projetos e Atividades              🔧 atual — 5.0
 Etapas 6 a 13                                ⏳
 Matriz formal de permissões                  ⏳ após pré-produção
 Congelamento/homologação final               ⏳ posterior
@@ -136,7 +136,7 @@ Detalhes: `CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 A Etapa 4 foi reconciliada sobre a base corrigida pelo supervisor, testada e validada funcionalmente. Detalhes: `CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 
-A próxima etapa é **Etapa 5 — Projetos e Atividades**.
+A etapa atual é **Etapa 5 — Projetos e Atividades**, iniciada pelo **5.0 — Portão de confirmação**.
 
 ---
 
