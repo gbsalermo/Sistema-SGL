@@ -3,7 +3,7 @@
 **Criado em:** 24/09/2026  
 **Etapa anterior:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
-**Bloco atual:** 5.0 — Portão de confirmação  
+**Bloco atual:** 5.0 — Portão de confirmação — regras centrais confirmadas; 2 pontos pendentes  
 **Branch de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fonte canônica de `main`:** GitLab institucional  
 
@@ -57,27 +57,112 @@ A Etapa 5 deve evoluir essa base; não criar um segundo domínio de Projeto para
 
 ---
 
-## 3. Portão 5.0 — confirmações obrigatórias
+## 3. Portão 5.0 — estado consolidado
 
-Antes de migrations/entities novas, fechar com o responsável/cliente:
+### 3.1 Código SEG ✅ regra hierárquica confirmada
 
-1. **Código SEG**
-   - confirmar regra exata do formato institucional;
-   - referência atual: `AAAA.MM.DD.XX.XXX`;
-   - definir se é informado manualmente ou gerado pelo SGL;
-   - definir unicidade e possibilidade de alteração.
+O Código SEG é institucional e será tratado inicialmente como **dado cadastrado**, não como código gerado pelo SGL.
 
-2. **Atividade**
-   - confirmar se é entidade subordinada a Projeto;
-   - se confirmada: `Projeto 1 → N Atividades`;
-   - definir dados mínimos e ciclo de vida.
+Estrutura confirmada pelo cliente:
 
-3. **SCI**
-   - confirmar se SCI é um tipo de Projeto ou um domínio distinto.
+```text
+PROJETO   = XX.XX.XX.XXX.XX.00
+SCI       = XX.XX.XX.XXX.XX.SS
+ATIVIDADE = XX.XX.XX.XXX.XX.SS.AAA
+```
 
-4. **Situação de execução**
-   - obter lista oficial de situações;
-   - não inventar enum antes dessa confirmação.
+Onde:
+
+- os 13 dígitos do Projeto terminam em `00`;
+- o SCI mantém a raiz do Projeto e usa sufixo sequencial `01`, `02`, `03`...;
+- a Atividade herda integralmente o código do SCI e acrescenta três dígitos sequenciais;
+- exemplo fornecido: `10.25.00.085.00.01.001`;
+- o padrão é único; varia apenas a numeração.
+
+Hierarquia:
+
+```text
+Projeto 1
+└── N SCI
+    └── N Atividades
+```
+
+### 3.2 SCI ✅ entidade própria subordinada ao Projeto
+
+Definição do cliente:
+
+> SCI é uma solução/contribuição para inovação ligada à gestão dos recursos do Projeto.
+
+Regra:
+
+- SCI nunca existe sem Projeto;
+- um Projeto pode possuir vários SCI;
+- SCI possui código SEG derivado do Projeto;
+- não tratar SCI como mero "tipo de Projeto".
+
+### 3.3 Atividade ✅ entidade própria subordinada ao SCI
+
+Regra confirmada:
+
+- Atividade pertence a um SCI;
+- consequentemente, toda Atividade pertence a um Projeto;
+- não existem Atividades soltas apenas no Laboratório;
+- Código da Atividade = Código do SCI + 3 dígitos;
+- Atividade possui ciclo/status independente do Projeto e pode ser encerrada antes dele;
+- Estagiário executa uma Atividade; a própria Atividade representa sua responsabilidade no Projeto.
+
+**Pendente:** recuperar/confirmar a lista completa de campos obrigatórios da Atividade. Ela não está preservada de forma suficiente na documentação atual.
+
+### 3.4 Ciclo de vida ✅ confirmado para Projeto
+
+Cliente confirmou:
+
+```text
+ATIVO
+→ ENCERRADO_COM_AVALIACAO_PENDENTE
+→ CONCLUIDO
+```
+
+Não criar estado `CRIADO` como ciclo oficial sem necessidade adicional. Cadastro e ativação podem ser tratados separadamente se o fluxo exigir.
+
+Atividades possuem estado independente. A lista exata de estados de Atividade ainda deve ser fechada sem inventar enum além do que foi confirmado.
+
+### 3.5 Recurso externo ✅ significado confirmado
+
+A coluna anteriormente chamada "Projeto" na planilha do cliente indica se o Projeto possui **recurso externo de outra empresa**.
+
+Na modelagem isso deve virar um dado explícito, não manter o nome ambíguo da planilha.
+
+### 3.6 Regras já confirmadas para Estagiários
+
+- todo Estagiário possui Orientador;
+- Orientador pode ser **PESQUISADOR** ou **ANALISTA**;
+- graduando/mestrando/doutorando descreve o nível/formação do Estagiário, não do Orientador;
+- Estagiário está vinculado a Projeto/Atividade;
+- a Atividade já representa a responsabilidade do Estagiário;
+- Cultura representa a cultura da pesquisa, com exemplos: mandioca, maracujá, abacaxi, citros, banana, mamão e outras;
+- Bolsa/vínculo e Curso/Formação permanecem conceitos separados.
+
+### 3.7 Ponto estrutural ainda aberto — Projeto x Laboratório ⚠️
+
+Em 11/09 havia sido definido:
+
+```text
+Projeto obrigatoriamente ligado a 1 Laboratório
+Laboratório 1 → N Projetos
+```
+
+Na retomada da Etapa 5 surgiu a percepção de que Projeto deve ter maior independência estrutural que Laboratório.
+
+Não remover nem alterar a FK atual até decidir explicitamente entre:
+
+```text
+A) Projeto continua com 1 Laboratório responsável
+ou
+B) Projeto passa a ser independente/multilaboratorial
+```
+
+A hierarquia Projeto → SCI → Atividade não depende dessa decisão, mas a migration do Projeto sim.
 
 ---
 
