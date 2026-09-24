@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -192,6 +193,45 @@ class ResiduoAdministracaoServiceTest {
         assertEquals(
                 "RETORNO_ADMINISTRATIVO_DE_ETAPA",
                 captor.getValue().getAcao()
+        );
+        assertEquals(
+                "Retorno administrativo: Liberado para armazenamento → Em análise. Justificativa: Necessária nova conferência",
+                captor.getValue().getObservacao()
+        );
+    }
+
+    @Test
+    void deveBuscarHistoricoDoGeradorDaUnidade() {
+        Residuo residuo = residuo(StatusResiduo.CANCELADO);
+
+        HistoricoResiduo evento = HistoricoResiduo.builder()
+                .id(200L)
+                .publicId(UUID.fromString("00000000-0000-0000-0000-000000000420"))
+                .residuo(residuo)
+                .usuario(administrador)
+                .status(StatusResiduo.CANCELADO)
+                .acao("RESIDUO_CANCELADO_ADMINISTRATIVAMENTE")
+                .observacao("Justificativa: cadastro indevido")
+                .dataHora(LocalDateTime.now())
+                .build();
+
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(
+                GERADOR_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(gerador));
+
+        when(historicoResiduoRepository
+                .findByResiduoGeradorPublicIdAndResiduoLaboratorioUnidadePublicIdOrderByDataHoraDesc(
+                        GERADOR_ID,
+                        UNIDADE_ID))
+                .thenReturn(List.of(evento));
+
+        var resposta = service.buscarHistoricoPorGerador(GERADOR_ID);
+
+        assertEquals(1, resposta.size());
+        assertEquals(RESIDUO_ID, resposta.get(0).getResiduoId());
+        assertEquals(
+                "RESIDUO_CANCELADO_ADMINISTRATIVAMENTE",
+                resposta.get(0).getAcao()
         );
     }
 
