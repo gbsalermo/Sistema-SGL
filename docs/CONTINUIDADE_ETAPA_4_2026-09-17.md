@@ -1,10 +1,10 @@
 # Continuidade SGL — Etapa 4
 
 **Criado originalmente em:** 17/09/2026  
-**Atualizado em:** 22/09/2026  
+**Atualizado em:** 24/09/2026  
 **Etapa anterior:** Etapa 3 — Refinamentos do fluxo atual de Resíduos ✅ concluída e validada  
-**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos 🔧 reconciliação + revalidação
-**Bloco atual:** 4.4 — Correções administrativas do ciclo de vida ✅ implementado / 🧪 validação pendente
+**Etapa atual:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada
+**Bloco atual:** 4.1–4.4 ✅ reconciliados, testados e validados
 **Branch histórica da implementação:** `feat/etapa-4-residuos`  
 **Branch atual de trabalho:** `collab/etapa-4-residuos-reconcile`  
 **Fonte canônica de `main`:** GitLab institucional  
@@ -20,10 +20,10 @@ A implementação histórica cobre:
 
 ```text
 4.1 Locais de armazenamento cadastráveis          ✅ reconciliado, testado e validado ponta a ponta
-4.2 Modelos de Resíduos pré-cadastrados            ✅ implementado na branch antiga
+4.2 Modelos de Resíduos pré-cadastrados            ✅ reconciliado, testado e validado ponta a ponta
 4.3 Uso de modelo ou preenchimento manual        ✅ reconciliado, testado e validado ponta a ponta
-4.4 Correções administrativas do ciclo             ✅ implementado na branch antiga
-Validação integrada na base corrigida              ⏳ pendente após reconciliação
+4.4 Correções administrativas do ciclo             ✅ reconciliado, testado e validado ponta a ponta
+Validação integrada na base corrigida              ✅ concluída
 ```
 
 A antiga `feat/etapa-4-residuos` **não deve ser mergeada integralmente**.
