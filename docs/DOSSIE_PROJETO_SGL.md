@@ -3,7 +3,7 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Atualizado em:** 22/09/2026  
+**Atualizado em:** 24/09/2026  
 **Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 — Projetos e Atividades em andamento no bloco 5.1 — Projeto base.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
@@ -18,7 +18,7 @@ Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 
 Handoff imediato:
 
-`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
 
 Plano canônico:
 
@@ -131,7 +131,7 @@ Frontend/documentação podem ser alterados diretamente quando autorizado.
 
 Trabalhar sempre em branch própria e em etapas pequenas.
 
-A antiga `feat/etapa-4-residuos` contém a implementação histórica dos blocos 4.1–4.4, mas está baseada em uma árvore anterior às correções do supervisor. Ela é fonte de referência. A branch operacional é `collab/etapa-4-residuos-reconcile`, criada sobre a `gitlab/main` canônica.
+A Etapa 4 está fechada. A branch operacional atual é `collab/etapa-5-projetos-atividades`, criada sobre a `main` já contendo as Etapas 1–4. Branches antigas permanecem apenas como referência histórica.
 
 ---
 
@@ -639,4 +639,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**Antes de iniciar a Etapa 4, confirmar que `feat/etapa-3-residuos` foi integrada à `main` no backend e frontend. Criar `feat/etapa-4-residuos` a partir da `main` atualizada. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md`, `docs/MODULO_RESIDUOS.md` e `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`. Começar somente pela 4.1 e manter o usuário como autor das mudanças funcionais de backend.**
+**Retomar pela Etapa 5. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`. A branch atual é `collab/etapa-5-projetos-atividades`. O bloco 5.0 está fechado; começar pelo 5.1 — Projeto base. Manter o usuário como autor das mudanças funcionais de backend, salvo autorização explícita.**
