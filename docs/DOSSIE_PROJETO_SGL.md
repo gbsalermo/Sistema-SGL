@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 22/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 é a próxima etapa.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 — Projetos e Atividades está iniciada no bloco 5.0 — Portão de confirmação.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -602,7 +602,7 @@ Etapa 1 ✅
 Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
-Etapa 5 ⏭ próxima
+Etapa 5 🔧 atual — 5.0
 Etapa 6 ⏳
 Etapa 7 ⏳
 Etapa 8 ⏳
