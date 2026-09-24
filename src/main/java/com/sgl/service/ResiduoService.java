@@ -315,6 +315,19 @@ public class ResiduoService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public List<HistoricoResiduoResponseDTO> buscarHistoricoDaUnidade() {
+		exigirTenantAtivo();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		return historicoResiduoRepository
+				.findByResiduoLaboratorioUnidadePublicIdOrderByDataHoraDesc(unidadeId)
+				.stream()
+				.map(HistoricoResiduoResponseDTO::new)
+				.toList();
+	}
+
 	@Transactional
 	public RotuloResiduoResponseDTO gerarDadosRotulo(UUID id) {
 		Residuo residuo = buscarEntidade(id);
