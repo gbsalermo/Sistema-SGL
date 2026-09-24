@@ -40,15 +40,15 @@ Regra especial do projeto:
 - frontend/documentação podem ser alterados diretamente quando autorizado;
 - não antecipar etapas futuras.
 
-A Etapa 4 já possui uma implementação histórica em `feat/etapa-4-residuos`, mas essa branch nasceu antes das correções recentes do supervisor e não pode ser mergeada integralmente. A retomada deve ocorrer em uma branch `collab/*` criada/atualizada a partir da `gitlab/main`.
+As Etapas 1–4 já foram integradas e validadas.
 
 Branch atual:
 
 ```text
-collab/etapa-4-residuos-reconcile
+collab/etapa-5-projetos-atividades
 ```
 
-A branch antiga serve somente como fonte para portar, bloco por bloco, o que ainda é válido.
+A Etapa 5 foi criada a partir da `main` contendo o fechamento da Etapa 4. Branches antigas de Etapa 4 permanecem somente como referência histórica.
 
 ---
 
