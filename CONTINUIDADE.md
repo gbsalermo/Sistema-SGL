@@ -351,60 +351,35 @@ Checkpoint: `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 ---
 
-# 9. Etapa 4 — em reconciliação
+# 9. Etapa 4 — concluída e validada
 
-Handoff canônico:
+Referência de fechamento:
 
 `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
 
-A implementação histórica dos blocos 4.1–4.4 existe na antiga `feat/etapa-4-residuos`, mas deve ser portada seletivamente sobre a `main` atual. A validação integrada fica suspensa até essa reconciliação terminar. No backend, a antiga migration V16 de locais deve virar V17 e a antiga V17 de modelos deve virar V18, preservando a V16 canônica de snapshot de Unidade.
-
-Ordem prevista:
+Estado consolidado:
 
 ```text
-4.1 Locais de armazenamento cadastráveis
-→ 4.2 Modelos de Resíduos pré-cadastrados pela Gestão
-→ 4.3 Uso de modelo ou preenchimento manual ✅ concluído e validado
-→ 4.4 Correções administrativas do ciclo de vida
+4.1 Locais de armazenamento cadastráveis              ✅
+4.2 Modelos de Resíduos pré-cadastrados               ✅
+4.3 Uso de modelo ou preenchimento manual             ✅
+4.4 Correções administrativas do ciclo de vida        ✅
 ```
 
-## 4.1 Local de armazenamento
+A implementação histórica de `feat/etapa-4-residuos` foi portada seletivamente para a base corrigida pelo supervisor, preservando multitenancy fail-closed e a V16 canônica. Na base reconciliada:
 
-Planejar catálogo reutilizável por Unidade, mantendo possibilidade de complemento/texto manual.
+- V17 cria o catálogo de locais de armazenamento;
+- V18 cria os Modelos de Resíduo;
+- ModeloResiduo é template; Residuo continua ocorrência independente;
+- cancelamento e retorno administrativo exigem justificativa e preservam histórico;
+- `DESPACHADO` precisa retornar de etapa antes de eventual cancelamento;
+- reanálise reaproveita vínculos de classes confirmadas sem duplicação;
+- dashboards distinguem visão pessoal do Solicitante e visão operacional da Gestão;
+- relatórios/exportações reconhecem `CANCELADO`;
+- validações funcionais da Etapa 4 foram concluídas.
 
-Antes de codar, decidir como preservar histórico caso o local seja renomeado futuramente.
+A próxima etapa canônica é a **Etapa 5 — Projetos e Atividades**.
 
-## 4.2 ModeloResiduo
-
-```text
-ModeloResiduo = padrão reutilizável
-Residuo       = ocorrência real
-```
-
-Modelo pode sugerir descrição, procedência, composição, classes, riscos, segurança, recipiente e outros dados reutilizáveis.
-
-Alterar o modelo depois não pode modificar Resíduos históricos.
-
-## 4.3 Solicitante
-
-Na criação, permitir escolha entre modelo pré-cadastrado e preenchimento manual.
-
-## 4.4 Correções administrativas
-
-Necessidade levantada ao fechar a Etapa 3:
-
-```text
-ADMINISTRADOR
-→ cancelar Resíduo com justificativa
-→ ou retornar para análise/liberação quando permitido
-→ preservar histórico
-```
-
-Antes de implementar, fechar regras de status, irreversibilidade de `DESPACHADO`, eventual `CANCELADO`, efeitos no rótulo e necessidade de nova liberação.
-
-Não confundir com delete lógico. A decisão geral de delete lógico continua na Etapa 11.
-
----
 
 # 10. Projetos, Estagiários e Relatórios — etapas futuras
 
@@ -501,8 +476,8 @@ Não fazer refactor grande agora apenas para reduzir linhas. O refactor final de
 Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
-Etapa 4 — expansão operacional de Resíduos            🔧 reconciliação + revalidação
-Etapa 5 — Projetos + Atividades                       ⏳
+Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
+Etapa 5 — Projetos + Atividades                       ⏭ próxima
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
@@ -519,7 +494,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**A Etapa 3 está encerrada e validada. Em 22/09/2026 os `main` de GitLab/GitHub foram reconciliados e passaram a usar sincronização automática. A Etapa 4 deve continuar em `collab/etapa-4-residuos-reconcile`, sempre a partir da `gitlab/main` atual, portando seletivamente a implementação histórica de `feat/etapa-4-residuos`. Ler primeiro `docs/SINCRONIZACAO_GITLAB_GITHUB.md` e depois `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`. O usuário continua implementando manualmente o backend funcional.**
+**As Etapas 1–4 estão encerradas e validadas. Após o merge da branch `collab/etapa-4-residuos-reconcile` no GitLab, a retomada deve ocorrer pela Etapa 5 — Projetos e Atividades, começando pelo portão 5.0 do `docs/PLANO_PRE_PRODUCAO.md`. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
@@ -542,4 +517,4 @@ A Etapa 4 só deve ser marcada como concluída após a validação funcional do 
 - criado histórico agregado por gerador para alimentar as atualizações do dashboard sem inferir eventos pelo status atual;
 - testes adicionados para reconfirmação da mesma classe, histórico por gerador e texto humanizado do retorno.
 
-Validação pendente apenas dos ajustes acima antes do fechamento definitivo da Etapa 4.
+Os ajustes acima foram validados e fazem parte do fechamento definitivo da Etapa 4.
