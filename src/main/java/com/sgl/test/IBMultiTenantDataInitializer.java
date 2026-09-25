@@ -141,14 +141,16 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                         .ativo(true)
                         .build()));
 
-        garantirSci(
-                projeto,
-                ib,
-                "97.97.97.001.01.01",
-                "Validação molecular multitenant IB",
-                pesquisador.getNome(),
-                projeto.getDataInicio().plusDays(5)
-        );
+        if (projeto.getDataInicio() != null) {
+            garantirSci(
+                    projeto,
+                    ib,
+                    "97.97.97.001.01.01",
+                    "Validação molecular multitenant IB",
+                    pesquisador.getNome(),
+                    projeto.getDataInicio().plusDays(5)
+            );
+        }
 
         pedido("IB-PENDENTE", pesquisador, labSecundario, projeto, masterMix, 3,
                 StatusPedido.PENDENTE, LocalDateTime.now().minusHours(6));
