@@ -445,7 +445,7 @@ Contrato aprovado para o bloco:
 - prorrogação de pai não altera automaticamente filhos;
 - redução de período de pai que invalidaria filhos deve ser rejeitada.
 
-A base V21 de Atividades foi validada em 25/09/2026 com testes automatizados e bateria funcional. O próximo incremento é V22 — históricos de prorrogação.
+A base V21 de Atividades foi validada em 25/09/2026. A V22 de prorrogações também foi concluída em 25/09/2026 com suíte automatizada verde; a bateria manual via Postman foi deliberadamente dispensada nesta rodada. O próximo incremento é 5.4 — validação hierárquica do Código SEG.
 
 Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações será provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
 

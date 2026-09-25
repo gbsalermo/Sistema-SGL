@@ -413,6 +413,8 @@ Autoria nesta fase de pré-autenticação:
 - não tratar esse mecanismo como autenticação definitiva;
 - substituir o UUID fornecido pelo cliente pelo usuário obtido do contexto autenticado quando a autenticação real for implementada.
 
+V22 foi considerada concluída por validação automatizada em 25/09/2026; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
+
 ### 5.4 Código SEG — validação hierárquica
 
 Formato institucional confirmado:

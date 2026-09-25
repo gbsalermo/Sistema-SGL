@@ -513,7 +513,7 @@ Planejamento de migrations:
 
 ```text
 V21 → criação de Atividades
-V22 → históricos de prorrogação de Projeto, SCI e Atividade
+V22 → históricos de prorrogação de Projeto, SCI e Atividade ✅ IMPLEMENTADA E VALIDADA
 ```
 
 O estágio reutilizará a mesma filosofia na Etapa 6, mas com histórico próprio do seu domínio.
@@ -536,7 +536,9 @@ Fechamento funcional confirmado em 25/09/2026:
 - testes de Service, Controller e Repository adicionados;
 - suíte automatizada e bateria funcional aprovadas.
 
-Próximo passo: **V22 — históricos de prorrogação**.
+V22 concluída em 25/09/2026 com suíte automatizada verde cobrindo fluxo de prorrogação, tenant, perfil, limites hierárquicos, histórico, imutabilidade de data de início e bloqueio de bypass pelo PUT comum. A bateria manual em Postman foi deliberadamente dispensada nesta rodada.
+
+Próximo passo: **5.4 — Código SEG e validações hierárquicas**.
 
 #### Autoria das prorrogações durante a pré-autenticação
 
