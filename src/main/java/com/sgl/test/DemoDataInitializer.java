@@ -222,42 +222,48 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "Genotipagem de variedades de mandioca",
                 "Caracterização molecular e seleção assistida por marcadores.",
                 hoje.minusMonths(8),
-                "Camila Menezes"
+                "Camila Menezes",
+                "99.99.99.001.01.00"
         );
         Projeto projFito = criarProjeto(
                 labFitopatologia,
                 "Diagnóstico de Fusarium em banana",
                 "Isolamento e caracterização de isolados associados a sintomas de murcha.",
                 hoje.minusMonths(5),
-                "Paulo Nascimento"
+                "Paulo Nascimento",
+                "99.99.99.002.01.00"
         );
         Projeto projEnto = criarProjeto(
                 labEntomologia,
                 "Controle biológico de mosca-branca",
                 "Avaliação de agentes de controle biológico em condições controladas.",
                 hoje.minusMonths(4),
-                "Juliana Rocha"
+                "Juliana Rocha",
+                "99.99.99.003.01.00"
         );
         Projeto projSolos = criarProjeto(
                 labSolos,
                 "Nutrição mineral da mandioca",
                 "Avaliação de macronutrientes e micronutrientes em solo e tecido vegetal.",
                 hoje.minusMonths(7),
-                "André Lima"
+                "André Lima",
+                "99.99.99.004.01.00"
         );
         Projeto projViro = criarProjeto(
                 labVirologia,
                 "Monitoramento molecular de fitovírus",
                 "Detecção por PCR e ELISA em amostras de fruteiras tropicais.",
                 hoje.minusMonths(6),
-                "Fernanda Costa"
+                "Fernanda Costa",
+                "99.99.99.005.01.00"
         );
         Projeto projEco = criarProjeto(
                 labEcofisiologia,
                 "Resposta hídrica de citros",
                 "Monitoramento de trocas gasosas e disponibilidade hídrica.",
                 hoje.minusMonths(3),
-                "Lucas Ribeiro"
+                "Lucas Ribeiro",
+                "99.99.99.006.01.00"
         );
 
         Produto etanol = criarProduto(
@@ -777,7 +783,8 @@ public class DemoDataInitializer implements CommandLineRunner {
             String nome,
             String descricao,
             LocalDate inicio,
-            String responsavel) {
+            String responsavel,
+            String codigoSeg) {
 
         return projetoRepository.save(
                 Projeto.builder()
@@ -786,6 +793,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                         .descricao(descricao)
                         .dataInicio(inicio)
                         .responsavel(responsavel)
+                        .codigoSeg(codigoSeg)
                         .ativo(true)
                         .build()
         );

@@ -25,7 +25,9 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoPerecivel;
@@ -129,6 +131,10 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                         .descricao("Projeto ficticio para validar isolamento de dados entre unidades.")
                         .dataInicio(LocalDate.now().minusDays(20))
                         .responsavel(pesquisador.getNome())
+                        .codigoSeg("97.97.97.001.01.00")
+                        .status(StatusProjeto.ATIVO)
+                        .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                        .possuiRecursoExterno(false)
                         .ativo(true)
                         .build()));
 

@@ -24,7 +24,9 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
@@ -215,6 +217,10 @@ public class DataInitializer implements CommandLineRunner {
                 .descricao("Estudo de fenômenos ópticos em materiais nanoestruturados")
                 .dataInicio(LocalDate.now().minusMonths(3))
                 .responsavel("Dr. Joao Pereira")
+                .codigoSeg("98.98.98.001.01.00")
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .possuiRecursoExterno(false)
                 .ativo(true)
                 .build());
 
@@ -224,6 +230,11 @@ public class DataInitializer implements CommandLineRunner {
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise")
                 .dataInicio(LocalDate.now().minusMonths(1))
                 .responsavel("Maria Oliveira")
+                .codigoSeg("98.98.98.002.01.00")
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .possuiRecursoExterno(true)
+                .empresaRecursoExterno("Empresa Fictícia DEV")
                 .ativo(true)
                 .build());
 
