@@ -57,7 +57,7 @@ class ProjetoControllerTest {
     static class JacksonTestConfig {
         @Bean
         ObjectMapper objectMapper() {
-            return new ObjectMapper();
+            return new ObjectMapper().findAndRegisterModules();
         }
     }
 
