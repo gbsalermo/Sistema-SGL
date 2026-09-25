@@ -101,8 +101,8 @@ public class ProjetoController {
 		projetoService.deletar(id);
 		return ResponseEntity.noContent().build();
 	}
-
-	@Operation(summary = "Listar projetos ativos", description = "Retorna os projetos da unidade atual cujo indicador técnico ativo esteja habilitado. Este filtro é independente do status de negócio do projeto.")
+  
+	@Operation(summary = "Listar projetos habilitados", description = "Retorna os projetos da unidade atual cujo indicador técnico ativo esteja habilitado. Este filtro é independente do status de negócio do projeto.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Projetos ativos listados com sucesso", useReturnTypeSchema = true),
 			@ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class))) })
