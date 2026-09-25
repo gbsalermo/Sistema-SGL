@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
@@ -34,6 +35,7 @@ import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
@@ -65,6 +67,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
+    private final AtividadeRepository atividadeRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
@@ -142,13 +145,22 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                         .build()));
 
         if (projeto.getDataInicio() != null) {
-            garantirSci(
+            Sci sci = garantirSci(
                     projeto,
                     ib,
                     "97.97.97.001.01.01",
                     "Validação molecular multitenant IB",
                     pesquisador.getNome(),
                     projeto.getDataInicio().plusDays(5)
+            );
+
+            garantirAtividade(
+                    sci,
+                    ib,
+                    "97.97.97.001.01.01.001",
+                    "Execução experimental multitenant IB",
+                    pesquisador.getNome(),
+                    sci.getDataInicio().plusDays(2)
             );
         }
 
@@ -181,6 +193,36 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                 .orElseGet(() -> sciRepository.save(
                         Sci.builder()
                                 .projeto(projeto)
+                                .codigoSeg(codigoSeg)
+                                .nome(nome)
+                                .responsavel(responsavel)
+                                .dataInicio(dataInicio)
+                                .status(StatusProjeto.ATIVO)
+                                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                                .ativo(true)
+                                .build()
+                ));
+    }
+
+    private Atividade garantirAtividade(
+            Sci sci,
+            Unidade unidade,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate dataInicio) {
+
+        return atividadeRepository
+                .findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                        sci.getPublicId(),
+                        unidade.getPublicId()
+                )
+                .stream()
+                .filter(atividade -> codigoSeg.equalsIgnoreCase(atividade.getCodigoSeg()))
+                .findFirst()
+                .orElseGet(() -> atividadeRepository.save(
+                        Atividade.builder()
+                                .sci(sci)
                                 .codigoSeg(codigoSeg)
                                 .nome(nome)
                                 .responsavel(responsavel)

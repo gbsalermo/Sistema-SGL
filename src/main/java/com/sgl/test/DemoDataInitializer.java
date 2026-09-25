@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.sgl.model.Atividade;
 import com.sgl.model.ComponenteResiduo;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
@@ -43,6 +44,7 @@ import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoResiduoRepository;
@@ -83,6 +85,7 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
+    private final AtividadeRepository atividadeRepository;
     private final ResiduoRepository residuoRepository;
     private final HistoricoResiduoRepository historicoResiduoRepository;
     private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
@@ -271,7 +274,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "99.99.99.006.01.00"
         );
 
-        criarSci(
+        Sci sciBiomolPainel = criarSci(
                 projBiomol,
                 "99.99.99.001.01.01",
                 "Painel de marcadores moleculares",
@@ -281,7 +284,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 StatusProjeto.ATIVO,
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
-        criarSci(
+        Sci sciBiomolProtocolo = criarSci(
                 projBiomol,
                 "99.99.99.001.01.02",
                 "Protocolo de seleção assistida",
@@ -291,7 +294,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 StatusProjeto.CONCLUIDO,
                 SituacaoExecucaoProjeto.NAO_INFORMADO
         );
-        criarSci(
+        Sci sciFito = criarSci(
                 projFito,
                 "99.99.99.002.01.01",
                 "Caracterização de isolados de Fusarium",
@@ -301,12 +304,63 @@ public class DemoDataInitializer implements CommandLineRunner {
                 StatusProjeto.ATIVO,
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO
         );
-        criarSci(
+        Sci sciEco = criarSci(
                 projEco,
                 "99.99.99.006.01.01",
                 "Indicadores de resposta ao déficit hídrico",
                 "Lucas Ribeiro",
                 hoje.minusMonths(2),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        criarAtividade(
+                sciBiomolPainel,
+                "99.99.99.001.01.01.001",
+                "Genotipagem do painel de acessos",
+                "Camila Menezes",
+                hoje.minusMonths(6),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+        criarAtividade(
+                sciBiomolPainel,
+                "99.99.99.001.01.01.002",
+                "Análise dos marcadores selecionados",
+                "Camila Menezes",
+                hoje.minusMonths(5),
+                hoje.minusMonths(3),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+        criarAtividade(
+                sciBiomolProtocolo,
+                "99.99.99.001.01.02.001",
+                "Validação do protocolo de seleção",
+                "Camila Menezes",
+                hoje.minusMonths(5),
+                hoje.minusMonths(3),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+        criarAtividade(
+                sciFito,
+                "99.99.99.002.01.01.001",
+                "Triagem fenotípica dos isolados",
+                "Paulo Nascimento",
+                hoje.minusMonths(3),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO
+        );
+        criarAtividade(
+                sciEco,
+                "99.99.99.006.01.01.001",
+                "Medição de trocas gasosas",
+                "Lucas Ribeiro",
+                hoje.minusMonths(1),
                 null,
                 StatusProjeto.ATIVO,
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
@@ -858,6 +912,31 @@ public class DemoDataInitializer implements CommandLineRunner {
         return sciRepository.save(
                 Sci.builder()
                         .projeto(projeto)
+                        .codigoSeg(codigoSeg)
+                        .nome(nome)
+                        .responsavel(responsavel)
+                        .dataInicio(inicio)
+                        .dataFim(fim)
+                        .status(status)
+                        .situacaoExecucao(situacaoExecucao)
+                        .ativo(true)
+                        .build()
+        );
+    }
+
+    private Atividade criarAtividade(
+            Sci sci,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate inicio,
+            LocalDate fim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao) {
+
+        return atividadeRepository.save(
+                Atividade.builder()
+                        .sci(sci)
                         .codigoSeg(codigoSeg)
                         .nome(nome)
                         .responsavel(responsavel)

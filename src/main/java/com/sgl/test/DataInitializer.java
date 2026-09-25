@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import com.sgl.model.Atividade;
 import com.sgl.model.ClasseResiduo;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
@@ -32,6 +33,7 @@ import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.ClasseResiduoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
@@ -61,6 +63,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
+    private final AtividadeRepository atividadeRepository;
     private final EstagiarioRepository estagiarioRepository;
     private final ClasseResiduoRepository classeResiduoRepository;
     private final LocalArmazenamentoResiduoRepository localArmazenamentoResiduoRepository;
@@ -241,7 +244,7 @@ public class DataInitializer implements CommandLineRunner {
                 .ativo(true)
                 .build());
 
-        sciRepository.save(Sci.builder()
+        Sci sci1 = sciRepository.save(Sci.builder()
                 .projeto(proj1)
                 .codigoSeg("98.98.98.001.01.01")
                 .nome("Caracterização óptica de nanoestruturas")
@@ -252,12 +255,34 @@ public class DataInitializer implements CommandLineRunner {
                 .ativo(true)
                 .build());
 
-        sciRepository.save(Sci.builder()
+        Sci sci2 = sciRepository.save(Sci.builder()
                 .projeto(proj2)
                 .codigoSeg("98.98.98.002.01.01")
                 .nome("Avaliação catalítica de novos compostos")
                 .responsavel("Maria Oliveira")
                 .dataInicio(LocalDate.now().minusDays(20))
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .ativo(true)
+                .build());
+
+        atividadeRepository.save(Atividade.builder()
+                .sci(sci1)
+                .codigoSeg("98.98.98.001.01.01.001")
+                .nome("Preparação e caracterização das amostras ópticas")
+                .responsavel("Dr. Joao Pereira")
+                .dataInicio(LocalDate.now().minusDays(45))
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .ativo(true)
+                .build());
+
+        atividadeRepository.save(Atividade.builder()
+                .sci(sci2)
+                .codigoSeg("98.98.98.002.01.01.001")
+                .nome("Ensaios catalíticos preliminares")
+                .responsavel("Maria Oliveira")
+                .dataInicio(LocalDate.now().minusDays(15))
                 .status(StatusProjeto.ATIVO)
                 .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
                 .ativo(true)
