@@ -31,6 +31,7 @@ public class SciService {
 	private final SciRepository sciRepository;
 	private final ProjetoRepository projetoRepository;
 	private final AtividadeRepository atividadeRepository;
+	private final CodigoSegValidator codigoSegValidator;
 
 	@Transactional
 	public SciResponseDTO criar(SciRequestDTO dto) {
@@ -131,7 +132,7 @@ public class SciService {
 
 	private void preencherSciNaCriacao(Sci sci, SciRequestDTO dto) {
 
-		sci.setCodigoSeg(normalizarTextoObrigatorio(dto.getCodigoSeg(), "O código SEG do SCI é obrigatório."));
+		sci.setCodigoSeg(codigoSegValidator.validarSci(dto.getCodigoSeg(), sci.getProjeto()));
 
 		sci.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome do SCI é obrigatório."));
 
@@ -149,7 +150,7 @@ public class SciService {
 
 	private void preencherSciNaAtualizacao(Sci sci, SciRequestDTO dto) {
 
-		sci.setCodigoSeg(normalizarTextoObrigatorio(dto.getCodigoSeg(), "O código SEG do SCI é obrigatório."));
+		sci.setCodigoSeg(codigoSegValidator.validarSci(dto.getCodigoSeg(), sci.getProjeto()));
 
 		sci.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome do SCI é obrigatório."));
 
@@ -198,20 +199,14 @@ public class SciService {
 		}
 	}
 
-	private void validarDataInicioImutavel(
-			LocalDate dataInicioAtual,
-			LocalDate dataInicioInformada) {
+	private void validarDataInicioImutavel(LocalDate dataInicioAtual, LocalDate dataInicioInformada) {
 
 		if (!Objects.equals(dataInicioAtual, dataInicioInformada)) {
-			throw new BusinessRuleException(
-					"A data de início do SCI não pode ser alterada após a criação."
-			);
+			throw new BusinessRuleException("A data de início do SCI não pode ser alterada após a criação.");
 		}
 	}
 
-	private void validarAlteracaoDataFim(
-			LocalDate dataFimAtual,
-			LocalDate novaDataFim) {
+	private void validarAlteracaoDataFim(LocalDate dataFimAtual, LocalDate novaDataFim) {
 
 		if (dataFimAtual == null) {
 			return;
@@ -219,20 +214,15 @@ public class SciService {
 
 		if (novaDataFim == null) {
 			throw new BusinessRuleException(
-					"A data de fim existente não pode ser removida pelo fluxo comum de atualização."
-			);
+					"A data de fim existente não pode ser removida pelo fluxo comum de atualização.");
 		}
 
 		if (novaDataFim.isAfter(dataFimAtual)) {
-			throw new BusinessRuleException(
-					"A ampliação da data final deve ser realizada pelo fluxo de prorrogação."
-			);
+			throw new BusinessRuleException("A ampliação da data final deve ser realizada pelo fluxo de prorrogação.");
 		}
 	}
 
-	private void validarPeriodoComAtividades(
-			Sci sci,
-			LocalDate novaDataFim) {
+	private void validarPeriodoComAtividades(Sci sci, LocalDate novaDataFim) {
 
 		if (novaDataFim == null) {
 			return;
@@ -241,19 +231,15 @@ public class SciService {
 		exigirTenantAtivo();
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		List<Atividade> atividades =
-				atividadeRepository.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
-						sci.getPublicId(),
-						unidadeId
-				);
+		List<Atividade> atividades = atividadeRepository
+				.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(sci.getPublicId(), unidadeId);
 
 		for (Atividade atividade : atividades) {
 			if (atividade.getDataInicio().isAfter(novaDataFim)
 					|| (atividade.getDataFim() != null && atividade.getDataFim().isAfter(novaDataFim))) {
 
 				throw new BusinessRuleException(
-						"A nova data de fim do SCI deixaria uma Atividade fora do período do SCI."
-				);
+						"A nova data de fim do SCI deixaria uma Atividade fora do período do SCI.");
 			}
 		}
 	}
@@ -283,12 +269,10 @@ public class SciService {
 
 			throw new BusinessRuleException("A data de fim do SCI não pode ser posterior à data de fim do projeto.");
 		}
-		
-		if (projeto.getDataFim() != null
-		        && dataInicioSci.isAfter(projeto.getDataFim())) {
 
-		    throw new BusinessRuleException(
-		            "A data de início do SCI não pode ser posterior à data de fim do projeto.");
+		if (projeto.getDataFim() != null && dataInicioSci.isAfter(projeto.getDataFim())) {
+
+			throw new BusinessRuleException("A data de início do SCI não pode ser posterior à data de fim do projeto.");
 		}
 	}
 

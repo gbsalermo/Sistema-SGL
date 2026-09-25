@@ -29,6 +29,7 @@ public class AtividadeService {
 
 	private final AtividadeRepository atividadeRepository;
 	private final SciRepository sciRepository;
+	private final CodigoSegValidator codigoSegValidator;
 
 	@Transactional
 	public AtividadeResponseDTO criar(AtividadeRequestDTO dto) {
@@ -146,7 +147,11 @@ public class AtividadeService {
 	private void preencherNaCriacao(Atividade atividade, AtividadeRequestDTO dto) {
 
 		atividade.setCodigoSeg(
-				normalizarTextoObrigatorio(dto.getCodigoSeg(), "O código SEG da Atividade é obrigatório."));
+		        codigoSegValidator.validarAtividade(
+		                dto.getCodigoSeg(),
+		                atividade.getSci()
+		        )
+		);
 
 		atividade.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome da Atividade é obrigatório."));
 
@@ -165,7 +170,11 @@ public class AtividadeService {
 	private void preencherNaAtualizacao(Atividade atividade, AtividadeRequestDTO dto) {
 
 		atividade.setCodigoSeg(
-				normalizarTextoObrigatorio(dto.getCodigoSeg(), "O código SEG da Atividade é obrigatório."));
+		        codigoSegValidator.validarAtividade(
+		                dto.getCodigoSeg(),
+		                atividade.getSci()
+		        )
+		);
 
 		atividade.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome da Atividade é obrigatório."));
 

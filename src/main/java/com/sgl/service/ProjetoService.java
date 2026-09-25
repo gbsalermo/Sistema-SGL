@@ -30,327 +30,269 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProjetoService {
 
-    private final ProjetoRepository projetoRepository;
-    private final LaboratorioRepository laboratorioRepository;
-    private final SciRepository sciRepository;
-    private final AtividadeRepository atividadeRepository;
+	private final ProjetoRepository projetoRepository;
+	private final LaboratorioRepository laboratorioRepository;
+	private final SciRepository sciRepository;
+	private final AtividadeRepository atividadeRepository;
+	private final CodigoSegValidator codigoSegValidator;
 
-    @Transactional
-    public ProjetoResponseDTO criar(ProjetoRequestDTO dto) {
-        Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
-        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
+	@Transactional
+	public ProjetoResponseDTO criar(ProjetoRequestDTO dto) {
+		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
+		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-        Projeto projeto = Projeto.builder()
-                .laboratorio(laboratorio)
-                .build();
-        preencherProjeto(projeto, dto);
+		Projeto projeto = Projeto.builder().laboratorio(laboratorio).build();
+		preencherProjeto(projeto, dto);
 
-        Projeto salvo = projetoRepository.save(projeto);
-        return new ProjetoResponseDTO(salvo);
-    }
+		Projeto salvo = projetoRepository.save(projeto);
+		return new ProjetoResponseDTO(salvo);
+	}
 
-    @Transactional(readOnly = true)
-    public List<ProjetoResponseDTO> listarTodos() {
-        // Correção de segurança: sem tenant ativo, caía num "findAll" que
-        // devolvia projetos de todas as unidades. Agora o header
-        // X-SGL-Unidade-Id é exigido também para listar.
-        exigirTenantAtivo();
+	@Transactional(readOnly = true)
+	public List<ProjetoResponseDTO> listarTodos() {
+		// Correção de segurança: sem tenant ativo, caía num "findAll" que
+		// devolvia projetos de todas as unidades. Agora o header
+		// X-SGL-Unidade-Id é exigido também para listar.
+		exigirTenantAtivo();
 
-        List<Projeto> projetos = projetoRepository
-                .findByLaboratorioUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
-        return projetos.stream().map(ProjetoResponseDTO::new).toList();
-    }
+		List<Projeto> projetos = projetoRepository
+				.findByLaboratorioUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
+		return projetos.stream().map(ProjetoResponseDTO::new).toList();
+	}
 
-    @Transactional(readOnly = true)
-    public ProjetoResponseDTO buscarPorId(UUID id) {
-        return new ProjetoResponseDTO(buscarProjetoNoTenant(id));
-    }
+	@Transactional(readOnly = true)
+	public ProjetoResponseDTO buscarPorId(UUID id) {
+		return new ProjetoResponseDTO(buscarProjetoNoTenant(id));
+	}
 
-    @Transactional(readOnly = true)
-    public List<ProjetoResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
-        Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
-        validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
+	@Transactional(readOnly = true)
+	public List<ProjetoResponseDTO> listarPorLaboratorio(UUID laboratorioId) {
+		Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
+		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-        return projetoRepository.findByLaboratorioId(laboratorio.getId())
-                .stream().map(ProjetoResponseDTO::new).toList();
-    }
+		return projetoRepository.findByLaboratorioId(laboratorio.getId()).stream().map(ProjetoResponseDTO::new)
+				.toList();
+	}
 
-    @Transactional
-    public ProjetoResponseDTO atualizar(UUID id, ProjetoRequestDTO dto) {
-        Projeto projeto = buscarProjetoNoTenant(id);
-        Laboratorio novoLaboratorio = buscarLaboratorio(dto.getLaboratorioId());
-        validarTenantUnidade(novoLaboratorio.getUnidade() != null ? novoLaboratorio.getUnidade().getPublicId() : null);
+	@Transactional
+	public ProjetoResponseDTO atualizar(UUID id, ProjetoRequestDTO dto) {
+		Projeto projeto = buscarProjetoNoTenant(id);
+		Laboratorio novoLaboratorio = buscarLaboratorio(dto.getLaboratorioId());
+		validarTenantUnidade(novoLaboratorio.getUnidade() != null ? novoLaboratorio.getUnidade().getPublicId() : null);
 
-        validarDataInicioImutavel(projeto.getDataInicio(), dto.getDataInicio());
-        validarAlteracaoDataFim(projeto.getDataFim(), dto.getDataFim());
-        validarPeriodoComDescendentes(projeto, dto.getDataFim());
+		validarDataInicioImutavel(projeto.getDataInicio(), dto.getDataInicio());
+		validarAlteracaoDataFim(projeto.getDataFim(), dto.getDataFim());
+		validarPeriodoComDescendentes(projeto, dto.getDataFim());
 
-        projeto.setLaboratorio(novoLaboratorio);
-        preencherProjeto(projeto, dto);
-        return new ProjetoResponseDTO(projetoRepository.save(projeto));
-    }
+		projeto.setLaboratorio(novoLaboratorio);
+		preencherProjeto(projeto, dto);
+		return new ProjetoResponseDTO(projetoRepository.save(projeto));
+	}
 
-    @Transactional
-    public void deletar(UUID id) {
-        Projeto projeto = buscarProjetoNoTenant(id);
-        projeto.setAtivo(false);
-    }
+	@Transactional
+	public void deletar(UUID id) {
+		Projeto projeto = buscarProjetoNoTenant(id);
+		projeto.setAtivo(false);
+	}
 
-    @Transactional(readOnly = true)
-    public List<ProjetoResponseDTO> listarAtivos() {
-        exigirTenantAtivo();
+	@Transactional(readOnly = true)
+	public List<ProjetoResponseDTO> listarAtivos() {
+		exigirTenantAtivo();
 
-        List<Projeto> projetos = projetoRepository
-                .findByLaboratorioUnidadePublicIdAndAtivoTrue(TenantContext.unidadeAtual().orElseThrow());
-        return projetos.stream().map(ProjetoResponseDTO::new).toList();
-    }
+		List<Projeto> projetos = projetoRepository
+				.findByLaboratorioUnidadePublicIdAndAtivoTrue(TenantContext.unidadeAtual().orElseThrow());
+		return projetos.stream().map(ProjetoResponseDTO::new).toList();
+	}
 
-    private Projeto buscarProjetoNoTenant(UUID id) {
-        // Correção de segurança: antes, sem tenant ativo, buscava sem
-        // filtro de unidade (findByPublicId), vazando o projeto de outra
-        // unidade para quem não enviasse o header.
-        exigirTenantAtivo();
+	private Projeto buscarProjetoNoTenant(UUID id) {
+		// Correção de segurança: antes, sem tenant ativo, buscava sem
+		// filtro de unidade (findByPublicId), vazando o projeto de outra
+		// unidade para quem não enviasse o header.
+		exigirTenantAtivo();
 
-        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
-        return projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
-    }
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+		return projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
+	}
 
-    private void preencherProjeto(Projeto projeto, ProjetoRequestDTO dto) {
-        projeto.setNome(dto.getNome());
-        projeto.setDescricao(dto.getDescricao());
-        projeto.updateDates(dto.getDataInicio(), dto.getDataFim());
-        projeto.setResponsavel(dto.getResponsavel());
+	private void preencherProjeto(Projeto projeto, ProjetoRequestDTO dto) {
+		projeto.setNome(dto.getNome());
+		projeto.setDescricao(dto.getDescricao());
+		projeto.updateDates(dto.getDataInicio(), dto.getDataFim());
+		projeto.setResponsavel(dto.getResponsavel());
 
-        if (projeto.getId() == null) {
-            preencherNovosCamposNaCriacao(projeto, dto);
-            projeto.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
-        } else {
-            preencherNovosCamposNaAtualizacao(projeto, dto);
+		if (projeto.getId() == null) {
+			preencherNovosCamposNaCriacao(projeto, dto);
+			projeto.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+		} else {
+			preencherNovosCamposNaAtualizacao(projeto, dto);
 
-            if (dto.getAtivo() != null) {
-                projeto.setAtivo(dto.getAtivo());
-            }
-        }
-    }
+			if (dto.getAtivo() != null) {
+				projeto.setAtivo(dto.getAtivo());
+			}
+		}
+	}
 
-    private void validarDataInicioImutavel(
-            LocalDate dataInicioAtual,
-            LocalDate dataInicioInformada) {
+	private void validarDataInicioImutavel(LocalDate dataInicioAtual, LocalDate dataInicioInformada) {
 
-        if (!Objects.equals(dataInicioAtual, dataInicioInformada)) {
-            throw new BusinessRuleException(
-                    "A data de início do projeto não pode ser alterada após a criação."
-            );
-        }
-    }
+		if (!Objects.equals(dataInicioAtual, dataInicioInformada)) {
+			throw new BusinessRuleException("A data de início do projeto não pode ser alterada após a criação.");
+		}
+	}
 
-    private void validarAlteracaoDataFim(
-            LocalDate dataFimAtual,
-            LocalDate novaDataFim) {
+	private void validarAlteracaoDataFim(LocalDate dataFimAtual, LocalDate novaDataFim) {
 
-        if (dataFimAtual == null) {
-            return;
-        }
+		if (dataFimAtual == null) {
+			return;
+		}
 
-        if (novaDataFim == null) {
-            throw new BusinessRuleException(
-                    "A data de fim existente não pode ser removida pelo fluxo comum de atualização."
-            );
-        }
+		if (novaDataFim == null) {
+			throw new BusinessRuleException(
+					"A data de fim existente não pode ser removida pelo fluxo comum de atualização.");
+		}
 
-        if (novaDataFim.isAfter(dataFimAtual)) {
-            throw new BusinessRuleException(
-                    "A ampliação da data final deve ser realizada pelo fluxo de prorrogação."
-            );
-        }
-    }
+		if (novaDataFim.isAfter(dataFimAtual)) {
+			throw new BusinessRuleException("A ampliação da data final deve ser realizada pelo fluxo de prorrogação.");
+		}
+	}
 
-    private void validarPeriodoComDescendentes(
-            Projeto projeto,
-            LocalDate novaDataFim) {
+	private void validarPeriodoComDescendentes(Projeto projeto, LocalDate novaDataFim) {
 
-        if (novaDataFim == null) {
-            return;
-        }
+		if (novaDataFim == null) {
+			return;
+		}
 
-        exigirTenantAtivo();
-        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+		exigirTenantAtivo();
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-        List<Sci> scis =
-                sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
-                        projeto.getPublicId(),
-                        unidadeId
-                );
+		List<Sci> scis = sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(projeto.getPublicId(),
+				unidadeId);
 
-        for (Sci sci : scis) {
-            if (sci.getDataInicio().isAfter(novaDataFim)
-                    || (sci.getDataFim() != null && sci.getDataFim().isAfter(novaDataFim))) {
+		for (Sci sci : scis) {
+			if (sci.getDataInicio().isAfter(novaDataFim)
+					|| (sci.getDataFim() != null && sci.getDataFim().isAfter(novaDataFim))) {
 
-                throw new BusinessRuleException(
-                        "A nova data de fim do projeto deixaria um SCI fora do período do projeto."
-                );
-            }
-        }
+				throw new BusinessRuleException(
+						"A nova data de fim do projeto deixaria um SCI fora do período do projeto.");
+			}
+		}
 
-        List<Atividade> atividades =
-                atividadeRepository.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(
-                        projeto.getPublicId(),
-                        unidadeId
-                );
+		List<Atividade> atividades = atividadeRepository
+				.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(projeto.getPublicId(), unidadeId);
 
-        for (Atividade atividade : atividades) {
-            if (atividade.getDataInicio().isAfter(novaDataFim)
-                    || (atividade.getDataFim() != null && atividade.getDataFim().isAfter(novaDataFim))) {
+		for (Atividade atividade : atividades) {
+			if (atividade.getDataInicio().isAfter(novaDataFim)
+					|| (atividade.getDataFim() != null && atividade.getDataFim().isAfter(novaDataFim))) {
 
-                throw new BusinessRuleException(
-                        "A nova data de fim do projeto deixaria uma Atividade fora do período do projeto."
-                );
-            }
-        }
-    }
+				throw new BusinessRuleException(
+						"A nova data de fim do projeto deixaria uma Atividade fora do período do projeto.");
+			}
+		}
+	}
 
-    private Laboratorio buscarLaboratorio(UUID laboratorioId) {
-        exigirTenantAtivo();
+	private Laboratorio buscarLaboratorio(UUID laboratorioId) {
+		exigirTenantAtivo();
 
-        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
-        Laboratorio laboratorio = laboratorioRepository
-                .findByPublicIdAndUnidadePublicId(laboratorioId, unidadeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+		Laboratorio laboratorio = laboratorioRepository.findByPublicIdAndUnidadePublicId(laboratorioId, unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
-        laboratorio.validateActive();
-        return laboratorio;
-    }
+		laboratorio.validateActive();
+		return laboratorio;
+	}
 
-    private void validarTenantUnidade(UUID unidadeId) {
-        if (!TenantContext.pertence(unidadeId)) {
-            throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
-        }
-    }
+	private void validarTenantUnidade(UUID unidadeId) {
+		if (!TenantContext.pertence(unidadeId)) {
+			throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+		}
+	}
 
-    /**
-     * Garante que existe uma unidade (tenant) definida para a requisição
-     * atual. Ver o mesmo método em EstoqueCentralService para a explicação
-     * completa do porquê essa checagem existe.
-     */
-    private void exigirTenantAtivo() {
-        if (!TenantContext.ativo()) {
-            throw new BusinessRuleException(
-                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
-        }
-    }
-    
-    private void preencherNovosCamposNaCriacao(
-            Projeto projeto,
-            ProjetoRequestDTO dto) {
+	/**
+	 * Garante que existe uma unidade (tenant) definida para a requisição atual. Ver
+	 * o mesmo método em EstoqueCentralService para a explicação completa do porquê
+	 * essa checagem existe.
+	 */
+	private void exigirTenantAtivo() {
+		if (!TenantContext.ativo()) {
+			throw new BusinessRuleException("Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+		}
+	}
 
-        projeto.setCodigoSeg(normalizarTextoOpcional(dto.getCodigoSeg()));
+	private void preencherNovosCamposNaCriacao(Projeto projeto, ProjetoRequestDTO dto) {
 
-        projeto.setStatus(
-                dto.getStatus() != null
-                        ? dto.getStatus()
-                        : StatusProjeto.ATIVO
-        );
+		projeto.setCodigoSeg(codigoSegValidator.validarProjeto(dto.getCodigoSeg()));
 
-        projeto.setSituacaoExecucao(
-                dto.getSituacaoExecucao() != null
-                        ? dto.getSituacaoExecucao()
-                        : SituacaoExecucaoProjeto.NAO_INFORMADO
-        );
+		projeto.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusProjeto.ATIVO);
 
-        boolean possuiRecursoExterno =
-                Boolean.TRUE.equals(dto.getPossuiRecursoExterno());
+		projeto.setSituacaoExecucao(
+				dto.getSituacaoExecucao() != null ? dto.getSituacaoExecucao() : SituacaoExecucaoProjeto.NAO_INFORMADO);
 
-        projeto.setPossuiRecursoExterno(possuiRecursoExterno);
+		boolean possuiRecursoExterno = Boolean.TRUE.equals(dto.getPossuiRecursoExterno());
 
-        aplicarRecursoExterno(
-                projeto,
-                possuiRecursoExterno,
-                dto.getEmpresaRecursoExterno()
-        );
-    }
-    
-    private void preencherNovosCamposNaAtualizacao(
-            Projeto projeto,
-            ProjetoRequestDTO dto) {
+		projeto.setPossuiRecursoExterno(possuiRecursoExterno);
 
-        if (dto.getCodigoSeg() != null) {
-            projeto.setCodigoSeg(
-                    normalizarTextoOpcional(dto.getCodigoSeg())
-            );
-        }
+		aplicarRecursoExterno(projeto, possuiRecursoExterno, dto.getEmpresaRecursoExterno());
+	}
 
-        if (dto.getStatus() != null) {
-            projeto.setStatus(dto.getStatus());
-        }
+	private void preencherNovosCamposNaAtualizacao(Projeto projeto, ProjetoRequestDTO dto) {
 
-        if (dto.getSituacaoExecucao() != null) {
-            projeto.setSituacaoExecucao(dto.getSituacaoExecucao());
-        }
+		if (dto.getCodigoSeg() != null) {
+			projeto.setCodigoSeg(codigoSegValidator.validarProjeto(dto.getCodigoSeg()));
+		}
 
-        if (dto.getPossuiRecursoExterno() != null) {
-            boolean possuiRecursoExterno =
-                    Boolean.TRUE.equals(dto.getPossuiRecursoExterno());
+		if (dto.getStatus() != null) {
+			projeto.setStatus(dto.getStatus());
+		}
 
-            projeto.setPossuiRecursoExterno(possuiRecursoExterno);
+		if (dto.getSituacaoExecucao() != null) {
+			projeto.setSituacaoExecucao(dto.getSituacaoExecucao());
+		}
 
-            aplicarRecursoExterno(
-                    projeto,
-                    possuiRecursoExterno,
-                    dto.getEmpresaRecursoExterno()
-            );
+		if (dto.getPossuiRecursoExterno() != null) {
+			boolean possuiRecursoExterno = Boolean.TRUE.equals(dto.getPossuiRecursoExterno());
 
-            return;
-        }
+			projeto.setPossuiRecursoExterno(possuiRecursoExterno);
 
-        if (dto.getEmpresaRecursoExterno() != null) {
-            if (!Boolean.TRUE.equals(projeto.getPossuiRecursoExterno())) {
-                throw new BusinessRuleException(
-                        "Não é possível informar uma empresa sem recurso externo."
-                );
-            }
+			aplicarRecursoExterno(projeto, possuiRecursoExterno, dto.getEmpresaRecursoExterno());
 
-            projeto.setEmpresaRecursoExterno(
-                    validarEmpresaRecursoExterno(
-                            dto.getEmpresaRecursoExterno()
-                    )
-            );
-        }
-    }
-    
-    private void aplicarRecursoExterno(
-            Projeto projeto,
-            boolean possuiRecursoExterno,
-            String empresaRecursoExterno) {
+			return;
+		}
 
-        if (!possuiRecursoExterno) {
-            projeto.setEmpresaRecursoExterno(null);
-            return;
-        }
+		if (dto.getEmpresaRecursoExterno() != null) {
+			if (!Boolean.TRUE.equals(projeto.getPossuiRecursoExterno())) {
+				throw new BusinessRuleException("Não é possível informar uma empresa sem recurso externo.");
+			}
 
-        projeto.setEmpresaRecursoExterno(
-                validarEmpresaRecursoExterno(empresaRecursoExterno)
-        );
-    }
+			projeto.setEmpresaRecursoExterno(validarEmpresaRecursoExterno(dto.getEmpresaRecursoExterno()));
+		}
+	}
 
-    private String validarEmpresaRecursoExterno(String empresa) {
-        String empresaNormalizada = normalizarTextoOpcional(empresa);
+	private void aplicarRecursoExterno(Projeto projeto, boolean possuiRecursoExterno, String empresaRecursoExterno) {
 
-        if (empresaNormalizada == null) {
-            throw new BusinessRuleException(
-                    "A empresa é obrigatória quando o projeto possui recurso externo."
-            );
-        }
+		if (!possuiRecursoExterno) {
+			projeto.setEmpresaRecursoExterno(null);
+			return;
+		}
 
-        return empresaNormalizada;
-    }
+		projeto.setEmpresaRecursoExterno(validarEmpresaRecursoExterno(empresaRecursoExterno));
+	}
 
-    private String normalizarTextoOpcional(String valor) {
-        if (valor == null) {
-            return null;
-        }
+	private String validarEmpresaRecursoExterno(String empresa) {
+		String empresaNormalizada = normalizarTextoOpcional(empresa);
 
-        String normalizado = valor.trim();
-        return normalizado.isEmpty() ? null : normalizado;
-    }
+		if (empresaNormalizada == null) {
+			throw new BusinessRuleException("A empresa é obrigatória quando o projeto possui recurso externo.");
+		}
+
+		return empresaNormalizada;
+	}
+
+	private String normalizarTextoOpcional(String valor) {
+		if (valor == null) {
+			return null;
+		}
+
+		String normalizado = valor.trim();
+		return normalizado.isEmpty() ? null : normalizado;
+	}
 }
