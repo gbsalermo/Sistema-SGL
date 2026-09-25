@@ -26,6 +26,7 @@ import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
+import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
@@ -34,6 +35,8 @@ import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusResiduo;
+import com.sgl.model.enums.StatusProjeto;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
@@ -50,6 +53,7 @@ import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
+import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -78,6 +82,7 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final LoteRepository loteRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
+    private final SciRepository sciRepository;
     private final ResiduoRepository residuoRepository;
     private final HistoricoResiduoRepository historicoResiduoRepository;
     private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
@@ -264,6 +269,47 @@ public class DemoDataInitializer implements CommandLineRunner {
                 hoje.minusMonths(3),
                 "Lucas Ribeiro",
                 "99.99.99.006.01.00"
+        );
+
+        criarSci(
+                projBiomol,
+                "99.99.99.001.01.01",
+                "Painel de marcadores moleculares",
+                "Camila Menezes",
+                hoje.minusMonths(7),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+        criarSci(
+                projBiomol,
+                "99.99.99.001.01.02",
+                "Protocolo de seleção assistida",
+                "Camila Menezes",
+                hoje.minusMonths(6),
+                hoje.minusMonths(2),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+        criarSci(
+                projFito,
+                "99.99.99.002.01.01",
+                "Caracterização de isolados de Fusarium",
+                "Paulo Nascimento",
+                hoje.minusMonths(4),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO
+        );
+        criarSci(
+                projEco,
+                "99.99.99.006.01.01",
+                "Indicadores de resposta ao déficit hídrico",
+                "Lucas Ribeiro",
+                hoje.minusMonths(2),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
 
         Produto etanol = criarProduto(
@@ -794,6 +840,31 @@ public class DemoDataInitializer implements CommandLineRunner {
                         .dataInicio(inicio)
                         .responsavel(responsavel)
                         .codigoSeg(codigoSeg)
+                        .ativo(true)
+                        .build()
+        );
+    }
+
+    private Sci criarSci(
+            Projeto projeto,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate inicio,
+            LocalDate fim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao) {
+
+        return sciRepository.save(
+                Sci.builder()
+                        .projeto(projeto)
+                        .codigoSeg(codigoSeg)
+                        .nome(nome)
+                        .responsavel(responsavel)
+                        .dataInicio(inicio)
+                        .dataFim(fim)
+                        .status(status)
+                        .situacaoExecucao(situacaoExecucao)
                         .ativo(true)
                         .build()
         );

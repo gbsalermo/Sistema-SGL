@@ -20,6 +20,7 @@ import com.sgl.model.LocalArmazenamentoResiduo;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
@@ -40,6 +41,7 @@ import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -58,6 +60,7 @@ public class DataInitializer implements CommandLineRunner {
     private final LoteRepository loteRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
+    private final SciRepository sciRepository;
     private final EstagiarioRepository estagiarioRepository;
     private final ClasseResiduoRepository classeResiduoRepository;
     private final LocalArmazenamentoResiduoRepository localArmazenamentoResiduoRepository;
@@ -235,6 +238,28 @@ public class DataInitializer implements CommandLineRunner {
                 .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
                 .possuiRecursoExterno(true)
                 .empresaRecursoExterno("Empresa Fictícia DEV")
+                .ativo(true)
+                .build());
+
+        sciRepository.save(Sci.builder()
+                .projeto(proj1)
+                .codigoSeg("98.98.98.001.01.01")
+                .nome("Caracterização óptica de nanoestruturas")
+                .responsavel("Dr. Joao Pereira")
+                .dataInicio(LocalDate.now().minusMonths(2))
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .ativo(true)
+                .build());
+
+        sciRepository.save(Sci.builder()
+                .projeto(proj2)
+                .codigoSeg("98.98.98.002.01.01")
+                .nome("Avaliação catalítica de novos compostos")
+                .responsavel("Maria Oliveira")
+                .dataInicio(LocalDate.now().minusDays(20))
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
                 .ativo(true)
                 .build());
 
