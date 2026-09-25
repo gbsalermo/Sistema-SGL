@@ -170,6 +170,8 @@ public class AtividadeService {
 
 		String codigoSeg = codigoSegValidator.validarAtividade(dto.getCodigoSeg(), atividade.getSci());
 
+		validarCodigoSegImutavel(atividade.getCodigoSeg(), codigoSeg);
+
 		validarCodigoSegUnico(codigoSeg, atividade.getPublicId());
 
 		atividade.setCodigoSeg(codigoSeg);
@@ -279,6 +281,15 @@ public class AtividadeService {
 		if (novaDataFim.isAfter(dataFimAtual)) {
 
 			throw new BusinessRuleException("A ampliação da data final deve ser realizada pelo fluxo de prorrogação.");
+		}
+	}
+
+	private void validarCodigoSegImutavel(String codigoAtual, String codigoInformado) {
+
+		if (!codigoAtual.equals(codigoInformado)) {
+			throw new BusinessRuleException(
+					"O Código SEG da Atividade não pode ser alterado pelo fluxo comum de atualização. Use o fluxo administrativo de correção."
+			);
 		}
 	}
 
