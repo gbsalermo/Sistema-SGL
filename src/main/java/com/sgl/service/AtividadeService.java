@@ -146,12 +146,11 @@ public class AtividadeService {
 
 	private void preencherNaCriacao(Atividade atividade, AtividadeRequestDTO dto) {
 
-		atividade.setCodigoSeg(
-		        codigoSegValidator.validarAtividade(
-		                dto.getCodigoSeg(),
-		                atividade.getSci()
-		        )
-		);
+		String codigoSeg = codigoSegValidator.validarAtividade(dto.getCodigoSeg(), atividade.getSci());
+
+		validarCodigoSegUnico(codigoSeg, null);
+
+		atividade.setCodigoSeg(codigoSeg);
 
 		atividade.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome da Atividade é obrigatório."));
 
@@ -169,12 +168,11 @@ public class AtividadeService {
 
 	private void preencherNaAtualizacao(Atividade atividade, AtividadeRequestDTO dto) {
 
-		atividade.setCodigoSeg(
-		        codigoSegValidator.validarAtividade(
-		                dto.getCodigoSeg(),
-		                atividade.getSci()
-		        )
-		);
+		String codigoSeg = codigoSegValidator.validarAtividade(dto.getCodigoSeg(), atividade.getSci());
+
+		validarCodigoSegUnico(codigoSeg, atividade.getPublicId());
+
+		atividade.setCodigoSeg(codigoSeg);
 
 		atividade.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome da Atividade é obrigatório."));
 
@@ -223,14 +221,11 @@ public class AtividadeService {
 		}
 	}
 
-	private void validarDataInicioImutavel(
-			LocalDate dataInicioAtual,
-			LocalDate dataInicioInformada) {
+	private void validarDataInicioImutavel(LocalDate dataInicioAtual, LocalDate dataInicioInformada) {
 
 		if (!Objects.equals(dataInicioAtual, dataInicioInformada)) {
-			throw new BusinessRuleException(
-					"A data de início da Atividade não pode ser alterada após a criação."
-			);
+
+			throw new BusinessRuleException("A data de início da Atividade não pode ser alterada após a criação.");
 		}
 	}
 
@@ -287,6 +282,17 @@ public class AtividadeService {
 		}
 	}
 
+	private void validarCodigoSegUnico(String codigoSeg, UUID atividadeAtualId) {
+
+		boolean duplicado = atividadeAtualId == null ? atividadeRepository.existsByCodigoSeg(codigoSeg)
+				: atividadeRepository.existsByCodigoSegAndPublicIdNot(codigoSeg, atividadeAtualId);
+
+		if (duplicado) {
+
+			throw new BusinessRuleException("Já existe uma Atividade com este Código SEG.");
+		}
+	}
+
 	private void exigirTenantAtivo() {
 
 		if (!TenantContext.ativo()) {
@@ -298,6 +304,7 @@ public class AtividadeService {
 	private String normalizarTextoObrigatorio(String valor, String mensagem) {
 
 		if (valor == null || valor.isBlank()) {
+
 			throw new BusinessRuleException(mensagem);
 		}
 
@@ -307,6 +314,7 @@ public class AtividadeService {
 	private String normalizarTextoOpcional(String valor) {
 
 		if (valor == null || valor.isBlank()) {
+
 			return null;
 		}
 

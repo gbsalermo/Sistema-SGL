@@ -132,7 +132,11 @@ public class SciService {
 
 	private void preencherSciNaCriacao(Sci sci, SciRequestDTO dto) {
 
-		sci.setCodigoSeg(codigoSegValidator.validarSci(dto.getCodigoSeg(), sci.getProjeto()));
+		String codigoSeg = codigoSegValidator.validarSci(dto.getCodigoSeg(), sci.getProjeto());
+
+		validarCodigoSegUnico(codigoSeg, null);
+
+		sci.setCodigoSeg(codigoSeg);
 
 		sci.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome do SCI é obrigatório."));
 
@@ -150,7 +154,11 @@ public class SciService {
 
 	private void preencherSciNaAtualizacao(Sci sci, SciRequestDTO dto) {
 
-		sci.setCodigoSeg(codigoSegValidator.validarSci(dto.getCodigoSeg(), sci.getProjeto()));
+		String codigoSeg = codigoSegValidator.validarSci(dto.getCodigoSeg(), sci.getProjeto());
+
+		validarCodigoSegUnico(codigoSeg, sci.getPublicId());
+
+		sci.setCodigoSeg(codigoSeg);
 
 		sci.setNome(normalizarTextoObrigatorio(dto.getNome(), "O nome do SCI é obrigatório."));
 
@@ -300,5 +308,15 @@ public class SciService {
 		}
 
 		return valor.trim();
+	}
+
+	private void validarCodigoSegUnico(String codigoSeg, UUID sciAtualId) {
+
+		boolean duplicado = sciAtualId == null ? sciRepository.existsByCodigoSeg(codigoSeg)
+				: sciRepository.existsByCodigoSegAndPublicIdNot(codigoSeg, sciAtualId);
+
+		if (duplicado) {
+			throw new BusinessRuleException("Já existe um SCI com este Código SEG.");
+		}
 	}
 }

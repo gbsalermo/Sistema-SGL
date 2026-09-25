@@ -25,4 +25,8 @@ public interface AtividadeRepository extends JpaRepository<Atividade, Long> {
 
 	List<Atividade> findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(UUID projetoPublicId,
 			UUID unidadePublicId);
+
+	boolean existsByCodigoSeg(String codigoSeg);
+
+	boolean existsByCodigoSegAndPublicIdNot(String codigoSeg, UUID publicId);
 }

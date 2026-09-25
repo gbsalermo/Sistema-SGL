@@ -22,4 +22,8 @@ public interface SciRepository extends JpaRepository<Sci, Long> {
 
 	List<Sci> findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdAndAtivoTrue(UUID projetoPublicId,
 			UUID unidadePublicId);
+
+	boolean existsByCodigoSeg(String codigoSeg);
+
+	boolean existsByCodigoSegAndPublicIdNot(String codigoSeg, UUID publicId);
 }

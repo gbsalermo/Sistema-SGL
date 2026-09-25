@@ -220,7 +220,11 @@ public class ProjetoService {
 
 	private void preencherNovosCamposNaCriacao(Projeto projeto, ProjetoRequestDTO dto) {
 
-		projeto.setCodigoSeg(codigoSegValidator.validarProjeto(dto.getCodigoSeg()));
+		String codigoSeg = codigoSegValidator.validarProjeto(dto.getCodigoSeg());
+
+		validarCodigoSegUnico(codigoSeg, null);
+
+		projeto.setCodigoSeg(codigoSeg);
 
 		projeto.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusProjeto.ATIVO);
 
@@ -237,7 +241,12 @@ public class ProjetoService {
 	private void preencherNovosCamposNaAtualizacao(Projeto projeto, ProjetoRequestDTO dto) {
 
 		if (dto.getCodigoSeg() != null) {
-			projeto.setCodigoSeg(codigoSegValidator.validarProjeto(dto.getCodigoSeg()));
+
+			String codigoSeg = codigoSegValidator.validarProjeto(dto.getCodigoSeg());
+
+			validarCodigoSegUnico(codigoSeg, projeto.getPublicId());
+
+			projeto.setCodigoSeg(codigoSeg);
 		}
 
 		if (dto.getStatus() != null) {
@@ -294,5 +303,19 @@ public class ProjetoService {
 
 		String normalizado = valor.trim();
 		return normalizado.isEmpty() ? null : normalizado;
+	}
+
+	private void validarCodigoSegUnico(String codigoSeg, UUID projetoAtualId) {
+
+		if (codigoSeg == null) {
+			return;
+		}
+
+		boolean duplicado = projetoAtualId == null ? projetoRepository.existsByCodigoSeg(codigoSeg)
+				: projetoRepository.existsByCodigoSegAndPublicIdNot(codigoSeg, projetoAtualId);
+
+		if (duplicado) {
+			throw new BusinessRuleException("Já existe um Projeto com este Código SEG.");
+		}
 	}
 }
