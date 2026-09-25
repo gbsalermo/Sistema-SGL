@@ -447,9 +447,9 @@ Contrato aprovado para o bloco:
 
 A base V21 de Atividades foi validada em 25/09/2026. A V22 de prorrogações também foi concluída em 25/09/2026 com suíte automatizada verde; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
 
-No 5.4, formato/coerência hierárquica e unicidade global do Código SEG já foram implementados, incluindo V23 com restrições `UNIQUE`. A decisão vigente é que o Código SEG fique imutável no CRUD comum depois de definido, sem reutilização após inativação. Para não deixar erros humanos de digitação sem solução, o planejamento agora exige um fluxo administrativo auditável de correção de Código SEG antes do fechamento da Etapa 5, com justificativa, autoria, histórico, validação global e atualização transacional da hierarquia afetada.
+No 5.4, formato/coerência hierárquica, unicidade global, imutabilidade no CRUD comum e correção administrativa auditável do Código SEG estão implementados. V23 aplica restrições `UNIQUE`; V24 cria o histórico de correções. Projeto legado sem SEG ainda pode receber a primeira definição, mas depois disso Projeto/SCI/Atividade só podem trocar o identificador pelo fluxo administrativo. A correção exige justificativa, operador ativo do tenant com perfil GESTOR/ADMINISTRADOR, valida novamente formato/hierarquia/unicidade e atualiza transacionalmente os descendentes preservando seus sufixos. Registros encerrados/inativos também podem ter erro de identificação corrigido sem reabrir seu ciclo de vida. A suíte automatizada da 5.4 foi adicionada e o fechamento depende apenas da confirmação local de `mvn test` verde.
 
-Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações será provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
+Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações e correções de Código SEG é provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
 
 ## Etapa 6 — Estagiários
 
