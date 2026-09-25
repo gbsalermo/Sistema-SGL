@@ -213,6 +213,13 @@ public class SciService {
 
 			throw new BusinessRuleException("A data de fim do SCI não pode ser posterior à data de fim do projeto.");
 		}
+		
+		if (projeto.getDataFim() != null
+		        && dataInicioSci.isAfter(projeto.getDataFim())) {
+
+		    throw new BusinessRuleException(
+		            "A data de início do SCI não pode ser posterior à data de fim do projeto.");
+		}
 	}
 
 	private void exigirTenantAtivo() {
