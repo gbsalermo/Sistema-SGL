@@ -382,6 +382,18 @@ Atividade é entidade própria, obrigatoriamente subordinada ao SCI e, por conse
 
 Próximo passo: fechar o contrato de domínio de Atividade antes da V21, sem antecipar a validação SEG completa do 5.4.
 
+Regras temporais/prorrogação já fechadas:
+
+- Atividade fica temporalmente contida no SCI; SCI permanece contido no Projeto;
+- prorrogações exigem justificativa e histórico;
+- Projeto/SCI/Atividade encerrados não recebem prorrogação comum;
+- para prorrogar SCI, Projeto precisa continuar aberto;
+- para prorrogar Atividade, SCI e Projeto precisam continuar abertos;
+- prorrogar um pai não prorroga automaticamente os filhos;
+- a prorrogação do pai apenas amplia o limite permitido para eventual prorrogação posterior do filho;
+- reduzir datas de um pai não pode invalidar filhos existentes;
+- mudanças que quebrariam a hierarquia devem ser rejeitadas, não corrigidas por cascata automática.
+
 ### 5.4 Código SEG — validação hierárquica
 
 Formato institucional confirmado:

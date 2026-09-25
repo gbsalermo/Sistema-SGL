@@ -3,7 +3,7 @@
 **Criado em:** 24/09/2026  
 **Etapa anterior:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
-**Bloco atual:** 5.2 — SCI 🔧 atual; 5.0 ✅ e 5.1 ✅ fechados  
+**Bloco atual:** 5.3 — Atividades 🔧 atual; 5.0 ✅, 5.1 ✅ e 5.2 ✅ fechados  
 **Branch de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fonte canônica de `main`:** GitLab institucional  
 
@@ -18,8 +18,8 @@ Roadmap canônico:
 ```text
 5.0 Portão de confirmação                         ✅ fechado
 → 5.1 Projeto base                                ✅ concluído e validado
-→ 5.2 SCI                                         🔧 atual
-→ 5.3 Atividades
+→ 5.2 SCI                                         ✅ concluído e validado
+→ 5.3 Atividades                                  🔧 atual
 → 5.4 Código SEG — validação hierárquica
 → 5.5 Interface e integração
 ```
@@ -408,6 +408,52 @@ Já confirmado:
 - validação hierárquica completa do Código SEG continua no 5.4.
 
 Próximo passo: fechar o contrato temporal e de ciclo da Atividade antes da V21.
+
+#### 5.3.1 Contrato temporal e prorrogações
+
+Regra hierárquica:
+
+```text
+Projeto
+└── SCI
+    └── Atividade
+```
+
+As datas seguem dependência hierárquica, mas não propagação automática:
+
+- Atividade deve iniciar na mesma data do SCI ou depois;
+- quando o SCI possuir data final, a Atividade deve permanecer dentro desse limite;
+- SCI continua limitado pelo período do Projeto;
+- ampliar o período do Projeto não altera automaticamente o SCI;
+- ampliar o período do SCI não altera automaticamente suas Atividades;
+- uma Atividade pode terminar no prazo originalmente previsto mesmo que seus pais sejam prorrogados;
+- se a Atividade também precisar de prazo adicional, sua própria prorrogação deve ser solicitada e justificada;
+- o novo fim de uma Atividade prorrogada deve continuar dentro dos limites vigentes de SCI e Projeto.
+
+Prorrogação é evento explícito, não simples sobrescrita silenciosa de `dataFim`:
+
+```text
+dataFimAnterior
+→ dataFimNova
+→ justificativa obrigatória
+→ registro histórico
+```
+
+Elegibilidade mínima:
+
+- Projeto só pode ser prorrogado enquanto não estiver encerrado;
+- SCI só pode ser prorrogado enquanto ele e o Projeto pai não estiverem encerrados;
+- Atividade só pode ser prorrogada enquanto ela, o SCI e o Projeto não estiverem encerrados;
+- item cancelado/encerrado não recebe prorrogação comum;
+- a prorrogação de um pai apenas aumenta o limite disponível para os filhos; nunca altera automaticamente as datas deles.
+
+Encurtar datas também não pode quebrar filhos existentes:
+
+- Projeto não pode ter seu período reduzido de modo a deixar um SCI fora do novo intervalo;
+- SCI não pode ter seu período reduzido de modo a deixar uma Atividade fora do novo intervalo;
+- não ajustar datas filhas automaticamente para fazer a alteração do pai caber.
+
+Para esta etapa, "prorrogação" significa aumento da data final. Definir uma data final antes inexistente não é, por si só, uma prorrogação.
 
 ### 5.4 — Código SEG e validações hierárquicas
 

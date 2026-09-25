@@ -400,3 +400,21 @@ Projeto
 ```
 
 Atividade será entidade própria obrigatoriamente vinculada ao SCI, com ciclo operacional próprio. Projeto, Laboratório e Unidade devem ser derivados pela hierarquia sempre que não houver regra de negócio que exija duplicação.
+
+
+### Prorrogação hierárquica de Projeto, SCI e Atividade
+
+```text
+Projeto prorrogado
+→ SCI mantém sua previsão atual
+
+SCI prorrogado
+→ Atividades mantêm suas previsões atuais
+
+Atividade precisa de mais prazo
+→ prorrogação própria
+→ justificativa
+→ novo fim dentro do SCI/Projeto vigentes
+```
+
+Prorrogação não é propagada em cascata. Pais abertos definem apenas o limite máximo disponível aos filhos. Um item encerrado não pode ser prorrogado pelo fluxo comum. Redução do período de um pai também deve ser bloqueada quando tornaria um filho existente temporalmente inválido.
