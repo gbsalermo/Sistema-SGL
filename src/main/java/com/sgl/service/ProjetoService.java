@@ -244,6 +244,8 @@ public class ProjetoService {
 
 			String codigoSeg = codigoSegValidator.validarProjeto(dto.getCodigoSeg());
 
+			validarCodigoSegImutavel(projeto.getCodigoSeg(), codigoSeg);
+
 			validarCodigoSegUnico(codigoSeg, projeto.getPublicId());
 
 			projeto.setCodigoSeg(codigoSeg);
@@ -303,6 +305,19 @@ public class ProjetoService {
 
 		String normalizado = valor.trim();
 		return normalizado.isEmpty() ? null : normalizado;
+	}
+
+	private void validarCodigoSegImutavel(String codigoAtual, String codigoInformado) {
+
+		if (codigoAtual == null) {
+			return;
+		}
+
+		if (!codigoAtual.equals(codigoInformado)) {
+			throw new BusinessRuleException(
+					"O Código SEG do Projeto não pode ser alterado pelo fluxo comum de atualização. Use o fluxo administrativo de correção."
+			);
+		}
 	}
 
 	private void validarCodigoSegUnico(String codigoSeg, UUID projetoAtualId) {
