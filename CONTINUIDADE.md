@@ -382,7 +382,7 @@ A implementação histórica de `feat/etapa-4-residuos` foi portada seletivament
 - relatórios/exportações reconhecem `CANCELADO`;
 - validações funcionais da Etapa 4 foram concluídas.
 
-A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.3 — Atividades**. Os blocos **5.1 — Projeto base** e **5.2 — SCI** foram concluídos e validados em 25/09/2026.
+A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.5 — Interface e integração**. Os blocos **5.1 — Projeto base**, **5.2 — SCI**, **5.3 — Atividades** e **5.4 — Código SEG** foram concluídos e validados em 25/09/2026.
 
 
 # 10. Projetos, Estagiários e Relatórios — evolução atual e próximas etapas
@@ -433,7 +433,7 @@ Validado em 25/09/2026:
 - bateria funcional da API foi validada integralmente;
 - formato, raiz e duplicidade do Código SEG permanecem deliberadamente no 5.4.
 
-Bloco atual: **5.4 Código SEG e validações hierárquicas**.
+Bloco atual: **5.5 Interface e integração**.
 
 Contrato aprovado para o bloco:
 
@@ -447,7 +447,7 @@ Contrato aprovado para o bloco:
 
 A base V21 de Atividades foi validada em 25/09/2026. A V22 de prorrogações também foi concluída em 25/09/2026 com suíte automatizada verde; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
 
-No 5.4, formato/coerência hierárquica, unicidade global, imutabilidade no CRUD comum e correção administrativa auditável do Código SEG estão implementados. V23 aplica restrições `UNIQUE`; V24 cria o histórico de correções. Projeto legado sem SEG ainda pode receber a primeira definição, mas depois disso Projeto/SCI/Atividade só podem trocar o identificador pelo fluxo administrativo. A correção exige justificativa, operador ativo do tenant com perfil GESTOR/ADMINISTRADOR, valida novamente formato/hierarquia/unicidade e atualiza transacionalmente os descendentes preservando seus sufixos. Registros encerrados/inativos também podem ter erro de identificação corrigido sem reabrir seu ciclo de vida. A suíte automatizada da 5.4 foi adicionada e o fechamento depende apenas da confirmação local de `mvn test` verde.
+No 5.4, formato/coerência hierárquica, unicidade global, imutabilidade no CRUD comum e correção administrativa auditável do Código SEG foram concluídos. V23 aplica restrições `UNIQUE`; V24 cria o histórico de correções. Projeto legado sem SEG ainda pode receber a primeira definição, mas depois disso Projeto/SCI/Atividade só podem trocar o identificador pelo fluxo administrativo. A correção exige justificativa, operador ativo do tenant com perfil GESTOR/ADMINISTRADOR, valida novamente formato/hierarquia/unicidade e atualiza transacionalmente os descendentes preservando seus sufixos. Registros encerrados/inativos também podem ter erro de identificação corrigido sem reabrir seu ciclo de vida. O código foi publicado e a suíte JUnit completa foi confirmada verde em 25/09/2026; o 5.4 está oficialmente concluído e validado.
 
 Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações e correções de Código SEG é provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
 
@@ -534,7 +534,7 @@ Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
-Etapa 5 — Projetos + Atividades                       🔧 atual — 5.3 Atividades; 5.1 ✅; 5.2 ✅
+Etapa 5 — Projetos + Atividades                       🔧 atual — 5.5 Interface e integração; 5.1–5.4 ✅
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
@@ -551,7 +551,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com o portão 5.0, o bloco 5.1 — Projeto base e o bloco 5.2 — SCI fechados; retomar pelo bloco 5.3 — Atividades. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com 5.0, 5.1, 5.2, 5.3 e 5.4 fechados e validados; retomar pelo bloco 5.5 — Interface e integração. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
