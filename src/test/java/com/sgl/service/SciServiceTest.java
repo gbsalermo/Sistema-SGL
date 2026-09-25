@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.SciRequestDTO;
@@ -57,6 +58,9 @@ class SciServiceTest {
 
     @Mock
     private AtividadeRepository atividadeRepository;
+
+    @Spy
+    private CodigoSegValidator codigoSegValidator = new CodigoSegValidator();
 
     @InjectMocks
     private SciService sciService;
@@ -394,6 +398,54 @@ class SciServiceTest {
 
         assertEquals(
                 "A nova data de fim do SCI deixaria uma Atividade fora do período do SCI.",
+                ex.getMessage()
+        );
+    }
+
+
+    @Test
+    void deveRejeitarAlteracaoDoCodigoSegDoSciNoPutComum() {
+        SciRequestDTO dto = requestValido();
+        dto.setCodigoSeg("95.95.95.001.01.02");
+
+        TenantContext.definir(UNIDADE_ID);
+
+        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+                SCI_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(sci));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> sciService.atualizar(SCI_ID, dto)
+        );
+
+        assertEquals(
+                "O Código SEG do SCI não pode ser alterado pelo fluxo comum de atualização. Use o fluxo administrativo de correção.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void deveRejeitarCodigoSegGlobalmenteDuplicadoNaCriacaoDoSci() {
+        SciRequestDTO dto = requestValido();
+
+        TenantContext.definir(UNIDADE_ID);
+
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(projeto));
+
+        when(sciRepository.existsByCodigoSeg(
+                "95.95.95.001.01.01"))
+                .thenReturn(true);
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> sciService.criar(dto)
+        );
+
+        assertEquals(
+                "Já existe um SCI com este Código SEG.",
                 ex.getMessage()
         );
     }
