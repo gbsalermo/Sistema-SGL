@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgl.config.SecurityConfig;
+import com.sgl.dto.request.CorrecaoCodigoSegRequestDTO;
 import com.sgl.dto.request.ProrrogacaoRequestDTO;
 import com.sgl.dto.request.SciRequestDTO;
 import com.sgl.dto.response.SciResponseDTO;
@@ -37,6 +38,7 @@ import com.sgl.model.Sci;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.service.SciService;
+import com.sgl.service.CorrecaoCodigoSegService;
 import com.sgl.service.ProrrogacaoService;
 
 @WebMvcTest(SciController.class)
@@ -69,6 +71,9 @@ class SciControllerTest {
 
     @MockitoBean
     private ProrrogacaoService prorrogacaoService;
+
+    @MockitoBean
+    private CorrecaoCodigoSegService correcaoCodigoSegService;
 
     private SciRequestDTO montarRequest() {
         SciRequestDTO dto = new SciRequestDTO();
@@ -229,6 +234,39 @@ class SciControllerTest {
                 .thenReturn(List.of());
 
         mockMvc.perform(get(BASE_URL + "/{id}/prorrogacoes", SCI_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+
+    @Test
+    void deveCorrigirCodigoSegDoSciERetornar201() throws Exception {
+        String body = """
+                {
+                  "usuarioId": "00000000-0000-0000-0000-000000000299",
+                  "novoCodigoSeg": "95.95.95.001.01.02",
+                  "justificativa": "Correção de digitação"
+                }
+                """;
+
+        when(correcaoCodigoSegService.corrigirSci(
+                eq(SCI_ID),
+                any(CorrecaoCodigoSegRequestDTO.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(post(BASE_URL + "/{id}/correcoes-codigo-seg", SCI_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void deveListarCorrecoesCodigoSegDoSciERetornar200() throws Exception {
+        when(correcaoCodigoSegService.listarHistoricoSci(SCI_ID))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get(BASE_URL + "/{id}/correcoes-codigo-seg", SCI_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
