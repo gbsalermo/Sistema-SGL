@@ -19,8 +19,8 @@ Roadmap canônico:
 5.0 Portão de confirmação                         ✅ fechado
 → 5.1 Projeto base                                ✅ concluído e validado
 → 5.2 SCI                                         ✅ concluído e validado
-→ 5.3 Atividades                                  🔧 atual
-→ 5.4 Código SEG — validação hierárquica
+→ 5.3 Atividades                                  ✅ concluído e validado
+→ 5.4 Código SEG — validação hierárquica           🧪 implementação concluída; validação final pendente
 → 5.5 Interface e integração
 ```
 
@@ -514,6 +514,8 @@ Planejamento de migrations:
 ```text
 V21 → criação de Atividades
 V22 → históricos de prorrogação de Projeto, SCI e Atividade ✅ IMPLEMENTADA E VALIDADA
+V23 → unicidade global do Código SEG ✅ IMPLEMENTADA
+V24 → histórico auditável de correções do Código SEG ✅ IMPLEMENTADA
 ```
 
 O estágio reutilizará a mesma filosofia na Etapa 6, mas com histórico próprio do seu domínio.
@@ -590,29 +592,68 @@ Implementado em 25/09/2026:
 - registros `ativo=false` continuam reservando o Código SEG;
 - o próprio registro é ignorado na checagem de duplicidade durante update.
 
-#### 5.4.3 Imutabilidade no CRUD comum + correção administrativa planejada
+#### 5.4.3 Imutabilidade no CRUD comum ✅
 
-Decisão de domínio:
+Implementado em 25/09/2026:
 
-- depois de definido, o Código SEG não deve ser alterado pelo CRUD comum;
-- Projeto legado com `codigoSeg = null` pode receber sua primeira definição;
-- SCI e Atividade recebem o Código SEG na criação e depois o mantêm imutável no CRUD comum;
-- essa proteção não pode deixar o sistema sem alternativa para erro humano de digitação.
+- depois de definido, o Código SEG não pode ser alterado pelo PUT comum;
+- Projeto legado com `codigoSeg = null` ainda pode receber sua primeira definição pelo fluxo comum;
+- SCI e Atividade mantêm o Código SEG definido na criação;
+- tentativas de troca pelo CRUD comum orientam o uso do fluxo administrativo de correção.
 
-Portanto, antes de encerrar a Etapa 5, deve existir um **fluxo administrativo específico de correção de Código SEG**. Esse fluxo deverá:
+#### 5.4.4 Correção administrativa auditável ✅
 
-- exigir justificativa obrigatória;
-- identificar e registrar o usuário responsável pela correção;
-- registrar Código SEG anterior, novo Código SEG, data/hora e motivo;
-- validar novamente formato, hierarquia e unicidade global antes de aplicar;
-- executar a correção de forma transacional, sem permitir estado parcialmente inconsistente;
-- ao corrigir o Código SEG de Projeto, atualizar coerentemente os prefixos de SCI e Atividades descendentes, preservando seus sufixos;
-- ao corrigir o Código SEG de SCI, atualizar coerentemente os prefixos das Atividades descendentes, preservando seus sufixos;
-- ao corrigir apenas uma Atividade, limitar a alteração à própria Atividade;
-- rejeitar a correção se qualquer novo Código SEG resultante colidir com um código já existente;
-- nunca gerar nova numeração automaticamente.
+Implementado em 25/09/2026 com a migration `V24__create_seg_correction_history.sql`.
 
-Alteração direta no banco fica restrita a manutenção excepcional em DEV/pré-produção. Em produção, a correção deve ocorrer pelo fluxo administrativo auditável, e não por edição manual de dados.
+O fluxo:
+
+- exige justificativa obrigatória;
+- recebe provisoriamente o UUID do usuário operador enquanto a autenticação real não fornecer principal confiável;
+- valida usuário ativo, mesmo tenant e perfil `GESTOR` ou `ADMINISTRADOR`;
+- registra alvo, Código SEG anterior, novo Código SEG, usuário, justificativa e data/hora;
+- permite correção mesmo de registros encerrados ou tecnicamente inativos, porque a operação corrige identidade institucional e não reabre ciclo de vida;
+- valida novamente formato, hierarquia e unicidade global antes de alterar dados;
+- executa alvo + descendentes + histórico na mesma transação;
+- ao corrigir Projeto, atualiza prefixos de SCI e Atividades descendentes preservando os sufixos;
+- ao corrigir SCI, atualiza os prefixos de suas Atividades preservando os sufixos;
+- ao corrigir Atividade, altera apenas a própria Atividade;
+- rejeita toda a operação antes de qualquer mutação quando houver colisão em alvo ou descendente;
+- não gera nova numeração automaticamente.
+
+Endpoints:
+
+```text
+POST /api/v1/projetos/{id}/correcoes-codigo-seg
+GET  /api/v1/projetos/{id}/correcoes-codigo-seg
+
+POST /api/v1/scis/{id}/correcoes-codigo-seg
+GET  /api/v1/scis/{id}/correcoes-codigo-seg
+
+POST /api/v1/atividades/{id}/correcoes-codigo-seg
+GET  /api/v1/atividades/{id}/correcoes-codigo-seg
+```
+
+Alteração direta no banco fica restrita a manutenção excepcional em DEV/pré-produção. Em produção, a correção oficial deve ocorrer pelo fluxo administrativo auditável.
+
+#### 5.4.5 Testes e fechamento 🧪
+
+A suíte da 5.4 foi adicionada cobrindo:
+
+- formato de Projeto, SCI e Atividade;
+- coerência hierárquica;
+- unicidade global;
+- primeira definição de Código SEG em Projeto legado;
+- imutabilidade no PUT comum;
+- correção de Projeto com cascata para SCI/Atividade;
+- correção de SCI com cascata para Atividade;
+- correção isolada de Atividade;
+- correção de registros inativos;
+- perfil e tenant do operador;
+- bloqueio de colisão;
+- atomicidade: colisão em descendente impede toda a correção;
+- seis endpoints de correção/histórico.
+
+A implementação está pronta para fechamento assim que a suíte completa `mvn test` for confirmada verde.
 
 ### 5.5 — Interface e integração
 
