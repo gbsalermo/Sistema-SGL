@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.ProjetoRequestDTO;
@@ -67,6 +68,9 @@ class ProjetoServiceTest {
 
     @Mock
     private AtividadeRepository atividadeRepository;
+
+    @Spy
+    private CodigoSegValidator codigoSegValidator = new CodigoSegValidator();
 
     @InjectMocks
     private ProjetoService projetoService;
@@ -496,6 +500,91 @@ class ProjetoServiceTest {
 
         assertEquals(
                 "A nova data de fim do projeto deixaria um SCI fora do período do projeto.",
+                ex.getMessage()
+        );
+    }
+
+
+    @Test
+    void devePermitirPrimeiraDefinicaoDeCodigoSegEmProjetoLegado() {
+        projeto.setCodigoSeg(null);
+
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto legado corrigido");
+        dto.setCodigoSeg("95.95.95.001.01.00");
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+
+        when(projetoRepository.save(any(Projeto.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProjetoResponseDTO resultado =
+                projetoService.atualizar(PROJETO_PUBLIC_ID, dto);
+
+        assertEquals("95.95.95.001.01.00", resultado.getCodigoSeg());
+    }
+
+    @Test
+    void deveRejeitarAlteracaoDoCodigoSegDoProjetoNoPutComum() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto atualizado");
+        dto.setCodigoSeg("95.95.95.001.01.00");
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> projetoService.atualizar(PROJETO_PUBLIC_ID, dto)
+        );
+
+        assertEquals(
+                "O Código SEG do Projeto não pode ser alterado pelo fluxo comum de atualização. Use o fluxo administrativo de correção.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void deveRejeitarCodigoSegGlobalmenteDuplicadoNaCriacaoDoProjeto() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto duplicado");
+        dto.setCodigoSeg("95.95.95.001.01.00");
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+
+        when(projetoRepository.existsByCodigoSeg(
+                "95.95.95.001.01.00"))
+                .thenReturn(true);
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> projetoService.criar(dto)
+        );
+
+        assertEquals(
+                "Já existe um Projeto com este Código SEG.",
                 ex.getMessage()
         );
     }
