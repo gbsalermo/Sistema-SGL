@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -123,6 +124,8 @@ public class AtividadeService {
 
 		Sci sci = atividade.getSci();
 
+		validarDataInicioImutavel(atividade.getDataInicio(), dto.getDataInicio());
+
 		validarPeriodoComSci(sci, dto.getDataInicio(), dto.getDataFim());
 
 		validarAlteracaoDataFim(atividade.getDataFim(), dto.getDataFim());
@@ -208,6 +211,17 @@ public class AtividadeService {
 		if (!atividade.getSci().getPublicId().equals(sciIdInformado)) {
 
 			throw new BusinessRuleException("A Atividade não pode ser transferida para outro SCI.");
+		}
+	}
+
+	private void validarDataInicioImutavel(
+			LocalDate dataInicioAtual,
+			LocalDate dataInicioInformada) {
+
+		if (!Objects.equals(dataInicioAtual, dataInicioInformada)) {
+			throw new BusinessRuleException(
+					"A data de início da Atividade não pode ser alterada após a criação."
+			);
 		}
 	}
 

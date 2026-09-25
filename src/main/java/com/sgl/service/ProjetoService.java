@@ -1,6 +1,8 @@
 package com.sgl.service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -10,12 +12,16 @@ import com.sgl.dto.request.ProjetoRequestDTO;
 import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.Atividade;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
+import com.sgl.model.Sci;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.SciRepository;
 import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +32,8 @@ public class ProjetoService {
 
     private final ProjetoRepository projetoRepository;
     private final LaboratorioRepository laboratorioRepository;
+    private final SciRepository sciRepository;
+    private final AtividadeRepository atividadeRepository;
 
     @Transactional
     public ProjetoResponseDTO criar(ProjetoRequestDTO dto) {
@@ -73,6 +81,10 @@ public class ProjetoService {
         Laboratorio novoLaboratorio = buscarLaboratorio(dto.getLaboratorioId());
         validarTenantUnidade(novoLaboratorio.getUnidade() != null ? novoLaboratorio.getUnidade().getPublicId() : null);
 
+        validarDataInicioImutavel(projeto.getDataInicio(), dto.getDataInicio());
+        validarAlteracaoDataFim(projeto.getDataFim(), dto.getDataFim());
+        validarPeriodoComDescendentes(projeto, dto.getDataFim());
+
         projeto.setLaboratorio(novoLaboratorio);
         preencherProjeto(projeto, dto);
         return new ProjetoResponseDTO(projetoRepository.save(projeto));
@@ -118,6 +130,82 @@ public class ProjetoService {
 
             if (dto.getAtivo() != null) {
                 projeto.setAtivo(dto.getAtivo());
+            }
+        }
+    }
+
+    private void validarDataInicioImutavel(
+            LocalDate dataInicioAtual,
+            LocalDate dataInicioInformada) {
+
+        if (!Objects.equals(dataInicioAtual, dataInicioInformada)) {
+            throw new BusinessRuleException(
+                    "A data de início do projeto não pode ser alterada após a criação."
+            );
+        }
+    }
+
+    private void validarAlteracaoDataFim(
+            LocalDate dataFimAtual,
+            LocalDate novaDataFim) {
+
+        if (dataFimAtual == null) {
+            return;
+        }
+
+        if (novaDataFim == null) {
+            throw new BusinessRuleException(
+                    "A data de fim existente não pode ser removida pelo fluxo comum de atualização."
+            );
+        }
+
+        if (novaDataFim.isAfter(dataFimAtual)) {
+            throw new BusinessRuleException(
+                    "A ampliação da data final deve ser realizada pelo fluxo de prorrogação."
+            );
+        }
+    }
+
+    private void validarPeriodoComDescendentes(
+            Projeto projeto,
+            LocalDate novaDataFim) {
+
+        if (novaDataFim == null) {
+            return;
+        }
+
+        exigirTenantAtivo();
+        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+        List<Sci> scis =
+                sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                        projeto.getPublicId(),
+                        unidadeId
+                );
+
+        for (Sci sci : scis) {
+            if (sci.getDataInicio().isAfter(novaDataFim)
+                    || (sci.getDataFim() != null && sci.getDataFim().isAfter(novaDataFim))) {
+
+                throw new BusinessRuleException(
+                        "A nova data de fim do projeto deixaria um SCI fora do período do projeto."
+                );
+            }
+        }
+
+        List<Atividade> atividades =
+                atividadeRepository.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                        projeto.getPublicId(),
+                        unidadeId
+                );
+
+        for (Atividade atividade : atividades) {
+            if (atividade.getDataInicio().isAfter(novaDataFim)
+                    || (atividade.getDataFim() != null && atividade.getDataFim().isAfter(novaDataFim))) {
+
+                throw new BusinessRuleException(
+                        "A nova data de fim do projeto deixaria uma Atividade fora do período do projeto."
+                );
             }
         }
     }

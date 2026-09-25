@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -11,10 +12,12 @@ import com.sgl.dto.request.SciRequestDTO;
 import com.sgl.dto.response.SciResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.Atividade;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.tenant.TenantContext;
@@ -27,6 +30,7 @@ public class SciService {
 
 	private final SciRepository sciRepository;
 	private final ProjetoRepository projetoRepository;
+	private final AtividadeRepository atividadeRepository;
 
 	@Transactional
 	public SciResponseDTO criar(SciRequestDTO dto) {
@@ -104,7 +108,13 @@ public class SciService {
 
 		Projeto projeto = sci.getProjeto();
 
+		validarDataInicioImutavel(sci.getDataInicio(), dto.getDataInicio());
+
 		validarPeriodoComProjeto(projeto, dto.getDataInicio(), dto.getDataFim());
+
+		validarAlteracaoDataFim(sci.getDataFim(), dto.getDataFim());
+
+		validarPeriodoComAtividades(sci, dto.getDataFim());
 
 		preencherSciNaAtualizacao(sci, dto);
 
@@ -185,6 +195,66 @@ public class SciService {
 		if (!sci.getProjeto().getPublicId().equals(projetoIdInformado)) {
 
 			throw new BusinessRuleException("O SCI não pode ser transferido para outro projeto.");
+		}
+	}
+
+	private void validarDataInicioImutavel(
+			LocalDate dataInicioAtual,
+			LocalDate dataInicioInformada) {
+
+		if (!Objects.equals(dataInicioAtual, dataInicioInformada)) {
+			throw new BusinessRuleException(
+					"A data de início do SCI não pode ser alterada após a criação."
+			);
+		}
+	}
+
+	private void validarAlteracaoDataFim(
+			LocalDate dataFimAtual,
+			LocalDate novaDataFim) {
+
+		if (dataFimAtual == null) {
+			return;
+		}
+
+		if (novaDataFim == null) {
+			throw new BusinessRuleException(
+					"A data de fim existente não pode ser removida pelo fluxo comum de atualização."
+			);
+		}
+
+		if (novaDataFim.isAfter(dataFimAtual)) {
+			throw new BusinessRuleException(
+					"A ampliação da data final deve ser realizada pelo fluxo de prorrogação."
+			);
+		}
+	}
+
+	private void validarPeriodoComAtividades(
+			Sci sci,
+			LocalDate novaDataFim) {
+
+		if (novaDataFim == null) {
+			return;
+		}
+
+		exigirTenantAtivo();
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		List<Atividade> atividades =
+				atividadeRepository.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+						sci.getPublicId(),
+						unidadeId
+				);
+
+		for (Atividade atividade : atividades) {
+			if (atividade.getDataInicio().isAfter(novaDataFim)
+					|| (atividade.getDataFim() != null && atividade.getDataFim().isAfter(novaDataFim))) {
+
+				throw new BusinessRuleException(
+						"A nova data de fim do SCI deixaria uma Atividade fora do período do SCI."
+				);
+			}
 		}
 	}
 
