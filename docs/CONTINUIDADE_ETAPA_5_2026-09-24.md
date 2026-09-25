@@ -568,8 +568,51 @@ Nesta etapa:
 - validar Projeto terminando em `00`;
 - validar SCI com a mesma raiz do Projeto e sufixo próprio;
 - validar Atividade com o código completo do SCI + três dígitos;
-- validar duplicidade conforme o escopo institucional definido no domínio;
+- validar **unicidade global/institucional** do Código SEG, independentemente da Unidade e inclusive para registros tecnicamente inativos;
 - não gerar sequências automaticamente nesta primeira versão.
+
+#### 5.4.1 Formato e coerência hierárquica ✅
+
+Implementado em 25/09/2026:
+
+- Projeto segue `XX.XX.XX.XXX.XX.00`;
+- SCI segue `XX.XX.XX.XXX.XX.SS`, preservando a raiz do Projeto;
+- Atividade segue `XX.XX.XX.XXX.XX.SS.AAA`, preservando integralmente o Código SEG do SCI;
+- Projeto legado ainda pode permanecer sem Código SEG até sua primeira definição;
+- SCI e Atividade exigem Código SEG válido.
+
+#### 5.4.2 Unicidade global/institucional ✅
+
+Implementado em 25/09/2026:
+
+- V23 adiciona restrições `UNIQUE` para `codigo_seg` em Projeto, SCI e Atividade;
+- a validação de Service ocorre de forma global, sem filtro por Unidade;
+- registros `ativo=false` continuam reservando o Código SEG;
+- o próprio registro é ignorado na checagem de duplicidade durante update.
+
+#### 5.4.3 Imutabilidade no CRUD comum + correção administrativa planejada
+
+Decisão de domínio:
+
+- depois de definido, o Código SEG não deve ser alterado pelo CRUD comum;
+- Projeto legado com `codigoSeg = null` pode receber sua primeira definição;
+- SCI e Atividade recebem o Código SEG na criação e depois o mantêm imutável no CRUD comum;
+- essa proteção não pode deixar o sistema sem alternativa para erro humano de digitação.
+
+Portanto, antes de encerrar a Etapa 5, deve existir um **fluxo administrativo específico de correção de Código SEG**. Esse fluxo deverá:
+
+- exigir justificativa obrigatória;
+- identificar e registrar o usuário responsável pela correção;
+- registrar Código SEG anterior, novo Código SEG, data/hora e motivo;
+- validar novamente formato, hierarquia e unicidade global antes de aplicar;
+- executar a correção de forma transacional, sem permitir estado parcialmente inconsistente;
+- ao corrigir o Código SEG de Projeto, atualizar coerentemente os prefixos de SCI e Atividades descendentes, preservando seus sufixos;
+- ao corrigir o Código SEG de SCI, atualizar coerentemente os prefixos das Atividades descendentes, preservando seus sufixos;
+- ao corrigir apenas uma Atividade, limitar a alteração à própria Atividade;
+- rejeitar a correção se qualquer novo Código SEG resultante colidir com um código já existente;
+- nunca gerar nova numeração automaticamente.
+
+Alteração direta no banco fica restrita a manutenção excepcional em DEV/pré-produção. Em produção, a correção deve ocorrer pelo fluxo administrativo auditável, e não por edição manual de dados.
 
 ### 5.5 — Interface e integração
 

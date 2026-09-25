@@ -433,7 +433,7 @@ Validado em 25/09/2026:
 - bateria funcional da API foi validada integralmente;
 - formato, raiz e duplicidade do Código SEG permanecem deliberadamente no 5.4.
 
-Bloco atual: **5.3 Atividades**.
+Bloco atual: **5.4 Código SEG e validações hierárquicas**.
 
 Contrato aprovado para o bloco:
 
@@ -445,7 +445,9 @@ Contrato aprovado para o bloco:
 - prorrogação de pai não altera automaticamente filhos;
 - redução de período de pai que invalidaria filhos deve ser rejeitada.
 
-A base V21 de Atividades foi validada em 25/09/2026. A V22 de prorrogações também foi concluída em 25/09/2026 com suíte automatizada verde; a bateria manual via Postman foi deliberadamente dispensada nesta rodada. O próximo incremento é 5.4 — validação hierárquica do Código SEG.
+A base V21 de Atividades foi validada em 25/09/2026. A V22 de prorrogações também foi concluída em 25/09/2026 com suíte automatizada verde; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
+
+No 5.4, formato/coerência hierárquica e unicidade global do Código SEG já foram implementados, incluindo V23 com restrições `UNIQUE`. A decisão vigente é que o Código SEG fique imutável no CRUD comum depois de definido, sem reutilização após inativação. Para não deixar erros humanos de digitação sem solução, o planejamento agora exige um fluxo administrativo auditável de correção de Código SEG antes do fechamento da Etapa 5, com justificativa, autoria, histórico, validação global e atualização transacional da hierarquia afetada.
 
 Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações será provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
 
