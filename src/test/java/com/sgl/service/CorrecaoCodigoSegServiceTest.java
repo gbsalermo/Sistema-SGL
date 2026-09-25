@@ -424,4 +424,53 @@ class CorrecaoCodigoSegServiceTest {
 				ex.getMessage()
 		);
 	}
+
+	@Test
+	void deveBloquearTodaCorrecaoDoProjetoSeDescendenteColidir() {
+
+		TenantContext.definir(UNIDADE_ID);
+
+		when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+				PROJETO_ID, UNIDADE_ID))
+				.thenReturn(Optional.of(projeto));
+
+		mockUsuario();
+
+		when(sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+				PROJETO_ID, UNIDADE_ID))
+				.thenReturn(List.of(sci));
+
+		when(atividadeRepository
+				.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+						PROJETO_ID, UNIDADE_ID))
+				.thenReturn(List.of(atividade));
+
+		when(sciRepository.existsByCodigoSegAndPublicIdNot(
+				"96.96.96.001.01.01",
+				SCI_ID
+		)).thenReturn(true);
+
+		BusinessRuleException ex = assertThrows(
+				BusinessRuleException.class,
+				() -> service.corrigirProjeto(
+						PROJETO_ID,
+						request("96.96.96.001.01.00")
+				)
+		);
+
+		assertEquals(
+				"Já existe um SCI com este Código SEG.",
+				ex.getMessage()
+		);
+
+		assertEquals("95.95.95.001.01.00", projeto.getCodigoSeg());
+		assertEquals("95.95.95.001.01.01", sci.getCodigoSeg());
+		assertEquals("95.95.95.001.01.01.001", atividade.getCodigoSeg());
+
+		verify(projetoRepository, never()).save(any());
+		verify(sciRepository, never()).saveAll(any());
+		verify(atividadeRepository, never()).saveAll(any());
+		verify(historicoRepository, never()).saveAll(any());
+	}
+
 }
