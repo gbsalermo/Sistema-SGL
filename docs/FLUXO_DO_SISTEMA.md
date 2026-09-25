@@ -418,3 +418,21 @@ Atividade precisa de mais prazo
 ```
 
 Prorrogação não é propagada em cascata. Pais abertos definem apenas o limite máximo disponível aos filhos. Um item encerrado não pode ser prorrogado pelo fluxo comum. Redução do período de um pai também deve ser bloqueada quando tornaria um filho existente temporalmente inválido.
+
+
+### Persistência das prorrogações
+
+Cada nível da hierarquia terá histórico próprio, mantendo FK real:
+
+```text
+Projeto
+└── HistoricoProrrogacaoProjeto
+
+SCI
+└── HistoricoProrrogacaoSci
+
+Atividade
+└── HistoricoProrrogacaoAtividade
+```
+
+Uma prorrogação registra a data final anterior, a nova data final, justificativa, autor e data/hora. A alteração da entidade e o histórico fazem parte da mesma transação. O update comum não deve ampliar uma data final já existente.

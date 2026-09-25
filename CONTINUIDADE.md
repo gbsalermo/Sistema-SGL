@@ -435,6 +435,16 @@ Validado em 25/09/2026:
 
 Bloco atual: **5.3 Atividades**.
 
+Contrato aprovado para o bloco:
+
+- Atividade será subordinada obrigatoriamente ao SCI;
+- Atividade reutilizará os valores de `StatusProjeto` e `SituacaoExecucaoProjeto`, persistidos independentemente;
+- V21 cria Atividades;
+- prorrogações de Projeto/SCI/Atividade são eventos explícitos, justificados e históricos;
+- V22 fica reservada a três históricos de prorrogação com FKs reais;
+- prorrogação de pai não altera automaticamente filhos;
+- redução de período de pai que invalidaria filhos deve ser rejeitada.
+
 ## Etapa 6 — Estagiários
 
 Planejado:

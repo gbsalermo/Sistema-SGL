@@ -311,6 +311,15 @@ V20 criação do domínio de SCI
 
 Próxima alteração de schema: V21+.
 
+Planejamento imediato:
+
+```text
+V21 → Atividades
+V22 → históricos de prorrogação de Projeto/SCI/Atividade
+```
+
+Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
+
 ---
 
 # 8. Multitenancy por Unidade

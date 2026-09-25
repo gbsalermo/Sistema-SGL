@@ -394,6 +394,16 @@ Regras temporais/prorrogação já fechadas:
 - reduzir datas de um pai não pode invalidar filhos existentes;
 - mudanças que quebrariam a hierarquia devem ser rejeitadas, não corrigidas por cascata automática.
 
+Persistência aprovada para prorrogações:
+
+- históricos separados para Projeto, SCI e Atividade, cada um com FK real;
+- preservar data final anterior, nova data final, justificativa, usuário e data/hora;
+- aumento de uma data final já existente só ocorre pelo fluxo explícito de prorrogação;
+- data + histórico são gravados atomicamente;
+- endpoints próprios de prorrogação serão expostos para Projeto, SCI e Atividade;
+- V21 fica dedicada à tabela de Atividades;
+- V22 fica reservada aos históricos de prorrogação.
+
 ### 5.4 Código SEG — validação hierárquica
 
 Formato institucional confirmado:
@@ -618,7 +628,7 @@ Etapa 1 — refinamento visual global                 ✅
 Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
-Etapa 5 — Projetos e Atividades                     🔧 atual — 5.1 Projeto base
+Etapa 5 — Projetos e Atividades                     🔧 atual — 5.3 Atividades; 5.1 ✅; 5.2 ✅
 Etapas 6–13                                         ⏳
 ```
 

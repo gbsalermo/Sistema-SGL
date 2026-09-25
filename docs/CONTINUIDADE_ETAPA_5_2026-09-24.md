@@ -455,6 +455,69 @@ Encurtar datas também não pode quebrar filhos existentes:
 
 Para esta etapa, "prorrogação" significa aumento da data final. Definir uma data final antes inexistente não é, por si só, uma prorrogação.
 
+#### 5.3.2 Persistência da prorrogação ✅ APROVADA
+
+A prorrogação será modelada como evento de domínio próprio e auditável.
+
+Estrutura aprovada:
+
+```text
+HistoricoProrrogacaoProjeto → Projeto
+HistoricoProrrogacaoSci → SCI
+HistoricoProrrogacaoAtividade → Atividade
+```
+
+Cada histórico deverá preservar:
+
+```text
+publicId
+entidade pai correspondente
+usuario
+dataFimAnterior
+dataFimNova
+justificativa
+dataHora
+```
+
+Decisões:
+
+- não usar tabela histórica polimórfica baseada apenas em `tipoEntidade + entidadeId`;
+- manter FKs reais para garantir integridade referencial;
+- alteração normal pode definir a primeira `dataFim` ou reduzir prazo quando a hierarquia continuar válida;
+- aumentar uma `dataFim` já existente é prorrogação e deve usar fluxo próprio;
+- prorrogação exige justificativa;
+- atualização da data e criação do histórico devem ocorrer na mesma transação;
+- usuário autor deve vir do contexto confiável da aplicação, não de UUID livre enviado pelo payload;
+- Projeto/SCI/Atividade encerrados ou cancelados não recebem prorrogação comum;
+- o pai precisa permanecer aberto para que um filho seja prorrogado;
+- prorrogar pai não altera filhos automaticamente.
+
+Contrato HTTP planejado:
+
+```text
+POST /api/v1/projetos/{id}/prorrogacoes
+POST /api/v1/scis/{id}/prorrogacoes
+POST /api/v1/atividades/{id}/prorrogacoes
+```
+
+Payload conceitual:
+
+```json
+{
+  "novaDataFim": "2027-03-31",
+  "justificativa": "Justificativa obrigatória"
+}
+```
+
+Planejamento de migrations:
+
+```text
+V21 → criação de Atividades
+V22 → históricos de prorrogação de Projeto, SCI e Atividade
+```
+
+O estágio reutilizará a mesma filosofia na Etapa 6, mas com histórico próprio do seu domínio.
+
 ### 5.4 — Código SEG e validações hierárquicas
 
 Formato canônico:
