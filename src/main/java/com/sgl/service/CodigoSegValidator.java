@@ -36,6 +36,14 @@ public class CodigoSegValidator {
 
 	public String validarSci(String codigoSeg, Projeto projeto) {
 
+		return validarSci(
+				codigoSeg,
+				projeto != null ? projeto.getCodigoSeg() : null
+		);
+	}
+
+	public String validarSci(String codigoSeg, String codigoProjetoInformado) {
+
 		String codigo = exigirCodigo(codigoSeg, "O código SEG do SCI é obrigatório.");
 
 		if (!PADRAO_SCI.matcher(codigo).matches()) {
@@ -43,12 +51,12 @@ public class CodigoSegValidator {
 					"Código SEG de SCI inválido. Formato esperado: XX.XX.XX.XXX.XX.SS, com SS entre 01 e 99.");
 		}
 
-		if (projeto == null || projeto.getCodigoSeg() == null || projeto.getCodigoSeg().isBlank()) {
+		if (codigoProjetoInformado == null || codigoProjetoInformado.isBlank()) {
 
 			throw new BusinessRuleException("O Projeto deve possuir Código SEG antes de receber um SCI.");
 		}
 
-		String codigoProjeto = validarProjeto(projeto.getCodigoSeg());
+		String codigoProjeto = validarProjeto(codigoProjetoInformado);
 
 		if (!raiz(codigo).equals(raiz(codigoProjeto))) {
 			throw new BusinessRuleException("O Código SEG do SCI deve possuir a mesma raiz do Projeto.");
@@ -59,6 +67,14 @@ public class CodigoSegValidator {
 
 	public String validarAtividade(String codigoSeg, Sci sci) {
 
+		return validarAtividade(
+				codigoSeg,
+				sci != null ? sci.getCodigoSeg() : null
+		);
+	}
+
+	public String validarAtividade(String codigoSeg, String codigoSciInformado) {
+
 		String codigo = exigirCodigo(codigoSeg, "O código SEG da Atividade é obrigatório.");
 
 		if (!PADRAO_ATIVIDADE.matcher(codigo).matches()) {
@@ -66,12 +82,12 @@ public class CodigoSegValidator {
 					"Código SEG de Atividade inválido. Formato esperado: XX.XX.XX.XXX.XX.SS.AAA.");
 		}
 
-		if (sci == null || sci.getCodigoSeg() == null || sci.getCodigoSeg().isBlank()) {
+		if (codigoSciInformado == null || codigoSciInformado.isBlank()) {
 
 			throw new BusinessRuleException("O SCI deve possuir Código SEG antes de receber uma Atividade.");
 		}
 
-		String codigoSci = sci.getCodigoSeg().trim();
+		String codigoSci = codigoSciInformado.trim();
 
 		if (!PADRAO_SCI.matcher(codigoSci).matches()) {
 			throw new BusinessRuleException("O SCI pai possui um Código SEG inválido.");
