@@ -415,7 +415,7 @@ Autoria nesta fase de pré-autenticação:
 
 V22 foi considerada concluída por validação automatizada em 25/09/2026; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
 
-### 5.4 Código SEG — validação hierárquica 🧪 VALIDAÇÃO FINAL
+### 5.4 Código SEG — validação hierárquica ✅ CONCLUÍDA
 
 Formato institucional confirmado:
 
@@ -433,13 +433,26 @@ Subblocos do 5.4:
 - **5.4.2 Unicidade global ✅** — V23 + validação de Service, sem reutilização de Código SEG mesmo após inativação;
 - **5.4.3 Imutabilidade no CRUD comum ✅** — após definido, o Código SEG não pode ser trocado por edição comum; Projeto legado sem código pode receber a primeira definição;
 - **5.4.4 Correção administrativa de Código SEG ✅** — V24 + fluxo auditável e transacional para corrigir erros humanos sem liberar alteração comum perigosa;
-- **5.4.5 Testes e fechamento 🧪** — testes automatizados implementados; resta confirmar a suíte completa verde.
+- **5.4.5 Testes e fechamento ✅** — suíte automatizada completa confirmada verde em 25/09/2026.
 
 A correção administrativa foi implementada pela `V24__create_seg_correction_history.sql` e por endpoints próprios em Projeto, SCI e Atividade. Exige justificativa e autoria, registra valor anterior/novo e data/hora, valida formato/hierarquia/unicidade e opera de forma transacional. Correção de Projeto propaga apenas o prefixo coerente aos SCI/Atividades descendentes, preservando seus sufixos; correção de SCI faz o mesmo com suas Atividades. Colisões bloqueiam toda a operação antes de qualquer mutação.
 
 A correção pode ser aplicada a registros encerrados ou inativos, porque corrige o identificador institucional sem reabrir o ciclo de vida. Alteração direta no banco não é fluxo funcional de produção. Pode existir apenas como manutenção excepcional em DEV/pré-produção; em produção, a alternativa oficial para erro de digitação será o fluxo administrativo auditável.
 
-### 5.5 Interface e integração
+Fechamento do 5.4:
+
+- V23 protege unicidade global/institucional do Código SEG;
+- V24 registra correções administrativas auditáveis;
+- Código SEG é imutável no CRUD comum após definido;
+- Projeto legado sem Código SEG pode receber a primeira definição;
+- correções de Projeto e SCI propagam prefixos aos descendentes preservando sufixos;
+- colisões impedem toda a transação;
+- correção exige justificativa, tenant e operador com perfil permitido;
+- registros encerrados/inativos podem ser corrigidos sem reabrir ciclo de vida;
+- suíte JUnit completa confirmada verde em 25/09/2026;
+- validação manual adicional em Postman não foi exigida para o fechamento deste bloco.
+
+### 5.5 Interface e integração 🔧 ATUAL
 
 Só fechar depois de Projeto → SCI → Atividade estabilizados no backend.
 
