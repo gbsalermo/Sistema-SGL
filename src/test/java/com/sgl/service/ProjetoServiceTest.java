@@ -2,7 +2,9 @@ package com.sgl.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,6 +29,8 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.tenant.TenantContext;
@@ -82,6 +87,11 @@ class ProjetoServiceTest {
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos")
                 .responsavel("Maria Oliveira")
+                .codigoSeg("96.96.96.001.01.00")
+                .status(StatusProjeto.ENCERRADO_COM_AVALIACAO_PENDENTE)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO)
+                .possuiRecursoExterno(true)
+                .empresaRecursoExterno("Empresa Atual")
                 .ativo(true)
                 .build();
     }
@@ -112,6 +122,135 @@ class ProjetoServiceTest {
 
         assertEquals(PROJETO_PUBLIC_ID, resultado.getId());
         verify(projetoRepository).save(any(Projeto.class));
+    }
+
+    @Test
+    void deveAplicarDefaultsAoCriarProjetoComContratoAntigo() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto legado");
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.save(any(Projeto.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        projetoService.criar(dto);
+
+        ArgumentCaptor<Projeto> captor = ArgumentCaptor.forClass(Projeto.class);
+        verify(projetoRepository).save(captor.capture());
+
+        Projeto salvo = captor.getValue();
+        assertNull(salvo.getCodigoSeg());
+        assertEquals(StatusProjeto.ATIVO, salvo.getStatus());
+        assertEquals(SituacaoExecucaoProjeto.NAO_INFORMADO, salvo.getSituacaoExecucao());
+        assertFalse(salvo.getPossuiRecursoExterno());
+        assertNull(salvo.getEmpresaRecursoExterno());
+        assertTrue(salvo.getAtivo());
+    }
+
+    @Test
+    void deveCriarProjetoComNovosCampos() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto expandido");
+        dto.setCodigoSeg(" 95.95.95.001.01.00 ");
+        dto.setStatus(StatusProjeto.CONCLUIDO);
+        dto.setSituacaoExecucao(SituacaoExecucaoProjeto.EXECUCAO_CANCELADA);
+        dto.setPossuiRecursoExterno(true);
+        dto.setEmpresaRecursoExterno(" Empresa Parceira ");
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.save(any(Projeto.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        projetoService.criar(dto);
+
+        ArgumentCaptor<Projeto> captor = ArgumentCaptor.forClass(Projeto.class);
+        verify(projetoRepository).save(captor.capture());
+
+        Projeto salvo = captor.getValue();
+        assertEquals("95.95.95.001.01.00", salvo.getCodigoSeg());
+        assertEquals(StatusProjeto.CONCLUIDO, salvo.getStatus());
+        assertEquals(SituacaoExecucaoProjeto.EXECUCAO_CANCELADA, salvo.getSituacaoExecucao());
+        assertTrue(salvo.getPossuiRecursoExterno());
+        assertEquals("Empresa Parceira", salvo.getEmpresaRecursoExterno());
+    }
+
+    @Test
+    void deveRejeitarRecursoExternoSemEmpresa() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto com recurso externo");
+        dto.setPossuiRecursoExterno(true);
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> projetoService.criar(dto)
+        );
+
+        assertEquals(
+                "A empresa é obrigatória quando o projeto possui recurso externo.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void devePreservarNovosCamposAoAtualizarComContratoAntigo() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto atualizado");
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.save(any(Projeto.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        projetoService.atualizar(PROJETO_PUBLIC_ID, dto);
+
+        assertEquals("96.96.96.001.01.00", projeto.getCodigoSeg());
+        assertEquals(StatusProjeto.ENCERRADO_COM_AVALIACAO_PENDENTE, projeto.getStatus());
+        assertEquals(SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO, projeto.getSituacaoExecucao());
+        assertTrue(projeto.getPossuiRecursoExterno());
+        assertEquals("Empresa Atual", projeto.getEmpresaRecursoExterno());
+    }
+
+    @Test
+    void deveRemoverEmpresaAoDesativarRecursoExterno() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto atualizado");
+        dto.setPossuiRecursoExterno(false);
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.save(any(Projeto.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        projetoService.atualizar(PROJETO_PUBLIC_ID, dto);
+
+        assertFalse(projeto.getPossuiRecursoExterno());
+        assertNull(projeto.getEmpresaRecursoExterno());
     }
 
     @Test

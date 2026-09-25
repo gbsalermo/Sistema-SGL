@@ -32,6 +32,8 @@ import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.service.ProjetoService;
 
 /**
@@ -74,14 +76,13 @@ class ProjetoControllerTest {
     private ProjetoService projetoService;
 
     private ProjetoRequestDTO montarRequestDTO() {
-        return new ProjetoRequestDTO(
-                LABORATORIO_PUBLIC_ID,
-                "Síntese de Novos Compostos",
-                "Desenvolvimento de novos compostos orgânicos para catálise.",
-                null,
-                null,
-                "Maria Oliveira",
-                true);
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Síntese de Novos Compostos");
+        dto.setDescricao("Desenvolvimento de novos compostos orgânicos para catálise.");
+        dto.setResponsavel("Maria Oliveira");
+        dto.setAtivo(true);
+        return dto;
     }
 
     // ProjetoResponseDTO só tem construtor a partir da entidade Projeto (campos
@@ -100,6 +101,11 @@ class ProjetoControllerTest {
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise.")
                 .responsavel("Maria Oliveira")
+                .codigoSeg("95.95.95.001.01.00")
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .possuiRecursoExterno(true)
+                .empresaRecursoExterno("Empresa Teste")
                 .ativo(true)
                 .build();
 
@@ -122,7 +128,12 @@ class ProjetoControllerTest {
 
         mockMvc.perform(get(BASE_URL + "/{id}", PROJETO_PUBLIC_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Síntese de Novos Compostos"));
+                .andExpect(jsonPath("$.nome").value("Síntese de Novos Compostos"))
+                .andExpect(jsonPath("$.codigoSeg").value("95.95.95.001.01.00"))
+                .andExpect(jsonPath("$.status").value("ATIVO"))
+                .andExpect(jsonPath("$.situacaoExecucao").value("EM_ANDAMENTO_NO_PRAZO"))
+                .andExpect(jsonPath("$.possuiRecursoExterno").value(true))
+                .andExpect(jsonPath("$.empresaRecursoExterno").value("Empresa Teste"));
     }
 
     @Test
