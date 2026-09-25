@@ -1,11 +1,11 @@
-package com.sgl.model.prorrogracao;
+package com.sgl.model.prorrogacao;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.sgl.model.Atividade;
+import com.sgl.model.Projeto;
 import com.sgl.model.Usuario;
 
 import jakarta.persistence.Column;
@@ -26,13 +26,13 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "historico_prorrogacao_atividade")
+@Table(name = "historico_prorrogacao_projeto")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class HistoricoProrrogacaoAtividade implements Serializable {
+public class HistoricoProrrogacaoProjeto implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -44,9 +44,9 @@ public class HistoricoProrrogacaoAtividade implements Serializable {
 	private UUID publicId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "atividade_id", nullable = false)
+	@JoinColumn(name = "projeto_id", nullable = false)
 	@ToString.Exclude
-	private Atividade atividade;
+	private Projeto projeto;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "usuario_id", nullable = false)

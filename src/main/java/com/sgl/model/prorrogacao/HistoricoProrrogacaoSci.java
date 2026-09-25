@@ -1,4 +1,4 @@
-package com.sgl.model.prorrogracao;
+package com.sgl.model.prorrogacao;
 
 import java.io.Serializable;
 import java.time.LocalDate;
