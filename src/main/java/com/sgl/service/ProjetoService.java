@@ -12,6 +12,8 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.tenant.TenantContext;
@@ -109,9 +111,14 @@ public class ProjetoService {
         projeto.setResponsavel(dto.getResponsavel());
 
         if (projeto.getId() == null) {
+            preencherNovosCamposNaCriacao(projeto, dto);
             projeto.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
-        } else if (dto.getAtivo() != null) {
-            projeto.setAtivo(dto.getAtivo());
+        } else {
+            preencherNovosCamposNaAtualizacao(projeto, dto);
+
+            if (dto.getAtivo() != null) {
+                projeto.setAtivo(dto.getAtivo());
+            }
         }
     }
 
@@ -143,5 +150,119 @@ public class ProjetoService {
             throw new BusinessRuleException(
                     "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
         }
+    }
+    
+    private void preencherNovosCamposNaCriacao(
+            Projeto projeto,
+            ProjetoRequestDTO dto) {
+
+        projeto.setCodigoSeg(normalizarTextoOpcional(dto.getCodigoSeg()));
+
+        projeto.setStatus(
+                dto.getStatus() != null
+                        ? dto.getStatus()
+                        : StatusProjeto.ATIVO
+        );
+
+        projeto.setSituacaoExecucao(
+                dto.getSituacaoExecucao() != null
+                        ? dto.getSituacaoExecucao()
+                        : SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+
+        boolean possuiRecursoExterno =
+                Boolean.TRUE.equals(dto.getPossuiRecursoExterno());
+
+        projeto.setPossuiRecursoExterno(possuiRecursoExterno);
+
+        aplicarRecursoExterno(
+                projeto,
+                possuiRecursoExterno,
+                dto.getEmpresaRecursoExterno()
+        );
+    }
+    
+    private void preencherNovosCamposNaAtualizacao(
+            Projeto projeto,
+            ProjetoRequestDTO dto) {
+
+        if (dto.getCodigoSeg() != null) {
+            projeto.setCodigoSeg(
+                    normalizarTextoOpcional(dto.getCodigoSeg())
+            );
+        }
+
+        if (dto.getStatus() != null) {
+            projeto.setStatus(dto.getStatus());
+        }
+
+        if (dto.getSituacaoExecucao() != null) {
+            projeto.setSituacaoExecucao(dto.getSituacaoExecucao());
+        }
+
+        if (dto.getPossuiRecursoExterno() != null) {
+            boolean possuiRecursoExterno =
+                    Boolean.TRUE.equals(dto.getPossuiRecursoExterno());
+
+            projeto.setPossuiRecursoExterno(possuiRecursoExterno);
+
+            aplicarRecursoExterno(
+                    projeto,
+                    possuiRecursoExterno,
+                    dto.getEmpresaRecursoExterno()
+            );
+
+            return;
+        }
+
+        if (dto.getEmpresaRecursoExterno() != null) {
+            if (!Boolean.TRUE.equals(projeto.getPossuiRecursoExterno())) {
+                throw new BusinessRuleException(
+                        "Não é possível informar uma empresa sem recurso externo."
+                );
+            }
+
+            projeto.setEmpresaRecursoExterno(
+                    validarEmpresaRecursoExterno(
+                            dto.getEmpresaRecursoExterno()
+                    )
+            );
+        }
+    }
+    
+    private void aplicarRecursoExterno(
+            Projeto projeto,
+            boolean possuiRecursoExterno,
+            String empresaRecursoExterno) {
+
+        if (!possuiRecursoExterno) {
+            projeto.setEmpresaRecursoExterno(null);
+            return;
+        }
+
+        projeto.setEmpresaRecursoExterno(
+                validarEmpresaRecursoExterno(empresaRecursoExterno)
+        );
+    }
+
+    private String validarEmpresaRecursoExterno(String empresa) {
+        String empresaNormalizada = normalizarTextoOpcional(empresa);
+
+        if (empresaNormalizada == null) {
+            throw new BusinessRuleException(
+                    "A empresa é obrigatória quando o projeto possui recurso externo."
+            );
+        }
+
+        return empresaNormalizada;
+    }
+
+    private String normalizarTextoOpcional(String valor) {
+        if (valor == null) {
+            return null;
+        }
+
+        String normalizado = valor.trim();
+        return normalizado.isEmpty() ? null : normalizado;
     }
 }
