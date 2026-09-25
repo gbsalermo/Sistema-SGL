@@ -16,11 +16,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.AtividadeRequestDTO;
+import com.sgl.dto.request.CorrecaoCodigoSegRequestDTO;
 import com.sgl.dto.request.ProrrogacaoRequestDTO;
 import com.sgl.dto.response.AtividadeResponseDTO;
+import com.sgl.dto.response.HistoricoCorrecaoCodigoSegResponseDTO;
 import com.sgl.dto.response.HistoricoProrrogacaoResponseDTO;
 import com.sgl.exception.ApiError;
 import com.sgl.service.AtividadeService;
+import com.sgl.service.CorrecaoCodigoSegService;
 import com.sgl.service.ProrrogacaoService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +43,7 @@ public class AtividadeController {
 
 	private final AtividadeService atividadeService;
 	private final ProrrogacaoService prorrogacaoService;
+	private final CorrecaoCodigoSegService correcaoCodigoSegService;
 
 	@Operation(summary = "Criar Atividade", description = "Cadastra uma nova Atividade vinculada obrigatoriamente a um SCI da unidade atual.")
 	@ApiResponses({
@@ -164,4 +168,40 @@ public class AtividadeController {
 
 		return ResponseEntity.ok(prorrogacaoService.listarHistoricoAtividade(id));
 	}
+
+	@Operation(
+			summary = "Corrigir Código SEG da Atividade",
+			description = "Corrige administrativamente um Código SEG digitado incorretamente e registra a operação em histórico auditável."
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "201", description = "Código SEG corrigido com sucesso", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "404", description = "Atividade ou usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "409", description = "Conflito de Código SEG", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
+	})
+	@PostMapping("/{id}/correcoes-codigo-seg")
+	public ResponseEntity<List<HistoricoCorrecaoCodigoSegResponseDTO>> corrigirCodigoSeg(
+			@PathVariable UUID id,
+			@Valid @RequestBody CorrecaoCodigoSegRequestDTO dto) {
+
+		List<HistoricoCorrecaoCodigoSegResponseDTO> historicos =
+				correcaoCodigoSegService.corrigirAtividade(id, dto);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(historicos);
+	}
+
+	@Operation(
+			summary = "Consultar histórico de correções de Código SEG da Atividade",
+			description = "Retorna, em ordem cronológica, as correções administrativas de Código SEG registradas para esta Atividade."
+	)
+	@GetMapping("/{id}/correcoes-codigo-seg")
+	public ResponseEntity<List<HistoricoCorrecaoCodigoSegResponseDTO>> listarCorrecoesCodigoSeg(
+			@PathVariable UUID id) {
+
+		return ResponseEntity.ok(
+				correcaoCodigoSegService.listarHistoricoAtividade(id)
+		);
+	}
+
 }
