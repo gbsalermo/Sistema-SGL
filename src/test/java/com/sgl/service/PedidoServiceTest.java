@@ -287,7 +287,7 @@ class PedidoServiceTest {
                 TipoEmbalagem.UNITARIO,
                 null
         )).thenThrow(new BusinessRuleException(
-                "Estoque utilizável insuficiente. Disponível nos lotes válidos: 2, solicitado: 3"
+                "Estoque utilizável insuficiente para a forma de retirada UNITARIO. Disponível nos lotes compatíveis: 2, solicitado: 3"
         ));
 
         BusinessRuleException exception = assertThrows(
@@ -296,7 +296,7 @@ class PedidoServiceTest {
         );
 
         assertEquals(
-                "Estoque utilizável insuficiente. Disponível nos lotes válidos: 2, solicitado: 3",
+                "Estoque utilizável insuficiente para a forma de retirada UNITARIO. Disponível nos lotes compatíveis: 2, solicitado: 3",
                 exception.getMessage()
         );
         assertEquals(null, item.getQuantidadeAprovada());

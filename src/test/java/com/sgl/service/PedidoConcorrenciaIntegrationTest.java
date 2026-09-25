@@ -278,7 +278,7 @@ class PedidoConcorrenciaIntegrationTest {
             return true;
         } catch (BusinessRuleException exception) {
             assertTrue(
-                    exception.getMessage().startsWith("Estoque utilizável insuficiente."),
+                    exception.getMessage().startsWith("Estoque utilizável insuficiente para a forma de retirada"),
                     "A única falha de negócio esperada é estoque utilizável insuficiente."
             );
             return false;
