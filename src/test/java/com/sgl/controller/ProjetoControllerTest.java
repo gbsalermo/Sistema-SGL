@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgl.config.SecurityConfig;
+import com.sgl.dto.request.CorrecaoCodigoSegRequestDTO;
 import com.sgl.dto.request.ProjetoRequestDTO;
 import com.sgl.dto.request.ProrrogacaoRequestDTO;
 import com.sgl.dto.response.ProjetoResponseDTO;
@@ -35,6 +36,7 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.service.CorrecaoCodigoSegService;
 import com.sgl.service.ProjetoService;
 import com.sgl.service.ProrrogacaoService;
 
@@ -79,6 +81,9 @@ class ProjetoControllerTest {
 
     @MockitoBean
     private ProrrogacaoService prorrogacaoService;
+
+    @MockitoBean
+    private CorrecaoCodigoSegService correcaoCodigoSegService;
 
     private ProjetoRequestDTO montarRequestDTO() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
@@ -245,6 +250,39 @@ class ProjetoControllerTest {
                 .thenReturn(List.of());
 
         mockMvc.perform(get(BASE_URL + "/{id}/prorrogacoes", PROJETO_PUBLIC_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+
+    @Test
+    void deveCorrigirCodigoSegDoProjetoERetornar201() throws Exception {
+        String body = """
+                {
+                  "usuarioId": "00000000-0000-0000-0000-000000000099",
+                  "novoCodigoSeg": "96.96.96.001.01.00",
+                  "justificativa": "Correção de digitação"
+                }
+                """;
+
+        when(correcaoCodigoSegService.corrigirProjeto(
+                eq(PROJETO_PUBLIC_ID),
+                any(CorrecaoCodigoSegRequestDTO.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(post(BASE_URL + "/{id}/correcoes-codigo-seg", PROJETO_PUBLIC_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void deveListarCorrecoesCodigoSegDoProjetoERetornar200() throws Exception {
+        when(correcaoCodigoSegService.listarHistoricoProjeto(PROJETO_PUBLIC_ID))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get(BASE_URL + "/{id}/correcoes-codigo-seg", PROJETO_PUBLIC_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
