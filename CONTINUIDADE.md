@@ -3,13 +3,13 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 24/09/2026  
+**Última atualização:** 25/09/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
 **Branch atual de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 4 — expansão operacional de Resíduos ✅  
-**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 5.1 Projeto base  
+**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 5.2 SCI; 5.1 Projeto base ✅  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
@@ -168,7 +168,7 @@ spring.flyway.enabled=true
 
 O Hibernate valida; o Flyway evolui o schema.
 
-Migrations relevantes já aplicadas no domínio de Resíduos:
+Migrations relevantes já aplicadas:
 
 ```text
 V11 — módulo de Resíduos
@@ -177,13 +177,16 @@ V13 — estado físico, tratamento e responsabilidade inicial
 V14 — Classes de Resíduo
 V15 — segurança/EPI
 V16 — snapshot de Unidade do Resíduo, incorporado pelo supervisor
+V17 — locais de armazenamento de Resíduos
+V18 — modelos reutilizáveis de Resíduos
+V19 — expansão do domínio de Projeto
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = próxima versão livre após V16
+nova alteração de schema = próxima versão livre após V19
 ```
 
 ---
@@ -378,7 +381,7 @@ A implementação histórica de `feat/etapa-4-residuos` foi portada seletivament
 - relatórios/exportações reconhecem `CANCELADO`;
 - validações funcionais da Etapa 4 foram concluídas.
 
-A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.1 — Projeto base**.
+A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.2 — SCI**. O bloco **5.1 — Projeto base** foi concluído e validado em 25/09/2026.
 
 
 # 10. Projetos, Estagiários e Relatórios — evolução atual e próximas etapas
@@ -396,7 +399,22 @@ Portão 5.0 fechado em 24/09/2026:
 - situação de execução separada;
 - recurso externo + empresa quando aplicável.
 
-Bloco atual: **5.1 Projeto base**.
+### Fechamento do 5.1 — Projeto base ✅
+
+Validado em 25/09/2026:
+
+- V19 expandiu a tabela `projetos` sem recriá-la;
+- `codigoSeg`, status de negócio, situação de execução e recurso externo foram incorporados;
+- `ativo` foi preservado como indicador técnico, separado do status de negócio;
+- compatibilidade com payloads antigos foi mantida na criação e atualização;
+- recurso externo exige empresa quando habilitado e limpa a empresa ao ser desligado;
+- isolamento por tenant permaneceu fail-closed;
+- dados DEV/Demo e testes automatizados foram atualizados;
+- suíte completa de testes ficou verde;
+- validação funcional confirmou listagem, defaults, criação completa, regra de empresa, atualização compatível e desligamento de recurso externo;
+- validação hierárquica/formato/duplicidade do Código SEG permanece deliberadamente no 5.4.
+
+Bloco atual: **5.2 SCI**.
 
 ## Etapa 6 — Estagiários
 
@@ -481,7 +499,7 @@ Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
-Etapa 5 — Projetos + Atividades                       🔧 atual — 5.1 Projeto base
+Etapa 5 — Projetos + Atividades                       🔧 atual — 5.2 SCI; 5.1 ✅
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
@@ -498,7 +516,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com o portão 5.0 fechado e o bloco 5.1 — Projeto base como próximo trabalho funcional. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com o portão 5.0 e o bloco 5.1 — Projeto base fechados; retomar pelo bloco 5.2 — SCI. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 

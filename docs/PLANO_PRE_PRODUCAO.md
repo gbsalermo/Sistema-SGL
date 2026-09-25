@@ -2,8 +2,8 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 24/09/2026  
-**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 em andamento — bloco 5.1 Projeto base  
+**Última atualização:** 25/09/2026  
+**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 em andamento — 5.1 Projeto base ✅, bloco atual 5.2 SCI  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -296,7 +296,10 @@ Decisões adicionais fechadas:
 - recurso externo pertence ao Projeto e exige empresa quando marcado;
 - dados pessoais de Estagiário devem vir preferencialmente de Usuario/autenticação institucional.
 
-### 5.1 Projeto base
+### 5.1 Projeto base ✅ CONCLUÍDO E VALIDADO
+
+**Fechamento:** 25/09/2026.
+
 
 Relação de domínio confirmada:
 
@@ -329,7 +332,21 @@ ATIVO
 → CONCLUIDO
 ```
 
-### 5.2 SCI
+Fechamento técnico do 5.1:
+
+- migration V19 aplicada sobre a tabela existente;
+- enums `StatusProjeto` e `SituacaoExecucaoProjeto`;
+- Entity, DTOs, Service e OpenAPI atualizados;
+- `codigoSeg` cadastrado, sem validação hierárquica antecipada;
+- recurso externo + empresa com regra condicional;
+- compatibilidade com contratos antigos preservada;
+- dados DEV/Demo atualizados;
+- testes de Service, Controller e Repository ampliados;
+- suíte completa JUnit verde;
+- validação funcional do CRUD e tenant concluída;
+- próxima migration livre: V20.
+
+### 5.2 SCI 🔧 ATUAL
 
 ```text
 Projeto 1 → N SCI

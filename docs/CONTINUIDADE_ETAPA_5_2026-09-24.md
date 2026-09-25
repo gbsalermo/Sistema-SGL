@@ -3,7 +3,7 @@
 **Criado em:** 24/09/2026  
 **Etapa anterior:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
-**Bloco atual:** 5.1 — Projeto base 🔧 atual; 5.0 ✅ fechado  
+**Bloco atual:** 5.2 — SCI 🔧 atual; 5.0 ✅ e 5.1 ✅ fechados  
 **Branch de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fonte canônica de `main`:** GitLab institucional  
 
@@ -17,8 +17,8 @@ Roadmap canônico:
 
 ```text
 5.0 Portão de confirmação                         ✅ fechado
-→ 5.1 Projeto base                               🔧 atual
-→ 5.2 SCI
+→ 5.1 Projeto base                                ✅ concluído e validado
+→ 5.2 SCI                                         🔧 atual
 → 5.3 Atividades
 → 5.4 Código SEG — validação hierárquica
 → 5.5 Interface e integração
@@ -32,7 +32,7 @@ O backend deve estabilizar Projeto → SCI → Atividade antes do fechamento da 
 
 O SGL já possui um cadastro funcional de `Projeto`.
 
-Hoje:
+Estado após o fechamento do 5.1:
 
 ```text
 Projeto
@@ -43,6 +43,11 @@ Projeto
 ├── dataInicio
 ├── dataFim
 ├── responsavel (texto livre)
+├── codigoSeg
+├── status
+├── situacaoExecucao
+├── possuiRecursoExterno
+├── empresaRecursoExterno
 └── ativo
 ```
 
@@ -309,9 +314,9 @@ A autenticação institucional será fonte preferencial para dados pessoais. O S
 
 ## 7. Plano de execução canônico
 
-### 5.1 — Projeto base 🔧 ATUAL
+### 5.1 — Projeto base ✅ CONCLUÍDO E VALIDADO
 
-A tabela `projetos` nasceu na V1 e hoje contém Laboratório, nome, descrição, início/fim, responsável e ativo. A próxima migration disponível é **V19**.
+A tabela `projetos` nasceu na V1 e foi expandida pela **V19** sem recriação nem perda de compatibilidade. A próxima migration disponível é **V20**.
 
 Ordem obrigatória:
 
@@ -345,9 +350,21 @@ Decisões para o 5.1:
 - preservar todos os filtros por tenant já existentes;
 - preservar compatibilidade com Pedido, Resíduo e demais referências atuais a Projeto.
 
-### 5.2 — SCI
+Fechamento validado em 25/09/2026:
 
-Somente após Projeto estabilizado:
+- V19 aplicada;
+- backend compilando e aplicação DEV iniciando normalmente;
+- suíte completa JUnit verde;
+- CRUD atual sem regressão;
+- tenant fail-closed validado;
+- payload legado preservado;
+- domínio expandido validado funcionalmente via API;
+- documentação atualizada;
+- formato/coerência/duplicidade do Código SEG permanecem para o 5.4.
+
+### 5.2 — SCI 🔧 ATUAL
+
+Projeto está estabilizado. Iniciar agora:
 
 ```text
 Projeto 1 → N SCI
@@ -401,14 +418,16 @@ O CRUD atual de Projeto em Administração permanece compatível durante a evolu
 
 ### Critério de avanço
 
-Não iniciar 5.2 enquanto 5.1 não tiver:
+Critério de avanço do 5.1 para 5.2:
 
 ```text
-migration aplicada
-+ backend compilando
-+ testes verdes
-+ CRUD atual sem regressão
-+ tenant validado
-+ documentação atualizada
+migration aplicada            ✅
++ backend compilando          ✅
++ testes verdes               ✅
++ CRUD atual sem regressão    ✅
++ tenant validado             ✅
++ documentação atualizada     ✅
 ```
+
+**5.2 liberado em 25/09/2026.**
 

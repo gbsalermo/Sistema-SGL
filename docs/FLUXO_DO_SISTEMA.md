@@ -1,6 +1,6 @@
 # Fluxo do Sistema SGL
 
-**Atualizado em:** 17/09/2026
+**Atualizado em:** 25/09/2026
 
 Este documento descreve como os módulos principais se conectam no estado funcional aprovado e nas etapas de pré-produção já validadas. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação no código da branch integrada à `main`.
 
@@ -327,7 +327,7 @@ ARMAZENADO_TEMPORARIAMENTE
 DESPACHADO
 ```
 
-## Hierarquia de Projetos — Etapa 5
+## Hierarquia de Projetos — Etapa 5 (5.1 concluído; 5.2 SCI atual)
 
 ```text
 Laboratório responsável/contextual
@@ -343,3 +343,18 @@ Projeto é o eixo funcional. Laboratório serve como contexto/filtro institucion
 
 Toda Atividade pertence a um SCI e, portanto, a um Projeto. Atividades podem encerrar antes do Projeto.
 
+
+
+### Estado do Projeto após o 5.1
+
+```text
+Projeto
+├── Laboratório responsável/contextual
+├── Código SEG cadastrado
+├── status de negócio
+├── situação de execução
+├── recurso externo/empresa
+└── ativo técnico
+```
+
+O bloco 5.2 introduz SCI como entidade obrigatoriamente subordinada ao Projeto. Laboratório não deve ser duplicado em SCI quando puder ser derivado do Projeto sem perda de regra de negócio.
