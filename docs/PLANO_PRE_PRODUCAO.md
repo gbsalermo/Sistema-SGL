@@ -370,9 +370,9 @@ Implementado e validado:
 - suíte completa verde e bateria funcional concluída com sucesso;
 - validação completa do Código SEG continua no 5.4.
 
-Próxima migration livre: **V21**.
+Migrations V21, V22, V23 e V24 já estão ocupadas pela Etapa 5. Próxima migration livre: **V25**.
 
-### 5.3 Atividades 🔧 ATUAL
+### 5.3 Atividades ✅ CONCLUÍDA
 
 ```text
 SCI 1 → N Atividades
@@ -380,7 +380,7 @@ SCI 1 → N Atividades
 
 Atividade é entidade própria, obrigatoriamente subordinada ao SCI e, por consequência, ao Projeto. Possui ciclo operacional próprio e pode ser encerrada antes do Projeto.
 
-Próximo passo: fechar o contrato de domínio de Atividade antes da V21, sem antecipar a validação SEG completa do 5.4.
+Contrato de Atividade fechado e implementado na V21. O histórico de prorrogações foi concluído na V22; a validação SEG completa segue no 5.4.
 
 Regras temporais/prorrogação já fechadas:
 
@@ -394,7 +394,7 @@ Regras temporais/prorrogação já fechadas:
 - reduzir datas de um pai não pode invalidar filhos existentes;
 - mudanças que quebrariam a hierarquia devem ser rejeitadas, não corrigidas por cascata automática.
 
-Base de Atividade/V21 validada funcionalmente em 25/09/2026. O próximo passo do 5.3 é a V22.
+Base de Atividade/V21 validada funcionalmente em 25/09/2026. V22 de prorrogações também concluída e validada por suíte automatizada.
 
 Persistência aprovada para prorrogações:
 
@@ -415,7 +415,7 @@ Autoria nesta fase de pré-autenticação:
 
 V22 foi considerada concluída por validação automatizada em 25/09/2026; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
 
-### 5.4 Código SEG — validação hierárquica
+### 5.4 Código SEG — validação hierárquica 🧪 VALIDAÇÃO FINAL
 
 Formato institucional confirmado:
 
