@@ -43,6 +43,7 @@ import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.tenant.TenantContext;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -161,6 +162,7 @@ class PedidoConcorrenciaIntegrationTest {
         Long estoqueId = estoque.getId();
         Long loteId = lote.getId();
         UUID usuarioPublicId = usuario.getPublicId();
+        UUID unidadePublicId = unidade.getPublicId();
 
         CountDownLatch prontas = new CountDownLatch(2);
         CountDownLatch iniciar = new CountDownLatch(1);
@@ -171,6 +173,7 @@ class PedidoConcorrenciaIntegrationTest {
                 pedidoAPublicId,
                 itemAPublicId,
                 usuarioPublicId,
+                unidadePublicId,
                 prontas,
                 iniciar
         ));
@@ -179,6 +182,7 @@ class PedidoConcorrenciaIntegrationTest {
                 pedidoBPublicId,
                 itemBPublicId,
                 usuarioPublicId,
+                unidadePublicId,
                 prontas,
                 iniciar
         ));
@@ -262,26 +266,34 @@ class PedidoConcorrenciaIntegrationTest {
             UUID pedidoId,
             UUID itemId,
             UUID usuarioAprovadorId,
+            UUID unidadePublicId,
             CountDownLatch prontas,
             CountDownLatch iniciar) throws InterruptedException {
 
         prontas.countDown();
         iniciar.await();
 
-        AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
-        dto.setUsuarioAprovadorId(usuarioAprovadorId);
-        dto.setObservacao("Teste de concorrência");
-        dto.setItens(List.of(new AprovarPedidoRequestDTO.ItemAprovacaoDTO(itemId, 7)));
+        TenantContext.definir(unidadePublicId);
 
         try {
-            pedidoService.aprovar(pedidoId, dto);
-            return true;
-        } catch (BusinessRuleException exception) {
-            assertTrue(
-                    exception.getMessage().startsWith("Estoque utilizável insuficiente para a forma de retirada"),
-                    "A única falha de negócio esperada é estoque utilizável insuficiente."
-            );
-            return false;
+            AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
+            dto.setUsuarioAprovadorId(usuarioAprovadorId);
+            dto.setObservacao("Teste de concorrência");
+            dto.setItens(List.of(new AprovarPedidoRequestDTO.ItemAprovacaoDTO(itemId, 7)));
+
+            try {
+                pedidoService.aprovar(pedidoId, dto);
+                return true;
+            } catch (BusinessRuleException exception) {
+                assertTrue(
+                        exception.getMessage().startsWith("Estoque utilizável insuficiente para a forma de retirada"),
+                        "A única falha de negócio esperada é estoque utilizável insuficiente. Mensagem recebida: "
+                                + exception.getMessage()
+                );
+                return false;
+            }
+        } finally {
+            TenantContext.limpar();
         }
     }
 }
