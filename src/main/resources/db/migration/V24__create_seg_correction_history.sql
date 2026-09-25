@@ -1,0 +1,61 @@
+CREATE TABLE historico_correcao_codigo_seg (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    public_id UUID NOT NULL UNIQUE,
+    tipo_alvo VARCHAR(16) NOT NULL,
+    projeto_id BIGINT NULL,
+    sci_id BIGINT NULL,
+    atividade_id BIGINT NULL,
+    usuario_id BIGINT NOT NULL,
+    codigo_anterior VARCHAR(22) NOT NULL,
+    codigo_novo VARCHAR(22) NOT NULL,
+    justificativa VARCHAR(1000) NOT NULL,
+    data_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_hist_correcao_seg_projeto
+        FOREIGN KEY (projeto_id) REFERENCES projetos(id),
+
+    CONSTRAINT fk_hist_correcao_seg_sci
+        FOREIGN KEY (sci_id) REFERENCES scis(id),
+
+    CONSTRAINT fk_hist_correcao_seg_atividade
+        FOREIGN KEY (atividade_id) REFERENCES atividades(id),
+
+    CONSTRAINT fk_hist_correcao_seg_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+
+    CONSTRAINT ck_hist_correcao_seg_tipo_alvo
+        CHECK (tipo_alvo IN ('PROJETO', 'SCI', 'ATIVIDADE')),
+
+    CONSTRAINT ck_hist_correcao_seg_alvo
+        CHECK (
+            (tipo_alvo = 'PROJETO' AND projeto_id IS NOT NULL AND sci_id IS NULL AND atividade_id IS NULL)
+            OR
+            (tipo_alvo = 'SCI' AND projeto_id IS NULL AND sci_id IS NOT NULL AND atividade_id IS NULL)
+            OR
+            (tipo_alvo = 'ATIVIDADE' AND projeto_id IS NULL AND sci_id IS NULL AND atividade_id IS NOT NULL)
+        ),
+
+    CONSTRAINT ck_hist_correcao_seg_codigo_anterior
+        CHECK (TRIM(codigo_anterior) <> ''),
+
+    CONSTRAINT ck_hist_correcao_seg_codigo_novo
+        CHECK (TRIM(codigo_novo) <> ''),
+
+    CONSTRAINT ck_hist_correcao_seg_codigos_diferentes
+        CHECK (codigo_anterior <> codigo_novo),
+
+    CONSTRAINT ck_hist_correcao_seg_justificativa
+        CHECK (TRIM(justificativa) <> '')
+);
+
+CREATE INDEX idx_hist_correcao_seg_projeto
+    ON historico_correcao_codigo_seg(projeto_id);
+
+CREATE INDEX idx_hist_correcao_seg_sci
+    ON historico_correcao_codigo_seg(sci_id);
+
+CREATE INDEX idx_hist_correcao_seg_atividade
+    ON historico_correcao_codigo_seg(atividade_id);
+
+CREATE INDEX idx_hist_correcao_seg_data_hora
+    ON historico_correcao_codigo_seg(data_hora);
