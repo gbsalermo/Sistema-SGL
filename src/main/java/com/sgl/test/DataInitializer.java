@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.UUID;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
@@ -73,7 +74,8 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (unidadeRepository.count() > 0) {
             garantirCadastrosResiduos();
-            System.out.println("=== Dados de desenvolvimento já existem. Catálogos de resíduos conferidos. ===");
+            garantirDadosEtapa5();
+            System.out.println("=== Dados de desenvolvimento já existem. Catálogos e massa da Etapa 5 conferidos. ===");
             return;
         }
 
@@ -332,9 +334,291 @@ public class DataInitializer implements CommandLineRunner {
         pedidoRepository.save(pedido2);
 
         garantirCadastrosResiduos();
+        garantirDadosEtapa5();
 
         System.out.println("=== Dados de teste injetados com sucesso! ===");
         System.out.println("=== Estoques iniciais criados com lotes correspondentes ===");
+    }
+
+    private void garantirDadosEtapa5() {
+
+        Unidade unidade = unidadeRepository.findAll().stream()
+                .filter(item -> "IQ".equalsIgnoreCase(item.getSigla()))
+                .findFirst()
+                .orElse(null);
+
+        if (unidade == null) {
+            System.out.println("=== ETAPA 5 DEV: unidade IQ não encontrada; massa complementar ignorada. ===");
+            return;
+        }
+
+        Laboratorio laboratorio = laboratorioRepository.findByUnidadeId(unidade.getId()).stream()
+                .filter(item -> Boolean.TRUE.equals(item.getAtivo()))
+                .findFirst()
+                .orElse(null);
+
+        if (laboratorio == null) {
+            System.out.println("=== ETAPA 5 DEV: unidade IQ sem laboratório ativo; massa complementar ignorada. ===");
+            return;
+        }
+
+        LocalDate hoje = LocalDate.now();
+
+        Projeto projetoBiossensores = garantirProjetoEtapa5(
+                laboratorio,
+                "96.96.96.001.01.00",
+                "Biossensores para Monitoramento Ambiental",
+                "Desenvolvimento e validação de biossensores para monitoramento de contaminantes em matrizes ambientais.",
+                "Dra. Helena Costa",
+                hoje.minusMonths(5),
+                hoje.plusMonths(7),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO,
+                true,
+                "Instituto Parceiro DEV"
+        );
+
+        Sci sciBiossensores = garantirSciEtapa5(
+                projetoBiossensores,
+                "96.96.96.001.01.01",
+                "Plataforma eletroquímica de detecção",
+                "Dra. Helena Costa",
+                hoje.minusMonths(4),
+                hoje.plusMonths(5),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Sci sciValidacao = garantirSciEtapa5(
+                projetoBiossensores,
+                "96.96.96.001.01.02",
+                "Validação em amostras ambientais",
+                "Carlos Menezes",
+                hoje.minusMonths(2),
+                hoje.plusMonths(6),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        garantirAtividadeEtapa5(
+                sciBiossensores,
+                "96.96.96.001.01.01.001",
+                "Preparação dos eletrodos sensores",
+                "Ana Martins",
+                hoje.minusMonths(3),
+                hoje.plusMonths(1),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        garantirAtividadeEtapa5(
+                sciBiossensores,
+                "96.96.96.001.01.01.002",
+                "Curvas analíticas e seletividade",
+                "Dra. Helena Costa",
+                hoje.minusMonths(2),
+                hoje.plusMonths(3),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        garantirAtividadeEtapa5(
+                sciValidacao,
+                "96.96.96.001.01.02.001",
+                "Coleta e preparo de amostras",
+                "Carlos Menezes",
+                hoje.minusMonths(1),
+                hoje.plusMonths(2),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Projeto projetoCatalise = garantirProjetoEtapa5(
+                laboratorio,
+                "96.96.96.002.01.00",
+                "Catálise Sustentável com Materiais Híbridos",
+                "Avaliação de materiais híbridos de baixo impacto para rotas catalíticas aplicadas a processos laboratoriais.",
+                "Dra. Paula Ribeiro",
+                hoje.minusMonths(8),
+                hoje.plusMonths(2),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO,
+                false,
+                null
+        );
+
+        Sci sciCatalise = garantirSciEtapa5(
+                projetoCatalise,
+                "96.96.96.002.01.01",
+                "Síntese e caracterização de catalisadores",
+                "Dra. Paula Ribeiro",
+                hoje.minusMonths(7),
+                hoje.plusMonths(1),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO
+        );
+
+        garantirAtividadeEtapa5(
+                sciCatalise,
+                "96.96.96.002.01.01.001",
+                "Síntese dos materiais híbridos",
+                "Marcos Lima",
+                hoje.minusMonths(6),
+                hoje.minusDays(10),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+
+        garantirAtividadeEtapa5(
+                sciCatalise,
+                "96.96.96.002.01.01.002",
+                "Ensaios de desempenho catalítico",
+                "Dra. Paula Ribeiro",
+                hoje.minusMonths(3),
+                hoje.plusMonths(1),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO
+        );
+
+        Projeto projetoConcluido = garantirProjetoEtapa5(
+                laboratorio,
+                "96.96.96.003.01.00",
+                "Rastreabilidade de Reagentes Críticos",
+                "Projeto piloto concluído para padronização de rastreabilidade de reagentes críticos.",
+                "Equipe de Gestão IQ",
+                hoje.minusYears(1),
+                hoje.minusMonths(1),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO,
+                false,
+                null
+        );
+
+        Sci sciRastreabilidade = garantirSciEtapa5(
+                projetoConcluido,
+                "96.96.96.003.01.01",
+                "Modelo piloto de rastreabilidade",
+                "Equipe de Gestão IQ",
+                hoje.minusMonths(11),
+                hoje.minusMonths(2),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+
+        garantirAtividadeEtapa5(
+                sciRastreabilidade,
+                "96.96.96.003.01.01.001",
+                "Validação do fluxo piloto",
+                "Equipe de Gestão IQ",
+                hoje.minusMonths(8),
+                hoje.minusMonths(2),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+    }
+
+    private Projeto garantirProjetoEtapa5(
+            Laboratorio laboratorio,
+            String codigoSeg,
+            String nome,
+            String descricao,
+            String responsavel,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao,
+            boolean possuiRecursoExterno,
+            String empresaRecursoExterno) {
+
+        return projetoRepository.findAll().stream()
+                .filter(item -> codigoSeg.equals(item.getCodigoSeg()))
+                .findFirst()
+                .orElseGet(() -> projetoRepository.save(
+                        Projeto.builder()
+                                .laboratorio(laboratorio)
+                                .nome(nome)
+                                .descricao(descricao)
+                                .responsavel(responsavel)
+                                .codigoSeg(codigoSeg)
+                                .dataInicio(dataInicio)
+                                .dataFim(dataFim)
+                                .status(status)
+                                .situacaoExecucao(situacaoExecucao)
+                                .possuiRecursoExterno(possuiRecursoExterno)
+                                .empresaRecursoExterno(empresaRecursoExterno)
+                                .ativo(true)
+                                .build()
+                ));
+    }
+
+    private Sci garantirSciEtapa5(
+            Projeto projeto,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao) {
+
+        UUID unidadeId = projeto.getLaboratorio().getUnidade().getPublicId();
+
+        return sciRepository
+                .findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                        projeto.getPublicId(),
+                        unidadeId
+                )
+                .stream()
+                .filter(item -> codigoSeg.equals(item.getCodigoSeg()))
+                .findFirst()
+                .orElseGet(() -> sciRepository.save(
+                        Sci.builder()
+                                .projeto(projeto)
+                                .codigoSeg(codigoSeg)
+                                .nome(nome)
+                                .responsavel(responsavel)
+                                .dataInicio(dataInicio)
+                                .dataFim(dataFim)
+                                .status(status)
+                                .situacaoExecucao(situacaoExecucao)
+                                .ativo(true)
+                                .build()
+                ));
+    }
+
+    private Atividade garantirAtividadeEtapa5(
+            Sci sci,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao) {
+
+        UUID unidadeId = sci.getProjeto().getLaboratorio().getUnidade().getPublicId();
+
+        return atividadeRepository
+                .findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                        sci.getPublicId(),
+                        unidadeId
+                )
+                .stream()
+                .filter(item -> codigoSeg.equals(item.getCodigoSeg()))
+                .findFirst()
+                .orElseGet(() -> atividadeRepository.save(
+                        Atividade.builder()
+                                .sci(sci)
+                                .codigoSeg(codigoSeg)
+                                .nome(nome)
+                                .responsavel(responsavel)
+                                .dataInicio(dataInicio)
+                                .dataFim(dataFim)
+                                .status(status)
+                                .situacaoExecucao(situacaoExecucao)
+                                .ativo(true)
+                                .build()
+                ));
     }
 
     private void garantirCadastrosResiduos() {
