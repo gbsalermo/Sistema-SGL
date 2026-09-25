@@ -452,11 +452,34 @@ Fechamento do 5.4:
 - suíte JUnit completa confirmada verde em 25/09/2026;
 - validação manual adicional em Postman não foi exigida para o fechamento deste bloco.
 
-### 5.5 Interface e integração 🔧 ATUAL
+### 5.5 Interface e integração 🔧 VALIDAÇÃO PENDENTE
 
-Só fechar depois de Projeto → SCI → Atividade estabilizados no backend.
+Projeto → SCI → Atividade já está estabilizado no backend e a implementação principal do frontend foi concluída.
 
-A navegação deve dar protagonismo ao Projeto. Laboratório continua vínculo/contexto e filtro, mas não deve ser uma etapa obrigatória de navegação para trabalhar com Projeto.
+Implementado:
+
+- rota operacional `/projetos` para Gestão/Administração;
+- navegação direta por Projeto sem passagem obrigatória por Laboratório;
+- listagem, busca, filtro e resumo operacional;
+- visualização hierárquica Projeto → SCI → Atividade;
+- cadastro/edição de SCI e Atividade;
+- formulário administrativo de Projeto alinhado ao domínio atual;
+- prorrogação explícita nos três níveis;
+- correção administrativa de Código SEG nos três níveis;
+- histórico visual de prorrogações e correções;
+- massa DEV idempotente para validação da interface.
+
+Pendente para fechamento:
+
+- validar carregamento real com backend DEV;
+- validar criação/edição de SCI e Atividade;
+- validar prorrogação e correção SEG;
+- validar atualização de histórico após operações;
+- validar perfil Administrador e Gestor;
+- validar responsividade e dark mode;
+- corrigir eventuais ajustes visuais/integração identificados.
+
+Após essa bateria, fechar a Etapa 5 e liberar a Etapa 6.
 
 ---
 

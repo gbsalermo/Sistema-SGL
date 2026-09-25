@@ -433,7 +433,7 @@ Validado em 25/09/2026:
 - bateria funcional da API foi validada integralmente;
 - formato, raiz e duplicidade do Código SEG permanecem deliberadamente no 5.4.
 
-Bloco atual: **5.5 Interface e integração**.
+Bloco atual: **5.5 Interface e integração — implementação principal concluída; validação pendente**.
 
 Contrato aprovado para o bloco:
 
@@ -450,6 +450,17 @@ A base V21 de Atividades foi validada em 25/09/2026. A V22 de prorrogações tam
 No 5.4, formato/coerência hierárquica, unicidade global, imutabilidade no CRUD comum e correção administrativa auditável do Código SEG foram concluídos. V23 aplica restrições `UNIQUE`; V24 cria o histórico de correções. Projeto legado sem SEG ainda pode receber a primeira definição, mas depois disso Projeto/SCI/Atividade só podem trocar o identificador pelo fluxo administrativo. A correção exige justificativa, operador ativo do tenant com perfil GESTOR/ADMINISTRADOR, valida novamente formato/hierarquia/unicidade e atualiza transacionalmente os descendentes preservando seus sufixos. Registros encerrados/inativos também podem ter erro de identificação corrigido sem reabrir seu ciclo de vida. O código foi publicado e a suíte JUnit completa foi confirmada verde em 25/09/2026; o 5.4 está oficialmente concluído e validado.
 
 Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações e correções de Código SEG é provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
+
+Estado do 5.5 em 25/09/2026:
+
+- massa DEV da Etapa 5 tornou-se idempotente, inclusive para bancos DEV já existentes;
+- frontend possui hub operacional direto de Projetos;
+- Projeto → SCI → Atividade é exibido e gerenciado na mesma experiência;
+- SCI e Atividade possuem criação/edição no hub;
+- cadastro administrativo de Projeto foi alinhado a Código SEG/status/situação/recurso externo;
+- prorrogações e correções SEG estão integradas;
+- histórico dessas operações é consultável na interface;
+- implementação principal concluída; resta validação visual/integrada antes do fechamento da Etapa 5.
 
 ## Etapa 6 — Estagiários
 

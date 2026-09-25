@@ -678,9 +678,9 @@ Estado consolidado:
 
 Próximo bloco liberado: **5.5 — Interface e integração**.
 
-### 5.5 — Interface e integração
+### 5.5 — Interface e integração 🔧 VALIDAÇÃO PENDENTE
 
-A interface deve refletir a importância funcional de Projeto:
+A interface implementada reflete a importância funcional de Projeto:
 
 ```text
 Projetos
@@ -689,9 +689,39 @@ Projetos
 → participantes/vínculos quando aplicável
 ```
 
-Laboratório permanece filtro/contexto, mas o usuário não deve precisar navegar por Laboratório para acessar Projeto.
+Laboratório permanece filtro/contexto, mas o usuário não precisa navegar por Laboratório para acessar Projeto.
 
-O CRUD atual de Projeto em Administração permanece compatível durante a evolução. Só substituir/reorganizar a experiência após contratos de Projeto/SCI/Atividade estabilizados.
+Checkpoint de implementação em 25/09/2026:
+
+- backend DEV recebeu massa idempotente específica da Etapa 5, aplicada também em banco já existente;
+- a massa cobre Projeto no prazo, Projeto atrasado e Projeto concluído, com múltiplos SCI e Atividades;
+- frontend ganhou rota operacional direta `/projetos` para Gestão/Administração;
+- menu lateral expõe Projetos como área operacional própria;
+- hub lista, busca e filtra Projetos da Unidade;
+- painel do Projeto exibe Código SEG, status, situação, período, responsável, Laboratório e recurso externo;
+- SCI são carregados por Projeto e Atividades são agrupadas por SCI;
+- SCI podem ser cadastrados e editados diretamente no hub;
+- Atividades podem ser cadastradas e editadas diretamente em seu SCI;
+- Código SEG e data de início permanecem protegidos na edição comum;
+- formulário administrativo de Projeto foi atualizado para o contrato atual da Etapa 5;
+- prorrogações de Projeto/SCI/Atividade foram integradas ao frontend;
+- correção administrativa do Código SEG foi integrada aos três níveis;
+- o usuário da sessão é enviado como operador temporário enquanto não houver principal autenticado;
+- histórico visual reúne prorrogações e correções SEG por Projeto, SCI ou Atividade;
+- interface usa as variáveis visuais existentes e mantém compatibilidade com light/dark mode;
+- revisão estática confirmou templates/chaves/imports consistentes.
+
+Subblocos:
+
+```text
+5.5.1 Massa DEV + hub Projeto → SCI → Atividade       ✅ implementado
+5.5.2 CRUD operacional SCI/Atividade                  ✅ implementado
+5.5.3 Cadastro administrativo de Projeto atualizado   ✅ implementado
+5.5.4 Prorrogação + correção SEG + histórico           ✅ implementado
+5.5.5 Validação visual/integrada                       🔧 pendente
+```
+
+A Etapa 5 só deve ser marcada como concluída após validar o frontend em execução, incluindo responsividade, dark mode e chamadas reais contra o backend.
 
 ### Critério de avanço
 
