@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 25/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 — Projetos e Atividades em andamento no bloco 5.2 — SCI, com 5.1 — Projeto base concluído e validado.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 — Projetos e Atividades em andamento no bloco 5.3 — Atividades, com 5.1 — Projeto base e 5.2 — SCI concluídos e validados.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -15,7 +15,8 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5.1 — Projeto base                    ✅ concluído e validado
-Etapa 5.2 — SCI                             🔧 atual
+Etapa 5.2 — SCI                             ✅ concluído e validado
+Etapa 5.3 — Atividades                      🔧 atual
 ```
 
 Handoff imediato:
@@ -305,9 +306,10 @@ V16 snapshot de Unidade do Resíduo
 V17 locais de armazenamento de Resíduos
 V18 modelos reutilizáveis de Resíduos
 V19 expansão do domínio de Projeto
+V20 criação do domínio de SCI
 ```
 
-Próxima alteração de schema: V20+.
+Próxima alteração de schema: V21+.
 
 ---
 
@@ -630,7 +632,7 @@ Etapa 1 ✅
 Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
-Etapa 5 🔧 atual — 5.2 SCI; 5.1 ✅
+Etapa 5 🔧 atual — 5.3 Atividades; 5.1 ✅; 5.2 ✅
 Etapa 6 ⏳
 Etapa 7 ⏳
 Etapa 8 ⏳
@@ -645,4 +647,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**Retomar pela Etapa 5. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`. A branch atual é `collab/etapa-5-projetos-atividades`. Os blocos 5.0 e 5.1 estão fechados; continuar pelo 5.2 — SCI. Manter o usuário como autor das mudanças funcionais de backend, salvo autorização explícita.**
+**Retomar pela Etapa 5. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`. A branch atual é `collab/etapa-5-projetos-atividades`. Os blocos 5.0, 5.1 e 5.2 estão fechados; continuar pelo 5.3 — Atividades. Manter o usuário como autor das mudanças funcionais de backend, salvo autorização explícita.**

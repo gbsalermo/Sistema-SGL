@@ -362,61 +362,52 @@ Fechamento validado em 25/09/2026:
 - documentação atualizada;
 - formato/coerência/duplicidade do Código SEG permanecem para o 5.4.
 
-### 5.2 — SCI 🔧 ATUAL
+### 5.2 — SCI ✅ CONCLUÍDO E VALIDADO
 
-Projeto está estabilizado.
-
-#### 5.2.1 Contrato da SCI ✅ FECHADO
+**Fechamento:** 25/09/2026.
 
 ```text
 Projeto 1 → N SCI
 ```
 
-SCI é entidade própria e obrigatoriamente subordinada ao Projeto.
+Estado final:
 
-Regras fechadas:
+- V20 cria `scis` com FK obrigatória para `projetos`;
+- SCI não duplica Laboratório/Unidade;
+- `Sci`, DTOs, Repository, Service e Controller/OpenAPI implementados;
+- Código SEG próprio armazenado, com validação completa adiada para 5.4;
+- início e fim próprios respeitam os limites temporais do Projeto;
+- Projeto sem início definido não recebe SCI;
+- status e situação de execução permanecem independentes;
+- recurso externo continua somente no Projeto;
+- Projeto pai não pode ser trocado pelo update comum;
+- soft delete usa o indicador técnico `ativo`;
+- tenant permanece fail-closed;
+- massa DEV/Demo e testes de Service, Controller e Repository adicionados;
+- suíte completa JUnit verde;
+- bateria funcional da API aprovada em todos os cenários planejados.
 
-- SCI nunca existe sem Projeto;
-- SCI não duplica Laboratório; o contexto institucional é obtido por `SCI → Projeto → Laboratório → Unidade`;
-- SCI possui Código SEG próprio, mas sua raiz deve corresponder ao Projeto pai; a validação completa de formato/coerência/duplicidade permanece no 5.4;
-- SCI possui início e fim próprios;
-- `SCI.dataInicio >= Projeto.dataInicio`;
-- se o Projeto possuir `dataFim`, então `SCI.dataFim <= Projeto.dataFim`;
-- SCI pode usar o mesmo período do Projeto ou um período menor;
-- SCI reutiliza os mesmos valores de status e situação de execução definidos no Projeto;
-- os valores são persistidos de forma independente no SCI; concluir SCI não conclui Projeto;
-- recurso externo pertence ao Projeto e não é duplicado em SCI;
-- vínculo com Projeto é estrutural e não deve ser trocado livremente em atualização;
-- duração permanece derivável de início/fim, sem persistência redundante.
-
-Dados do SCI:
-
-```text
-publicId
-projeto
-codigoSeg
-nome/título
-responsavel
-dataInicio
-dataFim
-status
-situacaoExecucao
-ativo
-```
-
-#### 5.2.2 Próximo passo — V20
-
-Criar a tabela `scis` com FK obrigatória para `projetos`, sem duplicar `laboratorio_id`.
-
-### 5.3 — Atividades
-
-Somente após SCI estabilizado:
+### 5.3 — Atividades 🔧 ATUAL
 
 ```text
 SCI 1 → N Atividades
 ```
 
-Atividade será entidade própria, vinculada obrigatoriamente ao SCI. Ela possui ciclo independente e pode encerrar antes do Projeto. A própria Atividade representa a responsabilidade executada pelo Estagiário.
+Atividade é entidade própria, obrigatoriamente vinculada ao SCI. Por consequência, toda Atividade pertence a um Projeto por `Atividade → SCI → Projeto`.
+
+Já confirmado:
+
+- Código SEG institucional;
+- título;
+- líder/responsável;
+- início e fim;
+- duração opcional/derivável;
+- status e situação de execução;
+- ciclo próprio, podendo encerrar antes do Projeto;
+- Projeto/Laboratório/Unidade devem ser derivados pela hierarquia quando não houver necessidade de duplicação;
+- validação hierárquica completa do Código SEG continua no 5.4.
+
+Próximo passo: fechar o contrato temporal e de ciclo da Atividade antes da V21.
 
 ### 5.4 — Código SEG e validações hierárquicas
 

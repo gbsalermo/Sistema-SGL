@@ -327,7 +327,7 @@ ARMAZENADO_TEMPORARIAMENTE
 DESPACHADO
 ```
 
-## Hierarquia de Projetos — Etapa 5 (5.1 concluído; 5.2 SCI atual)
+## Hierarquia de Projetos — Etapa 5 (5.1 e 5.2 concluídos; 5.3 Atividades atual)
 
 ```text
 Laboratório responsável/contextual
@@ -357,7 +357,7 @@ Projeto
 └── ativo técnico
 ```
 
-O bloco 5.2 introduz SCI como entidade obrigatoriamente subordinada ao Projeto. Laboratório não deve ser duplicado em SCI quando puder ser derivado do Projeto sem perda de regra de negócio.
+O bloco 5.2 introduziu SCI como entidade obrigatoriamente subordinada ao Projeto. Laboratório não é duplicado em SCI quando pode ser derivado do Projeto sem perda de regra de negócio.
 
 
 ### Regras da SCI — 5.2.1
@@ -374,3 +374,29 @@ Projeto
 - status e situação de execução são próprios do SCI, ainda que usem os mesmos valores de domínio do Projeto;
 - concluir SCI não conclui Projeto;
 - a coerência hierárquica do Código SEG será validada integralmente no 5.4.
+
+
+### Estado da SCI após o 5.2
+
+```text
+Projeto
+└── SCI
+    ├── Código SEG próprio
+    ├── responsável
+    ├── início/fim
+    ├── status de negócio
+    ├── situação de execução
+    └── ativo técnico
+```
+
+O período do SCI fica contido no período do Projeto. O vínculo com o Projeto é estrutural e não pode ser trocado pelo update comum. Laboratório e Unidade são derivados do Projeto. A validação completa da hierarquia do Código SEG continua no 5.4.
+
+### Atividades — 5.3 atual
+
+```text
+Projeto
+└── SCI
+    └── Atividade
+```
+
+Atividade será entidade própria obrigatoriamente vinculada ao SCI, com ciclo operacional próprio. Projeto, Laboratório e Unidade devem ser derivados pela hierarquia sempre que não houver regra de negócio que exija duplicação.

@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
 **Última atualização:** 25/09/2026  
-**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 em andamento — 5.1 Projeto base ✅, bloco atual 5.2 SCI  
+**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 em andamento — 5.1 Projeto base ✅, 5.2 SCI ✅, bloco atual 5.3 Atividades  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -346,35 +346,41 @@ Fechamento técnico do 5.1:
 - validação funcional do CRUD e tenant concluída;
 - próxima migration livre: V20.
 
-### 5.2 SCI 🔧 ATUAL
+### 5.2 SCI ✅ CONCLUÍDO E VALIDADO
+
+**Fechamento:** 25/09/2026.
 
 ```text
 Projeto 1 → N SCI
 ```
 
-SCI é uma solução/contribuição para inovação ligada à gestão dos recursos do Projeto. É entidade própria e nunca existe sem Projeto.
+Implementado e validado:
 
-Contrato fechado:
+- V20 criou `scis` com FK obrigatória para Projeto;
+- Laboratório/Unidade são derivados do Projeto;
+- Código SEG próprio é armazenado no SCI;
+- início/fim próprios ficam contidos no período do Projeto;
+- status e situação de execução são persistidos independentemente;
+- vínculo com Projeto não é trocado pelo update comum;
+- recurso externo não é duplicado;
+- duração permanece derivável;
+- tenant permanece fail-closed;
+- CRUD e consultas por Projeto estão documentados em OpenAPI;
+- dados DEV/Demo e testes automatizados foram adicionados;
+- suíte completa verde e bateria funcional concluída com sucesso;
+- validação completa do Código SEG continua no 5.4.
 
-- FK obrigatória para Projeto;
-- Laboratório/Unidade derivados do Projeto, sem duplicação no SCI;
-- Código SEG do SCI subordinado à raiz do Projeto;
-- início/fim próprios, contidos no período do Projeto;
-- mesmos valores de status e situação de execução do Projeto, persistidos independentemente;
-- conclusão do SCI não altera automaticamente o Projeto;
-- recurso externo permanece somente no Projeto;
-- duração derivada de início/fim;
-- validação hierárquica completa do Código SEG continua no 5.4.
+Próxima migration livre: **V21**.
 
-Próximo passo funcional: **V20 — criação da tabela `scis`**.
-
-### 5.3 Atividades
+### 5.3 Atividades 🔧 ATUAL
 
 ```text
 SCI 1 → N Atividades
 ```
 
-Atividade é entidade própria, nunca fica solta do Projeto e possui status independente. Pode ser encerrada antes do Projeto.
+Atividade é entidade própria, obrigatoriamente subordinada ao SCI e, por consequência, ao Projeto. Possui ciclo operacional próprio e pode ser encerrada antes do Projeto.
+
+Próximo passo: fechar o contrato de domínio de Atividade antes da V21, sem antecipar a validação SEG completa do 5.4.
 
 ### 5.4 Código SEG — validação hierárquica
 

@@ -9,7 +9,7 @@
 **Branch atual de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 4 — expansão operacional de Resíduos ✅  
-**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 5.2 SCI; 5.1 Projeto base ✅  
+**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 5.3 Atividades; 5.1 Projeto base ✅; 5.2 SCI ✅  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
@@ -180,13 +180,14 @@ V16 — snapshot de Unidade do Resíduo, incorporado pelo supervisor
 V17 — locais de armazenamento de Resíduos
 V18 — modelos reutilizáveis de Resíduos
 V19 — expansão do domínio de Projeto
+V20 — criação do domínio de SCI
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = próxima versão livre após V19
+nova alteração de schema = próxima versão livre após V20
 ```
 
 ---
@@ -381,7 +382,7 @@ A implementação histórica de `feat/etapa-4-residuos` foi portada seletivament
 - relatórios/exportações reconhecem `CANCELADO`;
 - validações funcionais da Etapa 4 foram concluídas.
 
-A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.2 — SCI**. O bloco **5.1 — Projeto base** foi concluído e validado em 25/09/2026.
+A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.3 — Atividades**. Os blocos **5.1 — Projeto base** e **5.2 — SCI** foram concluídos e validados em 25/09/2026.
 
 
 # 10. Projetos, Estagiários e Relatórios — evolução atual e próximas etapas
@@ -414,7 +415,25 @@ Validado em 25/09/2026:
 - validação funcional confirmou listagem, defaults, criação completa, regra de empresa, atualização compatível e desligamento de recurso externo;
 - validação hierárquica/formato/duplicidade do Código SEG permanece deliberadamente no 5.4.
 
-Bloco atual: **5.2 SCI**.
+### Fechamento do 5.2 — SCI ✅
+
+Validado em 25/09/2026:
+
+- V20 criou a tabela `scis` com vínculo obrigatório a Projeto;
+- SCI deriva Laboratório/Unidade por `SCI → Projeto → Laboratório → Unidade`;
+- entidade, DTOs, Repository, Service e Controller/OpenAPI foram implementados;
+- status e situação de execução são persistidos independentemente do Projeto;
+- vínculo com Projeto é preservado no update comum;
+- período do SCI é validado dentro do período do Projeto;
+- Projeto sem data de início não recebe SCI;
+- recurso externo permanece somente no Projeto;
+- consultas públicas permanecem fail-closed por tenant;
+- dados DEV/Demo e testes automatizados foram adicionados;
+- suíte completa JUnit ficou verde;
+- bateria funcional da API foi validada integralmente;
+- formato, raiz e duplicidade do Código SEG permanecem deliberadamente no 5.4.
+
+Bloco atual: **5.3 Atividades**.
 
 ## Etapa 6 — Estagiários
 
@@ -499,7 +518,7 @@ Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
-Etapa 5 — Projetos + Atividades                       🔧 atual — 5.2 SCI; 5.1 ✅
+Etapa 5 — Projetos + Atividades                       🔧 atual — 5.3 Atividades; 5.1 ✅; 5.2 ✅
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
@@ -516,7 +535,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com o portão 5.0 e o bloco 5.1 — Projeto base fechados; retomar pelo bloco 5.2 — SCI. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com o portão 5.0, o bloco 5.1 — Projeto base e o bloco 5.2 — SCI fechados; retomar pelo bloco 5.3 — Atividades. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
