@@ -354,6 +354,20 @@ Projeto 1 → N SCI
 
 SCI é uma solução/contribuição para inovação ligada à gestão dos recursos do Projeto. É entidade própria e nunca existe sem Projeto.
 
+Contrato fechado:
+
+- FK obrigatória para Projeto;
+- Laboratório/Unidade derivados do Projeto, sem duplicação no SCI;
+- Código SEG do SCI subordinado à raiz do Projeto;
+- início/fim próprios, contidos no período do Projeto;
+- mesmos valores de status e situação de execução do Projeto, persistidos independentemente;
+- conclusão do SCI não altera automaticamente o Projeto;
+- recurso externo permanece somente no Projeto;
+- duração derivada de início/fim;
+- validação hierárquica completa do Código SEG continua no 5.4.
+
+Próximo passo funcional: **V20 — criação da tabela `scis`**.
+
 ### 5.3 Atividades
 
 ```text

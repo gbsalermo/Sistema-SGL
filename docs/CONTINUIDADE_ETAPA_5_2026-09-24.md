@@ -364,13 +364,49 @@ Fechamento validado em 25/09/2026:
 
 ### 5.2 — SCI 🔧 ATUAL
 
-Projeto está estabilizado. Iniciar agora:
+Projeto está estabilizado.
+
+#### 5.2.1 Contrato da SCI ✅ FECHADO
 
 ```text
 Projeto 1 → N SCI
 ```
 
-SCI será entidade própria. Dados previstos: Código SEG, título, líder/responsável, início/fim, status/situação conforme a fonte institucional e vínculo obrigatório ao Projeto. Não duplicar Laboratório se ele puder ser obtido do Projeto sem perda de regra de negócio.
+SCI é entidade própria e obrigatoriamente subordinada ao Projeto.
+
+Regras fechadas:
+
+- SCI nunca existe sem Projeto;
+- SCI não duplica Laboratório; o contexto institucional é obtido por `SCI → Projeto → Laboratório → Unidade`;
+- SCI possui Código SEG próprio, mas sua raiz deve corresponder ao Projeto pai; a validação completa de formato/coerência/duplicidade permanece no 5.4;
+- SCI possui início e fim próprios;
+- `SCI.dataInicio >= Projeto.dataInicio`;
+- se o Projeto possuir `dataFim`, então `SCI.dataFim <= Projeto.dataFim`;
+- SCI pode usar o mesmo período do Projeto ou um período menor;
+- SCI reutiliza os mesmos valores de status e situação de execução definidos no Projeto;
+- os valores são persistidos de forma independente no SCI; concluir SCI não conclui Projeto;
+- recurso externo pertence ao Projeto e não é duplicado em SCI;
+- vínculo com Projeto é estrutural e não deve ser trocado livremente em atualização;
+- duração permanece derivável de início/fim, sem persistência redundante.
+
+Dados do SCI:
+
+```text
+publicId
+projeto
+codigoSeg
+nome/título
+responsavel
+dataInicio
+dataFim
+status
+situacaoExecucao
+ativo
+```
+
+#### 5.2.2 Próximo passo — V20
+
+Criar a tabela `scis` com FK obrigatória para `projetos`, sem duplicar `laboratorio_id`.
 
 ### 5.3 — Atividades
 

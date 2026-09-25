@@ -358,3 +358,19 @@ Projeto
 ```
 
 O bloco 5.2 introduz SCI como entidade obrigatoriamente subordinada ao Projeto. Laboratório não deve ser duplicado em SCI quando puder ser derivado do Projeto sem perda de regra de negócio.
+
+
+### Regras da SCI — 5.2.1
+
+```text
+Projeto
+└── SCI
+```
+
+- SCI depende obrigatoriamente de Projeto;
+- Laboratório e Unidade são alcançados pelo Projeto;
+- SCI possui período próprio, mas não pode começar antes do Projeto;
+- se o Projeto possuir fim, SCI não pode terminar depois dele;
+- status e situação de execução são próprios do SCI, ainda que usem os mesmos valores de domínio do Projeto;
+- concluir SCI não conclui Projeto;
+- a coerência hierárquica do Código SEG será validada integralmente no 5.4.
