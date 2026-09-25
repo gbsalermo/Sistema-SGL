@@ -394,6 +394,8 @@ Regras temporais/prorrogação já fechadas:
 - reduzir datas de um pai não pode invalidar filhos existentes;
 - mudanças que quebrariam a hierarquia devem ser rejeitadas, não corrigidas por cascata automática.
 
+Base de Atividade/V21 validada funcionalmente em 25/09/2026. O próximo passo do 5.3 é a V22.
+
 Persistência aprovada para prorrogações:
 
 - históricos separados para Projeto, SCI e Atividade, cada um com FK real;
@@ -403,6 +405,13 @@ Persistência aprovada para prorrogações:
 - endpoints próprios de prorrogação serão expostos para Projeto, SCI e Atividade;
 - V21 fica dedicada à tabela de Atividades;
 - V22 fica reservada aos históricos de prorrogação.
+
+Autoria nesta fase de pré-autenticação:
+
+- manter FK para `Usuario` nos históricos;
+- enquanto não houver principal autenticado no backend, aceitar provisoriamente o UUID do operador no fluxo, validando tenant, usuário ativo e perfil;
+- não tratar esse mecanismo como autenticação definitiva;
+- substituir o UUID fornecido pelo cliente pelo usuário obtido do contexto autenticado quando a autenticação real for implementada.
 
 ### 5.4 Código SEG — validação hierárquica
 

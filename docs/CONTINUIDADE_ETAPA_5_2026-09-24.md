@@ -518,6 +518,38 @@ V22 → históricos de prorrogação de Projeto, SCI e Atividade
 
 O estágio reutilizará a mesma filosofia na Etapa 6, mas com histórico próprio do seu domínio.
 
+#### 5.3.3 Base de Atividade — V21 ✅ VALIDADA
+
+Fechamento funcional confirmado em 25/09/2026:
+
+- V21 cria `atividades` com FK obrigatória para `scis`;
+- entidade, DTOs, Repository, Service e Controller/OpenAPI implementados;
+- resposta expõe SCI e Projeto derivados sem duplicar FKs na tabela;
+- tenant permanece fail-closed pela cadeia Atividade → SCI → Projeto → Laboratório → Unidade;
+- Atividade não pode ser transferida para outro SCI pelo update comum;
+- período da Atividade permanece contido no período do SCI quando houver limite final;
+- primeira definição de `dataFim` é permitida;
+- redução de `dataFim` é permitida quando válida;
+- ampliação ou remoção de uma `dataFim` já existente é bloqueada pelo update comum;
+- soft delete técnico preservado;
+- massa DEV/Demo/multitenant adicionada;
+- testes de Service, Controller e Repository adicionados;
+- suíte automatizada e bateria funcional aprovadas.
+
+Próximo passo: **V22 — históricos de prorrogação**.
+
+#### Autoria das prorrogações durante a pré-autenticação
+
+O backend atual ainda não possui identidade autenticada no `SecurityContext`; `SecurityConfig` continua temporariamente permissivo. Portanto, nesta fase não existe fonte confiável para inferir automaticamente o usuário autor da operação.
+
+Decisão de compatibilidade para a pré-produção:
+
+- os históricos mantêm FK para `Usuario`;
+- enquanto a autenticação real não existir, o fluxo poderá receber o UUID do usuário operador seguindo o padrão temporário já existente em Resíduos;
+- o Service deve obrigatoriamente validar que esse usuário pertence ao tenant atual, está ativo e possui perfil permitido;
+- essa identificação é provisória e não deve ser tratada como autenticação forte;
+- quando a autenticação definitiva for implementada, o autor deverá vir do principal/contexto autenticado e o UUID enviado pelo cliente deve ser removido do contrato.
+
 ### 5.4 — Código SEG e validações hierárquicas
 
 Formato canônico:
