@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,11 +29,14 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
+import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.SciRepository;
 import com.sgl.tenant.TenantContext;
 
 /**
@@ -57,6 +61,12 @@ class ProjetoServiceTest {
 
     @Mock
     private LaboratorioRepository laboratorioRepository;
+
+    @Mock
+    private SciRepository sciRepository;
+
+    @Mock
+    private AtividadeRepository atividadeRepository;
 
     @InjectMocks
     private ProjetoService projetoService;
@@ -389,4 +399,105 @@ class ProjetoServiceTest {
 
         assertEquals("A operação não pode acessar dados de outra unidade.", ex.getMessage());
     }
+
+    @Test
+    void deveRejeitarAlteracaoDaDataInicioDoProjeto() {
+        projeto.setDataInicio(LocalDate.of(2026, 1, 1));
+        projeto.setDataFim(LocalDate.of(2026, 12, 31));
+
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto atualizado");
+        dto.setDataInicio(LocalDate.of(2026, 1, 2));
+        dto.setDataFim(LocalDate.of(2026, 12, 31));
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> projetoService.atualizar(PROJETO_PUBLIC_ID, dto)
+        );
+
+        assertEquals(
+                "A data de início do projeto não pode ser alterada após a criação.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void deveRejeitarAmpliacaoDaDataFimDoProjetoNoPutComum() {
+        projeto.setDataInicio(LocalDate.of(2026, 1, 1));
+        projeto.setDataFim(LocalDate.of(2026, 12, 31));
+
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto atualizado");
+        dto.setDataInicio(LocalDate.of(2026, 1, 1));
+        dto.setDataFim(LocalDate.of(2027, 1, 31));
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> projetoService.atualizar(PROJETO_PUBLIC_ID, dto)
+        );
+
+        assertEquals(
+                "A ampliação da data final deve ser realizada pelo fluxo de prorrogação.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void deveRejeitarReducaoDoProjetoQueDeixaSciForaDoPeriodo() {
+        projeto.setDataInicio(LocalDate.of(2026, 1, 1));
+        projeto.setDataFim(LocalDate.of(2026, 12, 31));
+
+        Sci sciFilho = Sci.builder()
+                .publicId(UUID.randomUUID())
+                .projeto(projeto)
+                .dataInicio(LocalDate.of(2026, 2, 1))
+                .dataFim(LocalDate.of(2026, 8, 31))
+                .build();
+
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto atualizado");
+        dto.setDataInicio(LocalDate.of(2026, 1, 1));
+        dto.setDataFim(LocalDate.of(2026, 6, 30));
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+        when(sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(List.of(sciFilho));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> projetoService.atualizar(PROJETO_PUBLIC_ID, dto)
+        );
+
+        assertEquals(
+                "A nova data de fim do projeto deixaria um SCI fora do período do projeto.",
+                ex.getMessage()
+        );
+    }
+
 }

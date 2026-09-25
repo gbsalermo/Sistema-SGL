@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgl.config.SecurityConfig;
+import com.sgl.dto.request.ProrrogacaoRequestDTO;
 import com.sgl.dto.request.SciRequestDTO;
 import com.sgl.dto.response.SciResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
@@ -36,6 +37,7 @@ import com.sgl.model.Sci;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.service.SciService;
+import com.sgl.service.ProrrogacaoService;
 
 @WebMvcTest(SciController.class)
 @Import(SecurityConfig.class)
@@ -64,6 +66,9 @@ class SciControllerTest {
 
     @MockitoBean
     private SciService sciService;
+
+    @MockitoBean
+    private ProrrogacaoService prorrogacaoService;
 
     private SciRequestDTO montarRequest() {
         SciRequestDTO dto = new SciRequestDTO();
@@ -197,4 +202,35 @@ class SciControllerTest {
 
         verify(sciService).deletar(SCI_ID);
     }
+
+    @Test
+    void deveProrrogarSciERetornar201() throws Exception {
+        String body = """
+                {
+                  "usuarioId": "00000000-0000-0000-0000-000000000299",
+                  "novaDataFim": "2026-07-31",
+                  "justificativa": "Prorrogação de teste"
+                }
+                """;
+
+        when(prorrogacaoService.prorrogarSci(
+                eq(SCI_ID), any(ProrrogacaoRequestDTO.class)))
+                .thenReturn(null);
+
+        mockMvc.perform(post(BASE_URL + "/{id}/prorrogacoes", SCI_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void deveListarProrrogacoesDoSciERetornar200() throws Exception {
+        when(prorrogacaoService.listarHistoricoSci(SCI_ID))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get(BASE_URL + "/{id}/prorrogacoes", SCI_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
 }

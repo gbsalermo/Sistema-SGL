@@ -390,4 +390,26 @@ class AtividadeServiceTest {
 
         assertFalse(atividade.getAtivo());
     }
+
+    @Test
+    void deveRejeitarAlteracaoDaDataInicioDaAtividade() {
+        AtividadeRequestDTO dto = requestValido();
+        dto.setDataInicio(LocalDate.of(2026, 3, 2));
+
+        TenantContext.definir(UNIDADE_ID);
+        when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                ATIVIDADE_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(atividade));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> atividadeService.atualizar(ATIVIDADE_ID, dto)
+        );
+
+        assertEquals(
+                "A data de início da Atividade não pode ser alterada após a criação.",
+                ex.getMessage()
+        );
+    }
+
 }

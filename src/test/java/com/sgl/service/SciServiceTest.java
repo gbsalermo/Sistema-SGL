@@ -25,12 +25,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.sgl.dto.request.SciRequestDTO;
 import com.sgl.dto.response.SciResponseDTO;
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.Atividade;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.tenant.TenantContext;
@@ -52,6 +54,9 @@ class SciServiceTest {
 
     @Mock
     private ProjetoRepository projetoRepository;
+
+    @Mock
+    private AtividadeRepository atividadeRepository;
 
     @InjectMocks
     private SciService sciService;
@@ -322,4 +327,75 @@ class SciServiceTest {
 
         assertFalse(sci.getAtivo());
     }
+
+    @Test
+    void deveRejeitarAlteracaoDaDataInicioDoSci() {
+        SciRequestDTO dto = requestValido();
+        dto.setDataInicio(LocalDate.of(2026, 2, 2));
+
+        TenantContext.definir(UNIDADE_ID);
+        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(sci));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> sciService.atualizar(SCI_ID, dto)
+        );
+
+        assertEquals(
+                "A data de início do SCI não pode ser alterada após a criação.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void deveRejeitarAmpliacaoDaDataFimDoSciNoPutComum() {
+        SciRequestDTO dto = requestValido();
+        dto.setDataFim(LocalDate.of(2026, 7, 31));
+
+        TenantContext.definir(UNIDADE_ID);
+        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(sci));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> sciService.atualizar(SCI_ID, dto)
+        );
+
+        assertEquals(
+                "A ampliação da data final deve ser realizada pelo fluxo de prorrogação.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void deveRejeitarReducaoDoSciQueDeixaAtividadeForaDoPeriodo() {
+        Atividade atividade = Atividade.builder()
+                .publicId(UUID.randomUUID())
+                .sci(sci)
+                .dataInicio(LocalDate.of(2026, 3, 1))
+                .dataFim(LocalDate.of(2026, 6, 15))
+                .build();
+
+        SciRequestDTO dto = requestValido();
+        dto.setDataFim(LocalDate.of(2026, 5, 31));
+
+        TenantContext.definir(UNIDADE_ID);
+        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(sci));
+        when(atividadeRepository.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                SCI_ID, UNIDADE_ID))
+                .thenReturn(List.of(atividade));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> sciService.atualizar(SCI_ID, dto)
+        );
+
+        assertEquals(
+                "A nova data de fim do SCI deixaria uma Atividade fora do período do SCI.",
+                ex.getMessage()
+        );
+    }
+
 }

@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.ProjetoRequestDTO;
+import com.sgl.dto.request.ProrrogacaoRequestDTO;
 import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
@@ -35,6 +36,7 @@ import com.sgl.model.Projeto;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.service.ProjetoService;
+import com.sgl.service.ProrrogacaoService;
 
 /**
  * Teste de fatia web ({@code @WebMvcTest}) de {@link ProjetoController}. Segue o mesmo
@@ -74,6 +76,9 @@ class ProjetoControllerTest {
 
     @MockitoBean
     private ProjetoService projetoService;
+
+    @MockitoBean
+    private ProrrogacaoService prorrogacaoService;
 
     private ProjetoRequestDTO montarRequestDTO() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
@@ -213,4 +218,35 @@ class ProjetoControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].ativo").value(true));
     }
+
+    @Test
+    void deveProrrogarProjetoERetornar201() throws Exception {
+        String body = """
+                {
+                  "usuarioId": "00000000-0000-0000-0000-000000000099",
+                  "novaDataFim": "2027-01-31",
+                  "justificativa": "Prorrogação de teste"
+                }
+                """;
+
+        when(prorrogacaoService.prorrogarProjeto(
+                eq(PROJETO_PUBLIC_ID), any(ProrrogacaoRequestDTO.class)))
+                .thenReturn(null);
+
+        mockMvc.perform(post(BASE_URL + "/{id}/prorrogacoes", PROJETO_PUBLIC_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void deveListarProrrogacoesDoProjetoERetornar200() throws Exception {
+        when(prorrogacaoService.listarHistoricoProjeto(PROJETO_PUBLIC_ID))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get(BASE_URL + "/{id}/prorrogacoes", PROJETO_PUBLIC_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
 }
