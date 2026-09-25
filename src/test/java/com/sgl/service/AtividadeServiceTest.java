@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.AtividadeRequestDTO;
@@ -55,6 +56,9 @@ class AtividadeServiceTest {
 
     @Mock
     private SciRepository sciRepository;
+
+    @Spy
+    private CodigoSegValidator codigoSegValidator = new CodigoSegValidator();
 
     @InjectMocks
     private AtividadeService atividadeService;
@@ -408,6 +412,54 @@ class AtividadeServiceTest {
 
         assertEquals(
                 "A data de início da Atividade não pode ser alterada após a criação.",
+                ex.getMessage()
+        );
+    }
+
+
+    @Test
+    void deveRejeitarAlteracaoDoCodigoSegDaAtividadeNoPutComum() {
+        AtividadeRequestDTO dto = requestValido();
+        dto.setCodigoSeg("95.95.95.001.01.01.002");
+
+        TenantContext.definir(UNIDADE_ID);
+
+        when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                ATIVIDADE_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(atividade));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> atividadeService.atualizar(ATIVIDADE_ID, dto)
+        );
+
+        assertEquals(
+                "O Código SEG da Atividade não pode ser alterado pelo fluxo comum de atualização. Use o fluxo administrativo de correção.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    void deveRejeitarCodigoSegGlobalmenteDuplicadoNaCriacaoDaAtividade() {
+        AtividadeRequestDTO dto = requestValido();
+
+        TenantContext.definir(UNIDADE_ID);
+
+        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+                SCI_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(sci));
+
+        when(atividadeRepository.existsByCodigoSeg(
+                "95.95.95.001.01.01.001"))
+                .thenReturn(true);
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> atividadeService.criar(dto)
+        );
+
+        assertEquals(
+                "Já existe uma Atividade com este Código SEG.",
                 ex.getMessage()
         );
     }
