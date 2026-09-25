@@ -134,47 +134,29 @@ public class SciController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@Operation(summary = "Prorrogar projeto", description = "Amplia a data final de um projeto aberto e registra a operação no histórico de prorrogações.")
+	@Operation(summary = "Prorrogar SCI", description = "Amplia a data final de um SCI aberto, respeitando o limite temporal do projeto pai e registrando a operação no histórico.")
 	@ApiResponses({
-			@ApiResponse(responseCode = "201", description = "Projeto prorrogado com sucesso", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "201", description = "SCI prorrogado com sucesso", useReturnTypeSchema = true),
 			@ApiResponse(responseCode = "400", description = "Regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
-			@ApiResponse(responseCode = "404", description = "Projeto ou usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "404", description = "SCI ou usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
 			@ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class))) })
 	@PostMapping("/{id}/prorrogacoes")
 	public ResponseEntity<HistoricoProrrogacaoResponseDTO> prorrogar(@PathVariable UUID id,
 			@Valid @RequestBody ProrrogacaoRequestDTO dto) {
 
-		HistoricoProrrogacaoResponseDTO historico = prorrogacaoService.prorrogarProjeto(id, dto);
+		HistoricoProrrogacaoResponseDTO historico = prorrogacaoService.prorrogarSci(id, dto);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(historico);
 	}
 
-	@Operation(
-	        summary = "Consultar histórico de prorrogações do projeto",
-	        description = "Retorna, em ordem cronológica, todas as prorrogações registradas para o projeto."
-	)
+	@Operation(summary = "Consultar histórico de prorrogações do SCI", description = "Retorna, em ordem cronológica, todas as prorrogações registradas para o SCI.")
 	@ApiResponses({
-	        @ApiResponse(
-	                responseCode = "200",
-	                description = "Histórico retornado com sucesso",
-	                useReturnTypeSchema = true
-	        ),
-	        @ApiResponse(
-	                responseCode = "404",
-	                description = "Projeto não encontrado",
-	                content = @Content(schema = @Schema(implementation = ApiError.class))
-	        ),
-	        @ApiResponse(
-	                responseCode = "500",
-	                description = "Erro interno do servidor",
-	                content = @Content(schema = @Schema(implementation = ApiError.class))
-	        )
-	})
+			@ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "404", description = "SCI não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class))) })
 	@GetMapping("/{id}/prorrogacoes")
-	public ResponseEntity<List<HistoricoProrrogacaoResponseDTO>>
-	        listarProrrogacoes(@PathVariable UUID id) {
+	public ResponseEntity<List<HistoricoProrrogacaoResponseDTO>> listarProrrogacoes(@PathVariable UUID id) {
 
-	    return ResponseEntity.ok(
-	            prorrogacaoService.listarHistoricoProjeto(id)
-	    );
-	}}
+		return ResponseEntity.ok(prorrogacaoService.listarHistoricoSci(id));
+	}
+}

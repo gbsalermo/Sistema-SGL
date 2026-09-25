@@ -21,6 +21,7 @@ import com.sgl.dto.response.AtividadeResponseDTO;
 import com.sgl.dto.response.HistoricoProrrogacaoResponseDTO;
 import com.sgl.exception.ApiError;
 import com.sgl.service.AtividadeService;
+import com.sgl.service.ProrrogacaoService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

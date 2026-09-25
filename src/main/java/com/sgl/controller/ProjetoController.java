@@ -16,12 +16,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.ProjetoRequestDTO;
+import com.sgl.dto.request.ProrrogacaoRequestDTO;
+import com.sgl.dto.response.HistoricoProrrogacaoResponseDTO;
 import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.ApiError;
 import com.sgl.service.ProjetoService;
-import com.sgl.service.ProrrogacaoService;
-import com.sgl.dto.request.ProrrogacaoRequestDTO;
-import com.sgl.dto.response.HistoricoProrrogacaoResponseDTO;
 import com.sgl.service.ProrrogacaoService;
 
 import io.swagger.v3.oas.annotations.Operation;
