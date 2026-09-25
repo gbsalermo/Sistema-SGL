@@ -3,7 +3,7 @@
 **Criado em:** 24/09/2026  
 **Etapa anterior:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada  
 **Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
-**Bloco atual:** 5.3 — Atividades 🔧 atual; 5.0 ✅, 5.1 ✅ e 5.2 ✅ fechados  
+**Bloco atual:** 5.5 — Interface e integração 🔧 atual; 5.0 ✅, 5.1 ✅, 5.2 ✅, 5.3 ✅ e 5.4 ✅ fechados  
 **Branch de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fonte canônica de `main`:** GitLab institucional  
 
@@ -20,8 +20,8 @@ Roadmap canônico:
 → 5.1 Projeto base                                ✅ concluído e validado
 → 5.2 SCI                                         ✅ concluído e validado
 → 5.3 Atividades                                  ✅ concluído e validado
-→ 5.4 Código SEG — validação hierárquica           🧪 implementação concluída; validação final pendente
-→ 5.5 Interface e integração
+→ 5.4 Código SEG — validação hierárquica           ✅ concluído e validado
+→ 5.5 Interface e integração                        🔧 atual
 ```
 
 O backend deve estabilizar Projeto → SCI → Atividade antes do fechamento da interface. O Código SEG é cadastrado pelo usuário/gestão nesta etapa; o SGL valida formato e coerência hierárquica, sem gerar a numeração automaticamente.
@@ -635,7 +635,7 @@ GET  /api/v1/atividades/{id}/correcoes-codigo-seg
 
 Alteração direta no banco fica restrita a manutenção excepcional em DEV/pré-produção. Em produção, a correção oficial deve ocorrer pelo fluxo administrativo auditável.
 
-#### 5.4.5 Testes e fechamento 🧪
+#### 5.4.5 Testes e fechamento ✅
 
 A suíte da 5.4 foi adicionada cobrindo:
 
@@ -653,7 +653,30 @@ A suíte da 5.4 foi adicionada cobrindo:
 - atomicidade: colisão em descendente impede toda a correção;
 - seis endpoints de correção/histórico.
 
-A implementação está pronta para fechamento assim que a suíte completa `mvn test` for confirmada verde.
+A suíte completa `mvn test` foi confirmada verde em 25/09/2026 após o push do código. Com isso, o bloco 5.4 foi oficialmente concluído e validado. Nesta rodada, o fechamento foi realizado por validação automatizada; não foi exigida bateria manual adicional em Postman.
+
+#### Fechamento oficial do 5.4 ✅
+
+Fechado em 25/09/2026 após confirmação de código publicado e suíte JUnit completa verde.
+
+Estado consolidado:
+
+- formato hierárquico do Código SEG validado em Projeto, SCI e Atividade;
+- unicidade global/institucional protegida em Service e banco pela V23;
+- códigos permanecem reservados mesmo para registros inativos;
+- Código SEG fica imutável no CRUD comum depois de definido;
+- Projeto legado sem código pode receber a primeira definição;
+- V24 persiste histórico auditável de correção;
+- correção administrativa exige justificativa e operador válido do tenant;
+- Projeto corrigido propaga novo prefixo para SCI e Atividades preservando sufixos;
+- SCI corrigido propaga novo prefixo para suas Atividades preservando sufixos;
+- correção de Atividade altera apenas a própria Atividade;
+- colisão em qualquer alvo/descendente bloqueia toda a operação antes da mutação;
+- registros encerrados ou inativos podem ter erro de identificação corrigido sem reabrir ciclo de vida;
+- endpoints de correção e histórico estão expostos nos três domínios;
+- suíte automatizada completa confirmada verde.
+
+Próximo bloco liberado: **5.5 — Interface e integração**.
 
 ### 5.5 — Interface e integração
 
