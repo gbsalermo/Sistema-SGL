@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.AtividadeRequestDTO;
+import com.sgl.dto.request.ProrrogacaoRequestDTO;
 import com.sgl.dto.response.AtividadeResponseDTO;
+import com.sgl.dto.response.HistoricoProrrogacaoResponseDTO;
 import com.sgl.exception.ApiError;
 import com.sgl.service.AtividadeService;
 
@@ -36,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 public class AtividadeController {
 
 	private final AtividadeService atividadeService;
+	private final ProrrogacaoService prorrogacaoService;
 
 	@Operation(summary = "Criar Atividade", description = "Cadastra uma nova Atividade vinculada obrigatoriamente a um SCI da unidade atual.")
 	@ApiResponses({
@@ -137,5 +140,27 @@ public class AtividadeController {
 		atividadeService.deletar(id);
 
 		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Prorrogar Atividade", description = "Amplia a data final de uma Atividade aberta, respeitando os limites do SCI e do Projeto e registrando a operação no histórico.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "201", description = "Atividade prorrogada com sucesso", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "400", description = "Regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "404", description = "Atividade ou usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class))) })
+	@PostMapping("/{id}/prorrogacoes")
+	public ResponseEntity<HistoricoProrrogacaoResponseDTO> prorrogar(@PathVariable UUID id,
+			@Valid @RequestBody ProrrogacaoRequestDTO dto) {
+
+		HistoricoProrrogacaoResponseDTO historico = prorrogacaoService.prorrogarAtividade(id, dto);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(historico);
+	}
+
+	@Operation(summary = "Consultar histórico de prorrogações da Atividade", description = "Retorna, em ordem cronológica, todas as prorrogações registradas para a Atividade.")
+	@GetMapping("/{id}/prorrogacoes")
+	public ResponseEntity<List<HistoricoProrrogacaoResponseDTO>> listarProrrogacoes(@PathVariable UUID id) {
+
+		return ResponseEntity.ok(prorrogacaoService.listarHistoricoAtividade(id));
 	}
 }

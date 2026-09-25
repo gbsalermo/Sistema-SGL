@@ -19,6 +19,10 @@ import com.sgl.dto.request.ProjetoRequestDTO;
 import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.ApiError;
 import com.sgl.service.ProjetoService;
+import com.sgl.service.ProrrogacaoService;
+import com.sgl.dto.request.ProrrogacaoRequestDTO;
+import com.sgl.dto.response.HistoricoProrrogacaoResponseDTO;
+import com.sgl.service.ProrrogacaoService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 public class ProjetoController {
 
 	private final ProjetoService projetoService;
+	private final ProrrogacaoService prorrogacaoService;
 
 	@Operation(summary = "Criar projeto", description = "Cadastra um novo projeto associado ao laboratório responsável/contextual da unidade atual.")
 	@ApiResponses({
@@ -101,7 +106,7 @@ public class ProjetoController {
 		projetoService.deletar(id);
 		return ResponseEntity.noContent().build();
 	}
-  
+
 	@Operation(summary = "Listar projetos habilitados", description = "Retorna os projetos da unidade atual cujo indicador técnico ativo esteja habilitado. Este filtro é independente do status de negócio do projeto.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Projetos ativos listados com sucesso", useReturnTypeSchema = true),
@@ -109,5 +114,31 @@ public class ProjetoController {
 	@GetMapping("/ativos")
 	public ResponseEntity<List<ProjetoResponseDTO>> listarAtivos() {
 		return ResponseEntity.ok(projetoService.listarAtivos());
+	}
+
+	@Operation(summary = "Prorrogar projeto", description = "Amplia a data final de um projeto aberto e registra a operação no histórico de prorrogações.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "201", description = "Projeto prorrogado com sucesso", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "400", description = "Regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "404", description = "Projeto ou usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class))) })
+	@PostMapping("/{id}/prorrogacoes")
+	public ResponseEntity<HistoricoProrrogacaoResponseDTO> prorrogar(@PathVariable UUID id,
+			@Valid @RequestBody ProrrogacaoRequestDTO dto) {
+
+		HistoricoProrrogacaoResponseDTO historico = prorrogacaoService.prorrogarProjeto(id, dto);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(historico);
+	}
+
+	@Operation(summary = "Consultar histórico de prorrogações do projeto", description = "Retorna, em ordem cronológica, todas as prorrogações registradas para o projeto.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+			@ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class))) })
+	@GetMapping("/{id}/prorrogacoes")
+	public ResponseEntity<List<HistoricoProrrogacaoResponseDTO>> listarProrrogacoes(@PathVariable UUID id) {
+
+		return ResponseEntity.ok(prorrogacaoService.listarHistoricoProjeto(id));
 	}
 }
