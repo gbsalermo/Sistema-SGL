@@ -156,6 +156,8 @@ public class SciService {
 
 		String codigoSeg = codigoSegValidator.validarSci(dto.getCodigoSeg(), sci.getProjeto());
 
+		validarCodigoSegImutavel(sci.getCodigoSeg(), codigoSeg);
+
 		validarCodigoSegUnico(codigoSeg, sci.getPublicId());
 
 		sci.setCodigoSeg(codigoSeg);
@@ -308,6 +310,15 @@ public class SciService {
 		}
 
 		return valor.trim();
+	}
+
+	private void validarCodigoSegImutavel(String codigoAtual, String codigoInformado) {
+
+		if (!codigoAtual.equals(codigoInformado)) {
+			throw new BusinessRuleException(
+					"O Código SEG do SCI não pode ser alterado pelo fluxo comum de atualização. Use o fluxo administrativo de correção."
+			);
+		}
 	}
 
 	private void validarCodigoSegUnico(String codigoSeg, UUID sciAtualId) {
