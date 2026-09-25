@@ -431,13 +431,13 @@ Subblocos do 5.4:
 
 - **5.4.1 Formato e coerência hierárquica ✅** — validação de Projeto, SCI e Atividade conforme o padrão institucional;
 - **5.4.2 Unicidade global ✅** — V23 + validação de Service, sem reutilização de Código SEG mesmo após inativação;
-- **5.4.3 Imutabilidade no CRUD comum** — após definido, o Código SEG não pode ser trocado por edição comum; Projeto legado sem código pode receber a primeira definição;
-- **5.4.4 Correção administrativa de Código SEG** — fluxo obrigatório antes do fechamento da Etapa 5 para corrigir erros humanos de digitação sem liberar alteração comum perigosa;
-- **5.4.5 Testes e fechamento** — suíte automatizada cobrindo formato, hierarquia, unicidade, imutabilidade e correção auditada.
+- **5.4.3 Imutabilidade no CRUD comum ✅** — após definido, o Código SEG não pode ser trocado por edição comum; Projeto legado sem código pode receber a primeira definição;
+- **5.4.4 Correção administrativa de Código SEG ✅** — V24 + fluxo auditável e transacional para corrigir erros humanos sem liberar alteração comum perigosa;
+- **5.4.5 Testes e fechamento 🧪** — testes automatizados implementados; resta confirmar a suíte completa verde.
 
-A correção administrativa deverá exigir justificativa e autoria, registrar valor anterior/novo e data/hora, validar formato/hierarquia/unicidade e operar de forma transacional. Correção de Projeto deve propagar apenas o prefixo coerente aos SCI/Atividades descendentes, preservando seus sufixos; correção de SCI deve fazer o mesmo com suas Atividades. Colisões devem bloquear toda a operação.
+A correção administrativa foi implementada pela `V24__create_seg_correction_history.sql` e por endpoints próprios em Projeto, SCI e Atividade. Exige justificativa e autoria, registra valor anterior/novo e data/hora, valida formato/hierarquia/unicidade e opera de forma transacional. Correção de Projeto propaga apenas o prefixo coerente aos SCI/Atividades descendentes, preservando seus sufixos; correção de SCI faz o mesmo com suas Atividades. Colisões bloqueiam toda a operação antes de qualquer mutação.
 
-Alteração direta no banco não é fluxo funcional de produção. Pode existir apenas como manutenção excepcional em DEV/pré-produção; em produção, a alternativa oficial para erro de digitação será o fluxo administrativo auditável.
+A correção pode ser aplicada a registros encerrados ou inativos, porque corrige o identificador institucional sem reabrir o ciclo de vida. Alteração direta no banco não é fluxo funcional de produção. Pode existir apenas como manutenção excepcional em DEV/pré-produção; em produção, a alternativa oficial para erro de digitação será o fluxo administrativo auditável.
 
 ### 5.5 Interface e integração
 
