@@ -425,7 +425,7 @@ SCI       XX.XX.XX.XXX.XX.SS
 Atividade XX.XX.XX.XXX.XX.SS.AAA
 ```
 
-O Código SEG será cadastrado, não gerado automaticamente nesta versão. O SGL validará formato, coerência com o pai e **unicidade global/institucional**, independentemente da Unidade e inclusive para registros inativos.
+O Código SEG continua sendo um dado institucional cadastrado. O SGL não impõe sequência automática como regra: valida formato, coerência com o pai e **unicidade global/institucional**. Para facilitar o cadastro, a interface sugere o próximo sufixo provável de SCI/Atividade, mas o gestor pode substituí-lo por outro código institucional válido antes de salvar.
 
 Subblocos do 5.4:
 
@@ -468,6 +468,14 @@ Implementado:
 - correção administrativa de Código SEG nos três níveis;
 - histórico visual de prorrogações e correções;
 - massa DEV idempotente para validação da interface.
+
+Sugestão assistida no 5.5:
+
+- Novo SCI recebe sugestão `maior sufixo já utilizado + 1` a partir da raiz do Projeto;
+- Nova Atividade recebe sugestão equivalente a partir do Código SEG do SCI;
+- a sugestão considera registros ativos e inativos;
+- o campo permanece editável antes da criação;
+- códigos avulsos continuam permitidos desde que atendam formato, hierarquia e unicidade.
 
 Pendente para fechamento:
 
