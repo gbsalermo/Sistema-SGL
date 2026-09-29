@@ -477,6 +477,16 @@ Planejado:
 
 Depende das Etapas 5 e 6 estabilizadas. Inclui filtros/agregações, telas, PDF/XLSX e organização estrutural do módulo de relatórios.
 
+Decisões já fechadas para a Etapa 7:
+
+- adicionar **Projetos** como relatório consolidado próprio;
+- incluir Código SEG, Laboratório, responsável/líder, período, status, situação de execução, recurso externo e agregações de SCI/Atividades;
+- incorporar dimensões de vínculos/Estagiários depois da Etapa 6;
+- sintetizar **Movimentações** e **Resumo operacional** em uma única opção da Central;
+- dentro de Movimentações, manter modos/visões **Resumo** e **Detalhamento**;
+- preservar inicialmente os endpoints atuais de Movimentações e Resumo operacional para compatibilidade, tratando a unificação primeiro como decisão de interface;
+- usar o espaço liberado no seletor da Central para o novo relatório de Projetos.
+
 ---
 
 # 11. Unidades, Soluções e Pedidos

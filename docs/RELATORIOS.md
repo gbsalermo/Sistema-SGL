@@ -242,3 +242,50 @@ Não marcar essa bateria final como substituída apenas pela existência dos com
 Não há novo relatório obrigatório definido antes do congelamento do primeiro protótipo.
 
 Qualquer novo relatório deve nascer de necessidade operacional real e contrato de dados claro, evitando duplicar telas ou criar relatórios apenas por conveniência visual.
+
+
+---
+
+## Decisões planejadas para a Etapa 7
+
+Estas decisões **não alteram ainda os relatórios atuais**. Serão implementadas após a estabilização das Etapas 5 e 6.
+
+### Projetos como relatório próprio
+
+A Central de Relatórios receberá a opção **Projetos**, com visão consolidada de:
+
+- Código SEG;
+- Laboratório;
+- responsável/líder;
+- período;
+- status;
+- situação de execução;
+- recurso externo;
+- quantidade de SCI;
+- quantidade de Atividades;
+- dimensões de vínculos/Estagiários quando a Etapa 6 estiver estabilizada.
+
+O relatório de Projetos não substitui o hub operacional `/projetos`: o hub permanece voltado à operação/cadastro e o relatório à consulta, agregação e exportação.
+
+### Movimentações + Resumo operacional
+
+Os relatórios atuais:
+
+```text
+Movimentações
+Resumo operacional
+```
+
+serão apresentados como **uma única opção Movimentações** na Central, com duas visões:
+
+```text
+Resumo
+Detalhamento
+```
+
+- **Resumo** reutiliza a cobertura atualmente entregue por `/relatorios/resumo-operacional`;
+- **Detalhamento** reutiliza a cobertura atualmente entregue por `/relatorios/movimentacoes`.
+
+A unificação é inicialmente de interface. Os endpoints atuais podem permanecer separados para preservar compatibilidade e reduzir risco de regressão.
+
+Essa síntese libera espaço no seletor principal para **Projetos** sem aumentar a quantidade de cards/opções visíveis.

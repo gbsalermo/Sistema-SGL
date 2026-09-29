@@ -517,21 +517,102 @@ Confirmado para a Etapa 6:
 
 ### 7.1 Filtros/dimensões
 
-Laboratório, responsável, Projeto, Código SEG, líder, Atividade, Orientador, Bolsa, Curso, Cultura, situação e período.
+Laboratório, responsável, Projeto, Código SEG, líder, SCI, Atividade, Orientador, Bolsa, Curso, Cultura, situação e período.
 
-### 7.2 Consultas/agregações
+### 7.2 Relatório consolidado de Projetos
 
-Contagens por Laboratório, Orientador, responsável, Bolsa, Curso, Cultura, Projeto e Atividade.
+Adicionar **Projetos** como opção própria na Central de Relatórios.
 
-### 7.3 Prévia/telas
+Cobertura base derivada da Etapa 5:
+
+- Projeto;
+- Código SEG;
+- Laboratório responsável/contextual;
+- líder/responsável;
+- início e fim;
+- status;
+- situação de execução;
+- recurso externo/empresa quando aplicável;
+- quantidade de SCI;
+- quantidade de Atividades.
+
+Após estabilização da Etapa 6, o relatório pode incorporar dimensões consolidadas de vínculos/Estagiários sem duplicar a entidade Projeto.
+
+Filtros previstos:
+
+- Laboratório;
+- Projeto;
+- Código SEG;
+- responsável/líder;
+- status;
+- situação de execução;
+- período.
+
+A prévia deve permitir sair da visão consolidada do Projeto para seus SCI/Atividades quando necessário, sem transformar o relatório em substituto do hub operacional `/projetos`.
+
+### 7.3 Consolidação de Movimentações + Resumo operacional
+
+Na Central de Relatórios, **Movimentações** e **Resumo operacional** deixam de ocupar opções separadas.
+
+Novo desenho:
+
+```text
+Movimentações
+├── Resumo
+│   ├── total de movimentações
+│   ├── entradas / saídas / devoluções / descartes / ajustes
+│   ├── produtos movimentados
+│   ├── lotes movimentados
+│   ├── principais entradas
+│   ├── principais saídas
+│   └── lotes mais movimentados
+│
+└── Detalhamento
+    └── tabela completa de movimentações e rastreabilidade
+```
+
+A consolidação é inicialmente **de experiência de interface**, não uma obrigação de quebrar contratos backend.
+
+Por compatibilidade, os endpoints atuais podem permanecer:
+
+```text
+GET /api/v1/relatorios/movimentacoes
+GET /api/v1/relatorios/resumo-operacional
+```
+
+O frontend passa a tratá-los como duas visões do mesmo relatório. Refactor posterior pode compartilhar consulta/service internamente desde que não altere comportamento ou exportações.
+
+Com isso, a lista principal da Central passa a tender para:
+
+```text
+Estagiários
+Produtos
+Movimentações
+Estoque e lotes
+Resíduos
+Fiscalização
+Projetos
+```
+
+### 7.4 Consultas/agregações
+
+Contagens por Laboratório, Orientador, responsável, Bolsa, Curso, Cultura, Projeto, SCI e Atividade.
+
+### 7.5 Prévia/telas
 
 Visões consolidadas de Laboratórios, Projetos e Estagiários.
 
-### 7.4 PDF/XLSX
+### 7.6 PDF/XLSX
 
-Mesma consulta/filtros da tela.
+A exportação deve usar a mesma consulta/filtros da tela.
 
-### 7.5 Organização estrutural
+Para Movimentações, definir no fechamento do contrato se a exportação inclui:
+
+- visão resumida;
+- detalhamento;
+- ou ambas em seções/abas do mesmo arquivo.
+
+### 7.7 Organização estrutural
 
 Mover controllers/services/DTOs de Relatórios para packages específicos, sem alterar contratos ou comportamento.
 
