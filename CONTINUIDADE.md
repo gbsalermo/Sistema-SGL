@@ -6,10 +6,10 @@
 **Última atualização:** 29/09/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
-**Branch atual de trabalho:** `collab/etapa-5-projetos-atividades`  
+**Branch atual de trabalho:** `collab/etapa-6-estagiarios-vinculos`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 5 — Projetos e Atividades ✅  
-**Próxima etapa:** Etapa 6 — Estagiários e vínculos ⏳  
+**Etapa atual:** Etapa 6 — Estagiários e vínculos 🔧  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
@@ -45,10 +45,10 @@ As Etapas 1–4 já foram integradas e validadas.
 Branch atual:
 
 ```text
-collab/etapa-5-projetos-atividades
+collab/etapa-6-estagiarios-vinculos
 ```
 
-A Etapa 5 foi criada a partir da `main` contendo o fechamento da Etapa 4. Branches antigas de Etapa 4 permanecem somente como referência histórica.
+A Etapa 6 foi criada a partir da `main` pós-merge da Etapa 5. As branches das etapas anteriores permanecem somente como referência histórica.
 
 ---
 
@@ -181,14 +181,20 @@ V17 — locais de armazenamento de Resíduos
 V18 — modelos reutilizáveis de Resíduos
 V19 — expansão do domínio de Projeto
 V20 — criação do domínio de SCI
+V21 — criação do domínio de Atividade
+V22 — históricos de prorrogação de Projeto/SCI/Atividade
+V23 — unicidade global dos Códigos SEG
+V24 — histórico auditável de correções de Código SEG
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = próxima versão livre após V20
+nova alteração de schema = próxima versão livre após V24
 ```
+
+Na abertura da Etapa 6, a próxima versão esperada é **V25**, desde que nenhuma migration nova seja incorporada à `main` antes da implementação.
 
 ---
 
@@ -387,7 +393,7 @@ A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5
 
 # 10. Projetos, Estagiários e Relatórios — evolução atual e próximas etapas
 
-## Etapa 5 — Projetos + Atividades 🔧 ATUAL
+## Etapa 5 — Projetos + Atividades ✅ CONCLUÍDA E MERGEADA
 
 Portão 5.0 fechado em 24/09/2026:
 
@@ -464,16 +470,154 @@ Fechamento do 5.5 em 29/09/2026:
 - dark mode e tipografia canônica validados;
 - Etapa 5 oficialmente concluída e pronta para merge.
 
-## Etapa 6 — Estagiários
+## Etapa 6 — Estagiários e vínculos 🔧 ATUAL
 
-Planejado:
+Branch:
 
-- Orientador obrigatório;
-- Projeto/Atividade;
-- Bolsa/vínculo separado de Curso/Formação;
-- Cultura/área temática;
-- treinamento inicial de segurança;
-- prorrogações justificadas e históricas.
+```text
+collab/etapa-6-estagiarios-vinculos
+```
+
+A Etapa 6 deve **evoluir o domínio atual de `Estagiario`**, sem criar um segundo módulo paralelo. O Estagiário continua sendo uma extensão institucional de `Usuario`.
+
+### Identidade institucional x vínculo de estágio
+
+`Usuario` é a identidade institucional única, originada futuramente do ambiente corporativo/DevOps. O vínculo de Estagiário possui ciclo de vida próprio.
+
+Regras fechadas:
+
+- `Usuario.ativo` e situação do estágio são conceitos distintos;
+- um vínculo de estágio **nunca pode estar ativo se o Usuario estiver inativo**;
+- ao finalizar um estágio, o Usuario pode ser desativado ou permanecer ativo para permitir futuro novo vínculo;
+- Usuario inativado no ambiente institucional não pode manter estágio ativo;
+- um Usuario ativo, mas sem vínculo de estágio/atividade válido, não deve manter acesso operacional de Estagiário à interface de pedidos;
+- o acesso operacional do Estagiário depende de existir vínculo ativo com pelo menos uma Atividade/Projeto válido;
+- não reutilizar `Usuario.ativo` como único indicador de situação do estágio.
+
+Situações previstas para o vínculo:
+
+```text
+EM_ANDAMENTO
+PRORROGADO
+FINALIZADO
+```
+
+### Orientador
+
+Todo Estagiário deve possuir Orientador obrigatório.
+
+O Orientador:
+
+- é um `Usuario`;
+- deve ter perfil `PESQUISADOR` ou `ANALISTA`;
+- deve pertencer à mesma Unidade do Estagiário;
+- deve estar ligado ao contexto do Projeto/Laboratório aplicável;
+- não exige entidade paralela `Orientador`.
+
+### Atividades, SCI e Projetos
+
+O Estagiário deve estar relacionado a **pelo menos uma Atividade** e pode possuir **uma ou mais Atividades simultâneas**.
+
+Hierarquia reaproveitada da Etapa 5:
+
+```text
+Estagiário
+→ Atividade(s)
+→ SCI
+→ Projeto
+→ Laboratório
+→ Unidade
+```
+
+Regras fechadas:
+
+- não criar FK redundante direta de Projeto no Estagiário;
+- Projeto e SCI são derivados da Atividade;
+- todas as Atividades vinculadas ao Estagiário devem pertencer à mesma Unidade do Usuario;
+- adicionar outra Atividade não representa necessariamente uma "migração";
+- encerramento de participação em uma Atividade deve encerrar apenas aquele vínculo;
+- histórico deve preservar vínculos encerrados;
+- não sobrescrever silenciosamente um vínculo anterior;
+- um Estagiário pode continuar ativo em outra Atividade após encerrar uma participação específica.
+
+### Bolsa / tipo de vínculo, Formação e Curso
+
+Os três conceitos permanecem separados e têm finalidade predominantemente informativa e de filtro/relatório.
+
+`TipoBolsa` continua como enum, aproveitando o domínio atual e podendo ser evoluído com novos valores institucionais quando necessário.
+
+Formação e Curso também devem ser modelados inicialmente como enums, evitando catálogos adicionais sem necessidade operacional.
+
+Exemplos conceituais:
+
+```text
+Tipo de vínculo:
+PIBIC / PIBITI / CNPq / FAPESB / VOLUNTARIO / outros valores institucionais
+
+Formação:
+GRADUACAO / MESTRADO / DOUTORADO / ...
+
+Curso:
+AGRONOMIA / ENGENHARIA_DE_COMPUTACAO / QUIMICA / ...
+```
+
+### Cultura / área temática
+
+Cultura é uma característica ligada à participação do Estagiário em suas Atividades, não uma String única global no Estagiário.
+
+Um Estagiário pode possuir múltiplas Culturas por estar vinculado a múltiplas Atividades.
+
+A modelagem deve seguir o padrão de associações reutilizáveis já utilizado em Produto/Resíduo para riscos/classes:
+
+- catálogo reutilizável por Unidade;
+- relacionamento N:N quando aplicável;
+- sem String solta repetida;
+- respeitar tenant/Unidade;
+- permitir filtro futuro em relatórios.
+
+A cardinalidade exata deve ser implementada junto ao vínculo Estagiário–Atividade, evitando atribuir uma única Cultura global ao Usuario.
+
+### Período e prorrogação
+
+O vínculo de estágio mantém:
+
+```text
+dataInicio
+dataFim
+```
+
+Prorrogação não deve ser alteração silenciosa da data final. Deve preservar:
+
+- data final anterior;
+- nova data final;
+- justificativa;
+- autor;
+- data/hora.
+
+Seguir o padrão auditável consolidado na Etapa 5.
+
+### Treinamento de segurança
+
+Permanece requisito da Etapa 6. Inicialmente pode ser representado por informação booleana, desde que a revisão do domínio confirme que não existe estrutura equivalente.
+
+### Código interno / matrícula
+
+Não criar Código SGL adicional para Estagiário.
+
+A identidade funcional deverá utilizar a matrícula institucional do Usuario quando essa informação vier do ambiente corporativo/DevOps. O Código SEG permanece reservado ao domínio Projeto/SCI/Atividade.
+
+### Divisão de execução
+
+```text
+6.1 — contrato e fundação do vínculo
+6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico
+6.3 — dados acadêmicos, tipo de vínculo e Cultura
+6.4 — período, situação e prorrogações
+6.5 — frontend integrado
+6.6 — dados DEV, testes, validação e documentação
+```
+
+Não antecipar Etapa 7 durante esta implementação.
 
 ## Etapa 7 — Relatórios consolidados
 
@@ -557,8 +701,8 @@ Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
-Etapa 5 — Projetos + Atividades                       🔧 atual — 5.5 Interface e integração; 5.1–5.4 ✅
-Etapa 6 — Estagiários + vínculos                      ⏳
+Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
+Etapa 6 — Estagiários + vínculos                      🔧 atual
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
 Etapa 9 — Pedidos + Soluções                          ⏳
@@ -574,7 +718,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com 5.0, 5.1, 5.2, 5.3 e 5.4 fechados e validados; retomar pelo bloco 5.5 — Interface e integração. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–5 estão encerradas, validadas e integradas à main. A etapa atual é a Etapa 6 — Estagiários e vínculos, na branch `collab/etapa-6-estagiarios-vinculos`. Retomar pelo bloco 6.1 — contrato e fundação do vínculo, preservando o domínio atual de Estagiário e a hierarquia Projeto → SCI → Atividade. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
