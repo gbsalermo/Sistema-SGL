@@ -13,21 +13,28 @@ import com.sgl.model.Projeto;
 @Repository
 public interface ProjetoRepository extends JpaRepository<Projeto, Long> {
 
-    Optional<Projeto> findByPublicId(UUID publicId);
-    Optional<Projeto> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
+	Optional<Projeto> findByPublicId(UUID publicId);
 
-    @Override
-    @Query("""
-            SELECT projeto
-            FROM Projeto projeto
-            WHERE (:#{@tenantProvider.unidadeId} IS NULL
-               OR projeto.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
-            """)
-    List<Projeto> findAll();
+	Optional<Projeto> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
-    List<Projeto> findByLaboratorioId(Long laboratorioId);
-    List<Projeto> findByLaboratorioUnidadePublicId(UUID unidadePublicId);
+	@Override
+	@Query("""
+			SELECT projeto
+			FROM Projeto projeto
+			WHERE (:#{@tenantProvider.unidadeId} IS NULL
+			   OR projeto.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
+			""")
+	List<Projeto> findAll();
 
-    List<Projeto> findByAtivoTrue();
-    List<Projeto> findByLaboratorioUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
+	List<Projeto> findByLaboratorioId(Long laboratorioId);
+
+	List<Projeto> findByLaboratorioUnidadePublicId(UUID unidadePublicId);
+
+	List<Projeto> findByAtivoTrue();
+
+	List<Projeto> findByLaboratorioUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
+
+	boolean existsByCodigoSeg(String codigoSeg);
+
+	boolean existsByCodigoSegAndPublicIdNot(String codigoSeg, UUID publicId);
 }

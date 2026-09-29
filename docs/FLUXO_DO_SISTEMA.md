@@ -1,6 +1,6 @@
 # Fluxo do Sistema SGL
 
-**Atualizado em:** 17/09/2026
+**Atualizado em:** 25/09/2026
 
 Este documento descreve como os módulos principais se conectam no estado funcional aprovado e nas etapas de pré-produção já validadas. Detalhes de contrato devem ser confirmados no Swagger/OpenAPI e detalhes de implementação no código da branch integrada à `main`.
 
@@ -23,7 +23,7 @@ Regras atuais:
 1. Unidade é entidade institucional do domínio.
 2. Laboratórios pertencem a uma Unidade.
 3. Usuários pertencem a uma Unidade e, quando aplicável, a um Laboratório.
-4. Projetos pertencem ao contexto do Laboratório/Unidade.
+4. Projetos mantêm um Laboratório responsável/contextual e pertencem à Unidade, mas são o eixo operacional para SCI e Atividades.
 5. Produtos formam o catálogo.
 6. Cada Unidade possui seu próprio contexto de estoque para os produtos utilizados.
 
@@ -326,3 +326,134 @@ ARMAZENADO_TEMPORARIAMENTE
   ↓ despachar
 DESPACHADO
 ```
+
+## Hierarquia de Projetos — Etapa 5 ✅ concluída e validada
+
+```text
+Laboratório responsável/contextual
+└── Projeto
+    ├── Código SEG ...00
+    └── SCI
+        ├── Código SEG ...SS
+        └── Atividade
+            └── Código SEG ...SS.AAA
+```
+
+Projeto é o eixo funcional. Laboratório serve como contexto/filtro institucional; não é necessário entrar no Laboratório para navegar por Projeto.
+
+Toda Atividade pertence a um SCI e, portanto, a um Projeto. Atividades podem encerrar antes do Projeto.
+
+
+
+### Estado do Projeto após o 5.1
+
+```text
+Projeto
+├── Laboratório responsável/contextual
+├── Código SEG cadastrado
+├── status de negócio
+├── situação de execução
+├── recurso externo/empresa
+└── ativo técnico
+```
+
+O bloco 5.2 introduziu SCI como entidade obrigatoriamente subordinada ao Projeto. Laboratório não é duplicado em SCI quando pode ser derivado do Projeto sem perda de regra de negócio.
+
+
+### Regras da SCI — 5.2.1
+
+```text
+Projeto
+└── SCI
+```
+
+- SCI depende obrigatoriamente de Projeto;
+- Laboratório e Unidade são alcançados pelo Projeto;
+- SCI possui período próprio, mas não pode começar antes do Projeto;
+- se o Projeto possuir fim, SCI não pode terminar depois dele;
+- status e situação de execução são próprios do SCI, ainda que usem os mesmos valores de domínio do Projeto;
+- concluir SCI não conclui Projeto;
+- a coerência hierárquica do Código SEG é validada no backend, com unicidade global.
+
+
+### Estado da SCI após o 5.2
+
+```text
+Projeto
+└── SCI
+    ├── Código SEG próprio
+    ├── responsável
+    ├── início/fim
+    ├── status de negócio
+    ├── situação de execução
+    └── ativo técnico
+```
+
+O período do SCI fica contido no período do Projeto. O vínculo com o Projeto é estrutural e não pode ser trocado pelo update comum. Laboratório e Unidade são derivados do Projeto. A hierarquia e a unicidade global do Código SEG são validadas pelo backend.
+
+### Atividades — 5.3 ✅ concluído
+
+```text
+Projeto
+└── SCI
+    └── Atividade
+```
+
+Atividade é entidade própria obrigatoriamente vinculada ao SCI, com ciclo operacional próprio. Projeto, Laboratório e Unidade são derivados pela hierarquia sempre que não houver regra de negócio que exija duplicação.
+
+
+### Prorrogação hierárquica de Projeto, SCI e Atividade
+
+```text
+Projeto prorrogado
+→ SCI mantém sua previsão atual
+
+SCI prorrogado
+→ Atividades mantêm suas previsões atuais
+
+Atividade precisa de mais prazo
+→ prorrogação própria
+→ justificativa
+→ novo fim dentro do SCI/Projeto vigentes
+```
+
+Prorrogação não é propagada em cascata. Pais abertos definem apenas o limite máximo disponível aos filhos. Um item encerrado não pode ser prorrogado pelo fluxo comum. Redução do período de um pai também deve ser bloqueada quando tornaria um filho existente temporalmente inválido.
+
+
+### Persistência das prorrogações
+
+Cada nível da hierarquia terá histórico próprio, mantendo FK real:
+
+```text
+Projeto
+└── HistoricoProrrogacaoProjeto
+
+SCI
+└── HistoricoProrrogacaoSci
+
+Atividade
+└── HistoricoProrrogacaoAtividade
+```
+
+Uma prorrogação registra a data final anterior, a nova data final, justificativa, autor e data/hora. A alteração da entidade e o histórico fazem parte da mesma transação. O update comum não deve ampliar uma data final já existente.
+
+
+### Interface operacional da Etapa 5
+
+```text
+/projetos
+→ Projeto
+   → SCI
+      → Atividades
+```
+
+Projeto é o eixo da navegação. O hub oferece filtro por Laboratório, cadastro/edição de SCI e Atividade, prorrogações, correções SEG e consulta de histórico.
+
+Código SEG:
+
+- Projeto pode permanecer temporariamente sem SEG;
+- sem SEG no Projeto não se cria SCI;
+- SCI e Atividade exigem SEG;
+- a interface sugere próximo sufixo para SCI/Atividade, mas o gestor pode alterá-lo antes de salvar;
+- depois de definido, o Código SEG é imutável no CRUD comum;
+- correções posteriores usam fluxo administrativo auditável.

@@ -5,9 +5,13 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,6 +22,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -56,7 +61,28 @@ public class Projeto implements Serializable {
     private LocalDate dataFim;
 
     private String responsavel;
-
+    
+    @Column(name = "codigo_seg", length = 18)
+    private String codigoSeg;
+    
+    @Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 64)
+    private StatusProjeto status = StatusProjeto.ATIVO;
+    
+    @Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "situacao_execucao", nullable = false, length = 64)
+    private SituacaoExecucaoProjeto situacaoExecucao = SituacaoExecucaoProjeto.NAO_INFORMADO;
+    
+    @Default
+    @Column(name = "possui_recurso_externo", nullable = false)
+    private Boolean possuiRecursoExterno = false;
+    
+    @Column(name = "empresa_recurso_externo")
+    private String empresaRecursoExterno;
+    
+    @Default
     @Column(nullable = false)
     private Boolean ativo = true;
 

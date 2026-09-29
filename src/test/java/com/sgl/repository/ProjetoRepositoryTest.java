@@ -18,6 +18,8 @@ import org.springframework.test.context.ActiveProfiles;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.tenant.TenantContext;
 import com.sgl.tenant.TenantProvider;
 
@@ -75,6 +77,36 @@ class ProjetoRepositoryTest {
                 .ativo(ativo)
                 .build();
         return entityManager.persistAndFlush(projeto);
+    }
+
+    @Test
+    void devePersistirCamposExpandidosDoProjeto() {
+        Unidade unidade = criarUnidade("PX1");
+        Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório Expandido");
+
+        Projeto projeto = Projeto.builder()
+                .laboratorio(laboratorio)
+                .nome("Projeto Expandido")
+                .codigoSeg("94.94.94.001.01.00")
+                .status(StatusProjeto.ENCERRADO_COM_AVALIACAO_PENDENTE)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO)
+                .possuiRecursoExterno(true)
+                .empresaRecursoExterno("Empresa Teste")
+                .ativo(true)
+                .build();
+
+        entityManager.persistAndFlush(projeto);
+        entityManager.clear();
+
+        Projeto resultado = projetoRepository
+                .findByPublicId(projeto.getPublicId())
+                .orElseThrow();
+
+        assertEquals("94.94.94.001.01.00", resultado.getCodigoSeg());
+        assertEquals(StatusProjeto.ENCERRADO_COM_AVALIACAO_PENDENTE, resultado.getStatus());
+        assertEquals(SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO, resultado.getSituacaoExecucao());
+        assertTrue(resultado.getPossuiRecursoExterno());
+        assertEquals("Empresa Teste", resultado.getEmpresaRecursoExterno());
     }
 
     @Test

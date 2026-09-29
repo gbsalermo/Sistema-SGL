@@ -27,12 +27,18 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgl.config.SecurityConfig;
+import com.sgl.dto.request.CorrecaoCodigoSegRequestDTO;
 import com.sgl.dto.request.ProjetoRequestDTO;
+import com.sgl.dto.request.ProrrogacaoRequestDTO;
 import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
+import com.sgl.service.CorrecaoCodigoSegService;
 import com.sgl.service.ProjetoService;
+import com.sgl.service.ProrrogacaoService;
 
 /**
  * Teste de fatia web ({@code @WebMvcTest}) de {@link ProjetoController}. Segue o mesmo
@@ -53,7 +59,7 @@ class ProjetoControllerTest {
     static class JacksonTestConfig {
         @Bean
         ObjectMapper objectMapper() {
-            return new ObjectMapper();
+            return new ObjectMapper().findAndRegisterModules();
         }
     }
 
@@ -73,15 +79,20 @@ class ProjetoControllerTest {
     @MockitoBean
     private ProjetoService projetoService;
 
+    @MockitoBean
+    private ProrrogacaoService prorrogacaoService;
+
+    @MockitoBean
+    private CorrecaoCodigoSegService correcaoCodigoSegService;
+
     private ProjetoRequestDTO montarRequestDTO() {
-        return new ProjetoRequestDTO(
-                LABORATORIO_PUBLIC_ID,
-                "Síntese de Novos Compostos",
-                "Desenvolvimento de novos compostos orgânicos para catálise.",
-                null,
-                null,
-                "Maria Oliveira",
-                true);
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Síntese de Novos Compostos");
+        dto.setDescricao("Desenvolvimento de novos compostos orgânicos para catálise.");
+        dto.setResponsavel("Maria Oliveira");
+        dto.setAtivo(true);
+        return dto;
     }
 
     // ProjetoResponseDTO só tem construtor a partir da entidade Projeto (campos
@@ -100,6 +111,11 @@ class ProjetoControllerTest {
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise.")
                 .responsavel("Maria Oliveira")
+                .codigoSeg("95.95.95.001.01.00")
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .possuiRecursoExterno(true)
+                .empresaRecursoExterno("Empresa Teste")
                 .ativo(true)
                 .build();
 
@@ -122,7 +138,12 @@ class ProjetoControllerTest {
 
         mockMvc.perform(get(BASE_URL + "/{id}", PROJETO_PUBLIC_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Síntese de Novos Compostos"));
+                .andExpect(jsonPath("$.nome").value("Síntese de Novos Compostos"))
+                .andExpect(jsonPath("$.codigoSeg").value("95.95.95.001.01.00"))
+                .andExpect(jsonPath("$.status").value("ATIVO"))
+                .andExpect(jsonPath("$.situacaoExecucao").value("EM_ANDAMENTO_NO_PRAZO"))
+                .andExpect(jsonPath("$.possuiRecursoExterno").value(true))
+                .andExpect(jsonPath("$.empresaRecursoExterno").value("Empresa Teste"));
     }
 
     @Test
@@ -202,4 +223,68 @@ class ProjetoControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].ativo").value(true));
     }
+
+    @Test
+    void deveProrrogarProjetoERetornar201() throws Exception {
+        String body = """
+                {
+                  "usuarioId": "00000000-0000-0000-0000-000000000099",
+                  "novaDataFim": "2027-01-31",
+                  "justificativa": "Prorrogação de teste"
+                }
+                """;
+
+        when(prorrogacaoService.prorrogarProjeto(
+                eq(PROJETO_PUBLIC_ID), any(ProrrogacaoRequestDTO.class)))
+                .thenReturn(null);
+
+        mockMvc.perform(post(BASE_URL + "/{id}/prorrogacoes", PROJETO_PUBLIC_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void deveListarProrrogacoesDoProjetoERetornar200() throws Exception {
+        when(prorrogacaoService.listarHistoricoProjeto(PROJETO_PUBLIC_ID))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get(BASE_URL + "/{id}/prorrogacoes", PROJETO_PUBLIC_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+
+    @Test
+    void deveCorrigirCodigoSegDoProjetoERetornar201() throws Exception {
+        String body = """
+                {
+                  "usuarioId": "00000000-0000-0000-0000-000000000099",
+                  "novoCodigoSeg": "96.96.96.001.01.00",
+                  "justificativa": "Correção de digitação"
+                }
+                """;
+
+        when(correcaoCodigoSegService.corrigirProjeto(
+                eq(PROJETO_PUBLIC_ID),
+                any(CorrecaoCodigoSegRequestDTO.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(post(BASE_URL + "/{id}/correcoes-codigo-seg", PROJETO_PUBLIC_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void deveListarCorrecoesCodigoSegDoProjetoERetornar200() throws Exception {
+        when(correcaoCodigoSegService.listarHistoricoProjeto(PROJETO_PUBLIC_ID))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get(BASE_URL + "/{id}/correcoes-codigo-seg", PROJETO_PUBLIC_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
 }

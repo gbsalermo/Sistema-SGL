@@ -3,6 +3,9 @@ package com.sgl.dto.request;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -37,6 +40,21 @@ public class ProjetoRequestDTO {
 
     @Schema(description = "Nome do responsável pelo projeto.", example = "Maria Oliveira")
     private String responsavel;
+    
+    @Schema(description = "Código SEG institucional do projeto", example = "XX.XX.XX.XXX.XX.00")
+    private String codigoSeg;
+    
+    @Schema(description = "Status do ciclo de vida do projeto.", example = "ATIVO")
+    private StatusProjeto status;
+    
+    @Schema(description = "Situacao de execucao do projeto.", example = "NAO_INFORMADO")
+    private SituacaoExecucaoProjeto situacaoExecucao;
+    
+    @Schema(description = "Indica se o projeto possui recurso externo.", example = "false")
+    private Boolean possuiRecursoExterno;
+    
+    @Schema(description = "Empresa Responsável pelo recurso externo, quando aplicável.", example = "Empresa Parceira LTDA")
+    private String empresaRecursoExterno;
 
     @Schema(description = "Indica se o projeto está ativo.", example = "true")
     private Boolean ativo;

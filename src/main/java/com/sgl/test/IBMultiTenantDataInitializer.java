@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
@@ -21,16 +22,20 @@ import com.sgl.model.Lote;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
@@ -38,6 +43,7 @@ import com.sgl.repository.LoteRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -60,6 +66,8 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
     private final LoteRepository loteRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
+    private final SciRepository sciRepository;
+    private final AtividadeRepository atividadeRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
@@ -129,8 +137,32 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                         .descricao("Projeto ficticio para validar isolamento de dados entre unidades.")
                         .dataInicio(LocalDate.now().minusDays(20))
                         .responsavel(pesquisador.getNome())
+                        .codigoSeg("97.97.97.001.01.00")
+                        .status(StatusProjeto.ATIVO)
+                        .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                        .possuiRecursoExterno(false)
                         .ativo(true)
                         .build()));
+
+        if (projeto.getDataInicio() != null) {
+            Sci sci = garantirSci(
+                    projeto,
+                    ib,
+                    "97.97.97.001.01.01",
+                    "Validação molecular multitenant IB",
+                    pesquisador.getNome(),
+                    projeto.getDataInicio().plusDays(5)
+            );
+
+            garantirAtividade(
+                    sci,
+                    ib,
+                    "97.97.97.001.01.01.001",
+                    "Execução experimental multitenant IB",
+                    pesquisador.getNome(),
+                    sci.getDataInicio().plusDays(2)
+            );
+        }
 
         pedido("IB-PENDENTE", pesquisador, labSecundario, projeto, masterMix, 3,
                 StatusPedido.PENDENTE, LocalDateTime.now().minusHours(6));
@@ -140,6 +172,66 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                 StatusPedido.ENTREGUE, LocalDateTime.now().minusDays(3));
 
         System.out.println("=== MULTITENANT IB: massa complementar pronta. ===");
+    }
+
+    private Sci garantirSci(
+            Projeto projeto,
+            Unidade unidade,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate dataInicio) {
+
+        return sciRepository
+                .findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                        projeto.getPublicId(),
+                        unidade.getPublicId()
+                )
+                .stream()
+                .filter(sci -> codigoSeg.equalsIgnoreCase(sci.getCodigoSeg()))
+                .findFirst()
+                .orElseGet(() -> sciRepository.save(
+                        Sci.builder()
+                                .projeto(projeto)
+                                .codigoSeg(codigoSeg)
+                                .nome(nome)
+                                .responsavel(responsavel)
+                                .dataInicio(dataInicio)
+                                .status(StatusProjeto.ATIVO)
+                                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                                .ativo(true)
+                                .build()
+                ));
+    }
+
+    private Atividade garantirAtividade(
+            Sci sci,
+            Unidade unidade,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate dataInicio) {
+
+        return atividadeRepository
+                .findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                        sci.getPublicId(),
+                        unidade.getPublicId()
+                )
+                .stream()
+                .filter(atividade -> codigoSeg.equalsIgnoreCase(atividade.getCodigoSeg()))
+                .findFirst()
+                .orElseGet(() -> atividadeRepository.save(
+                        Atividade.builder()
+                                .sci(sci)
+                                .codigoSeg(codigoSeg)
+                                .nome(nome)
+                                .responsavel(responsavel)
+                                .dataInicio(dataInicio)
+                                .status(StatusProjeto.ATIVO)
+                                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                                .ativo(true)
+                                .build()
+                ));
     }
 
     private Usuario usuario(String nome, String email, Perfil perfil, Unidade unidade, Laboratorio lab) {

@@ -13,9 +13,9 @@
 
 ---
 
-## Estado atual — 24/09/2026
+## Estado atual — 29/09/2026
 
-O SGL já passou pela aprovação funcional do primeiro protótipo. As **Etapas 1, 2, 3 e 4 da pré-produção foram concluídas e validadas**. A próxima etapa canônica é a **Etapa 5 — Projetos e Atividades**.
+O SGL já passou pela aprovação funcional do primeiro protótipo. As **Etapas 1–5 da pré-produção foram concluídas e validadas**. A próxima etapa é a **Etapa 6 — Estagiários e vínculos**.
 
 Estado consolidado do backend:
 
@@ -40,7 +40,7 @@ Integração corporativa/SSO                        ⏳ etapa formal posterior
 
 No frontend também estão integrados dashboards, busca global, alertas, tema claro/escuro, sessão DEV, rotas por perfil e propagação do contexto de Unidade.
 
-> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/SINCRONIZACAO_GITLAB_GITHUB.md`](docs/SINCRONIZACAO_GITLAB_GITHUB.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`](docs/CONTINUIDADE_ETAPA_4_2026-09-17.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). O GitLab é a fonte canônica de `main`; contratos HTTP continuam pertencendo ao Swagger/OpenAPI em execução.
+> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/SINCRONIZACAO_GITLAB_GITHUB.md`](docs/SINCRONIZACAO_GITLAB_GITHUB.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`](docs/CONTINUIDADE_ETAPA_5_2026-09-24.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). O GitLab é a fonte canônica de `main`; contratos HTTP continuam pertencendo ao Swagger/OpenAPI em execução.
 
 ---
 
@@ -333,8 +333,9 @@ Etapa 1 — padrão visual global                 ✅
 Etapa 2 — Dark Mode definitivo                 ✅
 Etapa 3 — refinamentos do fluxo de Resíduos    ✅
 Etapa 4 — expansão operacional de Resíduos     ✅
-Etapa 5 — Projetos e Atividades                ⏭ próxima
-Etapas 6 a 13                                  ⏳ sequenciais
+Etapa 5 — Projetos e Atividades                ✅ concluída e validada
+Etapa 6 — Estagiários e vínculos               ⏳ próxima
+Etapas 7 a 13                                  ⏳ sequenciais
 ```
 
 ### Depois — roadmap formal para produção

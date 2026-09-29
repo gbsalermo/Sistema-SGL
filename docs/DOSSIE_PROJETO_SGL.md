@@ -3,8 +3,8 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Atualizado em:** 22/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 é a próxima etapa.  
+**Atualizado em:** 29/09/2026  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; próxima etapa planejada: Etapa 6 — Estagiários e vínculos.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -14,11 +14,13 @@ Etapa 1 — padrão visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
+Etapa 5 — Projetos e Atividades             ✅ concluída e validada
+Etapa 6 — Estagiários e vínculos             ⏳ próxima
 ```
 
 Handoff imediato:
 
-`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
 
 Plano canônico:
 
@@ -107,7 +109,7 @@ Quando houver conflito:
 9. documentos históricos
 ```
 
-Os `main` foram reconciliados em 22/09/2026 e a Etapa 4 foi concluída em 24/09/2026 na branch `collab/etapa-4-residuos-reconcile`. Após o merge no GitLab, a Etapa 5 deve nascer da `gitlab/main` atualizada; a antiga `feat/etapa-4-residuos` permanece apenas como referência histórica.
+A Etapa 4 foi integrada e a Etapa 5 nasceu da `main` atualizada. A branch operacional atual é `collab/etapa-5-projetos-atividades`; a antiga `feat/etapa-4-residuos` permanece apenas como referência histórica.
 
 ---
 
@@ -131,7 +133,7 @@ Frontend/documentação podem ser alterados diretamente quando autorizado.
 
 Trabalhar sempre em branch própria e em etapas pequenas.
 
-A antiga `feat/etapa-4-residuos` contém a implementação histórica dos blocos 4.1–4.4, mas está baseada em uma árvore anterior às correções do supervisor. Ela é fonte de referência. A branch operacional é `collab/etapa-4-residuos-reconcile`, criada sobre a `gitlab/main` canônica.
+A Etapa 4 está fechada. A branch operacional atual é `collab/etapa-5-projetos-atividades`, criada sobre a `main` já contendo as Etapas 1–4. Branches antigas permanecem apenas como referência histórica.
 
 ---
 
@@ -291,17 +293,31 @@ Flyway habilitado
 
 Migrations aplicadas são imutáveis.
 
-No domínio de Resíduos:
+Migrations relevantes:
 
 ```text
-V11 módulo base
+V11 módulo base de Resíduos
 V12 backfill Código SGL
 V13 estado físico/tratamento/responsabilidade
 V14 Classes de Resíduo
 V15 segurança/EPI
+V16 snapshot de Unidade do Resíduo
+V17 locais de armazenamento de Resíduos
+V18 modelos reutilizáveis de Resíduos
+V19 expansão do domínio de Projeto
+V20 criação do domínio de SCI
 ```
 
-Próxima alteração de schema: V16+.
+Próxima alteração de schema: V21+.
+
+Planejamento imediato:
+
+```text
+V21 → Atividades
+V22 → históricos de prorrogação de Projeto/SCI/Atividade
+```
+
+Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
 ---
 
@@ -534,7 +550,29 @@ Não confundir com delete lógico, que continua na Etapa 11.
 
 ---
 
-# 13. Estagiários, Projetos e Relatórios futuros
+# 13. Projetos/SCI/Atividades atuais; Estagiários e Relatórios seguintes
+
+Etapa 5 estabiliza a hierarquia:
+
+```text
+Laboratório responsável/contextual
+└── Projeto
+    └── SCI
+        └── Atividade
+```
+
+**Projeto é o eixo operacional principal**. Laboratório continua útil como contexto institucional, filtro e vínculo responsável, sem obrigar navegação por Laboratório para acessar Projeto.
+
+Código SEG:
+
+```text
+Projeto   XX.XX.XX.XXX.XX.00
+SCI       XX.XX.XX.XXX.XX.SS
+Atividade XX.XX.XX.XXX.XX.SS.AAA
+```
+
+A numeração é institucional e cadastrada; o SGL valida formato, hierarquia e unicidade. A interface sugere o próximo sufixo provável para SCI/Atividade, mas permite edição antes do primeiro salvamento.
+
 
 Etapa 5 estabiliza Projetos/Atividades e Código SEG.
 
@@ -602,7 +640,7 @@ Etapa 1 ✅
 Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
-Etapa 5 ⏭ próxima
+Etapa 5 ✅ concluída e validada
 Etapa 6 ⏳
 Etapa 7 ⏳
 Etapa 8 ⏳
@@ -617,4 +655,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**Antes de iniciar a Etapa 4, confirmar que `feat/etapa-3-residuos` foi integrada à `main` no backend e frontend. Criar `feat/etapa-4-residuos` a partir da `main` atualizada. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md`, `docs/MODULO_RESIDUOS.md` e `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`. Começar somente pela 4.1 e manter o usuário como autor das mudanças funcionais de backend.**
+**A Etapa 5 está encerrada e validada. Após o merge de `collab/etapa-5-projetos-atividades`, retomar pela Etapa 6 — Estagiários e vínculos em branch própria criada sobre a `main` sincronizada. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md`, `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` e `docs/VALIDACAO_ETAPA_5.md`.**

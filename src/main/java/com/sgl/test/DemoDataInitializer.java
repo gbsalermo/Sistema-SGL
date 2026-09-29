@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.sgl.model.Atividade;
 import com.sgl.model.ComponenteResiduo;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
@@ -26,6 +27,7 @@ import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
+import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.NivelRisco;
@@ -34,12 +36,15 @@ import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusResiduo;
+import com.sgl.model.enums.StatusProjeto;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoResiduoRepository;
@@ -50,6 +55,7 @@ import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
+import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -78,6 +84,8 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final LoteRepository loteRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
+    private final SciRepository sciRepository;
+    private final AtividadeRepository atividadeRepository;
     private final ResiduoRepository residuoRepository;
     private final HistoricoResiduoRepository historicoResiduoRepository;
     private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
@@ -222,42 +230,140 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "Genotipagem de variedades de mandioca",
                 "Caracterização molecular e seleção assistida por marcadores.",
                 hoje.minusMonths(8),
-                "Camila Menezes"
+                "Camila Menezes",
+                "99.99.99.001.01.00"
         );
         Projeto projFito = criarProjeto(
                 labFitopatologia,
                 "Diagnóstico de Fusarium em banana",
                 "Isolamento e caracterização de isolados associados a sintomas de murcha.",
                 hoje.minusMonths(5),
-                "Paulo Nascimento"
+                "Paulo Nascimento",
+                "99.99.99.002.01.00"
         );
         Projeto projEnto = criarProjeto(
                 labEntomologia,
                 "Controle biológico de mosca-branca",
                 "Avaliação de agentes de controle biológico em condições controladas.",
                 hoje.minusMonths(4),
-                "Juliana Rocha"
+                "Juliana Rocha",
+                "99.99.99.003.01.00"
         );
         Projeto projSolos = criarProjeto(
                 labSolos,
                 "Nutrição mineral da mandioca",
                 "Avaliação de macronutrientes e micronutrientes em solo e tecido vegetal.",
                 hoje.minusMonths(7),
-                "André Lima"
+                "André Lima",
+                "99.99.99.004.01.00"
         );
         Projeto projViro = criarProjeto(
                 labVirologia,
                 "Monitoramento molecular de fitovírus",
                 "Detecção por PCR e ELISA em amostras de fruteiras tropicais.",
                 hoje.minusMonths(6),
-                "Fernanda Costa"
+                "Fernanda Costa",
+                "99.99.99.005.01.00"
         );
         Projeto projEco = criarProjeto(
                 labEcofisiologia,
                 "Resposta hídrica de citros",
                 "Monitoramento de trocas gasosas e disponibilidade hídrica.",
                 hoje.minusMonths(3),
-                "Lucas Ribeiro"
+                "Lucas Ribeiro",
+                "99.99.99.006.01.00"
+        );
+
+        Sci sciBiomolPainel = criarSci(
+                projBiomol,
+                "99.99.99.001.01.01",
+                "Painel de marcadores moleculares",
+                "Camila Menezes",
+                hoje.minusMonths(7),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+        Sci sciBiomolProtocolo = criarSci(
+                projBiomol,
+                "99.99.99.001.01.02",
+                "Protocolo de seleção assistida",
+                "Camila Menezes",
+                hoje.minusMonths(6),
+                hoje.minusMonths(2),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+        Sci sciFito = criarSci(
+                projFito,
+                "99.99.99.002.01.01",
+                "Caracterização de isolados de Fusarium",
+                "Paulo Nascimento",
+                hoje.minusMonths(4),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO
+        );
+        Sci sciEco = criarSci(
+                projEco,
+                "99.99.99.006.01.01",
+                "Indicadores de resposta ao déficit hídrico",
+                "Lucas Ribeiro",
+                hoje.minusMonths(2),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        criarAtividade(
+                sciBiomolPainel,
+                "99.99.99.001.01.01.001",
+                "Genotipagem do painel de acessos",
+                "Camila Menezes",
+                hoje.minusMonths(6),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+        criarAtividade(
+                sciBiomolPainel,
+                "99.99.99.001.01.01.002",
+                "Análise dos marcadores selecionados",
+                "Camila Menezes",
+                hoje.minusMonths(5),
+                hoje.minusMonths(3),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+        criarAtividade(
+                sciBiomolProtocolo,
+                "99.99.99.001.01.02.001",
+                "Validação do protocolo de seleção",
+                "Camila Menezes",
+                hoje.minusMonths(5),
+                hoje.minusMonths(3),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+        criarAtividade(
+                sciFito,
+                "99.99.99.002.01.01.001",
+                "Triagem fenotípica dos isolados",
+                "Paulo Nascimento",
+                hoje.minusMonths(3),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO
+        );
+        criarAtividade(
+                sciEco,
+                "99.99.99.006.01.01.001",
+                "Medição de trocas gasosas",
+                "Lucas Ribeiro",
+                hoje.minusMonths(1),
+                null,
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
 
         Produto etanol = criarProduto(
@@ -777,7 +883,8 @@ public class DemoDataInitializer implements CommandLineRunner {
             String nome,
             String descricao,
             LocalDate inicio,
-            String responsavel) {
+            String responsavel,
+            String codigoSeg) {
 
         return projetoRepository.save(
                 Projeto.builder()
@@ -786,6 +893,57 @@ public class DemoDataInitializer implements CommandLineRunner {
                         .descricao(descricao)
                         .dataInicio(inicio)
                         .responsavel(responsavel)
+                        .codigoSeg(codigoSeg)
+                        .ativo(true)
+                        .build()
+        );
+    }
+
+    private Sci criarSci(
+            Projeto projeto,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate inicio,
+            LocalDate fim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao) {
+
+        return sciRepository.save(
+                Sci.builder()
+                        .projeto(projeto)
+                        .codigoSeg(codigoSeg)
+                        .nome(nome)
+                        .responsavel(responsavel)
+                        .dataInicio(inicio)
+                        .dataFim(fim)
+                        .status(status)
+                        .situacaoExecucao(situacaoExecucao)
+                        .ativo(true)
+                        .build()
+        );
+    }
+
+    private Atividade criarAtividade(
+            Sci sci,
+            String codigoSeg,
+            String nome,
+            String responsavel,
+            LocalDate inicio,
+            LocalDate fim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao) {
+
+        return atividadeRepository.save(
+                Atividade.builder()
+                        .sci(sci)
+                        .codigoSeg(codigoSeg)
+                        .nome(nome)
+                        .responsavel(responsavel)
+                        .dataInicio(inicio)
+                        .dataFim(fim)
+                        .status(status)
+                        .situacaoExecucao(situacaoExecucao)
                         .ativo(true)
                         .build()
         );

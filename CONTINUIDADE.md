@@ -3,16 +3,16 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 24/09/2026  
+**Última atualização:** 29/09/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
-**Branch atual de reconciliação:** `collab/etapa-4-residuos-reconcile`  
+**Branch atual de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fase atual:** pré-produção pós-aprovação funcional  
-**Etapa concluída:** Etapa 4 — expansão operacional de Resíduos ✅  
-**Etapa atual:** Etapa 5 — Projetos e Atividades ⏭ próxima  
+**Etapa concluída:** Etapa 5 — Projetos e Atividades ✅  
+**Próxima etapa:** Etapa 6 — Estagiários e vínculos ⏳  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Referência de fechamento da Etapa 4:** `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+**Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
 
@@ -40,15 +40,15 @@ Regra especial do projeto:
 - frontend/documentação podem ser alterados diretamente quando autorizado;
 - não antecipar etapas futuras.
 
-A Etapa 4 já possui uma implementação histórica em `feat/etapa-4-residuos`, mas essa branch nasceu antes das correções recentes do supervisor e não pode ser mergeada integralmente. A retomada deve ocorrer em uma branch `collab/*` criada/atualizada a partir da `gitlab/main`.
+As Etapas 1–4 já foram integradas e validadas.
 
 Branch atual:
 
 ```text
-collab/etapa-4-residuos-reconcile
+collab/etapa-5-projetos-atividades
 ```
 
-A branch antiga serve somente como fonte para portar, bloco por bloco, o que ainda é válido.
+A Etapa 5 foi criada a partir da `main` contendo o fechamento da Etapa 4. Branches antigas de Etapa 4 permanecem somente como referência histórica.
 
 ---
 
@@ -168,7 +168,7 @@ spring.flyway.enabled=true
 
 O Hibernate valida; o Flyway evolui o schema.
 
-Migrations relevantes já aplicadas no domínio de Resíduos:
+Migrations relevantes já aplicadas:
 
 ```text
 V11 — módulo de Resíduos
@@ -177,13 +177,17 @@ V13 — estado físico, tratamento e responsabilidade inicial
 V14 — Classes de Resíduo
 V15 — segurança/EPI
 V16 — snapshot de Unidade do Resíduo, incorporado pelo supervisor
+V17 — locais de armazenamento de Resíduos
+V18 — modelos reutilizáveis de Resíduos
+V19 — expansão do domínio de Projeto
+V20 — criação do domínio de SCI
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = próxima versão livre após V16
+nova alteração de schema = próxima versão livre após V20
 ```
 
 ---
@@ -378,21 +382,87 @@ A implementação histórica de `feat/etapa-4-residuos` foi portada seletivament
 - relatórios/exportações reconhecem `CANCELADO`;
 - validações funcionais da Etapa 4 foram concluídas.
 
-A próxima etapa canônica é a **Etapa 5 — Projetos e Atividades**.
+A etapa canônica atual é a **Etapa 5 — Projetos e Atividades**, no bloco **5.5 — Interface e integração**. Os blocos **5.1 — Projeto base**, **5.2 — SCI**, **5.3 — Atividades** e **5.4 — Código SEG** foram concluídos e validados em 25/09/2026.
 
 
-# 10. Projetos, Estagiários e Relatórios — etapas futuras
+# 10. Projetos, Estagiários e Relatórios — evolução atual e próximas etapas
 
-## Etapa 5 — Projetos + Atividades
+## Etapa 5 — Projetos + Atividades 🔧 ATUAL
 
-Antes de modelagem definitiva, confirmar:
+Portão 5.0 fechado em 24/09/2026:
 
-- Código SEG;
-- se Atividade é entidade subordinada ao Projeto;
-- se `SCI` é tipo de Projeto ou domínio separado;
-- situações de execução.
+- Projeto 1 → N SCI 1 → N Atividades;
+- Código SEG hierárquico confirmado;
+- SCI é entidade própria subordinada ao Projeto;
+- Atividade é entidade própria subordinada ao SCI;
+- Projeto mantém Laboratório responsável/contextual, mas é o eixo funcional principal;
+- status do Projeto: ATIVO → ENCERRADO_COM_AVALIACAO_PENDENTE → CONCLUIDO;
+- situação de execução separada;
+- recurso externo + empresa quando aplicável.
 
-Projeto continua N:1 com Laboratório.
+### Fechamento do 5.1 — Projeto base ✅
+
+Validado em 25/09/2026:
+
+- V19 expandiu a tabela `projetos` sem recriá-la;
+- `codigoSeg`, status de negócio, situação de execução e recurso externo foram incorporados;
+- `ativo` foi preservado como indicador técnico, separado do status de negócio;
+- compatibilidade com payloads antigos foi mantida na criação e atualização;
+- recurso externo exige empresa quando habilitado e limpa a empresa ao ser desligado;
+- isolamento por tenant permaneceu fail-closed;
+- dados DEV/Demo e testes automatizados foram atualizados;
+- suíte completa de testes ficou verde;
+- validação funcional confirmou listagem, defaults, criação completa, regra de empresa, atualização compatível e desligamento de recurso externo;
+- validação hierárquica/formato/duplicidade do Código SEG permanece deliberadamente no 5.4.
+
+### Fechamento do 5.2 — SCI ✅
+
+Validado em 25/09/2026:
+
+- V20 criou a tabela `scis` com vínculo obrigatório a Projeto;
+- SCI deriva Laboratório/Unidade por `SCI → Projeto → Laboratório → Unidade`;
+- entidade, DTOs, Repository, Service e Controller/OpenAPI foram implementados;
+- status e situação de execução são persistidos independentemente do Projeto;
+- vínculo com Projeto é preservado no update comum;
+- período do SCI é validado dentro do período do Projeto;
+- Projeto sem data de início não recebe SCI;
+- recurso externo permanece somente no Projeto;
+- consultas públicas permanecem fail-closed por tenant;
+- dados DEV/Demo e testes automatizados foram adicionados;
+- suíte completa JUnit ficou verde;
+- bateria funcional da API foi validada integralmente;
+- formato, raiz e duplicidade do Código SEG permanecem deliberadamente no 5.4.
+
+Bloco 5.5: **Interface e integração ✅ concluída e validada**.
+
+Contrato aprovado para o bloco:
+
+- Atividade será subordinada obrigatoriamente ao SCI;
+- Atividade reutilizará os valores de `StatusProjeto` e `SituacaoExecucaoProjeto`, persistidos independentemente;
+- V21 cria Atividades;
+- prorrogações de Projeto/SCI/Atividade são eventos explícitos, justificados e históricos;
+- V22 fica reservada a três históricos de prorrogação com FKs reais;
+- prorrogação de pai não altera automaticamente filhos;
+- redução de período de pai que invalidaria filhos deve ser rejeitada.
+
+A base V21 de Atividades foi validada em 25/09/2026. A V22 de prorrogações também foi concluída em 25/09/2026 com suíte automatizada verde; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
+
+No 5.4, formato/coerência hierárquica, unicidade global, imutabilidade no CRUD comum e correção administrativa auditável do Código SEG foram concluídos. V23 aplica restrições `UNIQUE`; V24 cria o histórico de correções. Projeto legado sem SEG ainda pode receber a primeira definição, mas depois disso Projeto/SCI/Atividade só podem trocar o identificador pelo fluxo administrativo. A correção exige justificativa, operador ativo do tenant com perfil GESTOR/ADMINISTRADOR, valida novamente formato/hierarquia/unicidade e atualiza transacionalmente os descendentes preservando seus sufixos. Registros encerrados/inativos também podem ter erro de identificação corrigido sem reabrir seu ciclo de vida. O código foi publicado e a suíte JUnit completa foi confirmada verde em 25/09/2026; o 5.4 está oficialmente concluído e validado.
+
+Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações e correções de Código SEG é provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
+
+Fechamento do 5.5 em 29/09/2026:
+
+- massa DEV idempotente validada em banco existente;
+- frontend possui hub operacional direto de Projetos;
+- Projeto → SCI → Atividade é exibido e gerenciado na mesma experiência;
+- SCI e Atividade possuem criação/edição no hub;
+- cadastro administrativo de Projeto está alinhado a Código SEG/status/situação/recurso externo;
+- prorrogações, correções SEG e históricos estão integrados;
+- filtro por Laboratório e hierarquia visual SCI/Atividade aprovados;
+- sugestão editável de Código SEG para novo SCI/Atividade aprovada;
+- dark mode e tipografia canônica validados;
+- Etapa 5 oficialmente concluída e pronta para merge.
 
 ## Etapa 6 — Estagiários
 
@@ -408,6 +478,16 @@ Planejado:
 ## Etapa 7 — Relatórios consolidados
 
 Depende das Etapas 5 e 6 estabilizadas. Inclui filtros/agregações, telas, PDF/XLSX e organização estrutural do módulo de relatórios.
+
+Decisões já fechadas para a Etapa 7:
+
+- adicionar **Projetos** como relatório consolidado próprio;
+- incluir Código SEG, Laboratório, responsável/líder, período, status, situação de execução, recurso externo e agregações de SCI/Atividades;
+- incorporar dimensões de vínculos/Estagiários depois da Etapa 6;
+- sintetizar **Movimentações** e **Resumo operacional** em uma única opção da Central;
+- dentro de Movimentações, manter modos/visões **Resumo** e **Detalhamento**;
+- preservar inicialmente os endpoints atuais de Movimentações e Resumo operacional para compatibilidade, tratando a unificação primeiro como decisão de interface;
+- usar o espaço liberado no seletor da Central para o novo relatório de Projetos.
 
 ---
 
@@ -477,7 +557,7 @@ Etapa 1 — refinamento visual global                   ✅
 Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
-Etapa 5 — Projetos + Atividades                       ⏭ próxima
+Etapa 5 — Projetos + Atividades                       🔧 atual — 5.5 Interface e integração; 5.1–5.4 ✅
 Etapa 6 — Estagiários + vínculos                      ⏳
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
@@ -494,7 +574,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–4 estão encerradas e validadas. Após o merge da branch `collab/etapa-4-residuos-reconcile` no GitLab, a retomada deve ocorrer pela Etapa 5 — Projetos e Atividades, começando pelo portão 5.0 do `docs/PLANO_PRE_PRODUCAO.md`. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–4 estão encerradas e validadas. A Etapa 5 está em andamento na branch `collab/etapa-5-projetos-atividades`, com 5.0, 5.1, 5.2, 5.3 e 5.4 fechados e validados; retomar pelo bloco 5.5 — Interface e integração. Ler `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` antes de alterar código. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 

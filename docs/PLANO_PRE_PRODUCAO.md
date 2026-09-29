@@ -2,13 +2,13 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 24/09/2026  
-**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 é a próxima etapa  
+**Última atualização:** 29/09/2026  
+**Status:** Etapas 1–5 concluídas e validadas; próxima etapa: Etapa 6 — Estagiários e vínculos  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
-> **Checkpoint de infraestrutura — 22/09/2026:** GitLab é a fonte canônica de `main` nos dois repositórios; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. O fluxo e os comandos estão em `docs/SINCRONIZACAO_GITLAB_GITHUB.md`. A antiga `feat/etapa-4-residuos` não deve ser mergeada integralmente: seus blocos 4.1–4.4 serão portados seletivamente para `collab/etapa-4-residuos-reconcile` sobre a `gitlab/main` atual.
+> **Checkpoint de infraestrutura — 24/09/2026:** GitLab continua sendo a fonte canônica de `main` nos dois repositórios; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A Etapa 4 foi integrada. A branch atual é `collab/etapa-5-projetos-atividades`, criada a partir da `main` já contendo a Etapa 4.
 
 Roadmap formal posterior:
 
@@ -271,70 +271,228 @@ Isso **não é delete lógico**. A decisão geral de delete lógico permanece na
 
 ---
 
-## Etapa 5 — Projetos e Atividades
+## Etapa 5 — Projetos e Atividades ✅ CONCLUÍDA E VALIDADA
 
 **Impacto:** alto.
 
-### 5.0 Portão de confirmação
+### 5.0 Portão de confirmação ✅ FECHADO
 
-Confirmar antes de alterar domínio:
+Confirmado em 24/09/2026:
 
-- regra exata do Código SEG;
-- se Atividade é entidade subordinada;
-- se `SCI` é tipo de Projeto ou domínio distinto;
-- lista oficial de situações de execução.
+- Código SEG cadastrado e hierárquico: Projeto `XX.XX.XX.XXX.XX.00`, SCI `XX.XX.XX.XXX.XX.SS`, Atividade `XX.XX.XX.XXX.XX.SS.AAA`;
+- `Projeto 1 → N SCI 1 → N Atividades`;
+- SCI é entidade própria subordinada ao Projeto;
+- Atividade é entidade própria subordinada ao SCI e possui status independente;
+- Projeto: `ATIVO → ENCERRADO_COM_AVALIACAO_PENDENTE → CONCLUIDO`;
+- coluna ambígua da planilha indica existência de recurso externo;
+- Estagiário executa Atividade e possui Orientador PESQUISADOR ou ANALISTA.
 
-### 5.1 Projeto base
+Decisões adicionais fechadas:
 
-Relação:
+- Projeto mantém vínculo com um Laboratório responsável/contextual, mas é o eixo operacional principal;
+- Laboratório funciona principalmente como contexto/filtro para pessoas, Projetos e Atividades;
+- Projeto/SCI/Atividade possuem Código SEG, título, líder/responsável, início, fim, duração opcional/derivável, status e situação de execução;
+- "Figura = Projeto/SCI/Atividade" é atributo da planilha e não será persistido como campo genérico;
+- recurso externo pertence ao Projeto e exige empresa quando marcado;
+- dados pessoais de Estagiário devem vir preferencialmente de Usuario/autenticação institucional.
+
+### 5.1 Projeto base ✅ CONCLUÍDO E VALIDADO
+
+**Fechamento:** 25/09/2026.
+
+
+Relação de domínio confirmada:
 
 ```text
-Laboratório 1 → N Projetos
+Projeto 1 → N SCI
+SCI 1 → N Atividades
 ```
+
+Projeto mantém um Laboratório responsável/contextual (`Laboratório 1 → N Projetos`), mas Projeto é o eixo funcional para SCI, Atividades e vínculos. A interface não deve obrigar navegação pelo Laboratório para trabalhar com Projeto.
 
 Planejado:
 
-- nome/descrição;
-- Laboratório obrigatório;
+- título/descrição;
+- Laboratório responsável/contextual;
 - líder/responsável;
 - início/fim;
-- financiador;
-- ciclo de vida;
+- duração opcional/derivável;
+- status principal;
 - situação de execução;
-- tipo, se confirmado;
 - Código SEG;
-- Código SGL/rastreabilidade interna.
+- Código SGL/rastreabilidade interna;
+- possui recurso externo;
+- empresa do recurso externo quando aplicável.
 
-Ciclo previsto:
+Ciclo confirmado pelo cliente:
 
 ```text
-CRIADO
-→ ATIVO
+ATIVO
 → ENCERRADO_COM_AVALIACAO_PENDENTE
 → CONCLUIDO
 ```
 
-### 5.2 Código SEG
+Fechamento técnico do 5.1:
 
-Formato informado até o momento:
+- migration V19 aplicada sobre a tabela existente;
+- enums `StatusProjeto` e `SituacaoExecucaoProjeto`;
+- Entity, DTOs, Service e OpenAPI atualizados;
+- `codigoSeg` cadastrado, sem validação hierárquica antecipada;
+- recurso externo + empresa com regra condicional;
+- compatibilidade com contratos antigos preservada;
+- dados DEV/Demo atualizados;
+- testes de Service, Controller e Repository ampliados;
+- suíte completa JUnit verde;
+- validação funcional do CRUD e tenant concluída;
+- próxima migration livre: V20.
+
+### 5.2 SCI ✅ CONCLUÍDO E VALIDADO
+
+**Fechamento:** 25/09/2026.
 
 ```text
-AAAA.MM.DD.XX.XXX
+Projeto 1 → N SCI
 ```
 
-Código SEG é institucional e não substitui Código SGL.
+Implementado e validado:
 
-### 5.3 Atividades — condicional
+- V20 criou `scis` com FK obrigatória para Projeto;
+- Laboratório/Unidade são derivados do Projeto;
+- Código SEG próprio é armazenado no SCI;
+- início/fim próprios ficam contidos no período do Projeto;
+- status e situação de execução são persistidos independentemente;
+- vínculo com Projeto não é trocado pelo update comum;
+- recurso externo não é duplicado;
+- duração permanece derivável;
+- tenant permanece fail-closed;
+- CRUD e consultas por Projeto estão documentados em OpenAPI;
+- dados DEV/Demo e testes automatizados foram adicionados;
+- suíte completa verde e bateria funcional concluída com sucesso;
+- validação completa do Código SEG continua no 5.4.
 
-Se confirmadas:
+Migrations V21, V22, V23 e V24 já estão ocupadas pela Etapa 5. Próxima migration livre: **V25**.
+
+### 5.3 Atividades ✅ CONCLUÍDA
 
 ```text
-Projeto 1 → N Atividades
+SCI 1 → N Atividades
 ```
 
-### 5.4 Interface
+Atividade é entidade própria, obrigatoriamente subordinada ao SCI e, por consequência, ao Projeto. Possui ciclo operacional próprio e pode ser encerrada antes do Projeto.
 
-Só fechar depois do domínio estabilizado.
+Contrato de Atividade fechado e implementado na V21. O histórico de prorrogações foi concluído na V22; a validação SEG completa segue no 5.4.
+
+Regras temporais/prorrogação já fechadas:
+
+- Atividade fica temporalmente contida no SCI; SCI permanece contido no Projeto;
+- prorrogações exigem justificativa e histórico;
+- Projeto/SCI/Atividade encerrados não recebem prorrogação comum;
+- para prorrogar SCI, Projeto precisa continuar aberto;
+- para prorrogar Atividade, SCI e Projeto precisam continuar abertos;
+- prorrogar um pai não prorroga automaticamente os filhos;
+- a prorrogação do pai apenas amplia o limite permitido para eventual prorrogação posterior do filho;
+- reduzir datas de um pai não pode invalidar filhos existentes;
+- mudanças que quebrariam a hierarquia devem ser rejeitadas, não corrigidas por cascata automática.
+
+Base de Atividade/V21 validada funcionalmente em 25/09/2026. V22 de prorrogações também concluída e validada por suíte automatizada.
+
+Persistência aprovada para prorrogações:
+
+- históricos separados para Projeto, SCI e Atividade, cada um com FK real;
+- preservar data final anterior, nova data final, justificativa, usuário e data/hora;
+- aumento de uma data final já existente só ocorre pelo fluxo explícito de prorrogação;
+- data + histórico são gravados atomicamente;
+- endpoints próprios de prorrogação serão expostos para Projeto, SCI e Atividade;
+- V21 fica dedicada à tabela de Atividades;
+- V22 fica reservada aos históricos de prorrogação.
+
+Autoria nesta fase de pré-autenticação:
+
+- manter FK para `Usuario` nos históricos;
+- enquanto não houver principal autenticado no backend, aceitar provisoriamente o UUID do operador no fluxo, validando tenant, usuário ativo e perfil;
+- não tratar esse mecanismo como autenticação definitiva;
+- substituir o UUID fornecido pelo cliente pelo usuário obtido do contexto autenticado quando a autenticação real for implementada.
+
+V22 foi considerada concluída por validação automatizada em 25/09/2026; a bateria manual via Postman foi deliberadamente dispensada nesta rodada.
+
+### 5.4 Código SEG — validação hierárquica ✅ CONCLUÍDA
+
+Formato institucional confirmado:
+
+```text
+Projeto   XX.XX.XX.XXX.XX.00
+SCI       XX.XX.XX.XXX.XX.SS
+Atividade XX.XX.XX.XXX.XX.SS.AAA
+```
+
+O Código SEG continua sendo um dado institucional cadastrado. O SGL não impõe sequência automática como regra: valida formato, coerência com o pai e **unicidade global/institucional**. Para facilitar o cadastro, a interface sugere o próximo sufixo provável de SCI/Atividade, mas o gestor pode substituí-lo por outro código institucional válido antes de salvar.
+
+Subblocos do 5.4:
+
+- **5.4.1 Formato e coerência hierárquica ✅** — validação de Projeto, SCI e Atividade conforme o padrão institucional;
+- **5.4.2 Unicidade global ✅** — V23 + validação de Service, sem reutilização de Código SEG mesmo após inativação;
+- **5.4.3 Imutabilidade no CRUD comum ✅** — após definido, o Código SEG não pode ser trocado por edição comum; Projeto legado sem código pode receber a primeira definição;
+- **5.4.4 Correção administrativa de Código SEG ✅** — V24 + fluxo auditável e transacional para corrigir erros humanos sem liberar alteração comum perigosa;
+- **5.4.5 Testes e fechamento ✅** — suíte automatizada completa confirmada verde em 25/09/2026.
+
+A correção administrativa foi implementada pela `V24__create_seg_correction_history.sql` e por endpoints próprios em Projeto, SCI e Atividade. Exige justificativa e autoria, registra valor anterior/novo e data/hora, valida formato/hierarquia/unicidade e opera de forma transacional. Correção de Projeto propaga apenas o prefixo coerente aos SCI/Atividades descendentes, preservando seus sufixos; correção de SCI faz o mesmo com suas Atividades. Colisões bloqueiam toda a operação antes de qualquer mutação.
+
+A correção pode ser aplicada a registros encerrados ou inativos, porque corrige o identificador institucional sem reabrir o ciclo de vida. Alteração direta no banco não é fluxo funcional de produção. Pode existir apenas como manutenção excepcional em DEV/pré-produção; em produção, a alternativa oficial para erro de digitação será o fluxo administrativo auditável.
+
+Fechamento do 5.4:
+
+- V23 protege unicidade global/institucional do Código SEG;
+- V24 registra correções administrativas auditáveis;
+- Código SEG é imutável no CRUD comum após definido;
+- Projeto legado sem Código SEG pode receber a primeira definição;
+- correções de Projeto e SCI propagam prefixos aos descendentes preservando sufixos;
+- colisões impedem toda a transação;
+- correção exige justificativa, tenant e operador com perfil permitido;
+- registros encerrados/inativos podem ser corrigidos sem reabrir ciclo de vida;
+- suíte JUnit completa confirmada verde em 25/09/2026;
+- validação manual adicional em Postman não foi exigida para o fechamento deste bloco.
+
+### 5.5 Interface e integração ✅ CONCLUÍDA E VALIDADA
+
+Projeto → SCI → Atividade já está estabilizado no backend e a implementação principal do frontend foi concluída.
+
+Implementado:
+
+- rota operacional `/projetos` para Gestão/Administração;
+- navegação direta por Projeto sem passagem obrigatória por Laboratório;
+- listagem, busca, filtro e resumo operacional;
+- visualização hierárquica Projeto → SCI → Atividade;
+- cadastro/edição de SCI e Atividade;
+- formulário administrativo de Projeto alinhado ao domínio atual;
+- prorrogação explícita nos três níveis;
+- correção administrativa de Código SEG nos três níveis;
+- histórico visual de prorrogações e correções;
+- massa DEV idempotente para validação da interface.
+
+Sugestão assistida no 5.5:
+
+- Novo SCI recebe sugestão `maior sufixo já utilizado + 1` a partir da raiz do Projeto;
+- Nova Atividade recebe sugestão equivalente a partir do Código SEG do SCI;
+- a sugestão considera registros ativos e inativos;
+- o campo permanece editável antes da criação;
+- códigos avulsos continuam permitidos desde que atendam formato, hierarquia e unicidade.
+
+Fechamento confirmado em 29/09/2026 após validação funcional/visual da interface integrada e confirmação da suíte JUnit do backend verde.
+
+Validado:
+
+- hub `/projetos` carregando dados reais do backend DEV;
+- filtros, incluindo Laboratório;
+- hierarquia Projeto → SCI → Atividade;
+- criação/edição de SCI e Atividade;
+- prorrogação, correção SEG e histórico;
+- primeira definição de SEG de Projeto via Cadastros;
+- sugestão editável de SEG para SCI/Atividade;
+- dark mode, tipografia e hierarquia visual SCI/Atividade;
+- massa DEV idempotente;
+- refinamentos finais de usabilidade.
+
+**Etapa 5 encerrada. Etapa 6 liberada.**
 
 ---
 
@@ -342,24 +500,19 @@ Só fechar depois do domínio estabilizado.
 
 **Dependência:** Etapa 5.
 
-Confirmar antes de implementar:
+Confirmado para a Etapa 6:
 
-- elegibilidade do Orientador;
-- Orientador interno/externo;
-- significado/cardinalidade de Cultura;
-- Curso/Formação;
-- múltiplas Atividades;
-- regras de prorrogação.
-
-Planejado:
-
-- Orientador obrigatório;
-- Projeto/Atividade;
-- Bolsa/vínculo separado de Curso/Formação;
-- Cultura/área temática;
-- treinamento inicial de segurança;
-- histórico de vínculos;
-- prorrogações justificadas.
+- Orientador obrigatório e com perfil PESQUISADOR ou ANALISTA;
+- Atividade obrigatória; Projeto é derivado de Atividade → SCI → Projeto;
+- Estagiário pode migrar entre Atividades/Projetos, exigindo histórico de vínculos;
+- Cultura representa a cultura da pesquisa e deve ser tratada como catálogo administrável por Unidade;
+- Bolsa/vínculo separado de Curso/Formação/nível;
+- início/fim do estágio;
+- prorrogações com histórico;
+- situação: EM_ANDAMENTO, FINALIZADO ou PRORROGADO;
+- treinamento de segurança booleano;
+- dados pessoais devem vir preferencialmente de Usuario/autenticação institucional;
+- código interno SGL do vínculo pode ser adotado sem substituir identidade institucional.
 
 ---
 
@@ -369,21 +522,102 @@ Planejado:
 
 ### 7.1 Filtros/dimensões
 
-Laboratório, responsável, Projeto, Código SEG, líder, Atividade, Orientador, Bolsa, Curso, Cultura, situação e período.
+Laboratório, responsável, Projeto, Código SEG, líder, SCI, Atividade, Orientador, Bolsa, Curso, Cultura, situação e período.
 
-### 7.2 Consultas/agregações
+### 7.2 Relatório consolidado de Projetos
 
-Contagens por Laboratório, Orientador, responsável, Bolsa, Curso, Cultura, Projeto e Atividade.
+Adicionar **Projetos** como opção própria na Central de Relatórios.
 
-### 7.3 Prévia/telas
+Cobertura base derivada da Etapa 5:
+
+- Projeto;
+- Código SEG;
+- Laboratório responsável/contextual;
+- líder/responsável;
+- início e fim;
+- status;
+- situação de execução;
+- recurso externo/empresa quando aplicável;
+- quantidade de SCI;
+- quantidade de Atividades.
+
+Após estabilização da Etapa 6, o relatório pode incorporar dimensões consolidadas de vínculos/Estagiários sem duplicar a entidade Projeto.
+
+Filtros previstos:
+
+- Laboratório;
+- Projeto;
+- Código SEG;
+- responsável/líder;
+- status;
+- situação de execução;
+- período.
+
+A prévia deve permitir sair da visão consolidada do Projeto para seus SCI/Atividades quando necessário, sem transformar o relatório em substituto do hub operacional `/projetos`.
+
+### 7.3 Consolidação de Movimentações + Resumo operacional
+
+Na Central de Relatórios, **Movimentações** e **Resumo operacional** deixam de ocupar opções separadas.
+
+Novo desenho:
+
+```text
+Movimentações
+├── Resumo
+│   ├── total de movimentações
+│   ├── entradas / saídas / devoluções / descartes / ajustes
+│   ├── produtos movimentados
+│   ├── lotes movimentados
+│   ├── principais entradas
+│   ├── principais saídas
+│   └── lotes mais movimentados
+│
+└── Detalhamento
+    └── tabela completa de movimentações e rastreabilidade
+```
+
+A consolidação é inicialmente **de experiência de interface**, não uma obrigação de quebrar contratos backend.
+
+Por compatibilidade, os endpoints atuais podem permanecer:
+
+```text
+GET /api/v1/relatorios/movimentacoes
+GET /api/v1/relatorios/resumo-operacional
+```
+
+O frontend passa a tratá-los como duas visões do mesmo relatório. Refactor posterior pode compartilhar consulta/service internamente desde que não altere comportamento ou exportações.
+
+Com isso, a lista principal da Central passa a tender para:
+
+```text
+Estagiários
+Produtos
+Movimentações
+Estoque e lotes
+Resíduos
+Fiscalização
+Projetos
+```
+
+### 7.4 Consultas/agregações
+
+Contagens por Laboratório, Orientador, responsável, Bolsa, Curso, Cultura, Projeto, SCI e Atividade.
+
+### 7.5 Prévia/telas
 
 Visões consolidadas de Laboratórios, Projetos e Estagiários.
 
-### 7.4 PDF/XLSX
+### 7.6 PDF/XLSX
 
-Mesma consulta/filtros da tela.
+A exportação deve usar a mesma consulta/filtros da tela.
 
-### 7.5 Organização estrutural
+Para Movimentações, definir no fechamento do contrato se a exportação inclui:
+
+- visão resumida;
+- detalhamento;
+- ou ambas em seções/abas do mesmo arquivo.
+
+### 7.7 Organização estrutural
 
 Mover controllers/services/DTOs de Relatórios para packages específicos, sem alterar contratos ou comportamento.
 
@@ -547,8 +781,9 @@ Etapa 1 — refinamento visual global                 ✅
 Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
-Etapa 5 — Projetos e Atividades                    ⏭ próxima
-Etapas 6–13                                         ⏳
+Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
+Etapa 6 — Estagiários e vínculos                    ⏳ próxima
+Etapas 7–13                                         ⏳
 ```
 
 A matriz de permissões não é a próxima tarefa enquanto este bloco estiver aberto.
@@ -570,4 +805,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Próximo handoff: `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Próxima retomada: Etapa 6 — Estagiários e vínculos.
