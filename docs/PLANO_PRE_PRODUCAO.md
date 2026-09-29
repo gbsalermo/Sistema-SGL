@@ -781,8 +781,9 @@ Etapa 1 — refinamento visual global                 ✅
 Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
-Etapa 5 — Projetos e Atividades                     🔧 atual — 5.3 Atividades; 5.1 ✅; 5.2 ✅
-Etapas 6–13                                         ⏳
+Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
+Etapa 6 — Estagiários e vínculos                    ⏳ próxima
+Etapas 7–13                                         ⏳
 ```
 
 A matriz de permissões não é a próxima tarefa enquanto este bloco estiver aberto.
@@ -804,4 +805,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Handoff atual: `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Próxima retomada: Etapa 6 — Estagiários e vínculos.
