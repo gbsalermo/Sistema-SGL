@@ -327,7 +327,7 @@ ARMAZENADO_TEMPORARIAMENTE
 DESPACHADO
 ```
 
-## Hierarquia de Projetos — Etapa 5 (5.1 e 5.2 concluídos; 5.3 Atividades atual)
+## Hierarquia de Projetos — Etapa 5 ✅ concluída e validada
 
 ```text
 Laboratório responsável/contextual
@@ -373,7 +373,7 @@ Projeto
 - se o Projeto possuir fim, SCI não pode terminar depois dele;
 - status e situação de execução são próprios do SCI, ainda que usem os mesmos valores de domínio do Projeto;
 - concluir SCI não conclui Projeto;
-- a coerência hierárquica do Código SEG será validada integralmente no 5.4.
+- a coerência hierárquica do Código SEG é validada no backend, com unicidade global.
 
 
 ### Estado da SCI após o 5.2
@@ -389,9 +389,9 @@ Projeto
     └── ativo técnico
 ```
 
-O período do SCI fica contido no período do Projeto. O vínculo com o Projeto é estrutural e não pode ser trocado pelo update comum. Laboratório e Unidade são derivados do Projeto. A validação completa da hierarquia do Código SEG continua no 5.4.
+O período do SCI fica contido no período do Projeto. O vínculo com o Projeto é estrutural e não pode ser trocado pelo update comum. Laboratório e Unidade são derivados do Projeto. A hierarquia e a unicidade global do Código SEG são validadas pelo backend.
 
-### Atividades — 5.3 atual
+### Atividades — 5.3 ✅ concluído
 
 ```text
 Projeto
@@ -399,7 +399,7 @@ Projeto
     └── Atividade
 ```
 
-Atividade será entidade própria obrigatoriamente vinculada ao SCI, com ciclo operacional próprio. Projeto, Laboratório e Unidade devem ser derivados pela hierarquia sempre que não houver regra de negócio que exija duplicação.
+Atividade é entidade própria obrigatoriamente vinculada ao SCI, com ciclo operacional próprio. Projeto, Laboratório e Unidade são derivados pela hierarquia sempre que não houver regra de negócio que exija duplicação.
 
 
 ### Prorrogação hierárquica de Projeto, SCI e Atividade
@@ -436,3 +436,24 @@ Atividade
 ```
 
 Uma prorrogação registra a data final anterior, a nova data final, justificativa, autor e data/hora. A alteração da entidade e o histórico fazem parte da mesma transação. O update comum não deve ampliar uma data final já existente.
+
+
+### Interface operacional da Etapa 5
+
+```text
+/projetos
+→ Projeto
+   → SCI
+      → Atividades
+```
+
+Projeto é o eixo da navegação. O hub oferece filtro por Laboratório, cadastro/edição de SCI e Atividade, prorrogações, correções SEG e consulta de histórico.
+
+Código SEG:
+
+- Projeto pode permanecer temporariamente sem SEG;
+- sem SEG no Projeto não se cria SCI;
+- SCI e Atividade exigem SEG;
+- a interface sugere próximo sufixo para SCI/Atividade, mas o gestor pode alterá-lo antes de salvar;
+- depois de definido, o Código SEG é imutável no CRUD comum;
+- correções posteriores usam fluxo administrativo auditável.

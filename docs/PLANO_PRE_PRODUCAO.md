@@ -2,8 +2,8 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 25/09/2026  
-**Status:** Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 em andamento — 5.1 Projeto base ✅, 5.2 SCI ✅, bloco atual 5.3 Atividades  
+**Última atualização:** 29/09/2026  
+**Status:** Etapas 1–5 concluídas e validadas; próxima etapa: Etapa 6 — Estagiários e vínculos  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -271,7 +271,7 @@ Isso **não é delete lógico**. A decisão geral de delete lógico permanece na
 
 ---
 
-## Etapa 5 — Projetos e Atividades 🔧 ATUAL
+## Etapa 5 — Projetos e Atividades ✅ CONCLUÍDA E VALIDADA
 
 **Impacto:** alto.
 
@@ -452,7 +452,7 @@ Fechamento do 5.4:
 - suíte JUnit completa confirmada verde em 25/09/2026;
 - validação manual adicional em Postman não foi exigida para o fechamento deste bloco.
 
-### 5.5 Interface e integração 🔧 VALIDAÇÃO PENDENTE
+### 5.5 Interface e integração ✅ CONCLUÍDA E VALIDADA
 
 Projeto → SCI → Atividade já está estabilizado no backend e a implementação principal do frontend foi concluída.
 
@@ -477,17 +477,22 @@ Sugestão assistida no 5.5:
 - o campo permanece editável antes da criação;
 - códigos avulsos continuam permitidos desde que atendam formato, hierarquia e unicidade.
 
-Pendente para fechamento:
+Fechamento confirmado em 29/09/2026 após validação funcional/visual da interface integrada e confirmação da suíte JUnit do backend verde.
 
-- validar carregamento real com backend DEV;
-- validar criação/edição de SCI e Atividade;
-- validar prorrogação e correção SEG;
-- validar atualização de histórico após operações;
-- validar perfil Administrador e Gestor;
-- validar responsividade e dark mode;
-- corrigir eventuais ajustes visuais/integração identificados.
+Validado:
 
-Após essa bateria, fechar a Etapa 5 e liberar a Etapa 6.
+- hub `/projetos` carregando dados reais do backend DEV;
+- filtros, incluindo Laboratório;
+- hierarquia Projeto → SCI → Atividade;
+- criação/edição de SCI e Atividade;
+- prorrogação, correção SEG e histórico;
+- primeira definição de SEG de Projeto via Cadastros;
+- sugestão editável de SEG para SCI/Atividade;
+- dark mode, tipografia e hierarquia visual SCI/Atividade;
+- massa DEV idempotente;
+- refinamentos finais de usabilidade.
+
+**Etapa 5 encerrada. Etapa 6 liberada.**
 
 ---
 

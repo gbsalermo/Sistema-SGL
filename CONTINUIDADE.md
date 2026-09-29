@@ -3,13 +3,13 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 25/09/2026  
+**Última atualização:** 29/09/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
 **Branch atual de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fase atual:** pré-produção pós-aprovação funcional  
-**Etapa concluída:** Etapa 4 — expansão operacional de Resíduos ✅  
-**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 5.3 Atividades; 5.1 Projeto base ✅; 5.2 SCI ✅  
+**Etapa concluída:** Etapa 5 — Projetos e Atividades ✅  
+**Próxima etapa:** Etapa 6 — Estagiários e vínculos ⏳  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
@@ -433,7 +433,7 @@ Validado em 25/09/2026:
 - bateria funcional da API foi validada integralmente;
 - formato, raiz e duplicidade do Código SEG permanecem deliberadamente no 5.4.
 
-Bloco atual: **5.5 Interface e integração — implementação principal concluída; validação pendente**.
+Bloco 5.5: **Interface e integração ✅ concluída e validada**.
 
 Contrato aprovado para o bloco:
 
@@ -451,16 +451,18 @@ No 5.4, formato/coerência hierárquica, unicidade global, imutabilidade no CRUD
 
 Observação de segurança: o backend ainda não possui principal autenticado; autoria de prorrogações e correções de Código SEG é provisoriamente identificada por UUID de usuário validado contra tenant/perfil, seguindo o padrão de pré-autenticação existente, até a autenticação definitiva fornecer o ator pelo contexto autenticado.
 
-Estado do 5.5 em 25/09/2026:
+Fechamento do 5.5 em 29/09/2026:
 
-- massa DEV da Etapa 5 tornou-se idempotente, inclusive para bancos DEV já existentes;
+- massa DEV idempotente validada em banco existente;
 - frontend possui hub operacional direto de Projetos;
 - Projeto → SCI → Atividade é exibido e gerenciado na mesma experiência;
 - SCI e Atividade possuem criação/edição no hub;
-- cadastro administrativo de Projeto foi alinhado a Código SEG/status/situação/recurso externo;
-- prorrogações e correções SEG estão integradas;
-- histórico dessas operações é consultável na interface;
-- implementação principal concluída; resta validação visual/integrada antes do fechamento da Etapa 5.
+- cadastro administrativo de Projeto está alinhado a Código SEG/status/situação/recurso externo;
+- prorrogações, correções SEG e históricos estão integrados;
+- filtro por Laboratório e hierarquia visual SCI/Atividade aprovados;
+- sugestão editável de Código SEG para novo SCI/Atividade aprovada;
+- dark mode e tipografia canônica validados;
+- Etapa 5 oficialmente concluída e pronta para merge.
 
 ## Etapa 6 — Estagiários
 

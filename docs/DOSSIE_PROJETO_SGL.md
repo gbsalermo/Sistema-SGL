@@ -3,8 +3,8 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Atualizado em:** 25/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1, 2, 3 e 4 concluídas e validadas; Etapa 5 — Projetos e Atividades em andamento no bloco 5.3 — Atividades, com 5.1 — Projeto base e 5.2 — SCI concluídos e validados.  
+**Atualizado em:** 29/09/2026  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; próxima etapa planejada: Etapa 6 — Estagiários e vínculos.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -14,9 +14,8 @@ Etapa 1 — padrão visual global              ✅ concluída
 Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
-Etapa 5.1 — Projeto base                    ✅ concluído e validado
-Etapa 5.2 — SCI                             ✅ concluído e validado
-Etapa 5.3 — Atividades                      🔧 atual
+Etapa 5 — Projetos e Atividades             ✅ concluída e validada
+Etapa 6 — Estagiários e vínculos             ⏳ próxima
 ```
 
 Handoff imediato:
@@ -572,7 +571,7 @@ SCI       XX.XX.XX.XXX.XX.SS
 Atividade XX.XX.XX.XXX.XX.SS.AAA
 ```
 
-A numeração é cadastrada nesta primeira versão; o SGL valida a hierarquia.
+A numeração é institucional e cadastrada; o SGL valida formato, hierarquia e unicidade. A interface sugere o próximo sufixo provável para SCI/Atividade, mas permite edição antes do primeiro salvamento.
 
 
 Etapa 5 estabiliza Projetos/Atividades e Código SEG.
@@ -641,7 +640,7 @@ Etapa 1 ✅
 Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
-Etapa 5 🔧 atual — 5.3 Atividades; 5.1 ✅; 5.2 ✅
+Etapa 5 ✅ concluída e validada
 Etapa 6 ⏳
 Etapa 7 ⏳
 Etapa 8 ⏳
@@ -656,4 +655,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**Retomar pela Etapa 5. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`. A branch atual é `collab/etapa-5-projetos-atividades`. Os blocos 5.0, 5.1 e 5.2 estão fechados; continuar pelo 5.3 — Atividades. Manter o usuário como autor das mudanças funcionais de backend, salvo autorização explícita.**
+**A Etapa 5 está encerrada e validada. Após o merge de `collab/etapa-5-projetos-atividades`, retomar pela Etapa 6 — Estagiários e vínculos em branch própria criada sobre a `main` sincronizada. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md`, `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` e `docs/VALIDACAO_ETAPA_5.md`.**

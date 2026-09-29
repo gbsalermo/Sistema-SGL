@@ -50,8 +50,9 @@ Etapa 1 — refinamento visual global          ✅ concluída
 Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos   ✅ concluída e validada
-Etapa 5 — Projetos e Atividades              🔧 atual — 5.1 Projeto base
-Etapas 6 a 13                                ⏳
+Etapa 5 — Projetos e Atividades              ✅ concluída e validada
+Etapa 6 — Estagiários e vínculos             ⏳ próxima
+Etapas 7 a 13                                ⏳
 Matriz formal de permissões                  ⏳ após pré-produção
 Congelamento/homologação final               ⏳ posterior
 Autenticação/autorização definitiva          ⏳ posterior
@@ -64,13 +65,14 @@ Integração corporativa                       ⏳ posterior
 
 | Documento | Papel | Estado |
 |---|---|---|
-| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 24/09** |
+| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 29/09** |
 | `SINCRONIZACAO_GITLAB_GITHUB.md` | fonte canônica para remotes, branches, Actions, push/pull e regras de sincronização | **ATUAL — 24/09** |
-| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 24/09** |
+| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 29/09** |
 | `CONTINUIDADE_ETAPA_4_2026-09-17.md` | fechamento e decisões da Etapa 4 | **FECHADO — 24/09** |
 | `VALIDACAO_ETAPA_4.md` | bateria executada e critérios de fechamento da Etapa 4 | **FECHADO — 24/09** |
+| `VALIDACAO_ETAPA_5.md` | fechamento, validações e decisões finais de Projetos/SCI/Atividades | **FECHADO — 29/09** |
 | `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **FECHADO — 17/09** |
-| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 24/09** |
+| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 29/09** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 17/09** |
 | `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **ATUAL — 17/09** |
 | `RELATORIOS.md` | cobertura de relatórios | **VIGENTE** |
@@ -87,8 +89,8 @@ Integração corporativa                       ⏳ posterior
 2. Dark Mode                                        ✅
 3. refinamentos do fluxo atual de Resíduos          ✅
 4. expansão de Resíduos                             ✅ concluída e validada
-5. Projetos + Atividades                            🔧 atual — 5.1
-6. Estagiários + vínculos                           ⏳
+5. Projetos + Atividades                            ✅ concluída e validada
+6. Estagiários + vínculos                           ⏳ próxima
 7. relatórios consolidados                          ⏳
 8. normalização de unidades + Soluções              ⏳
 9. Pedidos + integração com Soluções                ⏳
@@ -136,7 +138,7 @@ Detalhes: `CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 A Etapa 4 foi reconciliada sobre a base corrigida pelo supervisor, testada e validada funcionalmente. Detalhes: `CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 
-A etapa atual é **Etapa 5 — Projetos e Atividades**. O **5.0 — Portão de confirmação está fechado** e o bloco atual é **5.1 — Projeto base**.
+A **Etapa 5 — Projetos e Atividades está concluída e validada**. A próxima etapa é **Etapa 6 — Estagiários e vínculos**.
 
 ---
 

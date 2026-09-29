@@ -2,8 +2,8 @@
 
 **Criado em:** 24/09/2026  
 **Etapa anterior:** Etapa 4 — Expansão operacional de Resíduos ✅ concluída e validada  
-**Etapa atual:** Etapa 5 — Projetos e Atividades 🔧 iniciada  
-**Bloco atual:** 5.5 — Interface e integração 🔧 atual; 5.0 ✅, 5.1 ✅, 5.2 ✅, 5.3 ✅ e 5.4 ✅ fechados  
+**Etapa atual:** Etapa 5 — Projetos e Atividades ✅ concluída e validada  
+**Bloco atual:** 5.5 — Interface e integração ✅ concluído e validado; Etapa 5 encerrada  
 **Branch de trabalho:** `collab/etapa-5-projetos-atividades`  
 **Fonte canônica de `main`:** GitLab institucional  
 
@@ -21,7 +21,7 @@ Roadmap canônico:
 → 5.2 SCI                                         ✅ concluído e validado
 → 5.3 Atividades                                  ✅ concluído e validado
 → 5.4 Código SEG — validação hierárquica           ✅ concluído e validado
-→ 5.5 Interface e integração                        🔧 atual
+→ 5.5 Interface e integração                        ✅ concluído e validado
 ```
 
 O backend estabiliza Projeto → SCI → Atividade e permanece responsável por validar formato, coerência hierárquica e unicidade do Código SEG. A interface pode sugerir a próxima numeração provável para SCI e Atividade, mas a sugestão é editável e não impõe sequência obrigatória.
@@ -691,7 +691,7 @@ Estado consolidado:
 
 Próximo bloco liberado: **5.5 — Interface e integração**.
 
-### 5.5 — Interface e integração 🔧 VALIDAÇÃO PENDENTE
+### 5.5 — Interface e integração ✅ CONCLUÍDA E VALIDADA
 
 A interface implementada reflete a importância funcional de Projeto:
 
@@ -731,10 +731,50 @@ Subblocos:
 5.5.2 CRUD operacional SCI/Atividade                  ✅ implementado
 5.5.3 Cadastro administrativo de Projeto atualizado   ✅ implementado
 5.5.4 Prorrogação + correção SEG + histórico           ✅ implementado
-5.5.5 Validação visual/integrada                       🔧 pendente
+5.5.5 Validação visual/integrada                       ✅ validado
 ```
 
-A Etapa 5 só deve ser marcada como concluída após validar o frontend em execução, incluindo responsividade, dark mode e chamadas reais contra o backend.
+Validação final confirmada em 29/09/2026:
+
+- carregamento real do hub `/projetos` contra backend DEV;
+- massa DEV idempotente após correção transacional do initializer;
+- Projeto → SCI → Atividade visível e operacional;
+- criação/edição de SCI e Atividade;
+- prorrogações e correções administrativas de Código SEG;
+- histórico/auditoria;
+- filtro por Laboratório;
+- comportamento de Projeto sem SEG;
+- sugestão assistida e editável de Código SEG para novo SCI/Atividade;
+- tipografia alinhada aos tokens canônicos;
+- diferenciação visual SCI/Atividade;
+- dark mode e refinamentos visuais aprovados.
+
+O backend permaneceu com suíte JUnit verde durante o fechamento. A validação frontend desta rodada foi funcional/visual em execução; não se registra aqui uma suíte automatizada frontend como executada.
+
+### Fechamento oficial da Etapa 5 ✅
+
+**Fechamento:** 29/09/2026.
+
+A Etapa 5 está encerrada. Não reabrir Projeto/SCI/Atividade para mudanças de escopo durante a Etapa 6, salvo correção de regressão.
+
+Estado consolidado:
+
+- Projeto é o eixo operacional principal;
+- Laboratório permanece contexto/filtro e vínculo responsável;
+- hierarquia `Projeto → SCI → Atividade` estabilizada;
+- períodos e ciclos independentes preservados;
+- prorrogações explícitas e auditáveis;
+- Código SEG com formato/hierarquia/unicidade global;
+- Código SEG imutável após definido no CRUD comum;
+- correção SEG administrativa, justificada e auditada;
+- Projeto pode existir temporariamente sem SEG;
+- SCI exige Projeto com SEG; Atividade exige SCI com SEG;
+- interface sugere próximo Código SEG para SCI/Atividade sem tornar a sequência obrigatória;
+- hub operacional `/projetos` concluído e aprovado;
+- massa DEV idempotente disponível;
+- decisões de relatório de Projetos e síntese Movimentações/Resumo registradas para Etapa 7.
+
+Próxima etapa liberada: **Etapa 6 — Estagiários e vínculos**.
 
 ### Critério de avanço
 
