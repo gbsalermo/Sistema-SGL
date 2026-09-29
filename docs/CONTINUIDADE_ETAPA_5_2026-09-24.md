@@ -24,7 +24,7 @@ Roadmap canônico:
 → 5.5 Interface e integração                        🔧 atual
 ```
 
-O backend deve estabilizar Projeto → SCI → Atividade antes do fechamento da interface. O Código SEG é cadastrado pelo usuário/gestão nesta etapa; o SGL valida formato e coerência hierárquica, sem gerar a numeração automaticamente.
+O backend estabiliza Projeto → SCI → Atividade e permanece responsável por validar formato, coerência hierárquica e unicidade do Código SEG. A interface pode sugerir a próxima numeração provável para SCI e Atividade, mas a sugestão é editável e não impõe sequência obrigatória.
 
 ---
 
@@ -571,7 +571,7 @@ Nesta etapa:
 - validar SCI com a mesma raiz do Projeto e sufixo próprio;
 - validar Atividade com o código completo do SCI + três dígitos;
 - validar **unicidade global/institucional** do Código SEG, independentemente da Unidade e inclusive para registros tecnicamente inativos;
-- não gerar sequências automaticamente nesta primeira versão.
+- não impor sequência automática como regra institucional; a interface pode sugerir o próximo sufixo disponível para facilitar o cadastro, mantendo o valor editável antes da criação.
 
 #### 5.4.1 Formato e coerência hierárquica ✅
 
@@ -634,6 +634,19 @@ GET  /api/v1/atividades/{id}/correcoes-codigo-seg
 ```
 
 Alteração direta no banco fica restrita a manutenção excepcional em DEV/pré-produção. Em produção, a correção oficial deve ocorrer pelo fluxo administrativo auditável.
+
+#### Sugestão assistida de Código SEG
+
+Refinamento confirmado durante a validação do 5.5:
+
+- Projeto continua sendo o único nível que pode permanecer temporariamente sem Código SEG;
+- sem Código SEG no Projeto, não é permitido criar SCI;
+- ao abrir **Novo SCI**, a interface sugere o maior sufixo SCI já utilizado no Projeto + 1;
+- ao abrir **Nova Atividade**, a interface sugere o maior sufixo de Atividade já utilizado no SCI + 1;
+- registros inativos também participam da sugestão, evitando reutilização acidental;
+- a sugestão não é uma regra obrigatória: o gestor pode substituir por outro código institucional válido antes de salvar;
+- o backend continua validando raiz/herança, formato e unicidade global;
+- depois de salvo, o Código SEG permanece imutável no CRUD comum e só pode ser alterado pelo fluxo administrativo de correção.
 
 #### 5.4.5 Testes e fechamento ✅
 
