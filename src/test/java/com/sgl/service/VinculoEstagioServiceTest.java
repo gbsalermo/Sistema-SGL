@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -165,17 +166,17 @@ class VinculoEstagioServiceTest {
     }
 
     private void mockarBuscasBase() {
-        when(estagiarioRepository
+        lenient().when(estagiarioRepository
                 .findByPublicIdAndUnidadePublicId(
                         ESTAGIARIO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(estagiario));
 
-        when(usuarioRepository
+        lenient().when(usuarioRepository
                 .findByPublicIdAndUnidadePublicId(
                         ORIENTADOR_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(orientador));
 
-        when(atividadeRepository
+        lenient().when(atividadeRepository
                 .findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
                         ATIVIDADE_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(atividade));
