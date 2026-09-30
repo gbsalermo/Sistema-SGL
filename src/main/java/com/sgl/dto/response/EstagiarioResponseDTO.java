@@ -60,7 +60,6 @@ public class EstagiarioResponseDTO implements Serializable {
         this.dataFimEstagio = entity.getDataFimEstagio();
         this.tipoBolsa = entity.getTipoBolsa();
         this.observacao = entity.getObservacao();
-        this.ativo = entity.getAtivo();
         this.situacaoEstagio = entity.getSituacaoEstagio();
         this.usuarioAtivo = entity.getAtivo();
         this.ativo = Boolean.TRUE.equals(entity.getAtivo()) && entity.getSituacaoEstagio() != SituacaoEstagio.FINALIZADO;
