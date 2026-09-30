@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.EstagiarioRequestDTO;
+import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
@@ -39,6 +40,7 @@ public class EstagiarioService {
 	private final LaboratorioRepository laboratorioRepository;
 	private final VinculoEstagioRepository vinculoEstagioRepository;
 	private final VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
+	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -117,7 +119,17 @@ public class EstagiarioService {
 		vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
 		vinculo.setObservacao(dto.getObservacao());
 
-		vinculoEstagioRepository.save(vinculo);
+		vinculo = vinculoEstagioRepository.save(vinculo);
+
+		VinculoEstagioAtividadeRequestDTO participacaoDto = new VinculoEstagioAtividadeRequestDTO();
+
+		participacaoDto.setAtividadeId(dto.getAtividadeId());
+
+		participacaoDto.setDataInicioParticipacao(dto.getDataInicioEstagio());
+
+		participacaoDto.setObservacao(dto.getObservacao());
+
+		vinculoEstagioAtividadeService.adicionar(vinculo.getPublicId(), participacaoDto);
 
 		return montarResponse(estagiario);
 	}
