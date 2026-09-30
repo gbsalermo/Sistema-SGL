@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 29/09/2026  
+**Última atualização:** 30/09/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
 **Branch atual de trabalho:** `collab/etapa-6-estagiarios-vinculos`  
@@ -185,16 +185,18 @@ V21 — criação do domínio de Atividade
 V22 — históricos de prorrogação de Projeto/SCI/Atividade
 V23 — unicidade global dos Códigos SEG
 V24 — histórico auditável de correções de Código SEG
+V25 — fundação do ciclo de estágio: situação + orientador no legado
+V26 — criação de vínculos institucionais de estágio + migração do legado
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = próxima versão livre após V24
+nova alteração de schema = próxima versão livre após V26
 ```
 
-Na abertura da Etapa 6, a próxima versão esperada é **V25**, desde que nenhuma migration nova seja incorporada à `main` antes da implementação.
+Após o fechamento do 6.1, a próxima versão esperada é **V27**, desde que nenhuma migration nova seja incorporada à `main` antes da implementação.
 
 ---
 
@@ -625,15 +627,50 @@ Não criar Código SGL adicional para Estagiário.
 
 A identidade funcional deverá utilizar a matrícula institucional do Usuario quando essa informação vier do ambiente corporativo/DevOps. O Código SEG permanece reservado ao domínio Projeto/SCI/Atividade.
 
+### Fechamento do 6.1 — contrato e fundação do vínculo ✅
+
+Concluído e validado em **30/09/2026**.
+
+A fundação foi refinada para separar identidade, papel e ocorrência institucional:
+
+```text
+Usuario
+└── Estagiario
+    └── VinculoEstagio 1..N
+```
+
+Decisões e implementação consolidadas:
+
+- `Usuario` continua sendo a identidade institucional única;
+- `Estagiario` representa o papel persistente do usuário no domínio do SGL;
+- `VinculoEstagio` representa cada ocorrência institucional do estágio ao longo do tempo;
+- o mesmo Estagiário pode possuir múltiplos vínculos históricos sem sobrescrever períodos anteriores;
+- V25 introduziu `SituacaoEstagio` e orientador na estrutura legada como etapa de transição;
+- V26 criou `vinculos_estagio` com UUID público, orientador, período previsto/efetivo, tipo de vínculo, situação e observação;
+- os dados legados são migrados para o primeiro `VinculoEstagio`;
+- `SituacaoEstagio` possui `EM_ANDAMENTO`, `PRORROGADO` e `FINALIZADO`;
+- Orientador é `Usuario` ativo com perfil `PESQUISADOR` ou `ANALISTA`, na mesma Unidade do Estagiário;
+- criação de novo Estagiário gera o primeiro `VinculoEstagio`;
+- respostas da API passam a carregar o histórico de vínculos;
+- o estado operacional `ativo` passa a considerar `Usuario.ativo` + existência de vínculo não finalizado;
+- atualização, exclusão e encerramento legados foram bloqueados para não sobrescrever histórico nem desativar indevidamente o Usuario;
+- encerramento definitivo permanece reservado ao fluxo de vínculo da subetapa 6.4;
+- campos legados em `estagiarios` permanecem temporariamente para compatibilidade e serão removidos somente após a migração completa do fluxo;
+- suíte completa do backend foi executada após os ajustes e ficou verde;
+- testes de Service, Controller e Repository foram atualizados para o novo domínio;
+- Repository passou a cobrir explicitamente usuário ativo + vínculo ativo, vínculo finalizado e usuário inativo.
+
+Importante: o 6.1 **não cria ainda um novo vínculo institucional independente**, porque a regra fechada exige pelo menos uma Atividade válida. Esse fluxo será aberto no 6.2 já junto da associação obrigatória com Atividade.
+
 ### Divisão de execução
 
 ```text
-6.1 — contrato e fundação do vínculo
-6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico
-6.3 — dados acadêmicos, tipo de vínculo e Cultura
-6.4 — período, situação e prorrogações
-6.5 — frontend integrado
-6.6 — dados DEV, testes, validação e documentação
+6.1 — contrato e fundação do vínculo                     ✅ concluído e validado
+6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico 🔧 próximo
+6.3 — dados acadêmicos, tipo de vínculo e Cultura         ⏳
+6.4 — período, situação e prorrogações                    ⏳
+6.5 — frontend integrado                                  ⏳
+6.6 — dados DEV, testes, validação e documentação          ⏳
 ```
 
 Não antecipar Etapa 7 durante esta implementação.
@@ -721,7 +758,7 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
-Etapa 6 — Estagiários + vínculos                      🔧 atual
+Etapa 6 — Estagiários + vínculos                      🔧 6.1 concluído; 6.2 próximo
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções                         ⏳
 Etapa 9 — Pedidos + Soluções                          ⏳
@@ -737,7 +774,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas, validadas e integradas à main. A etapa atual é a Etapa 6 — Estagiários e vínculos, na branch `collab/etapa-6-estagiarios-vinculos`. Retomar pelo bloco 6.1 — contrato e fundação do vínculo, preservando o domínio atual de Estagiário e a hierarquia Projeto → SCI → Atividade. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, o bloco 6.1 — contrato e fundação do vínculo foi concluído e validado em 30/09/2026 com suíte backend completa verde. A branch atual é `collab/etapa-6-estagiarios-vinculos`. Retomar pelo bloco 6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico, preservando a estrutura Usuario → Estagiario → VinculoEstagio e a hierarquia Atividade → SCI → Projeto → Laboratório → Unidade. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
