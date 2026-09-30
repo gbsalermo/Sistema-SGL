@@ -2,7 +2,6 @@ package com.sgl.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -36,20 +35,16 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
+import com.sgl.model.VinculoEstagio;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.service.EstagiarioService;
 
 /**
- * Teste de fatia web ({@code @WebMvcTest}) de {@link EstagiarioController}. Segue o
- * mesmo padrão fixado em UnidadeControllerTest/LaboratorioControllerTest/
- * ProjetoControllerTest (ver notas de configuração lá): bean de {@link ObjectMapper}
- * via {@code @TestConfiguration} e {@code @Import(SecurityConfig.class)} para
- * reproduzir o "anyRequest().permitAll()" real em vez do HTTP Basic gerado por
- * padrão pelo slice.
+ * Teste de fatia web do controller de Estagiários.
  *
- * {@link EstagiarioService} é mockado - toda a regra de tenant/negócio (já coberta em
- * EstagiarioServiceTest) não é exercitada aqui, só roteamento HTTP, serialização e
- * validação de request.
+ * As regras de vínculo institucional ficam cobertas em EstagiarioServiceTest;
+ * aqui validamos contrato HTTP, serialização e validação do request.
  */
 @WebMvcTest(EstagiarioController.class)
 @Import(SecurityConfig.class)
@@ -59,12 +54,6 @@ class EstagiarioControllerTest {
     static class JacksonTestConfig {
         @Bean
         ObjectMapper objectMapper() {
-            // Diferente de UnidadeRequestDTO/LaboratorioRequestDTO (sem campos de
-            // data), EstagiarioRequestDTO tem LocalDate - o ObjectMapper "cru" do
-            // slice não vem com o JavaTimeModule registrado (isso é feito pela
-            // JacksonAutoConfiguration real, que este @WebMvcTest não sobe), então
-            // é preciso registrar explicitamente aqui para serializar/desserializar
-            // LocalDate no corpo da requisição de teste.
             return new ObjectMapper().registerModule(new JavaTimeModule());
         }
     }
@@ -77,6 +66,10 @@ class EstagiarioControllerTest {
             UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID UNIDADE_PUBLIC_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000003");
+    private static final UUID ORIENTADOR_PUBLIC_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000004");
+    private static final UUID VINCULO_PUBLIC_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000005");
 
     @Autowired
     private MockMvc mockMvc;
@@ -88,20 +81,17 @@ class EstagiarioControllerTest {
     private EstagiarioService estagiarioService;
 
     private EstagiarioRequestDTO montarRequestDTO() {
-        return new EstagiarioRequestDTO(
-                ESTAGIARIO_PUBLIC_ID,
-                LABORATORIO_PUBLIC_ID,
-                LocalDate.of(2026, 8, 1),
-                null,
-                TipoBolsa.CONTRATUAL,
-                "Estágio vinculado ao projeto de síntese.",
-                true);
+        EstagiarioRequestDTO dto = new EstagiarioRequestDTO();
+        dto.setUsuarioId(ESTAGIARIO_PUBLIC_ID);
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
+        dto.setDataFimEstagio(LocalDate.of(2027, 1, 31));
+        dto.setTipoBolsa(TipoBolsa.CONTRATUAL);
+        dto.setObservacao("Estágio vinculado ao projeto de síntese.");
+        dto.setOrientadorId(ORIENTADOR_PUBLIC_ID);
+        return dto;
     }
 
-    // EstagiarioResponseDTO só tem construtor a partir da entidade Estagiario
-    // (que estende Usuario) - por isso montamos a entidade real via setters (igual
-    // ao padrão de herança JOINED usado pelo EstagiarioService) em vez de mockar o
-    // próprio DTO.
     private EstagiarioResponseDTO montarResponseDTO() {
         Unidade unidade = Unidade.builder()
                 .publicId(UNIDADE_PUBLIC_ID)
@@ -120,37 +110,55 @@ class EstagiarioControllerTest {
         estagiario.setNome("Maria Oliveira");
         estagiario.setUnidade(unidade);
         estagiario.setLaboratorio(laboratorio);
-        estagiario.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
-        estagiario.setTipoBolsa(TipoBolsa.CONTRATUAL);
-        estagiario.setObservacao("Estágio vinculado ao projeto de síntese.");
         estagiario.setAtivo(true);
 
-        return new EstagiarioResponseDTO(estagiario);
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setPublicId(VINCULO_PUBLIC_ID);
+        vinculo.setEstagiario(estagiario);
+        vinculo.setDataInicio(LocalDate.of(2026, 8, 1));
+        vinculo.setDataFimPrevista(LocalDate.of(2027, 1, 31));
+        vinculo.setTipoBolsa(TipoBolsa.CONTRATUAL);
+        vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+        vinculo.setObservacao("Estágio vinculado ao projeto de síntese.");
+
+        return new EstagiarioResponseDTO(
+                estagiario,
+                List.of(vinculo));
     }
 
     @Test
     void deveListarTodosOsEstagiariosERetornar200() throws Exception {
-        when(estagiarioService.listarTodos()).thenReturn(List.of(montarResponseDTO()));
+        when(estagiarioService.listarTodos())
+                .thenReturn(List.of(montarResponseDTO()));
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(ESTAGIARIO_PUBLIC_ID.toString()));
+                .andExpect(jsonPath("$[0].id")
+                        .value(ESTAGIARIO_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].vinculos").isArray())
+                .andExpect(jsonPath("$[0].vinculos[0].situacao")
+                        .value("EM_ANDAMENTO"));
     }
 
     @Test
     void deveBuscarEstagiarioPorIdERetornar200() throws Exception {
-        when(estagiarioService.buscarPorId(ESTAGIARIO_PUBLIC_ID)).thenReturn(montarResponseDTO());
+        when(estagiarioService.buscarPorId(ESTAGIARIO_PUBLIC_ID))
+                .thenReturn(montarResponseDTO());
 
         mockMvc.perform(get(BASE_URL + "/{id}", ESTAGIARIO_PUBLIC_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.usuarioNome").value("Maria Oliveira"));
+                .andExpect(jsonPath("$.usuarioNome")
+                        .value("Maria Oliveira"))
+                .andExpect(jsonPath("$.ativo").value(true));
     }
 
     @Test
     void deveRetornar404QuandoEstagiarioNaoEncontrado() throws Exception {
         when(estagiarioService.buscarPorId(ESTAGIARIO_PUBLIC_ID))
-                .thenThrow(new ResourceNotFoundException("Estagiário", ESTAGIARIO_PUBLIC_ID));
+                .thenThrow(new ResourceNotFoundException(
+                        "Estagiário",
+                        ESTAGIARIO_PUBLIC_ID));
 
         mockMvc.perform(get(BASE_URL + "/{id}", ESTAGIARIO_PUBLIC_ID))
                 .andExpect(status().isNotFound());
@@ -162,15 +170,19 @@ class EstagiarioControllerTest {
                 .thenReturn(List.of(montarResponseDTO()));
 
         mockMvc.perform(get(BASE_URL + "/por-laboratorio")
-                        .param("laboratorioId", LABORATORIO_PUBLIC_ID.toString()))
+                        .param(
+                                "laboratorioId",
+                                LABORATORIO_PUBLIC_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].laboratorioId").value(LABORATORIO_PUBLIC_ID.toString()));
+                .andExpect(jsonPath("$[0].laboratorioId")
+                        .value(LABORATORIO_PUBLIC_ID.toString()));
     }
 
     @Test
     void deveListarAtivosERetornar200() throws Exception {
-        when(estagiarioService.listarAtivos()).thenReturn(List.of(montarResponseDTO()));
+        when(estagiarioService.listarAtivos())
+                .thenReturn(List.of(montarResponseDTO()));
 
         mockMvc.perform(get(BASE_URL + "/ativos"))
                 .andExpect(status().isOk())
@@ -181,21 +193,22 @@ class EstagiarioControllerTest {
     @Test
     void deveCriarEstagiarioERetornar201() throws Exception {
         EstagiarioRequestDTO dto = montarRequestDTO();
-        when(estagiarioService.criar(any(EstagiarioRequestDTO.class))).thenReturn(montarResponseDTO());
 
-        // O controller usa ResponseEntity.status(HttpStatus.CREATED) explicitamente
-        // (EstagiarioController.java linha 93) - por isso o teste espera 201, não 200.
+        when(estagiarioService.criar(any(EstagiarioRequestDTO.class)))
+                .thenReturn(montarResponseDTO());
+
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.usuarioNome").value("Maria Oliveira"));
+                .andExpect(jsonPath("$.usuarioNome")
+                        .value("Maria Oliveira"))
+                .andExpect(jsonPath("$.vinculos[0].situacao")
+                        .value("EM_ANDAMENTO"));
     }
 
     @Test
     void deveRetornar400AoCriarComCorpoInvalido() throws Exception {
-        // EstagiarioRequestDTO exige usuarioId, laboratorioId, dataInicioEstagio e
-        // tipoBolsa (todos @NotNull) - corpo vazio viola todos.
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -203,46 +216,48 @@ class EstagiarioControllerTest {
     }
 
     @Test
-    void deveAtualizarEstagiarioERetornar200() throws Exception {
+    void deveRetornar400AoAtualizarDiretamente() throws Exception {
         EstagiarioRequestDTO dto = montarRequestDTO();
-        when(estagiarioService.atualizar(eq(ESTAGIARIO_PUBLIC_ID), any(EstagiarioRequestDTO.class)))
-                .thenReturn(montarResponseDTO());
+
+        when(estagiarioService.atualizar(
+                eq(ESTAGIARIO_PUBLIC_ID),
+                any(EstagiarioRequestDTO.class)))
+                .thenThrow(new BusinessRuleException(
+                        "A atualização direta do estágio foi substituída "
+                                + "pelo gerenciamento de vínculos institucionais."));
 
         mockMvc.perform(put(BASE_URL + "/{id}", ESTAGIARIO_PUBLIC_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.usuarioNome").value("Maria Oliveira"));
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void deveDeletarEstagiarioERetornar204() throws Exception {
-        doNothing().when(estagiarioService).deletar(ESTAGIARIO_PUBLIC_ID);
+    void deveRetornar400AoDeletarDiretamente() throws Exception {
+        when(estagiarioService.deletar(ESTAGIARIO_PUBLIC_ID))
+                .thenThrow(new BusinessRuleException(
+                        "Estagiários não podem ser excluídos diretamente. "
+                                + "O histórico institucional deve ser preservado."));
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", ESTAGIARIO_PUBLIC_ID))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(delete(
+                        BASE_URL + "/{id}",
+                        ESTAGIARIO_PUBLIC_ID))
+                .andExpect(status().isBadRequest());
 
-        verify(estagiarioService).deletar(ESTAGIARIO_PUBLIC_ID);
+        verify(estagiarioService)
+                .deletar(ESTAGIARIO_PUBLIC_ID);
     }
 
     @Test
-    void deveEncerrarEstagioERetornar200() throws Exception {
-        when(estagiarioService.encerrarEstagio(ESTAGIARIO_PUBLIC_ID)).thenReturn(montarResponseDTO());
-
-        mockMvc.perform(put(BASE_URL + "/{id}/encerrar", ESTAGIARIO_PUBLIC_ID))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.usuarioNome").value("Maria Oliveira"));
-    }
-
-    @Test
-    void deveRetornar400AoEncerrarEstagioJaEncerrado() throws Exception {
-        // EstagiarioService.encerrarEstagio lança BusinessRuleException quando o
-        // estágio já está encerrado (EstagiarioService.java linha 244) - o
-        // RestExceptionHandler mapeia essa exceção para 400.
+    void deveRetornar400AoEncerrarPeloFluxoLegado() throws Exception {
         when(estagiarioService.encerrarEstagio(ESTAGIARIO_PUBLIC_ID))
-                .thenThrow(new BusinessRuleException("O estágio já está encerrado."));
+                .thenThrow(new BusinessRuleException(
+                        "O encerramento direto do estágio foi substituído "
+                                + "pelo fluxo de encerramento do vínculo institucional."));
 
-        mockMvc.perform(put(BASE_URL + "/{id}/encerrar", ESTAGIARIO_PUBLIC_ID))
+        mockMvc.perform(put(
+                        BASE_URL + "/{id}/encerrar",
+                        ESTAGIARIO_PUBLIC_ID))
                 .andExpect(status().isBadRequest());
     }
 }
