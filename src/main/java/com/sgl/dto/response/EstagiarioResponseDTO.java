@@ -2,9 +2,11 @@ package com.sgl.dto.response;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.Estagiario;
+import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 
@@ -19,49 +21,75 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EstagiarioResponseDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    @Schema(description = "Identificador público UUID do estagiário.", example = "550e8400-e29b-41d4-a716-446655440011")
-    private UUID id;
-    @Schema(description = "Identificador público UUID do usuário associado.", example = "550e8400-e29b-41d4-a716-446655440001")
-    private UUID usuarioId;
-    @Schema(description = "Nome do usuário associado ao estágio.", example = "Maria Oliveira")
-    private String usuarioNome;
-    @Schema(description = "Identificador público UUID da unidade institucional do estagiário.", example = "550e8400-e29b-41d4-a716-446655440002")
-    private UUID unidadeId;
-    @Schema(description = "Nome da unidade institucional do estagiário.", example = "Instituto de Química")
-    private String unidadeNome;
-    @Schema(description = "Identificador público UUID do laboratório.", example = "550e8400-e29b-41d4-a716-446655440003")
-    private UUID laboratorioId;
-    @Schema(description = "Nome do laboratório do estágio.", example = "Laboratório de Química Orgânica")
-    private String laboratorioNome;
-    @Schema(description = "Data de início do estágio.", example = "2026-08-01")
-    private LocalDate dataInicioEstagio;
-    @Schema(description = "Data de encerramento do estágio, quando definida.", example = "2027-01-31")
-    private LocalDate dataFimEstagio;
-    @Schema(description = "Tipo de vínculo do estágio. O campo técnico permanece tipoBolsa por compatibilidade.", example = "CONTRATUAL")
-    private TipoBolsa tipoBolsa;
-    @Schema(description = "Observação registrada no vínculo de estágio.", example = "Estágio vinculado ao projeto de síntese.")
-    private String observacao;
-    @Schema(description = "Indica se o estágio está ativo.", example = "true")
-    private Boolean ativo;
-    private SituacaoEstagio situacaoEstagio;
-    private Boolean usuarioAtivo;
+	@Schema(description = "Identificador público UUID do estagiário.", example = "550e8400-e29b-41d4-a716-446655440011")
+	private UUID id;
+	@Schema(description = "Identificador público UUID do usuário associado.", example = "550e8400-e29b-41d4-a716-446655440001")
+	private UUID usuarioId;
+	@Schema(description = "Nome do usuário associado ao estágio.", example = "Maria Oliveira")
+	private String usuarioNome;
+	@Schema(description = "Identificador público UUID da unidade institucional do estagiário.", example = "550e8400-e29b-41d4-a716-446655440002")
+	private UUID unidadeId;
+	@Schema(description = "Nome da unidade institucional do estagiário.", example = "Instituto de Química")
+	private String unidadeNome;
+	@Schema(description = "Identificador público UUID do laboratório.", example = "550e8400-e29b-41d4-a716-446655440003")
+	private UUID laboratorioId;
+	@Schema(description = "Nome do laboratório do estágio.", example = "Laboratório de Química Orgânica")
+	private String laboratorioNome;
+	@Schema(description = "Data de início do estágio.", example = "2026-08-01")
+	private LocalDate dataInicioEstagio;
+	@Schema(description = "Data de encerramento do estágio, quando definida.", example = "2027-01-31")
+	private LocalDate dataFimEstagio;
+	@Schema(description = "Tipo de vínculo do estágio. O campo técnico permanece tipoBolsa por compatibilidade.", example = "CONTRATUAL")
+	private TipoBolsa tipoBolsa;
+	@Schema(description = "Observação registrada no vínculo de estágio.", example = "Estágio vinculado ao projeto de síntese.")
+	private String observacao;
+	@Schema(description = "Indica se o estágio está ativo.", example = "true")
+	private Boolean ativo;
+	private SituacaoEstagio situacaoEstagio;
+	private Boolean usuarioAtivo;
+	private List<VinculoEstagioResponseDTO> vinculos;
 
-    public EstagiarioResponseDTO(Estagiario entity) {
-        this.id = entity.getPublicId();
-        this.usuarioId = entity.getPublicId();
-        this.usuarioNome = entity.getNome();
-        this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
-        this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
-        this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
-        this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
-        this.dataInicioEstagio = entity.getDataInicioEstagio();
-        this.dataFimEstagio = entity.getDataFimEstagio();
-        this.tipoBolsa = entity.getTipoBolsa();
-        this.observacao = entity.getObservacao();
-        this.situacaoEstagio = entity.getSituacaoEstagio();
-        this.usuarioAtivo = entity.getAtivo();
-        this.ativo = Boolean.TRUE.equals(entity.getAtivo()) && entity.getSituacaoEstagio() != SituacaoEstagio.FINALIZADO;
-    }
+	public EstagiarioResponseDTO(Estagiario entity, List<VinculoEstagio> vinculos) {
+
+		this.id = entity.getPublicId();
+		this.usuarioId = entity.getPublicId();
+		this.usuarioNome = entity.getNome();
+
+		this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
+
+		this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
+
+		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
+
+		this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
+
+		this.usuarioAtivo = entity.getAtivo();
+
+		this.vinculos = vinculos.stream().map(VinculoEstagioResponseDTO::new).toList();
+
+		VinculoEstagio vinculoMaisRecente = vinculos.isEmpty() ? null : vinculos.get(0);
+
+		/*
+		 * Campos temporários de compatibilidade com o frontend atual. A fonte real
+		 * passa a ser VinculoEstagio.
+		 */
+		if (vinculoMaisRecente != null) {
+
+			this.dataInicioEstagio = vinculoMaisRecente.getDataInicio();
+
+			this.dataFimEstagio = vinculoMaisRecente.getDataFimPrevista();
+
+			this.tipoBolsa = vinculoMaisRecente.getTipoBolsa();
+
+			this.observacao = vinculoMaisRecente.getObservacao();
+
+			this.situacaoEstagio = vinculoMaisRecente.getSituacao();
+		}
+
+		boolean possuiVinculoAtivo = vinculos.stream().anyMatch(v -> v.getSituacao() != SituacaoEstagio.FINALIZADO);
+
+		this.ativo = Boolean.TRUE.equals(entity.getAtivo()) && possuiVinculoAtivo;
+	}
 }

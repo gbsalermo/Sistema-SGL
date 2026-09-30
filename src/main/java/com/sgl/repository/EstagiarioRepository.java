@@ -33,4 +33,22 @@ public interface EstagiarioRepository extends JpaRepository<Estagiario, Long> {
     Optional<Estagiario> findById(Long id);
     Optional<Estagiario> findByPublicId(UUID publicId);
     Optional<Estagiario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
+    
+    @Query("""
+    	    SELECT DISTINCT e
+    	    FROM Estagiario e
+    	    WHERE e.unidade.publicId = :unidadeId
+    	      AND e.ativo = true
+    	      AND EXISTS (
+    	          SELECT v.id
+    	          FROM VinculoEstagio v
+    	          WHERE v.estagiario = e
+    	            AND v.situacao <> com.sgl.model.enums.SituacaoEstagio.FINALIZADO
+    	      )
+    	""")
+    	List<Estagiario> findEstagiariosComVinculoAtivo(
+    	        UUID unidadeId
+    	);
+    
+
 }

@@ -14,14 +14,14 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
+import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
-import com.sgl.tenant.TenantContext;
-import com.sgl.model.VinculoEstagio;
-import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.repository.VinculoEstagioRepository;
+import com.sgl.tenant.TenantContext;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -115,7 +115,7 @@ public class EstagiarioService {
 
 		vinculoEstagioRepository.save(vinculo);
 
-		return new EstagiarioResponseDTO(estagiario);
+		return montarResponse(estagiario);
 	}
 
 	@Transactional(readOnly = true)
@@ -128,12 +128,12 @@ public class EstagiarioService {
 		List<Estagiario> estagiarios = estagiarioRepository
 				.findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
-		return estagiarios.stream().map(EstagiarioResponseDTO::new).toList();
+		return estagiarios.stream().map(this::montarResponse).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public EstagiarioResponseDTO buscarPorId(UUID id) {
-		return new EstagiarioResponseDTO(buscarEstagiarioNoTenant(id));
+		return montarResponse(buscarEstagiarioNoTenant(id));
 	}
 
 	@Transactional(readOnly = true)
@@ -141,20 +141,20 @@ public class EstagiarioService {
 		Laboratorio laboratorio = buscarLaboratorio(id);
 		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-		return estagiarioRepository.findByLaboratorioId(laboratorio.getId()).stream().map(EstagiarioResponseDTO::new)
+		return estagiarioRepository.findByLaboratorioId(laboratorio.getId()).stream().map(this::montarResponse)
 				.toList();
 	}
 
 	@Transactional(readOnly = true)
 	public List<EstagiarioResponseDTO> listarAtivos() {
-		// Mesma correção: exigir tenant em vez de cair para "todas as
-		// unidades" quando o header não é enviado.
+
 		exigirTenantAtivo();
 
-		List<Estagiario> estagiarios = estagiarioRepository
-				.findByUnidadePublicIdAndAtivoTrue(TenantContext.unidadeAtual().orElseThrow());
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return estagiarios.stream().map(EstagiarioResponseDTO::new).toList();
+		List<Estagiario> estagiarios = estagiarioRepository.findEstagiariosComVinculoAtivo(unidadeId);
+
+		return estagiarios.stream().map(this::montarResponse).toList();
 	}
 
 	@Transactional
@@ -174,33 +174,16 @@ public class EstagiarioService {
 		estagiario.setLaboratorio(laboratorio);
 		preencherEstagiario(estagiario, dto);
 
-		return new EstagiarioResponseDTO(estagiarioRepository.save(estagiario));
+		return montarResponse(estagiario);
 	}
 
 	@Transactional
 	public void deletar(UUID id) {
 		Estagiario estagiario = buscarEstagiarioNoTenant(id);
-
-		// Correção de bug de lógica: "Estagiario" é uma extensão de "Usuario"
-		// (mesma tabela de login, herança JOINED) e as duas classes
-		// compartilham a coluna "ativo". Antes, este método fazia
-		// "estagiario.setAtivo(false)", que é EXATAMENTE o mesmo efeito de
-		// desativar a conta de usuário (bloqueando login) — igual ao que
-		// acontece em encerrarEstagio(). Ou seja, "excluir o estagiário"
-		// (uma ação que devia só encerrar o vínculo de estágio) também
-		// desligava a pessoa do sistema inteiro, sem avisar.
-		//
-		// Aqui só marcamos o fim do estágio (dataFimEstagio), sem tocar em
-		// "ativo". Se o objetivo for realmente desativar o login da pessoa,
-		// isso deve ser feito de forma explícita chamando encerrarEstagio()
-		// (que já documenta esse efeito) ou o endpoint de inativar usuário.
 		estagiario.setDataFimEstagio(LocalDate.now());
 	}
 
 	private Estagiario buscarEstagiarioNoTenant(UUID id) {
-		// Correção de segurança: antes, sem tenant ativo, caía numa busca
-		// sem filtro de unidade (findByPublicId), permitindo ler o
-		// estagiário de outra unidade só por não enviar o header.
 		exigirTenantAtivo();
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
@@ -278,7 +261,7 @@ public class EstagiarioService {
 		estagiario.setAtivo(false);
 		estagiario.setDataFimEstagio(hoje);
 
-		return new EstagiarioResponseDTO(estagiarioRepository.save(estagiario));
+		return montarResponse(estagiario);
 	}
 
 	private Usuario buscarEValidarOrientador(UUID orientadorId) {
@@ -294,19 +277,26 @@ public class EstagiarioService {
 
 		return orientador;
 	}
-	
-	private void validarMesmaUnidade(
-	        Usuario estagiario,
-	        Usuario orientador) {
 
-	    if (estagiario.getUnidade() == null
-	            || orientador.getUnidade() == null
-	            || !estagiario.getUnidade().getId()
-	                    .equals(orientador.getUnidade().getId())) {
+	private void validarMesmaUnidade(Usuario estagiario, Usuario orientador) {
 
-	        throw new BusinessRuleException(
-	                "Estagiário e orientador devem pertencer à mesma unidade."
-	        );
-	    }
+		if (estagiario.getUnidade() == null || orientador.getUnidade() == null
+				|| !estagiario.getUnidade().getId().equals(orientador.getUnidade().getId())) {
+
+			throw new BusinessRuleException("Estagiário e orientador devem pertencer à mesma unidade.");
+		}
+	}
+
+	private EstagiarioResponseDTO montarResponse(Estagiario estagiario) {
+
+		exigirTenantAtivo();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		List<VinculoEstagio> vinculos = vinculoEstagioRepository
+				.findByEstagiarioPublicIdAndEstagiarioUnidadePublicIdOrderByDataInicioDesc(estagiario.getPublicId(),
+						unidadeId);
+
+		return new EstagiarioResponseDTO(estagiario, vinculos);
 	}
 }
