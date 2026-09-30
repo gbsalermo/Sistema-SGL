@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sgl.dto.request.EstagiarioRequestDTO;
+import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -33,12 +34,14 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
+import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
 
@@ -65,6 +68,8 @@ class EstagiarioServiceTest {
             UUID.fromString("00000000-0000-0000-0000-000000000004");
     private static final UUID ORIENTADOR_PUBLIC_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000005");
+    private static final UUID ATIVIDADE_PUBLIC_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000007");
 
     @Mock
     private EstagiarioRepository estagiarioRepository;
@@ -77,6 +82,12 @@ class EstagiarioServiceTest {
 
     @Mock
     private VinculoEstagioRepository vinculoEstagioRepository;
+
+    @Mock
+    private VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
+
+    @Mock
+    private VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 
     @Mock
     private EntityManager entityManager;
@@ -93,6 +104,7 @@ class EstagiarioServiceTest {
     private Usuario orientador;
     private Estagiario estagiario;
     private VinculoEstagio vinculo;
+    private VinculoEstagioAtividade participacao;
 
     @BeforeEach
     void setUp() {
@@ -157,11 +169,21 @@ class EstagiarioServiceTest {
         vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
         vinculo.setObservacao("Estágio vinculado ao projeto de síntese.");
 
+        participacao = new VinculoEstagioAtividade();
+        participacao.setId(200L);
+        participacao.setPublicId(UUID.fromString("00000000-0000-0000-0000-000000000008"));
+        participacao.setVinculoEstagio(vinculo);
+        participacao.setDataInicioParticipacao(LocalDate.of(2026, 8, 1));
+
         ReflectionTestUtils.setField(estagiarioService, "entityManager", entityManager);
 
         lenient().when(entityManager.createNativeQuery(anyString())).thenReturn(nativeQuery);
         lenient().when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
         lenient().when(nativeQuery.executeUpdate()).thenReturn(1);
+        lenient().when(vinculoEstagioAtividadeRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        any(UUID.class), any(UUID.class)))
+                .thenReturn(List.of(participacao));
     }
 
     @AfterEach
@@ -201,6 +223,15 @@ class EstagiarioServiceTest {
         assertEquals(LocalDate.of(2026, 8, 1), salvo.getDataInicio());
         assertEquals(LocalDate.of(2027, 1, 31), salvo.getDataFimPrevista());
         verify(usuarioRepository).save(any(Usuario.class));
+
+        ArgumentCaptor<VinculoEstagioAtividadeRequestDTO> participacaoCaptor =
+                ArgumentCaptor.forClass(VinculoEstagioAtividadeRequestDTO.class);
+        verify(vinculoEstagioAtividadeService)
+                .adicionar(any(), participacaoCaptor.capture());
+
+        assertEquals(ATIVIDADE_PUBLIC_ID, participacaoCaptor.getValue().getAtividadeId());
+        assertEquals(LocalDate.of(2026, 8, 1),
+                participacaoCaptor.getValue().getDataInicioParticipacao());
     }
 
     @Test
@@ -464,6 +495,28 @@ class EstagiarioServiceTest {
     }
 
     @Test
+    void deveMarcarResponseComoInativoSemParticipacaoAberta() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        when(estagiarioRepository.findByPublicIdAndUnidadePublicId(
+                USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(estagiario));
+        when(vinculoEstagioRepository
+                .findByEstagiarioPublicIdAndEstagiarioUnidadePublicIdOrderByDataInicioDesc(
+                        USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(List.of(vinculo));
+        when(vinculoEstagioAtividadeRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        vinculo.getPublicId(), UNIDADE_PUBLIC_ID))
+                .thenReturn(List.of());
+
+        EstagiarioResponseDTO resultado =
+                estagiarioService.buscarPorId(USUARIO_PUBLIC_ID);
+
+        assertEquals(Boolean.FALSE, resultado.getAtivo());
+    }
+
+    @Test
     void devePreservarMultiplosVinculosNoResponse() {
         VinculoEstagio encerrado = new VinculoEstagio();
         encerrado.setId(90L);
@@ -570,6 +623,7 @@ class EstagiarioServiceTest {
         dto.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
         dto.setObservacao("Estágio vinculado ao projeto de síntese.");
         dto.setOrientadorId(ORIENTADOR_PUBLIC_ID);
+        dto.setAtividadeId(ATIVIDADE_PUBLIC_ID);
         return dto;
     }
 
