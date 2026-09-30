@@ -161,26 +161,22 @@ public class EstagiarioService {
 	public EstagiarioResponseDTO atualizar(UUID id, EstagiarioRequestDTO dto) {
 		Estagiario estagiario = buscarEstagiarioNoTenant(id);
 
-		if (!id.equals(dto.getUsuarioId())) {
-			throw new BusinessRuleException("Não é permitido trocar o usuário vinculado do estagiário.");
-		}
+		  buscarEstagiarioNoTenant(id);
 
-		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
-		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
-		estagiario.validateInternProfile();
-		validarUnidadeCompativel(estagiario, laboratorio);
-
-		estagiario.setPerfil(Perfil.ESTAGIARIO);
-		estagiario.setLaboratorio(laboratorio);
-		preencherEstagiario(estagiario, dto);
-
-		return montarResponse(estagiario);
+		    throw new BusinessRuleException(
+		            "A atualização direta do estágio foi substituída "
+		            + "pelo gerenciamento de vínculos institucionais."
+		    );
 	}
 
 	@Transactional
 	public void deletar(UUID id) {
-		Estagiario estagiario = buscarEstagiarioNoTenant(id);
-		estagiario.setDataFimEstagio(LocalDate.now());
+		 buscarEstagiarioNoTenant(id);
+
+		    throw new BusinessRuleException(
+		            "Estagiários não podem ser excluídos diretamente. "
+		            + "O histórico institucional deve ser preservado."
+		    );
 	}
 
 	private Estagiario buscarEstagiarioNoTenant(UUID id) {
@@ -245,23 +241,16 @@ public class EstagiarioService {
 		}
 	}
 
+
 	@Transactional
 	public EstagiarioResponseDTO encerrarEstagio(UUID id) {
-		Estagiario estagiario = buscarEstagiarioNoTenant(id);
 
-		if (!Boolean.TRUE.equals(estagiario.getAtivo())) {
-			throw new BusinessRuleException("O estágio já está encerrado.");
-		}
+	    buscarEstagiarioNoTenant(id);
 
-		LocalDate hoje = LocalDate.now();
-		if (hoje.isBefore(estagiario.getDataInicioEstagio())) {
-			throw new BusinessRuleException("Não é possível encerrar um estágio antes da data de início.");
-		}
-
-		estagiario.setAtivo(false);
-		estagiario.setDataFimEstagio(hoje);
-
-		return montarResponse(estagiario);
+	    throw new BusinessRuleException(
+	            "O encerramento direto do estágio foi substituído "
+	            + "pelo fluxo de encerramento do vínculo institucional."
+	    );
 	}
 
 	private Usuario buscarEValidarOrientador(UUID orientadorId) {
