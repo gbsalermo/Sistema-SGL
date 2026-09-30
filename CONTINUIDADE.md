@@ -577,24 +577,43 @@ A modelagem deve seguir o padrão de associações reutilizáveis já utilizado 
 
 A cardinalidade exata deve ser implementada junto ao vínculo Estagiário–Atividade, evitando atribuir uma única Cultura global ao Usuario.
 
-### Período e prorrogação
+### Período, encerramento e prorrogação
 
-O vínculo de estágio mantém:
+O vínculo de estágio deve distinguir claramente:
 
 ```text
-dataInicio
-dataFim
+dataInicioEstagio
+dataFimPrevista
+dataFimEfetiva
 ```
 
-Prorrogação não deve ser alteração silenciosa da data final. Deve preservar:
+A finalização do estágio terá **dois caminhos válidos**:
 
-- data final anterior;
-- nova data final;
+1. **término natural** — quando a data final prevista for atingida, o estágio deve ser finalizado pelo fluxo previsto para expiração normal;
+2. **encerramento manual antecipado** — Gestor/Admin pode encerrar o estágio antes da data prevista.
+
+Regras:
+
+- o término natural define `situacaoEstagio = FINALIZADO` e registra a data efetiva correspondente ao fim previsto;
+- o encerramento manual define `situacaoEstagio = FINALIZADO` e registra a data efetiva da ação;
+- o encerramento manual antecipado deve preservar a data final prevista original;
+- encerramento manual antecipado deve exigir justificativa e autoria;
+- finalizar estágio não implica necessariamente desativar o `Usuario`;
+- estágio ativo nunca pode coexistir com `Usuario` institucionalmente inativo;
+- após finalização, um `Usuario` ainda ativo pode futuramente receber novo vínculo de estágio;
+- acesso operacional de Estagiário depende de vínculo de estágio válido e de ao menos uma Atividade válida.
+
+Prorrogação não deve ser alteração silenciosa da data final prevista. Deve preservar:
+
+- data final prevista anterior;
+- nova data final prevista;
 - justificativa;
 - autor;
 - data/hora.
 
 Seguir o padrão auditável consolidado na Etapa 5.
+
+A implementação exata do mecanismo de término natural (processamento explícito/agendado ou estratégia equivalente que mantenha banco e API consistentes) será fechada no bloco que implementar o encerramento de estágio; não inferir encerramento apenas na camada visual.
 
 ### Treinamento de segurança
 
