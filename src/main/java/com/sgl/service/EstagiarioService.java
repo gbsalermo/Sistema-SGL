@@ -307,6 +307,14 @@ public class EstagiarioService {
 
 		response.setVinculos(vinculosResponse);
 
+		boolean possuiVinculoOperacional = vinculosResponse.stream()
+				.anyMatch(vinculo -> vinculo.getSituacao() != SituacaoEstagio.FINALIZADO
+						&& vinculo.getParticipacoesAtividade() != null
+						&& vinculo.getParticipacoesAtividade().stream()
+								.anyMatch(participacao -> Boolean.TRUE.equals(participacao.getAtiva())));
+
+		response.setAtivo(Boolean.TRUE.equals(estagiario.getAtivo()) && possuiVinculoOperacional);
+
 		return response;
 	}
 
