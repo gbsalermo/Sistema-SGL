@@ -9,17 +9,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.EstagiarioRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
+import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
+import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
 
@@ -35,6 +38,7 @@ public class EstagiarioService {
 	private final UsuarioRepository usuarioRepository;
 	private final LaboratorioRepository laboratorioRepository;
 	private final VinculoEstagioRepository vinculoEstagioRepository;
+	private final VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -160,23 +164,18 @@ public class EstagiarioService {
 	@Transactional
 	public EstagiarioResponseDTO atualizar(UUID id, EstagiarioRequestDTO dto) {
 
+		buscarEstagiarioNoTenant(id);
 
-		  buscarEstagiarioNoTenant(id);
-
-		    throw new BusinessRuleException(
-		            "A atualização direta do estágio foi substituída "
-		            + "pelo gerenciamento de vínculos institucionais."
-		    );
+		throw new BusinessRuleException(
+				"A atualização direta do estágio foi substituída " + "pelo gerenciamento de vínculos institucionais.");
 	}
 
 	@Transactional
 	public void deletar(UUID id) {
-		 buscarEstagiarioNoTenant(id);
+		buscarEstagiarioNoTenant(id);
 
-		    throw new BusinessRuleException(
-		            "Estagiários não podem ser excluídos diretamente. "
-		            + "O histórico institucional deve ser preservado."
-		    );
+		throw new BusinessRuleException(
+				"Estagiários não podem ser excluídos diretamente. " + "O histórico institucional deve ser preservado.");
 	}
 
 	private Estagiario buscarEstagiarioNoTenant(UUID id) {
@@ -241,16 +240,13 @@ public class EstagiarioService {
 		}
 	}
 
-
 	@Transactional
 	public EstagiarioResponseDTO encerrarEstagio(UUID id) {
 
-	    buscarEstagiarioNoTenant(id);
+		buscarEstagiarioNoTenant(id);
 
-	    throw new BusinessRuleException(
-	            "O encerramento direto do estágio foi substituído "
-	            + "pelo fluxo de encerramento do vínculo institucional."
-	    );
+		throw new BusinessRuleException("O encerramento direto do estágio foi substituído "
+				+ "pelo fluxo de encerramento do vínculo institucional.");
 	}
 
 	private Usuario buscarEValidarOrientador(UUID orientadorId) {
@@ -286,6 +282,20 @@ public class EstagiarioService {
 				.findByEstagiarioPublicIdAndEstagiarioUnidadePublicIdOrderByDataInicioDesc(estagiario.getPublicId(),
 						unidadeId);
 
-		return new EstagiarioResponseDTO(estagiario, vinculos);
+		EstagiarioResponseDTO response = new EstagiarioResponseDTO(estagiario, vinculos);
+
+		List<VinculoEstagioResponseDTO> vinculosResponse = vinculos.stream().map(vinculo -> {
+
+			List<VinculoEstagioAtividade> participacoes = vinculoEstagioAtividadeRepository
+					.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+							vinculo.getPublicId(), unidadeId);
+
+			return new VinculoEstagioResponseDTO(vinculo, participacoes);
+		}).toList();
+
+		response.setVinculos(vinculosResponse);
+
+		return response;
 	}
+
 }

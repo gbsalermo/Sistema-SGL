@@ -35,4 +35,7 @@ public interface VinculoEstagioAtividadeRepository
             Long vinculoEstagioId,
             Long atividadeId
         );
+    long countByVinculoEstagioIdAndDataFimParticipacaoIsNull(
+            Long vinculoEstagioId
+    );
 }
