@@ -234,10 +234,11 @@ class EstagiarioControllerTest {
 
     @Test
     void deveRetornar400AoDeletarDiretamente() throws Exception {
-        when(estagiarioService.deletar(ESTAGIARIO_PUBLIC_ID))
-                .thenThrow(new BusinessRuleException(
-                        "Estagiários não podem ser excluídos diretamente. "
-                                + "O histórico institucional deve ser preservado."));
+        doThrow(new BusinessRuleException(
+                "Estagiários não podem ser excluídos diretamente. "
+                        + "O histórico institucional deve ser preservado."))
+                .when(estagiarioService)
+                .deletar(ESTAGIARIO_PUBLIC_ID);
 
         mockMvc.perform(delete(
                         BASE_URL + "/{id}",
