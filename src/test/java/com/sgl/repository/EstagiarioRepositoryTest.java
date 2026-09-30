@@ -90,6 +90,24 @@ class EstagiarioRepositoryTest {
         return entityManager.persistAndFlush(estagiario);
     }
 
+    private VinculoEstagio criarVinculo(
+            Estagiario estagiario,
+            SituacaoEstagio situacao) {
+
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setEstagiario(estagiario);
+        vinculo.setDataInicio(LocalDate.of(2026, 1, 1));
+        vinculo.setDataFimPrevista(LocalDate.of(2026, 12, 31));
+        vinculo.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        vinculo.setSituacao(situacao);
+
+        if (situacao == SituacaoEstagio.FINALIZADO) {
+            vinculo.setDataFimEfetiva(LocalDate.of(2026, 12, 31));
+        }
+
+        return entityManager.persistAndFlush(vinculo);
+    }
+
     // --- findByPublicId ---------------------------------------------------------
 
     @Test
@@ -305,4 +323,65 @@ class EstagiarioRepositoryTest {
 
         assertFalse(estagiarioRepository.existsByIdAndAtivoTrue(estagiario.getId()));
     }
+
+    // --- findEstagiariosComVinculoAtivo -----------------------------------------
+
+    @Test
+    void deveEncontrarEstagiarioComUsuarioAtivoEVinculoEmAndamento() {
+        Unidade unidade = criarUnidade("ES19");
+        Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório Base");
+        Estagiario estagiario = criarEstagiario(
+                unidade,
+                laboratorio,
+                "vinculoativo@exemplo.com",
+                true);
+
+        criarVinculo(estagiario, SituacaoEstagio.EM_ANDAMENTO);
+
+        List<Estagiario> resultado =
+                estagiarioRepository.findEstagiariosComVinculoAtivo(
+                        unidade.getPublicId());
+
+        assertEquals(1, resultado.size());
+        assertEquals(estagiario.getId(), resultado.get(0).getId());
+    }
+
+    @Test
+    void naoDeveEncontrarQuandoVinculoEstaFinalizado() {
+        Unidade unidade = criarUnidade("ES20");
+        Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório Base");
+        Estagiario estagiario = criarEstagiario(
+                unidade,
+                laboratorio,
+                "vinculofinalizado@exemplo.com",
+                true);
+
+        criarVinculo(estagiario, SituacaoEstagio.FINALIZADO);
+
+        List<Estagiario> resultado =
+                estagiarioRepository.findEstagiariosComVinculoAtivo(
+                        unidade.getPublicId());
+
+        assertTrue(resultado.isEmpty());
+    }
+
+    @Test
+    void naoDeveEncontrarQuandoUsuarioEstaInativoMesmoComVinculoEmAndamento() {
+        Unidade unidade = criarUnidade("ES21");
+        Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório Base");
+        Estagiario estagiario = criarEstagiario(
+                unidade,
+                laboratorio,
+                "usuarioinativo@exemplo.com",
+                false);
+
+        criarVinculo(estagiario, SituacaoEstagio.EM_ANDAMENTO);
+
+        List<Estagiario> resultado =
+                estagiarioRepository.findEstagiariosComVinculoAtivo(
+                        unidade.getPublicId());
+
+        assertTrue(resultado.isEmpty());
+    }
+
 }
