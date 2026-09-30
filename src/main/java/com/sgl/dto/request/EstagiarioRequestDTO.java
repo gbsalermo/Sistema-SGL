@@ -44,4 +44,12 @@ public class EstagiarioRequestDTO implements Serializable {
 
     @Schema(description = "Indica se o vínculo de estágio está ativo.", example = "true")
     private Boolean ativo;
+    
+    @Schema(description = "UUID do usuário orientador do estagiário.",
+    		example = "550e8400-e29b-41d4-a716-446655440010",
+    		requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "Orientador é obrigatório")
+    private UUID orientadorId;
+    
+    
 }

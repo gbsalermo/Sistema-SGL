@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.sgl.model.Estagiario;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,6 +45,8 @@ public class EstagiarioResponseDTO implements Serializable {
     private String observacao;
     @Schema(description = "Indica se o estágio está ativo.", example = "true")
     private Boolean ativo;
+    private SituacaoEstagio situacaoEstagio;
+    private Boolean usuarioAtivo;
 
     public EstagiarioResponseDTO(Estagiario entity) {
         this.id = entity.getPublicId();
@@ -58,5 +61,8 @@ public class EstagiarioResponseDTO implements Serializable {
         this.tipoBolsa = entity.getTipoBolsa();
         this.observacao = entity.getObservacao();
         this.ativo = entity.getAtivo();
+        this.situacaoEstagio = entity.getSituacaoEstagio();
+        this.usuarioAtivo = entity.getAtivo();
+        this.ativo = Boolean.TRUE.equals(entity.getAtivo()) && entity.getSituacaoEstagio() != SituacaoEstagio.FINALIZADO;
     }
 }
