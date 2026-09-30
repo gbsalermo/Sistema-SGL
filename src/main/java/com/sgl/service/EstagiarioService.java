@@ -159,7 +159,7 @@ public class EstagiarioService {
 
 	@Transactional
 	public EstagiarioResponseDTO atualizar(UUID id, EstagiarioRequestDTO dto) {
-		Estagiario estagiario = buscarEstagiarioNoTenant(id);
+
 
 		  buscarEstagiarioNoTenant(id);
 

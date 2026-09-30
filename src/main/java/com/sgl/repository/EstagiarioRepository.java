@@ -48,8 +48,8 @@ public interface EstagiarioRepository extends JpaRepository<Estagiario, Long> {
     	      )
     	""")
     	List<Estagiario> findEstagiariosComVinculoAtivo(
-    	        UUID unidadeId
+    			@Param("unidadeId") UUID unidadeId
     	);
     
-
+    
 }
