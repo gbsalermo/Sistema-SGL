@@ -20,7 +20,9 @@ import org.springframework.test.context.ActiveProfiles;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
+import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.tenant.TenantContext;
 import com.sgl.tenant.TenantProvider;
@@ -87,6 +89,9 @@ class EstagiarioRepositoryTest {
         estagiario.setAtivo(ativo);
         estagiario.setDataInicioEstagio(LocalDate.of(2026, 1, 1));
         estagiario.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        estagiario.setSituacaoEstagio(ativo
+                ? SituacaoEstagio.EM_ANDAMENTO
+                : SituacaoEstagio.FINALIZADO);
         return entityManager.persistAndFlush(estagiario);
     }
 
