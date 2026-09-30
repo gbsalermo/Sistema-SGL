@@ -17,10 +17,14 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.Projeto;
+import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.VinculoEstagio;
+import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
@@ -111,6 +115,49 @@ class EstagiarioRepositoryTest {
         }
 
         return entityManager.persistAndFlush(vinculo);
+    }
+
+    private VinculoEstagioAtividade criarParticipacao(
+            VinculoEstagio vinculo,
+            Laboratorio laboratorio,
+            boolean aberta) {
+
+        Projeto projeto = Projeto.builder()
+                .laboratorio(laboratorio)
+                .nome("Projeto estágio")
+                .codigoSeg("PRJ-ESTAGIO")
+                .ativo(true)
+                .build();
+        projeto = entityManager.persistAndFlush(projeto);
+
+        Sci sci = Sci.builder()
+                .projeto(projeto)
+                .codigoSeg("SCI-ESTAGIO-0001")
+                .nome("SCI estágio")
+                .dataInicio(LocalDate.of(2026, 1, 1))
+                .ativo(true)
+                .build();
+        sci = entityManager.persistAndFlush(sci);
+
+        Atividade atividade = Atividade.builder()
+                .sci(sci)
+                .codigoSeg("ATV-ESTAGIO-0001")
+                .nome("Atividade estágio")
+                .dataInicio(LocalDate.of(2026, 1, 1))
+                .ativo(true)
+                .build();
+        atividade = entityManager.persistAndFlush(atividade);
+
+        VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+        participacao.setVinculoEstagio(vinculo);
+        participacao.setAtividade(atividade);
+        participacao.setDataInicioParticipacao(LocalDate.of(2026, 1, 1));
+
+        if (!aberta) {
+            participacao.setDataFimParticipacao(LocalDate.of(2026, 6, 30));
+        }
+
+        return entityManager.persistAndFlush(participacao);
     }
 
     // --- findByPublicId ---------------------------------------------------------
@@ -341,7 +388,9 @@ class EstagiarioRepositoryTest {
                 "vinculoativo@exemplo.com",
                 true);
 
-        criarVinculo(estagiario, SituacaoEstagio.EM_ANDAMENTO);
+        VinculoEstagio vinculo =
+                criarVinculo(estagiario, SituacaoEstagio.EM_ANDAMENTO);
+        criarParticipacao(vinculo, laboratorio, true);
 
         List<Estagiario> resultado =
                 estagiarioRepository.findEstagiariosComVinculoAtivo(
@@ -361,7 +410,9 @@ class EstagiarioRepositoryTest {
                 "vinculofinalizado@exemplo.com",
                 true);
 
-        criarVinculo(estagiario, SituacaoEstagio.FINALIZADO);
+        VinculoEstagio vinculo =
+                criarVinculo(estagiario, SituacaoEstagio.FINALIZADO);
+        criarParticipacao(vinculo, laboratorio, true);
 
         List<Estagiario> resultado =
                 estagiarioRepository.findEstagiariosComVinculoAtivo(
@@ -380,7 +431,30 @@ class EstagiarioRepositoryTest {
                 "usuarioinativo@exemplo.com",
                 false);
 
-        criarVinculo(estagiario, SituacaoEstagio.EM_ANDAMENTO);
+        VinculoEstagio vinculo =
+                criarVinculo(estagiario, SituacaoEstagio.EM_ANDAMENTO);
+        criarParticipacao(vinculo, laboratorio, true);
+
+        List<Estagiario> resultado =
+                estagiarioRepository.findEstagiariosComVinculoAtivo(
+                        unidade.getPublicId());
+
+        assertTrue(resultado.isEmpty());
+    }
+
+    @Test
+    void naoDeveEncontrarQuandoNaoHaParticipacaoAberta() {
+        Unidade unidade = criarUnidade("ES22");
+        Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório Base");
+        Estagiario estagiario = criarEstagiario(
+                unidade,
+                laboratorio,
+                "semparticipacaoaberta@exemplo.com",
+                true);
+
+        VinculoEstagio vinculo =
+                criarVinculo(estagiario, SituacaoEstagio.EM_ANDAMENTO);
+        criarParticipacao(vinculo, laboratorio, false);
 
         List<Estagiario> resultado =
                 estagiarioRepository.findEstagiariosComVinculoAtivo(
