@@ -71,6 +71,8 @@ class EstagiarioControllerTest {
             UUID.fromString("00000000-0000-0000-0000-000000000004");
     private static final UUID VINCULO_PUBLIC_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000005");
+    private static final UUID ATIVIDADE_PUBLIC_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000006");
 
     @Autowired
     private MockMvc mockMvc;
@@ -90,6 +92,7 @@ class EstagiarioControllerTest {
         dto.setTipoBolsa(TipoBolsa.CONTRATUAL);
         dto.setObservacao("Estágio vinculado ao projeto de síntese.");
         dto.setOrientadorId(ORIENTADOR_PUBLIC_ID);
+        dto.setAtividadeId(ATIVIDADE_PUBLIC_ID);
         return dto;
     }
 
