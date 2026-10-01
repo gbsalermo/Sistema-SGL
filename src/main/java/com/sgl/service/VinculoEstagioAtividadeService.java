@@ -78,7 +78,10 @@ public class VinculoEstagioAtividadeService {
 
 		participacao = participacaoRepository.save(participacao);
 
-		return montarResponse(participacao);
+		VinculoEstagioAtividadeCulturasRequestDTO culturasDto = new VinculoEstagioAtividadeCulturasRequestDTO();
+		culturasDto.setCulturaIds(dto.getCulturaIds());
+
+		return atualizarCulturas(participacao.getPublicId(), culturasDto);
 	}
 
 	@Transactional(readOnly = true)
