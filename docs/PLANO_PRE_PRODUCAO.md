@@ -542,18 +542,23 @@ Concluído e validado em 01/10/2026.
 - testes de Service, Controller e Repository/H2 foram adicionados;
 - suíte backend completa e compilação foram executadas sem erros/falhas em 01/10/2026.
 
-### 6.3 — dados acadêmicos, Curso, Cultura e treinamento de segurança 🔧
+### 6.3 — dados acadêmicos, Curso, Cultura e treinamento de segurança ✅
 
-Estado em 01/10/2026:
+Concluído e validado em 01/10/2026.
 
-- 6.3.1 fundação implementada com V28;
+- V28 implementou Formação, Curso e treinamento de segurança;
 - `FormacaoEstagiario` usa valores controlados + `OUTRO`;
 - `Curso` é catálogo por Unidade com inativação lógica;
 - `VinculoEstagio` recebe Formação, Curso e `treinamentoSegurancaConcluido`;
 - treinamento nasce `false` e possui ação explícita de conclusão;
-- validação/testes finais do 6.3.1 ainda devem ser executados antes do fechamento;
-- 6.3.2 implementação funcional concluída: V29, catálogo/API de Cultura, associação explícita com participação, atualização idempotente do conjunto, criação com Culturas e retorno consistente nas respostas diretas/aninhadas;
-- validação automatizada/compilação do 6.3.2 ainda pendente antes do fechamento formal.
+- V29 implementou catálogo/API de Cultura e associação explícita com participação;
+- atualização de Culturas é idempotente por conjunto;
+- Cultura inativa permanece em histórico existente, mas não entra em nova associação;
+- criação de participação, novo vínculo e primeiro cadastro de Estagiário aceitam Culturas;
+- respostas diretas e aninhadas retornam Culturas de forma consistente;
+- compilação backend concluída e suíte completa verde em 01/10/2026.
+
+Checkpoint: `docs/VALIDACAO_ETAPA_6_3.md`.
 
 A Etapa 6 também fechou uma decisão estrutural para etapas futuras: **não existe necessariamente um único Laboratório do Estagiário**. A participação `VinculoEstagioAtividade` passa a ser o contexto operacional que futuramente alimentará Pedidos.
 
@@ -571,7 +576,7 @@ No bloco 6.5, a interface deve remover a apresentação de um único "Laboratór
 
 Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
 
-Checkpoint anterior: `docs/VALIDACAO_ETAPA_6_2.md`.
+Próximo bloco: **6.4 — período, situação, prorrogações e finalização**.
 
 ---
 
@@ -880,7 +885,7 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
 Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.2 concluídos; 6.3 próximo
+Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.3 concluídos; 6.4 próximo
 Etapas 7–13                                         ⏳
 ```
 
@@ -903,4 +908,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint atual da Etapa 6: `docs/VALIDACAO_ETAPA_6_2.md`. Próxima retomada: bloco 6.3.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint atual da Etapa 6: `docs/VALIDACAO_ETAPA_6_3.md`. Próxima retomada: bloco 6.4.
