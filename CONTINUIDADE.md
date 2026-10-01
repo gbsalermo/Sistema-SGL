@@ -188,16 +188,17 @@ V24 — histórico auditável de correções de Código SEG
 V25 — fundação do ciclo de estágio: situação + orientador no legado
 V26 — criação de vínculos institucionais de estágio + migração do legado
 V27 — associação histórica VinculoEstagio ↔ Atividade
+V28 — dados acadêmicos do vínculo + catálogo de Cursos por Unidade
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = próxima versão livre após V27
+nova alteração de schema = próxima versão livre após V28
 ```
 
-A V27 foi utilizada no 6.2 para `vinculo_estagio_atividade`. A próxima migration livre esperada é **V28**, desde que nenhuma migration nova seja incorporada à `main` antes da próxima alteração de schema.
+A V28 foi utilizada no 6.3.1 para Formação, Curso e treinamento de segurança no `VinculoEstagio`. A próxima migration livre esperada é **V29**, reservada ao catálogo de Culturas e sua associação às participações, desde que nenhuma migration nova seja incorporada à `main` antes da próxima alteração de schema.
 
 ---
 
@@ -543,26 +544,59 @@ Regras fechadas:
 - não sobrescrever silenciosamente um vínculo anterior;
 - um Estagiário pode continuar ativo em outra Atividade após encerrar uma participação específica.
 
+### Contexto operacional do Estagiário
+
+A participação em Atividade é a fonte de verdade operacional do Estagiário:
+
+```text
+Usuario
+→ Estagiario
+→ VinculoEstagio
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratorio
+→ Unidade
+```
+
+Consequências:
+
+- não existe necessariamente um único "Laboratório do Estagiário";
+- o mesmo vínculo pode possuir Atividades em Projetos/Laboratórios diferentes dentro da mesma Unidade;
+- `Usuario.laboratorio` permanece temporariamente como campo legado/contexto de compatibilidade, mas **não é fonte operacional para Estagiários**;
+- a interface de Estagiários deve mostrar Atividade/Projeto/Laboratório por participação, em vez de um laboratório único;
+- Pedidos de Estagiários serão futuramente contextualizados por `VinculoEstagioAtividade`, com Projeto/Laboratório derivados pelo backend.
+
+Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
+
 ### Bolsa / tipo de vínculo, Formação e Curso
 
 Os três conceitos permanecem separados e têm finalidade predominantemente informativa e de filtro/relatório.
 
 `TipoBolsa` continua como enum, aproveitando o domínio atual e podendo ser evoluído com novos valores institucionais quando necessário.
 
-Formação e Curso também devem ser modelados inicialmente como enums, evitando catálogos adicionais sem necessidade operacional.
+Formação e Curso seguem estratégias diferentes:
 
-Exemplos conceituais:
+- **Formação** é enum controlado no vínculo, com valores institucionais conhecidos e opção `OUTRO`;
+- quando `formacao = OUTRO`, `formacaoOutro` é obrigatório;
+- **Curso** é catálogo administrável por Unidade, porque novos cursos podem surgir sem exigir alteração de código/migration;
+- Curso inativo permanece visível em vínculos históricos, mas não pode ser escolhido em novo vínculo.
+
+Formações atuais:
 
 ```text
-Tipo de vínculo:
-PIBIC / PIBITI / CNPq / FAPESB / VOLUNTARIO / outros valores institucionais
-
-Formação:
-GRADUACAO / MESTRADO / DOUTORADO / ...
-
-Curso:
-AGRONOMIA / ENGENHARIA_DE_COMPUTACAO / QUIMICA / ...
+ENSINO_MEDIO
+GRADUACAO
+MESTRADO
+DOUTORADO
+POS_DOUTORADO
+APOIO_ADMINISTRATIVO
+APOIO_TECNICO
+OUTRO
 ```
+
+Curso não é enum e não deve ser duplicado como String livre no vínculo.
 
 ### Cultura / área temática
 
@@ -620,7 +654,18 @@ A implementação exata do mecanismo de término natural (processamento explíci
 
 ### Treinamento de segurança
 
-Permanece requisito da Etapa 6. Inicialmente pode ser representado por informação booleana, desde que a revisão do domínio confirme que não existe estrutura equivalente.
+É informação do `VinculoEstagio` e nasce obrigatoriamente como `false`.
+
+```text
+novo vínculo
+→ treinamentoSegurancaConcluido = false
+
+treinamento realizado
+→ ação específica de conclusão
+→ true
+```
+
+Não permitir que o cliente crie um vínculo já marcado como treinado. A reversão de `true → false`, se algum dia necessária, deve ser tratada como correção administrativa/auditável e não como edição comum.
 
 ### Código interno / matrícula
 
@@ -713,7 +758,9 @@ Checkpoint detalhado: `docs/VALIDACAO_ETAPA_6_2.md`.
 ```text
 6.1 — contrato e fundação do vínculo                     ✅ concluído e validado
 6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico ✅ concluído e validado
-6.3 — dados acadêmicos, tipo de vínculo e Cultura         🔧 próximo
+6.3 — dados acadêmicos, Curso, Cultura e segurança         🔧 em andamento
+6.3.1 — Formação + Curso + treinamento                    🔧 fundação implementada; validação pendente
+6.3.2 — Cultura por Unidade + participação                ⏳ próximo
 6.4 — período, situação e prorrogações                    ⏳
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
@@ -760,9 +807,38 @@ Não converter massa ↔ volume genericamente sem densidade.
 
 Depois estabilizar domínio de Soluções.
 
+### Contexto operacional para Pedidos
+
+Antes da Etapa 9, fechar o contrato de contexto operacional:
+
+- Unidade/tenant continua vindo da identidade/sessão institucional;
+- para Estagiários, Laboratório/Projeto não vêm de `Usuario.laboratorio`;
+- o contexto operacional vem da participação aberta `VinculoEstagioAtividade`;
+- `laboratorioId/laboratorioNome` existentes na sessão DEV são compatibilidade e não autoridade operacional para Estagiários;
+- se houver uma única participação aberta, a interface pode selecioná-la automaticamente;
+- se houver múltiplas, o Estagiário escolhe qual Atividade está originando o Pedido.
+
 ## Etapa 9
 
-Integrar Soluções aos Pedidos sem redefinir a entidade Solução. Aprovação deve validar atomicamente todos os componentes.
+Integrar Soluções aos Pedidos e aplicar a refatoração estrutural de contexto do Estagiário.
+
+Para Pedidos de Estagiários:
+
+```text
+Pedido
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratorio
+→ Unidade
+```
+
+O frontend envia a participação escolhida; o backend deriva e valida Projeto/Laboratório/Unidade. Os FKs diretos existentes de Projeto/Laboratório podem ser preservados por compatibilidade/rastreabilidade, mas não devem ser tratados como valores livres fornecidos pelo cliente.
+
+Para perfis não Estagiários, a participação não é obrigatória e o contrato específico será fechado nessa etapa.
+
+Aprovação de Soluções deve validar atomicamente todos os componentes, preservando FIFO/FEFO, locks, lotes e regras de cancelamento/devolução.
 
 ---
 
@@ -804,10 +880,10 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
-Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.2 concluídos; 6.3 próximo
+Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.2 concluídos; 6.3 em andamento
 Etapa 7 — relatórios consolidados                     ⏳
-Etapa 8 — unidades + Soluções                         ⏳
-Etapa 9 — Pedidos + Soluções                          ⏳
+Etapa 8 — unidades + Soluções + contexto operacional  ⏳
+Etapa 9 — Pedidos + Soluções + participação           ⏳
 Etapa 10 — Rótulos + impressão operacional            ⏳
 Etapa 11 — Manual + decisão delete lógico             ⏳
 Etapa 12 — testes automatizados frontend              ⏳
