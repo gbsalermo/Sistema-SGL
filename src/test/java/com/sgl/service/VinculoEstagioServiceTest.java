@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,12 +33,15 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.AtividadeRepository;
+import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
@@ -72,6 +76,15 @@ class VinculoEstagioServiceTest {
 
     @Mock
     private AtividadeRepository atividadeRepository;
+
+    @Mock
+    private CursoRepository cursoRepository;
+
+    @Mock
+    private VinculoEstagioAtividadeCulturaRepository participacaoCulturaRepository;
+
+    @Mock
+    private VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 
     @InjectMocks
     private VinculoEstagioService service;
@@ -160,6 +173,7 @@ class VinculoEstagioServiceTest {
         dto.setDataInicio(LocalDate.of(2026, 10, 1));
         dto.setDataFimPrevista(LocalDate.of(2027, 3, 31));
         dto.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        dto.setFormacao(FormacaoEstagiario.GRADUACAO);
         dto.setObservacao("  novo período  ");
         dto.setObservacaoParticipacao("  primeira atividade  ");
         return dto;
@@ -200,13 +214,18 @@ class VinculoEstagioServiceTest {
                     return salvo;
                 });
 
-        when(participacaoRepository.save(any(VinculoEstagioAtividade.class)))
-                .thenAnswer(invocation -> {
-                    VinculoEstagioAtividade salva = invocation.getArgument(0);
-                    salva.setId(9L);
-                    salva.setPublicId(PARTICIPACAO_ID);
-                    return salva;
-                });
+        VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+        participacao.setId(9L);
+        participacao.setPublicId(PARTICIPACAO_ID);
+        participacao.setVinculoEstagio(new VinculoEstagio());
+        participacao.getVinculoEstagio().setPublicId(VINCULO_ID);
+        participacao.setAtividade(atividade);
+        participacao.setDataInicioParticipacao(LocalDate.of(2026, 10, 1));
+
+        when(participacaoRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(List.of(participacao));
 
         VinculoEstagioResponseDTO resultado =
                 service.criar(ESTAGIARIO_ID, montarDto());
@@ -223,8 +242,8 @@ class VinculoEstagioServiceTest {
 
         verify(vinculoEstagioRepository)
                 .save(any(VinculoEstagio.class));
-        verify(participacaoRepository)
-                .save(any(VinculoEstagioAtividade.class));
+        verify(vinculoEstagioAtividadeService)
+                .adicionar(any(), any());
     }
 
     @Test
