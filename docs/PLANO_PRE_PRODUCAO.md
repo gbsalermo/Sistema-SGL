@@ -610,7 +610,9 @@ Regras já fechadas:
 - CPF/matrícula não identifica uma bolsa específica; quando o ambiente fornecer identificador próprio do vínculo, ele deve ser usado como referência de sincronização;
 - enquanto o contrato externo não confirmar seu escopo, `referenciaInstitucional` permanece indexada, porém sem unicidade global;
 - idempotência de eventos é independente da referência do vínculo e usa `origem + referenciaEvento` quando a fonte disponibilizar identificador próprio do evento;
-- V30 cria a fundação desse histórico institucional; validação do bloco 6.4 ainda está pendente.
+- V30 cria a fundação desse histórico institucional;
+- V31 remove a unicidade global inicialmente assumida para `referenciaInstitucional`, preservando compatibilidade com bancos onde a V30 já tenha sido aplicada;
+- validação do bloco 6.4 ainda está pendente.
 
 Decisão detalhada: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
