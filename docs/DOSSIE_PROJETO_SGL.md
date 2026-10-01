@@ -602,7 +602,11 @@ Estado atual da Etapa 6:
 6.3 dados acadêmicos/Curso/Cultura/segurança         ✅ concluído e validado
 6.3.1 Formação + Curso + treinamento                ✅ concluído e validado
 6.3.2 Cultura por participação                      ✅ concluído e validado
-6.4 período/situação/prorrogações/finalização       🔧 próximo
+6.4 período/situação/prorrogações/finalização       🔧 atual
+6.4.1 histórico/auditoria                            ⏳ próximo
+6.4.2 prorrogação                                    ⏳
+6.4.3 encerramento manual/natural                    ⏳
+6.4.4 testes/validação/documentação                  ⏳
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
 ```
@@ -704,4 +708,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1, 6.2 e 6.3 estão concluídos e validados; retomar pelo 6.4 na branch `collab/etapa-6-estagiarios-vinculos`. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/VALIDACAO_ETAPA_6_3.md`.**
+**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1, 6.2 e 6.3 estão concluídos e validados; o 6.4 está em andamento na branch `collab/etapa-6-estagiarios-vinculos`, iniciando pelo 6.4.1 — histórico/auditoria. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/VALIDACAO_ETAPA_6_3.md`.**
