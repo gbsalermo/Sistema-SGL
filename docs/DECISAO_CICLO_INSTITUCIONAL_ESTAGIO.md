@@ -141,6 +141,8 @@ Quando o ambiente disponibilizar um identificador próprio do vínculo/bolsa/con
 
 Até que o contrato externo confirme o escopo desse identificador, o SGL **não assume unicidade global** de `referenciaInstitucional`. O campo permanece indexado para consulta, mas sem restrição `UNIQUE`.
 
+Implementação Flyway: V30 introduziu o campo/histórico e V31 remove a restrição de unicidade global inicialmente assumida, preservando a imutabilidade de migrations já publicadas.
+
 A idempotência de eventos é tratada separadamente por `origem + referenciaEvento` quando a fonte fornecer uma referência de evento. Eventos sem referência não devem ser artificialmente identificados.
 
 Até que esse contrato externo esteja disponível, qualquer correspondência por vínculo aberto/período deve ser tratada como compatibilidade temporária de DEV, não como identificação definitiva de produção.
