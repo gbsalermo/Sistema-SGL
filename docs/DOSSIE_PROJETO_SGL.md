@@ -320,9 +320,10 @@ V27 participação VinculoEstagio ↔ Atividade
 V28 dados acadêmicos do vínculo + catálogo de Cursos
 V29 catálogo de Culturas + associação com participação em Atividade
 V30 referência institucional + histórico de sincronização do vínculo
+V31 remoção da unicidade global não confirmada da referência institucional
 ```
 
-A V29 e o 6.3 foram concluídos e validados em 01/10/2026. A V30 abriu o 6.4.1 com referência institucional do vínculo e histórico de sincronização. `referenciaInstitucional` é indexada sem unicidade global até confirmação do contrato externo; idempotência de eventos usa origem + referência do evento quando disponível. Próxima migration esperada, se necessária: **V31+**.
+A V29 e o 6.3 foram concluídos e validados em 01/10/2026. A V30 abriu o 6.4.1 com referência institucional do vínculo e histórico de sincronização. A V31 remove a unicidade global não confirmada da referência institucional sem reescrever a migration já publicada. `referenciaInstitucional` permanece indexada; idempotência de eventos usa origem + referência do evento quando disponível. Próxima migration esperada, se necessária: **V32+**.
 
 Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
