@@ -15,7 +15,7 @@
 
 ## Estado atual — 29/09/2026
 
-O SGL já passou pela aprovação funcional do primeiro protótipo. As **Etapas 1–5 da pré-produção foram concluídas e validadas**. A próxima etapa é a **Etapa 6 — Estagiários e vínculos**.
+O SGL já passou pela aprovação funcional do primeiro protótipo. As **Etapas 1–5 da pré-produção foram concluídas e validadas**. A **Etapa 6 — Estagiários e vínculos** está em andamento; os blocos **6.1, 6.2 e 6.3 estão concluídos e validados**, e o próximo bloco é o **6.4 — período, situação, prorrogações e finalização**.
 
 Estado consolidado do backend:
 
@@ -149,7 +149,7 @@ Conceitos centrais:
 - **MovimentacaoEstoque:** trilha das operações físicas;
 - **Pedido:** solicitação e ciclo de aprovação/entrega;
 - **Resíduo:** material gerado no laboratório e encaminhado à Gestão;
-- **Estagiário:** vínculo institucional com Unidade/Laboratório e período;
+- **Estagiário:** identidade institucional ligada a vínculos históricos; contexto operacional vem das participações em Atividades, que derivam Projeto/Laboratório dentro da Unidade;
 - **Fiscalização:** classificação explícita de produtos controlados.
 
 ---
@@ -334,7 +334,7 @@ Etapa 2 — Dark Mode definitivo                 ✅
 Etapa 3 — refinamentos do fluxo de Resíduos    ✅
 Etapa 4 — expansão operacional de Resíduos     ✅
 Etapa 5 — Projetos e Atividades                ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos               ⏳ próxima
+Etapa 6 — Estagiários e vínculos               🔧 6.1–6.3 concluídos; 6.4 próximo
 Etapas 7 a 13                                  ⏳ sequenciais
 ```
 
@@ -375,3 +375,19 @@ O roadmap formal não foi descartado; ele apenas começa **depois** do bloco atu
   <strong>SGL — Sistema de Gestão de Laboratórios</strong><br/>
   Sistema funcionalmente aprovado em preparação para o ciclo formal de produção.
 </div>
+
+### Estado atual do domínio de Estagiários
+
+A Etapa 6 já consolidou:
+
+- `Usuario → Estagiario → VinculoEstagio 1..N`;
+- múltiplas participações históricas em Atividades;
+- Formação como enum institucional + `OUTRO`;
+- Curso como catálogo administrável por Unidade;
+- treinamento de segurança no vínculo, iniciado em `false` e concluído por ação explícita;
+- Cultura como catálogo por Unidade e associação N:N com `VinculoEstagioAtividade`;
+- respostas de vínculo/Estagiário com Atividade → SCI → Projeto → Laboratório e Culturas;
+- ausência de um único “Laboratório do Estagiário” como fonte operacional definitiva.
+
+Checkpoint atual: `docs/VALIDACAO_ETAPA_6_3.md`.
+
