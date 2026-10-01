@@ -507,7 +507,7 @@ Confirmado para a Etapa 6:
 - Estagiário pode participar de múltiplas Atividades no mesmo vínculo, com histórico preservado;
 - o mesmo Estagiário pode receber novo vínculo institucional após finalizar o anterior;
 - não podem existir dois vínculos de estágio não finalizados simultaneamente para o mesmo Estagiário;
-- todo vínculo novo nasce com pelo menos uma Atividade;
+- no fluxo local/DEV, o vínculo nasce com Atividade inicial; vínculo sincronizado do ambiente pode existir sem Atividade até receber contexto operacional;
 - Estagiário operacionalmente ativo exige Usuario ativo + vínculo não finalizado + participação de Atividade aberta;
 - finalizar estágio não desativa o Usuario;
 - Cultura representa a cultura da pesquisa e deve ser tratada como catálogo administrável por Unidade;
