@@ -552,8 +552,8 @@ Estado em 01/10/2026:
 - `VinculoEstagio` recebe Formação, Curso e `treinamentoSegurancaConcluido`;
 - treinamento nasce `false` e possui ação explícita de conclusão;
 - validação/testes finais do 6.3.1 ainda devem ser executados antes do fechamento;
-- 6.3.2 em andamento: V29, `Cultura`, `CulturaRepository`, `VinculoEstagioAtividadeCultura` e repository da associação já foram criados;
-- próximo passo técnico: CRUD/API de Cultura + associação/retorno no contexto da participação.
+- 6.3.2 implementação funcional concluída: V29, catálogo/API de Cultura, associação explícita com participação, atualização idempotente do conjunto, criação com Culturas e retorno consistente nas respostas diretas/aninhadas;
+- validação automatizada/compilação do 6.3.2 ainda pendente antes do fechamento formal.
 
 A Etapa 6 também fechou uma decisão estrutural para etapas futuras: **não existe necessariamente um único Laboratório do Estagiário**. A participação `VinculoEstagioAtividade` passa a ser o contexto operacional que futuramente alimentará Pedidos.
 
