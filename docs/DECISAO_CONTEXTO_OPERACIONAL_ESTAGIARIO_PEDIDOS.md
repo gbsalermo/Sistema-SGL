@@ -1,7 +1,7 @@
 # Decisão estrutural — Contexto operacional de Estagiários em Pedidos
 
 **Data:** 01/10/2026  
-**Status:** decisão arquitetural aprovada; implementação futura nas Etapas 8–9  
+**Status:** decisão arquitetural aprovada; base de Estagiários 6.1–6.3 validada; integração de Pedidos futura nas Etapas 8–9  
 **Branch de registro:** `collab/etapa-6-estagiarios-vinculos`
 
 ## 1. Problema identificado
@@ -29,6 +29,8 @@ Usuario
 ```
 
 Culturas ficam associadas à participação `VinculoEstagioAtividade`, não ao Usuario nem globalmente ao Estagiário.
+
+Esse contrato já está implementado e validado no backend: Formação/Curso/treinamento pertencem ao `VinculoEstagio`, enquanto Culturas pertencem às participações.
 
 `Usuario.laboratorio` permanece temporariamente como campo legado/contexto institucional de compatibilidade, mas deixa de ser fonte de verdade operacional para Estagiários.
 
