@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -22,10 +23,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.EncerrarVinculoEstagioAtividadeRequestDTO;
+import com.sgl.dto.request.VinculoEstagioAtividadeCulturasRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.VinculoEstagioAtividadeResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.Atividade;
+import com.sgl.model.Cultura;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
@@ -33,6 +36,7 @@ import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.AtividadeRepository;
@@ -53,6 +57,8 @@ class VinculoEstagioAtividadeServiceTest {
             UUID.fromString("10000000-0000-0000-0000-000000000003");
     private static final UUID PARTICIPACAO_ID =
             UUID.fromString("10000000-0000-0000-0000-000000000004");
+    private static final UUID CULTURA_ID =
+            UUID.fromString("10000000-0000-0000-0000-000000000005");
 
     @Mock
     private VinculoEstagioAtividadeRepository participacaoRepository;
@@ -327,6 +333,52 @@ class VinculoEstagioAtividadeServiceTest {
                 () -> service.encerrar(PARTICIPACAO_ID, dto));
 
         assertTrue(ex.getMessage().contains("última participação ativa"));
+    }
+
+    @Test
+    void deveAtualizarCulturasDaParticipacao() {
+        when(participacaoRepository
+                .findByPublicIdAndVinculoEstagioEstagiarioUnidadePublicId(
+                        PARTICIPACAO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(participacao));
+
+        Cultura cultura = Cultura.builder()
+                .id(20L)
+                .publicId(CULTURA_ID)
+                .unidade(unidade)
+                .nome("Mandioca")
+                .ativo(true)
+                .build();
+
+        when(culturaRepository
+                .findByPublicIdInAndUnidadePublicId(
+                        Set.of(CULTURA_ID), UNIDADE_ID))
+                .thenReturn(List.of(cultura));
+
+        VinculoEstagioAtividadeCultura associacao =
+                new VinculoEstagioAtividadeCultura();
+        associacao.setId(21L);
+        associacao.setPublicId(UUID.randomUUID());
+        associacao.setParticipacao(participacao);
+        associacao.setCultura(cultura);
+
+        when(participacaoCulturaRepository
+                .findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+                        PARTICIPACAO_ID, UNIDADE_ID))
+                .thenReturn(List.of())
+                .thenReturn(List.of(associacao));
+
+        VinculoEstagioAtividadeCulturasRequestDTO dto =
+                new VinculoEstagioAtividadeCulturasRequestDTO();
+        dto.setCulturaIds(Set.of(CULTURA_ID));
+
+        VinculoEstagioAtividadeResponseDTO resultado =
+                service.atualizarCulturas(PARTICIPACAO_ID, dto);
+
+        assertEquals(1, resultado.getCulturas().size());
+        assertEquals(CULTURA_ID, resultado.getCulturas().get(0).getId());
+        verify(participacaoCulturaRepository)
+                .saveAll(any());
     }
 
     @Test
