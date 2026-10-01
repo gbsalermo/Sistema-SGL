@@ -137,7 +137,11 @@ Não é necessário exigir justificativa de Gestor para uma alteração que veio
 
 CPF/matrícula identifica a pessoa, não uma bolsa específica.
 
-Quando o ambiente disponibilizar um identificador próprio do vínculo/bolsa/contrato, ele deve ser usado como referência institucional estável para sincronização e idempotência.
+Quando o ambiente disponibilizar um identificador próprio do vínculo/bolsa/contrato, ele deve ser usado como referência institucional estável para sincronização.
+
+Até que o contrato externo confirme o escopo desse identificador, o SGL **não assume unicidade global** de `referenciaInstitucional`. O campo permanece indexado para consulta, mas sem restrição `UNIQUE`.
+
+A idempotência de eventos é tratada separadamente por `origem + referenciaEvento` quando a fonte fornecer uma referência de evento. Eventos sem referência não devem ser artificialmente identificados.
 
 Até que esse contrato externo esteja disponível, qualquer correspondência por vínculo aberto/período deve ser tratada como compatibilidade temporária de DEV, não como identificação definitiva de produção.
 
