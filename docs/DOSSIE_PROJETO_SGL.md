@@ -314,9 +314,10 @@ V25 fundação de situação/orientador do estágio
 V26 vínculos institucionais de estágio
 V27 participação VinculoEstagio ↔ Atividade
 V28 dados acadêmicos do vínculo + catálogo de Cursos
+V29 catálogo de Culturas + associação com participação em Atividade
 ```
 
-Próxima alteração de schema esperada: **V29+**. A V29 está reservada ao catálogo de Culturas e associação com a participação, salvo nova migration incorporada à `main` antes disso.
+A V29 e sua fundação de domínio/repositories já estão implementadas na branch da Etapa 6. A integração por API e a validação do bloco ainda estão pendentes. Próxima migration esperada, se necessária: **V30+**.
 
 Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
@@ -600,7 +601,7 @@ Estado atual da Etapa 6:
 6.2 vínculos Estagiário ↔ Atividade + histórico    ✅ 01/10/2026
 6.3 dados acadêmicos/Curso/Cultura/segurança         🔧 em andamento
 6.3.1 Formação + Curso + treinamento                🔧 fundação implementada
-6.3.2 Cultura por participação                      ⏳ próximo
+6.3.2 Cultura por participação                      🔧 fundação V29 implementada
 6.4 período/situação/prorrogações                   ⏳
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
