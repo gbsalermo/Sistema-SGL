@@ -613,7 +613,7 @@ A modelagem deve seguir o padrão de associações reutilizáveis já utilizado 
 - respeitar tenant/Unidade;
 - permitir filtro futuro em relatórios.
 
-A cardinalidade exata deve ser implementada junto ao vínculo Estagiário–Atividade, evitando atribuir uma única Cultura global ao Usuario.
+A cardinalidade foi implementada como N:N entre `VinculoEstagioAtividade` e `Cultura`, evitando atribuir uma única Cultura global ao Usuario.
 
 ### Período, encerramento e prorrogação
 
@@ -754,9 +754,11 @@ Validação:
 
 Checkpoint detalhado: `docs/VALIDACAO_ETAPA_6_2.md`.
 
-### Estado do 6.3.2 — Cultura por participação
+### Fechamento do 6.3 — dados acadêmicos, Curso, Cultura e segurança ✅
 
-Implementação funcional concluída na branch atual:
+Concluído e validado em **01/10/2026**.
+
+Implementação consolidada:
 
 - V29 criou `culturas` e `vinculo_estagio_atividade_cultura`;
 - Cultura é catálogo por Unidade, com inativação lógica;
@@ -777,10 +779,10 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
 ```text
 6.1 — contrato e fundação do vínculo                     ✅ concluído e validado
 6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico ✅ concluído e validado
-6.3 — dados acadêmicos, Curso, Cultura e segurança         🔧 em andamento
-6.3.1 — Formação + Curso + treinamento                    🔧 fundação implementada; validação pendente
-6.3.2 — Cultura por Unidade + participação                🔧 implementação funcional concluída; validação pendente
-6.4 — período, situação e prorrogações                    ⏳
+6.3 — dados acadêmicos, Curso, Cultura e segurança         ✅ concluído e validado
+6.3.1 — Formação + Curso + treinamento                    ✅ concluído e validado
+6.3.2 — Cultura por Unidade + participação                ✅ concluído e validado
+6.4 — período, situação, prorrogações e finalização       🔧 próximo
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
 ```
