@@ -36,6 +36,8 @@ import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.AtividadeRepository;
+import com.sgl.repository.CulturaRepository;
+import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
@@ -60,6 +62,12 @@ class VinculoEstagioAtividadeServiceTest {
 
     @Mock
     private AtividadeRepository atividadeRepository;
+
+    @Mock
+    private CulturaRepository culturaRepository;
+
+    @Mock
+    private VinculoEstagioAtividadeCulturaRepository participacaoCulturaRepository;
 
     @InjectMocks
     private VinculoEstagioAtividadeService service;
