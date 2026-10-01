@@ -94,12 +94,6 @@ public class VinculoEstagioService {
 
 		vinculo.setTipoBolsa(dto.getTipoBolsa());
 
-		vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
-
-		vinculo.setObservacao(normalizarTexto(dto.getObservacao()));
-
-		vinculo = vinculoEstagioRepository.save(vinculo);
-
 		vinculo.setFormacao(dto.getFormacao());
 
 		vinculo.setFormacaoOutro(normalizarFormacaoOutro(dto.getFormacao(), dto.getFormacaoOutro()));
@@ -107,6 +101,12 @@ public class VinculoEstagioService {
 		vinculo.setCurso(curso);
 
 		vinculo.setTreinamentoSegurancaConcluido(false);
+
+		vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+		vinculo.setObservacao(normalizarTexto(dto.getObservacao()));
+
+		vinculo = vinculoEstagioRepository.save(vinculo);
 		/*
 		 * O novo vínculo institucional não pode nascer sem atividade. A primeira
 		 * participação é criada na mesma transação.
