@@ -2,10 +2,12 @@ package com.sgl.dto.response;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
@@ -44,6 +46,12 @@ public class VinculoEstagioResponseDTO {
 
 	public VinculoEstagioResponseDTO(VinculoEstagio entity, List<VinculoEstagioAtividade> participacoes) {
 
+		this(entity, participacoes, Map.of());
+	}
+
+	public VinculoEstagioResponseDTO(VinculoEstagio entity, List<VinculoEstagioAtividade> participacoes,
+			Map<UUID, List<VinculoEstagioAtividadeCultura>> culturasPorParticipacao) {
+
 		this.id = entity.getPublicId();
 
 		this.orientadorId = entity.getOrientador() != null ? entity.getOrientador().getPublicId() : null;
@@ -58,7 +66,10 @@ public class VinculoEstagioResponseDTO {
 		this.situacao = entity.getSituacao();
 		this.observacao = entity.getObservacao();
 
-		this.participacoesAtividade = participacoes.stream().map(VinculoEstagioAtividadeResponseDTO::new).toList();
+		this.participacoesAtividade = participacoes.stream()
+				.map(participacao -> new VinculoEstagioAtividadeResponseDTO(participacao,
+						culturasPorParticipacao.getOrDefault(participacao.getPublicId(), List.of())))
+				.toList();
 
 		this.formacao = entity.getFormacao();
 		this.formacaoOutro = entity.getFormacaoOutro();
