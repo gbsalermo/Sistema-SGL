@@ -813,10 +813,12 @@ Antes da Etapa 9, fechar o contrato de contexto operacional:
 
 - Unidade/tenant continua vindo da identidade/sessão institucional;
 - para Estagiários, Laboratório/Projeto não vêm de `Usuario.laboratorio`;
-- o contexto operacional vem da participação aberta `VinculoEstagioAtividade`;
-- `laboratorioId/laboratorioNome` existentes na sessão DEV são compatibilidade e não autoridade operacional para Estagiários;
+- o contexto operacional do Estagiário vem da participação aberta `VinculoEstagioAtividade`;
 - se houver uma única participação aberta, a interface pode selecioná-la automaticamente;
-- se houver múltiplas, o Estagiário escolhe qual Atividade está originando o Pedido.
+- se houver múltiplas, o Estagiário escolhe qual Atividade está originando o Pedido;
+- para TECNICO/ANALISTA/PESQUISADOR com Projeto, o frontend seleciona o Projeto e o backend deriva o Laboratório;
+- para TECNICO/ANALISTA/PESQUISADOR sem Projeto, `Usuario.laboratorio` continua sendo o contexto institucional/base;
+- `laboratorioId/laboratorioNome` existentes na sessão DEV são compatibilidade e não autoridade operacional universal.
 
 ## Etapa 9
 
