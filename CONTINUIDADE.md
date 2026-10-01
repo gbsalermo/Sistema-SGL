@@ -782,7 +782,11 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
 6.3 — dados acadêmicos, Curso, Cultura e segurança         ✅ concluído e validado
 6.3.1 — Formação + Curso + treinamento                    ✅ concluído e validado
 6.3.2 — Cultura por Unidade + participação                ✅ concluído e validado
-6.4 — período, situação, prorrogações e finalização       🔧 próximo
+6.4 — período, situação, prorrogações e finalização       🔧 atual
+6.4.1 — histórico/auditoria de prorrogação e encerramento ⏳ próximo
+6.4.2 — prorrogação do vínculo                             ⏳
+6.4.3 — finalização manual e término natural              ⏳
+6.4.4 — testes, validação e documentação                   ⏳
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
 ```
