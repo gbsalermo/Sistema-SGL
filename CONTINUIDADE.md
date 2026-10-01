@@ -192,6 +192,7 @@ V27 — associação histórica VinculoEstagio ↔ Atividade
 V28 — dados acadêmicos do vínculo + catálogo de Cursos por Unidade
 V29 — catálogo de Culturas + associação Cultura ↔ participação em Atividade
 V30 — referência institucional do vínculo + histórico de sincronização institucional
+V31 — remoção da unicidade global não confirmada da referência institucional
 ```
 
 Regra obrigatória:
@@ -201,7 +202,7 @@ migration aplicada = imutável
 nova alteração de schema = próxima versão livre após V29
 ```
 
-A V29 foi concluída e validada no 6.3.2. A V30 iniciou o 6.4.1 com `referencia_institucional` em `vinculos_estagio` e `historico_sincronizacao_vinculo_estagio`. A referência institucional é indexada, mas **não possui unicidade global enquanto o contrato corporativo não confirmar esse requisito**. A idempotência de evento é separada por origem + referência do evento quando disponível. Fundação implementada; validação do 6.4 ainda pendente. Próxima migration esperada, se necessária, é **V31**.
+A V29 foi concluída e validada no 6.3.2. A V30 iniciou o 6.4.1 com `referencia_institucional` em `vinculos_estagio` e `historico_sincronizacao_vinculo_estagio`. Como a V30 já foi publicada, a V31 remove de forma evolutiva a unicidade global inicialmente assumida para `referencia_institucional`, preservando o índice de consulta. O SGL não assume unicidade global enquanto o contrato corporativo não confirmar esse requisito. A idempotência de evento é separada por origem + referência do evento quando disponível. Fundação implementada; validação do 6.4 ainda pendente. Próxima migration esperada, se necessária, é **V32**.
 
 ---
 
