@@ -12,7 +12,8 @@
 **Etapa atual:** Etapa 6 — Estagiários e vínculos 🔧  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Handoff da etapa atual:** `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
+**Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_3.md`  
+**Decisão do bloco 6.4:** `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
 
