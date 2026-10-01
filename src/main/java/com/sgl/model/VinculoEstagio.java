@@ -86,6 +86,9 @@ public class VinculoEstagio implements Serializable {
 	private SituacaoEstagio situacao;
 
 	private String observacao;
+	
+	@Column(name = "referencia_institucional", length = 120, unique = true)
+	private String referenciaInstitucional;
 
 	@PrePersist
 	private void generateDefaults() {
@@ -98,4 +101,6 @@ public class VinculoEstagio implements Serializable {
 			treinamentoSegurancaConcluido = false;
 		}
 	}
+
+
 }
