@@ -31,6 +31,7 @@ Usuario
 - a última participação aberta não pode ser encerrada isoladamente enquanto o vínculo estiver em andamento;
 - novo vínculo para Estagiário existente nasce com primeira Atividade na mesma transação;
 - primeiro vínculo criado por `POST /estagiarios` também exige Atividade inicial;
+- **evolução posterior do 6.4:** essa exigência permanece correta para o fluxo local/DEV validado no 6.2, mas não é regra absoluta para vínculos recebidos do ambiente institucional; vínculos sincronizados podem existir sem Atividade até receberem contexto operacional.
 - dois vínculos não finalizados simultâneos para o mesmo Estagiário são bloqueados;
 - Projeto/SCI/Laboratório não são duplicados no vínculo; são derivados da Atividade.
 
