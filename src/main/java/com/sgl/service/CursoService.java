@@ -28,6 +28,8 @@ public class CursoService {
 	@Transactional
 	public CursoResponseDTO criar(CursoRequestDTO dto) {
 
+		exigirTenantAtivo();
+
 		Unidade unidade = buscarUnidade(dto.getUnidadeId());
 
 		validarTenantUnidade(unidade.getPublicId());
@@ -128,6 +130,8 @@ public class CursoService {
 	}
 
 	private void validarTenantUnidade(UUID unidadeId) {
+
+		exigirTenantAtivo();
 
 		if (!TenantContext.pertence(unidadeId)) {
 
