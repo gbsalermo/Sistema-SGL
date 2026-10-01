@@ -2,6 +2,8 @@ package com.sgl.dto.request;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.enums.FormacaoEstagiario;
@@ -63,4 +65,7 @@ public class EstagiarioRequestDTO implements Serializable {
 
 	@Schema(description = "UUID do curso vinculado ao estágio, quando aplicável.")
 	private UUID cursoId;
+
+	@Schema(description = "UUIDs das Culturas associadas à participação inicial em Atividade.")
+	private Set<UUID> culturaIds = new LinkedHashSet<>();
 }
