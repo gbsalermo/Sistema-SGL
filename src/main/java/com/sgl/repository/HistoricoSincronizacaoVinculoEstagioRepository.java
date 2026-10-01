@@ -1,6 +1,7 @@
 package com.sgl.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +24,12 @@ public interface HistoricoSincronizacaoVinculoEstagioRepository
         );
 
     boolean existsByOrigemAndReferenciaEvento(
+        OrigemSincronizacaoVinculoEstagio origem,
+        String referenciaEvento
+    );
+    
+    Optional<HistoricoSincronizacaoVinculoEstagio>
+    findByOrigemAndReferenciaEvento(
         OrigemSincronizacaoVinculoEstagio origem,
         String referenciaEvento
     );

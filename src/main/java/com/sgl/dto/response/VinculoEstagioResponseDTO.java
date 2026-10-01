@@ -38,6 +38,7 @@ public class VinculoEstagioResponseDTO {
 	private final Boolean treinamentoSegurancaConcluido;
 
 	private final String observacao;
+	private final String referenciaInstitucional;
 
 	public VinculoEstagioResponseDTO(VinculoEstagio entity) {
 
@@ -79,5 +80,6 @@ public class VinculoEstagioResponseDTO {
 		this.cursoNome = entity.getCurso() != null ? entity.getCurso().getNome() : null;
 
 		this.treinamentoSegurancaConcluido = entity.getTreinamentoSegurancaConcluido();
+		this.referenciaInstitucional = entity.getReferenciaInstitucional();
 	}
 }
