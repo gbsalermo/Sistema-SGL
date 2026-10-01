@@ -460,6 +460,41 @@ Código SEG:
 
 ---
 
+# Ciclo institucional do Estagiário — Etapa 6.4
+
+```text
+Ambiente institucional
+→ identifica Usuario por matrícula/CPF
+→ informa vínculo/período/situação
+→ SGL sincroniza VinculoEstagio
+→ SGL aplica consequências operacionais
+```
+
+Prorrogação da mesma bolsa:
+
+```text
+mesmo VinculoEstagio
+→ dataFimPrevista ampliada
+→ histórico institucional
+```
+
+Nova bolsa:
+
+```text
+mesmo Usuario
+→ mesmo Estagiario
+→ vínculo anterior FINALIZADO
+→ novo VinculoEstagio
+```
+
+O novo vínculo institucional pode existir sem Atividade por um período de preparação. Ele só habilita operação de Estagiário quando houver ao menos uma participação aberta.
+
+Finalização recebida do ambiente encerra as participações abertas e preserva Usuario/Estagiario. `Usuario.ativo = false` bloqueia operação, mas não é sinônimo automático de vínculo FINALIZADO.
+
+Não existe encerramento/prorrogação manual de rotina no SGL como fonte de verdade do ciclo institucional.
+
+Referência: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
+
 # Estagiários — contrato backend estabilizado até 6.3
 
 Em 01/10/2026, os blocos 6.1–6.3 foram concluídos e validados no backend.
