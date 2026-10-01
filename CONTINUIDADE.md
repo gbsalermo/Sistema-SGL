@@ -625,33 +625,25 @@ dataFimPrevista
 dataFimEfetiva
 ```
 
-A finalização do estágio terá **dois caminhos válidos**:
-
-1. **término natural** — quando a data final prevista for atingida, o estágio deve ser finalizado pelo fluxo previsto para expiração normal;
-2. **encerramento manual antecipado** — Gestor/Admin pode encerrar o estágio antes da data prevista.
+O ciclo institucional do estágio é **autoritativo no ambiente corporativo**, não no workflow cotidiano do SGL.
 
 Regras:
 
-- o término natural define `situacaoEstagio = FINALIZADO` e registra a data efetiva correspondente ao fim previsto;
-- o encerramento manual define `situacaoEstagio = FINALIZADO` e registra a data efetiva da ação;
-- o encerramento manual antecipado deve preservar a data final prevista original;
-- encerramento manual antecipado deve exigir justificativa e autoria;
-- finalizar estágio não desativa o `Usuario`;
-- estágio ativo nunca pode coexistir com `Usuario` institucionalmente inativo;
-- após finalização, um `Usuario` ainda ativo pode futuramente receber novo vínculo de estágio;
-- acesso operacional de Estagiário depende de vínculo de estágio não finalizado e de ao menos uma participação de Atividade aberta.
+- `Usuario` representa a identidade institucional estável; matrícula/CPF identifica a pessoa e troca de senha não cria nova identidade;
+- `Estagiario` representa o papel persistente;
+- `VinculoEstagio` representa cada ocorrência institucional de bolsa/estágio;
+- prorrogação da mesma bolsa mantém o mesmo `VinculoEstagio` e amplia `dataFimPrevista`;
+- nova bolsa após encerramento cria novo `VinculoEstagio` para o mesmo `Usuario/Estagiario`;
+- o SGL não oferece "Finalizar estágio" como fonte normal de verdade;
+- finalização/prorrogação recebidas do ambiente são sincronizadas e auditadas;
+- finalizar vínculo não desativa o `Usuario`;
+- `Usuario.ativo = false` remove acesso operacional, mas não implica sozinho `VinculoEstagio = FINALIZADO`;
+- ao receber vínculo FINALIZADO, o SGL encerra participações ainda abertas e preserva histórico;
+- inconsistência temporal recebida da fonte institucional deve ser sinalizada para reconciliação, nunca corrigida silenciosamente.
 
-Prorrogação não deve ser alteração silenciosa da data final prevista. Deve preservar:
+Prorrogação institucional deve preservar ao menos data final anterior, nova data, origem e data/hora. Justificativa de Gestor não é exigida quando a alteração vem da fonte institucional.
 
-- data final prevista anterior;
-- nova data final prevista;
-- justificativa;
-- autor;
-- data/hora.
-
-Seguir o padrão auditável consolidado na Etapa 5.
-
-A implementação exata do mecanismo de término natural (processamento explícito/agendado ou estratégia equivalente que mantenha banco e API consistentes) será fechada no bloco que implementar o encerramento de estágio; não inferir encerramento apenas na camada visual.
+Decisão detalhada: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
 ### Treinamento de segurança
 
@@ -707,7 +699,7 @@ Decisões e implementação consolidadas:
 - testes de Service, Controller e Repository foram atualizados para o novo domínio;
 - Repository passou a cobrir explicitamente usuário ativo + vínculo ativo, vínculo finalizado e usuário inativo.
 
-Importante: o 6.1 **não cria ainda um novo vínculo institucional independente**, porque a regra fechada exige pelo menos uma Atividade válida. Esse fluxo foi aberto e consolidado no 6.2 junto da associação obrigatória com Atividade.
+Importante: a exigência de primeira Atividade permanece para o fluxo local/DEV criado no 6.2, mas **não é uma regra absoluta do vínculo institucional**. Quando a integração corporativa estiver ativa, um novo `VinculoEstagio` poderá ser sincronizado antes de possuir participação em Atividade; nesse estado ele existe institucionalmente, mas ainda não é operacionalmente ativo no SGL.
 
 ### Fechamento do 6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico ✅
 
@@ -724,7 +716,7 @@ Implementação consolidada:
 - encerrar uma participação preserva histórico e não encerra o estágio;
 - enquanto o vínculo estiver em andamento, a última participação aberta não pode ser encerrada isoladamente;
 - o encerramento definitivo da última participação será coordenado pelo fluxo de encerramento do próprio vínculo no 6.4;
-- novo `VinculoEstagio` para Estagiário já existente nasce obrigatoriamente com a primeira Atividade na mesma transação;
+- no fluxo local/DEV, novo `VinculoEstagio` para Estagiário já existente nasce com a primeira Atividade; na integração institucional futura, o vínculo poderá chegar primeiro e receber a Atividade depois;
 - um Estagiário não pode possuir dois vínculos não finalizados simultaneamente;
 - o primeiro cadastro via `POST /estagiarios` também exige Atividade inicial e cria a primeira participação;
 - respostas de vínculo passam a carregar `participacoesAtividade` com dados derivados de Atividade/SCI/Projeto/Laboratório;
@@ -782,11 +774,11 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
 6.3 — dados acadêmicos, Curso, Cultura e segurança         ✅ concluído e validado
 6.3.1 — Formação + Curso + treinamento                    ✅ concluído e validado
 6.3.2 — Cultura por Unidade + participação                ✅ concluído e validado
-6.4 — período, situação, prorrogações e finalização       🔧 atual
-6.4.1 — histórico/auditoria de prorrogação e encerramento ⏳ próximo
-6.4.2 — prorrogação do vínculo                             ⏳
-6.4.3 — finalização manual e término natural              ⏳
-6.4.4 — testes, validação e documentação                   ⏳
+6.4 — ciclo institucional e sincronização                 🔧 atual
+6.4.1 — contrato + histórico da sincronização             🔧 atual
+6.4.2 — sincronização do vínculo existente                ⏳
+6.4.3 — nova bolsa / novo VinculoEstagio                  ⏳
+6.4.4 — testes, validação e documentação                  ⏳
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
 ```
@@ -907,7 +899,7 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
-Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.3 concluídos; 6.4 próximo
+Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.3 concluídos; 6.4 atual
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções + contexto operacional  ⏳
 Etapa 9 — Pedidos + Soluções + participação           ⏳
@@ -923,7 +915,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, os blocos 6.1 e 6.2 foram concluídos e validados; o 6.2 teve suíte completa e compilação confirmadas verdes em 01/10/2026. A branch atual é `collab/etapa-6-estagiarios-vinculos`. Retomar pelo bloco 6.3 — dados acadêmicos, tipo de vínculo, Cultura e treinamento de segurança, preservando a estrutura Usuario → Estagiario → VinculoEstagio → participações em Atividade e a hierarquia Atividade → SCI → Projeto → Laboratório → Unidade. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, os blocos 6.1–6.3 estão concluídos e validados; o 6.4 está em andamento com foco em sincronização do ciclo institucional do vínculo. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
