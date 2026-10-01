@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 01/10/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.3 concluídos e validados; próximo bloco: 6.4.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.3 concluídos e validados; 6.4 em execução no modelo de sincronização institucional.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -15,12 +15,16 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5 — Projetos e Atividades             ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             🔧 6.1–6.3 concluídos; 6.4 próximo
+Etapa 6 — Estagiários e vínculos             🔧 6.1–6.3 concluídos; 6.4 sincronização institucional
 ```
 
 Handoff imediato:
 
-`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
+`docs/VALIDACAO_ETAPA_6_3.md`
+
+Decisão atual do ciclo institucional:
+
+`docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`
 
 Plano canônico:
 
