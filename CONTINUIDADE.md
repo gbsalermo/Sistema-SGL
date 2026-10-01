@@ -189,16 +189,17 @@ V25 — fundação do ciclo de estágio: situação + orientador no legado
 V26 — criação de vínculos institucionais de estágio + migração do legado
 V27 — associação histórica VinculoEstagio ↔ Atividade
 V28 — dados acadêmicos do vínculo + catálogo de Cursos por Unidade
+V29 — catálogo de Culturas + associação Cultura ↔ participação em Atividade
 ```
 
 Regra obrigatória:
 
 ```text
 migration aplicada = imutável
-nova alteração de schema = próxima versão livre após V28
+nova alteração de schema = próxima versão livre após V29
 ```
 
-A V28 foi utilizada no 6.3.1 para Formação, Curso e treinamento de segurança no `VinculoEstagio`. A próxima migration livre esperada é **V29**, reservada ao catálogo de Culturas e sua associação às participações, desde que nenhuma migration nova seja incorporada à `main` antes da próxima alteração de schema.
+A V29 foi criada no 6.3.2 para `culturas` e `vinculo_estagio_atividade_cultura`. A fundação de domínio/repositories está implementada na branch atual; integração por DTO/Service/Controller e validação ainda estão pendentes. A próxima migration esperada, se necessária, é **V30**.
 
 ---
 
@@ -760,7 +761,7 @@ Checkpoint detalhado: `docs/VALIDACAO_ETAPA_6_2.md`.
 6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico ✅ concluído e validado
 6.3 — dados acadêmicos, Curso, Cultura e segurança         🔧 em andamento
 6.3.1 — Formação + Curso + treinamento                    🔧 fundação implementada; validação pendente
-6.3.2 — Cultura por Unidade + participação                ⏳ próximo
+6.3.2 — Cultura por Unidade + participação                🔧 fundação V29 implementada
 6.4 — período, situação e prorrogações                    ⏳
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
