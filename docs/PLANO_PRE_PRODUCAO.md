@@ -720,17 +720,19 @@ Solução = receita/composição reutilizável de Produtos.
 
 Estabilizar DTOs, composição, unidades, validações, edição/inativação, interface e histórico/snapshot antes da Etapa 9.
 
-### 8.4 Contexto operacional do Estagiário para Pedidos
+### 8.4 Contexto operacional dos solicitantes para Pedidos
 
 Fechar antes da evolução de Pedido:
 
 - Unidade/tenant permanece derivada da identidade/sessão institucional;
 - `Usuario.laboratorio` deixa de ser considerado fonte operacional para Estagiários;
 - um vínculo pode possuir participações em Atividades de Projetos/Laboratórios diferentes dentro da mesma Unidade;
-- `laboratorioId/laboratorioNome` da sessão DEV permanecem apenas por compatibilidade até a migração do fluxo;
-- o frontend deve trabalhar com a lista de participações abertas do Estagiário;
-- uma participação aberta pode ser pré-selecionada quando for única; múltiplas participações exigem escolha explícita;
-- Projeto e Laboratório serão derivados da participação pelo backend.
+- para Estagiários, o frontend trabalha com as participações abertas; uma única pode ser pré-selecionada e múltiplas exigem escolha explícita;
+- para Estagiários, Projeto e Laboratório são derivados da participação;
+- para TECNICO/ANALISTA/PESQUISADOR com Projeto, o usuário escolhe o Projeto e o backend deriva o Laboratório;
+- para TECNICO/ANALISTA/PESQUISADOR sem Projeto, `Usuario.laboratorio` permanece como contexto institucional/base;
+- o frontend não deve permitir Projeto e Laboratório independentes quando o Projeto já determina seu Laboratório;
+- `laboratorioId/laboratorioNome` da sessão DEV permanecem apenas por compatibilidade até a migração do fluxo.
 
 Essa decisão prepara a Etapa 9 sem antecipar a alteração funcional de Pedido.
 
