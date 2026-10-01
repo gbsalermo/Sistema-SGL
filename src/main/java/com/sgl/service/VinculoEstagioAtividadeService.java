@@ -78,10 +78,9 @@ public class VinculoEstagioAtividadeService {
 
 		participacao = participacaoRepository.save(participacao);
 
-		VinculoEstagioAtividadeCulturasRequestDTO culturasDto = new VinculoEstagioAtividadeCulturasRequestDTO();
-		culturasDto.setCulturaIds(dto.getCulturaIds());
+		sincronizarCulturas(participacao, dto.getCulturaIds());
 
-		return atualizarCulturas(participacao.getPublicId(), culturasDto);
+		return montarResponse(participacao);
 	}
 
 	@Transactional(readOnly = true)
@@ -309,7 +308,14 @@ public class VinculoEstagioAtividadeService {
 
 		validarVinculoOperacional(participacao.getVinculoEstagio());
 
-		Set<UUID> ids = dto.getCulturaIds() != null ? new LinkedHashSet<>(dto.getCulturaIds()) : new LinkedHashSet<>();
+		sincronizarCulturas(participacao, dto.getCulturaIds());
+
+		return montarResponse(participacao);
+	}
+
+	private void sincronizarCulturas(VinculoEstagioAtividade participacao, Set<UUID> culturaIds) {
+
+		Set<UUID> ids = culturaIds != null ? new LinkedHashSet<>(culturaIds) : new LinkedHashSet<>();
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
@@ -332,12 +338,6 @@ public class VinculoEstagioAtividadeService {
 			atuaisPorCultura.put(atual.getCultura().getPublicId(), atual);
 		}
 
-		/*
-		 * Cultura inativa pode permanecer se já estava historicamente ligada à
-		 * participação.
-		 *
-		 * Apenas novas associações exigem Cultura ativa.
-		 */
 		for (Cultura cultura : culturas) {
 
 			if (!atuaisPorCultura.containsKey(cultura.getPublicId())) {
@@ -360,7 +360,6 @@ public class VinculoEstagioAtividadeService {
 					VinculoEstagioAtividadeCultura associacao = new VinculoEstagioAtividadeCultura();
 
 					associacao.setParticipacao(participacao);
-
 					associacao.setCultura(cultura);
 
 					return associacao;
@@ -370,8 +369,6 @@ public class VinculoEstagioAtividadeService {
 
 			participacaoCulturaRepository.saveAll(adicionar);
 		}
-
-		return montarResponse(participacao);
 	}
 
 	private VinculoEstagioAtividadeResponseDTO montarResponse(VinculoEstagioAtividade participacao) {
