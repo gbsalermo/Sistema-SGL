@@ -92,6 +92,56 @@ Os campos diretos de Projeto/Laboratório podem ser mantidos por compatibilidade
 
 Para solicitantes que não sejam Estagiários, o contrato operacional específico permanece a ser fechado junto da refatoração de Pedidos; a participação de estágio não será exigida nesses perfis.
 
+## 6. Contexto de Pedido para usuários não Estagiários
+
+A participação de estágio é obrigatória somente para o perfil `ESTAGIARIO`. Para os demais solicitantes comuns — atualmente `TECNICO`, `ANALISTA` e `PESQUISADOR` — o contexto segue duas possibilidades.
+
+### Usuário comum com Projeto
+
+Quando o Pedido estiver associado a Projeto:
+
+```text
+TECNICO / ANALISTA / PESQUISADOR
+→ escolhe Projeto
+→ backend deriva Laboratorio
+→ backend confirma Unidade/tenant
+→ cria Pedido
+```
+
+O frontend não deve enviar Projeto e Laboratório como escolhas independentes. O Projeto é a fonte do contexto operacional e o Laboratório é consequência da hierarquia.
+
+### Usuário comum sem Projeto
+
+Pedidos operacionais gerais continuam válidos quando não houver Projeto aplicável:
+
+```text
+TECNICO / ANALISTA / PESQUISADOR
+→ Pedido sem Projeto
+→ usa Usuario.laboratorio como contexto institucional/base
+→ confirma Unidade/tenant
+→ cria Pedido
+```
+
+Nesse caso, `Usuario.laboratorio` continua útil e não deve ser removido do domínio apenas por causa da evolução dos Estagiários.
+
+### Ordem de resolução do contexto
+
+```text
+1. Solicitante é ESTAGIARIO
+   → participação aberta obrigatória
+   → deriva Atividade/SCI/Projeto/Laboratório
+
+2. Solicitante não é ESTAGIARIO e informou Projeto
+   → deriva Laboratório do Projeto
+
+3. Solicitante não é ESTAGIARIO e Pedido não possui Projeto
+   → usa Usuario.laboratorio
+```
+
+Combinações inconsistentes devem ser rejeitadas pelo backend. Exemplo: um Projeto do Laboratório A não pode ser acompanhado de um Laboratório B fornecido livremente pelo cliente.
+
+Assim, `Usuario.laboratorio` deixa de ser a fonte universal de contexto, mas continua sendo contexto institucional/base para operações sem Projeto de usuários não Estagiários.
+
 ## 6. Integridade e sincronização entre Solicitante e Gestão
 
 Solicitante e Gestão são duas visões do mesmo registro de domínio.
@@ -108,7 +158,7 @@ Não existe sincronização direta entre as duas interfaces.
 
 Alterações institucionais em vínculo, curso, formação, Atividades ou Cultura são lidas novamente da API. Dados históricos do Pedido permanecem ligados à participação usada na criação.
 
-## 7. Distribuição no roadmap
+## 8. Distribuição no roadmap
 
 ### Etapa 6.5 — frontend integrado
 
@@ -132,7 +182,7 @@ Alterações institucionais em vínculo, curso, formação, Atividades ou Cultur
 - integrar o mesmo contexto às telas de Solicitante e Gestão;
 - manter FIFO/FEFO, locks, aprovação, cancelamento/devolução e integração com Soluções.
 
-## 8. Regra final
+## 9. Regra final
 
 ```text
 Laboratório não é o núcleo do Estagiário.
