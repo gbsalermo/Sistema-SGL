@@ -1,6 +1,7 @@
 package com.sgl.dto.response;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.Atividade;
@@ -8,6 +9,7 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
 
 import lombok.Getter;
 
@@ -35,45 +37,109 @@ public class VinculoEstagioAtividadeResponseDTO {
 
 	private final String observacao;
 	private final Boolean ativa;
+	
+	private final List<CulturaResponseDTO> culturas;
 
-	public VinculoEstagioAtividadeResponseDTO(VinculoEstagioAtividade entity) {
+	public VinculoEstagioAtividadeResponseDTO(
+	        VinculoEstagioAtividade entity) {
 
-		Atividade atividade = entity.getAtividade();
+	    this(entity, List.of());
+	}
 
-		Sci sci = atividade != null ? atividade.getSci() : null;
+	public VinculoEstagioAtividadeResponseDTO(
+	        VinculoEstagioAtividade entity,
+	        List<VinculoEstagioAtividadeCultura> associacoesCultura) {
 
-		Projeto projeto = sci != null ? sci.getProjeto() : null;
+	    Atividade atividade = entity.getAtividade();
 
-		Laboratorio laboratorio = projeto != null ? projeto.getLaboratorio() : null;
+	    Sci sci =
+	            atividade != null
+	                    ? atividade.getSci()
+	                    : null;
 
-		this.id = entity.getPublicId();
+	    Projeto projeto =
+	            sci != null
+	                    ? sci.getProjeto()
+	                    : null;
 
-		this.vinculoEstagioId = entity.getVinculoEstagio() != null ? entity.getVinculoEstagio().getPublicId() : null;
+	    Laboratorio laboratorio =
+	            projeto != null
+	                    ? projeto.getLaboratorio()
+	                    : null;
 
-		this.atividadeId = atividade != null ? atividade.getPublicId() : null;
+	    this.id = entity.getPublicId();
 
-		this.atividadeNome = atividade != null ? atividade.getNome() : null;
+	    this.vinculoEstagioId =
+	            entity.getVinculoEstagio() != null
+	                    ? entity.getVinculoEstagio()
+	                            .getPublicId()
+	                    : null;
 
-		this.atividadeCodigoSeg = atividade != null ? atividade.getCodigoSeg() : null;
+	    this.atividadeId =
+	            atividade != null
+	                    ? atividade.getPublicId()
+	                    : null;
 
-		this.sciId = sci != null ? sci.getPublicId() : null;
+	    this.atividadeNome =
+	            atividade != null
+	                    ? atividade.getNome()
+	                    : null;
 
-		this.sciNome = sci != null ? sci.getNome() : null;
+	    this.atividadeCodigoSeg =
+	            atividade != null
+	                    ? atividade.getCodigoSeg()
+	                    : null;
 
-		this.projetoId = projeto != null ? projeto.getPublicId() : null;
+	    this.sciId =
+	            sci != null
+	                    ? sci.getPublicId()
+	                    : null;
 
-		this.projetoNome = projeto != null ? projeto.getNome() : null;
+	    this.sciNome =
+	            sci != null
+	                    ? sci.getNome()
+	                    : null;
 
-		this.laboratorioId = laboratorio != null ? laboratorio.getPublicId() : null;
+	    this.projetoId =
+	            projeto != null
+	                    ? projeto.getPublicId()
+	                    : null;
 
-		this.laboratorioNome = laboratorio != null ? laboratorio.getNome() : null;
+	    this.projetoNome =
+	            projeto != null
+	                    ? projeto.getNome()
+	                    : null;
 
-		this.dataInicioParticipacao = entity.getDataInicioParticipacao();
+	    this.laboratorioId =
+	            laboratorio != null
+	                    ? laboratorio.getPublicId()
+	                    : null;
 
-		this.dataFimParticipacao = entity.getDataFimParticipacao();
+	    this.laboratorioNome =
+	            laboratorio != null
+	                    ? laboratorio.getNome()
+	                    : null;
 
-		this.observacao = entity.getObservacao();
+	    this.dataInicioParticipacao =
+	            entity.getDataInicioParticipacao();
 
-		this.ativa = entity.getDataFimParticipacao() == null;
+	    this.dataFimParticipacao =
+	            entity.getDataFimParticipacao();
+
+	    this.observacao =
+	            entity.getObservacao();
+
+	    this.ativa =
+	            entity.getDataFimParticipacao() == null;
+
+	    this.culturas =
+	            associacoesCultura.stream()
+	                    .map(
+	                        associacao ->
+	                            new CulturaResponseDTO(
+	                                associacao.getCultura()
+	                            )
+	                    )
+	                    .toList();
 	}
 }

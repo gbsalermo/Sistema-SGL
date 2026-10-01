@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.EncerrarVinculoEstagioAtividadeRequestDTO;
+import com.sgl.dto.request.VinculoEstagioAtividadeCulturasRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.VinculoEstagioAtividadeResponseDTO;
 import com.sgl.service.VinculoEstagioAtividadeService;
@@ -59,5 +60,13 @@ public class VinculoEstagioAtividadeController {
 			@Valid @RequestBody EncerrarVinculoEstagioAtividadeRequestDTO dto) {
 
 		return ResponseEntity.ok(service.encerrar(participacaoId, dto));
+	}
+
+	@Operation(summary = "Definir Culturas da participação em uma Atividade")
+	@PutMapping("/participacoes/{participacaoId}/culturas")
+	public ResponseEntity<VinculoEstagioAtividadeResponseDTO> atualizarCulturas(@PathVariable UUID participacaoId,
+			@Valid @RequestBody VinculoEstagioAtividadeCulturasRequestDTO dto) {
+
+		return ResponseEntity.ok(service.atualizarCulturas(participacaoId, dto));
 	}
 }

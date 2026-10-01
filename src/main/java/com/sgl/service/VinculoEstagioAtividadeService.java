@@ -1,25 +1,34 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.EncerrarVinculoEstagioAtividadeRequestDTO;
+import com.sgl.dto.request.VinculoEstagioAtividadeCulturasRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.VinculoEstagioAtividadeResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Atividade;
+import com.sgl.model.Cultura;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.repository.AtividadeRepository;
+import com.sgl.repository.CulturaRepository;
+import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
@@ -33,6 +42,8 @@ public class VinculoEstagioAtividadeService {
 	private final VinculoEstagioAtividadeRepository participacaoRepository;
 	private final VinculoEstagioRepository vinculoEstagioRepository;
 	private final AtividadeRepository atividadeRepository;
+	private final CulturaRepository culturaRepository;
+	private final VinculoEstagioAtividadeCulturaRepository participacaoCulturaRepository;
 
 	@Transactional
 	public VinculoEstagioAtividadeResponseDTO adicionar(UUID vinculoId, VinculoEstagioAtividadeRequestDTO dto) {
@@ -67,7 +78,7 @@ public class VinculoEstagioAtividadeService {
 
 		participacao = participacaoRepository.save(participacao);
 
-		return new VinculoEstagioAtividadeResponseDTO(participacao);
+		return montarResponse(participacao);
 	}
 
 	@Transactional(readOnly = true)
@@ -80,7 +91,7 @@ public class VinculoEstagioAtividadeService {
 		return participacaoRepository
 				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
 						vinculo.getPublicId(), unidadeId)
-				.stream().map(VinculoEstagioAtividadeResponseDTO::new).toList();
+				.stream().map(this::montarResponse).toList();
 	}
 
 	@Transactional(readOnly = true)
@@ -129,7 +140,9 @@ public class VinculoEstagioAtividadeService {
 		// 6. Finalmente encerra a participação
 		participacao.setDataFimParticipacao(dto.getDataFimParticipacao());
 
-		return new VinculoEstagioAtividadeResponseDTO(participacaoRepository.save(participacao));
+		participacao = participacaoRepository.save(participacao);
+
+		return montarResponse(participacao);
 	}
 
 	private VinculoEstagio buscarVinculoNoTenant(UUID vinculoId) {
@@ -278,5 +291,96 @@ public class VinculoEstagioAtividadeService {
 
 			throw new BusinessRuleException("Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
 		}
+	}
+
+	@Transactional
+	public VinculoEstagioAtividadeResponseDTO atualizarCulturas(UUID participacaoId,
+			VinculoEstagioAtividadeCulturasRequestDTO dto) {
+
+		VinculoEstagioAtividade participacao = buscarParticipacaoNoTenant(participacaoId);
+
+		if (participacao.getDataFimParticipacao() != null) {
+
+			throw new BusinessRuleException("Não é possível alterar Culturas de uma participação encerrada.");
+		}
+
+		validarVinculoOperacional(participacao.getVinculoEstagio());
+
+		Set<UUID> ids = dto.getCulturaIds() != null ? new LinkedHashSet<>(dto.getCulturaIds()) : new LinkedHashSet<>();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		List<Cultura> culturas = ids.isEmpty() ? List.of()
+				: culturaRepository.findByPublicIdInAndUnidadePublicId(ids, unidadeId);
+
+		if (culturas.size() != ids.size()) {
+
+			throw new BusinessRuleException("Uma ou mais culturas são inválidas para esta unidade.");
+		}
+
+		List<VinculoEstagioAtividadeCultura> atuais = participacaoCulturaRepository
+				.findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+						participacao.getPublicId(), unidadeId);
+
+		Map<UUID, VinculoEstagioAtividadeCultura> atuaisPorCultura = new LinkedHashMap<>();
+
+		for (VinculoEstagioAtividadeCultura atual : atuais) {
+
+			atuaisPorCultura.put(atual.getCultura().getPublicId(), atual);
+		}
+
+		/*
+		 * Cultura inativa pode permanecer se já estava historicamente ligada à
+		 * participação.
+		 *
+		 * Apenas novas associações exigem Cultura ativa.
+		 */
+		for (Cultura cultura : culturas) {
+
+			if (!atuaisPorCultura.containsKey(cultura.getPublicId())) {
+
+				cultura.validateActive();
+			}
+		}
+
+		List<VinculoEstagioAtividadeCultura> remover = atuais.stream()
+				.filter(associacao -> !ids.contains(associacao.getCultura().getPublicId())).toList();
+
+		if (!remover.isEmpty()) {
+
+			participacaoCulturaRepository.deleteAll(remover);
+		}
+
+		List<VinculoEstagioAtividadeCultura> adicionar = culturas.stream()
+				.filter(cultura -> !atuaisPorCultura.containsKey(cultura.getPublicId())).map(cultura -> {
+
+					VinculoEstagioAtividadeCultura associacao = new VinculoEstagioAtividadeCultura();
+
+					associacao.setParticipacao(participacao);
+
+					associacao.setCultura(cultura);
+
+					return associacao;
+				}).toList();
+
+		if (!adicionar.isEmpty()) {
+
+			participacaoCulturaRepository.saveAll(adicionar);
+		}
+
+		return montarResponse(participacao);
+	}
+
+	private VinculoEstagioAtividadeResponseDTO montarResponse(VinculoEstagioAtividade participacao) {
+
+		exigirTenantAtivo();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		List<VinculoEstagioAtividadeCultura> culturas = participacaoCulturaRepository
+				.findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+						participacao.getPublicId(), unidadeId);
+
+		return montarResponse(participacao);
 	}
 }
