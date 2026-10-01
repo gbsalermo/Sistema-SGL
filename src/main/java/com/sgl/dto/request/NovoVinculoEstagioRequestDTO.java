@@ -1,6 +1,8 @@
 package com.sgl.dto.request;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.enums.FormacaoEstagiario;
@@ -36,4 +38,6 @@ public class NovoVinculoEstagioRequestDTO {
 	private String formacaoOutro;
 
 	private UUID cursoId;
+
+	private Set<UUID> culturaIds = new LinkedHashSet<>();
 }
