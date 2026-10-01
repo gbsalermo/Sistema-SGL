@@ -460,6 +460,22 @@ Código SEG:
 
 ---
 
+# Estagiários — contrato backend estabilizado até 6.3
+
+Em 01/10/2026, os blocos 6.1–6.3 foram concluídos e validados no backend.
+
+```text
+VinculoEstagio
+├── Formação
+├── Curso
+├── treinamento de segurança
+└── participações em Atividades
+    ├── Atividade → SCI → Projeto → Laboratório
+    └── Culturas
+```
+
+Formação é enum institucional + `OUTRO`; Curso e Cultura são catálogos por Unidade. Cultura é N:N com a participação em Atividade. O frontend definitivo desse domínio permanece no 6.5.
+
 # Contexto operacional do Estagiário e evolução de Pedidos
 
 Decisão estrutural aprovada em 01/10/2026:
