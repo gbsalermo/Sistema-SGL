@@ -637,7 +637,13 @@ Pedido
 → Unidade
 ```
 
-Para Estagiários, a participação será escolhida entre as participações abertas e Projeto/Laboratório serão derivados pelo backend. Para outros perfis, a participação de estágio não será obrigatória.
+Para Estagiários, a participação será escolhida entre as participações abertas e Projeto/Laboratório serão derivados pelo backend.
+
+Para solicitantes não Estagiários:
+
+- com Projeto: o Projeto é escolhido e o Laboratório é derivado pelo backend;
+- sem Projeto: `Usuario.laboratorio` permanece como contexto institucional/base;
+- a participação de estágio não é obrigatória.
 
 A interface de Estagiários, já no 6.5, deve abandonar a legenda de um único laboratório e exibir os contextos por participação.
 
