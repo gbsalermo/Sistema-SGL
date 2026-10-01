@@ -30,6 +30,7 @@ import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.service.VinculoEstagioService;
@@ -75,6 +76,7 @@ class VinculoEstagioControllerTest {
         dto.setDataInicio(LocalDate.of(2026, 10, 1));
         dto.setDataFimPrevista(LocalDate.of(2027, 3, 31));
         dto.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        dto.setFormacao(FormacaoEstagiario.GRADUACAO);
         dto.setObservacao("Novo período");
         return dto;
     }
