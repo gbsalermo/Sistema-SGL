@@ -2,13 +2,13 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 29/09/2026  
-**Status:** Etapas 1–5 concluídas e validadas; próxima etapa: Etapa 6 — Estagiários e vínculos  
+**Última atualização:** 01/10/2026  
+**Status:** Etapas 1–5 concluídas e validadas; Etapa 6 em andamento com 6.1–6.2 concluídos e validados; próximo bloco: 6.3  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
-> **Checkpoint de infraestrutura — 24/09/2026:** GitLab continua sendo a fonte canônica de `main` nos dois repositórios; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A Etapa 4 foi integrada. A branch atual é `collab/etapa-5-projetos-atividades`, criada a partir da `main` já contendo a Etapa 4.
+> **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual do backend é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
 
 Roadmap formal posterior:
 
@@ -504,7 +504,12 @@ Confirmado para a Etapa 6:
 
 - Orientador obrigatório e com perfil PESQUISADOR ou ANALISTA;
 - Atividade obrigatória; Projeto é derivado de Atividade → SCI → Projeto;
-- Estagiário pode migrar entre Atividades/Projetos, exigindo histórico de vínculos;
+- Estagiário pode participar de múltiplas Atividades no mesmo vínculo, com histórico preservado;
+- o mesmo Estagiário pode receber novo vínculo institucional após finalizar o anterior;
+- não podem existir dois vínculos de estágio não finalizados simultaneamente para o mesmo Estagiário;
+- todo vínculo novo nasce com pelo menos uma Atividade;
+- Estagiário operacionalmente ativo exige Usuario ativo + vínculo não finalizado + participação de Atividade aberta;
+- finalizar estágio não desativa o Usuario;
 - Cultura representa a cultura da pesquisa e deve ser tratada como catálogo administrável por Unidade;
 - Bolsa/vínculo separado de Curso/Formação/nível;
 - início/fim do estágio;
@@ -512,7 +517,29 @@ Confirmado para a Etapa 6:
 - situação: EM_ANDAMENTO, FINALIZADO ou PRORROGADO;
 - treinamento de segurança booleano;
 - dados pessoais devem vir preferencialmente de Usuario/autenticação institucional;
-- código interno SGL do vínculo pode ser adotado sem substituir identidade institucional.
+- não criar Código SGL adicional para Estagiário; identidade/matrícula virá da fonte institucional.
+
+### 6.1 — contrato e fundação do vínculo ✅
+
+Concluído e validado em 30/09/2026. Consolidou `Usuario → Estagiario → VinculoEstagio 1..N`, orientador, situação própria e V25/V26.
+
+### 6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico ✅
+
+Concluído e validado em 01/10/2026.
+
+- V27 criou `vinculo_estagio_atividade`;
+- múltiplas participações simultâneas são permitidas no mesmo vínculo;
+- histórico de participações encerradas é preservado;
+- a última participação aberta não pode ser encerrada isoladamente enquanto o vínculo estiver em andamento;
+- novo vínculo institucional e primeiro vínculo de um novo Estagiário exigem Atividade inicial;
+- respostas retornam as participações com Atividade/SCI/Projeto/Laboratório derivados;
+- listagem/estado operacional ativo incorporam participação aberta;
+- testes de Service, Controller e Repository/H2 foram adicionados;
+- suíte backend completa e compilação foram executadas sem erros/falhas em 01/10/2026.
+
+Próximo bloco: **6.3 — dados acadêmicos, tipo de vínculo, Cultura e treinamento de segurança**.
+
+Checkpoint: `docs/VALIDACAO_ETAPA_6_2.md`.
 
 ---
 
@@ -782,7 +809,7 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
 Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos                    ⏳ próxima
+Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.2 concluídos; 6.3 próximo
 Etapas 7–13                                         ⏳
 ```
 
@@ -805,4 +832,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Próxima retomada: Etapa 6 — Estagiários e vínculos.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint atual da Etapa 6: `docs/VALIDACAO_ETAPA_6_2.md`. Próxima retomada: bloco 6.3.
