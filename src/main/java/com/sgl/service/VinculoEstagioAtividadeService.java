@@ -104,7 +104,7 @@ public class VinculoEstagioAtividadeService {
 		return participacaoRepository
 				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdAndDataFimParticipacaoIsNull(
 						vinculo.getPublicId(), unidadeId)
-				.stream().map(VinculoEstagioAtividadeResponseDTO::new).toList();
+				.stream().map(this::montarResponse).toList();
 	}
 
 	@Transactional
@@ -381,6 +381,6 @@ public class VinculoEstagioAtividadeService {
 				.findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
 						participacao.getPublicId(), unidadeId);
 
-		return montarResponse(participacao);
+		return new VinculoEstagioAtividadeResponseDTO(participacao, culturas);
 	}
 }
