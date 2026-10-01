@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 01/10/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.2 concluídos e validados; próximo bloco: 6.3.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.3 concluídos e validados; próximo bloco: 6.4.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -15,7 +15,7 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5 — Projetos e Atividades             ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             🔧 6.1–6.2 concluídos; 6.3 próximo
+Etapa 6 — Estagiários e vínculos             🔧 6.1–6.3 concluídos; 6.4 próximo
 ```
 
 Handoff imediato:
@@ -317,7 +317,7 @@ V28 dados acadêmicos do vínculo + catálogo de Cursos
 V29 catálogo de Culturas + associação com participação em Atividade
 ```
 
-A V29 e sua fundação de domínio/repositories já estão implementadas na branch da Etapa 6. A integração por API e a validação do bloco ainda estão pendentes. Próxima migration esperada, se necessária: **V30+**.
+A V29, o catálogo/API de Cultura, a associação com participação e a propagação nas respostas foram concluídos e validados em 01/10/2026. Próxima migration esperada, se necessária: **V30+**.
 
 Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
@@ -599,15 +599,15 @@ Estado atual da Etapa 6:
 ```text
 6.1 contrato e fundação do vínculo                  ✅ 30/09/2026
 6.2 vínculos Estagiário ↔ Atividade + histórico    ✅ 01/10/2026
-6.3 dados acadêmicos/Curso/Cultura/segurança         🔧 em andamento
-6.3.1 Formação + Curso + treinamento                🔧 fundação implementada
-6.3.2 Cultura por participação                      🔧 implementação concluída; validação pendente
-6.4 período/situação/prorrogações                   ⏳
+6.3 dados acadêmicos/Curso/Cultura/segurança         ✅ concluído e validado
+6.3.1 Formação + Curso + treinamento                ✅ concluído e validado
+6.3.2 Cultura por participação                      ✅ concluído e validado
+6.4 período/situação/prorrogações/finalização       🔧 próximo
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
 ```
 
-O 6.2 teve suíte backend completa e compilação confirmadas sem erros/falhas em 01/10/2026. Checkpoint: `docs/VALIDACAO_ETAPA_6_2.md`.
+O 6.2 teve suíte backend completa e compilação confirmadas sem erros/falhas em 01/10/2026. O 6.3 também foi validado em 01/10/2026 com compilação concluída e suíte completa verde. Checkpoint atual: `docs/VALIDACAO_ETAPA_6_3.md`.
 
 Etapa 7 consome Etapas 5/6 em relatórios consolidados e inclui organização estrutural do módulo de Relatórios.
 
@@ -690,7 +690,7 @@ Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
 Etapa 5 ✅ concluída e validada
-Etapa 6 🔧 6.1–6.2 concluídos; 6.3 em andamento
+Etapa 6 🔧 6.1–6.3 concluídos; 6.4 próximo
 Etapa 7 ⏳
 Etapa 8 ⏳ unidades/Soluções/contexto operacional
 Etapa 9 ⏳ Pedidos/Soluções/participação
@@ -704,4 +704,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1 e 6.2 estão concluídos e validados; retomar pelo 6.3 na branch `collab/etapa-6-estagiarios-vinculos`. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/VALIDACAO_ETAPA_6_2.md`.**
+**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1, 6.2 e 6.3 estão concluídos e validados; retomar pelo 6.4 na branch `collab/etapa-6-estagiarios-vinculos`. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/VALIDACAO_ETAPA_6_3.md`.**
