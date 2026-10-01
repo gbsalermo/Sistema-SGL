@@ -191,6 +191,7 @@ V26 — criação de vínculos institucionais de estágio + migração do legado
 V27 — associação histórica VinculoEstagio ↔ Atividade
 V28 — dados acadêmicos do vínculo + catálogo de Cursos por Unidade
 V29 — catálogo de Culturas + associação Cultura ↔ participação em Atividade
+V30 — referência institucional do vínculo + histórico de sincronização institucional
 ```
 
 Regra obrigatória:
@@ -200,7 +201,7 @@ migration aplicada = imutável
 nova alteração de schema = próxima versão livre após V29
 ```
 
-A V29 foi criada no 6.3.2 para `culturas` e `vinculo_estagio_atividade_cultura`. O catálogo, a associação, os DTOs/Services/Controllers e a integração com respostas diretas/aninhadas foram concluídos e validados em 01/10/2026. A próxima migration esperada, se necessária, é **V30**.
+A V29 foi concluída e validada no 6.3.2. A V30 iniciou o 6.4.1 com `referencia_institucional` em `vinculos_estagio` e `historico_sincronizacao_vinculo_estagio`. A referência institucional é indexada, mas **não possui unicidade global enquanto o contrato corporativo não confirmar esse requisito**. A idempotência de evento é separada por origem + referência do evento quando disponível. Fundação implementada; validação do 6.4 ainda pendente. Próxima migration esperada, se necessária, é **V31**.
 
 ---
 
