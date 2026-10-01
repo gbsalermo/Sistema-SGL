@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.TipoBolsa;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -52,4 +53,14 @@ public class EstagiarioRequestDTO implements Serializable {
 	@Schema(description = "UUID da Atividade inicial do primeiro vínculo de estágio.", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "Atividade inicial é obrigatória")
 	private UUID atividadeId;
+
+	@Schema(description = "Formação/categoria institucional do primeiro vínculo.", example = "GRADUACAO", requiredMode = Schema.RequiredMode.REQUIRED)
+	@NotNull(message = "Formação é obrigatória")
+	private FormacaoEstagiario formacao;
+
+	@Schema(description = "Descrição obrigatória quando a formação for OUTRO.")
+	private String formacaoOutro;
+
+	@Schema(description = "UUID do curso vinculado ao estágio, quando aplicável.")
+	private UUID cursoId;
 }

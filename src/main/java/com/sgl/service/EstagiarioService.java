@@ -13,13 +13,16 @@ import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.Curso;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
@@ -41,6 +44,7 @@ public class EstagiarioService {
 	private final VinculoEstagioRepository vinculoEstagioRepository;
 	private final VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
+	private final CursoRepository cursoRepository;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -106,6 +110,16 @@ public class EstagiarioService {
 		Estagiario estagiario = estagiarioRepository.findById(usuario.getId())
 				.orElseThrow(() -> new ResourceNotFoundException("Estagiário recém-criado", usuario.getId()));
 
+		validarFormacao(dto.getFormacao(), dto.getFormacaoOutro());
+
+		Curso curso = null;
+
+		if (dto.getCursoId() != null) {
+
+			curso = buscarCursoNoTenant(dto.getCursoId());
+
+			curso.validateActive();
+		}
 		VinculoEstagio vinculo = new VinculoEstagio();
 
 		vinculo.setEstagiario(estagiario);
@@ -120,6 +134,14 @@ public class EstagiarioService {
 		vinculo.setObservacao(dto.getObservacao());
 
 		vinculo = vinculoEstagioRepository.save(vinculo);
+
+		vinculo.setFormacao(dto.getFormacao());
+
+		vinculo.setFormacaoOutro(normalizarFormacaoOutro(dto.getFormacao(), dto.getFormacaoOutro()));
+
+		vinculo.setCurso(curso);
+
+		vinculo.setTreinamentoSegurancaConcluido(false);
 
 		VinculoEstagioAtividadeRequestDTO participacaoDto = new VinculoEstagioAtividadeRequestDTO();
 
@@ -309,13 +331,44 @@ public class EstagiarioService {
 
 		boolean possuiVinculoOperacional = vinculosResponse.stream()
 				.anyMatch(vinculo -> vinculo.getSituacao() != SituacaoEstagio.FINALIZADO
-						&& vinculo.getParticipacoesAtividade() != null
-						&& vinculo.getParticipacoesAtividade().stream()
+						&& vinculo.getParticipacoesAtividade() != null && vinculo.getParticipacoesAtividade().stream()
 								.anyMatch(participacao -> Boolean.TRUE.equals(participacao.getAtiva())));
 
 		response.setAtivo(Boolean.TRUE.equals(estagiario.getAtivo()) && possuiVinculoOperacional);
 
 		return response;
+	}
+
+	private Curso buscarCursoNoTenant(UUID cursoId) {
+
+		exigirTenantAtivo();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		return cursoRepository.findByPublicIdAndUnidadePublicId(cursoId, unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Curso", cursoId));
+	}
+
+	private void validarFormacao(FormacaoEstagiario formacao, String formacaoOutro) {
+
+		if (formacao == null) {
+			throw new BusinessRuleException("Formação é obrigatória.");
+		}
+
+		if (formacao == FormacaoEstagiario.OUTRO && (formacaoOutro == null || formacaoOutro.isBlank())) {
+
+			throw new BusinessRuleException(
+					"A descrição da formação é obrigatória quando a opção OUTRO for selecionada.");
+		}
+	}
+
+	private String normalizarFormacaoOutro(FormacaoEstagiario formacao, String valor) {
+
+		if (formacao != FormacaoEstagiario.OUTRO) {
+			return null;
+		}
+
+		return valor.trim();
 	}
 
 }

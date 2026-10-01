@@ -12,6 +12,7 @@ import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Atividade;
+import com.sgl.model.Curso;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
@@ -19,9 +20,11 @@ import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.repository.AtividadeRepository;
+import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
@@ -40,6 +43,8 @@ public class VinculoEstagioService {
 	private final EstagiarioRepository estagiarioRepository;
 	private final UsuarioRepository usuarioRepository;
 	private final AtividadeRepository atividadeRepository;
+
+	private final CursoRepository cursoRepository;
 
 	@Transactional
 	public VinculoEstagioResponseDTO criar(UUID estagiarioId, NovoVinculoEstagioRequestDTO dto) {
@@ -66,6 +71,16 @@ public class VinculoEstagioService {
 
 		validarInicioComAtividade(dto.getDataInicio(), atividade);
 
+		validarFormacao(dto.getFormacao(), dto.getFormacaoOutro());
+
+		Curso curso = null;
+
+		if (dto.getCursoId() != null) {
+			curso = buscarCursoNoTenant(dto.getCursoId());
+
+			curso.validateActive();
+		}
+
 		VinculoEstagio vinculo = new VinculoEstagio();
 
 		vinculo.setEstagiario(estagiario);
@@ -85,6 +100,13 @@ public class VinculoEstagioService {
 
 		vinculo = vinculoEstagioRepository.save(vinculo);
 
+		vinculo.setFormacao(dto.getFormacao());
+
+		vinculo.setFormacaoOutro(normalizarFormacaoOutro(dto.getFormacao(), dto.getFormacaoOutro()));
+
+		vinculo.setCurso(curso);
+
+		vinculo.setTreinamentoSegurancaConcluido(false);
 		/*
 		 * O novo vínculo institucional não pode nascer sem atividade. A primeira
 		 * participação é criada na mesma transação.
@@ -253,5 +275,74 @@ public class VinculoEstagioService {
 
 			throw new BusinessRuleException("Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
 		}
+	}
+
+	private Curso buscarCursoNoTenant(UUID cursoId) {
+
+		exigirTenantAtivo();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		return cursoRepository.findByPublicIdAndUnidadePublicId(cursoId, unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Curso", cursoId));
+	}
+
+	private void validarFormacao(FormacaoEstagiario formacao, String formacaoOutro) {
+
+		if (formacao == null) {
+			throw new BusinessRuleException("Formação é obrigatória.");
+		}
+
+		if (formacao == FormacaoEstagiario.OUTRO && (formacaoOutro == null || formacaoOutro.isBlank())) {
+
+			throw new BusinessRuleException(
+					"A descrição da formação é obrigatória quando a opção OUTRO for selecionada.");
+		}
+	}
+
+	private String normalizarFormacaoOutro(FormacaoEstagiario formacao, String valor) {
+
+		if (formacao != FormacaoEstagiario.OUTRO) {
+			return null;
+		}
+
+		return valor.trim();
+	}
+
+	@Transactional
+	public VinculoEstagioResponseDTO concluirTreinamentoSeguranca(UUID vinculoId) {
+
+		VinculoEstagio vinculo = buscarVinculoNoTenant(vinculoId);
+
+		if (vinculo.getSituacao() == SituacaoEstagio.FINALIZADO) {
+
+			throw new BusinessRuleException(
+					"Não é possível registrar treinamento em um vínculo de estágio finalizado.");
+		}
+
+		if (Boolean.TRUE.equals(vinculo.getTreinamentoSegurancaConcluido())) {
+
+			throw new BusinessRuleException("O treinamento de segurança já foi registrado como concluído.");
+		}
+
+		vinculo.setTreinamentoSegurancaConcluido(true);
+
+		vinculo = vinculoEstagioRepository.save(vinculo);
+
+		List<VinculoEstagioAtividade> participacoes = participacaoRepository
+				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+						vinculo.getPublicId(), TenantContext.unidadeAtual().orElseThrow());
+
+		return new VinculoEstagioResponseDTO(vinculo, participacoes);
+	}
+
+	private VinculoEstagio buscarVinculoNoTenant(UUID vinculoId) {
+
+		exigirTenantAtivo();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		return vinculoEstagioRepository.findByPublicIdAndEstagiarioUnidadePublicId(vinculoId, unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Vínculo de estágio", vinculoId));
 	}
 }
