@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
 **Última atualização:** 01/10/2026  
-**Status:** Etapas 1–5 concluídas e validadas; Etapa 6 em andamento com 6.1–6.2 concluídos e validados; próximo bloco: 6.3  
+**Status:** Etapas 1–5 concluídas e validadas; Etapa 6 em andamento com 6.1–6.2 concluídos e validados; 6.3 em execução  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
@@ -512,6 +512,11 @@ Confirmado para a Etapa 6:
 - finalizar estágio não desativa o Usuario;
 - Cultura representa a cultura da pesquisa e deve ser tratada como catálogo administrável por Unidade;
 - Bolsa/vínculo separado de Curso/Formação/nível;
+- Formação é enum controlado com opção `OUTRO` + descrição específica;
+- Curso é catálogo administrável por Unidade, não enum rígido;
+- treinamento de segurança nasce `false` e só é concluído por ação específica;
+- `Usuario.laboratorio` não é fonte operacional de laboratório para Estagiários;
+- o contexto operacional do Estagiário é sua participação em Atividade, da qual Projeto/Laboratório são derivados;
 - início/fim do estágio;
 - prorrogações com histórico;
 - situação: EM_ANDAMENTO, FINALIZADO ou PRORROGADO;
@@ -537,9 +542,35 @@ Concluído e validado em 01/10/2026.
 - testes de Service, Controller e Repository/H2 foram adicionados;
 - suíte backend completa e compilação foram executadas sem erros/falhas em 01/10/2026.
 
-Próximo bloco: **6.3 — dados acadêmicos, tipo de vínculo, Cultura e treinamento de segurança**.
+### 6.3 — dados acadêmicos, Curso, Cultura e treinamento de segurança 🔧
 
-Checkpoint: `docs/VALIDACAO_ETAPA_6_2.md`.
+Estado em 01/10/2026:
+
+- 6.3.1 fundação implementada com V28;
+- `FormacaoEstagiario` usa valores controlados + `OUTRO`;
+- `Curso` é catálogo por Unidade com inativação lógica;
+- `VinculoEstagio` recebe Formação, Curso e `treinamentoSegurancaConcluido`;
+- treinamento nasce `false` e possui ação explícita de conclusão;
+- validação/testes finais do 6.3.1 ainda devem ser executados antes do fechamento;
+- próximo bloco técnico: 6.3.2 — catálogo de Cultura + associação à participação em Atividade.
+
+A Etapa 6 também fechou uma decisão estrutural para etapas futuras: **não existe necessariamente um único Laboratório do Estagiário**. A participação `VinculoEstagioAtividade` passa a ser o contexto operacional que futuramente alimentará Pedidos.
+
+```text
+Estagiario
+→ VinculoEstagio
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratorio
+```
+
+No bloco 6.5, a interface deve remover a apresentação de um único "Laboratório do Estagiário" como atributo definitivo e exibir Atividade/Projeto/Laboratório por participação.
+
+Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
+
+Checkpoint anterior: `docs/VALIDACAO_ETAPA_6_2.md`.
 
 ---
 
@@ -650,7 +681,7 @@ Mover controllers/services/DTOs de Relatórios para packages específicos, sem a
 
 ---
 
-## Etapa 8 — Unidades e Soluções
+## Etapa 8 — Unidades, Soluções e contexto operacional
 
 Ordem:
 
@@ -658,6 +689,7 @@ Ordem:
 normalização de unidades/apresentações
 → domínio de Soluções
 → composição/regras
+→ contrato de contexto operacional do solicitante
 → interface/contrato estabilizados
 ```
 
@@ -688,13 +720,49 @@ Solução = receita/composição reutilizável de Produtos.
 
 Estabilizar DTOs, composição, unidades, validações, edição/inativação, interface e histórico/snapshot antes da Etapa 9.
 
+### 8.4 Contexto operacional do Estagiário para Pedidos
+
+Fechar antes da evolução de Pedido:
+
+- Unidade/tenant permanece derivada da identidade/sessão institucional;
+- `Usuario.laboratorio` deixa de ser considerado fonte operacional para Estagiários;
+- um vínculo pode possuir participações em Atividades de Projetos/Laboratórios diferentes dentro da mesma Unidade;
+- `laboratorioId/laboratorioNome` da sessão DEV permanecem apenas por compatibilidade até a migração do fluxo;
+- o frontend deve trabalhar com a lista de participações abertas do Estagiário;
+- uma participação aberta pode ser pré-selecionada quando for única; múltiplas participações exigem escolha explícita;
+- Projeto e Laboratório serão derivados da participação pelo backend.
+
+Essa decisão prepara a Etapa 9 sem antecipar a alteração funcional de Pedido.
+
 ---
 
-## Etapa 9 — Pedidos + Soluções
+## Etapa 9 — Pedidos + Soluções + contexto de participação
 
 **Dependência:** Etapa 8.
 
-Antes de alterar Pedido, confirmar se o fluxo atual será mantido ou se há mudanças adicionais solicitadas pelo cliente.
+A evolução de Pedido deve incorporar duas frentes: Soluções e contexto operacional do Estagiário.
+
+Para Estagiários, a referência operacional do Pedido passa a ser `VinculoEstagioAtividade`:
+
+```text
+Pedido
+→ participação escolhida
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratorio
+→ Unidade
+```
+
+Regras:
+
+- o Estagiário escolhe entre suas participações abertas;
+- o frontend não combina livremente Atividade, Projeto e Laboratório;
+- o backend deriva e valida Projeto/Laboratório/Unidade;
+- a associação com a participação preserva o contexto histórico do Pedido;
+- os FKs atuais de Projeto/Laboratório podem permanecer por compatibilidade, consulta e rastreabilidade, mas para Estagiários devem ser preenchidos/validados a partir da participação;
+- Solicitante e Gestão leem o mesmo Pedido; não existem cópias independentes a sincronizar;
+- para perfis não Estagiários, `VinculoEstagioAtividade` não é obrigatório e o contrato específico será fechado na etapa.
 
 Pedido poderá conter Produto, Solução ou ambos, conforme escopo final.
 
