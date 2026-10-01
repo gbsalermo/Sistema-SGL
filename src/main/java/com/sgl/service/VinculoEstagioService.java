@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
-import com.sgl.dto.request.VinculoEstagioAtividadeCulturasRequestDTO;
+import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -116,28 +116,23 @@ public class VinculoEstagioService {
 		vinculo = vinculoEstagioRepository.save(vinculo);
 		/*
 		 * O novo vínculo institucional não pode nascer sem atividade. A primeira
-		 * participação é criada na mesma transação.
+		 * participação usa o mesmo fluxo das demais participações para manter
+		 * validações e Culturas centralizadas.
 		 */
-		VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+		VinculoEstagioAtividadeRequestDTO participacaoDto = new VinculoEstagioAtividadeRequestDTO();
 
-		participacao.setVinculoEstagio(vinculo);
+		participacaoDto.setAtividadeId(dto.getAtividadeId());
+		participacaoDto.setDataInicioParticipacao(dto.getDataInicio());
+		participacaoDto.setObservacao(normalizarTexto(dto.getObservacaoParticipacao()));
+		participacaoDto.setCulturaIds(dto.getCulturaIds());
 
-		participacao.setAtividade(atividade);
+		vinculoEstagioAtividadeService.adicionar(vinculo.getPublicId(), participacaoDto);
 
-		participacao.setDataInicioParticipacao(dto.getDataInicio());
+		List<VinculoEstagioAtividade> participacoes = participacaoRepository
+				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+						vinculo.getPublicId(), TenantContext.unidadeAtual().orElseThrow());
 
-		participacao.setDataFimParticipacao(null);
-
-		participacao.setObservacao(normalizarTexto(dto.getObservacaoParticipacao()));
-
-		participacao = participacaoRepository.save(participacao);
-
-		VinculoEstagioAtividadeCulturasRequestDTO culturasDto = new VinculoEstagioAtividadeCulturasRequestDTO();
-		culturasDto.setCulturaIds(dto.getCulturaIds());
-
-		vinculoEstagioAtividadeService.atualizarCulturas(participacao.getPublicId(), culturasDto);
-
-		return montarResponse(vinculo, List.of(participacao));
+		return montarResponse(vinculo, participacoes);
 	}
 
 	private Estagiario buscarEstagiarioNoTenant(UUID estagiarioId) {
