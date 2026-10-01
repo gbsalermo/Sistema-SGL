@@ -18,4 +18,6 @@ public class VinculoEstagioAtividadeRequestDTO {
     private LocalDate dataInicioParticipacao;
 
     private String observacao;
+
+    private Set<UUID> culturaIds = new LinkedHashSet<>();
 }
