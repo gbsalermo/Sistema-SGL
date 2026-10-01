@@ -199,7 +199,7 @@ migration aplicada = imutável
 nova alteração de schema = próxima versão livre após V29
 ```
 
-A V29 foi criada no 6.3.2 para `culturas` e `vinculo_estagio_atividade_cultura`. A fundação de domínio/repositories está implementada na branch atual; integração por DTO/Service/Controller e validação ainda estão pendentes. A próxima migration esperada, se necessária, é **V30**.
+A V29 foi criada no 6.3.2 para `culturas` e `vinculo_estagio_atividade_cultura`. O catálogo, a associação, os DTOs/Services/Controllers e a integração com respostas diretas/aninhadas foram concluídos e validados em 01/10/2026. A próxima migration esperada, se necessária, é **V30**.
 
 ---
 
@@ -770,7 +770,7 @@ Implementação funcional concluída na branch atual:
 - `EstagiarioResponseDTO → VinculoEstagioResponseDTO → participacoesAtividade → culturas` permanece consistente;
 - testes existentes foram ajustados às novas dependências e campos obrigatórios.
 
-O 6.3.2 ainda **não deve ser marcado como validado** até execução da suíte backend/compilação.
+O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte completa verde. Checkpoint: `docs/VALIDACAO_ETAPA_6_3.md`.
 
 ### Divisão de execução
 
@@ -901,7 +901,7 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
-Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.2 concluídos; 6.3 em andamento
+Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.3 concluídos; 6.4 próximo
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções + contexto operacional  ⏳
 Etapa 9 — Pedidos + Soluções + participação           ⏳
