@@ -607,7 +607,10 @@ Regras já fechadas:
 - finalização recebida do ambiente encerra participações abertas, mas não desativa o Usuario;
 - Usuario institucionalmente inativo perde acesso operacional sem que isso, isoladamente, finalize o vínculo;
 - novo vínculo vindo do ambiente pode existir inicialmente sem Atividade; só fica operacionalmente ativo após participação aberta;
-- CPF/matrícula não identifica uma bolsa específica; quando o ambiente fornecer identificador próprio do vínculo, ele deve ser usado para sincronização/idempotência.
+- CPF/matrícula não identifica uma bolsa específica; quando o ambiente fornecer identificador próprio do vínculo, ele deve ser usado como referência de sincronização;
+- enquanto o contrato externo não confirmar seu escopo, `referenciaInstitucional` permanece indexada, porém sem unicidade global;
+- idempotência de eventos é independente da referência do vínculo e usa `origem + referenciaEvento` quando a fonte disponibilizar identificador próprio do evento;
+- V30 cria a fundação desse histórico institucional; validação do bloco 6.4 ainda está pendente.
 
 Decisão detalhada: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
