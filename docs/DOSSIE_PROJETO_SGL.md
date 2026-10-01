@@ -313,9 +313,10 @@ V24 histórico de correções SEG
 V25 fundação de situação/orientador do estágio
 V26 vínculos institucionais de estágio
 V27 participação VinculoEstagio ↔ Atividade
+V28 dados acadêmicos do vínculo + catálogo de Cursos
 ```
 
-Próxima alteração de schema esperada: **V28+**.
+Próxima alteração de schema esperada: **V29+**. A V29 está reservada ao catálogo de Culturas e associação com a participação, salvo nova migration incorporada à `main` antes disso.
 
 Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
@@ -585,16 +586,21 @@ Etapa 6 evolui Estagiários com:
 - todo vínculo novo exigindo primeira Atividade;
 - estado operacional ativo dependente de Usuario ativo + vínculo não finalizado + participação aberta;
 - Bolsa separada de Curso/Formação;
-- Cultura/área temática;
-- treinamento de segurança;
-- histórico de prorrogações.
+- Formação controlada por enum + opção `OUTRO`;
+- Curso como catálogo administrável por Unidade;
+- Cultura/área temática por participação;
+- treinamento de segurança iniciado em `false` e concluído por ação específica;
+- histórico de prorrogações;
+- abandono da noção operacional de um único "Laboratório do Estagiário".
 
 Estado atual da Etapa 6:
 
 ```text
 6.1 contrato e fundação do vínculo                  ✅ 30/09/2026
 6.2 vínculos Estagiário ↔ Atividade + histórico    ✅ 01/10/2026
-6.3 dados acadêmicos/tipo/Cultura/segurança         🔧 próximo
+6.3 dados acadêmicos/Curso/Cultura/segurança         🔧 em andamento
+6.3.1 Formação + Curso + treinamento                🔧 fundação implementada
+6.3.2 Cultura por participação                      ⏳ próximo
 6.4 período/situação/prorrogações                   ⏳
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
@@ -614,9 +620,28 @@ Etapa 8:
 - `1 L = 1000 mL`;
 - `1 kg = 1000 g`;
 - não converter massa/volume sem densidade;
-- estabilizar domínio de Soluções.
+- estabilizar domínio de Soluções;
+- fechar o contrato de contexto operacional do solicitante;
+- tratar `Usuario.laboratorio` e o laboratório da sessão DEV como compatibilidade, não como fonte de verdade para Estagiários;
+- preparar Pedido para consumir a participação aberta do Estagiário.
 
-Etapa 9 integra Soluções aos Pedidos com aprovação atômica dos componentes.
+Etapa 9 integra Soluções aos Pedidos com aprovação atômica dos componentes e aplica a evolução:
+
+```text
+Pedido
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratorio
+→ Unidade
+```
+
+Para Estagiários, a participação será escolhida entre as participações abertas e Projeto/Laboratório serão derivados pelo backend. Para outros perfis, a participação de estágio não será obrigatória.
+
+A interface de Estagiários, já no 6.5, deve abandonar a legenda de um único laboratório e exibir os contextos por participação.
+
+Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
 
 ---
 
@@ -658,10 +683,10 @@ Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
 Etapa 5 ✅ concluída e validada
-Etapa 6 🔧 6.1–6.2 concluídos; 6.3 próximo
+Etapa 6 🔧 6.1–6.2 concluídos; 6.3 em andamento
 Etapa 7 ⏳
-Etapa 8 ⏳
-Etapa 9 ⏳
+Etapa 8 ⏳ unidades/Soluções/contexto operacional
+Etapa 9 ⏳ Pedidos/Soluções/participação
 Etapa 10 ⏳
 Etapa 11 ⏳
 Etapa 12 ⏳
