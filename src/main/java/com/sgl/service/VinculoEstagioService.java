@@ -1,13 +1,16 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
+import com.sgl.dto.request.VinculoEstagioAtividadeCulturasRequestDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -20,6 +23,7 @@ import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
@@ -27,6 +31,7 @@ import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
@@ -39,6 +44,8 @@ public class VinculoEstagioService {
 
 	private final VinculoEstagioRepository vinculoEstagioRepository;
 	private final VinculoEstagioAtividadeRepository participacaoRepository;
+	private final VinculoEstagioAtividadeCulturaRepository participacaoCulturaRepository;
+	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 
 	private final EstagiarioRepository estagiarioRepository;
 	private final UsuarioRepository usuarioRepository;
@@ -125,7 +132,12 @@ public class VinculoEstagioService {
 
 		participacao = participacaoRepository.save(participacao);
 
-		return new VinculoEstagioResponseDTO(vinculo, List.of(participacao));
+		VinculoEstagioAtividadeCulturasRequestDTO culturasDto = new VinculoEstagioAtividadeCulturasRequestDTO();
+		culturasDto.setCulturaIds(dto.getCulturaIds());
+
+		vinculoEstagioAtividadeService.atualizarCulturas(participacao.getPublicId(), culturasDto);
+
+		return montarResponse(vinculo, List.of(participacao));
 	}
 
 	private Estagiario buscarEstagiarioNoTenant(UUID estagiarioId) {
@@ -333,7 +345,28 @@ public class VinculoEstagioService {
 				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
 						vinculo.getPublicId(), TenantContext.unidadeAtual().orElseThrow());
 
-		return new VinculoEstagioResponseDTO(vinculo, participacoes);
+		return montarResponse(vinculo, participacoes);
+	}
+
+	private VinculoEstagioResponseDTO montarResponse(VinculoEstagio vinculo,
+			List<VinculoEstagioAtividade> participacoes) {
+
+		exigirTenantAtivo();
+
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		Map<UUID, List<VinculoEstagioAtividadeCultura>> culturasPorParticipacao = new LinkedHashMap<>();
+
+		for (VinculoEstagioAtividade participacao : participacoes) {
+
+			List<VinculoEstagioAtividadeCultura> culturas = participacaoCulturaRepository
+					.findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+							participacao.getPublicId(), unidadeId);
+
+			culturasPorParticipacao.put(participacao.getPublicId(), culturas);
+		}
+
+		return new VinculoEstagioResponseDTO(vinculo, participacoes, culturasPorParticipacao);
 	}
 
 	private VinculoEstagio buscarVinculoNoTenant(UUID vinculoId) {
