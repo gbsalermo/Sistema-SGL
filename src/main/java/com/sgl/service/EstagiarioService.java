@@ -1,7 +1,9 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
@@ -26,6 +29,7 @@ import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
@@ -43,6 +47,7 @@ public class EstagiarioService {
 	private final LaboratorioRepository laboratorioRepository;
 	private final VinculoEstagioRepository vinculoEstagioRepository;
 	private final VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
+	private final VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 	private final CursoRepository cursoRepository;
 
@@ -151,6 +156,8 @@ public class EstagiarioService {
 		participacaoDto.setDataInicioParticipacao(dto.getDataInicioEstagio());
 
 		participacaoDto.setObservacao(dto.getObservacao());
+
+		participacaoDto.setCulturaIds(dto.getCulturaIds());
 
 		vinculoEstagioAtividadeService.adicionar(vinculo.getPublicId(), participacaoDto);
 
@@ -325,7 +332,18 @@ public class EstagiarioService {
 					.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
 							vinculo.getPublicId(), unidadeId);
 
-			return new VinculoEstagioResponseDTO(vinculo, participacoes);
+			Map<UUID, List<VinculoEstagioAtividadeCultura>> culturasPorParticipacao = new LinkedHashMap<>();
+
+			for (VinculoEstagioAtividade participacao : participacoes) {
+
+				List<VinculoEstagioAtividadeCultura> culturas = vinculoEstagioAtividadeCulturaRepository
+						.findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+								participacao.getPublicId(), unidadeId);
+
+				culturasPorParticipacao.put(participacao.getPublicId(), culturas);
+			}
+
+			return new VinculoEstagioResponseDTO(vinculo, participacoes, culturasPorParticipacao);
 		}).toList();
 
 		response.setVinculos(vinculosResponse);
