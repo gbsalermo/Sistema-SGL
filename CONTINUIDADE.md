@@ -754,6 +754,24 @@ Validação:
 
 Checkpoint detalhado: `docs/VALIDACAO_ETAPA_6_2.md`.
 
+### Estado do 6.3.2 — Cultura por participação
+
+Implementação funcional concluída na branch atual:
+
+- V29 criou `culturas` e `vinculo_estagio_atividade_cultura`;
+- Cultura é catálogo por Unidade, com inativação lógica;
+- uma participação pode possuir múltiplas Culturas e a mesma Cultura pode aparecer em várias participações;
+- atualização de Culturas usa operação idempotente por conjunto;
+- Cultura inativa pode permanecer em associação histórica existente, mas não pode entrar como nova associação;
+- criação de nova participação aceita `culturaIds`;
+- primeiro vínculo de um Estagiário existente aceita Culturas na participação inicial;
+- primeiro cadastro de Estagiário aceita Culturas na participação inicial;
+- respostas diretas e aninhadas de participação retornam Culturas;
+- `EstagiarioResponseDTO → VinculoEstagioResponseDTO → participacoesAtividade → culturas` permanece consistente;
+- testes existentes foram ajustados às novas dependências e campos obrigatórios.
+
+O 6.3.2 ainda **não deve ser marcado como validado** até execução da suíte backend/compilação.
+
 ### Divisão de execução
 
 ```text
@@ -761,7 +779,7 @@ Checkpoint detalhado: `docs/VALIDACAO_ETAPA_6_2.md`.
 6.2 — vínculos múltiplos Estagiário ↔ Atividade + histórico ✅ concluído e validado
 6.3 — dados acadêmicos, Curso, Cultura e segurança         🔧 em andamento
 6.3.1 — Formação + Curso + treinamento                    🔧 fundação implementada; validação pendente
-6.3.2 — Cultura por Unidade + participação                🔧 fundação V29 implementada
+6.3.2 — Cultura por Unidade + participação                🔧 implementação funcional concluída; validação pendente
 6.4 — período, situação e prorrogações                    ⏳
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
