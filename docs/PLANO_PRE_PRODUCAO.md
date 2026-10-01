@@ -578,6 +578,30 @@ Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
 
 Próximo bloco: **6.4 — período, situação, prorrogações e finalização**.
 
+### 6.4 — período, situação, prorrogações e finalização 🔧
+
+Divisão operacional:
+
+```text
+6.4.1 histórico/auditoria de prorrogação e encerramento
+→ 6.4.2 prorrogação do vínculo
+→ 6.4.3 finalização manual + término natural
+→ 6.4.4 testes, validação e documentação
+```
+
+Regras já fechadas:
+
+- `dataInicio` permanece imutável após criação;
+- `dataFimPrevista` representa o limite institucional vigente;
+- `dataFimEfetiva` só é preenchida no encerramento;
+- prorrogação deve registrar data anterior, nova data, justificativa, autor e data/hora;
+- prorrogação altera a situação para `PRORROGADO` e não expande automaticamente participações;
+- vínculo `FINALIZADO` não pode ser prorrogado;
+- encerramento manual antecipado exige Gestor/Admin, justificativa e autoria;
+- encerramento natural deve finalizar o vínculo de forma consistente no backend/banco, não apenas na camada visual;
+- finalizar o vínculo deve encerrar as participações ainda abertas sem desativar o `Usuario`;
+- um Usuario institucionalmente ativo pode receber novo vínculo depois da finalização.
+
 ---
 
 ## Etapa 7 — Relatórios consolidados
