@@ -3,8 +3,8 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Atualizado em:** 29/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; próxima etapa planejada: Etapa 6 — Estagiários e vínculos.  
+**Atualizado em:** 01/10/2026  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.2 concluídos e validados; próximo bloco: 6.3.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -15,7 +15,7 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5 — Projetos e Atividades             ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             ⏳ próxima
+Etapa 6 — Estagiários e vínculos             🔧 6.1–6.2 concluídos; 6.3 próximo
 ```
 
 Handoff imediato:
@@ -109,7 +109,7 @@ Quando houver conflito:
 9. documentos históricos
 ```
 
-A Etapa 4 foi integrada e a Etapa 5 nasceu da `main` atualizada. A branch operacional atual é `collab/etapa-5-projetos-atividades`; a antiga `feat/etapa-4-residuos` permanece apenas como referência histórica.
+As Etapas 4 e 5 foram integradas à `main`. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`; branches anteriores permanecem apenas como referência histórica.
 
 ---
 
@@ -133,7 +133,7 @@ Frontend/documentação podem ser alterados diretamente quando autorizado.
 
 Trabalhar sempre em branch própria e em etapas pequenas.
 
-A Etapa 4 está fechada. A branch operacional atual é `collab/etapa-5-projetos-atividades`, criada sobre a `main` já contendo as Etapas 1–4. Branches antigas permanecem apenas como referência histórica.
+As Etapas 1–5 estão fechadas. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
 
 ---
 
@@ -306,16 +306,16 @@ V17 locais de armazenamento de Resíduos
 V18 modelos reutilizáveis de Resíduos
 V19 expansão do domínio de Projeto
 V20 criação do domínio de SCI
+V21 criação do domínio de Atividade
+V22 históricos de prorrogação
+V23 unicidade global do Código SEG
+V24 histórico de correções SEG
+V25 fundação de situação/orientador do estágio
+V26 vínculos institucionais de estágio
+V27 participação VinculoEstagio ↔ Atividade
 ```
 
-Próxima alteração de schema: V21+.
-
-Planejamento imediato:
-
-```text
-V21 → Atividades
-V22 → históricos de prorrogação de Projeto/SCI/Atividade
-```
+Próxima alteração de schema esperada: **V28+**.
 
 Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
@@ -579,11 +579,28 @@ Etapa 5 estabiliza Projetos/Atividades e Código SEG.
 Etapa 6 evolui Estagiários com:
 
 - Orientador obrigatório;
-- Projeto/Atividade;
+- `Usuario → Estagiario → VinculoEstagio 1..N`;
+- múltiplas participações históricas em Atividades;
+- Projeto/SCI/Laboratório derivados da Atividade;
+- todo vínculo novo exigindo primeira Atividade;
+- estado operacional ativo dependente de Usuario ativo + vínculo não finalizado + participação aberta;
 - Bolsa separada de Curso/Formação;
 - Cultura/área temática;
 - treinamento de segurança;
 - histórico de prorrogações.
+
+Estado atual da Etapa 6:
+
+```text
+6.1 contrato e fundação do vínculo                  ✅ 30/09/2026
+6.2 vínculos Estagiário ↔ Atividade + histórico    ✅ 01/10/2026
+6.3 dados acadêmicos/tipo/Cultura/segurança         🔧 próximo
+6.4 período/situação/prorrogações                   ⏳
+6.5 frontend integrado                              ⏳
+6.6 dados DEV/testes/validação/documentação         ⏳
+```
+
+O 6.2 teve suíte backend completa e compilação confirmadas sem erros/falhas em 01/10/2026. Checkpoint: `docs/VALIDACAO_ETAPA_6_2.md`.
 
 Etapa 7 consome Etapas 5/6 em relatórios consolidados e inclui organização estrutural do módulo de Relatórios.
 
@@ -641,7 +658,7 @@ Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
 Etapa 5 ✅ concluída e validada
-Etapa 6 ⏳
+Etapa 6 🔧 6.1–6.2 concluídos; 6.3 próximo
 Etapa 7 ⏳
 Etapa 8 ⏳
 Etapa 9 ⏳
@@ -655,4 +672,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**A Etapa 5 está encerrada e validada. Após o merge de `collab/etapa-5-projetos-atividades`, retomar pela Etapa 6 — Estagiários e vínculos em branch própria criada sobre a `main` sincronizada. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md`, `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` e `docs/VALIDACAO_ETAPA_5.md`.**
+**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1 e 6.2 estão concluídos e validados; retomar pelo 6.3 na branch `collab/etapa-6-estagiarios-vinculos`. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md` e `docs/VALIDACAO_ETAPA_6_2.md`.**
