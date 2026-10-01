@@ -37,6 +37,7 @@ import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.VinculoEstagio;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.service.EstagiarioService;
@@ -93,6 +94,7 @@ class EstagiarioControllerTest {
         dto.setObservacao("Estágio vinculado ao projeto de síntese.");
         dto.setOrientadorId(ORIENTADOR_PUBLIC_ID);
         dto.setAtividadeId(ATIVIDADE_PUBLIC_ID);
+        dto.setFormacao(FormacaoEstagiario.GRADUACAO);
         return dto;
     }
 
