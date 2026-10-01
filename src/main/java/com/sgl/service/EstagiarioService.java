@@ -130,10 +130,6 @@ public class EstagiarioService {
 		vinculo.setDataFimEfetiva(null);
 
 		vinculo.setTipoBolsa(dto.getTipoBolsa());
-		vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
-		vinculo.setObservacao(dto.getObservacao());
-
-		vinculo = vinculoEstagioRepository.save(vinculo);
 
 		vinculo.setFormacao(dto.getFormacao());
 
@@ -142,6 +138,11 @@ public class EstagiarioService {
 		vinculo.setCurso(curso);
 
 		vinculo.setTreinamentoSegurancaConcluido(false);
+
+		vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+		vinculo.setObservacao(dto.getObservacao());
+
+		vinculo = vinculoEstagioRepository.save(vinculo);
 
 		VinculoEstagioAtividadeRequestDTO participacaoDto = new VinculoEstagioAtividadeRequestDTO();
 
