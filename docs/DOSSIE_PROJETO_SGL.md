@@ -601,7 +601,7 @@ Estado atual da Etapa 6:
 6.2 vínculos Estagiário ↔ Atividade + histórico    ✅ 01/10/2026
 6.3 dados acadêmicos/Curso/Cultura/segurança         🔧 em andamento
 6.3.1 Formação + Curso + treinamento                🔧 fundação implementada
-6.3.2 Cultura por participação                      🔧 fundação V29 implementada
+6.3.2 Cultura por participação                      🔧 implementação concluída; validação pendente
 6.4 período/situação/prorrogações                   ⏳
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
