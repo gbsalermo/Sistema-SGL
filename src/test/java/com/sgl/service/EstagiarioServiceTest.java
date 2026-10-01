@@ -35,12 +35,15 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
@@ -87,7 +90,13 @@ class EstagiarioServiceTest {
     private VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
 
     @Mock
+    private VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
+
+    @Mock
     private VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
+
+    @Mock
+    private CursoRepository cursoRepository;
 
     @Mock
     private EntityManager entityManager;
@@ -621,6 +630,7 @@ class EstagiarioServiceTest {
         dto.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
         dto.setDataFimEstagio(LocalDate.of(2027, 1, 31));
         dto.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        dto.setFormacao(FormacaoEstagiario.GRADUACAO);
         dto.setObservacao("Estágio vinculado ao projeto de síntese.");
         dto.setOrientadorId(ORIENTADOR_PUBLIC_ID);
         dto.setAtividadeId(ATIVIDADE_PUBLIC_ID);
