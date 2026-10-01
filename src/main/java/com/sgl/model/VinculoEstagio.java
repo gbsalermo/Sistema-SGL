@@ -87,7 +87,7 @@ public class VinculoEstagio implements Serializable {
 
 	private String observacao;
 	
-	@Column(name = "referencia_institucional", length = 120, unique = true)
+	@Column(name = "referencia_institucional", length = 120)
 	private String referenciaInstitucional;
 
 	@PrePersist
