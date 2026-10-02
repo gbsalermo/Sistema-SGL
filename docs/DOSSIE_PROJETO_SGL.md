@@ -614,8 +614,8 @@ Estado atual da Etapa 6:
   6.4.2A DTOs/contrato                               ✅
   6.4.2B regra transacional                          ✅
   6.4.2C endpoint + testes                           ✅ suíte local verde
-6.4.3 nova bolsa / novo vínculo                      🔧 próximo
-6.4.4 testes/validação/documentação                  ⏳
+6.4.3 nova bolsa / novo vínculo                      ✅ implementado; validação local pendente
+6.4.4 testes/validação/documentação                  🔧 próximo
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
 ```
