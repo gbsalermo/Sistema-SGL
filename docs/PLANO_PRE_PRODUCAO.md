@@ -591,7 +591,7 @@ Divisão operacional:
    → 6.4.2B regra transacional ✅
    → 6.4.2C endpoint + testes ✅ suíte local verde
    → prorrogação/finalização derivadas do estado recebido
-→ 6.4.3 nova bolsa / novo VinculoEstagio 🔧 próximo
+→ 6.4.3 nova bolsa / novo VinculoEstagio ✅ implementado; validação local pendente
 → 6.4.4 testes, validação e documentação
 ```
 
