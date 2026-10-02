@@ -175,10 +175,12 @@ SGL
       → finalização ✅
       → idempotência por origem + referência do evento ✅
       → encerramento coerente das participações abertas ✅
-6.4.3 nova bolsa / novo VinculoEstagio 🔧 próximo
+6.4.3 nova bolsa / novo VinculoEstagio ✅ implementado; validação local pendente
       → mesma identidade
+      → criação sem Atividade inicial
+      → evento de CRIACAO auditado e idempotente por referência quando disponível
       → ativação operacional somente após Atividade
-6.4.4 testes, validação e documentação
+6.4.4 testes, validação e documentação 🔧 próximo
 ```
 
 Correção administrativa manual do ciclo institucional, caso necessária no futuro, será fluxo excepcional e auditável; não faz parte do workflow normal do 6.4.
