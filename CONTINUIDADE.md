@@ -12,7 +12,7 @@
 **Etapa atual:** Etapa 6 — Estagiários e vínculos 🔧  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_3.md`  
+**Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_4.md`  
 **Decisão do bloco 6.4:** `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
@@ -202,7 +202,7 @@ migration aplicada = imutável
 nova alteração de schema = próxima versão livre após V29
 ```
 
-A V29 foi concluída e validada no 6.3.2. A V30 iniciou o 6.4.1 com `referencia_institucional` em `vinculos_estagio` e `historico_sincronizacao_vinculo_estagio`. Como a V30 já foi publicada, a V31 remove de forma evolutiva a unicidade global inicialmente assumida para `referencia_institucional`, preservando o índice de consulta. O SGL não assume unicidade global enquanto o contrato corporativo não confirmar esse requisito. A idempotência de evento é separada por origem + referência do evento quando disponível. Fundação implementada; validação do 6.4 ainda pendente. Próxima migration esperada, se necessária, é **V32**.
+A V29 foi concluída e validada no 6.3.2. A V30 iniciou o 6.4.1 com `referencia_institucional` em `vinculos_estagio` e `historico_sincronizacao_vinculo_estagio`. Como a V30 já foi publicada, a V31 remove de forma evolutiva a unicidade global inicialmente assumida para `referencia_institucional`, preservando o índice de consulta. O SGL não assume unicidade global enquanto o contrato corporativo não confirmar esse requisito. A idempotência de evento é separada por origem + referência do evento quando disponível. Fundação implementada e ciclo institucional 6.4 concluído e validado em 02/10/2026. Próxima migration esperada, se necessária, é **V32**.
 
 ---
 
@@ -777,14 +777,14 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
 6.3 — dados acadêmicos, Curso, Cultura e segurança         ✅ concluído e validado
 6.3.1 — Formação + Curso + treinamento                    ✅ concluído e validado
 6.3.2 — Cultura por Unidade + participação                ✅ concluído e validado
-6.4 — ciclo institucional e sincronização                 🔧 atual
-6.4.1 — contrato + histórico da sincronização             ✅ implementado; validação no fechamento
-6.4.2 — sincronização do vínculo existente                🔧 atual
-  6.4.2A — DTOs/contrato de sincronização                 ✅ implementado
-  6.4.2B — regra transacional                             ✅ implementado; validação pendente
-  6.4.2C — endpoint + testes                              ✅ implementado; suíte local pendente
-6.4.3 — nova bolsa / novo VinculoEstagio                  ✅ implementado; validação local pendente
-6.4.4 — testes, validação e documentação                  🔧 próximo
+6.4 — ciclo institucional e sincronização                 ✅ concluído e validado em 02/10/2026
+6.4.1 — contrato + histórico da sincronização             ✅
+6.4.2 — sincronização do vínculo existente                ✅
+  6.4.2A — DTOs/contrato de sincronização                 ✅
+  6.4.2B — regra transacional                             ✅
+  6.4.2C — endpoint + testes                              ✅ suíte local verde
+6.4.3 — nova bolsa / novo VinculoEstagio                  ✅ suíte local verde
+6.4.4 — testes, validação e documentação                  ✅ concluído
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
 ```
@@ -905,7 +905,7 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
-Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.3 concluídos; 6.4 atual
+Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.4 concluídos; 6.5 frontend próximo
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções + contexto operacional  ⏳
 Etapa 9 — Pedidos + Soluções + participação           ⏳
@@ -921,7 +921,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, os blocos 6.1–6.3 estão concluídos e validados; o 6.4 está em andamento com foco em sincronização do ciclo institucional do vínculo. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o próximo bloco é o 6.5 — frontend integrado. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
