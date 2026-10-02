@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
+import com.sgl.dto.request.NovaBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.request.SincronizacaoVinculoEstagioRequestDTO;
@@ -45,7 +46,8 @@ public class VinculoEstagioController {
 
 	@Operation(
 			summary = "Atualizar dados operacionais do vínculo",
-			description = "Permite ao SGL complementar/ajustar Formação, Curso, Bolsa, Orientador e período. "
+			description = "Permite ao SGL complementar/ajustar Formação, Curso, Orientador e período. "
+					+ "O tipo de bolsa não é alterado por este fluxo; uma nova bolsa gera nova ocorrência de vínculo. "
 					+ "Quando a integração institucional informar esses mesmos campos posteriormente, "
 					+ "a sincronização institucional prevalece.")
 	@PutMapping("/{vinculoId}")
@@ -54,6 +56,18 @@ public class VinculoEstagioController {
 			@Valid @RequestBody AtualizarVinculoEstagioRequestDTO dto) {
 
 		return ResponseEntity.ok(service.atualizarLocal(vinculoId, dto));
+	}
+
+	@Operation(
+			summary = "Registrar nova bolsa local",
+			description = "Alternativa operacional enquanto a integração institucional não fornecer a nova ocorrência. "
+					+ "Finaliza a bolsa/vínculo atual, preserva seu histórico e cria uma nova ocorrência vigente para o mesmo Estagiário.")
+	@PostMapping("/{vinculoId}/nova-bolsa")
+	public ResponseEntity<VinculoEstagioResponseDTO> registrarNovaBolsa(
+			@PathVariable UUID vinculoId,
+			@Valid @RequestBody NovaBolsaVinculoEstagioRequestDTO dto) {
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarNovaBolsaLocal(vinculoId, dto));
 	}
 
 	@Operation(summary = "Sincronizar estado institucional do vínculo", description = "Recebe o estado do vínculo informado pelo ambiente institucional, "
