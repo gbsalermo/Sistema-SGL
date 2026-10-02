@@ -905,7 +905,7 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
-Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.4 concluídos; 6.5 frontend próximo
+Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções + contexto operacional  ⏳
 Etapa 9 — Pedidos + Soluções + participação           ⏳
@@ -921,7 +921,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o próximo bloco é o 6.5 — frontend integrado. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o 6.5 — frontend integrado foi implementado e aguarda validação visual/local. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
