@@ -2,13 +2,13 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 01/10/2026  
-**Status:** Etapas 1–5 concluídas e validadas; Etapa 6 em andamento com 6.1–6.2 concluídos e validados; 6.3 em execução  
+**Última atualização:** 02/10/2026  
+**Status:** Etapas 1–6 concluídas e validadas; Etapa 7 — Relatórios consolidados em andamento  
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
-> **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual do backend é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
+> **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual de colaboração é `collab/etapa-7-relatorios-consolidados`, criada a partir do fechamento validado da Etapa 6. O merge da Etapa 6 em `main` ainda deve ser concluído antes da integração final da Etapa 7.
 
 Roadmap formal posterior:
 
@@ -620,7 +620,7 @@ Decisão detalhada: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
 ---
 
-### 6.5 — refinamento final do drawer 🔧
+### 6.5 — refinamento final do drawer ✅
 
 Na validação visual/funcional do 6.5, o drawer foi reorganizado para priorizar operação e legibilidade:
 
@@ -634,7 +634,7 @@ Na validação visual/funcional do 6.5, o drawer foi reorganizado para priorizar
 - Gerenciar Culturas permite criar nova Cultura ativa da Unidade e selecioná-la para posterior associação;
 - V32 sustenta observações e auditoria de treinamento.
 
-Validação manual e automática desta rodada permanece para o 6.6.
+Validação manual e automática concluída no 6.6.
 
 ---
 
@@ -967,7 +967,7 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
 Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
+Etapa 6 — Estagiários e vínculos                    ✅ concluída e validada
 Etapas 7–13                                         ⏳
 ```
 
@@ -990,7 +990,7 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 6.5 — frontend integrado implementado; validação visual/local pendente.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 6.5 — frontend integrado concluído e validado.
 
 
 ### Revisão híbrida 02/10/2026 — Etapa 6
