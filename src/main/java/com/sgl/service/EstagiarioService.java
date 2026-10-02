@@ -17,6 +17,7 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Curso;
 import com.sgl.model.Estagiario;
+import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
@@ -27,6 +28,7 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
+import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
@@ -50,6 +52,7 @@ public class EstagiarioService {
 	private final VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 	private final CursoRepository cursoRepository;
+	private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -343,7 +346,17 @@ public class EstagiarioService {
 				culturasPorParticipacao.put(participacao.getPublicId(), culturas);
 			}
 
-			return new VinculoEstagioResponseDTO(vinculo, participacoes, culturasPorParticipacao);
+			List<HistoricoSincronizacaoVinculoEstagio> historicosSincronizacao =
+					historicoSincronizacaoVinculoEstagioRepository
+							.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataHoraSincronizacaoAsc(
+									vinculo.getPublicId(), unidadeId);
+
+			return new VinculoEstagioResponseDTO(
+					vinculo,
+					participacoes,
+					culturasPorParticipacao,
+					historicosSincronizacao
+			);
 		}).toList();
 
 		response.setVinculos(vinculosResponse);
