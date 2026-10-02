@@ -6,10 +6,11 @@
 **Última atualização:** 02/10/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
-**Branch atual de trabalho:** `collab/etapa-6-estagiarios-vinculos`  
+**Branch atual de trabalho:** `collab/etapa-7-relatorios-consolidados`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 6 — Estagiários e Vínculos ✅  
 **Próxima etapa:** Etapa 7 — Relatórios consolidados ⏳  
+**Observação de integração:** o merge da Etapa 6 ainda não foi refletido em `main` no GitHub; a branch da Etapa 7 foi criada a partir do fechamento validado da Etapa 6 para não perder continuidade.  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_6.md`  
@@ -46,7 +47,7 @@ As Etapas 1–4 já foram integradas e validadas.
 Branch atual:
 
 ```text
-collab/etapa-6-estagiarios-vinculos
+collab/etapa-7-relatorios-consolidados
 ```
 
 A Etapa 6 foi criada a partir da `main` pós-merge da Etapa 5. As branches das etapas anteriores permanecem somente como referência histórica.
@@ -478,7 +479,7 @@ Fechamento do 5.5 em 29/09/2026:
 - dark mode e tipografia canônica validados;
 - Etapa 5 oficialmente concluída e pronta para merge.
 
-## Etapa 6 — Estagiários e vínculos 🔧 ATUAL
+## Etapa 6 — Estagiários e vínculos ✅ FECHADA
 
 Branch:
 
@@ -791,7 +792,7 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
 
 Não antecipar Etapa 7 durante esta implementação.
 
-## Etapa 7 — Relatórios consolidados
+## Etapa 7 — Relatórios consolidados 🔧 ATUAL
 
 Depende das Etapas 5 e 6 estabilizadas. Inclui filtros/agregações, telas, PDF/XLSX e organização estrutural do módulo de relatórios.
 
