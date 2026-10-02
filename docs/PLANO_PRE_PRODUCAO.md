@@ -925,7 +925,7 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
 Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.4 concluídos; 6.5 frontend próximo
+Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
 Etapas 7–13                                         ⏳
 ```
 
@@ -948,4 +948,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Próximo bloco: 6.5 — frontend integrado.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 6.5 — frontend integrado implementado; validação visual/local pendente.
