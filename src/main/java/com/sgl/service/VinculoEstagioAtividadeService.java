@@ -301,9 +301,18 @@ public class VinculoEstagioAtividadeService {
 			throw new BusinessRuleException("A participação não pode começar antes da Atividade.");
 		}
 
-		if (atividade.getDataFim() != null && inicio.isAfter(atividade.getDataFim())) {
+		LocalDate limiteFimAtividade = atividade.getDataFim();
 
-			throw new BusinessRuleException("A participação não pode começar após o fim da Atividade.");
+		if (limiteFimAtividade == null
+				&& atividade.getSci() != null
+				&& atividade.getSci().getProjeto() != null) {
+			limiteFimAtividade = atividade.getSci().getProjeto().getDataFim();
+		}
+
+		if (limiteFimAtividade != null && inicio.isAfter(limiteFimAtividade)) {
+
+			throw new BusinessRuleException(
+					"A participação não pode começar após o fim da Atividade/Projeto.");
 		}
 
 		if (fim != null) {
@@ -314,9 +323,10 @@ public class VinculoEstagioAtividadeService {
 						"A participação não pode terminar após o fim previsto do vínculo de estágio.");
 			}
 
-			if (atividade.getDataFim() != null && fim.isAfter(atividade.getDataFim())) {
+			if (limiteFimAtividade != null && fim.isAfter(limiteFimAtividade)) {
 
-				throw new BusinessRuleException("A participação não pode terminar após o fim da Atividade.");
+				throw new BusinessRuleException(
+						"A participação não pode terminar após o fim da Atividade/Projeto.");
 			}
 		}
 	}
