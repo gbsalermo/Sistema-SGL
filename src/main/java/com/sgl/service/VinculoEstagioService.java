@@ -4,11 +4,13 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
@@ -27,6 +29,7 @@ import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
+import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
@@ -247,12 +250,14 @@ public class VinculoEstagioService {
 	private void validarPeriodoVinculo(LocalDate inicio, LocalDate fimPrevista) {
 
 		if (inicio == null) {
-
 			throw new BusinessRuleException("Data de início do vínculo é obrigatória.");
 		}
 
-		if (fimPrevista != null && fimPrevista.isBefore(inicio)) {
+		if (fimPrevista == null) {
+			throw new BusinessRuleException("Data final prevista é obrigatória.");
+		}
 
+		if (fimPrevista.isBefore(inicio)) {
 			throw new BusinessRuleException("Data final prevista não pode ser anterior à data de início do vínculo.");
 		}
 	}
@@ -319,6 +324,97 @@ public class VinculoEstagioService {
 		}
 
 		return valor.trim();
+	}
+
+	@Transactional
+	public VinculoEstagioResponseDTO atualizarLocal(UUID vinculoId, AtualizarVinculoEstagioRequestDTO dto) {
+
+		VinculoEstagio vinculo = buscarVinculoNoTenant(vinculoId);
+
+		if (vinculo.getSituacao() == SituacaoEstagio.FINALIZADO) {
+			throw new BusinessRuleException("Vínculos finalizados não podem ser alterados pelo fluxo operacional.");
+		}
+
+		validarPeriodoVinculo(dto.getDataInicio(), dto.getDataFimPrevista());
+		validarFormacao(dto.getFormacao(), dto.getFormacaoOutro());
+
+		Usuario orientador = buscarOrientadorNoTenant(dto.getOrientadorId());
+		validarOrientador(orientador);
+		validarMesmaUnidade(vinculo.getEstagiario(), orientador);
+
+		Curso curso = null;
+		if (dto.getCursoId() != null) {
+			curso = buscarCursoNoTenant(dto.getCursoId());
+			curso.validateActive();
+		}
+
+		List<VinculoEstagioAtividade> participacoes = participacaoRepository
+				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+						vinculoId, TenantContext.unidadeAtual().orElseThrow());
+
+		validarPeriodoComParticipacoes(dto.getDataInicio(), dto.getDataFimPrevista(), participacoes);
+
+		LocalDate fimAnterior = vinculo.getDataFimPrevista();
+		SituacaoEstagio situacaoAnterior = vinculo.getSituacao();
+
+		vinculo.setOrientador(orientador);
+		vinculo.setDataInicio(dto.getDataInicio());
+		vinculo.setDataFimPrevista(dto.getDataFimPrevista());
+		vinculo.setTipoBolsa(dto.getTipoBolsa());
+		vinculo.setFormacao(dto.getFormacao());
+		vinculo.setFormacaoOutro(normalizarFormacaoOutro(dto.getFormacao(), dto.getFormacaoOutro()));
+		vinculo.setCurso(curso);
+		vinculo.setObservacao(normalizarTexto(dto.getObservacao()));
+
+		boolean houveProrrogacao = fimAnterior != null && dto.getDataFimPrevista().isAfter(fimAnterior);
+
+		if (houveProrrogacao) {
+			vinculo.setSituacao(SituacaoEstagio.PRORROGADO);
+		}
+
+		vinculo = vinculoEstagioRepository.save(vinculo);
+
+		if (!Objects.equals(fimAnterior, dto.getDataFimPrevista())) {
+			HistoricoSincronizacaoVinculoEstagio historico = HistoricoSincronizacaoVinculoEstagio.builder()
+					.vinculoEstagio(vinculo)
+					.tipoEvento(houveProrrogacao
+							? TipoEventoSincronizacaoVinculoEstagio.PRORROGACAO
+							: TipoEventoSincronizacaoVinculoEstagio.ATUALIZACAO)
+					.origem(OrigemSincronizacaoVinculoEstagio.DEV)
+					.situacaoAnterior(situacaoAnterior)
+					.situacaoNova(vinculo.getSituacao())
+					.dataFimPrevistaAnterior(fimAnterior)
+					.dataFimPrevistaNova(dto.getDataFimPrevista())
+					.build();
+
+			historicoSincronizacaoRepository.save(historico);
+		}
+
+		return montarResponse(vinculo, participacoes);
+	}
+
+	private void validarPeriodoComParticipacoes(
+			LocalDate dataInicio,
+			LocalDate dataFimPrevista,
+			List<VinculoEstagioAtividade> participacoes) {
+
+		for (VinculoEstagioAtividade participacao : participacoes) {
+			if (participacao.getDataInicioParticipacao().isBefore(dataInicio)) {
+				throw new BusinessRuleException(
+						"A nova data de início é posterior a uma participação já registrada.");
+			}
+
+			if (participacao.getDataInicioParticipacao().isAfter(dataFimPrevista)) {
+				throw new BusinessRuleException(
+						"A nova data final prevista é anterior ao início de uma participação já registrada.");
+			}
+
+			if (participacao.getDataFimParticipacao() != null
+					&& participacao.getDataFimParticipacao().isAfter(dataFimPrevista)) {
+				throw new BusinessRuleException(
+						"A nova data final prevista é anterior ao fim de uma participação já registrada.");
+			}
+		}
 	}
 
 	@Transactional
