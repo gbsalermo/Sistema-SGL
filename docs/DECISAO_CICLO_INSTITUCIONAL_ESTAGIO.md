@@ -4,19 +4,40 @@
 **Status:** decisão arquitetural implementada e validada no bloco 6.4 em 02/10/2026  
 **Branch:** `collab/etapa-6-estagiarios-vinculos`
 
-## 1. Fonte de verdade
+## 1. Fonte de verdade — revisão híbrida de 02/10/2026
 
-O ciclo institucional do Estagiário não é decidido pelo SGL.
+A integração passa a usar **precedência por campo**, e não autoridade absoluta do ambiente institucional sobre toda a entidade.
 
-A fonte autoritativa é o ambiente institucional/corporativo para, no mínimo:
+Dados institucionais básicos continuam tendo o ambiente como fonte prioritária:
 
 - identidade do Usuario;
 - matrícula/CPF ou identificador institucional equivalente;
-- estado institucional ativo/inativo do Usuario;
-- existência e período do vínculo de estágio;
-- situação institucional do vínculo quando disponibilizada pela integração.
+- nome e demais dados pessoais institucionais;
+- estado ativo/inativo do Usuario;
+- ocorrência do vínculo quando recebida da integração;
+- situação institucional quando disponibilizada.
 
-O SGL consome e espelha essas informações e aplica consequências operacionais internas.
+Dados de vínculo que também fazem sentido para operação do SGL podem ser complementados e editados localmente:
+
+- Formação;
+- Curso;
+- Bolsa/modalidade;
+- Orientador;
+- data de início;
+- data final prevista;
+- observação operacional.
+
+Regra de precedência:
+
+```text
+campo não enviado pelo ambiente
+→ preservar valor mantido no SGL
+
+campo enviado pelo ambiente
+→ valor institucional prevalece naquele campo
+```
+
+Projeto, SCI, Atividade, Laboratório, participação, Culturas, treinamento, Pedidos, Resíduos e demais operações laboratoriais continuam pertencendo ao SGL.
 
 Senha é credencial de acesso e não identifica uma nova pessoa nem um novo vínculo.
 
@@ -150,14 +171,22 @@ Até que esse contrato externo esteja disponível, qualquer correspondência por
 ## 9. Fronteira de responsabilidade
 
 ```text
-Ambiente institucional
-├── identidade
+Ambiente institucional — prioridade
+├── identidade e dados pessoais institucionais
 ├── Usuario ativo/inativo
-├── ocorrência do vínculo
-├── período institucional
-└── situação institucional
+├── ocorrência institucional do vínculo
+└── campos de vínculo que forem efetivamente enviados
 
-SGL
+SGL — manutenção local permitida
+├── Formação
+├── Curso
+├── Bolsa/modalidade
+├── Orientador
+├── período do vínculo
+└── observação
+
+SGL — domínio operacional
+├── Projeto / SCI / Atividade / Laboratório
 ├── participações em Atividades
 ├── Culturas
 ├── treinamento de segurança
@@ -165,6 +194,8 @@ SGL
 ├── Resíduos
 └── demais operações laboratoriais
 ```
+
+A sincronização não apaga valor local por ausência de campo. Ela substitui apenas os campos efetivamente recebidos.
 
 ## 10. Bloco 6.4 revisado
 
@@ -183,4 +214,16 @@ SGL
 6.4.4 testes, validação e documentação ✅ concluído
 ```
 
-Correção administrativa manual do ciclo institucional, caso necessária no futuro, será fluxo excepcional e auditável; não faz parte do workflow normal do 6.4.
+### Regra temporal obrigatória — revisão de 02/10/2026
+
+Todo vínculo de estágio/bolsa deve possuir:
+
+```text
+dataInicio          obrigatória
+dataFimPrevista     obrigatória
+dataFimEfetiva      somente quando finalizado
+```
+
+Não é permitido criar novo estágio sem término previsto. Registros legados incompletos devem ser reconciliados; a aplicação não deve gerar novos vínculos com `dataFimPrevista = null`.
+
+A Gestão pode editar dados locais do vínculo enquanto ele não estiver finalizado. Aumentar a data final prevista pelo SGL registra prorrogação local auditável; uma sincronização institucional posterior continua tendo precedência nos campos que enviar. O encerramento definitivo permanece separado dessa edição operacional e não é inferido apenas pela mudança da data prevista.
