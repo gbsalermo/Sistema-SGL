@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,6 +26,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
+import com.sgl.dto.request.ProrrogarBolsaVinculoEstagioRequestDTO;
+import com.sgl.dto.request.NovaBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.SincronizacaoVinculoEstagioRequestDTO;
 import com.sgl.dto.response.HistoricoSincronizacaoVinculoEstagioResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
@@ -238,4 +241,84 @@ class VinculoEstagioControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void deveProrrogarBolsaERetornar200()
+            throws Exception {
+
+        ProrrogarBolsaVinculoEstagioRequestDTO dto =
+                new ProrrogarBolsaVinculoEstagioRequestDTO();
+        dto.setNovaDataFimPrevista(LocalDate.of(2027, 6, 30));
+
+        when(service.prorrogarBolsaLocal(
+                eq(VINCULO_ID),
+                any(ProrrogarBolsaVinculoEstagioRequestDTO.class)))
+                .thenReturn(montarResponse());
+
+        mockMvc.perform(put(
+                        "/api/v1/vinculos-estagio/{vinculoId}/prorrogar-bolsa",
+                        VINCULO_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id")
+                        .value(VINCULO_ID.toString()));
+    }
+
+    @Test
+    void deveRegistrarNovaBolsaERetornar201()
+            throws Exception {
+
+        NovaBolsaVinculoEstagioRequestDTO dto =
+                new NovaBolsaVinculoEstagioRequestDTO();
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setDataInicio(LocalDate.of(2026, 10, 2));
+        dto.setDataFimPrevista(LocalDate.of(2027, 3, 31));
+
+        when(service.registrarNovaBolsaLocal(
+                eq(VINCULO_ID),
+                any(NovaBolsaVinculoEstagioRequestDTO.class)))
+                .thenReturn(montarResponse());
+
+        mockMvc.perform(post(
+                        "/api/v1/vinculos-estagio/{vinculoId}/nova-bolsa",
+                        VINCULO_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id")
+                        .value(VINCULO_ID.toString()));
+    }
+
+    @Test
+    void deveRetornar400AoProrrogarBolsaSemNovaData()
+            throws Exception {
+
+        ProrrogarBolsaVinculoEstagioRequestDTO dto =
+                new ProrrogarBolsaVinculoEstagioRequestDTO();
+
+        mockMvc.perform(put(
+                        "/api/v1/vinculos-estagio/{vinculoId}/prorrogar-bolsa",
+                        VINCULO_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveRetornar400AoRegistrarNovaBolsaSemPeriodo()
+            throws Exception {
+
+        NovaBolsaVinculoEstagioRequestDTO dto =
+                new NovaBolsaVinculoEstagioRequestDTO();
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+
+        mockMvc.perform(post(
+                        "/api/v1/vinculos-estagio/{vinculoId}/nova-bolsa",
+                        VINCULO_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
 }
