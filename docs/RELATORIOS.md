@@ -1,6 +1,6 @@
 # Relatórios — SGL
 
-**Atualizado em:** 03/09/2026  
+**Atualizado em:** 02/10/2026  
 **Estado:** consultas, prévias e exportações dos relatórios do primeiro protótipo estão integradas à `main`.
 
 ## Objetivo
@@ -246,9 +246,9 @@ Qualquer novo relatório deve nascer de necessidade operacional real e contrato 
 
 ---
 
-## Decisões planejadas para a Etapa 7
+## Etapa 7 — escopo atual
 
-Estas decisões **não alteram ainda os relatórios atuais**. Serão implementadas após a estabilização das Etapas 5 e 6.
+As Etapas 5 e 6 estão estabilizadas e validadas. Este é o escopo ativo da Etapa 7; os relatórios existentes continuam válidos até cada subbloco ser implementado e validado.
 
 ### Projetos como relatório próprio
 
@@ -263,7 +263,7 @@ A Central de Relatórios receberá a opção **Projetos**, com visão consolidad
 - recurso externo;
 - quantidade de SCI;
 - quantidade de Atividades;
-- dimensões de vínculos/Estagiários quando a Etapa 6 estiver estabilizada.
+- dimensões de vínculos/Estagiários agora que a Etapa 6 está estabilizada.
 
 O relatório de Projetos não substitui o hub operacional `/projetos`: o hub permanece voltado à operação/cadastro e o relatório à consulta, agregação e exportação.
 
