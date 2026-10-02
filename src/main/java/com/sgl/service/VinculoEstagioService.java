@@ -488,42 +488,24 @@ public class VinculoEstagioService {
 		}
 
 		if (dto.getDataInicio().isAfter(LocalDate.now())) {
-			throw new BusinessRuleException("A troca manual imediata de bolsa não aceita data de início futura.");
+			throw new BusinessRuleException(
+					"A nova bolsa local só pode entrar em vigor hoje ou em uma data passada.");
 		}
 
-		LocalDate fimAtual = dto.getDataInicio().minusDays(1);
+		LocalDate inicioNovaBolsa = dto.getDataInicio();
+		LocalDate fimBolsaAtual = inicioNovaBolsa.minusDays(1);
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		List<VinculoEstagioAtividade> participacoes = participacaoRepository
 				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
 						atual.getPublicId(), unidadeId);
 
-		for (VinculoEstagioAtividade participacao : participacoes) {
-			if (participacao.getDataInicioParticipacao().isAfter(fimAtual)
-					|| (participacao.getDataFimParticipacao() != null
-							&& participacao.getDataFimParticipacao().isAfter(fimAtual))) {
-				throw new BusinessRuleException(
-						"A nova bolsa não pode retroagir sobre participações já registradas no vínculo atual.");
-			}
-		}
-
-		List<VinculoEstagioAtividade> ativas = participacoes.stream()
-				.filter(participacao -> participacao.getDataFimParticipacao() == null)
-				.toList();
-
 		SituacaoEstagio situacaoAnterior = atual.getSituacao();
 		LocalDate fimEfetivoAnterior = atual.getDataFimEfetiva();
 
 		atual.setSituacao(SituacaoEstagio.FINALIZADO);
-		atual.setDataFimEfetiva(fimAtual);
+		atual.setDataFimEfetiva(fimBolsaAtual);
 		vinculoEstagioRepository.save(atual);
-
-		for (VinculoEstagioAtividade participacao : ativas) {
-			participacao.setDataFimParticipacao(fimAtual);
-		}
-		if (!ativas.isEmpty()) {
-			participacaoRepository.saveAll(ativas);
-		}
 
 		historicoSincronizacaoRepository.save(HistoricoSincronizacaoVinculoEstagio.builder()
 				.vinculoEstagio(atual)
@@ -534,13 +516,13 @@ public class VinculoEstagioService {
 				.dataFimPrevistaAnterior(atual.getDataFimPrevista())
 				.dataFimPrevistaNova(atual.getDataFimPrevista())
 				.dataFimEfetivaAnterior(fimEfetivoAnterior)
-				.dataFimEfetivaNova(fimAtual)
+				.dataFimEfetivaNova(fimBolsaAtual)
 				.build());
 
 		VinculoEstagio novo = new VinculoEstagio();
 		novo.setEstagiario(atual.getEstagiario());
 		novo.setOrientador(atual.getOrientador());
-		novo.setDataInicio(dto.getDataInicio());
+		novo.setDataInicio(inicioNovaBolsa);
 		novo.setDataFimPrevista(dto.getDataFimPrevista());
 		novo.setDataFimEfetiva(null);
 		novo.setTipoBolsa(dto.getTipoBolsa());
@@ -561,19 +543,55 @@ public class VinculoEstagioService {
 				.dataFimPrevistaNova(dto.getDataFimPrevista())
 				.build());
 
-		for (VinculoEstagioAtividade anterior : ativas) {
-			var culturas = participacaoCulturaRepository
+		for (VinculoEstagioAtividade participacao : participacoes) {
+
+			LocalDate inicioParticipacao = participacao.getDataInicioParticipacao();
+			LocalDate fimParticipacaoOriginal = participacao.getDataFimParticipacao();
+
+			/*
+			 * Participações que terminaram antes da nova bolsa permanecem integralmente
+			 * no vínculo anterior.
+			 */
+			if (fimParticipacaoOriginal != null && fimParticipacaoOriginal.isBefore(inicioNovaBolsa)) {
+				continue;
+			}
+
+			/*
+			 * Se a participação começou na data da nova bolsa ou depois dela, o registro
+			 * inteiro pertence à nova ocorrência. A associação de Culturas acompanha a
+			 * própria participação, portanto não precisa ser recriada.
+			 */
+			if (!inicioParticipacao.isBefore(inicioNovaBolsa)) {
+				participacao.setVinculoEstagio(novo);
+				participacaoRepository.save(participacao);
+				continue;
+			}
+
+			/*
+			 * Participação que atravessa a troca de bolsa é dividida: o trecho anterior
+			 * permanece no vínculo antigo e o trecho seguinte continua no novo vínculo.
+			 */
+			participacao.setDataFimParticipacao(fimBolsaAtual);
+			participacaoRepository.save(participacao);
+
+			VinculoEstagioAtividade continuacao = new VinculoEstagioAtividade();
+			continuacao.setVinculoEstagio(novo);
+			continuacao.setAtividade(participacao.getAtividade());
+			continuacao.setDataInicioParticipacao(inicioNovaBolsa);
+			continuacao.setDataFimParticipacao(fimParticipacaoOriginal);
+			continuacao.setObservacao(participacao.getObservacao());
+			continuacao = participacaoRepository.save(continuacao);
+
+			List<VinculoEstagioAtividadeCultura> culturas = participacaoCulturaRepository
 					.findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
-							anterior.getPublicId(), unidadeId);
+							participacao.getPublicId(), unidadeId);
 
-			VinculoEstagioAtividadeRequestDTO participacaoDto = new VinculoEstagioAtividadeRequestDTO();
-			participacaoDto.setAtividadeId(anterior.getAtividade().getPublicId());
-			participacaoDto.setDataInicioParticipacao(dto.getDataInicio());
-			participacaoDto.setObservacao(anterior.getObservacao());
-			participacaoDto.setCulturaIds(new java.util.LinkedHashSet<>(
-					culturas.stream().map(item -> item.getCultura().getPublicId()).toList()));
-
-			vinculoEstagioAtividadeService.adicionar(novo.getPublicId(), participacaoDto);
+			for (VinculoEstagioAtividadeCultura associacao : culturas) {
+				VinculoEstagioAtividadeCultura copia = new VinculoEstagioAtividadeCultura();
+				copia.setParticipacao(continuacao);
+				copia.setCultura(associacao.getCultura());
+				participacaoCulturaRepository.save(copia);
+			}
 		}
 
 		List<VinculoEstagioAtividade> novas = participacaoRepository
