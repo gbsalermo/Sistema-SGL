@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,16 +19,21 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
+import com.sgl.dto.request.ProrrogarBolsaVinculoEstagioRequestDTO;
+import com.sgl.dto.request.NovaBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.Atividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
+import com.sgl.model.Cultura;
 import com.sgl.model.Estagiario;
 import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.Laboratorio;
@@ -635,7 +641,7 @@ class VinculoEstagioServiceTest {
         dto.setOrientadorId(ORIENTADOR_ID);
         dto.setDataInicio(LocalDate.of(2026, 2, 1));
         dto.setDataFimPrevista(LocalDate.of(2027, 3, 31));
-        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
         dto.setFormacao(FormacaoEstagiario.MESTRADO);
         dto.setObservacao("ajuste local");
 
@@ -643,7 +649,7 @@ class VinculoEstagioServiceTest {
                 service.atualizarLocal(VINCULO_ID, dto);
 
         assertEquals(SituacaoEstagio.PRORROGADO, resultado.getSituacao());
-        assertEquals(TipoBolsa.BOLSA_CAPES, resultado.getTipoBolsa());
+        assertEquals(TipoBolsa.BOLSA_CNPQ, resultado.getTipoBolsa());
         assertEquals(FormacaoEstagiario.MESTRADO, resultado.getFormacao());
         assertEquals(LocalDate.of(2027, 3, 31), resultado.getDataFimPrevista());
         assertEquals("ajuste local", resultado.getObservacao());
@@ -651,4 +657,371 @@ class VinculoEstagioServiceTest {
         verify(historicoSincronizacaoRepository)
                 .save(any(HistoricoSincronizacaoVinculoEstagio.class));
     }
+
+    @Test
+    void deveBloquearTrocaDeBolsaNoEditarVinculo() {
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setId(50L);
+        vinculo.setPublicId(VINCULO_ID);
+        vinculo.setEstagiario(estagiario);
+        vinculo.setOrientador(orientador);
+        vinculo.setDataInicio(LocalDate.of(2026, 2, 1));
+        vinculo.setDataFimPrevista(LocalDate.of(2026, 12, 31));
+        vinculo.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        vinculo.setFormacao(FormacaoEstagiario.GRADUACAO);
+        vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+        when(vinculoEstagioRepository
+                .findByPublicIdAndEstagiarioUnidadePublicId(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(vinculo));
+
+        AtualizarVinculoEstagioRequestDTO dto =
+                new AtualizarVinculoEstagioRequestDTO();
+        dto.setOrientadorId(ORIENTADOR_ID);
+        dto.setDataInicio(LocalDate.of(2026, 2, 1));
+        dto.setDataFimPrevista(LocalDate.of(2026, 12, 31));
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setFormacao(FormacaoEstagiario.GRADUACAO);
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.atualizarLocal(VINCULO_ID, dto));
+
+        assertEquals(
+                "O tipo de bolsa não pode ser alterado em Editar vínculo. Use o fluxo de nova bolsa.",
+                ex.getMessage());
+
+        verify(vinculoEstagioRepository, never())
+                .save(any(VinculoEstagio.class));
+    }
+
+    @Test
+    void deveProrrogarBolsaAtualERegistrarHistorico() {
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setId(51L);
+        vinculo.setPublicId(VINCULO_ID);
+        vinculo.setEstagiario(estagiario);
+        vinculo.setOrientador(orientador);
+        vinculo.setDataInicio(LocalDate.of(2026, 2, 1));
+        vinculo.setDataFimPrevista(LocalDate.of(2026, 12, 31));
+        vinculo.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        vinculo.setFormacao(FormacaoEstagiario.GRADUACAO);
+        vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+        when(vinculoEstagioRepository
+                .findByPublicIdAndEstagiarioUnidadePublicId(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(vinculo));
+        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(historicoSincronizacaoRepository
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(participacaoRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(List.of());
+
+        ProrrogarBolsaVinculoEstagioRequestDTO dto =
+                new ProrrogarBolsaVinculoEstagioRequestDTO();
+        dto.setNovaDataFimPrevista(LocalDate.of(2027, 3, 31));
+
+        VinculoEstagioResponseDTO resultado =
+                service.prorrogarBolsaLocal(VINCULO_ID, dto);
+
+        assertEquals(SituacaoEstagio.PRORROGADO, resultado.getSituacao());
+        assertEquals(LocalDate.of(2027, 3, 31),
+                resultado.getDataFimPrevista());
+
+        ArgumentCaptor<HistoricoSincronizacaoVinculoEstagio> captor =
+                ArgumentCaptor.forClass(HistoricoSincronizacaoVinculoEstagio.class);
+
+        verify(historicoSincronizacaoRepository).save(captor.capture());
+
+        assertEquals(TipoEventoSincronizacaoVinculoEstagio.PRORROGACAO,
+                captor.getValue().getTipoEvento());
+        assertEquals(OrigemSincronizacaoVinculoEstagio.DEV,
+                captor.getValue().getOrigem());
+        assertEquals(LocalDate.of(2026, 12, 31),
+                captor.getValue().getDataFimPrevistaAnterior());
+        assertEquals(LocalDate.of(2027, 3, 31),
+                captor.getValue().getDataFimPrevistaNova());
+    }
+
+    @Test
+    void deveBloquearProrrogacaoSemAumentarDataFinal() {
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setId(52L);
+        vinculo.setPublicId(VINCULO_ID);
+        vinculo.setEstagiario(estagiario);
+        vinculo.setDataInicio(LocalDate.of(2026, 2, 1));
+        vinculo.setDataFimPrevista(LocalDate.of(2026, 12, 31));
+        vinculo.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+        when(vinculoEstagioRepository
+                .findByPublicIdAndEstagiarioUnidadePublicId(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(vinculo));
+
+        ProrrogarBolsaVinculoEstagioRequestDTO dto =
+                new ProrrogarBolsaVinculoEstagioRequestDTO();
+        dto.setNovaDataFimPrevista(LocalDate.of(2026, 12, 31));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.prorrogarBolsaLocal(VINCULO_ID, dto));
+
+        assertEquals(
+                "A nova data final prevista deve ser posterior ao término atual da bolsa.",
+                ex.getMessage());
+
+        verify(vinculoEstagioRepository, never())
+                .save(any(VinculoEstagio.class));
+    }
+
+    @Test
+    void deveRegistrarNovaBolsaNaDataAtualMovendoParticipacaoDoPontoDeCorte() {
+        LocalDate hoje = LocalDate.now();
+        UUID novoVinculoId =
+                UUID.fromString("20000000-0000-0000-0000-000000000050");
+
+        VinculoEstagio atual = new VinculoEstagio();
+        atual.setId(53L);
+        atual.setPublicId(VINCULO_ID);
+        atual.setEstagiario(estagiario);
+        atual.setOrientador(orientador);
+        atual.setDataInicio(hoje.minusMonths(6));
+        atual.setDataFimPrevista(hoje.plusMonths(2));
+        atual.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        atual.setFormacao(FormacaoEstagiario.GRADUACAO);
+        atual.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+        atual.setTreinamentoSegurancaConcluido(true);
+
+        VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+        participacao.setId(54L);
+        participacao.setPublicId(PARTICIPACAO_ID);
+        participacao.setVinculoEstagio(atual);
+        participacao.setAtividade(atividade);
+        participacao.setDataInicioParticipacao(hoje);
+
+        when(vinculoEstagioRepository
+                .findByPublicIdAndEstagiarioUnidadePublicId(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(atual));
+
+        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+                .thenAnswer(invocation -> {
+                    VinculoEstagio salvo = invocation.getArgument(0);
+                    if (salvo.getPublicId() == null) {
+                        salvo.setId(55L);
+                        salvo.setPublicId(novoVinculoId);
+                    }
+                    return salvo;
+                });
+
+        when(historicoSincronizacaoRepository
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(participacaoRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(List.of(participacao));
+
+        when(participacaoRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        novoVinculoId, UNIDADE_ID))
+                .thenReturn(List.of(participacao));
+
+        when(participacaoRepository.save(any(VinculoEstagioAtividade.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(participacaoCulturaRepository
+                .findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+                        PARTICIPACAO_ID, UNIDADE_ID))
+                .thenReturn(List.of());
+
+        NovaBolsaVinculoEstagioRequestDTO dto =
+                new NovaBolsaVinculoEstagioRequestDTO();
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setDataInicio(hoje);
+        dto.setDataFimPrevista(hoje.plusMonths(8));
+
+        VinculoEstagioResponseDTO resultado =
+                service.registrarNovaBolsaLocal(VINCULO_ID, dto);
+
+        assertEquals(novoVinculoId, resultado.getId());
+        assertEquals(TipoBolsa.BOLSA_CAPES, resultado.getTipoBolsa());
+        assertEquals(SituacaoEstagio.FINALIZADO, atual.getSituacao());
+        assertEquals(hoje.minusDays(1), atual.getDataFimEfetiva());
+        assertEquals(novoVinculoId,
+                participacao.getVinculoEstagio().getPublicId());
+        assertEquals(1, resultado.getParticipacoesAtividade().size());
+
+        verify(historicoSincronizacaoRepository, times(2))
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class));
+    }
+
+    @Test
+    void deveDividirParticipacaoQueAtravesseTrocaDeBolsaEPreservarCultura() {
+        LocalDate hoje = LocalDate.now();
+        UUID novoVinculoId =
+                UUID.fromString("20000000-0000-0000-0000-000000000060");
+        UUID culturaId =
+                UUID.fromString("20000000-0000-0000-0000-000000000061");
+
+        VinculoEstagio atual = new VinculoEstagio();
+        atual.setId(60L);
+        atual.setPublicId(VINCULO_ID);
+        atual.setEstagiario(estagiario);
+        atual.setOrientador(orientador);
+        atual.setDataInicio(hoje.minusMonths(8));
+        atual.setDataFimPrevista(hoje.plusMonths(1));
+        atual.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        atual.setFormacao(FormacaoEstagiario.GRADUACAO);
+        atual.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+        VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+        participacao.setId(61L);
+        participacao.setPublicId(PARTICIPACAO_ID);
+        participacao.setVinculoEstagio(atual);
+        participacao.setAtividade(atividade);
+        participacao.setDataInicioParticipacao(hoje.minusMonths(2));
+        participacao.setObservacao("participação contínua");
+
+        Cultura cultura = Cultura.builder()
+                .id(62L)
+                .publicId(culturaId)
+                .unidade(unidade)
+                .nome("Mandioca")
+                .ativo(true)
+                .build();
+
+        VinculoEstagioAtividadeCultura associacao =
+                new VinculoEstagioAtividadeCultura();
+        associacao.setId(63L);
+        associacao.setPublicId(UUID.randomUUID());
+        associacao.setParticipacao(participacao);
+        associacao.setCultura(cultura);
+
+        when(vinculoEstagioRepository
+                .findByPublicIdAndEstagiarioUnidadePublicId(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(atual));
+
+        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+                .thenAnswer(invocation -> {
+                    VinculoEstagio salvo = invocation.getArgument(0);
+                    if (salvo.getPublicId() == null) {
+                        salvo.setId(64L);
+                        salvo.setPublicId(novoVinculoId);
+                    }
+                    return salvo;
+                });
+
+        when(historicoSincronizacaoRepository
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(participacaoRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(List.of(participacao));
+
+        when(participacaoRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        novoVinculoId, UNIDADE_ID))
+                .thenReturn(List.of());
+
+        when(participacaoRepository.save(any(VinculoEstagioAtividade.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(participacaoCulturaRepository
+                .findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+                        PARTICIPACAO_ID, UNIDADE_ID))
+                .thenReturn(List.of(associacao));
+
+        when(participacaoCulturaRepository
+                .save(any(VinculoEstagioAtividadeCultura.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        NovaBolsaVinculoEstagioRequestDTO dto =
+                new NovaBolsaVinculoEstagioRequestDTO();
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setDataInicio(hoje);
+        dto.setDataFimPrevista(hoje.plusMonths(10));
+
+        service.registrarNovaBolsaLocal(VINCULO_ID, dto);
+
+        assertEquals(hoje.minusDays(1),
+                participacao.getDataFimParticipacao());
+
+        ArgumentCaptor<VinculoEstagioAtividade> participacaoCaptor =
+                ArgumentCaptor.forClass(VinculoEstagioAtividade.class);
+
+        verify(participacaoRepository, times(2))
+                .save(participacaoCaptor.capture());
+
+        VinculoEstagioAtividade continuacao =
+                participacaoCaptor.getAllValues().stream()
+                        .filter(item -> item != participacao)
+                        .findFirst()
+                        .orElseThrow();
+
+        assertEquals(novoVinculoId,
+                continuacao.getVinculoEstagio().getPublicId());
+        assertEquals(hoje, continuacao.getDataInicioParticipacao());
+        assertEquals("participação contínua",
+                continuacao.getObservacao());
+
+        ArgumentCaptor<VinculoEstagioAtividadeCultura> culturaCaptor =
+                ArgumentCaptor.forClass(VinculoEstagioAtividadeCultura.class);
+
+        verify(participacaoCulturaRepository)
+                .save(culturaCaptor.capture());
+
+        assertEquals(culturaId,
+                culturaCaptor.getValue().getCultura().getPublicId());
+        assertEquals(continuacao,
+                culturaCaptor.getValue().getParticipacao());
+    }
+
+    @Test
+    void deveBloquearNovaBolsaLocalComInicioFuturo() {
+        LocalDate hoje = LocalDate.now();
+
+        VinculoEstagio atual = new VinculoEstagio();
+        atual.setId(70L);
+        atual.setPublicId(VINCULO_ID);
+        atual.setEstagiario(estagiario);
+        atual.setDataInicio(hoje.minusMonths(3));
+        atual.setDataFimPrevista(hoje.plusMonths(4));
+        atual.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        atual.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+        when(vinculoEstagioRepository
+                .findByPublicIdAndEstagiarioUnidadePublicId(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(atual));
+
+        NovaBolsaVinculoEstagioRequestDTO dto =
+                new NovaBolsaVinculoEstagioRequestDTO();
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setDataInicio(hoje.plusDays(1));
+        dto.setDataFimPrevista(hoje.plusMonths(6));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.registrarNovaBolsaLocal(VINCULO_ID, dto));
+
+        assertEquals(
+                "A nova bolsa local só pode entrar em vigor hoje ou em uma data passada.",
+                ex.getMessage());
+
+        verify(vinculoEstagioRepository, never())
+                .save(any(VinculoEstagio.class));
+    }
+
 }
