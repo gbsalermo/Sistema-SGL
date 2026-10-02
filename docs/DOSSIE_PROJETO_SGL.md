@@ -612,8 +612,8 @@ Estado atual da Etapa 6:
 6.4.1 contrato + histórico institucional             ✅ implementado
 6.4.2 sincronização do vínculo existente             🔧 atual
   6.4.2A DTOs/contrato                               ✅ implementado
-  6.4.2B regra transacional                          🔧 atual
-  6.4.2C endpoint + testes                           ⏳
+  6.4.2B regra transacional                          ✅ implementado
+  6.4.2C endpoint + testes                           🔧 atual
 6.4.3 nova bolsa / novo vínculo                      ⏳
 6.4.4 testes/validação/documentação                  ⏳
 6.5 frontend integrado                              ⏳
