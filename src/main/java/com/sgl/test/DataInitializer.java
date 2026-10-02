@@ -125,6 +125,7 @@ public class DataInitializer implements CommandLineRunner {
         maria.setAtivo(true);
         maria.setDataInicioEstagio(LocalDate.now().minusMonths(2));
         maria.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
+        maria.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
         maria.setObservacao("Cadastro inicial de estágio para testes");
         maria = estagiarioRepository.save(maria);
 
@@ -798,6 +799,42 @@ public class DataInitializer implements CommandLineRunner {
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
 
+        Projeto projetoHistorico = garantirProjetoEtapa5(
+                laboratorioOrganica,
+                "96.96.96.005.01.00",
+                "Métodos Analíticos Históricos DEV",
+                "Contexto histórico DEV para validar participações e vínculos já encerrados.",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(18),
+                hoje.minusMonths(6),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO,
+                false,
+                null
+        );
+
+        Sci sciHistorico = garantirSciEtapa5(
+                projetoHistorico,
+                "96.96.96.005.01.01",
+                "Padronização analítica histórica",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(17),
+                hoje.minusMonths(7),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+
+        Atividade atividadeHistorica = garantirAtividadeEtapa5(
+                sciHistorico,
+                "96.96.96.005.01.01.001",
+                "Validação histórica de métodos",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(16),
+                hoje.minusMonths(8),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+
         Estagiario joao = garantirEstagiarioEtapa6(
                 "João Silva",
                 "joao.silva.estagio@iq.sgl.local",
@@ -813,7 +850,7 @@ public class DataInitializer implements CommandLineRunner {
                 joao,
                 orientadoraHelena,
                 "IQ-DEV-JOAO-2025",
-                hoje.minusYears(1).minusMonths(6),
+                hoje.minusMonths(18),
                 hoje.minusMonths(7),
                 hoje.minusMonths(7),
                 TipoBolsa.BOLSA_CNPQ,
@@ -841,8 +878,8 @@ public class DataInitializer implements CommandLineRunner {
 
         VinculoEstagioAtividade joaoHistorico = garantirParticipacaoEtapa6(
                 joaoAnterior,
-                atividadeEletrodos,
-                hoje.minusYears(1).minusMonths(5),
+                atividadeHistorica,
+                hoje.minusMonths(15),
                 hoje.minusMonths(8),
                 "Participação histórica DEV."
         );
@@ -851,7 +888,7 @@ public class DataInitializer implements CommandLineRunner {
         VinculoEstagioAtividade joaoAtividade1 = garantirParticipacaoEtapa6(
                 joaoAtual,
                 atividadeCurvas,
-                hoje.minusMonths(5),
+                hoje.minusMonths(2),
                 null,
                 "Participação ativa em biossensores."
         );
@@ -896,7 +933,7 @@ public class DataInitializer implements CommandLineRunner {
         VinculoEstagioAtividade anaParticipacao = garantirParticipacaoEtapa6(
                 anaVinculo,
                 atividadeEletrodos,
-                hoje.minusMonths(8),
+                hoje.minusMonths(3),
                 null,
                 "Participação ativa da mestranda."
         );
@@ -934,7 +971,7 @@ public class DataInitializer implements CommandLineRunner {
                 unidade,
                 laboratorioOrganica,
                 orientadoraHelena,
-                hoje.minusYears(2),
+                hoje.minusMonths(18),
                 TipoBolsa.BOLSA_CNPQ,
                 "Massa DEV do 6.5: vínculo encerrado com histórico preservado."
         );
@@ -942,10 +979,10 @@ public class DataInitializer implements CommandLineRunner {
         VinculoEstagio pedroVinculo = garantirVinculoEtapa6(
                 pedro,
                 orientadoraHelena,
-                "IQ-DEV-PEDRO-2024",
-                hoje.minusYears(2),
-                hoje.minusMonths(5),
-                hoje.minusMonths(5),
+                "IQ-DEV-PEDRO-2025",
+                hoje.minusMonths(18),
+                hoje.minusMonths(7),
+                hoje.minusMonths(7),
                 TipoBolsa.BOLSA_CNPQ,
                 FormacaoEstagiario.GRADUACAO,
                 quimica,
@@ -956,9 +993,9 @@ public class DataInitializer implements CommandLineRunner {
 
         VinculoEstagioAtividade pedroParticipacao = garantirParticipacaoEtapa6(
                 pedroVinculo,
-                atividadeCurvas,
-                hoje.minusYears(1).minusMonths(10),
-                hoje.minusMonths(5),
+                atividadeHistorica,
+                hoje.minusMonths(15),
+                hoje.minusMonths(8),
                 "Participação encerrada junto do vínculo."
         );
         garantirCulturaParticipacaoEtapa6(pedroParticipacao, soja);
