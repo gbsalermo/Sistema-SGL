@@ -19,6 +19,7 @@ import com.sgl.model.Cultura;
 import com.sgl.model.Curso;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
+import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Lote;
@@ -34,12 +35,14 @@ import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.NivelRisco;
+import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
@@ -49,6 +52,7 @@ import com.sgl.repository.CulturaRepository;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
+import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.LocalArmazenamentoResiduoRepository;
@@ -80,6 +84,7 @@ public class DataInitializer implements CommandLineRunner {
     private final SciRepository sciRepository;
     private final AtividadeRepository atividadeRepository;
     private final EstagiarioRepository estagiarioRepository;
+    private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
     private final VinculoEstagioRepository vinculoEstagioRepository;
     private final VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
     private final VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
@@ -930,6 +935,13 @@ public class DataInitializer implements CommandLineRunner {
                 "Vínculo prorrogado para validar status e indicador de até 30 dias."
         );
 
+        garantirProrrogacaoVinculoEtapa6(
+                anaVinculo,
+                "DEV-IQ-PRORROGACAO-ANA-2026",
+                hoje.minusDays(10),
+                hoje.plusDays(20)
+        );
+
         VinculoEstagioAtividade anaParticipacao = garantirParticipacaoEtapa6(
                 anaVinculo,
                 atividadeEletrodos,
@@ -964,6 +976,41 @@ public class DataInitializer implements CommandLineRunner {
                 SituacaoEstagio.EM_ANDAMENTO,
                 "Vínculo institucional válido, ainda sem contexto operacional."
         );
+
+        Estagiario camila = garantirEstagiarioEtapa6(
+                "Camila Rocha",
+                "camila.rocha.estagio@iq.sgl.local",
+                unidade,
+                laboratorioOrganica,
+                orientadoraHelena,
+                hoje.minusMonths(14),
+                TipoBolsa.BOLSA_INSTITUCIONAL,
+                "Massa DEV do 6.5: vínculo ainda aberto, mas todas as participações já foram encerradas."
+        );
+
+        VinculoEstagio camilaVinculo = garantirVinculoEtapa6(
+                camila,
+                orientadoraHelena,
+                "IQ-DEV-CAMILA-2025",
+                hoje.minusMonths(14),
+                hoje.plusMonths(3),
+                null,
+                TipoBolsa.BOLSA_INSTITUCIONAL,
+                FormacaoEstagiario.GRADUACAO,
+                quimica,
+                true,
+                SituacaoEstagio.EM_ANDAMENTO,
+                "Vínculo permanece institucionalmente aberto, embora não existam Atividades ativas."
+        );
+
+        VinculoEstagioAtividade camilaParticipacao = garantirParticipacaoEtapa6(
+                camilaVinculo,
+                atividadeHistorica,
+                hoje.minusMonths(13),
+                hoje.minusMonths(8),
+                "Última participação encerrada; vínculo não finalizado."
+        );
+        garantirCulturaParticipacaoEtapa6(camilaParticipacao, citros);
 
         Estagiario pedro = garantirEstagiarioEtapa6(
                 "Pedro Lima",
@@ -1151,6 +1198,34 @@ public class DataInitializer implements CommandLineRunner {
                     participacao.setObservacao(observacao);
                     return vinculoEstagioAtividadeRepository.save(participacao);
                 });
+    }
+
+    private void garantirProrrogacaoVinculoEtapa6(
+            VinculoEstagio vinculo,
+            String referenciaEvento,
+            LocalDate dataFimAnterior,
+            LocalDate dataFimNova) {
+
+        if (historicoSincronizacaoVinculoEstagioRepository
+                .existsByOrigemAndReferenciaEvento(
+                        OrigemSincronizacaoVinculoEstagio.DEV,
+                        referenciaEvento)) {
+            return;
+        }
+
+        HistoricoSincronizacaoVinculoEstagio historico =
+                HistoricoSincronizacaoVinculoEstagio.builder()
+                        .vinculoEstagio(vinculo)
+                        .tipoEvento(TipoEventoSincronizacaoVinculoEstagio.PRORROGACAO)
+                        .origem(OrigemSincronizacaoVinculoEstagio.DEV)
+                        .referenciaEvento(referenciaEvento)
+                        .situacaoAnterior(SituacaoEstagio.EM_ANDAMENTO)
+                        .situacaoNova(SituacaoEstagio.PRORROGADO)
+                        .dataFimPrevistaAnterior(dataFimAnterior)
+                        .dataFimPrevistaNova(dataFimNova)
+                        .build();
+
+        historicoSincronizacaoVinculoEstagioRepository.save(historico);
     }
 
     private void garantirCulturaParticipacaoEtapa6(
