@@ -35,4 +35,8 @@ public class SincronizacaoVinculoEstagioRequestDTO {
 
 	@Schema(description = "Data e hora do evento na fonte institucional, quando disponível.")
 	private LocalDateTime dataHoraOrigem;
+
+	@Size(max = 120)
+	@Schema(description = "Referência do vínculo/bolsa na fonte institucional, quando disponível.")
+	private String referenciaInstitucional;
 }
