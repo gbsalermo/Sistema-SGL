@@ -23,6 +23,7 @@ public class NovoVinculoInstitucionalRequestDTO {
     @NotNull
     private LocalDate dataInicio;
 
+    @NotNull(message = "Data final prevista é obrigatória")
     private LocalDate dataFimPrevista;
 
     @NotNull
