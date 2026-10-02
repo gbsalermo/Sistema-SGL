@@ -57,6 +57,8 @@ public class SincronizacaoVinculoEstagioService {
 		VinculoEstagio vinculo = vinculoEstagioRepository.buscarPorPublicIdETenantComBloqueio(vinculoId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vínculo de estágio", vinculoId));
 
+		validarReferenciaInstitucional(vinculo, referenciaInstitucional);
+
 		Optional<HistoricoSincronizacaoVinculoEstagio> eventoJaProcessado = buscarEventoJaProcessado(dto,
 				referenciaEvento);
 
@@ -74,8 +76,6 @@ public class SincronizacaoVinculoEstagioService {
 
 			return new HistoricoSincronizacaoVinculoEstagioResponseDTO(historico);
 		}
-
-		validarReferenciaInstitucional(vinculo, referenciaInstitucional);
 
 		List<VinculoEstagioAtividade> participacoes = participacaoRepository
 				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
