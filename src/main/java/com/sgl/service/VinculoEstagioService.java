@@ -532,7 +532,7 @@ public class VinculoEstagioService {
 		novo.setTreinamentoSegurancaConcluido(atual.getTreinamentoSegurancaConcluido());
 		novo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
 		novo.setObservacao(atual.getObservacao());
-		novo.setReferenciaInstitucional(null);
+		novo.setReferenciaInstitucional(normalizarTexto(dto.getEspecificacaoBolsa()));
 		novo = vinculoEstagioRepository.save(novo);
 
 		historicoSincronizacaoRepository.save(HistoricoSincronizacaoVinculoEstagio.builder()
