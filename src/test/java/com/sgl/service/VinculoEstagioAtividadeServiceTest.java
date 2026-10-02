@@ -393,4 +393,130 @@ class VinculoEstagioAtividadeServiceTest {
                 "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.",
                 ex.getMessage());
     }
+
+    @Test
+    void deveAtualizarParticipacaoAtivaCorrigindoAtividadeEObservacao() {
+        UUID novaAtividadeId =
+                UUID.fromString("10000000-0000-0000-0000-000000000030");
+
+        Atividade novaAtividade = Atividade.builder()
+                .id(30L)
+                .publicId(novaAtividadeId)
+                .sci(sci)
+                .codigoSeg("ATV-CORRIGIDA")
+                .nome("Atividade Corrigida")
+                .dataInicio(LocalDate.of(2026, 1, 1))
+                .dataFim(LocalDate.of(2026, 12, 31))
+                .ativo(true)
+                .build();
+
+        when(participacaoRepository
+                .findByPublicIdAndVinculoEstagioEstagiarioUnidadePublicId(
+                        PARTICIPACAO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(participacao));
+
+        when(atividadeRepository
+                .findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                        novaAtividadeId, UNIDADE_ID))
+                .thenReturn(Optional.of(novaAtividade));
+
+        when(participacaoRepository
+                .existsByVinculoEstagioIdAndAtividadeIdAndDataFimParticipacaoIsNull(
+                        vinculo.getId(), novaAtividade.getId()))
+                .thenReturn(false);
+
+        when(participacaoRepository.save(any(VinculoEstagioAtividade.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(participacaoCulturaRepository
+                .findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+                        PARTICIPACAO_ID, UNIDADE_ID))
+                .thenReturn(List.of());
+
+        VinculoEstagioAtividadeRequestDTO dto =
+                new VinculoEstagioAtividadeRequestDTO();
+        dto.setAtividadeId(novaAtividadeId);
+        dto.setDataInicioParticipacao(LocalDate.of(2026, 4, 1));
+        dto.setObservacao("  atividade corrigida pelo gestor  ");
+        dto.setCulturaIds(Set.of());
+
+        VinculoEstagioAtividadeResponseDTO resultado =
+                service.atualizar(PARTICIPACAO_ID, dto);
+
+        assertEquals(novaAtividadeId, resultado.getAtividadeId());
+        assertEquals(LocalDate.of(2026, 4, 1),
+                resultado.getDataInicioParticipacao());
+        assertEquals("atividade corrigida pelo gestor",
+                resultado.getObservacao());
+        assertTrue(resultado.getAtiva());
+    }
+
+    @Test
+    void deveBloquearEdicaoDeParticipacaoEncerrada() {
+        participacao.setDataFimParticipacao(LocalDate.of(2026, 6, 30));
+
+        when(participacaoRepository
+                .findByPublicIdAndVinculoEstagioEstagiarioUnidadePublicId(
+                        PARTICIPACAO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(participacao));
+
+        VinculoEstagioAtividadeRequestDTO dto =
+                new VinculoEstagioAtividadeRequestDTO();
+        dto.setAtividadeId(ATIVIDADE_ID);
+        dto.setDataInicioParticipacao(LocalDate.of(2026, 3, 1));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.atualizar(PARTICIPACAO_ID, dto));
+
+        assertEquals(
+                "Não é possível editar uma participação em Atividade já encerrada.",
+                ex.getMessage());
+    }
+
+    @Test
+    void deveUsarFimDoProjetoComoLimiteQuandoAtividadeNaoTemDataFinal() {
+        atividade.setDataFim(null);
+        projeto.setDataFim(LocalDate.of(2026, 6, 30));
+
+        mockarVinculo();
+        mockarAtividade();
+
+        VinculoEstagioAtividadeRequestDTO dto =
+                new VinculoEstagioAtividadeRequestDTO();
+        dto.setAtividadeId(ATIVIDADE_ID);
+        dto.setDataInicioParticipacao(LocalDate.of(2026, 7, 1));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.adicionar(VINCULO_ID, dto));
+
+        assertEquals(
+                "A participação não pode começar após o fim da Atividade/Projeto.",
+                ex.getMessage());
+    }
+
+    @Test
+    void deveExporDatasDaAtividadeEDoProjetoNaResposta() {
+        atividade.setDataFim(LocalDate.of(2026, 9, 30));
+        projeto.setDataFim(LocalDate.of(2026, 12, 31));
+
+        mockarVinculo();
+
+        when(participacaoRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        VINCULO_ID, UNIDADE_ID))
+                .thenReturn(List.of(participacao));
+
+        List<VinculoEstagioAtividadeResponseDTO> resultado =
+                service.listarPorVinculo(VINCULO_ID);
+
+        assertEquals(LocalDate.of(2026, 1, 1),
+                resultado.get(0).getAtividadeDataInicio());
+        assertEquals(LocalDate.of(2026, 9, 30),
+                resultado.get(0).getAtividadeDataFim());
+        assertEquals(LocalDate.of(2026, 12, 31),
+                resultado.get(0).getProjetoDataFim());
+    }
+
 }
