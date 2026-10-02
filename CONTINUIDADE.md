@@ -1012,3 +1012,14 @@ O encerramento continua sendo feito pelo endpoint histórico `PUT /participacoes
 O catálogo `Curso` já existente passou a ser consumido pelo frontend também para a opção “Outro / adicionar novo curso”; portanto não houve alteração de schema nem nova migration.
 
 A validação formal de build/suíte permanece para o 6.6.
+
+### Refinamento 6.5 — atividade e bolsa — 02/10/2026
+
+- `Editar vínculo` não troca mais o tipo de bolsa; a bolsa aparece somente como leitura nesse formulário.
+- novo fallback local `POST /api/v1/vinculos-estagio/{vinculoId}/nova-bolsa`: finaliza a ocorrência atual, cria nova ocorrência para o mesmo Estagiário e preserva o histórico; a integração institucional continua prioritária.
+- a troca local preserva Formação, Curso, Orientador, treinamento e transfere as participações que estavam ativas para o novo vínculo, encerrando-as no vínculo anterior.
+- Participações passam a expor `atividadeDataInicio`, `atividadeDataFim` e `projetoDataFim`.
+- quando a Atividade não possui `dataFim`, o prazo do Projeto é usado como limite operacional/visual.
+- a validação de Atividade foi reforçada para impedir data final posterior à data final do Projeto.
+- o encerramento manual da participação continua histórico e mantém a regra de não encerrar a última participação ativa enquanto o vínculo estiver em andamento.
+- nenhuma migration nova foi necessária.
