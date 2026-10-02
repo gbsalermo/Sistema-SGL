@@ -35,7 +35,8 @@ public class EstagiarioRequestDTO implements Serializable {
 	@NotNull(message = "Data de início do estágio é obrigatória")
 	private LocalDate dataInicioEstagio;
 
-	@Schema(description = "Data de encerramento do estágio, quando definida.", example = "2027-01-31")
+	@Schema(description = "Data final prevista do estágio.", example = "2027-01-31", requiredMode = Schema.RequiredMode.REQUIRED)
+	@NotNull(message = "Data final prevista do estágio é obrigatória")
 	private LocalDate dataFimEstagio;
 
 	@Schema(description = "Tipo de vínculo do estágio. O nome técnico do campo permanece tipoBolsa por compatibilidade.", example = "CONTRATUAL", requiredMode = Schema.RequiredMode.REQUIRED)
