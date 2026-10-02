@@ -13,12 +13,18 @@ import com.sgl.dto.request.SincronizacaoVinculoEstagioRequestDTO;
 import com.sgl.dto.response.HistoricoSincronizacaoVinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.Curso;
 import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
+import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.enums.FormacaoEstagiario;
+import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
+import com.sgl.repository.CursoRepository;
 import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
+import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
@@ -39,6 +45,10 @@ public class SincronizacaoVinculoEstagioService {
 	private final VinculoEstagioAtividadeRepository participacaoRepository;
 
 	private final HistoricoSincronizacaoVinculoEstagioRepository historicoRepository;
+
+	private final CursoRepository cursoRepository;
+
+	private final UsuarioRepository usuarioRepository;
 
 	@Transactional
 	public HistoricoSincronizacaoVinculoEstagioResponseDTO sincronizar(UUID vinculoId,
@@ -72,7 +82,7 @@ public class SincronizacaoVinculoEstagioService {
 						"A referência do evento já foi utilizada " + "para outro vínculo de estágio.");
 			}
 
-			validarRepeticaoIdempotente(historico, dto);
+			validarRepeticaoIdempotente(historico, dto, vinculo);
 
 			return new HistoricoSincronizacaoVinculoEstagioResponseDTO(historico);
 		}
@@ -81,9 +91,11 @@ public class SincronizacaoVinculoEstagioService {
 				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
 						vinculoId, unidadeId);
 
+		validarCamposOpcionaisInstitucionais(vinculo, dto, unidadeId);
+
 		validarEstadoRecebido(vinculo, dto);
 
-		validarCoerenciaComParticipacoes(participacoes, dto);
+		validarCoerenciaComParticipacoes(vinculo, participacoes, dto);
 
 		TipoEventoSincronizacaoVinculoEstagio tipoEvento = classificarEvento(vinculo, dto);
 
@@ -165,7 +177,7 @@ public class SincronizacaoVinculoEstagioService {
 
 	private void validarEstadoRecebido(VinculoEstagio vinculo, SincronizacaoVinculoEstagioRequestDTO dto) {
 
-		LocalDate dataInicio = vinculo.getDataInicio();
+		LocalDate dataInicio = dto.getDataInicio() != null ? dto.getDataInicio() : vinculo.getDataInicio();
 
 		LocalDate fimPrevista = dto.getDataFimPrevista();
 
@@ -177,7 +189,7 @@ public class SincronizacaoVinculoEstagioService {
 
 		if (dto.getSituacao() == SituacaoEstagio.FINALIZADO) {
 
-			validarFinalizacao(vinculo, dto);
+			validarFinalizacao(vinculo, dto, dataInicio);
 
 			return;
 		}
@@ -194,7 +206,10 @@ public class SincronizacaoVinculoEstagioService {
 		}
 	}
 
-	private void validarFinalizacao(VinculoEstagio vinculo, SincronizacaoVinculoEstagioRequestDTO dto) {
+	private void validarFinalizacao(
+			VinculoEstagio vinculo,
+			SincronizacaoVinculoEstagioRequestDTO dto,
+			LocalDate dataInicioRecebida) {
 
 		LocalDate fimEfetiva = dto.getDataFimEfetiva();
 
@@ -203,7 +218,7 @@ public class SincronizacaoVinculoEstagioService {
 			throw new BusinessRuleException("A data final efetiva é obrigatória " + "para um vínculo finalizado.");
 		}
 
-		if (fimEfetiva.isBefore(vinculo.getDataInicio())) {
+		if (fimEfetiva.isBefore(dataInicioRecebida)) {
 
 			throw new BusinessRuleException("A data final efetiva não pode ser " + "anterior ao início do vínculo.");
 		}
@@ -227,10 +242,21 @@ public class SincronizacaoVinculoEstagioService {
 		}
 	}
 
-	private void validarCoerenciaComParticipacoes(List<VinculoEstagioAtividade> participacoes,
+	private void validarCoerenciaComParticipacoes(
+			VinculoEstagio vinculo,
+			List<VinculoEstagioAtividade> participacoes,
 			SincronizacaoVinculoEstagioRequestDTO dto) {
 
+		LocalDate inicioRecebido = dto.getDataInicio() != null
+				? dto.getDataInicio()
+				: vinculo.getDataInicio();
+
 		for (VinculoEstagioAtividade participacao : participacoes) {
+
+			if (participacao.getDataInicioParticipacao().isBefore(inicioRecebido)) {
+				throw new BusinessRuleException(
+						"A data de início institucional é posterior a uma participação já registrada.");
+			}
 
 			if (participacao.getDataInicioParticipacao().isAfter(dto.getDataFimPrevista())) {
 
@@ -311,7 +337,34 @@ public class SincronizacaoVinculoEstagioService {
 
 	private void aplicarEstadoInstitucional(VinculoEstagio vinculo, SincronizacaoVinculoEstagioRequestDTO dto) {
 
+		if (dto.getDataInicio() != null) {
+			vinculo.setDataInicio(dto.getDataInicio());
+		}
+
 		vinculo.setDataFimPrevista(dto.getDataFimPrevista());
+
+		if (dto.getTipoBolsa() != null) {
+			vinculo.setTipoBolsa(dto.getTipoBolsa());
+		}
+
+		if (dto.getFormacao() != null) {
+			vinculo.setFormacao(dto.getFormacao());
+			vinculo.setFormacaoOutro(normalizarFormacaoOutro(dto.getFormacao(), dto.getFormacaoOutro()));
+		}
+
+		if (dto.getCursoId() != null) {
+			UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+			Curso curso = cursoRepository.findByPublicIdAndUnidadePublicId(dto.getCursoId(), unidadeId)
+					.orElseThrow(() -> new ResourceNotFoundException("Curso", dto.getCursoId()));
+			vinculo.setCurso(curso);
+		}
+
+		if (dto.getOrientadorId() != null) {
+			UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+			Usuario orientador = usuarioRepository.findByPublicIdAndUnidadePublicId(dto.getOrientadorId(), unidadeId)
+					.orElseThrow(() -> new ResourceNotFoundException("Orientador", dto.getOrientadorId()));
+			vinculo.setOrientador(orientador);
+		}
 
 		vinculo.setSituacao(dto.getSituacao());
 
@@ -340,6 +393,61 @@ public class SincronizacaoVinculoEstagioService {
 		}
 	}
 
+	private void validarCamposOpcionaisInstitucionais(
+			VinculoEstagio vinculo,
+			SincronizacaoVinculoEstagioRequestDTO dto,
+			UUID unidadeId) {
+
+		if (dto.getFormacao() != null) {
+			validarFormacao(dto.getFormacao(), dto.getFormacaoOutro());
+		}
+
+		if (dto.getCursoId() != null) {
+			Curso curso = cursoRepository.findByPublicIdAndUnidadePublicId(dto.getCursoId(), unidadeId)
+					.orElseThrow(() -> new ResourceNotFoundException("Curso", dto.getCursoId()));
+			curso.validateActive();
+		}
+
+		if (dto.getOrientadorId() != null) {
+			Usuario orientador = usuarioRepository.findByPublicIdAndUnidadePublicId(dto.getOrientadorId(), unidadeId)
+					.orElseThrow(() -> new ResourceNotFoundException("Orientador", dto.getOrientadorId()));
+
+			orientador.validateActive();
+
+			if (orientador.getPerfil() != Perfil.ANALISTA
+					&& orientador.getPerfil() != Perfil.PESQUISADOR) {
+				throw new BusinessRuleException(
+						"Orientador deve possuir perfil ANALISTA ou PESQUISADOR.");
+			}
+
+			if (vinculo.getEstagiario().getUnidade() == null
+					|| orientador.getUnidade() == null
+					|| !vinculo.getEstagiario().getUnidade().getPublicId()
+							.equals(orientador.getUnidade().getPublicId())) {
+				throw new BusinessRuleException(
+						"Estagiário e orientador devem pertencer à mesma unidade.");
+			}
+		}
+	}
+
+	private void validarFormacao(FormacaoEstagiario formacao, String formacaoOutro) {
+
+		if (formacao == FormacaoEstagiario.OUTRO
+				&& (formacaoOutro == null || formacaoOutro.isBlank())) {
+			throw new BusinessRuleException(
+					"A descrição da formação é obrigatória quando a opção OUTRO for selecionada.");
+		}
+	}
+
+	private String normalizarFormacaoOutro(FormacaoEstagiario formacao, String valor) {
+
+		if (formacao != FormacaoEstagiario.OUTRO) {
+			return null;
+		}
+
+		return valor.trim();
+	}
+
 	private String normalizarTexto(String valor) {
 
 		if (valor == null || valor.isBlank()) {
@@ -357,17 +465,27 @@ public class SincronizacaoVinculoEstagioService {
 		}
 	}
 
-	private void validarRepeticaoIdempotente(HistoricoSincronizacaoVinculoEstagio historico,
-			SincronizacaoVinculoEstagioRequestDTO dto) {
+	private void validarRepeticaoIdempotente(
+			HistoricoSincronizacaoVinculoEstagio historico,
+			SincronizacaoVinculoEstagioRequestDTO dto,
+			VinculoEstagio vinculo) {
 
 		boolean mesmoEstado = Objects.equals(historico.getSituacaoNova(), dto.getSituacao())
 				&& Objects.equals(historico.getDataFimPrevistaNova(), dto.getDataFimPrevista())
-				&& Objects.equals(historico.getDataFimEfetivaNova(), dto.getDataFimEfetiva());
+				&& Objects.equals(historico.getDataFimEfetivaNova(), dto.getDataFimEfetiva())
+				&& (dto.getDataInicio() == null || Objects.equals(vinculo.getDataInicio(), dto.getDataInicio()))
+				&& (dto.getTipoBolsa() == null || Objects.equals(vinculo.getTipoBolsa(), dto.getTipoBolsa()))
+				&& (dto.getFormacao() == null || Objects.equals(vinculo.getFormacao(), dto.getFormacao()))
+				&& (dto.getCursoId() == null
+						|| (vinculo.getCurso() != null
+								&& Objects.equals(vinculo.getCurso().getPublicId(), dto.getCursoId())))
+				&& (dto.getOrientadorId() == null
+						|| (vinculo.getOrientador() != null
+								&& Objects.equals(vinculo.getOrientador().getPublicId(), dto.getOrientadorId())));
 
 		if (!mesmoEstado) {
-
 			throw new BusinessRuleException(
-					"A referência do evento já foi processada " + "com dados institucionais diferentes.");
+					"A referência do evento já foi processada com dados institucionais diferentes.");
 		}
 	}
 }
