@@ -495,6 +495,8 @@ Não existe encerramento/prorrogação manual de rotina no SGL como fonte de ver
 
 Referência: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
+Fluxo validado em 02/10/2026: sincronização de vínculo existente, prorrogação, finalização, idempotência de eventos e criação de nova bolsa/novo `VinculoEstagio` sem Atividade inicial foram cobertas pela suíte backend.
+
 # Estagiários — contrato backend estabilizado até 6.3
 
 Em 01/10/2026, os blocos 6.1–6.3 foram concluídos e validados no backend.
