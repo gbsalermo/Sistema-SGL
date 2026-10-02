@@ -264,6 +264,23 @@ public class AtividadeService {
 
 			throw new BusinessRuleException("A data de fim da Atividade não pode ser posterior à data de fim do SCI.");
 		}
+
+		Projeto projeto = sci.getProjeto();
+
+		if (projeto != null && projeto.getDataFim() != null
+				&& dataInicioAtividade.isAfter(projeto.getDataFim())) {
+
+			throw new BusinessRuleException(
+					"A data de início da Atividade não pode ser posterior à data de fim do Projeto.");
+		}
+
+		if (projeto != null && projeto.getDataFim() != null
+				&& dataFimAtividade != null
+				&& dataFimAtividade.isAfter(projeto.getDataFim())) {
+
+			throw new BusinessRuleException(
+					"A data de fim da Atividade não pode ser posterior à data de fim do Projeto.");
+		}
 	}
 
 	private void validarAlteracaoDataFim(LocalDate dataFimAtual, LocalDate novaDataFim) {
