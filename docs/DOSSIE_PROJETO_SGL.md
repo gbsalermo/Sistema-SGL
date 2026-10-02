@@ -719,7 +719,7 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o 6.5 — frontend integrado foi implementado e aguarda validação visual/local. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e `docs/VALIDACAO_ETAPA_6_4.md`.**
+**As Etapas 1–5 estão encerradas e validadas. A Etapa 6 foi concluída e validada em 02/10/2026. A Etapa 7 — Relatórios consolidados é a frente atual. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e `docs/VALIDACAO_ETAPA_6_4.md`.**
 
 
 **Refinamento 6.5 — período/prorrogação:** o contrato de leitura de `VinculoEstagio` passou a expor `dataFimPrevistaOriginal` quando derivável do histórico institucional de prorrogação. A massa DEV IQ também cobre vínculo não finalizado sem participação ativa, diferenciando `Não iniciado` de `Sem atividade ativa`.
