@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 01/10/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado é o próximo bloco.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado implementado e aguardando validação visual/local.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -15,7 +15,7 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5 — Projetos e Atividades             ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             🔧 6.1–6.4 concluídos; 6.5 frontend próximo
+Etapa 6 — Estagiários e vínculos             🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
 ```
 
 Handoff imediato:
@@ -703,7 +703,7 @@ Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
 Etapa 5 ✅ concluída e validada
-Etapa 6 🔧 6.1–6.4 concluídos; 6.5 frontend próximo
+Etapa 6 🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
 Etapa 7 ⏳
 Etapa 8 ⏳ unidades/Soluções/contexto operacional
 Etapa 9 ⏳ Pedidos/Soluções/participação
@@ -717,4 +717,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o próximo passo é o 6.5 — frontend integrado. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e `docs/VALIDACAO_ETAPA_6_4.md`.**
+**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o 6.5 — frontend integrado foi implementado e aguarda validação visual/local. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e `docs/VALIDACAO_ETAPA_6_4.md`.**
