@@ -783,8 +783,8 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
   6.4.2A — DTOs/contrato de sincronização                 ✅ implementado
   6.4.2B — regra transacional                             ✅ implementado; validação pendente
   6.4.2C — endpoint + testes                              ✅ implementado; suíte local pendente
-6.4.3 — nova bolsa / novo VinculoEstagio                  ⏳
-6.4.4 — testes, validação e documentação                  ⏳
+6.4.3 — nova bolsa / novo VinculoEstagio                  ✅ implementado; validação local pendente
+6.4.4 — testes, validação e documentação                  🔧 próximo
 6.5 — frontend integrado                                  ⏳
 6.6 — dados DEV, testes, validação e documentação          ⏳
 ```
