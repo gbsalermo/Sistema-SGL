@@ -610,11 +610,11 @@ Estado atual da Etapa 6:
 6.3.2 Cultura por participação                      ✅ concluído e validado
 6.4 ciclo institucional/sincronização                🔧 atual
 6.4.1 contrato + histórico institucional             ✅ implementado
-6.4.2 sincronização do vínculo existente             🔧 atual
-  6.4.2A DTOs/contrato                               ✅ implementado
-  6.4.2B regra transacional                          ✅ implementado
-  6.4.2C endpoint + testes                           ✅ implementado; validação pendente
-6.4.3 nova bolsa / novo vínculo                      ⏳
+6.4.2 sincronização do vínculo existente             ✅ concluído e validado em 02/10/2026
+  6.4.2A DTOs/contrato                               ✅
+  6.4.2B regra transacional                          ✅
+  6.4.2C endpoint + testes                           ✅ suíte local verde
+6.4.3 nova bolsa / novo vínculo                      🔧 próximo
 6.4.4 testes/validação/documentação                  ⏳
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
