@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.query.Param;
 
 import com.sgl.model.Estagiario;
 
@@ -33,4 +34,28 @@ public interface EstagiarioRepository extends JpaRepository<Estagiario, Long> {
     Optional<Estagiario> findById(Long id);
     Optional<Estagiario> findByPublicId(UUID publicId);
     Optional<Estagiario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
+    
+    @Query("""
+            SELECT DISTINCT e
+            FROM Estagiario e
+            WHERE e.unidade.publicId = :unidadeId
+              AND e.ativo = true
+              AND EXISTS (
+                  SELECT v.id
+                  FROM VinculoEstagio v
+                  WHERE v.estagiario = e
+                    AND v.situacao <> com.sgl.model.enums.SituacaoEstagio.FINALIZADO
+                    AND EXISTS (
+                        SELECT p.id
+                        FROM VinculoEstagioAtividade p
+                        WHERE p.vinculoEstagio = v
+                          AND p.dataFimParticipacao IS NULL
+                    )
+              )
+            """)
+    List<Estagiario> findEstagiariosComVinculoAtivo(
+            @Param("unidadeId") UUID unidadeId
+    );
+    
+    
 }

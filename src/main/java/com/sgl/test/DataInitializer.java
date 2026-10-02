@@ -3,6 +3,7 @@ package com.sgl.test;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -14,8 +15,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.sgl.model.Atividade;
 import com.sgl.model.ClasseResiduo;
+import com.sgl.model.Cultura;
+import com.sgl.model.Curso;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
+import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Lote;
@@ -26,19 +30,29 @@ import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.VinculoEstagio;
+import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.VinculoEstagioAtividadeCultura;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.NivelRisco;
+import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.ClasseResiduoRepository;
+import com.sgl.repository.CulturaRepository;
+import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.EstoqueCentralRepository;
+import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.LocalArmazenamentoResiduoRepository;
@@ -48,6 +62,9 @@ import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
+import com.sgl.repository.VinculoEstagioAtividadeRepository;
+import com.sgl.repository.VinculoEstagioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -67,6 +84,12 @@ public class DataInitializer implements CommandLineRunner {
     private final SciRepository sciRepository;
     private final AtividadeRepository atividadeRepository;
     private final EstagiarioRepository estagiarioRepository;
+    private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
+    private final VinculoEstagioRepository vinculoEstagioRepository;
+    private final VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
+    private final VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
+    private final CursoRepository cursoRepository;
+    private final CulturaRepository culturaRepository;
     private final ClasseResiduoRepository classeResiduoRepository;
     private final LocalArmazenamentoResiduoRepository localArmazenamentoResiduoRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -77,7 +100,8 @@ public class DataInitializer implements CommandLineRunner {
         if (unidadeRepository.count() > 0) {
             garantirCadastrosResiduos();
             garantirDadosEtapa5();
-            System.out.println("=== Dados de desenvolvimento já existem. Catálogos e massa da Etapa 5 conferidos. ===");
+            garantirDadosEtapa6();
+            System.out.println("=== Dados de desenvolvimento já existem. Catálogos e massas das Etapas 5/6 conferidos. ===");
             return;
         }
 
@@ -105,7 +129,9 @@ public class DataInitializer implements CommandLineRunner {
         maria.setLaboratorio(lab4);
         maria.setAtivo(true);
         maria.setDataInicioEstagio(LocalDate.now().minusMonths(2));
+        maria.setDataFimEstagio(LocalDate.now().plusMonths(10));
         maria.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
+        maria.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
         maria.setObservacao("Cadastro inicial de estágio para testes");
         maria = estagiarioRepository.save(maria);
 
@@ -337,6 +363,7 @@ public class DataInitializer implements CommandLineRunner {
 
         garantirCadastrosResiduos();
         garantirDadosEtapa5();
+        garantirDadosEtapa6();
 
         System.out.println("=== Dados de teste injetados com sucesso! ===");
         System.out.println("=== Estoques iniciais criados com lotes correspondentes ===");
@@ -621,6 +648,668 @@ public class DataInitializer implements CommandLineRunner {
                                 .ativo(true)
                                 .build()
                 ));
+    }
+
+
+    private void garantirDadosEtapa6() {
+
+        Unidade unidade = unidadeRepository.findAll().stream()
+                .filter(item -> "IQ".equalsIgnoreCase(item.getSigla()))
+                .findFirst()
+                .orElse(null);
+
+        if (unidade == null) {
+            System.out.println("=== ETAPA 6 DEV: unidade IQ não encontrada; massa de Estagiários ignorada. ===");
+            return;
+        }
+
+        List<Laboratorio> laboratorios = laboratorioRepository.findByUnidadeId(unidade.getId());
+
+        Laboratorio laboratorioOrganica = laboratorios.stream()
+                .filter(item -> Boolean.TRUE.equals(item.getAtivo()))
+                .findFirst()
+                .orElse(null);
+
+        if (laboratorioOrganica == null) {
+            System.out.println("=== ETAPA 6 DEV: unidade IQ sem laboratório ativo; massa de Estagiários ignorada. ===");
+            return;
+        }
+
+        Laboratorio laboratorioEspectroscopia = laboratorios.stream()
+                .filter(item -> "Laboratorio de Espectroscopia Aplicada".equalsIgnoreCase(item.getNome()))
+                .findFirst()
+                .orElseGet(() -> laboratorioRepository.save(
+                        new Laboratorio(
+                                null,
+                                null,
+                                unidade,
+                                "Laboratorio de Espectroscopia Aplicada",
+                                "Laboratório DEV para diversificar o contexto operacional dos Estagiários.",
+                                null,
+                                true
+                        )
+                ));
+
+        Usuario orientadoraHelena = garantirUsuarioEtapa6(
+                "Dra. Helena Costa",
+                "helena.costa@iq.sgl.local",
+                Perfil.PESQUISADOR,
+                unidade,
+                laboratorioOrganica
+        );
+
+        Usuario orientadorMarcos = garantirUsuarioEtapa6(
+                "Dr. Marcos Lima",
+                "marcos.lima@iq.sgl.local",
+                Perfil.ANALISTA,
+                unidade,
+                laboratorioEspectroscopia
+        );
+
+        if (laboratorioEspectroscopia.getResponsavel() == null) {
+            laboratorioEspectroscopia.setResponsavel(orientadorMarcos);
+            laboratorioRepository.save(laboratorioEspectroscopia);
+        }
+
+        Curso engenhariaComputacao = garantirCursoEtapa6(unidade, "Engenharia de Computação");
+        Curso quimica = garantirCursoEtapa6(unidade, "Química");
+
+        normalizarPeriodoMariaDev(
+                unidade,
+                orientadoraHelena,
+                quimica,
+                LocalDate.now().plusMonths(10)
+        );
+        Curso engenhariaQuimica = garantirCursoEtapa6(unidade, "Engenharia Química");
+        Curso biotecnologia = garantirCursoEtapa6(unidade, "Biotecnologia");
+
+        Cultura citros = garantirCulturaEtapa6(unidade, "Citros");
+        Cultura mandioca = garantirCulturaEtapa6(unidade, "Mandioca");
+        Cultura soja = garantirCulturaEtapa6(unidade, "Soja");
+
+        LocalDate hoje = LocalDate.now();
+
+        Projeto projetoBiossensores = garantirProjetoEtapa5(
+                laboratorioOrganica,
+                "96.96.96.001.01.00",
+                "Biossensores para Monitoramento Ambiental",
+                "Desenvolvimento e validação de biossensores para monitoramento de contaminantes em matrizes ambientais.",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(5),
+                hoje.plusMonths(7),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO,
+                true,
+                "Instituto Parceiro DEV"
+        );
+
+        Sci sciBiossensores = garantirSciEtapa5(
+                projetoBiossensores,
+                "96.96.96.001.01.01",
+                "Plataforma eletroquímica de detecção",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(4),
+                hoje.plusMonths(5),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Atividade atividadeEletrodos = garantirAtividadeEtapa5(
+                sciBiossensores,
+                "96.96.96.001.01.01.001",
+                "Preparação dos eletrodos sensores",
+                "Ana Martins",
+                hoje.minusMonths(3),
+                hoje.plusMonths(1),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Atividade atividadeCurvas = garantirAtividadeEtapa5(
+                sciBiossensores,
+                "96.96.96.001.01.01.002",
+                "Curvas analíticas e seletividade",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(2),
+                hoje.plusMonths(3),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Projeto projetoEspectroscopia = garantirProjetoEtapa5(
+                laboratorioEspectroscopia,
+                "96.96.96.004.01.00",
+                "Espectroscopia Aplicada a Materiais",
+                "Projeto DEV para demonstrar Estagiário atuando em mais de um laboratório dentro da mesma Unidade.",
+                orientadorMarcos.getNome(),
+                hoje.minusMonths(3),
+                hoje.plusMonths(8),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO,
+                false,
+                null
+        );
+
+        Sci sciEspectroscopia = garantirSciEtapa5(
+                projetoEspectroscopia,
+                "96.96.96.004.01.01",
+                "Caracterização espectroscópica",
+                orientadorMarcos.getNome(),
+                hoje.minusMonths(2),
+                hoje.plusMonths(7),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Atividade atividadeEspectros = garantirAtividadeEtapa5(
+                sciEspectroscopia,
+                "96.96.96.004.01.01.001",
+                "Aquisição e tratamento de espectros",
+                orientadorMarcos.getNome(),
+                hoje.minusMonths(1),
+                hoje.plusMonths(6),
+                StatusProjeto.ATIVO,
+                SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Projeto projetoHistorico = garantirProjetoEtapa5(
+                laboratorioOrganica,
+                "96.96.96.005.01.00",
+                "Métodos Analíticos Históricos DEV",
+                "Contexto histórico DEV para validar participações e vínculos já encerrados.",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(18),
+                hoje.minusMonths(6),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO,
+                false,
+                null
+        );
+
+        Sci sciHistorico = garantirSciEtapa5(
+                projetoHistorico,
+                "96.96.96.005.01.01",
+                "Padronização analítica histórica",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(17),
+                hoje.minusMonths(7),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+
+        Atividade atividadeHistorica = garantirAtividadeEtapa5(
+                sciHistorico,
+                "96.96.96.005.01.01.001",
+                "Validação histórica de métodos",
+                orientadoraHelena.getNome(),
+                hoje.minusMonths(16),
+                hoje.minusMonths(8),
+                StatusProjeto.CONCLUIDO,
+                SituacaoExecucaoProjeto.NAO_INFORMADO
+        );
+
+        Estagiario joao = garantirEstagiarioEtapa6(
+                "João Silva",
+                "joao.silva.estagio@iq.sgl.local",
+                unidade,
+                laboratorioOrganica,
+                orientadoraHelena,
+                hoje.minusYears(1).minusMonths(6),
+                TipoBolsa.BOLSA_CNPQ,
+                "Massa DEV do 6.5: múltiplos vínculos e contextos operacionais."
+        );
+
+        VinculoEstagio joaoAnterior = garantirVinculoEtapa6(
+                joao,
+                orientadoraHelena,
+                "IQ-DEV-JOAO-2025",
+                hoje.minusMonths(18),
+                hoje.minusMonths(7),
+                hoje.minusMonths(7),
+                TipoBolsa.BOLSA_CNPQ,
+                FormacaoEstagiario.GRADUACAO,
+                engenhariaComputacao,
+                true,
+                SituacaoEstagio.FINALIZADO,
+                "Vínculo histórico encerrado para demonstrar a linha do tempo."
+        );
+
+        VinculoEstagio joaoAtual = garantirVinculoEtapa6(
+                joao,
+                orientadoraHelena,
+                "IQ-DEV-JOAO-2026",
+                hoje.minusMonths(6),
+                hoje.plusMonths(6),
+                null,
+                TipoBolsa.BOLSA_CNPQ,
+                FormacaoEstagiario.GRADUACAO,
+                engenhariaComputacao,
+                true,
+                SituacaoEstagio.EM_ANDAMENTO,
+                "Vínculo atual com atuação em dois Projetos e dois Laboratórios."
+        );
+
+        VinculoEstagioAtividade joaoHistorico = garantirParticipacaoEtapa6(
+                joaoAnterior,
+                atividadeHistorica,
+                hoje.minusMonths(15),
+                hoje.minusMonths(8),
+                "Participação histórica DEV."
+        );
+        garantirCulturaParticipacaoEtapa6(joaoHistorico, citros);
+
+        VinculoEstagioAtividade joaoAtividade1 = garantirParticipacaoEtapa6(
+                joaoAtual,
+                atividadeCurvas,
+                hoje.minusMonths(2),
+                null,
+                "Participação ativa em biossensores."
+        );
+        garantirCulturaParticipacaoEtapa6(joaoAtividade1, citros);
+        garantirCulturaParticipacaoEtapa6(joaoAtividade1, mandioca);
+
+        VinculoEstagioAtividade joaoAtividade2 = garantirParticipacaoEtapa6(
+                joaoAtual,
+                atividadeEspectros,
+                hoje.minusMonths(1),
+                null,
+                "Participação ativa em espectroscopia."
+        );
+        garantirCulturaParticipacaoEtapa6(joaoAtividade2, soja);
+
+        Estagiario anaCosta = garantirEstagiarioEtapa6(
+                "Ana Costa",
+                "ana.costa.estagio@iq.sgl.local",
+                unidade,
+                laboratorioOrganica,
+                orientadoraHelena,
+                hoje.minusMonths(9),
+                TipoBolsa.BOLSA_CAPES,
+                "Massa DEV do 6.5: vínculo prorrogado próximo do término."
+        );
+
+        VinculoEstagio anaVinculo = garantirVinculoEtapa6(
+                anaCosta,
+                orientadoraHelena,
+                "IQ-DEV-ANA-2026",
+                hoje.minusMonths(9),
+                hoje.plusDays(20),
+                null,
+                TipoBolsa.BOLSA_CAPES,
+                FormacaoEstagiario.MESTRADO,
+                biotecnologia,
+                true,
+                SituacaoEstagio.PRORROGADO,
+                "Vínculo prorrogado para validar status e indicador de até 30 dias."
+        );
+
+        garantirProrrogacaoVinculoEtapa6(
+                anaVinculo,
+                "DEV-IQ-PRORROGACAO-ANA-2026",
+                hoje.minusDays(10),
+                hoje.plusDays(20)
+        );
+
+        VinculoEstagioAtividade anaParticipacao = garantirParticipacaoEtapa6(
+                anaVinculo,
+                atividadeEletrodos,
+                hoje.minusMonths(3),
+                null,
+                "Participação ativa da mestranda."
+        );
+        garantirCulturaParticipacaoEtapa6(anaParticipacao, mandioca);
+
+        Estagiario lucas = garantirEstagiarioEtapa6(
+                "Lucas Ferreira",
+                "lucas.ferreira.estagio@iq.sgl.local",
+                unidade,
+                laboratorioEspectroscopia,
+                orientadorMarcos,
+                hoje.minusDays(18),
+                TipoBolsa.BOLSA_INSTITUCIONAL,
+                "Massa DEV do 6.5: vínculo institucional aguardando primeira Atividade."
+        );
+
+        garantirVinculoEtapa6(
+                lucas,
+                orientadorMarcos,
+                "IQ-DEV-LUCAS-2026",
+                hoje.minusDays(18),
+                hoje.plusMonths(10),
+                null,
+                TipoBolsa.BOLSA_INSTITUCIONAL,
+                FormacaoEstagiario.GRADUACAO,
+                engenhariaQuimica,
+                false,
+                SituacaoEstagio.EM_ANDAMENTO,
+                "Vínculo institucional válido, ainda sem contexto operacional."
+        );
+
+        Estagiario camila = garantirEstagiarioEtapa6(
+                "Camila Rocha",
+                "camila.rocha.estagio@iq.sgl.local",
+                unidade,
+                laboratorioOrganica,
+                orientadoraHelena,
+                hoje.minusMonths(14),
+                TipoBolsa.BOLSA_INSTITUCIONAL,
+                "Massa DEV do 6.5: vínculo ainda aberto, mas todas as participações já foram encerradas."
+        );
+
+        VinculoEstagio camilaVinculo = garantirVinculoEtapa6(
+                camila,
+                orientadoraHelena,
+                "IQ-DEV-CAMILA-2025",
+                hoje.minusMonths(14),
+                hoje.plusMonths(3),
+                null,
+                TipoBolsa.BOLSA_INSTITUCIONAL,
+                FormacaoEstagiario.GRADUACAO,
+                quimica,
+                true,
+                SituacaoEstagio.EM_ANDAMENTO,
+                "Vínculo permanece institucionalmente aberto, embora não existam Atividades ativas."
+        );
+
+        VinculoEstagioAtividade camilaParticipacao = garantirParticipacaoEtapa6(
+                camilaVinculo,
+                atividadeHistorica,
+                hoje.minusMonths(13),
+                hoje.minusMonths(8),
+                "Última participação encerrada; vínculo não finalizado."
+        );
+        garantirCulturaParticipacaoEtapa6(camilaParticipacao, citros);
+
+        Estagiario pedro = garantirEstagiarioEtapa6(
+                "Pedro Lima",
+                "pedro.lima.estagio@iq.sgl.local",
+                unidade,
+                laboratorioOrganica,
+                orientadoraHelena,
+                hoje.minusMonths(18),
+                TipoBolsa.BOLSA_CNPQ,
+                "Massa DEV do 6.5: vínculo encerrado com histórico preservado."
+        );
+
+        VinculoEstagio pedroVinculo = garantirVinculoEtapa6(
+                pedro,
+                orientadoraHelena,
+                "IQ-DEV-PEDRO-2025",
+                hoje.minusMonths(18),
+                hoje.minusMonths(7),
+                hoje.minusMonths(7),
+                TipoBolsa.BOLSA_CNPQ,
+                FormacaoEstagiario.GRADUACAO,
+                quimica,
+                true,
+                SituacaoEstagio.FINALIZADO,
+                "Estágio encerrado para validar histórico e estado final."
+        );
+
+        VinculoEstagioAtividade pedroParticipacao = garantirParticipacaoEtapa6(
+                pedroVinculo,
+                atividadeHistorica,
+                hoje.minusMonths(15),
+                hoje.minusMonths(8),
+                "Participação encerrada junto do vínculo."
+        );
+        garantirCulturaParticipacaoEtapa6(pedroParticipacao, soja);
+
+        System.out.println("=== ETAPA 6 DEV: massa de Estagiários IQ conferida. ===");
+    }
+
+    private void normalizarPeriodoMariaDev(
+            Unidade unidade,
+            Usuario orientador,
+            Curso curso,
+            LocalDate fimPrevistoPadrao) {
+
+        Estagiario maria = estagiarioRepository.findAll().stream()
+                .filter(item -> "maria@iq.com".equalsIgnoreCase(item.getEmail()))
+                .findFirst()
+                .orElse(null);
+
+        if (maria == null || maria.getUnidade() == null
+                || !unidade.getId().equals(maria.getUnidade().getId())) {
+            return;
+        }
+
+        if (maria.getDataFimEstagio() == null) {
+            maria.setDataFimEstagio(fimPrevistoPadrao);
+            estagiarioRepository.save(maria);
+        }
+
+        List<VinculoEstagio> vinculos = vinculoEstagioRepository
+                .findByEstagiarioPublicIdAndEstagiarioUnidadePublicIdOrderByDataInicioDesc(
+                        maria.getPublicId(),
+                        unidade.getPublicId()
+                );
+
+        VinculoEstagio atual = vinculos.stream()
+                .filter(item -> item.getSituacao() != SituacaoEstagio.FINALIZADO)
+                .findFirst()
+                .orElse(null);
+
+        if (atual != null) {
+            boolean alterado = false;
+
+            if (atual.getDataFimPrevista() == null) {
+                atual.setDataFimPrevista(fimPrevistoPadrao);
+                alterado = true;
+            }
+
+            if (atual.getOrientador() == null) {
+                atual.setOrientador(orientador);
+                alterado = true;
+            }
+
+            if (atual.getFormacao() == null) {
+                atual.setFormacao(FormacaoEstagiario.GRADUACAO);
+                alterado = true;
+            }
+
+            if (atual.getCurso() == null) {
+                atual.setCurso(curso);
+                alterado = true;
+            }
+
+            if (alterado) {
+                vinculoEstagioRepository.save(atual);
+            }
+        }
+    }
+
+    private Usuario garantirUsuarioEtapa6(
+            String nome,
+            String email,
+            Perfil perfil,
+            Unidade unidade,
+            Laboratorio laboratorio) {
+
+        return usuarioRepository.findByEmail(email)
+                .orElseGet(() -> usuarioRepository.save(
+                        new Usuario(
+                                null,
+                                null,
+                                nome,
+                                email,
+                                passwordEncoder.encode("123456"),
+                                perfil,
+                                unidade,
+                                laboratorio,
+                                true
+                        )
+                ));
+    }
+
+    private Curso garantirCursoEtapa6(Unidade unidade, String nome) {
+
+        return cursoRepository.findByUnidadePublicIdOrderByNomeAsc(unidade.getPublicId()).stream()
+                .filter(item -> nome.equalsIgnoreCase(item.getNome()))
+                .findFirst()
+                .orElseGet(() -> cursoRepository.save(
+                        Curso.builder()
+                                .unidade(unidade)
+                                .nome(nome)
+                                .ativo(true)
+                                .build()
+                ));
+    }
+
+    private Cultura garantirCulturaEtapa6(Unidade unidade, String nome) {
+
+        return culturaRepository.findByUnidadePublicIdOrderByNomeAsc(unidade.getPublicId()).stream()
+                .filter(item -> nome.equalsIgnoreCase(item.getNome()))
+                .findFirst()
+                .orElseGet(() -> culturaRepository.save(
+                        Cultura.builder()
+                                .unidade(unidade)
+                                .nome(nome)
+                                .ativo(true)
+                                .build()
+                ));
+    }
+
+    private Estagiario garantirEstagiarioEtapa6(
+            String nome,
+            String email,
+            Unidade unidade,
+            Laboratorio laboratorio,
+            Usuario orientador,
+            LocalDate dataInicio,
+            TipoBolsa tipoBolsa,
+            String observacao) {
+
+        return estagiarioRepository.findAll().stream()
+                .filter(item -> email.equalsIgnoreCase(item.getEmail()))
+                .findFirst()
+                .orElseGet(() -> {
+                    Estagiario estagiario = new Estagiario();
+                    estagiario.setNome(nome);
+                    estagiario.setEmail(email);
+                    estagiario.setSenha(passwordEncoder.encode("123456"));
+                    estagiario.setPerfil(Perfil.ESTAGIARIO);
+                    estagiario.setUnidade(unidade);
+                    estagiario.setLaboratorio(laboratorio);
+                    estagiario.setAtivo(true);
+                    estagiario.setDataInicioEstagio(dataInicio);
+                    estagiario.setDataFimEstagio(null);
+                    estagiario.setTipoBolsa(tipoBolsa);
+                    estagiario.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
+                    estagiario.setOrientador(orientador);
+                    estagiario.setObservacao(observacao);
+                    return estagiarioRepository.save(estagiario);
+                });
+    }
+
+    private VinculoEstagio garantirVinculoEtapa6(
+            Estagiario estagiario,
+            Usuario orientador,
+            String referenciaInstitucional,
+            LocalDate dataInicio,
+            LocalDate dataFimPrevista,
+            LocalDate dataFimEfetiva,
+            TipoBolsa tipoBolsa,
+            FormacaoEstagiario formacao,
+            Curso curso,
+            boolean treinamentoConcluido,
+            SituacaoEstagio situacao,
+            String observacao) {
+
+        return vinculoEstagioRepository
+                .findByEstagiarioPublicIdAndEstagiarioUnidadePublicIdOrderByDataInicioDesc(
+                        estagiario.getPublicId(),
+                        estagiario.getUnidade().getPublicId()
+                )
+                .stream()
+                .filter(item -> referenciaInstitucional.equals(item.getReferenciaInstitucional()))
+                .findFirst()
+                .orElseGet(() -> {
+                    VinculoEstagio vinculo = new VinculoEstagio();
+                    vinculo.setEstagiario(estagiario);
+                    vinculo.setOrientador(orientador);
+                    vinculo.setDataInicio(dataInicio);
+                    vinculo.setDataFimPrevista(dataFimPrevista);
+                    vinculo.setDataFimEfetiva(dataFimEfetiva);
+                    vinculo.setTipoBolsa(tipoBolsa);
+                    vinculo.setFormacao(formacao);
+                    vinculo.setCurso(curso);
+                    vinculo.setTreinamentoSegurancaConcluido(treinamentoConcluido);
+                    vinculo.setSituacao(situacao);
+                    vinculo.setObservacao(observacao);
+                    vinculo.setReferenciaInstitucional(referenciaInstitucional);
+                    return vinculoEstagioRepository.save(vinculo);
+                });
+    }
+
+    private VinculoEstagioAtividade garantirParticipacaoEtapa6(
+            VinculoEstagio vinculo,
+            Atividade atividade,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            String observacao) {
+
+        return vinculoEstagioAtividadeRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+                        vinculo.getPublicId(),
+                        vinculo.getEstagiario().getUnidade().getPublicId()
+                )
+                .stream()
+                .filter(item -> item.getAtividade() != null
+                        && item.getAtividade().getId().equals(atividade.getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+                    participacao.setVinculoEstagio(vinculo);
+                    participacao.setAtividade(atividade);
+                    participacao.setDataInicioParticipacao(dataInicio);
+                    participacao.setDataFimParticipacao(dataFim);
+                    participacao.setObservacao(observacao);
+                    return vinculoEstagioAtividadeRepository.save(participacao);
+                });
+    }
+
+    private void garantirProrrogacaoVinculoEtapa6(
+            VinculoEstagio vinculo,
+            String referenciaEvento,
+            LocalDate dataFimAnterior,
+            LocalDate dataFimNova) {
+
+        if (historicoSincronizacaoVinculoEstagioRepository
+                .existsByOrigemAndReferenciaEvento(
+                        OrigemSincronizacaoVinculoEstagio.DEV,
+                        referenciaEvento)) {
+            return;
+        }
+
+        HistoricoSincronizacaoVinculoEstagio historico =
+                HistoricoSincronizacaoVinculoEstagio.builder()
+                        .vinculoEstagio(vinculo)
+                        .tipoEvento(TipoEventoSincronizacaoVinculoEstagio.PRORROGACAO)
+                        .origem(OrigemSincronizacaoVinculoEstagio.DEV)
+                        .referenciaEvento(referenciaEvento)
+                        .situacaoAnterior(SituacaoEstagio.EM_ANDAMENTO)
+                        .situacaoNova(SituacaoEstagio.PRORROGADO)
+                        .dataFimPrevistaAnterior(dataFimAnterior)
+                        .dataFimPrevistaNova(dataFimNova)
+                        .build();
+
+        historicoSincronizacaoVinculoEstagioRepository.save(historico);
+    }
+
+    private void garantirCulturaParticipacaoEtapa6(
+            VinculoEstagioAtividade participacao,
+            Cultura cultura) {
+
+        if (vinculoEstagioAtividadeCulturaRepository
+                .existsByParticipacaoIdAndCulturaId(participacao.getId(), cultura.getId())) {
+            return;
+        }
+
+        VinculoEstagioAtividadeCultura associacao = new VinculoEstagioAtividadeCultura();
+        associacao.setParticipacao(participacao);
+        associacao.setCultura(cultura);
+        vinculoEstagioAtividadeCulturaRepository.save(associacao);
     }
 
     private void garantirCadastrosResiduos() {

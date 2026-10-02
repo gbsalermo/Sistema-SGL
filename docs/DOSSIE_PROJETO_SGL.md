@@ -3,8 +3,10 @@
 **Projeto:** SGL — Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Atualizado em:** 29/09/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; próxima etapa planejada: Etapa 6 — Estagiários e vínculos.  
+**Atualizado em:** 01/10/2026  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado implementado e aguardando validação visual/local.
+
+Para validar o 6.5, foi adicionada massa DEV IQ idempotente com múltiplos cenários de Estagiários, vínculos e participações. Essa massa não substitui o bloco 6.6 de fechamento final.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -15,12 +17,16 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5 — Projetos e Atividades             ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             ⏳ próxima
+Etapa 6 — Estagiários e vínculos             🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
 ```
 
 Handoff imediato:
 
-`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`
+`docs/VALIDACAO_ETAPA_6_3.md`
+
+Decisão atual do ciclo institucional:
+
+`docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`
 
 Plano canônico:
 
@@ -109,7 +115,7 @@ Quando houver conflito:
 9. documentos históricos
 ```
 
-A Etapa 4 foi integrada e a Etapa 5 nasceu da `main` atualizada. A branch operacional atual é `collab/etapa-5-projetos-atividades`; a antiga `feat/etapa-4-residuos` permanece apenas como referência histórica.
+As Etapas 4 e 5 foram integradas à `main`. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`; branches anteriores permanecem apenas como referência histórica.
 
 ---
 
@@ -133,7 +139,7 @@ Frontend/documentação podem ser alterados diretamente quando autorizado.
 
 Trabalhar sempre em branch própria e em etapas pequenas.
 
-A Etapa 4 está fechada. A branch operacional atual é `collab/etapa-5-projetos-atividades`, criada sobre a `main` já contendo as Etapas 1–4. Branches antigas permanecem apenas como referência histórica.
+As Etapas 1–5 estão fechadas. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
 
 ---
 
@@ -306,16 +312,20 @@ V17 locais de armazenamento de Resíduos
 V18 modelos reutilizáveis de Resíduos
 V19 expansão do domínio de Projeto
 V20 criação do domínio de SCI
+V21 criação do domínio de Atividade
+V22 históricos de prorrogação
+V23 unicidade global do Código SEG
+V24 histórico de correções SEG
+V25 fundação de situação/orientador do estágio
+V26 vínculos institucionais de estágio
+V27 participação VinculoEstagio ↔ Atividade
+V28 dados acadêmicos do vínculo + catálogo de Cursos
+V29 catálogo de Culturas + associação com participação em Atividade
+V30 referência institucional + histórico de sincronização do vínculo
+V31 remoção da unicidade global não confirmada da referência institucional
 ```
 
-Próxima alteração de schema: V21+.
-
-Planejamento imediato:
-
-```text
-V21 → Atividades
-V22 → históricos de prorrogação de Projeto/SCI/Atividade
-```
+A V29 e o 6.3 foram concluídos e validados em 01/10/2026. A V30 abriu o 6.4.1 com referência institucional do vínculo e histórico de sincronização. A V31 remove a unicidade global não confirmada da referência institucional sem reescrever a migration já publicada. `referenciaInstitucional` permanece indexada; idempotência de eventos usa origem + referência do evento quando disponível. V32 passou a ser usada por observações/auditoria do treinamento no 6.5; próxima migration livre: **V33+**.
 
 Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
@@ -579,11 +589,40 @@ Etapa 5 estabiliza Projetos/Atividades e Código SEG.
 Etapa 6 evolui Estagiários com:
 
 - Orientador obrigatório;
-- Projeto/Atividade;
+- `Usuario → Estagiario → VinculoEstagio 1..N`;
+- múltiplas participações históricas em Atividades;
+- Projeto/SCI/Laboratório derivados da Atividade;
+- vínculo sincronizado do ambiente pode existir antes da primeira Atividade; atividade aberta continua obrigatória para estado operacional ativo;
+- estado operacional ativo dependente de Usuario ativo + vínculo não finalizado + participação aberta;
 - Bolsa separada de Curso/Formação;
-- Cultura/área temática;
-- treinamento de segurança;
-- histórico de prorrogações.
+- Formação controlada por enum + opção `OUTRO`;
+- Curso como catálogo administrável por Unidade;
+- Cultura/área temática por participação;
+- treinamento de segurança iniciado em `false` e concluído por ação específica;
+- histórico de sincronizações/prorrogações institucionais;
+- abandono da noção operacional de um único "Laboratório do Estagiário".
+
+Estado atual da Etapa 6:
+
+```text
+6.1 contrato e fundação do vínculo                  ✅ 30/09/2026
+6.2 vínculos Estagiário ↔ Atividade + histórico    ✅ 01/10/2026
+6.3 dados acadêmicos/Curso/Cultura/segurança         ✅ concluído e validado
+6.3.1 Formação + Curso + treinamento                ✅ concluído e validado
+6.3.2 Cultura por participação                      ✅ concluído e validado
+6.4 ciclo institucional/sincronização                ✅ concluído e validado em 02/10/2026
+6.4.1 contrato + histórico institucional             ✅
+6.4.2 sincronização do vínculo existente             ✅
+  6.4.2A DTOs/contrato                               ✅
+  6.4.2B regra transacional                          ✅
+  6.4.2C endpoint + testes                           ✅ suíte local verde
+6.4.3 nova bolsa / novo vínculo                      ✅ suíte local verde
+6.4.4 testes/validação/documentação                  ✅ concluído
+6.5 frontend integrado                              ⏳
+6.6 dados DEV/testes/validação/documentação         ⏳
+```
+
+O 6.2 teve suíte backend completa e compilação confirmadas sem erros/falhas em 01/10/2026. O 6.3 também foi validado em 01/10/2026 com compilação concluída e suíte completa verde. Checkpoint atual: `docs/VALIDACAO_ETAPA_6_3.md`.
 
 Etapa 7 consome Etapas 5/6 em relatórios consolidados e inclui organização estrutural do módulo de Relatórios.
 
@@ -597,9 +636,34 @@ Etapa 8:
 - `1 L = 1000 mL`;
 - `1 kg = 1000 g`;
 - não converter massa/volume sem densidade;
-- estabilizar domínio de Soluções.
+- estabilizar domínio de Soluções;
+- fechar o contrato de contexto operacional do solicitante;
+- tratar `Usuario.laboratorio` e o laboratório da sessão DEV como compatibilidade, não como fonte de verdade para Estagiários;
+- preparar Pedido para consumir a participação aberta do Estagiário.
 
-Etapa 9 integra Soluções aos Pedidos com aprovação atômica dos componentes.
+Etapa 9 integra Soluções aos Pedidos com aprovação atômica dos componentes e aplica a evolução:
+
+```text
+Pedido
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratorio
+→ Unidade
+```
+
+Para Estagiários, a participação será escolhida entre as participações abertas e Projeto/Laboratório serão derivados pelo backend.
+
+Para solicitantes não Estagiários:
+
+- com Projeto: o Projeto é escolhido e o Laboratório é derivado pelo backend;
+- sem Projeto: `Usuario.laboratorio` permanece como contexto institucional/base;
+- a participação de estágio não é obrigatória.
+
+A interface de Estagiários, já no 6.5, deve abandonar a legenda de um único laboratório e exibir os contextos por participação.
+
+Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
 
 ---
 
@@ -641,10 +705,10 @@ Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
 Etapa 5 ✅ concluída e validada
-Etapa 6 ⏳
+Etapa 6 🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
 Etapa 7 ⏳
-Etapa 8 ⏳
-Etapa 9 ⏳
+Etapa 8 ⏳ unidades/Soluções/contexto operacional
+Etapa 9 ⏳ Pedidos/Soluções/participação
 Etapa 10 ⏳
 Etapa 11 ⏳
 Etapa 12 ⏳
@@ -655,4 +719,28 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**A Etapa 5 está encerrada e validada. Após o merge de `collab/etapa-5-projetos-atividades`, retomar pela Etapa 6 — Estagiários e vínculos em branch própria criada sobre a `main` sincronizada. Ler `CONTINUIDADE.md`, `docs/PLANO_PRE_PRODUCAO.md`, `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` e `docs/VALIDACAO_ETAPA_5.md`.**
+**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o 6.5 — frontend integrado foi implementado e aguarda validação visual/local. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e `docs/VALIDACAO_ETAPA_6_4.md`.**
+
+
+**Refinamento 6.5 — período/prorrogação:** o contrato de leitura de `VinculoEstagio` passou a expor `dataFimPrevistaOriginal` quando derivável do histórico institucional de prorrogação. A massa DEV IQ também cobre vínculo não finalizado sem participação ativa, diferenciando `Não iniciado` de `Sem atividade ativa`.
+
+
+## Revisão do vínculo — 02/10/2026
+
+O modelo deixou de tratar o ambiente institucional como autoridade absoluta sobre todos os campos do vínculo. A precedência agora é por campo: identidade/estado institucional continuam prioritariamente externos; Formação, Curso, Bolsa/modalidade, Orientador e período podem ser mantidos localmente e são sobrescritos quando a integração enviar explicitamente esses mesmos campos.
+
+Novo endpoint local: `PUT /api/v1/vinculos-estagio/{vinculoId}`.
+
+Todo novo vínculo exige início e fim previsto. Não criar bolsa/estágio sem término predeterminado.
+
+
+## Projetos ↔ Estagiários — refinamento posterior
+
+Após o fechamento da Etapa 6, a tela de Projetos deverá ser revisada para mostrar, em cada Atividade, os Estagiários associados via `VinculoEstagioAtividade`, preservando o responsável da Atividade já exibido. A relação não será duplicada diretamente no Projeto; será derivada da participação existente.
+
+
+## Drawer de Estagiários — refinamento 6.5
+
+A experiência final do drawer prioriza Ações operacionais, seguida de `BOLSA / VÍNCULO`, Formação, Orientador, Participações e Observações. V32 adiciona observações auditáveis do vínculo e eventos de treinamento. O treinamento pode ser concluído ou revertido pelo novo fluxo auditável, com observação opcional e identificação do operador. O cadastro de Cultura também pode ser iniciado diretamente pelo modal de gestão de Culturas da participação.
+
+Status: implementado, aguardando testes manuais e automáticos do 6.6.

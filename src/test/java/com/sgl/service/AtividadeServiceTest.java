@@ -464,4 +464,29 @@ class AtividadeServiceTest {
         );
     }
 
+
+    @Test
+    void deveRejeitarAtividadeTerminandoDepoisDoProjetoMesmoSemFimNoSci() {
+        sci.setDataFim(null);
+        projeto.setDataFim(LocalDate.of(2026, 8, 31));
+
+        AtividadeRequestDTO dto = requestValido();
+        dto.setDataFim(LocalDate.of(2026, 9, 1));
+
+        TenantContext.definir(UNIDADE_ID);
+        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+                SCI_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(sci));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> atividadeService.criar(dto)
+        );
+
+        assertEquals(
+                "A data de fim da Atividade não pode ser posterior à data de fim do Projeto.",
+                ex.getMessage()
+        );
+    }
+
 }

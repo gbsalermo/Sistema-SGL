@@ -457,3 +457,105 @@ Código SEG:
 - a interface sugere próximo sufixo para SCI/Atividade, mas o gestor pode alterá-lo antes de salvar;
 - depois de definido, o Código SEG é imutável no CRUD comum;
 - correções posteriores usam fluxo administrativo auditável.
+
+---
+
+# Ciclo institucional do Estagiário — Etapa 6.4
+
+```text
+Ambiente institucional
+→ identifica Usuario por matrícula/CPF
+→ informa vínculo/período/situação
+→ SGL sincroniza VinculoEstagio
+→ SGL aplica consequências operacionais
+```
+
+Prorrogação da mesma bolsa:
+
+```text
+mesmo VinculoEstagio
+→ dataFimPrevista ampliada
+→ histórico institucional
+```
+
+Nova bolsa:
+
+```text
+mesmo Usuario
+→ mesmo Estagiario
+→ vínculo anterior FINALIZADO
+→ novo VinculoEstagio
+```
+
+O novo vínculo institucional pode existir sem Atividade por um período de preparação. Ele só habilita operação de Estagiário quando houver ao menos uma participação aberta.
+
+Finalização recebida do ambiente encerra as participações abertas e preserva Usuario/Estagiario. `Usuario.ativo = false` bloqueia operação, mas não é sinônimo automático de vínculo FINALIZADO.
+
+Não existe encerramento/prorrogação manual de rotina no SGL como fonte de verdade do ciclo institucional.
+
+Referência: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
+
+Fluxo validado em 02/10/2026: sincronização de vínculo existente, prorrogação, finalização, idempotência de eventos e criação de nova bolsa/novo `VinculoEstagio` sem Atividade inicial foram cobertas pela suíte backend.
+
+# Estagiários — contrato backend estabilizado até 6.3
+
+Em 01/10/2026, os blocos 6.1–6.3 foram concluídos e validados no backend.
+
+```text
+VinculoEstagio
+├── Formação
+├── Curso
+├── treinamento de segurança
+└── participações em Atividades
+    ├── Atividade → SCI → Projeto → Laboratório
+    └── Culturas
+```
+
+Formação é enum institucional + `OUTRO`; Curso e Cultura são catálogos por Unidade. Cultura é N:N com a participação em Atividade. O frontend definitivo desse domínio permanece no 6.5.
+
+# Contexto operacional do Estagiário e evolução de Pedidos
+
+Decisão estrutural aprovada em 01/10/2026:
+
+```text
+Usuario
+└── Estagiario
+    └── VinculoEstagio
+        └── VinculoEstagioAtividade
+            └── Atividade
+                └── SCI
+                    └── Projeto
+                        └── Laboratorio
+                            └── Unidade
+```
+
+Para Estagiários, `Usuario.laboratorio` não representa mais a fonte de verdade operacional. Um mesmo vínculo pode participar de Atividades pertencentes a Projetos e Laboratórios diferentes dentro da mesma Unidade.
+
+A interface de Estagiários deve, no bloco 6.5, representar cada participação com sua Atividade, Projeto e Laboratório, removendo a ideia visual de um único "Laboratório do Estagiário".
+
+## Pedido atual x fluxo alvo
+
+O Pedido atual ainda recebe `usuarioId`, `laboratorioId` e `projetoId` pelo cliente. Esse contrato permanece por compatibilidade até a evolução planejada.
+
+Fluxo alvo para Estagiário:
+
+```text
+Novo Pedido
+→ carregar participações abertas do Estagiário
+→ escolher participação/Atividade
+→ backend resolve Projeto
+→ backend resolve Laboratório
+→ backend confirma Unidade/tenant
+→ criar Pedido
+```
+
+Se houver uma única participação aberta, o frontend pode selecioná-la automaticamente. Com múltiplas participações, a escolha deve ser explícita.
+
+Na Etapa 9, o Pedido deve ganhar referência à `VinculoEstagioAtividade`. Projeto e Laboratório continuam podendo existir como relações diretas para compatibilidade/consulta/rastreabilidade, mas seus valores, em Pedido de Estagiário, devem ser derivados e validados pelo backend.
+
+Solicitante e Gestão consomem o mesmo registro de Pedido; não existe sincronização de cópias entre interfaces. O backend/banco permanece a fonte de verdade.
+
+Para perfis não Estagiários, a participação de estágio não é obrigatória e o contrato operacional será fechado junto da refatoração de Pedidos.
+
+Referência: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
+
