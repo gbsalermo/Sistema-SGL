@@ -601,6 +601,26 @@ public class VinculoEstagioService {
 		return montarResponse(novo, novas);
 	}
 
+
+	@Transactional
+	public VinculoEstagioResponseDTO atualizarReferenciaBolsaLocal(UUID vinculoId, String referencia) {
+
+		VinculoEstagio vinculo = buscarVinculoNoTenant(vinculoId);
+
+		if (vinculo.getSituacao() == SituacaoEstagio.FINALIZADO) {
+			throw new BusinessRuleException("Não é possível alterar a referência de uma bolsa encerrada.");
+		}
+
+		vinculo.setReferenciaInstitucional(normalizarTexto(referencia));
+		vinculo = vinculoEstagioRepository.save(vinculo);
+
+		List<VinculoEstagioAtividade> participacoes = participacaoRepository
+				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+						vinculo.getPublicId(), TenantContext.unidadeAtual().orElseThrow());
+
+		return montarResponse(vinculo, participacoes);
+	}
+
 	@Transactional
 	public VinculoEstagioResponseDTO concluirTreinamentoSeguranca(UUID vinculoId) {
 
