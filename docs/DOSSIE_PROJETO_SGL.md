@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 01/10/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado implementado e aguardando validação visual/local.
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 concluída e validada em 02/10/2026; Etapa 7 — Relatórios consolidados é a frente atual.
 
 Para validar o 6.5, foi adicionada massa DEV IQ idempotente com múltiplos cenários de Estagiários, vínculos e participações. Essa massa não substitui o bloco 6.6 de fechamento final.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
@@ -17,7 +17,7 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5 — Projetos e Atividades             ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
+Etapa 6 — Estagiários e vínculos             ✅ concluída e validada
 ```
 
 Handoff imediato:
@@ -115,7 +115,7 @@ Quando houver conflito:
 9. documentos históricos
 ```
 
-As Etapas 4 e 5 foram integradas à `main`. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`; branches anteriores permanecem apenas como referência histórica.
+As Etapas 4 e 5 foram integradas à `main`. A branch operacional atual é `collab/etapa-7-relatorios-consolidados`; branches anteriores permanecem apenas como referência histórica.
 
 ---
 
@@ -139,7 +139,7 @@ Frontend/documentação podem ser alterados diretamente quando autorizado.
 
 Trabalhar sempre em branch própria e em etapas pequenas.
 
-As Etapas 1–5 estão fechadas. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
+As Etapas 1–5 estão fechadas. A branch operacional atual é `collab/etapa-7-relatorios-consolidados`, criada sobre a `main` pós-Etapa 5.
 
 ---
 
@@ -618,8 +618,8 @@ Estado atual da Etapa 6:
   6.4.2C endpoint + testes                           ✅ suíte local verde
 6.4.3 nova bolsa / novo vínculo                      ✅ suíte local verde
 6.4.4 testes/validação/documentação                  ✅ concluído
-6.5 frontend integrado                              ⏳
-6.6 dados DEV/testes/validação/documentação         ⏳
+6.5 frontend integrado                              ✅
+6.6 dados DEV/testes/validação/documentação         ✅
 ```
 
 O 6.2 teve suíte backend completa e compilação confirmadas sem erros/falhas em 01/10/2026. O 6.3 também foi validado em 01/10/2026 com compilação concluída e suíte completa verde. Checkpoint atual: `docs/VALIDACAO_ETAPA_6_3.md`.
@@ -705,7 +705,7 @@ Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
 Etapa 5 ✅ concluída e validada
-Etapa 6 🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
+Etapa 6 ✅ concluída e validada
 Etapa 7 ⏳
 Etapa 8 ⏳ unidades/Soluções/contexto operacional
 Etapa 9 ⏳ Pedidos/Soluções/participação
