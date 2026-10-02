@@ -778,8 +778,11 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
 6.3.1 — Formação + Curso + treinamento                    ✅ concluído e validado
 6.3.2 — Cultura por Unidade + participação                ✅ concluído e validado
 6.4 — ciclo institucional e sincronização                 🔧 atual
-6.4.1 — contrato + histórico da sincronização             🔧 atual
-6.4.2 — sincronização do vínculo existente                ⏳
+6.4.1 — contrato + histórico da sincronização             ✅ implementado; validação no fechamento
+6.4.2 — sincronização do vínculo existente                🔧 atual
+  6.4.2A — DTOs/contrato de sincronização                 ✅ implementado
+  6.4.2B — regra transacional                             🔧 atual
+  6.4.2C — endpoint + testes                              ⏳
 6.4.3 — nova bolsa / novo VinculoEstagio                  ⏳
 6.4.4 — testes, validação e documentação                  ⏳
 6.5 — frontend integrado                                  ⏳
