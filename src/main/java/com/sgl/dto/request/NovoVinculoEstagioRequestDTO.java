@@ -23,6 +23,7 @@ public class NovoVinculoEstagioRequestDTO {
 	@NotNull(message = "Data de início do vínculo é obrigatória")
 	private LocalDate dataInicio;
 
+	@NotNull(message = "Data final prevista é obrigatória")
 	private LocalDate dataFimPrevista;
 
 	@NotNull(message = "Tipo de vínculo é obrigatório")
