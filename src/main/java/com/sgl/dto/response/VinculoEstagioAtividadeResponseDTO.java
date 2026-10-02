@@ -93,6 +93,16 @@ public class VinculoEstagioAtividadeResponseDTO {
 	                    ? atividade.getCodigoSeg()
 	                    : null;
 
+	    this.atividadeDataInicio =
+	            atividade != null
+	                    ? atividade.getDataInicio()
+	                    : null;
+
+	    this.atividadeDataFim =
+	            atividade != null
+	                    ? atividade.getDataFim()
+	                    : null;
+
 	    this.sciId =
 	            sci != null
 	                    ? sci.getPublicId()
@@ -111,6 +121,11 @@ public class VinculoEstagioAtividadeResponseDTO {
 	    this.projetoNome =
 	            projeto != null
 	                    ? projeto.getNome()
+	                    : null;
+
+	    this.projetoDataFim =
+	            projeto != null
+	                    ? projeto.getDataFim()
 	                    : null;
 
 	    this.laboratorioId =
