@@ -202,7 +202,7 @@ migration aplicada = imutável
 nova alteração de schema = próxima versão livre após V29
 ```
 
-A V29 foi concluída e validada no 6.3.2. A V30 iniciou o 6.4.1 com `referencia_institucional` em `vinculos_estagio` e `historico_sincronizacao_vinculo_estagio`. Como a V30 já foi publicada, a V31 remove de forma evolutiva a unicidade global inicialmente assumida para `referencia_institucional`, preservando o índice de consulta. O SGL não assume unicidade global enquanto o contrato corporativo não confirmar esse requisito. A idempotência de evento é separada por origem + referência do evento quando disponível. Fundação implementada e ciclo institucional 6.4 concluído e validado em 02/10/2026. Próxima migration esperada, se necessária, é **V32**.
+A V29 foi concluída e validada no 6.3.2. A V30 iniciou o 6.4.1 com `referencia_institucional` em `vinculos_estagio` e `historico_sincronizacao_vinculo_estagio`. Como a V30 já foi publicada, a V31 remove de forma evolutiva a unicidade global inicialmente assumida para `referencia_institucional`, preservando o índice de consulta. O SGL não assume unicidade global enquanto o contrato corporativo não confirmar esse requisito. A idempotência de evento é separada por origem + referência do evento quando disponível. Fundação implementada e ciclo institucional 6.4 concluído e validado em 02/10/2026. A V32 foi ocupada pelas observações/auditoria do treinamento no 6.5. Próxima migration livre, se necessária, é **V33**.
 
 ---
 
@@ -979,3 +979,22 @@ Regra obrigatória: todo novo vínculo deve possuir `dataInicio` e `dataFimPrevi
 ## Pendência pós-Etapa 6 — Projetos ↔ Estagiários
 
 Depois de concluir e validar a Etapa 6, revisar o hub de Projetos para que cada Atividade possa exibir os Estagiários relacionados por `VinculoEstagioAtividade`, ao lado/abaixo do responsável já mostrado atualmente. Não criar relação direta Projeto ↔ Estagiário; a associação deve continuar derivada da Atividade. A definição visual de participações atuais x históricas fica para essa rodada posterior.
+
+
+### Refinamento do drawer 6.5 — observações e treinamento auditável
+
+Implementado em 02/10/2026 para sustentar o polimento final do frontend:
+
+- V32 cria `observacoes_vinculo_estagio`;
+- observações operacionais ficam vinculadas ao `VinculoEstagio`, com operador e data/hora;
+- eventos de treinamento de segurança são auditados como `TREINAMENTO_CONCLUIDO` ou `TREINAMENTO_REVERTIDO`;
+- o treinamento passou a aceitar reversão pelo fluxo auditável;
+- observação do treinamento é opcional e aparece no conjunto de observações do vínculo;
+- o endpoint antigo de conclusão direta sem auditoria deixou de ser exposto;
+- novos endpoints:
+  - `GET /api/v1/vinculos-estagio/{vinculoId}/observacoes`;
+  - `POST /api/v1/vinculos-estagio/{vinculoId}/observacoes`;
+  - `PUT /api/v1/vinculos-estagio/{vinculoId}/treinamento-seguranca`.
+- operações auditáveis de observação/treinamento exigem operador ativo GESTOR ou ADMINISTRADOR do tenant.
+
+A implementação ainda aguarda a bateria manual e automatizada do 6.6; não considerar este bloco validado apenas pela publicação do código.
