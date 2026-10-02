@@ -906,6 +906,8 @@ Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e valida
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
 Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
+
+**Massa DEV IQ de apoio ao 6.5:** `DataInitializer` passou a garantir cenários variados para `admin@sgl.com`/Unidade IQ: Estagiário operacional com múltiplas Atividades/Projetos/Laboratórios, vínculo prorrogado próximo do término, vínculo institucional sem Atividade e vínculo encerrado com histórico. A carga é idempotente e serve apenas à validação visual/funcional do 6.5; o fechamento formal de dados/testes continua no 6.6.
 Etapa 7 — relatórios consolidados                     ⏳
 Etapa 8 — unidades + Soluções + contexto operacional  ⏳
 Etapa 9 — Pedidos + Soluções + participação           ⏳
