@@ -1023,3 +1023,14 @@ A validação formal de build/suíte permanece para o 6.6.
 - a validação de Atividade foi reforçada para impedir data final posterior à data final do Projeto.
 - o encerramento manual da participação continua histórico e mantém a regra de não encerrar a última participação ativa enquanto o vínculo estiver em andamento.
 - nenhuma migration nova foi necessária.
+
+### Correção do modal de Bolsa — 02/10/2026
+
+- `Editar bolsa` passou a ter dois modos explícitos: `Prorrogar bolsa atual` e `Registrar nova bolsa`.
+- prorrogação usa `PUT /api/v1/vinculos-estagio/{vinculoId}/prorrogar-bolsa`, mantém o mesmo vínculo, exige nova data final posterior à atual e grava evento `PRORROGACAO`.
+- nova bolsa continua usando `POST /api/v1/vinculos-estagio/{vinculoId}/nova-bolsa`, mas a troca local foi corrigida para redistribuir participações conforme a data de corte:
+  - participação encerrada antes da nova bolsa permanece no vínculo anterior;
+  - participação iniciada na nova data ou depois é movida para a nova ocorrência;
+  - participação que atravessa a troca é dividida entre vínculo anterior e novo, preservando Atividade, observação e Culturas.
+- a nova bolsa local é uma troca imediata/retroativa controlada; não agenda ocorrência futura. Data inicial deve ser hoje ou uma data passada. Agendamento futuro permanece responsabilidade da integração institucional.
+- nenhuma migration nova foi necessária.
