@@ -2,7 +2,7 @@
 
 Data de preparação: 02/10/2026
 
-Status: **testes automatizados preparados; execução local final pendente**.
+Status: **VALIDADO — Etapa 6.6 concluída em 02/10/2026**.
 
 ## Objetivo
 
@@ -167,4 +167,14 @@ A Etapa 6 só deve ser marcada como encerrada quando:
 4. frontend `build` estiver verde;
 5. polimento manual já validado permanecer sem regressão.
 
-Até essa execução, documentação deve usar **“6.6 preparado / validação automática pendente”**, não “Etapa 6 concluída”.
+## Resultado final
+
+Validação local confirmada em 02/10/2026: **100% verde**.
+
+- regressão automatizada da Etapa 6 validada;
+- correção dos mocks de `HistoricoSincronizacaoVinculoEstagioRepository` em `EstagiarioServiceTest` validada;
+- suíte automatizada final sem falhas informadas;
+- polimento funcional/visual aprovado;
+- Etapa 6 autorizada para fechamento e merge.
+
+**Etapa 6 — Estagiários e Vínculos: CONCLUÍDA E VALIDADA.**
