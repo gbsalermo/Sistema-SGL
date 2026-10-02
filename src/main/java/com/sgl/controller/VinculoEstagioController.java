@@ -15,6 +15,7 @@ import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovaBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
+import com.sgl.dto.request.ProrrogarBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.SincronizacaoVinculoEstagioRequestDTO;
 import com.sgl.dto.response.HistoricoSincronizacaoVinculoEstagioResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
@@ -56,6 +57,18 @@ public class VinculoEstagioController {
 			@Valid @RequestBody AtualizarVinculoEstagioRequestDTO dto) {
 
 		return ResponseEntity.ok(service.atualizarLocal(vinculoId, dto));
+	}
+
+	@Operation(
+			summary = "Prorrogar bolsa atual localmente",
+			description = "Fallback operacional enquanto a integração institucional não fornecer a prorrogação. "
+					+ "Mantém a mesma ocorrência de vínculo, amplia a data final prevista e registra histórico auditável.")
+	@PutMapping("/{vinculoId}/prorrogar-bolsa")
+	public ResponseEntity<VinculoEstagioResponseDTO> prorrogarBolsa(
+			@PathVariable UUID vinculoId,
+			@Valid @RequestBody ProrrogarBolsaVinculoEstagioRequestDTO dto) {
+
+		return ResponseEntity.ok(service.prorrogarBolsaLocal(vinculoId, dto));
 	}
 
 	@Operation(
