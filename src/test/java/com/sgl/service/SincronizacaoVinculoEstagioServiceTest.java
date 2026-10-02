@@ -31,8 +31,10 @@ import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.Unidade;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
@@ -486,6 +488,32 @@ class SincronizacaoVinculoEstagioServiceTest {
 
         verify(vinculoEstagioRepository, never())
                 .buscarPorPublicIdETenantComBloqueio(any(), any());
+    }
+
+    @Test
+    void deveAplicarCamposInstitucionaisQuandoInformados() {
+
+        vinculo.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        vinculo.setFormacao(FormacaoEstagiario.GRADUACAO);
+
+        mockarFluxoNovoEvento();
+
+        SincronizacaoVinculoEstagioRequestDTO dto =
+                montarDto(
+                        SituacaoEstagio.EM_ANDAMENTO,
+                        LocalDate.of(2026, 12, 31),
+                        null,
+                        "EVT-001");
+
+        dto.setDataInicio(LocalDate.of(2026, 1, 15));
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setFormacao(FormacaoEstagiario.MESTRADO);
+
+        service.sincronizar(VINCULO_ID, dto);
+
+        assertEquals(LocalDate.of(2026, 1, 15), vinculo.getDataInicio());
+        assertEquals(TipoBolsa.BOLSA_CAPES, vinculo.getTipoBolsa());
+        assertEquals(FormacaoEstagiario.MESTRADO, vinculo.getFormacao());
     }
 
     private HistoricoSincronizacaoVinculoEstagio montarHistoricoProcessado(
