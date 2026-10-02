@@ -846,6 +846,7 @@ class VinculoEstagioServiceTest {
         NovaBolsaVinculoEstagioRequestDTO dto =
                 new NovaBolsaVinculoEstagioRequestDTO();
         dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        dto.setEspecificacaoBolsa("  Bolsa Growth  ");
         dto.setDataInicio(hoje);
         dto.setDataFimPrevista(hoje.plusMonths(8));
 
@@ -854,6 +855,7 @@ class VinculoEstagioServiceTest {
 
         assertEquals(novoVinculoId, resultado.getId());
         assertEquals(TipoBolsa.BOLSA_CAPES, resultado.getTipoBolsa());
+        assertEquals("Bolsa Growth", resultado.getReferenciaInstitucional());
         assertEquals(SituacaoEstagio.FINALIZADO, atual.getSituacao());
         assertEquals(hoje.minusDays(1), atual.getDataFimEfetiva());
         assertEquals(novoVinculoId,
