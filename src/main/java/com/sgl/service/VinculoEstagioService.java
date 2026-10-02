@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
+import com.sgl.dto.request.NovaBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
@@ -333,6 +334,11 @@ public class VinculoEstagioService {
 
 		if (vinculo.getSituacao() == SituacaoEstagio.FINALIZADO) {
 			throw new BusinessRuleException("Vínculos finalizados não podem ser alterados pelo fluxo operacional.");
+		}
+
+		if (dto.getTipoBolsa() != vinculo.getTipoBolsa()) {
+			throw new BusinessRuleException(
+					"O tipo de bolsa não pode ser alterado em Editar vínculo. Use o fluxo de nova bolsa.");
 		}
 
 		validarPeriodoVinculo(dto.getDataInicio(), dto.getDataFimPrevista());
