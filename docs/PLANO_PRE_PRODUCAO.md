@@ -588,8 +588,8 @@ Divisão operacional:
 6.4.1 contrato + histórico da sincronização institucional ✅ implementado
 → 6.4.2 sincronização do vínculo existente 🔧
    → 6.4.2A DTOs/contrato ✅ implementado
-   → 6.4.2B regra transacional 🔧 atual
-   → 6.4.2C endpoint + testes ⏳
+   → 6.4.2B regra transacional ✅ implementado; validação pendente
+   → 6.4.2C endpoint + testes 🔧 atual
    → prorrogação/finalização derivadas do estado recebido
 → 6.4.3 nova bolsa / novo VinculoEstagio
 → 6.4.4 testes, validação e documentação
