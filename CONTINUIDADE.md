@@ -954,3 +954,23 @@ Os ajustes acima foram validados e fazem parte do fechamento definitivo da Etapa
 - `VinculoEstagioResponseDTO` passa a expor `dataFimPrevistaOriginal` quando há histórico de `PRORROGACAO`, derivado da primeira data prevista anterior registrada; isso permite ao frontend mostrar período original e `Prorrogado até ...` sem inventar dado.
 - A massa DEV IQ ganhou um Estagiário com vínculo ainda `EM_ANDAMENTO`, mas apenas participações encerradas, para validar o estado visual `Sem atividade ativa` sem tratá-lo como `Não iniciado`.
 - A massa DEV da Ana Costa passou a registrar histórico de prorrogação para exercitar a visualização do período original + nova data.
+
+
+## Revisão híbrida de dados do vínculo — 02/10/2026
+
+A decisão do 6.4 foi refinada para precedência **por campo**:
+
+- identidade e dados pessoais institucionais continuam prioritariamente externos;
+- Formação, Curso, Bolsa/modalidade, Orientador e período podem ser mantidos pelo SGL;
+- quando a sincronização institucional enviar um desses campos, o valor institucional prevalece;
+- ausência do campo na sincronização não apaga o valor local;
+- Projeto/SCI/Atividade/Laboratório e participações continuam sendo domínio operacional do SGL;
+- vínculos finalizados não podem ser editados pelo fluxo local comum.
+
+Contrato local novo:
+
+`PUT /api/v1/vinculos-estagio/{vinculoId}`
+
+Permite editar Formação, Curso, Bolsa/modalidade, Orientador, data de início, data final prevista e observação. Aumento da data final prevista registra prorrogação local no histórico com origem `DEV`.
+
+Regra obrigatória: todo novo vínculo deve possuir `dataInicio` e `dataFimPrevista`; não criar estágio sem término previsto.
