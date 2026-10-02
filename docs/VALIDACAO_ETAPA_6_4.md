@@ -62,3 +62,17 @@ A cobertura adicionada no bloco inclui, entre outros cenários:
 ```
 
 O frontend deve refletir o estado institucional vindo do backend, sem criar workflow cotidiano próprio para prorrogação/finalização, e deve representar o Estagiário por suas participações/contextos de Atividade em vez de um único Laboratório definitivo.
+
+
+## Evolução posterior — modelo híbrido de 02/10/2026
+
+Este checkpoint continua válido como registro do que foi validado no fechamento do 6.4. Depois dele, a fronteira de responsabilidade foi refinada durante o 6.5:
+
+- identidade e situação institucional continuam prioritariamente externas;
+- Formação, Curso, Bolsa/modalidade, Orientador e período passaram a aceitar manutenção local;
+- quando a integração institucional enviar esses mesmos campos, o valor externo prevalece;
+- ausência de campo no evento institucional não apaga valor local;
+- todo novo vínculo exige data de início e data final prevista;
+- encerramento definitivo continua separado da edição local comum.
+
+A decisão vigente está em `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
