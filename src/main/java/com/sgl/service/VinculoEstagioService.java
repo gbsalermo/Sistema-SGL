@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovaBolsaVinculoEstagioRequestDTO;
+import com.sgl.dto.request.ProrrogarBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
@@ -421,6 +422,53 @@ public class VinculoEstagioService {
 						"A nova data final prevista é anterior ao fim de uma participação já registrada.");
 			}
 		}
+	}
+
+	@Transactional
+	public VinculoEstagioResponseDTO prorrogarBolsaLocal(UUID vinculoId,
+			ProrrogarBolsaVinculoEstagioRequestDTO dto) {
+
+		VinculoEstagio vinculo = buscarVinculoNoTenant(vinculoId);
+
+		if (vinculo.getSituacao() == SituacaoEstagio.FINALIZADO) {
+			throw new BusinessRuleException("A bolsa atual já está encerrada.");
+		}
+
+		LocalDate fimAnterior = vinculo.getDataFimPrevista();
+		LocalDate novoFim = dto.getNovaDataFimPrevista();
+
+		if (fimAnterior == null) {
+			throw new BusinessRuleException("A bolsa atual não possui data final prevista para ser prorrogada.");
+		}
+
+		if (!novoFim.isAfter(fimAnterior)) {
+			throw new BusinessRuleException(
+					"A nova data final prevista deve ser posterior ao término atual da bolsa.");
+		}
+
+		SituacaoEstagio situacaoAnterior = vinculo.getSituacao();
+
+		vinculo.setDataFimPrevista(novoFim);
+		vinculo.setSituacao(SituacaoEstagio.PRORROGADO);
+		vinculo = vinculoEstagioRepository.save(vinculo);
+
+		historicoSincronizacaoRepository.save(HistoricoSincronizacaoVinculoEstagio.builder()
+				.vinculoEstagio(vinculo)
+				.tipoEvento(TipoEventoSincronizacaoVinculoEstagio.PRORROGACAO)
+				.origem(OrigemSincronizacaoVinculoEstagio.DEV)
+				.situacaoAnterior(situacaoAnterior)
+				.situacaoNova(SituacaoEstagio.PRORROGADO)
+				.dataFimPrevistaAnterior(fimAnterior)
+				.dataFimPrevistaNova(novoFim)
+				.dataFimEfetivaAnterior(vinculo.getDataFimEfetiva())
+				.dataFimEfetivaNova(vinculo.getDataFimEfetiva())
+				.build());
+
+		List<VinculoEstagioAtividade> participacoes = participacaoRepository
+				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+						vinculo.getPublicId(), TenantContext.unidadeAtual().orElseThrow());
+
+		return montarResponse(vinculo, participacoes);
 	}
 
 	@Transactional
