@@ -325,7 +325,7 @@ V30 referência institucional + histórico de sincronização do vínculo
 V31 remoção da unicidade global não confirmada da referência institucional
 ```
 
-A V29 e o 6.3 foram concluídos e validados em 01/10/2026. A V30 abriu o 6.4.1 com referência institucional do vínculo e histórico de sincronização. A V31 remove a unicidade global não confirmada da referência institucional sem reescrever a migration já publicada. `referenciaInstitucional` permanece indexada; idempotência de eventos usa origem + referência do evento quando disponível. Próxima migration esperada, se necessária: **V32+**.
+A V29 e o 6.3 foram concluídos e validados em 01/10/2026. A V30 abriu o 6.4.1 com referência institucional do vínculo e histórico de sincronização. A V31 remove a unicidade global não confirmada da referência institucional sem reescrever a migration já publicada. `referenciaInstitucional` permanece indexada; idempotência de eventos usa origem + referência do evento quando disponível. V32 passou a ser usada por observações/auditoria do treinamento no 6.5; próxima migration livre: **V33+**.
 
 Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
 
@@ -737,3 +737,10 @@ Todo novo vínculo exige início e fim previsto. Não criar bolsa/estágio sem t
 ## Projetos ↔ Estagiários — refinamento posterior
 
 Após o fechamento da Etapa 6, a tela de Projetos deverá ser revisada para mostrar, em cada Atividade, os Estagiários associados via `VinculoEstagioAtividade`, preservando o responsável da Atividade já exibido. A relação não será duplicada diretamente no Projeto; será derivada da participação existente.
+
+
+## Drawer de Estagiários — refinamento 6.5
+
+A experiência final do drawer prioriza Ações operacionais, seguida de `BOLSA / VÍNCULO`, Formação, Orientador, Participações e Observações. V32 adiciona observações auditáveis do vínculo e eventos de treinamento. O treinamento pode ser concluído ou revertido pelo novo fluxo auditável, com observação opcional e identificação do operador. O cadastro de Cultura também pode ser iniciado diretamente pelo modal de gestão de Culturas da participação.
+
+Status: implementado, aguardando testes manuais e automáticos do 6.6.
