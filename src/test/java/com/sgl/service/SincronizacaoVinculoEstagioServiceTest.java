@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -151,10 +152,11 @@ class SincronizacaoVinculoEstagioServiceTest {
                         VINCULO_ID, UNIDADE_ID))
                 .thenReturn(List.of(participacao));
 
-        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+        lenient().when(
+                vinculoEstagioRepository.save(any(VinculoEstagio.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(historicoRepository
+        lenient().when(historicoRepository
                 .save(any(HistoricoSincronizacaoVinculoEstagio.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
