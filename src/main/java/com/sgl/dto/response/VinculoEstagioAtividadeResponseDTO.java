@@ -22,12 +22,15 @@ public class VinculoEstagioAtividadeResponseDTO {
 	private final UUID atividadeId;
 	private final String atividadeNome;
 	private final String atividadeCodigoSeg;
+	private final LocalDate atividadeDataInicio;
+	private final LocalDate atividadeDataFim;
 
 	private final UUID sciId;
 	private final String sciNome;
 
 	private final UUID projetoId;
 	private final String projetoNome;
+	private final LocalDate projetoDataFim;
 
 	private final UUID laboratorioId;
 	private final String laboratorioNome;
