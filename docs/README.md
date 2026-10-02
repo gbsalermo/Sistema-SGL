@@ -1,6 +1,6 @@
 # Documentação — SGL Backend
 
-**Atualizado em:** 24/09/2026
+**Atualizado em:** 02/10/2026
 
 Este diretório reúne documentação vigente, decisões de domínio, material auxiliar e registros históricos. O objetivo deste índice é impedir que documentos antigos sejam interpretados como estado atual do projeto.
 
@@ -12,7 +12,7 @@ Este diretório reúne documentação vigente, decisões de domínio, material a
 1. ../CONTINUIDADE.md
 2. SINCRONIZACAO_GITLAB_GITHUB.md
 3. PLANO_PRE_PRODUCAO.md
-4. CONTINUIDADE_ETAPA_5_2026-09-24.md
+4. CONTINUIDADE_ETAPA_7_2026-10-02.md
 5. DOSSIE_PROJETO_SGL.md
 6. Swagger/OpenAPI em execução
 7. documento específico da área em trabalho
@@ -51,8 +51,9 @@ Etapa 2 — Dark Mode definitivo               ✅ concluída
 Etapa 3 — refinamentos de Resíduos           ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos   ✅ concluída e validada
 Etapa 5 — Projetos e Atividades              ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             ⏳ próxima
-Etapas 7 a 13                                ⏳
+Etapa 6 — Estagiários e vínculos             ✅ concluída e validada
+Etapa 7 — Relatórios consolidados            🔧 atual
+Etapas 8 a 13                                ⏳
 Matriz formal de permissões                  ⏳ após pré-produção
 Congelamento/homologação final               ⏳ posterior
 Autenticação/autorização definitiva          ⏳ posterior
@@ -65,14 +66,14 @@ Integração corporativa                       ⏳ posterior
 
 | Documento | Papel | Estado |
 |---|---|---|
-| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 29/09** |
+| `../CONTINUIDADE.md` | checkpoint técnico e fase atual | **ATUAL — 02/10** |
 | `SINCRONIZACAO_GITLAB_GITHUB.md` | fonte canônica para remotes, branches, Actions, push/pull e regras de sincronização | **ATUAL — 24/09** |
-| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 29/09** |
+| `PLANO_PRE_PRODUCAO.md` | sequência canônica, dependências e regras | **ATUAL — 02/10** |
 | `CONTINUIDADE_ETAPA_4_2026-09-17.md` | fechamento e decisões da Etapa 4 | **FECHADO — 24/09** |
 | `VALIDACAO_ETAPA_4.md` | bateria executada e critérios de fechamento da Etapa 4 | **FECHADO — 24/09** |
 | `VALIDACAO_ETAPA_5.md` | fechamento, validações e decisões finais de Projetos/SCI/Atividades | **FECHADO — 29/09** |
 | `CONTINUIDADE_ETAPA_3_2026-09-11.md` | fechamento detalhado da Etapa 3 | **FECHADO — 17/09** |
-| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 29/09** |
+| `DOSSIE_PROJETO_SGL.md` | visão consolidada para handoff humano/IA | **ATUAL — 02/10** |
 | `MODULO_RESIDUOS.md` | domínio e fluxo de Resíduos | **ATUAL — 17/09** |
 | `FLUXO_DO_SISTEMA.md` | fluxo operacional de domínio | **ATUAL — 17/09** |
 | `RELATORIOS.md` | cobertura de relatórios | **VIGENTE** |
@@ -90,8 +91,8 @@ Integração corporativa                       ⏳ posterior
 3. refinamentos do fluxo atual de Resíduos          ✅
 4. expansão de Resíduos                             ✅ concluída e validada
 5. Projetos + Atividades                            ✅ concluída e validada
-6. Estagiários + vínculos                           ⏳ próxima
-7. relatórios consolidados                          ⏳
+6. Estagiários + vínculos                           ✅ concluída e validada
+7. relatórios consolidados                          🔧 atual
 8. normalização de unidades + Soluções              ⏳
 9. Pedidos + integração com Soluções                ⏳
 10. rótulos + documento de lote + impressão         ⏳
@@ -138,7 +139,7 @@ Detalhes: `CONTINUIDADE_ETAPA_3_2026-09-11.md`.
 
 A Etapa 4 foi reconciliada sobre a base corrigida pelo supervisor, testada e validada funcionalmente. Detalhes: `CONTINUIDADE_ETAPA_4_2026-09-17.md`.
 
-A **Etapa 5 — Projetos e Atividades está concluída e validada**. A próxima etapa é **Etapa 6 — Estagiários e vínculos**.
+As **Etapas 5 e 6 estão concluídas e validadas**. A etapa atual é **Etapa 7 — Relatórios consolidados**.
 
 ---
 
@@ -203,9 +204,9 @@ Antes de alterar o sistema:
 3. usar CONTINUIDADE_ETAPA_4_2026-09-17.md apenas como fechamento da Etapa 4
 4. confirmar o estado da main canônica no GitLab
 5. conferir Swagger/OpenAPI
-6. ler CONTINUIDADE_ETAPA_5_2026-09-24.md
-7. continuar pelo 5.1 — Projeto base
-7. distinguir requisito atual de registro histórico
+6. ler CONTINUIDADE_ETAPA_7_2026-10-02.md
+7. continuar pela Etapa 7 — Relatórios consolidados
+8. distinguir requisito atual de registro histórico
 ```
 
-A branch de trabalho da Etapa 5 é `collab/etapa-5-projetos-atividades`, criada a partir da `main` contendo a Etapa 4. Não iniciar alterações funcionais fora dela.
+A branch de trabalho atual é `collab/etapa-7-relatorios-consolidados`. Documentos de continuidade das Etapas 3–6 são registros históricos de fechamento.
