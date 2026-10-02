@@ -1,7 +1,7 @@
 # Decisão estrutural — Ciclo institucional do Estagiário
 
 **Data:** 02/10/2026  
-**Status:** decisão arquitetural aprovada; orienta o bloco 6.4  
+**Status:** decisão arquitetural implementada e validada no bloco 6.4 em 02/10/2026  
 **Branch:** `collab/etapa-6-estagiarios-vinculos`
 
 ## 1. Fonte de verdade
@@ -169,18 +169,18 @@ SGL
 ## 10. Bloco 6.4 revisado
 
 ```text
-6.4.1 contrato e histórico da sincronização institucional ✅ implementado
+6.4.1 contrato e histórico da sincronização institucional ✅
 6.4.2 sincronização do vínculo existente ✅ concluído e validado em 02/10/2026
       → prorrogação ✅
       → finalização ✅
       → idempotência por origem + referência do evento ✅
       → encerramento coerente das participações abertas ✅
-6.4.3 nova bolsa / novo VinculoEstagio ✅ implementado; validação local pendente
+6.4.3 nova bolsa / novo VinculoEstagio ✅ validado
       → mesma identidade
       → criação sem Atividade inicial
       → evento de CRIACAO auditado e idempotente por referência quando disponível
       → ativação operacional somente após Atividade
-6.4.4 testes, validação e documentação 🔧 próximo
+6.4.4 testes, validação e documentação ✅ concluído
 ```
 
 Correção administrativa manual do ciclo institucional, caso necessária no futuro, será fluxo excepcional e auditável; não faz parte do workflow normal do 6.4.
