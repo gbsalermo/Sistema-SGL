@@ -208,12 +208,12 @@ class VinculoEstagioServiceTest {
     }
 
     private void mockarBuscasInstitucionais() {
-        when(estagiarioRepository
+        lenient().when(estagiarioRepository
                 .findByPublicIdAndUnidadePublicId(
                         ESTAGIARIO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(estagiario));
 
-        when(usuarioRepository
+        lenient().when(usuarioRepository
                 .findByPublicIdAndUnidadePublicId(
                         ORIENTADOR_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(orientador));
