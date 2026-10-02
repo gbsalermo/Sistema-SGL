@@ -578,21 +578,21 @@ Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
 
 Próximo bloco: **6.4 — período, situação, prorrogações e finalização**.
 
-### 6.4 — ciclo institucional e sincronização 🔧
+### 6.4 — ciclo institucional e sincronização ✅ concluído e validado em 02/10/2026
 
 A fonte de verdade do ciclo de bolsa/estágio é o ambiente institucional. O SGL espelha o vínculo e executa consequências operacionais.
 
 Divisão operacional:
 
 ```text
-6.4.1 contrato + histórico da sincronização institucional ✅ implementado
+6.4.1 contrato + histórico da sincronização institucional ✅
 → 6.4.2 sincronização do vínculo existente ✅ concluído e validado em 02/10/2026
    → 6.4.2A DTOs/contrato ✅
    → 6.4.2B regra transacional ✅
    → 6.4.2C endpoint + testes ✅ suíte local verde
    → prorrogação/finalização derivadas do estado recebido
-→ 6.4.3 nova bolsa / novo VinculoEstagio ✅ implementado; validação local pendente
-→ 6.4.4 testes, validação e documentação
+→ 6.4.3 nova bolsa / novo VinculoEstagio ✅ suíte local verde
+→ 6.4.4 testes, validação e documentação ✅ concluído
 ```
 
 Regras já fechadas:
@@ -614,7 +614,7 @@ Regras já fechadas:
 - idempotência de eventos é independente da referência do vínculo e usa `origem + referenciaEvento` quando a fonte disponibilizar identificador próprio do evento;
 - V30 cria a fundação desse histórico institucional;
 - V31 remove a unicidade global inicialmente assumida para `referenciaInstitucional`, preservando compatibilidade com bancos onde a V30 já tenha sido aplicada;
-- validação do bloco 6.4 ainda está pendente.
+- bloco 6.4 concluído e validado em 02/10/2026; checkpoint: `docs/VALIDACAO_ETAPA_6_4.md`.
 
 Decisão detalhada: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
@@ -925,7 +925,7 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
 Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.3 concluídos; 6.4 atual
+Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.4 concluídos; 6.5 frontend próximo
 Etapas 7–13                                         ⏳
 ```
 
@@ -948,4 +948,4 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado anterior: `docs/VALIDACAO_ETAPA_6_3.md`. Bloco atual: 6.4 — ciclo institucional e sincronização.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Próximo bloco: 6.5 — frontend integrado.
