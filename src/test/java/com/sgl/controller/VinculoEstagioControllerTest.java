@@ -25,14 +25,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
+import com.sgl.dto.request.SincronizacaoVinculoEstagioRequestDTO;
+import com.sgl.dto.response.HistoricoSincronizacaoVinculoEstagioResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
+import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.FormacaoEstagiario;
+import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.service.SincronizacaoVinculoEstagioService;
 import com.sgl.service.VinculoEstagioService;
 
 @WebMvcTest(VinculoEstagioController.class)
@@ -67,6 +73,9 @@ class VinculoEstagioControllerTest {
 
     @MockitoBean
     private VinculoEstagioService service;
+
+    @MockitoBean
+    private SincronizacaoVinculoEstagioService sincronizacaoService;
 
     private NovoVinculoEstagioRequestDTO montarRequest() {
         NovoVinculoEstagioRequestDTO dto =
@@ -149,6 +158,82 @@ class VinculoEstagioControllerTest {
         mockMvc.perform(post(
                         "/api/v1/vinculos-estagio/estagiarios/{estagiarioId}",
                         ESTAGIARIO_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveSincronizarVinculoInstitucional()
+            throws Exception {
+
+        SincronizacaoVinculoEstagioRequestDTO dto =
+                new SincronizacaoVinculoEstagioRequestDTO();
+
+        dto.setOrigem(
+                OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL);
+        dto.setReferenciaEvento("EVT-001");
+        dto.setReferenciaInstitucional("BOLSA-001");
+        dto.setSituacao(SituacaoEstagio.PRORROGADO);
+        dto.setDataFimPrevista(LocalDate.of(2027, 6, 30));
+
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setPublicId(VINCULO_ID);
+
+        HistoricoSincronizacaoVinculoEstagio historico =
+                HistoricoSincronizacaoVinculoEstagio.builder()
+                        .publicId(UUID.randomUUID())
+                        .vinculoEstagio(vinculo)
+                        .tipoEvento(
+                                TipoEventoSincronizacaoVinculoEstagio.PRORROGACAO)
+                        .origem(
+                                OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL)
+                        .referenciaEvento("EVT-001")
+                        .situacaoAnterior(SituacaoEstagio.EM_ANDAMENTO)
+                        .situacaoNova(SituacaoEstagio.PRORROGADO)
+                        .dataFimPrevistaAnterior(
+                                LocalDate.of(2027, 3, 31))
+                        .dataFimPrevistaNova(
+                                LocalDate.of(2027, 6, 30))
+                        .build();
+
+        when(sincronizacaoService.sincronizar(
+                eq(VINCULO_ID),
+                any(SincronizacaoVinculoEstagioRequestDTO.class)))
+                .thenReturn(
+                        new HistoricoSincronizacaoVinculoEstagioResponseDTO(
+                                historico));
+
+        mockMvc.perform(post(
+                        "/api/v1/vinculos-estagio/{vinculoId}/sincronizacoes-institucionais",
+                        VINCULO_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.vinculoId")
+                        .value(VINCULO_ID.toString()))
+                .andExpect(jsonPath("$.tipoEvento")
+                        .value("PRORROGACAO"))
+                .andExpect(jsonPath("$.situacaoNova")
+                        .value("PRORROGADO"))
+                .andExpect(jsonPath("$.referenciaEvento")
+                        .value("EVT-001"));
+    }
+
+    @Test
+    void deveRetornar400QuandoSituacaoDaSincronizacaoNaoForInformada()
+            throws Exception {
+
+        SincronizacaoVinculoEstagioRequestDTO dto =
+                new SincronizacaoVinculoEstagioRequestDTO();
+
+        dto.setOrigem(
+                OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL);
+        dto.setDataFimPrevista(LocalDate.of(2027, 6, 30));
+
+        mockMvc.perform(post(
+                        "/api/v1/vinculos-estagio/{vinculoId}/sincronizacoes-institucionais",
+                        VINCULO_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
