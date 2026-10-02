@@ -26,9 +26,9 @@ import com.sgl.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Serviço responsável por sincronizar os dados institucionais
- * de vínculos de estágio, validando regras de negócio,
- * atualizando o vínculo e registrando o histórico da sincronização.
+ * Serviço responsável por sincronizar os dados institucionais de vínculos de
+ * estágio, validando regras de negócio, atualizando o vínculo e registrando o
+ * histórico da sincronização.
  */
 @Service
 @RequiredArgsConstructor
@@ -54,8 +54,11 @@ public class SincronizacaoVinculoEstagioService {
 
 		String referenciaInstitucional = normalizarTexto(dto.getReferenciaInstitucional());
 
+		VinculoEstagio vinculo = vinculoEstagioRepository.buscarPorPublicIdETenantComBloqueio(vinculoId, unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Vínculo de estágio", vinculoId));
+
 		Optional<HistoricoSincronizacaoVinculoEstagio> eventoJaProcessado = buscarEventoJaProcessado(dto,
-				referenciaEvento, unidadeId);
+				referenciaEvento);
 
 		if (eventoJaProcessado.isPresent()) {
 
@@ -67,11 +70,10 @@ public class SincronizacaoVinculoEstagioService {
 						"A referência do evento já foi utilizada " + "para outro vínculo de estágio.");
 			}
 
+			validarRepeticaoIdempotente(historico, dto);
+
 			return new HistoricoSincronizacaoVinculoEstagioResponseDTO(historico);
 		}
-
-		VinculoEstagio vinculo = vinculoEstagioRepository.buscarPorPublicIdETenantComBloqueio(vinculoId, unidadeId)
-				.orElseThrow(() -> new ResourceNotFoundException("Vínculo de estágio", vinculoId));
 
 		validarReferenciaInstitucional(vinculo, referenciaInstitucional);
 
@@ -115,14 +117,13 @@ public class SincronizacaoVinculoEstagioService {
 	}
 
 	private Optional<HistoricoSincronizacaoVinculoEstagio> buscarEventoJaProcessado(
-			SincronizacaoVinculoEstagioRequestDTO dto, String referenciaEvento, UUID unidadeId) {
+			SincronizacaoVinculoEstagioRequestDTO dto, String referenciaEvento) {
 
 		if (referenciaEvento == null) {
 			return Optional.empty();
 		}
 
-		return historicoRepository.findByOrigemAndReferenciaEventoAndVinculoEstagioEstagiarioUnidadePublicId(
-				dto.getOrigem(), referenciaEvento, unidadeId);
+		return historicoRepository.findByOrigemAndReferenciaEvento(dto.getOrigem(), referenciaEvento);
 	}
 
 	private void validarCamposObrigatorios(SincronizacaoVinculoEstagioRequestDTO dto) {
@@ -265,6 +266,15 @@ public class SincronizacaoVinculoEstagioService {
 			throw new BusinessRuleException(
 					"A data efetiva de encerramento é " + "incompatível com uma participação " + "já encerrada.");
 		}
+
+		LocalDate fimAtividade = participacao.getAtividade().getDataFim();
+
+		if (participacao.getDataFimParticipacao() == null && fimAtividade != null
+				&& dataFimEfetiva.isAfter(fimAtividade)) {
+
+			throw new BusinessRuleException("A data efetiva de encerramento é incompatível "
+					+ "com uma participação aberta cuja Atividade " + "já terminou anteriormente.");
+		}
 	}
 
 	private TipoEventoSincronizacaoVinculoEstagio classificarEvento(VinculoEstagio vinculo,
@@ -344,6 +354,20 @@ public class SincronizacaoVinculoEstagioService {
 		if (!TenantContext.ativo()) {
 
 			throw new BusinessRuleException("Cabeçalho X-SGL-Unidade-Id " + "é obrigatório para esta operação.");
+		}
+	}
+
+	private void validarRepeticaoIdempotente(HistoricoSincronizacaoVinculoEstagio historico,
+			SincronizacaoVinculoEstagioRequestDTO dto) {
+
+		boolean mesmoEstado = Objects.equals(historico.getSituacaoNova(), dto.getSituacao())
+				&& Objects.equals(historico.getDataFimPrevistaNova(), dto.getDataFimPrevista())
+				&& Objects.equals(historico.getDataFimEfetivaNova(), dto.getDataFimEfetiva());
+
+		if (!mesmoEstado) {
+
+			throw new BusinessRuleException(
+					"A referência do evento já foi processada " + "com dados institucionais diferentes.");
 		}
 	}
 }
