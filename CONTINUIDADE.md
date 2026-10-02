@@ -974,3 +974,8 @@ Contrato local novo:
 Permite editar Formação, Curso, Bolsa/modalidade, Orientador, data de início, data final prevista e observação. Aumento da data final prevista registra prorrogação local no histórico com origem `DEV`.
 
 Regra obrigatória: todo novo vínculo deve possuir `dataInicio` e `dataFimPrevista`; não criar estágio sem término previsto.
+
+
+## Pendência pós-Etapa 6 — Projetos ↔ Estagiários
+
+Depois de concluir e validar a Etapa 6, revisar o hub de Projetos para que cada Atividade possa exibir os Estagiários relacionados por `VinculoEstagioAtividade`, ao lado/abaixo do responsável já mostrado atualmente. Não criar relação direta Projeto ↔ Estagiário; a associação deve continuar derivada da Atividade. A definição visual de participações atuais x históricas fica para essa rodada posterior.
