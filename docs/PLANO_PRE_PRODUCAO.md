@@ -620,6 +620,30 @@ Decisão detalhada: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
 ---
 
+## Refinamento pós-Etapa 6 — Integração visual Projetos ↔ Estagiários
+
+Após o fechamento da Etapa 6, revisar a interface de Projetos para aproveitar o vínculo operacional já existente:
+
+```text
+Projeto
+→ SCI
+→ Atividade
+→ VinculoEstagioAtividade
+→ Estagiário
+```
+
+Objetivo visual:
+
+- manter o responsável da Atividade, como já ocorre hoje;
+- exibir também os Estagiários associados àquela Atividade;
+- não criar FK direta Projeto ↔ Estagiário;
+- derivar a relação pelas participações em Atividade já existentes;
+- decidir no momento da implementação como diferenciar participações atuais e históricas sem poluir a hierarquia Projeto → SCI → Atividade.
+
+Esse refinamento não faz parte do fechamento da Etapa 6 e não deve atrasar sua validação atual.
+
+---
+
 ## Etapa 7 — Relatórios consolidados
 
 **Dependência:** Etapas 5 e 6.
