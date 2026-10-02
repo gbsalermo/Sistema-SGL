@@ -147,6 +147,49 @@ public class VinculoEstagioAtividadeService {
 		return montarResponse(participacao);
 	}
 
+	@Transactional
+	public VinculoEstagioAtividadeResponseDTO atualizar(UUID participacaoId,
+			VinculoEstagioAtividadeRequestDTO dto) {
+
+		VinculoEstagioAtividade participacao = buscarParticipacaoNoTenant(participacaoId);
+
+		if (participacao.getDataFimParticipacao() != null) {
+			throw new BusinessRuleException("Não é possível editar uma participação em Atividade já encerrada.");
+		}
+
+		VinculoEstagio vinculo = participacao.getVinculoEstagio();
+
+		validarVinculoOperacional(vinculo);
+
+		Atividade atividade = buscarAtividadeNoTenant(dto.getAtividadeId());
+
+		validarAtividadeOperacional(atividade);
+		validarMesmaUnidade(vinculo, atividade);
+		validarPeriodo(vinculo, atividade, dto.getDataInicioParticipacao(), null);
+
+		boolean mudouAtividade = !participacao.getAtividade().getId().equals(atividade.getId());
+
+		if (mudouAtividade) {
+			boolean jaPossuiParticipacaoAberta = participacaoRepository
+					.existsByVinculoEstagioIdAndAtividadeIdAndDataFimParticipacaoIsNull(
+							vinculo.getId(), atividade.getId());
+
+			if (jaPossuiParticipacaoAberta) {
+				throw new BusinessRuleException("O vínculo de estágio já possui participação ativa nesta Atividade.");
+			}
+		}
+
+		participacao.setAtividade(atividade);
+		participacao.setDataInicioParticipacao(dto.getDataInicioParticipacao());
+		participacao.setObservacao(normalizarObservacao(dto.getObservacao()));
+
+		participacao = participacaoRepository.save(participacao);
+
+		sincronizarCulturas(participacao, dto.getCulturaIds());
+
+		return montarResponse(participacao);
+	}
+
 	private VinculoEstagio buscarVinculoNoTenant(UUID vinculoId) {
 
 		exigirTenantAtivo();
