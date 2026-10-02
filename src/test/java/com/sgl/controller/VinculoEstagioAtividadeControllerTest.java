@@ -190,4 +190,32 @@ class VinculoEstagioAtividadeControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void deveEditarParticipacaoERetornar200()
+            throws Exception {
+
+        VinculoEstagioAtividadeRequestDTO dto =
+                new VinculoEstagioAtividadeRequestDTO();
+        dto.setAtividadeId(ATIVIDADE_ID);
+        dto.setDataInicioParticipacao(
+                LocalDate.of(2026, 4, 1));
+        dto.setObservacao("Correção administrativa");
+
+        when(service.atualizar(
+                eq(PARTICIPACAO_ID),
+                any(VinculoEstagioAtividadeRequestDTO.class)))
+                .thenReturn(montarResponse(false));
+
+        mockMvc.perform(put(
+                        "/api/v1/vinculos-estagio/participacoes/{participacaoId}",
+                        PARTICIPACAO_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id")
+                        .value(PARTICIPACAO_ID.toString()))
+                .andExpect(jsonPath("$.ativa").value(true));
+    }
+
 }
