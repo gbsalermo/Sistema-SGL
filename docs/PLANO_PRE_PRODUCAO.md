@@ -1003,3 +1003,7 @@ Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `
 - `dataFimPrevista` passa a ser obrigatória em todos os novos vínculos;
 - edição local de período não finaliza automaticamente o estágio;
 - aumento de prazo local é auditado como prorrogação.
+
+#### Ajuste de interface do 6.5 — bolsa e prazo de Atividade — 02/10/2026
+
+No drawer de Estagiários, Bolsa deixa de ser um campo livre do `Editar vínculo`. A troca manual é um fallback específico que encerra a ocorrência atual e cria um novo `VinculoEstagio`, mantendo o histórico; o ambiente institucional continua autoritativo. Para participações, a data final visual/operacional usa `Atividade.dataFim` e, quando ela não existir, `Projeto.dataFim` como fallback. O drawer também oferece encerramento explícito de atividade/participação.
