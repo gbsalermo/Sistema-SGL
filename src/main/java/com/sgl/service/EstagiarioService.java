@@ -280,7 +280,15 @@ public class EstagiarioService {
 	}
 
 	private void validarDatas(LocalDate dataInicio, LocalDate dataFim) {
-		if (dataFim != null && dataFim.isBefore(dataInicio)) {
+		if (dataInicio == null) {
+			throw new BusinessRuleException("Data de início do estágio é obrigatória.");
+		}
+
+		if (dataFim == null) {
+			throw new BusinessRuleException("Data final prevista do estágio é obrigatória.");
+		}
+
+		if (dataFim.isBefore(dataInicio)) {
 			throw new BusinessRuleException("Data de fim do estágio não pode ser menor que data de início.");
 		}
 	}
