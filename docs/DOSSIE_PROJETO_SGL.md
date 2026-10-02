@@ -4,7 +4,9 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 01/10/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado implementado e aguardando validação visual/local.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado implementado e aguardando validação visual/local.
+
+Para validar o 6.5, foi adicionada massa DEV IQ idempotente com múltiplos cenários de Estagiários, vínculos e participações. Essa massa não substitui o bloco 6.6 de fechamento final.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
