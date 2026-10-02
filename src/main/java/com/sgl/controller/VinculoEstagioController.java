@@ -56,13 +56,6 @@ public class VinculoEstagioController {
 		return ResponseEntity.ok(service.atualizarLocal(vinculoId, dto));
 	}
 
-	@Operation(summary = "Registrar conclusão do treinamento de segurança")
-	@PutMapping("/{vinculoId}/treinamento-seguranca/concluir")
-	public ResponseEntity<VinculoEstagioResponseDTO> concluirTreinamentoSeguranca(@PathVariable UUID vinculoId) {
-
-		return ResponseEntity.ok(service.concluirTreinamentoSeguranca(vinculoId));
-	}
-
 	@Operation(summary = "Sincronizar estado institucional do vínculo", description = "Recebe o estado do vínculo informado pelo ambiente institucional, "
 			+ "aplicando atualização, prorrogação ou finalização de forma auditável.")
 	@PostMapping("/{vinculoId}/sincronizacoes-institucionais")
