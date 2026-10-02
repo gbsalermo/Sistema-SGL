@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 
 import lombok.Getter;
 
@@ -24,6 +26,7 @@ public class VinculoEstagioResponseDTO {
 
 	private final LocalDate dataInicio;
 	private final LocalDate dataFimPrevista;
+	private final LocalDate dataFimPrevistaOriginal;
 	private final LocalDate dataFimEfetiva;
 
 	private final TipoBolsa tipoBolsa;
@@ -53,6 +56,13 @@ public class VinculoEstagioResponseDTO {
 	public VinculoEstagioResponseDTO(VinculoEstagio entity, List<VinculoEstagioAtividade> participacoes,
 			Map<UUID, List<VinculoEstagioAtividadeCultura>> culturasPorParticipacao) {
 
+		this(entity, participacoes, culturasPorParticipacao, List.of());
+	}
+
+	public VinculoEstagioResponseDTO(VinculoEstagio entity, List<VinculoEstagioAtividade> participacoes,
+			Map<UUID, List<VinculoEstagioAtividadeCultura>> culturasPorParticipacao,
+			List<HistoricoSincronizacaoVinculoEstagio> historicosSincronizacao) {
+
 		this.id = entity.getPublicId();
 
 		this.orientadorId = entity.getOrientador() != null ? entity.getOrientador().getPublicId() : null;
@@ -61,6 +71,14 @@ public class VinculoEstagioResponseDTO {
 
 		this.dataInicio = entity.getDataInicio();
 		this.dataFimPrevista = entity.getDataFimPrevista();
+
+		this.dataFimPrevistaOriginal = historicosSincronizacao.stream()
+				.filter(historico -> historico.getTipoEvento() == TipoEventoSincronizacaoVinculoEstagio.PRORROGACAO)
+				.map(HistoricoSincronizacaoVinculoEstagio::getDataFimPrevistaAnterior)
+				.filter(data -> data != null)
+				.findFirst()
+				.orElse(null);
+
 		this.dataFimEfetiva = entity.getDataFimEfetiva();
 
 		this.tipoBolsa = entity.getTipoBolsa();
