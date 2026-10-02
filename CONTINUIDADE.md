@@ -947,3 +947,10 @@ A Etapa 4 só deve ser marcada como concluída após a validação funcional do 
 - testes adicionados para reconfirmação da mesma classe, histórico por gerador e texto humanizado do retorno.
 
 Os ajustes acima foram validados e fazem parte do fechamento definitivo da Etapa 4.
+
+
+### Refinamentos de apoio ao 6.5 — 02/10/2026
+
+- `VinculoEstagioResponseDTO` passa a expor `dataFimPrevistaOriginal` quando há histórico de `PRORROGACAO`, derivado da primeira data prevista anterior registrada; isso permite ao frontend mostrar período original e `Prorrogado até ...` sem inventar dado.
+- A massa DEV IQ ganhou um Estagiário com vínculo ainda `EM_ANDAMENTO`, mas apenas participações encerradas, para validar o estado visual `Sem atividade ativa` sem tratá-lo como `Não iniciado`.
+- A massa DEV da Ana Costa passou a registrar histórico de prorrogação para exercitar a visualização do período original + nova data.
