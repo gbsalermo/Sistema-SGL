@@ -129,6 +129,7 @@ public class DataInitializer implements CommandLineRunner {
         maria.setLaboratorio(lab4);
         maria.setAtivo(true);
         maria.setDataInicioEstagio(LocalDate.now().minusMonths(2));
+        maria.setDataFimEstagio(LocalDate.now().plusMonths(10));
         maria.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
         maria.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
         maria.setObservacao("Cadastro inicial de estágio para testes");
@@ -712,6 +713,13 @@ public class DataInitializer implements CommandLineRunner {
 
         Curso engenhariaComputacao = garantirCursoEtapa6(unidade, "Engenharia de Computação");
         Curso quimica = garantirCursoEtapa6(unidade, "Química");
+
+        normalizarPeriodoMariaDev(
+                unidade,
+                orientadoraHelena,
+                quimica,
+                LocalDate.now().plusMonths(10)
+        );
         Curso engenhariaQuimica = garantirCursoEtapa6(unidade, "Engenharia Química");
         Curso biotecnologia = garantirCursoEtapa6(unidade, "Biotecnologia");
 
@@ -1048,6 +1056,67 @@ public class DataInitializer implements CommandLineRunner {
         garantirCulturaParticipacaoEtapa6(pedroParticipacao, soja);
 
         System.out.println("=== ETAPA 6 DEV: massa de Estagiários IQ conferida. ===");
+    }
+
+    private void normalizarPeriodoMariaDev(
+            Unidade unidade,
+            Usuario orientador,
+            Curso curso,
+            LocalDate fimPrevistoPadrao) {
+
+        Estagiario maria = estagiarioRepository.findAll().stream()
+                .filter(item -> "maria@iq.com".equalsIgnoreCase(item.getEmail()))
+                .findFirst()
+                .orElse(null);
+
+        if (maria == null || maria.getUnidade() == null
+                || !unidade.getId().equals(maria.getUnidade().getId())) {
+            return;
+        }
+
+        if (maria.getDataFimEstagio() == null) {
+            maria.setDataFimEstagio(fimPrevistoPadrao);
+            estagiarioRepository.save(maria);
+        }
+
+        List<VinculoEstagio> vinculos = vinculoEstagioRepository
+                .findByEstagiarioPublicIdAndEstagiarioUnidadePublicIdOrderByDataInicioDesc(
+                        maria.getPublicId(),
+                        unidade.getPublicId()
+                );
+
+        VinculoEstagio atual = vinculos.stream()
+                .filter(item -> item.getSituacao() != SituacaoEstagio.FINALIZADO)
+                .findFirst()
+                .orElse(null);
+
+        if (atual != null) {
+            boolean alterado = false;
+
+            if (atual.getDataFimPrevista() == null) {
+                atual.setDataFimPrevista(fimPrevistoPadrao);
+                alterado = true;
+            }
+
+            if (atual.getOrientador() == null) {
+                atual.setOrientador(orientador);
+                alterado = true;
+            }
+
+            if (atual.getFormacao() == null) {
+                atual.setFormacao(FormacaoEstagiario.GRADUACAO);
+                alterado = true;
+            }
+
+            if (atual.getCurso() == null) {
+                atual.setCurso(curso);
+                alterado = true;
+            }
+
+            if (alterado) {
+                vinculoEstagioRepository.save(atual);
+            }
+        }
     }
 
     private Usuario garantirUsuarioEtapa6(
