@@ -732,3 +732,8 @@ O modelo deixou de tratar o ambiente institucional como autoridade absoluta sobr
 Novo endpoint local: `PUT /api/v1/vinculos-estagio/{vinculoId}`.
 
 Todo novo vínculo exige início e fim previsto. Não criar bolsa/estágio sem término predeterminado.
+
+
+## Projetos ↔ Estagiários — refinamento posterior
+
+Após o fechamento da Etapa 6, a tela de Projetos deverá ser revisada para mostrar, em cada Atividade, os Estagiários associados via `VinculoEstagioAtividade`, preservando o responsável da Atividade já exibido. A relação não será duplicada diretamente no Projeto; será derivada da participação existente.
