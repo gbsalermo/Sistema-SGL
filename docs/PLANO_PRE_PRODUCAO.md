@@ -620,6 +620,24 @@ Decisão detalhada: `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.
 
 ---
 
+### 6.5 — refinamento final do drawer 🔧
+
+Na validação visual/funcional do 6.5, o drawer foi reorganizado para priorizar operação e legibilidade:
+
+- Ações operacionais movidas para o topo;
+- `BOLSA / VÍNCULO` concentra bolsa vigente/último vínculo e histórico de vínculos;
+- seção isolada de Segurança removida;
+- treinamento de segurança aparece nas Ações operacionais, exige confirmação no frontend e aceita reversão auditável;
+- observações do treinamento entram no bloco de Observações;
+- Gestor/Admin pode adicionar observações operacionais sem sobrescrever registros anteriores;
+- Participações em Atividades receberam escala tipográfica maior;
+- Gerenciar Culturas permite criar nova Cultura ativa da Unidade e selecioná-la para posterior associação;
+- V32 sustenta observações e auditoria de treinamento.
+
+Validação manual e automática desta rodada permanece para o 6.6.
+
+---
+
 ## Refinamento pós-Etapa 6 — Integração visual Projetos ↔ Estagiários
 
 Após o fechamento da Etapa 6, revisar a interface de Projetos para aproveitar o vínculo operacional já existente:
