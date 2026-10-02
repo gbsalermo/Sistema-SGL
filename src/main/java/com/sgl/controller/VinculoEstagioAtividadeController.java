@@ -54,6 +54,14 @@ public class VinculoEstagioAtividadeController {
 		return ResponseEntity.ok(service.listarAtivasPorVinculo(vinculoId));
 	}
 
+	@Operation(summary = "Editar participação em uma Atividade", description = "Permite corrigir a Atividade, a data de início, a observação e as Culturas de uma participação ativa.")
+	@PutMapping("/participacoes/{participacaoId}")
+	public ResponseEntity<VinculoEstagioAtividadeResponseDTO> atualizar(@PathVariable UUID participacaoId,
+			@Valid @RequestBody VinculoEstagioAtividadeRequestDTO dto) {
+
+		return ResponseEntity.ok(service.atualizar(participacaoId, dto));
+	}
+
 	@Operation(summary = "Encerrar participação em uma Atividade")
 	@PutMapping("/participacoes/{participacaoId}/encerrar")
 	public ResponseEntity<VinculoEstagioAtividadeResponseDTO> encerrar(@PathVariable UUID participacaoId,
