@@ -723,3 +723,12 @@ Etapa 13 ⏳
 
 
 **Refinamento 6.5 — período/prorrogação:** o contrato de leitura de `VinculoEstagio` passou a expor `dataFimPrevistaOriginal` quando derivável do histórico institucional de prorrogação. A massa DEV IQ também cobre vínculo não finalizado sem participação ativa, diferenciando `Não iniciado` de `Sem atividade ativa`.
+
+
+## Revisão do vínculo — 02/10/2026
+
+O modelo deixou de tratar o ambiente institucional como autoridade absoluta sobre todos os campos do vínculo. A precedência agora é por campo: identidade/estado institucional continuam prioritariamente externos; Formação, Curso, Bolsa/modalidade, Orientador e período podem ser mantidos localmente e são sobrescritos quando a integração enviar explicitamente esses mesmos campos.
+
+Novo endpoint local: `PUT /api/v1/vinculos-estagio/{vinculoId}`.
+
+Todo novo vínculo exige início e fim previsto. Não criar bolsa/estágio sem término predeterminado.
