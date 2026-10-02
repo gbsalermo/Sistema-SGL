@@ -4,7 +4,7 @@
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
 **Atualizado em:** 01/10/2026  
-**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.3 concluídos e validados; 6.4 em execução no modelo de sincronização institucional.  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado é o próximo bloco.  
 **Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
 
 ## Checkpoint atual
@@ -15,7 +15,7 @@ Etapa 2 — Dark Mode definitivo              ✅ concluída
 Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
 Etapa 5 — Projetos e Atividades             ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos             🔧 6.1–6.3 concluídos; 6.4 sincronização institucional
+Etapa 6 — Estagiários e vínculos             🔧 6.1–6.4 concluídos; 6.5 frontend próximo
 ```
 
 Handoff imediato:
@@ -608,14 +608,14 @@ Estado atual da Etapa 6:
 6.3 dados acadêmicos/Curso/Cultura/segurança         ✅ concluído e validado
 6.3.1 Formação + Curso + treinamento                ✅ concluído e validado
 6.3.2 Cultura por participação                      ✅ concluído e validado
-6.4 ciclo institucional/sincronização                🔧 atual
-6.4.1 contrato + histórico institucional             ✅ implementado
-6.4.2 sincronização do vínculo existente             ✅ concluído e validado em 02/10/2026
+6.4 ciclo institucional/sincronização                ✅ concluído e validado em 02/10/2026
+6.4.1 contrato + histórico institucional             ✅
+6.4.2 sincronização do vínculo existente             ✅
   6.4.2A DTOs/contrato                               ✅
   6.4.2B regra transacional                          ✅
   6.4.2C endpoint + testes                           ✅ suíte local verde
-6.4.3 nova bolsa / novo vínculo                      ✅ implementado; validação local pendente
-6.4.4 testes/validação/documentação                  🔧 próximo
+6.4.3 nova bolsa / novo vínculo                      ✅ suíte local verde
+6.4.4 testes/validação/documentação                  ✅ concluído
 6.5 frontend integrado                              ⏳
 6.6 dados DEV/testes/validação/documentação         ⏳
 ```
@@ -703,7 +703,7 @@ Etapa 2 ✅
 Etapa 3 ✅
 Etapa 4 ✅ concluída
 Etapa 5 ✅ concluída e validada
-Etapa 6 🔧 6.1–6.3 concluídos; 6.4 atual
+Etapa 6 🔧 6.1–6.4 concluídos; 6.5 frontend próximo
 Etapa 7 ⏳
 Etapa 8 ⏳ unidades/Soluções/contexto operacional
 Etapa 9 ⏳ Pedidos/Soluções/participação
@@ -717,4 +717,4 @@ Etapa 13 ⏳
 
 # 17. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1–6.3 estão concluídos e validados; o 6.4 está em andamento na branch `collab/etapa-6-estagiarios-vinculos`, iniciando pelo contrato/histórico de sincronização institucional. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`.**
+**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o próximo passo é o 6.5 — frontend integrado. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e `docs/VALIDACAO_ETAPA_6_4.md`.**
