@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,10 +23,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
+import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
+import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
@@ -34,12 +37,15 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.FormacaoEstagiario;
+import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
+import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
@@ -85,6 +91,9 @@ class VinculoEstagioServiceTest {
 
     @Mock
     private VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
+
+    @Mock
+    private HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoRepository;
 
     @InjectMocks
     private VinculoEstagioService service;
@@ -177,6 +186,37 @@ class VinculoEstagioServiceTest {
         dto.setObservacao("  novo período  ");
         dto.setObservacaoParticipacao("  primeira atividade  ");
         return dto;
+    }
+
+
+    private NovoVinculoInstitucionalRequestDTO montarDtoInstitucional() {
+        NovoVinculoInstitucionalRequestDTO dto =
+                new NovoVinculoInstitucionalRequestDTO();
+
+        dto.setOrientadorId(ORIENTADOR_ID);
+        dto.setDataInicio(LocalDate.of(2027, 4, 1));
+        dto.setDataFimPrevista(LocalDate.of(2027, 12, 31));
+        dto.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        dto.setFormacao(FormacaoEstagiario.GRADUACAO);
+        dto.setOrigem(
+                OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL);
+        dto.setReferenciaEvento("EVT-NOVA-BOLSA-001");
+        dto.setReferenciaInstitucional("BOLSA-2027-001");
+        dto.setObservacao("  nova bolsa institucional  ");
+
+        return dto;
+    }
+
+    private void mockarBuscasInstitucionais() {
+        when(estagiarioRepository
+                .findByPublicIdAndUnidadePublicId(
+                        ESTAGIARIO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(estagiario));
+
+        when(usuarioRepository
+                .findByPublicIdAndUnidadePublicId(
+                        ORIENTADOR_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(orientador));
     }
 
     private void mockarBuscasBase() {
@@ -356,5 +396,181 @@ class VinculoEstagioServiceTest {
         assertEquals(
                 "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.",
                 ex.getMessage());
+    }
+
+    @Test
+    void deveCriarNovoVinculoInstitucionalQuandoAnteriorJaFoiFinalizado() {
+        mockarBuscasInstitucionais();
+
+        when(historicoSincronizacaoRepository
+                .findByOrigemAndReferenciaEvento(
+                        OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL,
+                        "EVT-NOVA-BOLSA-001"))
+                .thenReturn(Optional.empty());
+
+        when(vinculoEstagioRepository
+                .existsByEstagiarioIdAndSituacaoNot(
+                        estagiario.getId(),
+                        SituacaoEstagio.FINALIZADO))
+                .thenReturn(false);
+
+        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+                .thenAnswer(invocation -> {
+                    VinculoEstagio salvo = invocation.getArgument(0);
+                    salvo.setId(20L);
+                    salvo.setPublicId(VINCULO_ID);
+                    return salvo;
+                });
+
+        when(historicoSincronizacaoRepository
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        VinculoEstagioResponseDTO resultado =
+                service.criarInstitucional(
+                        ESTAGIARIO_ID,
+                        montarDtoInstitucional());
+
+        assertEquals(VINCULO_ID, resultado.getId());
+        assertEquals(SituacaoEstagio.EM_ANDAMENTO, resultado.getSituacao());
+        assertEquals("BOLSA-2027-001",
+                resultado.getReferenciaInstitucional());
+        assertEquals("nova bolsa institucional",
+                resultado.getObservacao());
+
+        verify(vinculoEstagioRepository)
+                .save(any(VinculoEstagio.class));
+        verify(historicoSincronizacaoRepository)
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class));
+    }
+
+    @Test
+    void deveBloquearNovoVinculoInstitucionalQuandoExisteOutroNaoFinalizado() {
+        mockarBuscasInstitucionais();
+
+        when(historicoSincronizacaoRepository
+                .findByOrigemAndReferenciaEvento(
+                        OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL,
+                        "EVT-NOVA-BOLSA-001"))
+                .thenReturn(Optional.empty());
+
+        when(vinculoEstagioRepository
+                .existsByEstagiarioIdAndSituacaoNot(
+                        estagiario.getId(),
+                        SituacaoEstagio.FINALIZADO))
+                .thenReturn(true);
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.criarInstitucional(
+                        ESTAGIARIO_ID,
+                        montarDtoInstitucional()));
+
+        assertEquals(
+                "O Estagiário já possui um vínculo de estágio em andamento.",
+                ex.getMessage());
+
+        verify(vinculoEstagioRepository, never())
+                .save(any(VinculoEstagio.class));
+        verify(historicoSincronizacaoRepository, never())
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class));
+    }
+
+    @Test
+    void deveCriarVinculoInstitucionalSemParticipacaoInicial() {
+        mockarBuscasInstitucionais();
+
+        when(historicoSincronizacaoRepository
+                .findByOrigemAndReferenciaEvento(
+                        OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL,
+                        "EVT-NOVA-BOLSA-001"))
+                .thenReturn(Optional.empty());
+
+        when(vinculoEstagioRepository
+                .existsByEstagiarioIdAndSituacaoNot(
+                        estagiario.getId(),
+                        SituacaoEstagio.FINALIZADO))
+                .thenReturn(false);
+
+        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+                .thenAnswer(invocation -> {
+                    VinculoEstagio salvo = invocation.getArgument(0);
+                    salvo.setId(21L);
+                    salvo.setPublicId(VINCULO_ID);
+                    return salvo;
+                });
+
+        when(historicoSincronizacaoRepository
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        VinculoEstagioResponseDTO resultado =
+                service.criarInstitucional(
+                        ESTAGIARIO_ID,
+                        montarDtoInstitucional());
+
+        assertTrue(resultado.getParticipacoesAtividade().isEmpty());
+
+        verify(vinculoEstagioAtividadeService, never())
+                .adicionar(any(), any());
+        verify(participacaoRepository, never())
+                .save(any(VinculoEstagioAtividade.class));
+    }
+
+    @Test
+    void deveReaproveitarVinculoQuandoEventoInstitucionalForReenviado() {
+        when(estagiarioRepository
+                .findByPublicIdAndUnidadePublicId(
+                        ESTAGIARIO_ID, UNIDADE_ID))
+                .thenReturn(Optional.of(estagiario));
+
+        VinculoEstagio vinculoExistente = new VinculoEstagio();
+        vinculoExistente.setId(30L);
+        vinculoExistente.setPublicId(VINCULO_ID);
+        vinculoExistente.setEstagiario(estagiario);
+        vinculoExistente.setOrientador(orientador);
+        vinculoExistente.setDataInicio(LocalDate.of(2027, 4, 1));
+        vinculoExistente.setDataFimPrevista(LocalDate.of(2027, 12, 31));
+        vinculoExistente.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
+        vinculoExistente.setFormacao(FormacaoEstagiario.GRADUACAO);
+        vinculoExistente.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+        vinculoExistente.setTreinamentoSegurancaConcluido(false);
+        vinculoExistente.setReferenciaInstitucional("BOLSA-2027-001");
+
+        HistoricoSincronizacaoVinculoEstagio historico =
+                HistoricoSincronizacaoVinculoEstagio.builder()
+                        .publicId(UUID.randomUUID())
+                        .vinculoEstagio(vinculoExistente)
+                        .tipoEvento(
+                                TipoEventoSincronizacaoVinculoEstagio.CRIACAO)
+                        .origem(
+                                OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL)
+                        .referenciaEvento("EVT-NOVA-BOLSA-001")
+                        .situacaoNova(SituacaoEstagio.EM_ANDAMENTO)
+                        .dataFimPrevistaNova(
+                                LocalDate.of(2027, 12, 31))
+                        .build();
+
+        when(historicoSincronizacaoRepository
+                .findByOrigemAndReferenciaEvento(
+                        OrigemSincronizacaoVinculoEstagio.AMBIENTE_INSTITUCIONAL,
+                        "EVT-NOVA-BOLSA-001"))
+                .thenReturn(Optional.of(historico));
+
+        VinculoEstagioResponseDTO resultado =
+                service.criarInstitucional(
+                        ESTAGIARIO_ID,
+                        montarDtoInstitucional());
+
+        assertEquals(VINCULO_ID, resultado.getId());
+
+        verify(vinculoEstagioRepository, never())
+                .save(any(VinculoEstagio.class));
+        verify(historicoSincronizacaoRepository, never())
+                .save(any(HistoricoSincronizacaoVinculoEstagio.class));
+        verify(vinculoEstagioRepository, never())
+                .existsByEstagiarioIdAndSituacaoNot(
+                        any(),
+                        any());
     }
 }
