@@ -998,3 +998,17 @@ Implementado em 02/10/2026 para sustentar o polimento final do frontend:
 - operações auditáveis de observação/treinamento exigem operador ativo GESTOR ou ADMINISTRADOR do tenant.
 
 A implementação ainda aguarda a bateria manual e automatizada do 6.6; não considerar este bloco validado apenas pela publicação do código.
+
+### Correção administrativa de participação — 02/10/2026
+
+Como refinamento do 6.5, foi adicionado o endpoint:
+
+`PUT /api/v1/vinculos-estagio/participacoes/{participacaoId}`
+
+Ele permite corrigir uma participação ativa já cadastrada, reutilizando `VinculoEstagioAtividadeRequestDTO` para alterar Atividade, data de início, observação e conjunto de Culturas. O serviço mantém as validações de tenant, vínculo operacional, Atividade/SCI/Projeto/Laboratório ativos, mesma Unidade, período válido e prevenção de participação ativa duplicada na mesma Atividade.
+
+O encerramento continua sendo feito pelo endpoint histórico `PUT /participacoes/{participacaoId}/encerrar`, preservando a regra consolidada de não encerrar a última participação ativa enquanto o vínculo de estágio estiver em andamento.
+
+O catálogo `Curso` já existente passou a ser consumido pelo frontend também para a opção “Outro / adicionar novo curso”; portanto não houve alteração de schema nem nova migration.
+
+A validação formal de build/suíte permanece para o 6.6.
