@@ -8,11 +8,11 @@
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
 **Branch atual de trabalho:** `collab/etapa-6-estagiarios-vinculos`  
 **Fase atual:** pré-produção pós-aprovação funcional  
-**Etapa concluída:** Etapa 5 — Projetos e Atividades ✅  
-**Etapa atual:** Etapa 6 — Estagiários e vínculos 🔧  
+**Etapa concluída:** Etapa 6 — Estagiários e Vínculos ✅  
+**Próxima etapa:** Etapa 7 — Relatórios consolidados ⏳  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_4.md`  
+**Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_6.md`  
 **Decisão do bloco 6.4:** `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
@@ -785,8 +785,8 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
   6.4.2C — endpoint + testes                              ✅ suíte local verde
 6.4.3 — nova bolsa / novo VinculoEstagio                  ✅ suíte local verde
 6.4.4 — testes, validação e documentação                  ✅ concluído
-6.5 — frontend integrado                                  ⏳
-6.6 — dados DEV, testes, validação e documentação          ⏳
+6.5 — frontend integrado                                  ✅ concluído e validado
+6.6 — dados DEV, testes, validação e documentação          ✅ concluído e validado
 ```
 
 Não antecipar Etapa 7 durante esta implementação.
@@ -905,7 +905,7 @@ Etapa 2 — Dark Mode definitivo                        ✅
 Etapa 3 — refinamentos do fluxo atual de Resíduos     ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos            ✅ concluída e validada
 Etapa 5 — Projetos + Atividades                       ✅ concluída, validada e mergeada
-Etapa 6 — Estagiários + vínculos                      🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
+Etapa 6 — Estagiários + vínculos                      ✅ concluída e validada
 
 **Massa DEV IQ de apoio ao 6.5:** `DataInitializer` passou a garantir cenários variados para `admin@sgl.com`/Unidade IQ: Estagiário operacional com múltiplas Atividades/Projetos/Laboratórios, vínculo prorrogado próximo do término, vínculo institucional sem Atividade e vínculo encerrado com histórico. A carga é idempotente e serve apenas à validação visual/funcional do 6.5; o fechamento formal de dados/testes continua no 6.6.
 Etapa 7 — relatórios consolidados                     ⏳
@@ -923,7 +923,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–5 estão encerradas, validadas e integradas à main. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o 6.5 — frontend integrado foi implementado e aguarda validação visual/local. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–6 estão concluídas e validadas. A próxima frente é a Etapa 7 — Relatórios consolidados. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
@@ -1034,3 +1034,17 @@ A validação formal de build/suíte permanece para o 6.6.
   - participação que atravessa a troca é dividida entre vínculo anterior e novo, preservando Atividade, observação e Culturas.
 - a nova bolsa local é uma troca imediata/retroativa controlada; não agenda ocorrência futura. Data inicial deve ser hoje ou uma data passada. Agendamento futuro permanece responsabilidade da integração institucional.
 - nenhuma migration nova foi necessária.
+
+### Fechamento definitivo da Etapa 6 — 02/10/2026
+
+- blocos 6.1–6.6 concluídos e validados;
+- drawer e fluxos operacionais de Estagiários aprovados;
+- Bolsa separada do Editar vínculo, com prorrogação, nova ocorrência e referência editável;
+- Curso/Cultura administráveis por Unidade;
+- participações em Atividades com edição, encerramento, Culturas e histórico;
+- observações e treinamento de segurança auditáveis;
+- integração institucional continua prioritária;
+- bateria automatizada final validada 100%;
+- checkpoint: `docs/VALIDACAO_ETAPA_6_6.md`.
+
+**Etapa 6 encerrada. Próxima etapa: 7 — Relatórios consolidados.**
