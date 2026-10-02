@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.request.SincronizacaoVinculoEstagioRequestDTO;
@@ -40,6 +41,19 @@ public class VinculoEstagioController {
 			@Valid @RequestBody NovoVinculoEstagioRequestDTO dto) {
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(estagiarioId, dto));
+	}
+
+	@Operation(
+			summary = "Atualizar dados operacionais do vínculo",
+			description = "Permite ao SGL complementar/ajustar Formação, Curso, Bolsa, Orientador e período. "
+					+ "Quando a integração institucional informar esses mesmos campos posteriormente, "
+					+ "a sincronização institucional prevalece.")
+	@PutMapping("/{vinculoId}")
+	public ResponseEntity<VinculoEstagioResponseDTO> atualizarLocal(
+			@PathVariable UUID vinculoId,
+			@Valid @RequestBody AtualizarVinculoEstagioRequestDTO dto) {
+
+		return ResponseEntity.ok(service.atualizarLocal(vinculoId, dto));
 	}
 
 	@Operation(summary = "Registrar conclusão do treinamento de segurança")
