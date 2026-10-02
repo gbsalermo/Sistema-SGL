@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
+import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
@@ -17,6 +18,7 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Atividade;
 import com.sgl.model.Curso;
 import com.sgl.model.Estagiario;
+import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
@@ -27,9 +29,11 @@ import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
+import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
@@ -46,6 +50,7 @@ public class VinculoEstagioService {
 	private final VinculoEstagioAtividadeRepository participacaoRepository;
 	private final VinculoEstagioAtividadeCulturaRepository participacaoCulturaRepository;
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
+	private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoRepository;
 
 	private final EstagiarioRepository estagiarioRepository;
 	private final UsuarioRepository usuarioRepository;
@@ -372,5 +377,79 @@ public class VinculoEstagioService {
 
 		return vinculoEstagioRepository.findByPublicIdAndEstagiarioUnidadePublicId(vinculoId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vínculo de estágio", vinculoId));
+	}
+
+	@Transactional
+	public VinculoEstagioResponseDTO criarInstitucional(UUID estagiarioId, NovoVinculoInstitucionalRequestDTO dto) {
+
+		Estagiario estagiario = buscarEstagiarioNoTenant(estagiarioId);
+
+		estagiario.validateActive();
+
+		validarAusenciaDeVinculoAtivo(estagiario);
+
+		Usuario orientador = buscarOrientadorNoTenant(dto.getOrientadorId());
+
+		validarOrientador(orientador);
+		validarMesmaUnidade(estagiario, orientador);
+
+		validarPeriodoVinculo(dto.getDataInicio(), dto.getDataFimPrevista());
+
+		validarFormacao(dto.getFormacao(), dto.getFormacaoOutro());
+
+		Curso curso = null;
+
+		if (dto.getCursoId() != null) {
+			curso = buscarCursoNoTenant(dto.getCursoId());
+			curso.validateActive();
+		}
+
+		String referenciaEvento = normalizarTexto(dto.getReferenciaEvento());
+
+		if (referenciaEvento != null) {
+
+			var eventoExistente = historicoSincronizacaoRepository.findByOrigemAndReferenciaEvento(dto.getOrigem(),
+					referenciaEvento);
+
+			if (eventoExistente.isPresent()) {
+
+				return montarResponse(eventoExistente.get().getVinculoEstagio(), List.of());
+			}
+		}
+
+		VinculoEstagio vinculo = new VinculoEstagio();
+
+		vinculo.setEstagiario(estagiario);
+		vinculo.setOrientador(orientador);
+		vinculo.setDataInicio(dto.getDataInicio());
+		vinculo.setDataFimPrevista(dto.getDataFimPrevista());
+		vinculo.setDataFimEfetiva(null);
+		vinculo.setTipoBolsa(dto.getTipoBolsa());
+
+		vinculo.setFormacao(dto.getFormacao());
+
+		vinculo.setFormacaoOutro(normalizarFormacaoOutro(dto.getFormacao(), dto.getFormacaoOutro()));
+
+		vinculo.setCurso(curso);
+
+		vinculo.setTreinamentoSegurancaConcluido(false);
+
+		vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+		vinculo.setObservacao(normalizarTexto(dto.getObservacao()));
+
+		vinculo.setReferenciaInstitucional(normalizarTexto(dto.getReferenciaInstitucional()));
+
+		vinculo = vinculoEstagioRepository.save(vinculo);
+
+		HistoricoSincronizacaoVinculoEstagio historico = HistoricoSincronizacaoVinculoEstagio.builder()
+				.vinculoEstagio(vinculo).tipoEvento(TipoEventoSincronizacaoVinculoEstagio.CRIACAO)
+				.origem(dto.getOrigem()).referenciaEvento(referenciaEvento).situacaoAnterior(null)
+				.situacaoNova(SituacaoEstagio.EM_ANDAMENTO).dataFimPrevistaAnterior(null)
+				.dataFimPrevistaNova(dto.getDataFimPrevista()).dataHoraOrigem(dto.getDataHoraOrigem()).build();
+
+		historicoSincronizacaoRepository.save(historico);
+
+		return montarResponse(vinculo, List.of());
 	}
 }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
+import com.sgl.dto.request.NovoVinculoInstitucionalRequestDTO;
 import com.sgl.dto.request.SincronizacaoVinculoEstagioRequestDTO;
 import com.sgl.dto.response.HistoricoSincronizacaoVinculoEstagioResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
@@ -55,5 +56,13 @@ public class VinculoEstagioController {
 			@Valid @RequestBody SincronizacaoVinculoEstagioRequestDTO dto) {
 
 		return ResponseEntity.ok(sincronizacaoService.sincronizar(vinculoId, dto));
+	}
+
+	@Operation(summary = "Criar novo vínculo recebido do ambiente institucional")
+	@PostMapping("/estagiarios/{estagiarioId}/institucional")
+	public ResponseEntity<VinculoEstagioResponseDTO> criarInstitucional(@PathVariable UUID estagiarioId,
+			@Valid @RequestBody NovoVinculoInstitucionalRequestDTO dto) {
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(service.criarInstitucional(estagiarioId, dto));
 	}
 }
