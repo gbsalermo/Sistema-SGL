@@ -949,3 +949,15 @@ status
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
 Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 6.5 — frontend integrado implementado; validação visual/local pendente.
+
+
+### Revisão híbrida 02/10/2026 — Etapa 6
+
+- ambiente institucional permanece prioritário para identidade/estado institucional;
+- dados de vínculo podem ser complementados/editados no SGL;
+- precedência é por campo: valor institucional substitui o local somente quando o campo é recebido;
+- Formação, Curso, Bolsa/modalidade, Orientador e período são editáveis localmente;
+- Projeto/SCI/Atividade/Laboratório permanecem operacionais do SGL;
+- `dataFimPrevista` passa a ser obrigatória em todos os novos vínculos;
+- edição local de período não finaliza automaticamente o estágio;
+- aumento de prazo local é auditado como prorrogação.
