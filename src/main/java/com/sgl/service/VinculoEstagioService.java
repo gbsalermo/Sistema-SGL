@@ -384,13 +384,51 @@ public class VinculoEstagioService {
 
 		Estagiario estagiario = buscarEstagiarioNoTenant(estagiarioId);
 
+		String referenciaEvento = normalizarTexto(dto.getReferenciaEvento());
+
+		/*
+		 * Idempotência: se o ambiente reenviar o mesmo evento de criação, não criamos
+		 * outro vínculo.
+		 */
+		if (referenciaEvento != null) {
+
+			var eventoExistente = historicoSincronizacaoRepository.findByOrigemAndReferenciaEvento(dto.getOrigem(),
+					referenciaEvento);
+
+			if (eventoExistente.isPresent()) {
+
+				HistoricoSincronizacaoVinculoEstagio historico = eventoExistente.get();
+
+				VinculoEstagio vinculoExistente = historico.getVinculoEstagio();
+
+				if (historico.getTipoEvento() != TipoEventoSincronizacaoVinculoEstagio.CRIACAO) {
+
+					throw new BusinessRuleException(
+							"A referência do evento já foi utilizada " + "por outro tipo de sincronização.");
+				}
+
+				if (!vinculoExistente.getEstagiario().getPublicId().equals(estagiarioId)) {
+
+					throw new BusinessRuleException(
+							"A referência do evento já foi utilizada " + "para outro Estagiário.");
+				}
+
+				return montarResponse(vinculoExistente, List.of());
+			}
+		}
+
 		estagiario.validateActive();
 
+		/*
+		 * Uma nova bolsa só pode gerar um novo vínculo quando não existe outro vínculo
+		 * não finalizado.
+		 */
 		validarAusenciaDeVinculoAtivo(estagiario);
 
 		Usuario orientador = buscarOrientadorNoTenant(dto.getOrientadorId());
 
 		validarOrientador(orientador);
+
 		validarMesmaUnidade(estagiario, orientador);
 
 		validarPeriodoVinculo(dto.getDataInicio(), dto.getDataFimPrevista());
@@ -400,30 +438,24 @@ public class VinculoEstagioService {
 		Curso curso = null;
 
 		if (dto.getCursoId() != null) {
+
 			curso = buscarCursoNoTenant(dto.getCursoId());
+
 			curso.validateActive();
-		}
-
-		String referenciaEvento = normalizarTexto(dto.getReferenciaEvento());
-
-		if (referenciaEvento != null) {
-
-			var eventoExistente = historicoSincronizacaoRepository.findByOrigemAndReferenciaEvento(dto.getOrigem(),
-					referenciaEvento);
-
-			if (eventoExistente.isPresent()) {
-
-				return montarResponse(eventoExistente.get().getVinculoEstagio(), List.of());
-			}
 		}
 
 		VinculoEstagio vinculo = new VinculoEstagio();
 
 		vinculo.setEstagiario(estagiario);
+
 		vinculo.setOrientador(orientador);
+
 		vinculo.setDataInicio(dto.getDataInicio());
+
 		vinculo.setDataFimPrevista(dto.getDataFimPrevista());
+
 		vinculo.setDataFimEfetiva(null);
+
 		vinculo.setTipoBolsa(dto.getTipoBolsa());
 
 		vinculo.setFormacao(dto.getFormacao());
@@ -434,6 +466,10 @@ public class VinculoEstagioService {
 
 		vinculo.setTreinamentoSegurancaConcluido(false);
 
+		/*
+		 * Institucionalmente o vínculo existe, mas ainda não é operacionalmente ativo
+		 * até possuir uma participação aberta em Atividade.
+		 */
 		vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
 
 		vinculo.setObservacao(normalizarTexto(dto.getObservacao()));
@@ -442,14 +478,22 @@ public class VinculoEstagioService {
 
 		vinculo = vinculoEstagioRepository.save(vinculo);
 
+		/*
+		 * A criação institucional também entra na trilha de sincronização.
+		 */
 		HistoricoSincronizacaoVinculoEstagio historico = HistoricoSincronizacaoVinculoEstagio.builder()
 				.vinculoEstagio(vinculo).tipoEvento(TipoEventoSincronizacaoVinculoEstagio.CRIACAO)
 				.origem(dto.getOrigem()).referenciaEvento(referenciaEvento).situacaoAnterior(null)
 				.situacaoNova(SituacaoEstagio.EM_ANDAMENTO).dataFimPrevistaAnterior(null)
-				.dataFimPrevistaNova(dto.getDataFimPrevista()).dataHoraOrigem(dto.getDataHoraOrigem()).build();
+				.dataFimPrevistaNova(dto.getDataFimPrevista()).dataFimEfetivaAnterior(null).dataFimEfetivaNova(null)
+				.dataHoraOrigem(dto.getDataHoraOrigem()).build();
 
 		historicoSincronizacaoRepository.save(historico);
 
+		/*
+		 * Diferente do fluxo local/DEV antigo, o vínculo institucional nasce sem
+		 * participação obrigatória em Atividade.
+		 */
 		return montarResponse(vinculo, List.of());
 	}
 }
