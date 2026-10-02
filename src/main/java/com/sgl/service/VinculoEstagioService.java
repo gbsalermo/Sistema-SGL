@@ -424,6 +424,118 @@ public class VinculoEstagioService {
 	}
 
 	@Transactional
+	public VinculoEstagioResponseDTO registrarNovaBolsaLocal(UUID vinculoId,
+			NovaBolsaVinculoEstagioRequestDTO dto) {
+
+		VinculoEstagio atual = buscarVinculoNoTenant(vinculoId);
+
+		if (atual.getSituacao() == SituacaoEstagio.FINALIZADO) {
+			throw new BusinessRuleException("A bolsa atual já está encerrada.");
+		}
+
+		validarPeriodoVinculo(dto.getDataInicio(), dto.getDataFimPrevista());
+
+		if (!dto.getDataInicio().isAfter(atual.getDataInicio())) {
+			throw new BusinessRuleException("A nova bolsa deve iniciar após a data de início da bolsa atual.");
+		}
+
+		if (dto.getDataInicio().isAfter(LocalDate.now())) {
+			throw new BusinessRuleException("A troca manual imediata de bolsa não aceita data de início futura.");
+		}
+
+		LocalDate fimAtual = dto.getDataInicio().minusDays(1);
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		List<VinculoEstagioAtividade> participacoes = participacaoRepository
+				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+						atual.getPublicId(), unidadeId);
+
+		for (VinculoEstagioAtividade participacao : participacoes) {
+			if (participacao.getDataInicioParticipacao().isAfter(fimAtual)
+					|| (participacao.getDataFimParticipacao() != null
+							&& participacao.getDataFimParticipacao().isAfter(fimAtual))) {
+				throw new BusinessRuleException(
+						"A nova bolsa não pode retroagir sobre participações já registradas no vínculo atual.");
+			}
+		}
+
+		List<VinculoEstagioAtividade> ativas = participacoes.stream()
+				.filter(participacao -> participacao.getDataFimParticipacao() == null)
+				.toList();
+
+		SituacaoEstagio situacaoAnterior = atual.getSituacao();
+		LocalDate fimEfetivoAnterior = atual.getDataFimEfetiva();
+
+		atual.setSituacao(SituacaoEstagio.FINALIZADO);
+		atual.setDataFimEfetiva(fimAtual);
+		vinculoEstagioRepository.save(atual);
+
+		for (VinculoEstagioAtividade participacao : ativas) {
+			participacao.setDataFimParticipacao(fimAtual);
+		}
+		if (!ativas.isEmpty()) {
+			participacaoRepository.saveAll(ativas);
+		}
+
+		historicoSincronizacaoRepository.save(HistoricoSincronizacaoVinculoEstagio.builder()
+				.vinculoEstagio(atual)
+				.tipoEvento(TipoEventoSincronizacaoVinculoEstagio.FINALIZACAO)
+				.origem(OrigemSincronizacaoVinculoEstagio.DEV)
+				.situacaoAnterior(situacaoAnterior)
+				.situacaoNova(SituacaoEstagio.FINALIZADO)
+				.dataFimPrevistaAnterior(atual.getDataFimPrevista())
+				.dataFimPrevistaNova(atual.getDataFimPrevista())
+				.dataFimEfetivaAnterior(fimEfetivoAnterior)
+				.dataFimEfetivaNova(fimAtual)
+				.build());
+
+		VinculoEstagio novo = new VinculoEstagio();
+		novo.setEstagiario(atual.getEstagiario());
+		novo.setOrientador(atual.getOrientador());
+		novo.setDataInicio(dto.getDataInicio());
+		novo.setDataFimPrevista(dto.getDataFimPrevista());
+		novo.setDataFimEfetiva(null);
+		novo.setTipoBolsa(dto.getTipoBolsa());
+		novo.setFormacao(atual.getFormacao());
+		novo.setFormacaoOutro(atual.getFormacaoOutro());
+		novo.setCurso(atual.getCurso());
+		novo.setTreinamentoSegurancaConcluido(atual.getTreinamentoSegurancaConcluido());
+		novo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+		novo.setObservacao(atual.getObservacao());
+		novo.setReferenciaInstitucional(null);
+		novo = vinculoEstagioRepository.save(novo);
+
+		historicoSincronizacaoRepository.save(HistoricoSincronizacaoVinculoEstagio.builder()
+				.vinculoEstagio(novo)
+				.tipoEvento(TipoEventoSincronizacaoVinculoEstagio.CRIACAO)
+				.origem(OrigemSincronizacaoVinculoEstagio.DEV)
+				.situacaoNova(SituacaoEstagio.EM_ANDAMENTO)
+				.dataFimPrevistaNova(dto.getDataFimPrevista())
+				.build());
+
+		for (VinculoEstagioAtividade anterior : ativas) {
+			var culturas = participacaoCulturaRepository
+					.findByParticipacaoPublicIdAndParticipacaoVinculoEstagioEstagiarioUnidadePublicIdOrderByCulturaNomeAsc(
+							anterior.getPublicId(), unidadeId);
+
+			VinculoEstagioAtividadeRequestDTO participacaoDto = new VinculoEstagioAtividadeRequestDTO();
+			participacaoDto.setAtividadeId(anterior.getAtividade().getPublicId());
+			participacaoDto.setDataInicioParticipacao(dto.getDataInicio());
+			participacaoDto.setObservacao(anterior.getObservacao());
+			participacaoDto.setCulturaIds(new java.util.LinkedHashSet<>(
+					culturas.stream().map(item -> item.getCultura().getPublicId()).toList()));
+
+			vinculoEstagioAtividadeService.adicionar(novo.getPublicId(), participacaoDto);
+		}
+
+		List<VinculoEstagioAtividade> novas = participacaoRepository
+				.findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
+						novo.getPublicId(), unidadeId);
+
+		return montarResponse(novo, novas);
+	}
+
+	@Transactional
 	public VinculoEstagioResponseDTO concluirTreinamentoSeguranca(UUID vinculoId) {
 
 		VinculoEstagio vinculo = buscarVinculoNoTenant(vinculoId);
