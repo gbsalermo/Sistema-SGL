@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.request.AtualizarReferenciaBolsaRequestDTO;
 import com.sgl.dto.request.AtualizarVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovaBolsaVinculoEstagioRequestDTO;
 import com.sgl.dto.request.NovoVinculoEstagioRequestDTO;
@@ -57,6 +58,18 @@ public class VinculoEstagioController {
 			@Valid @RequestBody AtualizarVinculoEstagioRequestDTO dto) {
 
 		return ResponseEntity.ok(service.atualizarLocal(vinculoId, dto));
+	}
+
+
+	@Operation(
+			summary = "Atualizar referência da bolsa vigente",
+			description = "Permite corrigir ou complementar localmente a referência/especificação da bolsa vigente sem exigir prorrogação.")
+	@PutMapping("/{vinculoId}/referencia-bolsa")
+	public ResponseEntity<VinculoEstagioResponseDTO> atualizarReferenciaBolsa(
+			@PathVariable UUID vinculoId,
+			@Valid @RequestBody AtualizarReferenciaBolsaRequestDTO dto) {
+
+		return ResponseEntity.ok(service.atualizarReferenciaBolsaLocal(vinculoId, dto.getReferencia()));
 	}
 
 	@Operation(
