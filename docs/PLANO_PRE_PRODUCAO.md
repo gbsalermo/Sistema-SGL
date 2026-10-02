@@ -585,10 +585,12 @@ A fonte de verdade do ciclo de bolsa/estágio é o ambiente institucional. O SGL
 Divisão operacional:
 
 ```text
-6.4.1 contrato + histórico da sincronização institucional
-→ 6.4.2 sincronização do vínculo existente
-   → prorrogação
-   → finalização
+6.4.1 contrato + histórico da sincronização institucional ✅ implementado
+→ 6.4.2 sincronização do vínculo existente 🔧
+   → 6.4.2A DTOs/contrato ✅ implementado
+   → 6.4.2B regra transacional 🔧 atual
+   → 6.4.2C endpoint + testes ⏳
+   → prorrogação/finalização derivadas do estado recebido
 → 6.4.3 nova bolsa / novo VinculoEstagio
 → 6.4.4 testes, validação e documentação
 ```
