@@ -41,6 +41,7 @@ import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
+import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
@@ -97,6 +98,9 @@ class EstagiarioServiceTest {
 
     @Mock
     private CursoRepository cursoRepository;
+
+    @Mock
+    private HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
 
     @Mock
     private EntityManager entityManager;
@@ -193,6 +197,11 @@ class EstagiarioServiceTest {
                 .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
                         any(UUID.class), any(UUID.class)))
                 .thenReturn(List.of(participacao));
+
+        lenient().when(historicoSincronizacaoVinculoEstagioRepository
+                .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataHoraSincronizacaoAsc(
+                        any(UUID.class), any(UUID.class)))
+                .thenReturn(List.of());
     }
 
     @AfterEach
