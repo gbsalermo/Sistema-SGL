@@ -21,7 +21,7 @@ Dados de vínculo que também fazem sentido para operação do SGL podem ser com
 
 - Formação;
 - Curso;
-- Bolsa/modalidade;
+- Bolsa/modalidade por fluxo específico de nova ocorrência, não pelo `Editar vínculo`;
 - Orientador;
 - data de início;
 - data final prevista;
@@ -81,6 +81,24 @@ mesmo Usuario
 ```
 
 O novo vínculo pode ter período, tipo de bolsa, orientador e demais dados institucionais diferentes.
+
+### Alternativa local temporária para troca de bolsa
+
+Enquanto o ambiente institucional ainda não fornecer a nova ocorrência, a Gestão pode usar `Editar bolsa` como fallback operacional. Esse fluxo **não altera o tipo de bolsa dentro do vínculo atual**:
+
+```text
+Editar bolsa
+→ informar nova modalidade + início + fim previsto
+→ finalizar o VinculoEstagio atual no dia anterior ao novo início
+→ preservar vínculo anterior no histórico
+→ criar novo VinculoEstagio para o mesmo Estagiario
+→ copiar Formação, Curso, Orientador e treinamento
+→ encerrar as participações abertas no vínculo anterior
+→ recriar as participações que estavam ativas no novo vínculo
+```
+
+A data inicial dessa troca local não pode ser futura, pois o fallback representa uma transição imediata. Quando a integração institucional informar a ocorrência, ela continua sendo a fonte prioritária.
+
 
 ## 4. Atividade não identifica o vínculo institucional
 
