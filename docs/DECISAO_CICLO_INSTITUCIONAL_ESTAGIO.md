@@ -245,3 +245,26 @@ dataFimEfetiva      somente quando finalizado
 Não é permitido criar novo estágio sem término previsto. Registros legados incompletos devem ser reconciliados; a aplicação não deve gerar novos vínculos com `dataFimPrevista = null`.
 
 A Gestão pode editar dados locais do vínculo enquanto ele não estiver finalizado. Aumentar a data final prevista pelo SGL registra prorrogação local auditável; uma sincronização institucional posterior continua tendo precedência nos campos que enviar. O encerramento definitivo permanece separado dessa edição operacional e não é inferido apenas pela mudança da data prevista.
+
+### Complemento — fallback local de Bolsa no 6.5
+
+O fallback local de Bolsa possui duas operações distintas:
+
+```text
+Prorrogar bolsa atual
+→ mesmo VinculoEstagio
+→ nova dataFimPrevista > dataFimPrevista atual
+→ situação PRORROGADO
+→ histórico PRORROGACAO
+```
+
+```text
+Registrar nova bolsa
+→ data inicial hoje ou passada
+→ VinculoEstagio atual finalizado no dia anterior
+→ nova ocorrência criada
+→ participações redistribuídas/splitadas pela data de corte
+→ histórico anterior preservado
+```
+
+O fallback local não agenda nova ocorrência para data futura. Esse caso permanece sob responsabilidade da integração institucional, evitando dois vínculos não finalizados competindo como vínculo vigente.
