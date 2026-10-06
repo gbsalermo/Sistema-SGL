@@ -239,8 +239,8 @@ A Etapa 7 deve fechar o contrato; a aplicação efetiva em Pedido será Etapa 8.
 ## 6. Roadmap interno da Etapa 7
 
 ```text
-7.0 Auditoria + decisões de domínio          🔧 atual
-7.1 Unidade de medida x apresentação         ⏳
+7.0 Auditoria + decisões de domínio          ✅ concluído
+7.1 Unidade de medida x apresentação         🔧 atual
 7.2 Modelo decimal/compatibilidade estoque   ⏳
 7.3 Domínio de Soluções                      ⏳
 7.4 Contexto operacional                     ⏳
@@ -2122,3 +2122,36 @@ Preferência:
 
 A modelagem da Etapa 7 pode ser feita para o estado correto futuro, sem carregar complexidade exclusiva para preservar dados fictícios atuais.
 
+
+
+---
+
+## 15. Fechamento do 7.0 e entrada no 7.1
+
+O bloco 7.0 está concluído.
+
+Foram fechados:
+
+- unidade de medida x apresentação;
+- quantidade física em BigDecimal;
+- estoque por recipiente físico;
+- FEFO;
+- preferência entre recipiente aberto/fechado;
+- concorrência;
+- política de devolução;
+- ajuste de estoque;
+- rastreabilidade por recipiente;
+- descarte da massa fictícia atual.
+
+O desenho detalhado das migrations e entidades está em:
+
+\`\`\`text
+docs/ETAPA_7_MODELO_ESTOQUE.md
+\`\`\`
+
+Situação:
+
+\`\`\`text
+7.0 ✅
+7.1 🔧 atual
+\`\`\`
