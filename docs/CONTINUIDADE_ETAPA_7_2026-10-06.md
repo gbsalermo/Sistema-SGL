@@ -988,3 +988,302 @@ OUTRO    → exige revisão/mapeamento explícito
 
 Nenhum registro legado deve ser convertido silenciosamente de uma grandeza incompatível.
 
+---
+
+## 11. 7.1.3 — TipoEmbalagem e RecipienteEstoque
+
+### 11.1 Auditoria do TipoEmbalagem atual
+
+Enum atual:
+
+\`\`\`java
+UNITARIO,
+KIT,
+CAIXA,
+GARRAFA,
+GALAO
+\`\`\`
+
+Ele já cumpre parcialmente o papel correto: **apresentação física**, não unidade de medida.
+
+Entretanto, precisa ser ampliado para cobrir apresentações já existentes no domínio legado e casos laboratoriais comuns.
+
+Proposta:
+
+\`\`\`java
+public enum TipoEmbalagem {
+    UNITARIO,
+    FRASCO,
+    AMPOLA,
+    GARRAFA,
+    GALAO,
+    CAIXA,
+    KIT,
+    PACOTE,
+    SACO,
+    TUBO,
+    POTE,
+    PAR,
+    OUTRO
+}
+\`\`\`
+
+A enumeração representa somente o tipo físico da apresentação.
+
+Exemplos:
+
+\`\`\`text
+FRASCO + 500 + ML
+AMPOLA + 2 + ML
+CAIXA + 100 + UNIDADE
+KIT + 50 + REACAO
+PACOTE + 1000 + UNIDADE
+\`\`\`
+
+\`OUTRO\` exige descrição textual em \`apresentacao\`.
+
+### 11.2 Regra de fracionamento
+
+O atributo \`fracionavel\` permanece útil, mas passa a significar:
+
+> o conteúdo interno de uma apresentação física pode ser retirado parcialmente.
+
+Exemplos:
+
+\`\`\`text
+Frasco 500 mL de Etanol
+→ fracionável = true
+
+Ampola descartável de 2 mL
+→ normalmente fracionável = false
+
+Caixa com 100 ponteiras
+→ pode ser fracionável = true, se as unidades internas puderem sair separadamente
+
+Kit PCR 50 reações
+→ pode ser fracionável = true, desde que a regra institucional permita retirada por reação
+\`\`\`
+
+O tipo da embalagem sozinho nunca determina se ela é fracionável.
+
+### 11.3 Nova entidade RecipienteEstoque
+
+Responsabilidade:
+
+Representar uma **unidade física individual de apresentação** pertencente a um Lote.
+
+Estrutura proposta:
+
+\`\`\`java
+RecipienteEstoque
+- id: Long
+- publicId: UUID
+- lote: Lote
+- sequencial: Integer
+- codigoInterno: String
+- tipoEmbalagem: TipoEmbalagem
+- capacidadeInicial: BigDecimal
+- quantidadeDisponivel: BigDecimal
+- unidadeMedida: UnidadeMedida
+- estado: EstadoRecipienteEstoque
+- dataAbertura: LocalDateTime?
+- dataEsgotamento: LocalDateTime?
+- ativo: Boolean
+- observacao: String?
+\`\`\`
+
+### 11.4 EstadoRecipienteEstoque
+
+Proposta:
+
+\`\`\`java
+public enum EstadoRecipienteEstoque {
+    FECHADO,
+    ABERTO,
+    ESGOTADO
+}
+\`\`\`
+
+Regras:
+
+\`\`\`text
+FECHADO
+→ quantidadeDisponivel = capacidadeInicial
+→ dataAbertura = null
+→ dataEsgotamento = null
+
+ABERTO
+→ 0 < quantidadeDisponivel <= capacidadeInicial
+→ dataAbertura != null
+→ dataEsgotamento = null
+
+ESGOTADO
+→ quantidadeDisponivel = 0
+→ dataEsgotamento != null
+\`\`\`
+
+Um recipiente pode passar:
+
+\`\`\`text
+FECHADO → ABERTO → ESGOTADO
+\`\`\`
+
+ou, em retirada integral:
+
+\`\`\`text
+FECHADO → ESGOTADO
+\`\`\`
+
+Nesse segundo caso, não é necessário simular uma abertura intermediária apenas para registrar a transição.
+
+### 11.5 Código interno do recipiente
+
+Cada recipiente precisa de identificação própria e estável para auditoria.
+
+Proposta:
+
+\`\`\`text
+Lote:
+LOT-ETANOL-001
+
+Recipientes:
+LOT-ETANOL-001-R001
+LOT-ETANOL-001-R002
+LOT-ETANOL-001-R003
+...
+\`\`\`
+
+O código é imutável após a criação.
+
+### 11.6 Materialização na entrada
+
+Exemplo:
+
+\`\`\`text
+Entrada:
+tipo = FRASCO
+quantidadeApresentacoes = 10
+conteudoPorApresentacao = 500
+unidade = ML
+fracionavel = true
+\`\`\`
+
+Resultado:
+
+\`\`\`text
+Lote
+├── R001 — 500 mL — FECHADO
+├── R002 — 500 mL — FECHADO
+├── ...
+└── R010 — 500 mL — FECHADO
+\`\`\`
+
+O saldo do Lote e do EstoqueCentral passa a ser derivável/sincronizado pela soma dos recipientes.
+
+### 11.7 Quando não materializar recipiente individual
+
+A materialização individual é obrigatória quando:
+
+- a apresentação é fracionável;
+- a rastreabilidade física individual é relevante;
+- existem estados aberto/fechado;
+- a quantidade disponível de uma apresentação pode divergir das demais.
+
+Para produtos puramente unitários e não fracionáveis, deve ser avaliado se a materialização individual traz benefício suficiente.
+
+Estratégia recomendada para simplificar invariantes:
+
+> materializar todas as apresentações físicas recebidas como \`RecipienteEstoque\`, inclusive não fracionáveis.
+
+Assim existe uma única fonte operacional para saída, auditoria e concorrência.
+
+Exemplo:
+
+\`\`\`text
+100 caixas não fracionáveis
+→ 100 RecipienteEstoque FECHADO
+\`\`\`
+
+A desvantagem é maior volume de registros, mas para a escala prevista do SGL isso é aceitável e simplifica fortemente o domínio.
+
+### 11.8 Relação com Lote
+
+O Lote continua guardando:
+
+- número do fornecedor;
+- código interno;
+- validade;
+- data de entrada;
+- apresentação declarada;
+- fracionável;
+- quantidade de apresentações recebidas;
+- rastreabilidade institucional.
+
+O saldo agregado em \`Lote.quantidadeDisponivel\` pode ser mantido inicialmente por compatibilidade/performance, mas deverá ser considerado **saldo derivado e validado** contra os recipientes.
+
+### 11.9 Relação com MovimentacaoEstoque
+
+\`MovimentacaoEstoque\` continua sendo o evento agregado por Produto/Lote/Pedido.
+
+Para preservar o detalhe físico, será necessário um detalhe de movimentação por recipiente.
+
+Proposta futura:
+
+\`\`\`text
+MovimentacaoEstoque
+└── MovimentacaoRecipiente
+    ├── recipiente
+    ├── quantidadeAnterior
+    ├── quantidadeMovimentada
+    ├── quantidadeAtual
+    ├── estadoAnterior
+    └── estadoAtual
+\`\`\`
+
+Isso evita duplicar uma movimentação principal para cada recipiente e permite registrar uma única saída de 700 mL composta por:
+
+\`\`\`text
+500 mL do R001
++
+200 mL do R004
+\`\`\`
+
+### 11.10 Devolução
+
+A devolução não pode simplesmente restaurar o valor no Lote.
+
+Ela deve usar o detalhe original da movimentação.
+
+Casos:
+
+\`\`\`text
+saída de recipiente fechado inteiro
+→ devolução pode restaurar o mesmo recipiente, se fisicamente devolvido intacto
+
+saída parcial de recipiente
+→ devolução exige decisão operacional:
+   a) retorno ao mesmo recipiente
+   b) novo recipiente identificado
+   c) não permitir retorno físico ao estoque
+\`\`\`
+
+Essa política ainda precisa ser fechada antes da implementação de devolução no novo modelo.
+
+### 11.11 Próxima migration
+
+A maior versão existente atualmente é V32.
+
+A primeira migration disponível para esta etapa é:
+
+\`\`\`text
+V33
+\`\`\`
+
+Nenhuma V33 deve ser criada até o fechamento completo de:
+
+- \`TipoEmbalagem\`;
+- \`RecipienteEstoque\`;
+- detalhes de movimentação por recipiente;
+- política de devolução;
+- estratégia de backfill dos lotes existentes.
+
