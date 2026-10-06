@@ -1412,3 +1412,320 @@ como intenção operacional no contrato/DTO, mesmo que a persistência continue 
 
 A decisão final do contrato será feita antes da V33.
 
+---
+
+## 12. 7.1.4 — MovimentacaoRecipiente e contrato de Ajuste
+
+### 12.1 Auditoria do modelo atual de movimentação
+
+Hoje \`MovimentacaoEstoque\` concentra:
+
+- Produto;
+- EstoqueCentral;
+- Lote;
+- Pedido;
+- Laboratório;
+- Usuário;
+- tipo/origem;
+- quantidade movimentada;
+- saldo agregado anterior/atual.
+
+Esse modelo continua útil como evento principal de estoque.
+
+Entretanto, para retiradas que usam mais de um recipiente, ele não consegue responder:
+
+- quais recipientes foram afetados;
+- quanto saiu de cada recipiente;
+- qual era o saldo individual antes/depois;
+- se o recipiente foi aberto ou esgotado naquela operação.
+
+### 12.2 Nova entidade MovimentacaoRecipiente
+
+Proposta:
+
+\`\`\`java
+MovimentacaoRecipiente
+- id: Long
+- publicId: UUID
+- movimentacaoEstoque: MovimentacaoEstoque
+- recipienteEstoque: RecipienteEstoque
+- quantidadeAnterior: BigDecimal
+- quantidadeMovimentada: BigDecimal
+- quantidadeAtual: BigDecimal
+- estadoAnterior: EstadoRecipienteEstoque
+- estadoAtual: EstadoRecipienteEstoque
+- abriuRecipiente: Boolean
+- esgotouRecipiente: Boolean
+\`\`\`
+
+A entidade é detalhe da movimentação principal.
+
+Relação:
+
+\`\`\`text
+MovimentacaoEstoque 1 → N MovimentacaoRecipiente
+\`\`\`
+
+### 12.3 Exemplo de retirada de 700 mL
+
+Estado:
+
+\`\`\`text
+R001 — 500 mL — FECHADO
+R004 — 350 mL — ABERTO
+\`\`\`
+
+Pedido:
+
+\`\`\`text
+700 mL
+\`\`\`
+
+Movimentação principal:
+
+\`\`\`text
+SAIDA
+Produto: Etanol
+Quantidade: 700 mL
+Lote: ETANOL-001
+\`\`\`
+
+Detalhes:
+
+\`\`\`text
+R001
+500 → 0 mL
+FECHADO → ESGOTADO
+
+R004
+350 → 150 mL
+ABERTO → ABERTO
+\`\`\`
+
+### 12.4 Uma movimentação pode afetar mais de um Lote
+
+Como a regra FEFO pode precisar atravessar Lotes para atender um Pedido, o desenho deve preservar uma movimentação principal por Lote afetado, mantendo compatibilidade com o modelo atual.
+
+Exemplo:
+
+\`\`\`text
+Pedido: 900 mL
+
+MovimentacaoEstoque #1
+→ Lote A
+→ 600 mL
+→ detalhes dos recipientes de A
+
+MovimentacaoEstoque #2
+→ Lote B
+→ 300 mL
+→ detalhes dos recipientes de B
+\`\`\`
+
+Isso preserva a rastreabilidade já existente por Lote e evita tornar \`MovimentacaoEstoque.lote\` ambíguo.
+
+### 12.5 DTO de ajuste
+
+Proposta conceitual:
+
+\`\`\`java
+AjusteEstoqueRequestDTO
+- tipoAjuste: ENTRADA | SAIDA
+- produtoId: UUID
+- loteId: UUID
+- recipienteId: UUID? 
+- destinoEntrada: NOVO_RECIPIENTE | RECIPIENTE_EXISTENTE?
+- tipoEmbalagem: TipoEmbalagem?
+- quantidade: BigDecimal
+- unidadeMedida: UnidadeMedida
+- justificativa: String
+- observacao: String?
+\`\`\`
+
+Regras:
+
+\`\`\`text
+AJUSTE_ENTRADA + NOVO_RECIPIENTE
+→ recipienteId = null
+→ cria RecipienteEstoque próprio
+→ tipoEmbalagem obrigatório
+→ quantidade inicial = quantidade ajustada
+→ estado inicial = ABERTO
+
+AJUSTE_ENTRADA + RECIPIENTE_EXISTENTE
+→ recipienteId obrigatório
+→ não cria recipiente novo
+→ adiciona quantidade ao recipiente informado
+→ valida capacidade
+
+AJUSTE_SAIDA
+→ recipienteId obrigatório quando houver recipientes individualizados
+→ reduz saldo físico explicitamente
+\`\`\`
+
+### 12.6 Enum de intenção de ajuste
+
+Proposta:
+
+\`\`\`java
+public enum TipoAjusteEstoque {
+    ENTRADA,
+    SAIDA
+}
+\`\`\`
+
+Persistência principal:
+
+\`\`\`text
+TipoMovimentacao = AJUSTE
+OrigemMovimentacao = AJUSTE
+\`\`\`
+
+O enum novo representa a intenção operacional no contrato, sem quebrar a semântica histórica da movimentação.
+
+### 12.7 Destino do ajuste de entrada
+
+Proposta:
+
+\`\`\`java
+public enum DestinoAjusteEntrada {
+    NOVO_RECIPIENTE,
+    RECIPIENTE_EXISTENTE
+}
+\`\`\`
+
+Não permitir valor implícito.
+
+O usuário/Gestor precisa saber se está:
+
+- criando uma nova unidade física;
+- ou corrigindo o saldo de uma unidade física já existente.
+
+### 12.8 Regras do ajuste de saída
+
+Ajuste de saída serve para reconciliação física, perda, evaporação, divergência de inventário ou correção operacional.
+
+Não deve ser usado como substituto de:
+
+- Pedido;
+- Descarte por vencimento;
+- consumo por Solução;
+- devolução.
+
+Obrigatório:
+
+- justificativa;
+- usuário responsável;
+- recipiente alvo;
+- saldo suficiente;
+- histórico antes/depois.
+
+### 12.9 Capacidade no ajuste de entrada
+
+Para \`RECIPIENTE_EXISTENTE\`:
+
+\`\`\`text
+quantidadeDisponivel + ajuste
+<= capacidadeInicial
+\`\`\`
+
+Caso contrário:
+
+\`\`\`text
+bloquear
+→ sugerir NOVO_RECIPIENTE
+\`\`\`
+
+O backend não aumenta automaticamente a capacidade original de um recipiente para fazer o ajuste caber.
+
+### 12.10 Ajuste de recipiente esgotado
+
+Decisão recomendada:
+
+\`\`\`text
+ESGOTADO
+→ não recebe ajuste de entrada
+\`\`\`
+
+Se material reaparecer fisicamente, criar novo recipiente.
+
+Motivo: um recipiente marcado como esgotado representa o encerramento físico/auditável daquela unidade.
+
+### 12.11 Ajuste e Lote
+
+Quando o Lote é conhecido:
+
+- ajuste deve permanecer no mesmo Lote;
+- novo recipiente é criado dentro daquele Lote.
+
+Quando o material não possui Lote confiável:
+
+- não reutilizar artificialmente um Lote antigo;
+- criar fluxo de lote de ajuste/inventário com origem explicitamente auditável.
+
+A definição exata desse caso será fechada no desenho da V33/V34.
+
+### 12.12 Resposta da API
+
+\`MovimentacaoEstoqueResponseDTO\` deverá evoluir para incluir detalhes dos recipientes.
+
+Conceito:
+
+\`\`\`text
+movimentacao
+├── quantidade total
+├── lote
+└── recipientes[]
+    ├── código
+    ├── antes
+    ├── movimentado
+    ├── depois
+    ├── estado anterior
+    └── estado atual
+\`\`\`
+
+A interface pode manter a linha resumida e expandir os detalhes sob demanda.
+
+### 12.13 Atomicidade do ajuste
+
+O ajuste deve ser uma única transação:
+
+\`\`\`text
+validar
+→ bloquear Estoque/Lote/Recipiente
+→ alterar recipiente
+→ recalcular/validar Lote
+→ recalcular/validar EstoqueCentral
+→ registrar MovimentacaoEstoque
+→ registrar MovimentacaoRecipiente
+→ commit
+\`\`\`
+
+Qualquer falha:
+
+\`\`\`text
+rollback integral
+\`\`\`
+
+### 12.14 Situação após este subbloco
+
+Decisões já fechadas:
+
+- unidade x apresentação;
+- BigDecimal;
+- RecipienteEstoque;
+- estados FECHADO/ABERTO/ESGOTADO;
+- FEFO;
+- prioridade fechado x aberto conforme retirada;
+- concorrência/revalidação;
+- devolução de fracionado proibida;
+- ajuste de entrada/saída auditável;
+- MovimentacaoRecipiente como detalhe físico.
+
+Pendências antes da primeira migration:
+
+1. fechar estratégia de backfill dos Lotes existentes;
+2. definir exatamente quais colunas agregadas permanecem em Lote/EstoqueCentral;
+3. decidir política para registros legados com \`UnidadeMedida\` atualmente igual a CAIXA/FRASCO/AMPOLA/PAR/OUTRO;
+4. dividir as migrations da Etapa 7 em ordem segura.
+
