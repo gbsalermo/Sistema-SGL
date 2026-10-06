@@ -279,3 +279,203 @@ Nada deve ser perdido:
 - preview/PDF/XLSX usando a mesma consulta/filtros.
 
 A implementação aguarda a estabilização das Etapas 7 e 8.
+
+---
+
+## 9. Decisão adicional — estoque fracionável por recipiente físico
+
+Foi confirmado que, para itens fracionáveis, o SGL não pode representar apenas um saldo agregado do lote.
+
+Exemplo aprovado:
+
+```text
+Entrada:
+10 frascos de Etanol
+cada frasco = 500 mL
+
+Saldo físico inicial:
+10 × 500 mL
+= 5.000 mL
+```
+
+Após retirada de 50 mL:
+
+```text
+INCORRETO:
+10 frascos
+ou
+9 frascos + 450 mL sem identificar o recipiente
+
+CORRETO:
+9 frascos fechados de 500 mL
+1 frasco aberto com 450 mL
+```
+
+O sistema precisa preservar o estado de cada recipiente/apresentação fracionável.
+
+### 9.1 Modelo conceitual recomendado
+
+```text
+EstoqueCentral
+→ Produto na Unidade
+→ saldo consolidado canônico
+
+Lote
+→ validade / fornecedor / rastreabilidade
+
+RecipienteEstoque
+→ unidade física real dentro do lote
+→ apresentação
+→ capacidade inicial
+→ quantidade disponível
+→ aberto/fechado
+→ data de abertura
+→ ativo/esgotado
+```
+
+Nome definitivo da entidade ainda será fechado antes da migration. Nomes candidatos:
+
+- `RecipienteEstoque`;
+- `UnidadeFisicaEstoque`;
+- `ApresentacaoEstoque`.
+
+A preferência conceitual é por **RecipienteEstoque**, porque o registro representa uma unidade física individual rastreável.
+
+### 9.2 Exemplo
+
+```text
+Lote ETANOL-001
+├── frasco #1 → 500 mL → FECHADO
+├── frasco #2 → 500 mL → FECHADO
+├── ...
+├── frasco #9 → 500 mL → FECHADO
+└── frasco #10 → 450 mL → ABERTO
+```
+
+O saldo agregado continua podendo ser mostrado como:
+
+```text
+4.950 mL
+```
+
+mas nunca substitui a informação física dos recipientes.
+
+### 9.3 Regra preliminar de retirada
+
+A retirada precisa respeitar simultaneamente:
+
+1. FIFO/FEFO do lote;
+2. estado físico dos recipientes;
+3. preferência por recipientes já abertos quando houver retirada parcial;
+4. evitar abrir recipientes novos desnecessariamente;
+5. registrar exatamente quais recipientes foram consumidos e quanto saiu de cada um.
+
+Exemplos aprovados:
+
+```text
+Saldo:
+9 × 500 mL fechados
+1 × 450 mL aberto
+
+Pedido 200 mL
+→ retirar 200 mL do frasco aberto
+→ frasco aberto passa a 250 mL
+
+Pedido 600 mL
+→ liberar 1 frasco fechado de 500 mL
+→ retirar 100 mL do frasco aberto de 450 mL
+→ frasco aberto passa a 350 mL
+```
+
+A regra exata para casos onde FIFO/FEFO conflita com "recipiente aberto primeiro" será fechada no 7.0 antes da implementação.
+
+### 9.4 Auditoria obrigatória
+
+Cada saída fracionada deve registrar:
+
+- lote;
+- recipiente físico;
+- quantidade anterior no recipiente;
+- quantidade retirada;
+- quantidade restante;
+- usuário responsável;
+- pedido/origem;
+- data/hora;
+- unidade canônica;
+- se o recipiente foi aberto naquela operação;
+- se o recipiente foi esgotado naquela operação.
+
+Não basta registrar apenas a quantidade total retirada do Lote.
+
+### 9.5 Consistências obrigatórias
+
+O backend deve garantir invariantes:
+
+```text
+saldo EstoqueCentral
+=
+soma dos saldos dos recipientes ativos
+
+saldo do Lote
+=
+soma dos saldos dos recipientes do Lote
+
+0 <= saldo do recipiente <= capacidade inicial
+
+recipiente FECHADO
+→ saldo = capacidade inicial
+
+recipiente ABERTO
+→ saldo pode ser menor que capacidade inicial
+
+recipiente ESGOTADO
+→ saldo = 0
+```
+
+Alteração manual que quebre essas igualdades deve ser bloqueada ou passar por ajuste auditável.
+
+### 9.6 Concorrência
+
+Saídas precisam bloquear os recipientes/lotes selecionados durante a transação.
+
+Objetivo:
+
+```text
+dois Gestores aprovando ao mesmo tempo
+≠
+os dois consumirem os mesmos 100 mL restantes
+```
+
+A estratégia de lock atual dos Pedidos/Lotes deve ser revisada para chegar ao nível do recipiente físico quando houver fracionamento.
+
+### 9.7 Entrada de estoque
+
+Para apresentação fracionável:
+
+```text
+quantidade de apresentações = 10
+conteúdo por apresentação = 500 mL
+```
+
+deve materializar dez recipientes físicos com 500 mL cada.
+
+Para itens não fracionáveis, avaliar se é necessário materializar uma linha por unidade física ou se o saldo agregado continua suficiente.
+
+### 9.8 Impacto na Etapa 7
+
+O 7.0 passa a incluir auditoria específica de:
+
+- `Lote.quantidadeDisponivel`;
+- `Lote.quantidadeInicial`;
+- `Lote.quantidadeApresentacoes`;
+- `Lote.conteudoPorApresentacao`;
+- `Lote.fracionavel`;
+- `MovimentacaoEstoque`;
+- seleção FIFO/FEFO;
+- locks pessimistas;
+- devolução/cancelamento;
+- descarte;
+- entrada/ajuste de lote.
+
+Nenhuma migration deve ser criada antes de fechar esta modelagem.
+
