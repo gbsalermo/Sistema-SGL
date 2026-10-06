@@ -1287,3 +1287,128 @@ Nenhuma V33 deve ser criada até o fechamento completo de:
 - política de devolução;
 - estratégia de backfill dos lotes existentes.
 
+### 11.12 Política fechada — devolução de material fracionado
+
+Decisão confirmada:
+
+Material fracionado que saiu fisicamente do estoque **não retorna pelo fluxo normal de DEVOLUCAO**.
+
+Motivo:
+
+- não é possível garantir esterilidade, pureza, estabilidade ou integridade do conteúdo devolvido;
+- a maior parte do fracionamento será consumida em preparo de Soluções;
+- devolver, por exemplo, 10 mL de acetona ao recipiente original pode contaminar ou inutilizar o produto;
+- o SGL não deve reconstruir artificialmente um saldo físico cuja condição real não pode ser garantida.
+
+Portanto:
+
+\`\`\`text
+retirada inteira de recipiente fechado
+→ pode admitir DEVOLUCAO, desde que o recipiente retorne íntegro/lacrado
+
+retirada fracionada
+→ DEVOLUCAO normal proibida
+\`\`\`
+
+### 11.13 Ajuste de estoque como única forma de reentrada de material fracionado
+
+Se material fracionado precisar voltar fisicamente ao controle de estoque, isso será tratado como **AJUSTE DE ENTRADA**, não como devolução.
+
+O ajuste deverá exigir:
+
+- usuário/Gestor responsável;
+- justificativa obrigatória;
+- Produto;
+- Lote de origem, quando conhecido;
+- quantidade;
+- unidade;
+- estado físico;
+- destino do ajuste.
+
+Destinos possíveis:
+
+\`\`\`text
+A) NOVO_RECIPIENTE
+B) RECIPIENTE_EXISTENTE
+\`\`\`
+
+#### A) Novo recipiente
+
+É o comportamento recomendado por padrão.
+
+Exemplo:
+
+\`\`\`text
+retornaram 10 mL de acetona
+
+→ criar novo RecipienteEstoque
+→ saldo inicial = 10 mL
+→ estado = ABERTO
+→ origem = AJUSTE
+→ observação/justificativa obrigatória
+\`\`\`
+
+O novo recipiente recebe identificação própria e não é confundido com o recipiente original.
+
+#### B) Recipiente existente
+
+Permitido apenas quando o Gestor especificar explicitamente o recipiente de destino.
+
+O backend deverá validar:
+
+- mesmo Produto;
+- mesma unidade canônica;
+- mesmo lote quando a política exigir;
+- recipiente não esgotado/inativo;
+- capacidade máxima não excedida;
+- justificativa obrigatória.
+
+Essa ação deve ser auditada com saldo antes/depois.
+
+O sistema nunca deve escolher automaticamente um recipiente existente para receber material de ajuste.
+
+### 11.14 Segurança do ajuste
+
+A existência do ajuste não significa que qualquer material devolvido é tecnicamente reutilizável.
+
+A decisão física de aceitar o material é responsabilidade do Gestor.
+
+A interface deve deixar claro:
+
+> Ajuste de entrada corrige/reconcilia o estoque. Não representa uma devolução automática nem garante a integridade do material.
+
+O histórico deve permitir distinguir:
+
+\`\`\`text
+COMPRA
+DEVOLUCAO de recipiente íntegro
+AJUSTE de entrada
+AJUSTE de saída
+INVENTARIO
+DESCARTE
+\`\`\`
+
+### 11.15 Impacto no modelo atual
+
+O enum atual já possui:
+
+\`\`\`text
+TipoMovimentacao.AJUSTE
+OrigemMovimentacao.AJUSTE
+\`\`\`
+
+mas o backend atual não possui endpoint operacional específico para ajuste de estoque.
+
+Na Etapa 7 deverá ser criado um fluxo explícito de ajuste, sem reutilizar de forma ambígua a entrada normal de lote ou a devolução de Pedido.
+
+Sugestão de separação:
+
+\`\`\`text
+AJUSTE_ENTRADA
+AJUSTE_SAIDA
+\`\`\`
+
+como intenção operacional no contrato/DTO, mesmo que a persistência continue usando \`TipoMovimentacao.AJUSTE\` com quantidade/sentido bem definidos.
+
+A decisão final do contrato será feita antes da V33.
+
