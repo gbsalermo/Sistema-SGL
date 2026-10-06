@@ -3,12 +3,12 @@
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
 **Última atualização:** 01/10/2026  
-**Status:** Etapas 1–5 concluídas e validadas; Etapa 6 em andamento com 6.1–6.2 concluídos e validados; 6.3 em execução  
+**Status:** Etapas 1–6 concluídas e validadas; Etapa 7 — Unidades + Soluções + contexto operacional em andamento
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
-> **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual do backend é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
+> **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual do backend é `collab/etapa-7-unidades-solucoes-contexto`, criada sobre a `main` pós-Etapa 5.
 
 Roadmap formal posterior:
 
@@ -662,112 +662,120 @@ Esse refinamento não faz parte do fechamento da Etapa 6 e não deve atrasar sua
 
 ---
 
-## Etapa 7 — Relatórios consolidados
+## Etapa 7 — Unidades + Soluções + contexto operacional 🔧 ATUAL
 
-**Dependência:** Etapas 5 e 6.
+**Dependência:** Etapas 5 e 6 estabilizadas.
 
-### 7.1 Filtros/dimensões
+### 7.0 — auditoria do modelo atual
 
-Laboratório, responsável, Projeto, Código SEG, líder, SCI, Atividade, Orientador, Bolsa, Curso, Cultura, situação e período.
+Antes de migration ou contrato novo, revisar:
 
-### 7.2 Relatório consolidado de Projetos
+- `UnidadeMedida`;
+- `TipoEmbalagem`;
+- Produto;
+- EstoqueCentral;
+- Lote;
+- ItemPedido;
+- Pedido;
+- movimentações;
+- telas e DTOs que exibem/recebem quantidade.
 
-Adicionar **Projetos** como opção própria na Central de Relatórios.
+Achados iniciais já confirmados:
 
-Cobertura base derivada da Etapa 5:
+- `UnidadeMedida` mistura unidade física e apresentação;
+- estoque e pedido usam quantidades inteiras;
+- não existe domínio `Solucao` no backend atual.
 
-- Projeto;
-- Código SEG;
-- Laboratório responsável/contextual;
-- líder/responsável;
-- início e fim;
-- status;
-- situação de execução;
-- recurso externo/empresa quando aplicável;
-- quantidade de SCI;
-- quantidade de Atividades.
+### 7.1 — normalização de unidade x apresentação
 
-Após estabilização da Etapa 6, o relatório pode incorporar dimensões consolidadas de vínculos/Estagiários sem duplicar a entidade Projeto.
-
-Filtros previstos:
-
-- Laboratório;
-- Projeto;
-- Código SEG;
-- responsável/líder;
-- status;
-- situação de execução;
-- período.
-
-A prévia deve permitir sair da visão consolidada do Projeto para seus SCI/Atividades quando necessário, sem transformar o relatório em substituto do hub operacional `/projetos`.
-
-### 7.3 Consolidação de Movimentações + Resumo operacional
-
-Na Central de Relatórios, **Movimentações** e **Resumo operacional** deixam de ocupar opções separadas.
-
-Novo desenho:
+Regra:
 
 ```text
-Movimentações
-├── Resumo
-│   ├── total de movimentações
-│   ├── entradas / saídas / devoluções / descartes / ajustes
-│   ├── produtos movimentados
-│   ├── lotes movimentados
-│   ├── principais entradas
-│   ├── principais saídas
-│   └── lotes mais movimentados
-│
-└── Detalhamento
-    └── tabela completa de movimentações e rastreabilidade
+unidade de medida
+≠
+apresentação física
 ```
 
-A consolidação é inicialmente **de experiência de interface**, não uma obrigação de quebrar contratos backend.
-
-Por compatibilidade, os endpoints atuais podem permanecer:
+Exemplos de dimensão/unidade:
 
 ```text
-GET /api/v1/relatorios/movimentacoes
-GET /api/v1/relatorios/resumo-operacional
+VOLUME: mL, L
+MASSA: mg, g, kg
+COMPRIMENTO: m
+CONTAGEM: unidade
 ```
 
-O frontend passa a tratá-los como duas visões do mesmo relatório. Refactor posterior pode compartilhar consulta/service internamente desde que não altere comportamento ou exportações.
-
-Com isso, a lista principal da Central passa a tender para:
+Apresentação física permanece separada, por exemplo:
 
 ```text
-Estagiários
-Produtos
-Movimentações
-Estoque e lotes
-Resíduos
-Fiscalização
-Projetos
+frasco
+ampola
+caixa
+kit
+par
 ```
 
-### 7.4 Consultas/agregações
+Conversão automática somente dentro da mesma dimensão.
 
-Contagens por Laboratório, Orientador, responsável, Bolsa, Curso, Cultura, Projeto, SCI e Atividade.
+### 7.2 — modelo de quantidade e compatibilidade
 
-### 7.5 Prévia/telas
+Definir antes de alterar schema:
 
-Visões consolidadas de Laboratórios, Projetos e Estagiários.
+- unidade canônica por Produto;
+- precisão decimal necessária;
+- estratégia para dados legados;
+- impacto em estoque, lotes, pedidos e movimentações;
+- como multiplicadores de embalagem convivem com unidade física.
 
-### 7.6 PDF/XLSX
+### 7.3 — domínio de Soluções
 
-A exportação deve usar a mesma consulta/filtros da tela.
+Modelar Solução como composição reutilizável, distinta de Produto.
 
-Para Movimentações, definir no fechamento do contrato se a exportação inclui:
+A modelagem deve definir:
 
-- visão resumida;
-- detalhamento;
-- ou ambas em seções/abas do mesmo arquivo.
+- identidade e status;
+- Unidade/tenant;
+- nome/descrição;
+- componentes Produtos;
+- quantidade e unidade de cada componente;
+- rendimento/volume ou massa final quando aplicável;
+- preparo/instruções quando necessário;
+- histórico/snapshot suficiente para Pedidos.
 
-### 7.7 Organização estrutural
+### 7.4 — contexto operacional
 
-Mover controllers/services/DTOs de Relatórios para packages específicos, sem alterar contratos ou comportamento.
+Fechar o contrato que será consumido pela Etapa 8:
+
+Para Estagiários:
+
+```text
+Pedido
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratório
+→ Unidade
+```
+
+Para TECNICO/ANALISTA/PESQUISADOR:
+
+- com Projeto: Projeto determina Laboratório;
+- sem Projeto: contexto-base pode continuar vindo de `Usuario.laboratorio`;
+- o frontend não deve oferecer Projeto e Laboratório como escolhas independentes quando Projeto já determina Laboratório.
+
+### 7.5 — frontend e validação
+
+Após estabilizar contratos:
+
+- atualizar cadastros/estoque onde necessário;
+- preparar UI de Soluções;
+- validar dados legados;
+- ampliar testes backend;
+- preservar relatórios atuais sem consolidá-los ainda.
 
 ---
+
 
 ## Etapa 8 — Unidades, Soluções e contexto operacional
 
@@ -942,10 +950,9 @@ Etapa 1 → Etapa 2 → Etapa 3 → Etapa 4
 
 Etapa 5 Projeto/Atividade
 → Etapa 6 Estagiários/vínculos
-→ Etapa 7 Relatórios
-
-Etapa 8 Unidades/Soluções
-→ Etapa 9 Pedidos/Soluções
+→ Etapa 7 Unidades/Soluções/contexto
+→ Etapa 8 Pedidos/Soluções
+→ Etapa 9 Relatórios
 
 Produto + Resíduo + Solução estabilizados
 → Etapa 10 Rótulos
@@ -967,8 +974,9 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
 Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
-Etapas 7–13                                         ⏳
+Etapa 6 — Estagiários e vínculos                    ✅ concluída e validada
+Etapa 7 — Unidades + Soluções + contexto            🔧 atual
+Etapas 8–13                                         ⏳
 ```
 
 A matriz de permissões não é a próxima tarefa enquanto este bloco estiver aberto.
@@ -990,7 +998,7 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 6.5 — frontend integrado implementado; validação visual/local pendente.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 7.0 — auditoria do modelo de unidades, apresentações, quantidades e Soluções.
 
 
 ### Revisão híbrida 02/10/2026 — Etapa 6
