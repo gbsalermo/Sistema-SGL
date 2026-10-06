@@ -618,3 +618,60 @@ MovimentacaoEstoque
 
 A implementação do 7.1 deve preservar essa hierarquia.
 
+### 9.13 Regra adicional — retirada inteira deve preservar recipientes abertos
+
+Decisão confirmada:
+
+Quando a quantidade solicitada corresponde exatamente a uma ou mais apresentações completas, o sistema deve evitar consumir recipientes já abertos sem necessidade.
+
+Prioridade:
+
+```text
+1. FEFO define o lote prioritário
+2. dentro do lote prioritário:
+   a) pedido de apresentação inteira
+      → usar recipiente FECHADO compatível
+   b) pedido fracionado
+      → usar recipiente ABERTO compatível
+      → abrir novo recipiente somente se necessário
+```
+
+Exemplo:
+
+```text
+Lote A — vence primeiro
+├── frasco aberto: 300 mL
+├── frasco fechado: 500 mL
+└── frasco fechado: 500 mL
+```
+
+Pedido de 500 mL:
+
+```text
+→ entregar 1 frasco fechado de 500 mL
+→ manter o frasco aberto com 300 mL
+```
+
+Pedido de 200 mL:
+
+```text
+→ retirar 200 mL do frasco aberto
+→ restam 100 mL
+```
+
+Pedido de 700 mL:
+
+```text
+→ 1 frasco fechado de 500 mL
+→ + 200 mL do recipiente aberto
+```
+
+Objetivo:
+
+- evitar abrir recipientes desnecessariamente;
+- reduzir proliferação de recipientes parcialmente consumidos;
+- preservar rastreabilidade física;
+- manter FEFO como regra superior entre lotes.
+
+Essa regra deve ser aplicada pela recomendação automática de retirada e validada novamente no momento da aprovação.
+
