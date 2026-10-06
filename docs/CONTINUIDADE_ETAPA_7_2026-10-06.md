@@ -675,3 +675,77 @@ Objetivo:
 
 Essa regra deve ser aplicada pela recomendação automática de retirada e validada novamente no momento da aprovação.
 
+### 9.14 Auditoria do código atual — impacto real da mudança
+
+A auditoria do código confirmou que o modelo atual já possui mecanismos úteis, porém todos ainda trabalham com saldo agregado inteiro por Lote.
+
+#### Lote atual
+
+O modelo `Lote` já possui:
+
+- `tipoEmbalagem`;
+- `apresentacao`;
+- `quantidadeApresentacoes`;
+- `conteudoPorApresentacao`;
+- `fracionavel`;
+- `quantidadeInicial`;
+- `quantidadeDisponivel`.
+
+Hoje `quantidadeInicial` e `quantidadeDisponivel` são `Integer`, e não existe identificação individual dos recipientes.
+
+#### Movimentação atual
+
+`MovimentacaoEstoqueService.registrarEntradaLote` calcula:
+
+```text
+quantidade total
+=
+quantidade de apresentações
+× conteúdo por apresentação
+```
+
+e grava o total agregado no Lote e no EstoqueCentral.
+
+A saída usa FIFO/FEFO no nível de Lote e reduz diretamente `Lote.quantidadeDisponivel`.
+
+Portanto, a implementação atual **não consegue distinguir**:
+
+```text
+9 frascos fechados de 500 mL
++
+1 frasco aberto de 450 mL
+```
+
+de um simples saldo agregado de `4.950 mL`.
+
+#### Locks atuais
+
+A implementação já possui bloqueio pessimista de EstoqueCentral/Lote em fluxos de movimentação. Isso é uma base positiva.
+
+Na evolução da Etapa 7, a granularidade de lock deve chegar ao recipiente físico quando a retirada envolver fracionamento.
+
+#### Devolução atual
+
+A devolução hoje restaura saldo diretamente no Lote.
+
+Com `RecipienteEstoque`, a devolução deverá saber quais recipientes foram afetados e não poderá simplesmente somar quantidade ao saldo agregado sem reconstruir corretamente o estado físico.
+
+#### Conclusão da auditoria
+
+O modelo atual pode ser evoluído, não refeito do zero:
+
+```text
+manter:
+EstoqueCentral
+Lote
+TipoEmbalagem
+MovimentacaoEstoque
+FIFO/FEFO
+locks
+
+evoluir:
+Integer → quantidade física decimal onde aplicável
+Lote agregado → Lote + RecipienteEstoque
+movimentação por Lote → movimentação com detalhe por recipiente
+```
+
