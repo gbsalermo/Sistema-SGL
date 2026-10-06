@@ -2155,3 +2155,15 @@ Situação:
 7.0 ✅
 7.1 🔧 atual
 \`\`\`
+
+
+### 15.1 Implementação 7.1-A
+
+Enums de medida/apresentação e conversor implementados.
+
+```text
+7.1-A ✅ implementado
+7.1-B 🔧 próximo — BigDecimal nas entidades/DTOs
+```
+
+A suíte ainda precisa ser executada no ambiente local/CI antes de considerar validação concluída.

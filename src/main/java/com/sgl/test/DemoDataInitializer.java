@@ -416,7 +416,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 false, Set.of(), null
         );
         Produto ponteiras = criarProduto(
-                "Ponteiras 1000 µL com filtro", "CNPMF-PON-1000", UnidadeMedida.CAIXA,
+                "Ponteiras 1000 µL com filtro", "CNPMF-PON-1000", UnidadeMedida.UNIDADE,
                 "Ponteiras estéreis com filtro para micropipetas.",
                 "Armário M3 - Materiais descartáveis",
                 NivelRisco.NENHUM, null, null,
@@ -424,7 +424,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 false, Set.of(), null
         );
         Produto luvas = criarProduto(
-                "Luvas Nitrílicas sem pó", "CNPMF-LUV-NIT", UnidadeMedida.CAIXA,
+                "Luvas Nitrílicas sem pó", "CNPMF-LUV-NIT", UnidadeMedida.UNIDADE,
                 "Luvas de procedimento para uso laboratorial.",
                 "Armário EPI - Almoxarifado",
                 NivelRisco.NENHUM, null, null,
@@ -432,7 +432,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 false, Set.of(), null
         );
         Produto bda = criarProduto(
-                "Meio BDA preparado", "CNPMF-BDA", UnidadeMedida.FRASCO,
+                "Meio BDA preparado", "CNPMF-BDA", UnidadeMedida.UNIDADE,
                 "Meio Batata Dextrose Ágar preparado para cultivo de fungos.",
                 "Geladeira 2-8 °C - Fitopatologia",
                 NivelRisco.BAIXO, TipoRisco.BIOLOGICO, "Material destinado a cultivo microbiológico.",
@@ -449,7 +449,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "Produto fiscalizado no cenário de demonstração."
         );
         Produto pbs = criarProduto(
-                "Tampão PBS 10X", "CNPMF-PBS-10X", UnidadeMedida.FRASCO,
+                "Tampão PBS 10X", "CNPMF-PBS-10X", UnidadeMedida.ML,
                 "Tampão concentrado para rotinas de biologia molecular e imunodiagnóstico.",
                 "Geladeira 2-8 °C - Central de Soluções",
                 NivelRisco.NENHUM, null, null,
@@ -465,7 +465,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 false, Set.of(), null
         );
         Produto tmb = criarProduto(
-                "Substrato ELISA TMB", "CNPMF-TMB-ELISA", UnidadeMedida.FRASCO,
+                "Substrato ELISA TMB", "CNPMF-TMB-ELISA", UnidadeMedida.ML,
                 "Substrato cromogênico para ensaios ELISA.",
                 "Geladeira 2-8 °C - Virologia",
                 NivelRisco.BAIXO, TipoRisco.IRRITANTE, "Evitar contato com pele e olhos.",

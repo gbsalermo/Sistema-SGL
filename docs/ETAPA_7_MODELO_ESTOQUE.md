@@ -471,3 +471,30 @@ MovimentacaoRecipienteResponseDTO
 \`\`\`
 
 Somente depois seguir para o domínio de Soluções.
+
+
+---
+
+## 11. Implementação 7.1-A
+
+Implementado na branch da Etapa 7:
+
+- `DimensaoMedida`;
+- `GrupoConversaoMedida`;
+- `UnidadeMedida` com metadados de dimensão/grupo/fator;
+- remoção de apresentações do enum `UnidadeMedida`;
+- expansão de `TipoEmbalagem`;
+- `EstadoRecipienteEstoque`;
+- `TipoAjusteEstoque`;
+- `DestinoAjusteEntrada`;
+- `ConversorUnidadeMedida`;
+- testes unitários do conversor;
+- atualização mínima dos initializers para não usar CAIXA/FRASCO como unidade.
+
+A alteração de `TipoMovimentacao.AJUSTE` para entrada/saída explícitas fica para o bloco do fluxo de ajustes, evitando antecipar comportamento funcional antes do novo estoque estar implementado.
+
+Próximo bloco:
+
+```text
+7.1-B — BigDecimal nas entidades e DTOs
+```
