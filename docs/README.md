@@ -92,8 +92,8 @@ Integração corporativa                       ⏳ posterior
 5. Projetos + Atividades                            ✅ concluída e validada
 6. Estagiários + vínculos                           ⏳ próxima
 7. relatórios consolidados                          ⏳
-8. normalização de unidades + Soluções              ⏳
-9. Pedidos + integração com Soluções                ⏳
+8. Pedidos + integração com Soluções                ⏳
+9. relatórios consolidados                           ⏳
 10. rótulos + documento de lote + impressão         ⏳
 11. Manual do Usuário + delete lógico               ⏳
 12. testes frontend — Vitest/Vue Test Utils/Cypress ⏳
