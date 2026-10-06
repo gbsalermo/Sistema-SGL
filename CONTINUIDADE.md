@@ -6,10 +6,10 @@
 **Última atualização:** 02/10/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
-**Branch atual de trabalho:** `collab/etapa-6-estagiarios-vinculos`  
+**Branch atual de trabalho:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Fase atual:** pré-produção pós-aprovação funcional  
 **Etapa concluída:** Etapa 6 — Estagiários e Vínculos ✅  
-**Próxima etapa:** Etapa 7 — Relatórios consolidados ⏳  
+**Etapa atual:** Etapa 7 — Unidades + Soluções + contexto operacional 🔧  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
 **Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_6.md`  
@@ -270,7 +270,7 @@ Regras:
 - cancelamento aprovado restaura os lotes efetivamente usados;
 - urgência não altera FIFO/FEFO.
 
-Unidades/apresentações serão refinadas na Etapa 8 antes de Soluções.
+Unidades/apresentações serão refinadas na Etapa 7 antes de consolidar Soluções.
 
 ---
 
@@ -791,25 +791,51 @@ O 6.3 foi validado em 01/10/2026 com compilação backend concluída e suíte co
 
 Não antecipar Etapa 7 durante esta implementação.
 
-## Etapa 7 — Relatórios consolidados
+## Etapa 7 — Unidades + Soluções + contexto operacional 🔧 ATUAL
 
-Depende das Etapas 5 e 6 estabilizadas. Inclui filtros/agregações, telas, PDF/XLSX e organização estrutural do módulo de relatórios.
+A Etapa 7 foi reposicionada para estabilizar primeiro os dados que alimentarão Pedidos e, depois, Relatórios.
 
-Decisões já fechadas para a Etapa 7:
+Objetivos centrais:
 
-- adicionar **Projetos** como relatório consolidado próprio;
-- incluir Código SEG, Laboratório, responsável/líder, período, status, situação de execução, recurso externo e agregações de SCI/Atividades;
-- incorporar dimensões de vínculos/Estagiários depois da Etapa 6;
-- sintetizar **Movimentações** e **Resumo operacional** em uma única opção da Central;
-- dentro de Movimentações, manter modos/visões **Resumo** e **Detalhamento**;
-- preservar inicialmente os endpoints atuais de Movimentações e Resumo operacional para compatibilidade, tratando a unificação primeiro como decisão de interface;
-- usar o espaço liberado no seletor da Central para o novo relatório de Projetos.
+- separar **unidade de medida** de **apresentação física/embalagem**;
+- permitir conversões apenas entre unidades compatíveis da mesma dimensão;
+- preservar rastreabilidade e compatibilidade com estoque/lotes existentes;
+- criar e estabilizar o domínio de **Soluções**;
+- fechar o contrato de contexto operacional usado por Pedidos;
+- não antecipar ainda a consolidação de Relatórios.
+
+Regra base:
+
+```text
+unidade de medida ≠ apresentação física
+```
+
+Conversões compatíveis previstas:
+
+```text
+1 L = 1000 mL
+1 kg = 1000 g
+```
+
+Não converter massa ↔ volume genericamente sem densidade.
+
+### Achado inicial da auditoria
+
+O enum atual `UnidadeMedida` mistura grandezas e apresentações:
+
+```text
+ML, L, MG, G, KG
++
+UNIDADE, REACAO, CAIXA, FRASCO, AMPOLA, PAR, METRO, OUTRO
+```
+
+Além disso, `EstoqueCentral.quantidadeAtual`, `quantidadeMinima` e quantidades de Pedido são inteiros. Isso precisa ser tratado no desenho da Etapa 7 antes de qualquer migration.
 
 ---
 
-# 11. Unidades, Soluções e Pedidos
+# 11. Unidades, Soluções, Pedidos e Relatórios
 
-## Etapa 8
+## Etapa 7
 
 Normalizar:
 
@@ -832,7 +858,7 @@ Depois estabilizar domínio de Soluções.
 
 ### Contexto operacional para Pedidos
 
-Antes da Etapa 9, fechar o contrato de contexto operacional:
+Ainda na Etapa 7, fechar o contrato de contexto operacional:
 
 - Unidade/tenant continua vindo da identidade/sessão institucional;
 - para Estagiários, Laboratório/Projeto não vêm de `Usuario.laboratorio`;
@@ -843,7 +869,7 @@ Antes da Etapa 9, fechar o contrato de contexto operacional:
 - para TECNICO/ANALISTA/PESQUISADOR sem Projeto, `Usuario.laboratorio` continua sendo o contexto institucional/base;
 - `laboratorioId/laboratorioNome` existentes na sessão DEV são compatibilidade e não autoridade operacional universal.
 
-## Etapa 9
+## Etapa 8
 
 Integrar Soluções aos Pedidos e aplicar a refatoração estrutural de contexto do Estagiário.
 
@@ -908,9 +934,9 @@ Etapa 5 — Projetos + Atividades                       ✅ concluída, validada
 Etapa 6 — Estagiários + vínculos                      ✅ concluída e validada
 
 **Massa DEV IQ de apoio ao 6.5:** `DataInitializer` passou a garantir cenários variados para `admin@sgl.com`/Unidade IQ: Estagiário operacional com múltiplas Atividades/Projetos/Laboratórios, vínculo prorrogado próximo do término, vínculo institucional sem Atividade e vínculo encerrado com histórico. A carga é idempotente e serve apenas à validação visual/funcional do 6.5; o fechamento formal de dados/testes continua no 6.6.
-Etapa 7 — relatórios consolidados                     ⏳
-Etapa 8 — unidades + Soluções + contexto operacional  ⏳
-Etapa 9 — Pedidos + Soluções + participação           ⏳
+Etapa 7 — unidades + Soluções + contexto operacional  🔧 atual
+Etapa 8 — Pedidos + Soluções + participação           ⏳
+Etapa 9 — relatórios consolidados                     ⏳
 Etapa 10 — Rótulos + impressão operacional            ⏳
 Etapa 11 — Manual + decisão delete lógico             ⏳
 Etapa 12 — testes automatizados frontend              ⏳
@@ -923,7 +949,7 @@ Matriz de permissões, congelamento funcional e autenticação definitiva contin
 
 # 14. Regra final de retomada
 
-**As Etapas 1–6 estão concluídas e validadas. A próxima frente é a Etapa 7 — Relatórios consolidados. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
+**As Etapas 1–6 estão concluídas e validadas. A frente atual é a Etapa 7 — Unidades + Soluções + contexto operacional. Preservar a identidade estável Usuario → Estagiario, distinguir prorrogação da mesma bolsa de nova bolsa/novo VinculoEstagio e manter participação em Atividade como requisito operacional, não como identificador da ocorrência institucional. GitLab/main permanece a fonte canônica e GitHub/main seu espelho.**
 
 ### Estado do 4.4
 
