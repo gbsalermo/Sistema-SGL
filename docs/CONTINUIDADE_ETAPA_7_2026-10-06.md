@@ -479,3 +479,142 @@ O 7.0 passa a incluir auditoria específica de:
 
 Nenhuma migration deve ser criada antes de fechar esta modelagem.
 
+### 9.9 Prioridade definitiva para fracionamento: FEFO acima de aberto/fechado
+
+Decisão confirmada:
+
+```text
+1. validade/lote mais próximo do vencimento (FEFO)
+2. dentro do lote prioritário:
+   → recipiente já aberto para a fração
+   → recipiente fechado somente quando necessário
+3. entre múltiplos recipientes abertos:
+   → continua prevalecendo a validade do lote
+   → em empate, usar critério determinístico para reduzir sobras abertas
+```
+
+Portanto, um recipiente aberto de lote mais novo **não ultrapassa** um lote mais antigo apenas por já estar aberto.
+
+Exemplo:
+
+```text
+Lote A — vence primeiro — recipientes fechados
+Lote B — vence depois   — 1 recipiente aberto
+
+retirada parcial
+→ o sistema deve indicar primeiro o Lote A
+→ se a operação parcial exigir abertura, abre o recipiente do Lote A
+→ o recipiente aberto do Lote B continua preservado para quando chegar sua prioridade FEFO
+```
+
+Isso significa que o estoque pode possuir **múltiplos recipientes abertos simultaneamente**, e o modelo deve suportar esse estado sem tentar forçar artificialmente apenas um recipiente aberto por Produto.
+
+Quando houver vários recipientes abertos, a seleção continua ordenada por validade/lote. Para empate dentro do mesmo lote, o critério de desempate deve ser estável e auditável; a implementação poderá priorizar o recipiente aberto há mais tempo e, em novo empate, o de menor saldo restante, reduzindo recipientes parcialmente consumidos.
+
+A interface deve deixar visível a recomendação, por exemplo:
+
+```text
+Retirada recomendada:
+Lote ETANOL-001 — vence em 12/11/2026
+Frasco #04 — aberto — 220 mL disponíveis
+```
+
+e não exigir que o usuário descubra manualmente qual recipiente deve usar.
+
+### 9.10 Concorrência — aprovação serializada e revalidação obrigatória
+
+Decisão de integridade:
+
+Dois Gestores podem abrir/preparar Pedidos ao mesmo tempo, mas a alteração física do estoque deve ser serializada.
+
+Cenário:
+
+```text
+Gestor A abre Pedido A
+Gestor B abre Pedido B
+
+ambos enxergam o mesmo saldo
+
+A aprova primeiro
+→ locks são adquiridos
+→ recipientes/lotes são revalidados
+→ saída é registrada
+→ transação de A é concluída
+
+B tenta aprovar depois
+→ lê/revalida o estado após A
+→ não pode consumir o saldo antigo
+```
+
+Se a alocação que B havia visto foi alterada por A, a aprovação de B deve falhar atomicamente com conflito de estoque.
+
+Comportamento recomendado:
+
+```text
+HTTP 409 / conflito de estoque
+
+"O estoque foi alterado por outra operação.
+Revise a disponibilidade antes de aprovar este pedido."
+```
+
+O Pedido B **não deve ser marcado automaticamente como ENTREGUE, APROVADO ou CANCELADO**.
+
+Preferência:
+
+```text
+Pedido B permanece PENDENTE
+→ interface atualiza a disponibilidade
+→ Gestor revisa/reaprova
+```
+
+Se ainda houver saldo em outros lotes/recipientes, o sistema pode apresentar uma nova sugestão de alocação, mas não deve silenciosamente aprovar usando uma distribuição diferente daquela que foi revalidada durante a tentativa concorrente.
+
+Se não houver mais saldo suficiente:
+
+```text
+"Saldo insuficiente após movimentação concorrente."
+```
+
+e o Pedido continua preservado para ajuste/rejeição explícita.
+
+### 9.11 Estratégia técnica de concorrência
+
+A aprovação deve combinar:
+
+- transação única;
+- lock pessimista nos registros físicos selecionados (`Lote`/`RecipienteEstoque`) ou estratégia equivalente;
+- ordem determinística de aquisição dos locks para reduzir deadlock;
+- revalidação de quantidade e estado depois de adquirir o lock;
+- nenhuma movimentação parcial se qualquer item falhar;
+- rollback integral do Pedido/Solução quando necessário;
+- histórico de conflito opcional para auditoria.
+
+Para aprovação envolvendo vários Produtos/Soluções:
+
+```text
+ou todos os componentes são reservados/baixados
+ou nenhum é alterado
+```
+
+Essa regra preserva a atomicidade já desejada para Soluções.
+
+### 9.12 Consequência para o desenho do estoque
+
+O saldo exibido continua agregado, mas a fonte operacional passa a ser a soma das unidades físicas:
+
+```text
+EstoqueCentral
+→ visão consolidada
+
+Lote
+→ agrupamento/rastreabilidade/validade
+
+RecipienteEstoque
+→ fonte física de disponibilidade fracionável
+
+MovimentacaoEstoque
+→ trilha de cada alteração
+```
+
+A implementação do 7.1 deve preservar essa hierarquia.
+
