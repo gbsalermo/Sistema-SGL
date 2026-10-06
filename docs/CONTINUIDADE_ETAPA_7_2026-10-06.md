@@ -1729,3 +1729,294 @@ Pendências antes da primeira migration:
 3. decidir política para registros legados com \`UnidadeMedida\` atualmente igual a CAIXA/FRASCO/AMPOLA/PAR/OUTRO;
 4. dividir as migrations da Etapa 7 em ordem segura.
 
+---
+
+## 13. 7.1.5 — estratégia de backfill dos Lotes legados
+
+### 13.1 Achado da massa atual
+
+A auditoria dos initializers confirmou que parte dos dados atuais **não contém informação física suficiente** para reconstruir recipientes reais com segurança.
+
+Exemplos encontrados:
+
+- Produtos cadastrados com \`UnidadeMedida.FRASCO\` e \`UnidadeMedida.CAIXA\`;
+- apresentação textual como "frasco de 500 mL", mas Lote com \`conteudoPorApresentacao = 1\`;
+- \`quantidadeApresentacoes\` preenchida com o mesmo valor da quantidade total;
+- lotes antigos tratados como "Legado" e fracionáveis;
+- dados em que o texto da apresentação sugere uma capacidade, mas essa capacidade não está estruturada.
+
+Conclusão:
+
+> A migration não pode inferir automaticamente a distribuição física real dos Lotes atuais a partir de texto livre.
+
+### 13.2 Regra central do backfill
+
+**Não inventar recipientes históricos.**
+
+Para cada Lote legado com saldo, criar inicialmente um único registro técnico de compatibilidade:
+
+\`\`\`text
+RecipienteEstoque LEGADO
+→ representa apenas o saldo agregado conhecido do Lote
+→ não afirma quantos frascos/caixas reais existem
+→ não afirma se estão abertos ou fechados
+\`\`\`
+
+Esse registro serve como ponte de migração, não como representação física definitiva.
+
+### 13.3 Estado adicional de reconciliação
+
+Adicionar um estado explícito para dados migrados sem distribuição física confiável.
+
+Proposta:
+
+\`\`\`java
+public enum EstadoRecipienteEstoque {
+    NAO_RECONCILIADO,
+    FECHADO,
+    ABERTO,
+    ESGOTADO
+}
+\`\`\`
+
+Regras:
+
+\`\`\`text
+NAO_RECONCILIADO
+→ somente para backfill legado
+→ quantidade disponível conhecida
+→ distribuição física desconhecida
+→ não assume aberto/fechado
+\`\`\`
+
+Novos recipientes criados após a Etapa 7 nunca devem nascer como \`NAO_RECONCILIADO\`.
+
+### 13.4 Criação do recipiente legado
+
+Para Lote existente:
+
+\`\`\`text
+capacidadeInicial
+→ quantidadeInicial atual convertida para BigDecimal
+
+quantidadeDisponivel
+→ quantidadeDisponivel atual convertida para BigDecimal
+
+unidadeMedida
+→ unidade canônica mapeada do Produto
+
+estado
+→ NAO_RECONCILIADO quando houver saldo
+→ ESGOTADO quando saldo = 0
+
+codigo
+→ <codigo-lote>-RLEGACY
+\`\`\`
+
+Campo recomendado:
+
+\`\`\`text
+origemLegada = true
+\`\`\`
+
+ou equivalente para impedir que esse registro seja confundido com recipiente físico cadastrado normalmente.
+
+### 13.5 Reconciliação física obrigatória
+
+Criar fluxo operacional de **Reconciliação de estoque legado**.
+
+O Gestor abre um Lote não reconciliado e informa como o saldo físico realmente está distribuído.
+
+Exemplo:
+
+\`\`\`text
+Saldo legado conhecido:
+4.950 mL de Etanol
+
+Gestor confere fisicamente:
+
+9 frascos fechados × 500 mL
+1 frasco aberto × 450 mL
+\`\`\`
+
+Após confirmar:
+
+\`\`\`text
+R001 ... R009 → 500 mL FECHADO
+R010          → 450 mL ABERTO
+
+RLEGACY
+→ encerrado/substituído pela reconciliação
+\`\`\`
+
+A soma informada deve ser exatamente igual ao saldo legado antes da confirmação.
+
+### 13.6 Reconciliação não altera o saldo
+
+Reconciliação:
+
+\`\`\`text
+não é ENTRADA
+não é SAIDA
+não é DEVOLUCAO
+\`\`\`
+
+Ela apenas transforma:
+
+\`\`\`text
+saldo agregado conhecido
+→ distribuição física conhecida
+\`\`\`
+
+Por isso deve possuir evento próprio de auditoria ou origem \`INVENTARIO\`, sem alterar o total do EstoqueCentral.
+
+### 13.7 Operações antes da reconciliação
+
+Regra recomendada:
+
+- consulta e relatórios continuam funcionando;
+- saldo agregado continua visível;
+- novos Lotes usam imediatamente o modelo novo;
+- Lote legado com \`NAO_RECONCILIADO\` não pode executar retirada parcial automatizada;
+- para qualquer operação que dependa de escolher recipiente físico, exigir reconciliação primeiro.
+
+Isso evita que o sistema continue aprofundando uma incerteza histórica.
+
+A interface deve apresentar:
+
+\`\`\`text
+"Este lote foi migrado do modelo anterior e ainda não possui
+distribuição física dos recipientes confirmada.
+Reconcilie o lote antes de realizar retirada fracionada."
+\`\`\`
+
+### 13.8 Produtos com unidade legada inválida
+
+Mapeamento automático seguro:
+
+\`\`\`text
+ML, L, MG, G, KG, METRO, UNIDADE, REACAO
+→ mantêm significado
+\`\`\`
+
+Valores antigos que são apresentações:
+
+\`\`\`text
+CAIXA
+FRASCO
+AMPOLA
+PAR
+OUTRO
+\`\`\`
+
+não devem ser convertidos silenciosamente para uma unidade física arbitrária.
+
+Esses Produtos recebem estado de pendência cadastral, conceitualmente:
+
+\`\`\`text
+unidadeCanonicaPendente = true
+\`\`\`
+
+e precisam ser revisados pelo Gestor/Administrador.
+
+A apresentação antiga deve ser preservada como pista de auditoria.
+
+Exemplos:
+
+\`\`\`text
+Produto atual:
+Ponteiras
+unidade = CAIXA
+apresentação = "caixa com 1000 unidades"
+
+Revisão:
+unidade canônica = UNIDADE
+tipo de embalagem = CAIXA
+conteúdo por apresentação = 1000 UNIDADE
+\`\`\`
+
+\`\`\`text
+Produto atual:
+BHI
+unidade = FRASCO
+apresentação = "frasco de 500 mL"
+
+Revisão:
+unidade canônica = ML
+tipo de embalagem = FRASCO
+conteúdo por apresentação = 500 ML
+\`\`\`
+
+Essa conversão pode ser sugerida pela interface, mas exige confirmação humana.
+
+### 13.9 Produtos sem pendência
+
+Produtos já cadastrados com unidade física válida podem ser migrados automaticamente:
+
+\`\`\`text
+L → L ou ML canônico conforme política escolhida
+ML → ML
+G → G ou MG canônico conforme política escolhida
+MG → MG
+KG → KG ou MG canônico conforme política escolhida
+UNIDADE → UNIDADE
+REACAO → REACAO
+METRO → METRO
+\`\`\`
+
+A migration não deve mudar numericamente o saldo sem aplicar o fator de conversão correspondente.
+
+### 13.10 Estratégia de rollout
+
+Sequência segura proposta:
+
+\`\`\`text
+1. adicionar novas estruturas sem remover colunas antigas
+2. converter colunas de saldo para DECIMAL
+3. criar RecipienteEstoque
+4. gerar RLEGACY para Lotes existentes
+5. marcar Produtos de unidade ambígua como pendentes
+6. manter leitura compatível
+7. disponibilizar reconciliação no frontend
+8. somente depois tornar recipiente a fonte operacional obrigatória
+9. remover/deprecar campos antigos apenas em etapa posterior
+\`\`\`
+
+Essa estratégia permite rollback e reduz risco de indisponibilidade.
+
+### 13.11 Backfill das movimentações históricas
+
+Não criar \`MovimentacaoRecipiente\` retroativamente para movimentações antigas.
+
+Motivo:
+
+> não sabemos quais recipientes físicos participaram das saídas históricas.
+
+Movimentações anteriores à migration permanecem válidas no nível de Lote.
+
+Somente novas movimentações, depois da ativação do modelo de recipientes, geram detalhes por recipiente.
+
+A interface deve aceitar histórico misto:
+
+\`\`\`text
+movimentação antiga
+→ detalhe por Lote
+
+movimentação nova
+→ detalhe por Lote + Recipiente
+\`\`\`
+
+### 13.12 Resultado
+
+A migration preserva 100% do saldo conhecido sem fabricar informação física inexistente.
+
+O modelo passa a distinguir claramente:
+
+\`\`\`text
+saldo legado conhecido
+≠
+distribuição física confirmada
+\`\`\`
+
+Essa distinção é obrigatória para manter a auditoria confiável.
+
