@@ -794,3 +794,197 @@ Não usar `double`/ponto flutuante para saldo físico.
 
 A migration deve preservar os valores inteiros existentes convertendo-os para a nova representação decimal sem perda.
 
+---
+
+## 10. 7.1 — desenho de dimensões e unidades
+
+### 10.1 DimensaoMedida
+
+Proposta fechada como base:
+
+\`\`\`java
+public enum DimensaoMedida {
+    VOLUME,
+    MASSA,
+    COMPRIMENTO,
+    CONTAGEM
+}
+\`\`\`
+
+A dimensão classifica o tipo de quantidade, mas **não é suficiente sozinha para autorizar conversão automática**.
+
+### 10.2 UnidadeMedida revisada
+
+Proposta:
+
+\`\`\`text
+VOLUME
+→ ML
+→ L
+
+MASSA
+→ MG
+→ G
+→ KG
+
+COMPRIMENTO
+→ METRO
+
+CONTAGEM
+→ UNIDADE
+→ REACAO
+\`\`\`
+
+Remover do conceito de unidade de medida:
+
+\`\`\`text
+CAIXA
+FRASCO
+AMPOLA
+PAR
+\`\`\`
+
+Esses itens passam a pertencer ao conceito de apresentação/embalagem.
+
+\`OUTRO\` também não deve ser usado como unidade canônica automática. Quando necessário, o sistema deverá exigir especificação explícita e bloquear conversões automáticas.
+
+### 10.3 Compatibilidade de conversão
+
+A regra de conversão não será apenas "mesma dimensão".
+
+Exemplo:
+
+\`\`\`text
+mL ↔ L       ✅
+mg ↔ g ↔ kg  ✅
+metro        ✅ identidade
+unidade      ✅ identidade
+reação       ✅ identidade
+
+unidade ↔ reação  ❌
+massa ↔ volume    ❌
+frasco ↔ mL       ❌ sem conteúdo declarado da apresentação
+\`\`\`
+
+Portanto, cada \`UnidadeMedida\` deve possuir um grupo/família de conversão explícito.
+
+Proposta conceitual:
+
+\`\`\`java
+public enum GrupoConversaoMedida {
+    VOLUME,
+    MASSA,
+    COMPRIMENTO,
+    UNIDADE,
+    REACAO
+}
+\`\`\`
+
+Assim, \`UNIDADE\` e \`REACAO\` podem compartilhar a dimensão \`CONTAGEM\`, mas não são convertidas automaticamente entre si.
+
+### 10.4 Unidade base interna por grupo
+
+Bases recomendadas:
+
+\`\`\`text
+VOLUME       → mL
+MASSA        → mg
+COMPRIMENTO  → m
+UNIDADE      → unidade
+REACAO       → reação
+\`\`\`
+
+A unidade base interna permite comparar/somar saldos com segurança.
+
+Exemplos:
+
+\`\`\`text
+1 L  → 1000 mL
+1 kg → 1.000.000 mg
+1 g  → 1000 mg
+\`\`\`
+
+A apresentação informada pelo usuário não precisa ser convertida permanentemente para a unidade visual; o backend pode persistir a quantidade canônica e manter metadados de apresentação para exibição/auditoria.
+
+### 10.5 Produto
+
+Cada Produto deverá possuir:
+
+\`\`\`text
+unidadeMedidaCanonica
+dimensão derivada da unidade
+grupo de conversão derivado da unidade
+\`\`\`
+
+Exemplos:
+
+\`\`\`text
+Etanol
+→ unidade canônica: ML
+
+NaCl
+→ unidade canônica: MG ou G, conforme cadastro institucional escolhido
+
+Ponteira
+→ unidade canônica: UNIDADE
+
+Kit PCR
+→ unidade canônica: REACAO
+\`\`\`
+
+A escolha da unidade canônica deve ser estável depois que houver estoque/movimentação. Mudança posterior exige fluxo de migração/conversão auditável, não edição simples do cadastro.
+
+### 10.6 Apresentação
+
+\`TipoEmbalagem\` continuará separado da unidade e será ampliado/revisado no próximo subbloco.
+
+Exemplos:
+
+\`\`\`text
+FRASCO 500 mL
+AMPOLA 2 mL
+CAIXA 100 unidades
+KIT 50 reações
+PAR
+UNITARIO
+\`\`\`
+
+A relação é:
+
+\`\`\`text
+apresentação física
++ conteúdo por apresentação
++ unidade do conteúdo
+\`\`\`
+
+e não "embalagem como unidade de medida".
+
+### 10.7 Precisão
+
+Para quantidades físicas, usar \`BigDecimal\`.
+
+A escala exata do banco será fechada na migration, com recomendação inicial de precisão suficiente para laboratório, por exemplo \`DECIMAL(19,6)\`, sem usar \`FLOAT\`/\`DOUBLE\`.
+
+### 10.8 Compatibilidade legada
+
+Mapeamento planejado do enum atual:
+
+\`\`\`text
+ML       → ML
+L        → L
+MG       → MG
+G        → G
+KG       → KG
+METRO    → METRO
+UNIDADE  → UNIDADE
+REACAO   → REACAO
+
+CAIXA    → apresentação CAIXA
+FRASCO   → apresentação FRASCO
+AMPOLA   → apresentação AMPOLA
+PAR      → apresentação PAR
+OUTRO    → exige revisão/mapeamento explícito
+\`\`\`
+
+Nenhum registro legado deve ser convertido silenciosamente de uma grandeza incompatível.
+
