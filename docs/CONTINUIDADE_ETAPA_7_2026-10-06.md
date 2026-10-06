@@ -2020,3 +2020,105 @@ distribuição física confirmada
 
 Essa distinção é obrigatória para manter a auditoria confiável.
 
+---
+
+## 14. Decisão de simplificação — sem backfill legado de estoque
+
+Decisão confirmada em 06/10/2026:
+
+> Todos os dados atualmente existentes no SGL são fictícios/de desenvolvimento/teste e podem ser descartados.
+
+Portanto, a estratégia de backfill descrita no item 13 fica **supersedida para a implementação atual**.
+
+Não será necessário:
+
+- criar \`RLEGACY\`;
+- adicionar \`NAO_RECONCILIADO\` apenas para preservar dados atuais;
+- reconstruir recipientes a partir de lotes antigos;
+- manter compatibilidade física com saldos fictícios;
+- migrar movimentações históricas de teste;
+- criar fluxo de reconciliação apenas para dados descartáveis.
+
+### 14.1 Estratégia adotada
+
+A Etapa 7 poderá assumir banco limpo para o novo modelo de estoque.
+
+Fluxo recomendado:
+
+\`\`\`text
+1. implementar novo schema/modelo
+2. atualizar migrations Flyway da Etapa 7
+3. atualizar initializers DEV/DEMO
+4. apagar/recriar bancos locais e ambientes de homologação que só contenham massa fictícia
+5. executar Flyway desde o início
+6. popular novamente dados fictícios já no novo formato
+7. validar estoque, recipientes, pedidos e movimentações sobre a nova modelagem
+\`\`\`
+
+### 14.2 Consequência para EstadoRecipienteEstoque
+
+Como não há necessidade de preservar lote legado real, o estado volta a ser somente:
+
+\`\`\`java
+public enum EstadoRecipienteEstoque {
+    FECHADO,
+    ABERTO,
+    ESGOTADO
+}
+\`\`\`
+
+\`NAO_RECONCILIADO\` não será criado nesta versão.
+
+### 14.3 Consequência para UnidadeMedida antiga
+
+Valores antigos como:
+
+\`\`\`text
+CAIXA
+FRASCO
+AMPOLA
+PAR
+OUTRO
+\`\`\`
+
+não precisam ser migrados em registros existentes.
+
+Em vez disso, os initializers serão corrigidos para usar:
+
+\`\`\`text
+unidade canônica real
++
+TipoEmbalagem
++
+conteúdo por apresentação
+\`\`\`
+
+Exemplos:
+
+\`\`\`text
+Ponteiras
+→ UNIDADE
+→ CAIXA
+→ 1000 UNIDADE
+
+BHI
+→ ML
+→ FRASCO
+→ 500 ML
+\`\`\`
+
+### 14.4 Flyway
+
+A decisão de descartar massa fictícia **não significa editar migrations históricas já consolidadas sem necessidade**.
+
+Preferência:
+
+- manter V1–V32 como histórico do projeto;
+- criar as migrations da Etapa 7 a partir de V33;
+- os ambientes DEV/DEMO podem ser recriados do zero e receber V1→V33+;
+- se alguma migration histórica incompatível impedir a reconstrução limpa, avaliar separadamente uma correção controlada.
+
+### 14.5 Resultado
+
+A modelagem da Etapa 7 pode ser feita para o estado correto futuro, sem carregar complexidade exclusiva para preservar dados fictícios atuais.
+
