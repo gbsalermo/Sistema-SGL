@@ -749,3 +749,48 @@ Lote agregado → Lote + RecipienteEstoque
 movimentação por Lote → movimentação com detalhe por recipiente
 ```
 
+### 9.15 Decisão fechada — modelo de quantidade física
+
+Decisão aprovada para a Etapa 7:
+
+```text
+quantidade física
+→ BigDecimal
+
+contagem de apresentações/recipientes
+→ Integer
+
+unidade canônica
+→ definida no Produto
+
+apresentação física
+→ separada da unidade de medida
+
+recipiente físico fracionável
+→ rastreado individualmente
+```
+
+Aplicações previstas:
+
+```text
+EstoqueCentral.quantidadeAtual       → BigDecimal
+EstoqueCentral.quantidadeMinima      → BigDecimal
+Lote.quantidadeInicial               → BigDecimal
+Lote.quantidadeDisponivel            → BigDecimal
+MovimentacaoEstoque.quantidade*      → BigDecimal
+RecipienteEstoque.capacidadeInicial  → BigDecimal
+RecipienteEstoque.quantidadeDisponivel → BigDecimal
+```
+
+Campos de contagem física continuam inteiros:
+
+```text
+quantidadeApresentacoes
+quantidade de recipientes
+quantidade de caixas/frascos recebidos
+```
+
+Não usar `double`/ponto flutuante para saldo físico.
+
+A migration deve preservar os valores inteiros existentes convertendo-os para a nova representação decimal sem perda.
+
