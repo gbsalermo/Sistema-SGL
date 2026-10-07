@@ -1,5 +1,6 @@
 package com.sgl.test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -291,8 +292,8 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                 .orElseGet(() -> estoqueCentralRepository.save(EstoqueCentral.builder()
                         .unidade(unidade)
                         .produto(produto)
-                        .quantidadeAtual(quantidade)
-                        .quantidadeMinima(minimo)
+                        .quantidadeAtual(BigDecimal.valueOf(quantidade))
+                        .quantidadeMinima(BigDecimal.valueOf(minimo))
                         .ativo(true)
                         .build()));
     }
@@ -314,10 +315,10 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                     l.setTipoEmbalagem(tipoEmbalagem);
                     l.setApresentacao(apresentacao);
                     l.setQuantidadeApresentacoes(quantidade);
-                    l.setConteudoPorApresentacao(1);
+                    l.setConteudoPorApresentacao(BigDecimal.ONE);
                     l.setFracionavel(true);
-                    l.setQuantidadeInicial(quantidade);
-                    l.setQuantidadeDisponivel(quantidade);
+                    l.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
+                    l.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
                     l.setDataEntrada(LocalDate.now().minusDays(12));
                     l.setDataValidade(validade);
                     l.setAtivo(true);
@@ -343,7 +344,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
         ItemPedido item = ItemPedido.builder()
                 .pedido(pedido)
                 .produto(produto)
-                .quantidadeSolicitada(quantidade)
+                .quantidadeSolicitada(BigDecimal.valueOf(quantidade))
                 .build();
         pedido.getItens().add(item);
         pedidoRepository.save(pedido);

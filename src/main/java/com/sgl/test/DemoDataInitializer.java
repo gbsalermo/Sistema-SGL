@@ -993,8 +993,8 @@ public class DemoDataInitializer implements CommandLineRunner {
                 EstoqueCentral.builder()
                         .unidade(unidade)
                         .produto(produto)
-                        .quantidadeAtual(atual)
-                        .quantidadeMinima(minimo)
+                        .quantidadeAtual(BigDecimal.valueOf(atual))
+                        .quantidadeMinima(BigDecimal.valueOf(minimo))
                         .ativo(true)
                         .build()
         );
@@ -1030,11 +1030,11 @@ public class DemoDataInitializer implements CommandLineRunner {
         lote.setTipoEmbalagem(tipoEmbalagem);
         lote.setApresentacao(apresentacao);
         lote.setQuantidadeApresentacoes(quantidadeInicial);
-        lote.setConteudoPorApresentacao(1);
+        lote.setConteudoPorApresentacao(BigDecimal.ONE);
         lote.setFracionavel(fracionavel);
         lote.setObservacao(observacao);
-        lote.setQuantidadeInicial(quantidadeInicial);
-        lote.setQuantidadeDisponivel(quantidadeDisponivel);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(quantidadeInicial));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidadeDisponivel));
         lote.setDataEntrada(dataEntrada);
         lote.setDataValidade(dataValidade);
         lote.setAtivo(ativo);
@@ -1070,8 +1070,8 @@ public class DemoDataInitializer implements CommandLineRunner {
             ItemPedido entidade = ItemPedido.builder()
                     .pedido(pedido)
                     .produto(item.produto())
-                    .quantidadeSolicitada(item.solicitada())
-                    .quantidadeAprovada(item.aprovada())
+                    .quantidadeSolicitada(BigDecimal.valueOf(item.solicitada()))
+                    .quantidadeAprovada(item.aprovada() == null ? null : BigDecimal.valueOf(item.aprovada()))
                     .build();
             pedido.getItens().add(entidade);
         }
@@ -1104,9 +1104,9 @@ public class DemoDataInitializer implements CommandLineRunner {
                         .lote(lote)
                         .tipoMovimentacao(tipo)
                         .origem(origem)
-                        .quantidadeMovimentada(quantidade)
-                        .quantidadeAnterior(anterior)
-                        .quantidadeAtual(atual)
+                        .quantidadeMovimentada(BigDecimal.valueOf(quantidade))
+                        .quantidadeAnterior(BigDecimal.valueOf(anterior))
+                        .quantidadeAtual(BigDecimal.valueOf(atual))
                         .dataMovimentacao(quando)
                         .observacao(observacao)
                         .estoqueCentral(lote.getEstoqueCentral())

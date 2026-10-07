@@ -1,5 +1,6 @@
 package com.sgl.test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -331,14 +332,14 @@ public class DataInitializer implements CommandLineRunner {
         ItemPedido item1 = ItemPedido.builder()
                 .pedido(pedido1)
                 .produto(p1)
-                .quantidadeSolicitada(5)
+                .quantidadeSolicitada(BigDecimal.valueOf(5))
                 .build();
         pedido1.getItens().add(item1);
 
         ItemPedido item2 = ItemPedido.builder()
                 .pedido(pedido1)
                 .produto(p5)
-                .quantidadeSolicitada(2)
+                .quantidadeSolicitada(BigDecimal.valueOf(2))
                 .build();
         pedido1.getItens().add(item2);
         pedidoRepository.save(pedido1);
@@ -356,7 +357,7 @@ public class DataInitializer implements CommandLineRunner {
         ItemPedido item3 = ItemPedido.builder()
                 .pedido(pedido2)
                 .produto(p4)
-                .quantidadeSolicitada(3)
+                .quantidadeSolicitada(BigDecimal.valueOf(3))
                 .build();
         pedido2.getItens().add(item3);
         pedidoRepository.save(pedido2);
@@ -1389,8 +1390,8 @@ public class DataInitializer implements CommandLineRunner {
         return estoqueCentralRepository.save(EstoqueCentral.builder()
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(quantidade)
-                .quantidadeMinima(quantidadeMinima)
+                .quantidadeAtual(BigDecimal.valueOf(quantidade))
+                .quantidadeMinima(BigDecimal.valueOf(quantidadeMinima))
                 .ativo(true)
                 .build());
     }
@@ -1419,10 +1420,10 @@ public class DataInitializer implements CommandLineRunner {
         lote.setNumeroLote(numeroLote);
         lote.setApresentacao("Legado");
         lote.setQuantidadeApresentacoes(quantidade);
-        lote.setConteudoPorApresentacao(1);
+        lote.setConteudoPorApresentacao(BigDecimal.ONE);
         lote.setFracionavel(true);
-        lote.setQuantidadeInicial(quantidade);
-        lote.setQuantidadeDisponivel(quantidade);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
         lote.setDataEntrada(LocalDate.now().minusDays(30));
         lote.setDataValidade(dataValidade);
         lote.setAtivo(true);
