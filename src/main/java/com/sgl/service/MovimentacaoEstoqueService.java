@@ -184,7 +184,7 @@ public class MovimentacaoEstoqueService {
 	@Transactional
 	public List<MovimentacaoEstoqueResponseDTO> registrarSaida(Long estoqueId, BigDecimal quantidade, Usuario usuario,
 			OrigemMovimentacao origem, Pedido pedido, Laboratorio laboratorio, String observacao,
-			TipoEmbalagem tipoEmbalagemSolicitada, Integer multiplicadorSolicitado) {
+			TipoEmbalagem tipoEmbalagemSolicitada, BigDecimal multiplicadorSolicitado) {
 
 		validarQuantidade(quantidade);
 		validarUsuarioResponsavel(usuario);
@@ -215,7 +215,26 @@ public class MovimentacaoEstoqueService {
 			BigDecimal saldoAtual = saldoAnterior.subtract(consumido);
 
 			lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel().subtract(consumido));
+			estoque.setQuantidadeAtual(saldoAtual);
 
+			loteRepository.save(lote);
+			estoqueCentralRepository.save(estoque);
+
+			MovimentacaoEstoque movimentacao = registrarMovimentacao(
+					estoque,
+					lote,
+					usuario,
+					pedido,
+					laboratorio,
+					TipoMovimentacao.SAIDA,
+					origem,
+					consumido,
+					saldoAnterior,
+					saldoAtual,
+					observacao
+			);
+
+			movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
 			restante = restante.subtract(consumido);
 		}
 

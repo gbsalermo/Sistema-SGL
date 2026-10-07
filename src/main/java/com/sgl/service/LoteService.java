@@ -76,7 +76,8 @@ public class LoteService {
 
 		lote.getEstoqueCentral().getProduto().validateLotExpirationDate(dto.getDataValidade());
 
-		if (Boolean.FALSE.equals(dto.getAtivo()) && lote.getQuantidadeDisponivel() > 0) {
+		if (Boolean.FALSE.equals(dto.getAtivo())
+				&& lote.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) > 0) {
 			throw new BusinessRuleException("Lote com saldo disponível não pode ser inativado diretamente.");
 		}
 
@@ -115,7 +116,7 @@ public class LoteService {
 	public void inativar(UUID id) {
 		Lote lote = buscarLoteNoTenant(id);
 
-		if (lote.getQuantidadeDisponivel() > 0) {
+		if (lote.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) > 0) {
 			throw new BusinessRuleException("Lote com saldo disponível não pode ser inativado diretamente.");
 		}
 

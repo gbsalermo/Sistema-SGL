@@ -59,15 +59,16 @@ public class RelatorioResumoOperacionalService {
 		for (MovimentacaoEstoque item : filtradas) {
 			BigDecimal quantidade = item.getQuantidadeMovimentada() == null ? BigDecimal.ZERO
 					: item.getQuantidadeMovimentada();
+			Produto produto = item.getProduto();
 
 			if (item.getTipoMovimentacao() == TipoMovimentacao.ENTRADA) {
 				quantidadeEntradas = quantidadeEntradas.add(quantidade);
 				acumularProduto(entradasPorProduto, produto, quantidade);
 			} else if (item.getTipoMovimentacao() == TipoMovimentacao.SAIDA) {
-				quantidadeSaidas = quantidadeEntradas.add(quantidade);
+				quantidadeSaidas = quantidadeSaidas.add(quantidade);
 				acumularProduto(saidasPorProduto, produto, quantidade);
 			} else if (item.getTipoMovimentacao() == TipoMovimentacao.DESCARTE_VENCIMENTO) {
-				quantidadeDescartes = quantidadeEntradas.add(quantidade);
+				quantidadeDescartes = quantidadeDescartes.add(quantidade);
 			}
 
 			if (item.getLote() != null) {
@@ -88,7 +89,7 @@ public class RelatorioResumoOperacionalService {
 
 		List<RelatorioResumoOperacionalResponseDTO.LoteRanking> lotesMaisMovimentados = movimentacaoPorLote.values()
 				.stream()
-				.sorted(Comparator.comparingInt(LoteAcumulado::getQuantidadeMovimentada).reversed()
+				.sorted(Comparator.comparing(LoteAcumulado::getQuantidadeMovimentada).reversed()
 						.thenComparing(LoteAcumulado::getCodigoInterno, String.CASE_INSENSITIVE_ORDER))
 				.limit(limiteEfetivo).map(LoteAcumulado::toDto).toList();
 
@@ -100,7 +101,7 @@ public class RelatorioResumoOperacionalService {
 				principaisEntradas, principaisSaidas, lotesMaisMovimentados);
 	}
 
-	private void acumularProduto(Map<UUID, ProdutoAcumulado> destino, Produto produto, int quantidade) {
+	private void acumularProduto(Map<UUID, ProdutoAcumulado> destino, Produto produto, BigDecimal quantidade) {
 		if (produto == null || produto.getPublicId() == null) {
 			return;
 		}
@@ -110,7 +111,7 @@ public class RelatorioResumoOperacionalService {
 		acumulado.adicionar(quantidade);
 	}
 
-	private void acumularLote(Map<UUID, LoteAcumulado> destino, Lote lote, TipoMovimentacao tipo, int quantidade) {
+	private void acumularLote(Map<UUID, LoteAcumulado> destino, Lote lote, TipoMovimentacao tipo, BigDecimal quantidade) {
 
 		if (lote.getPublicId() == null) {
 			return;
@@ -168,26 +169,26 @@ public class RelatorioResumoOperacionalService {
 
 	private static class LoteAcumulado {
 		private final Lote lote;
-		private int quantidadeMovimentada;
+		private BigDecimal quantidadeMovimentada = BigDecimal.ZERO;
 		private int movimentacoes;
-		private int entradas;
-		private int saidas;
+		private BigDecimal entradas = BigDecimal.ZERO;
+		private BigDecimal saidas = BigDecimal.ZERO;
 
 		LoteAcumulado(Lote lote) {
 			this.lote = lote;
 		}
 
-		void adicionar(TipoMovimentacao tipo, int quantidade) {
-			quantidadeMovimentada += quantidade;
+		void adicionar(TipoMovimentacao tipo, BigDecimal quantidade) {
+			quantidadeMovimentada = quantidadeMovimentada.add(quantidade);
 			movimentacoes++;
 			if (tipo == TipoMovimentacao.ENTRADA) {
-				entradas += quantidade;
+				entradas = entradas.add(quantidade);
 			} else if (tipo == TipoMovimentacao.SAIDA) {
-				saidas += quantidade;
+				saidas = saidas.add(quantidade);
 			}
 		}
 
-		int getQuantidadeMovimentada() {
+		BigDecimal getQuantidadeMovimentada() {
 			return quantidadeMovimentada;
 		}
 

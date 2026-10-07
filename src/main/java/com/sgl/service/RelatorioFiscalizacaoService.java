@@ -117,7 +117,12 @@ public class RelatorioFiscalizacaoService {
 
 		return RelatorioFiscalizacaoResponseDTO.builder().geradoEm(LocalDateTime.now())
 				.totalProdutosFiscalizados(produtosFiscalizados.size())
-				.saldoAtualTotal(estoques.stream().mapToInt(EstoqueCentral::getQuantidadeAtual).sum())
+				.saldoAtualTotal(
+						estoques.stream()
+								.map(EstoqueCentral::getQuantidadeAtual)
+								.filter(java.util.Objects::nonNull)
+								.reduce(BigDecimal.ZERO, BigDecimal::add)
+				)
 				.lotesAtivos(lotesAtivos).lotesVencidos(lotesVencidos).lotesProximosVencimento(lotesProximos)
 				.quantidadeEntradas(somarTipo(movimentacoes, TipoMovimentacao.ENTRADA))
 				.quantidadeSaidas(somarTipo(movimentacoes, TipoMovimentacao.SAIDA)).produtos(produtos)
@@ -145,7 +150,12 @@ public class RelatorioFiscalizacaoService {
 				.codigoReferencia(produto.getCodigoReferencia())
 				.orgaosFiscalizadores(Set.copyOf(produto.getOrgaosFiscalizadores()))
 				.observacaoFiscalizacao(produto.getObservacaoFiscalizacao())
-				.saldoAtual(estoquesProduto.stream().mapToInt(EstoqueCentral::getQuantidadeAtual).sum())
+				.saldoAtual(
+						estoquesProduto.stream()
+								.map(EstoqueCentral::getQuantidadeAtual)
+								.filter(java.util.Objects::nonNull)
+								.reduce(BigDecimal.ZERO, BigDecimal::add)
+				)
 				.lotesAtivos((int) lotesProduto.stream()
 						.filter(lote -> Boolean.TRUE.equals(lote.getAtivo())
 								&& lote.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) > 0)
@@ -179,9 +189,12 @@ public class RelatorioFiscalizacaoService {
 				.responsavelNome(mov.getUsuario().getNome()).saldoAposMovimentacao(mov.getQuantidadeAtual()).build();
 	}
 
-	private int somarTipo(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {
-		return movimentacoes.stream().filter(mov -> mov.getTipoMovimentacao() == tipo)
-				.mapToInt(MovimentacaoEstoque::getQuantidadeMovimentada).sum();
+	private BigDecimal somarTipo(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {
+		return movimentacoes.stream()
+				.filter(mov -> mov.getTipoMovimentacao() == tipo)
+				.map(MovimentacaoEstoque::getQuantidadeMovimentada)
+				.filter(java.util.Objects::nonNull)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
 
 	private boolean loteVencido(Lote lote, LocalDate hoje) {
