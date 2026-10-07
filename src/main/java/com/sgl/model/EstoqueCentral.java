@@ -1,6 +1,7 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
@@ -54,10 +55,10 @@ public class EstoqueCentral implements Serializable {
     private Produto produto;
 
     @Column(nullable = false)
-    private Integer quantidadeAtual = 0;
+    private BigDecimal quantidadeAtual = BigDecimal.ZERO;
 
     @Column(nullable = false)
-    private Integer quantidadeMinima = 0;
+    private BigDecimal quantidadeMinima = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private Boolean ativo = true;

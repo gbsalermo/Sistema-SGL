@@ -1,6 +1,7 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -72,14 +73,14 @@ public class MovimentacaoEstoque implements Serializable {
     @Column(nullable = false)
     private OrigemMovimentacao origem;
 
-    @Column(nullable = false)
-    private Integer quantidadeMovimentada;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidadeMovimentada;
 
-    @Column(nullable = false)
-    private Integer quantidadeAnterior;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidadeAnterior;
 
-    @Column(nullable = false)
-    private Integer quantidadeAtual;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidadeAtual;
 
     @Column(nullable = false)
     private LocalDateTime dataMovimentacao;

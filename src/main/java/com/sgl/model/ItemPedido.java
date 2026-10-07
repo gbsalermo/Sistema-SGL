@@ -1,6 +1,8 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.enums.TipoEmbalagem;
@@ -52,10 +54,11 @@ public class ItemPedido implements Serializable {
     @ToString.Exclude
     private Produto produto;
 
-    @Column(nullable = false)
-    private Integer quantidadeSolicitada;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidadeSolicitada;
 
-    private Integer quantidadeAprovada;
+    @Column(precision = 19, scale = 6)
+    private BigDecimal quantidadeAprovada;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_embalagem_solicitada")
@@ -64,8 +67,8 @@ public class ItemPedido implements Serializable {
     @Column(name = "quantidade_embalagens_solicitada")
     private Integer quantidadeEmbalagensSolicitada;
 
-    @Column(name = "multiplicador_solicitado")
-    private Integer multiplicadorSolicitado;
+    @Column(name = "multiplicador_solicitado", precision = 19, scale = 6)
+    private BigDecimal multiplicadorSolicitado;
 
     @PrePersist
     private void prepareForPersistence() {
@@ -77,12 +80,9 @@ public class ItemPedido implements Serializable {
             tipoEmbalagemSolicitada = TipoEmbalagem.UNITARIO;
         }
 
-        if (multiplicadorSolicitado == null || multiplicadorSolicitado <= 0) {
-            multiplicadorSolicitado = 1;
-        }
-
-        if (quantidadeEmbalagensSolicitada == null || quantidadeEmbalagensSolicitada <= 0) {
-            quantidadeEmbalagensSolicitada = quantidadeSolicitada;
+        if (multiplicadorSolicitado == null
+                || multiplicadorSolicitado.compareTo(BigDecimal.ZERO) <= 0) {
+            multiplicadorSolicitado = BigDecimal.ONE;
         }
     }
 }
