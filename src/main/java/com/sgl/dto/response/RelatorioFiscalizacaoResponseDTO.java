@@ -20,12 +20,12 @@ public class RelatorioFiscalizacaoResponseDTO {
 
     private LocalDateTime geradoEm;
     private Integer totalProdutosFiscalizados;
-    private Integer saldoAtualTotal;
+    private BigDecimal saldoAtualTotal;
     private Integer lotesAtivos;
     private Integer lotesVencidos;
     private Integer lotesProximosVencimento;
-    private Integer quantidadeEntradas;
-    private Integer quantidadeSaidas;
+    private BigDecimal quantidadeEntradas;
+    private BigDecimal quantidadeSaidas;
     private List<ProdutoFiscalizadoItem> produtos;
     private List<MovimentacaoFiscalizadaItem> movimentacoes;
 
@@ -38,13 +38,13 @@ public class RelatorioFiscalizacaoResponseDTO {
         private String codigoReferencia;
         private Set<OrgaoFiscalizador> orgaosFiscalizadores;
         private String observacaoFiscalizacao;
-        private Integer saldoAtual;
+        private BigDecimal saldoAtual;
         private Integer lotesAtivos;
         private Integer lotesVencidos;
         private Integer lotesProximosVencimento;
         private LocalDate proximoVencimento;
-        private Integer quantidadeEntradas;
-        private Integer quantidadeSaidas;
+        private BigDecimal quantidadeEntradas;
+        private BigDecimal quantidadeSaidas;
     }
 
     @Getter
@@ -56,7 +56,7 @@ public class RelatorioFiscalizacaoResponseDTO {
         private UUID produtoId;
         private String produtoNome;
         private TipoMovimentacao tipoMovimentacao;
-        private Integer quantidadeMovimentada;
+        private BigDecimal quantidadeMovimentada;
         private UUID loteId;
         private String codigoInternoLote;
         private String numeroLote;
@@ -70,6 +70,6 @@ public class RelatorioFiscalizacaoResponseDTO {
         private UUID pedidoId;
         private UUID responsavelId;
         private String responsavelNome;
-        private Integer saldoAposMovimentacao;
+        private BigDecimal saldoAposMovimentacao;
     }
 }

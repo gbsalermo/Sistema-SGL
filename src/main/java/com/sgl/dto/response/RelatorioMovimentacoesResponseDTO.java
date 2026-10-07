@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,10 +15,10 @@ public class RelatorioMovimentacoesResponseDTO {
 
     private LocalDateTime geradoEm;
     private Integer totalMovimentacoes;
-    private Integer quantidadeEntradas;
-    private Integer quantidadeSaidas;
-    private Integer quantidadeAjustes;
-    private Integer quantidadeDevolucoes;
-    private Integer quantidadeDescartes;
+    private BigDecimal quantidadeEntradas;
+    private BigDecimal quantidadeSaidas;
+    private BigDecimal quantidadeAjustes;
+    private BigDecimal quantidadeDevolucoes;
+    private BigDecimal quantidadeDescartes;
     private List<MovimentacaoEstoqueResponseDTO> itens;
 }

@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,152 +25,141 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EstoqueCentralService {
 
-    private final EstoqueCentralRepository estoqueCentralRepository;
-    private final ProdutoRepository produtoRepository;
-    private final UnidadeRepository unidadeRepository;
+	private final EstoqueCentralRepository estoqueCentralRepository;
+	private final ProdutoRepository produtoRepository;
+	private final UnidadeRepository unidadeRepository;
 
-    @Transactional
-    public EstoqueCentralResponseDTO criar(EstoqueCentralRequestDTO dto) {
-        validarTenantUnidade(dto.getUnidadeId());
+	@Transactional
+	public EstoqueCentralResponseDTO criar(EstoqueCentralRequestDTO dto) {
+		validarTenantUnidade(dto.getUnidadeId());
 
-        Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
+		Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
+				.orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
-        Produto produto = produtoRepository.findByPublicId(dto.getProdutoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Produto", dto.getProdutoId()));
+		Produto produto = produtoRepository.findByPublicId(dto.getProdutoId())
+				.orElseThrow(() -> new ResourceNotFoundException("Produto", dto.getProdutoId()));
 
-        if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(unidade.getId(), produto.getId())) {
-            throw new BusinessRuleException("Já existe estoque para esse produto nesta unidade.");
-        }
+		if (estoqueCentralRepository.existsByUnidadeIdAndProdutoId(unidade.getId(), produto.getId())) {
+			throw new BusinessRuleException("Já existe estoque para esse produto nesta unidade.");
+		}
 
-        if (!Boolean.TRUE.equals(produto.getAtivo())) {
-            throw new BusinessRuleException("Não é possível criar estoque para produto inativo.");
-        }
+		if (!Boolean.TRUE.equals(produto.getAtivo())) {
+			throw new BusinessRuleException("Não é possível criar estoque para produto inativo.");
+		}
 
-        EstoqueCentral estoque = EstoqueCentral.builder()
-                .unidade(unidade)
-                .produto(produto)
-                .quantidadeAtual(0)
-                .quantidadeMinima(dto.getQuantidadeMinima())
-                .ativo(dto.getAtivo() != null ? dto.getAtivo() : true)
-                .build();
+		EstoqueCentral estoque = EstoqueCentral.builder().unidade(unidade).produto(produto)
+				.quantidadeAtual(BigDecimal.ZERO).quantidadeMinima(dto.getQuantidadeMinima())
+				.ativo(dto.getAtivo() != null ? dto.getAtivo() : true).build();
 
-        return new EstoqueCentralResponseDTO(estoqueCentralRepository.save(estoque));
-    }
+		return new EstoqueCentralResponseDTO(estoqueCentralRepository.save(estoque));
+	}
 
-    @Transactional(readOnly = true)
-    public List<EstoqueCentralResponseDTO> listarTodos() {
-        // Correção de segurança: antes, se a requisição chegasse sem o header
-        // X-SGL-Unidade-Id, caíamos no "findAll" e devolvíamos o estoque de
-        // TODAS as unidades. Agora exigimos o tenant também para listar.
-        exigirTenantAtivo();
+	@Transactional(readOnly = true)
+	public List<EstoqueCentralResponseDTO> listarTodos() {
+		// Correção de segurança: antes, se a requisição chegasse sem o header
+		// X-SGL-Unidade-Id, caíamos no "findAll" e devolvíamos o estoque de
+		// TODAS as unidades. Agora exigimos o tenant também para listar.
+		exigirTenantAtivo();
 
-        List<EstoqueCentral> estoques = estoqueCentralRepository
-                .findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
+		List<EstoqueCentral> estoques = estoqueCentralRepository
+				.findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
-        return estoques.stream()
-                .map(EstoqueCentralResponseDTO::new)
-                .toList();
-    }
+		return estoques.stream().map(EstoqueCentralResponseDTO::new).toList();
+	}
 
-    @Transactional(readOnly = true)
-    public EstoqueCentralResponseDTO buscarPorId(UUID id) {
-        return new EstoqueCentralResponseDTO(buscarEstoqueNoTenant(id));
-    }
+	@Transactional(readOnly = true)
+	public EstoqueCentralResponseDTO buscarPorId(UUID id) {
+		return new EstoqueCentralResponseDTO(buscarEstoqueNoTenant(id));
+	}
 
-    @Transactional(readOnly = true)
-    public EstoqueCentralResponseDTO buscarPorUnidadeEProduto(UUID unidadeId, UUID produtoId) {
-        validarTenantUnidade(unidadeId);
-        Unidade unidade = buscarUnidade(unidadeId);
-        Produto produto = produtoRepository.findByPublicId(produtoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
+	@Transactional(readOnly = true)
+	public EstoqueCentralResponseDTO buscarPorUnidadeEProduto(UUID unidadeId, UUID produtoId) {
+		validarTenantUnidade(unidadeId);
+		Unidade unidade = buscarUnidade(unidadeId);
+		Produto produto = produtoRepository.findByPublicId(produtoId)
+				.orElseThrow(() -> new ResourceNotFoundException("Produto", produtoId));
 
-        EstoqueCentral estoque = estoqueCentralRepository
-                .findByUnidadeIdAndProdutoId(unidade.getId(), produto.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Estoque da unidade " + unidadeId + " para o produto " + produtoId
-                ));
-        return new EstoqueCentralResponseDTO(estoque);
-    }
+		EstoqueCentral estoque = estoqueCentralRepository.findByUnidadeIdAndProdutoId(unidade.getId(), produto.getId())
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"Estoque da unidade " + unidadeId + " para o produto " + produtoId));
+		return new EstoqueCentralResponseDTO(estoque);
+	}
 
-    @Transactional(readOnly = true)
-    public List<EstoqueCentralResponseDTO> listarPorUnidade(UUID unidadeId) {
-        validarTenantUnidade(unidadeId);
-        return estoqueCentralRepository.findByUnidadePublicId(unidadeId).stream()
-                .map(EstoqueCentralResponseDTO::new)
-                .toList();
-    }
+	@Transactional(readOnly = true)
+	public List<EstoqueCentralResponseDTO> listarPorUnidade(UUID unidadeId) {
+		validarTenantUnidade(unidadeId);
+		return estoqueCentralRepository.findByUnidadePublicId(unidadeId).stream().map(EstoqueCentralResponseDTO::new)
+				.toList();
+	}
 
-    @Transactional
-    public EstoqueCentralResponseDTO atualizar(UUID id, EstoqueCentralRequestDTO dto) {
-        EstoqueCentral estoque = buscarEstoqueNoTenant(id);
+	@Transactional
+	public EstoqueCentralResponseDTO atualizar(UUID id, EstoqueCentralRequestDTO dto) {
+		EstoqueCentral estoque = buscarEstoqueNoTenant(id);
 
-        estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
-        if (dto.getAtivo() != null) {
-            estoque.setAtivo(dto.getAtivo());
-        }
+		estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
+		if (dto.getAtivo() != null) {
+			estoque.setAtivo(dto.getAtivo());
+		}
 
-        return new EstoqueCentralResponseDTO(estoqueCentralRepository.save(estoque));
-    }
+		return new EstoqueCentralResponseDTO(estoqueCentralRepository.save(estoque));
+	}
 
-    @Transactional(readOnly = true)
-    public List<EstoqueCentralResponseDTO> listarEstoqueBaixoPorUnidade(UUID unidadeId) {
-        validarTenantUnidade(unidadeId);
-        return estoqueCentralRepository.findByUnidadePublicIdAndAtivoTrue(unidadeId).stream()
-                .filter(estoque -> estoque.getQuantidadeAtual() <= estoque.getQuantidadeMinima())
-                .map(EstoqueCentralResponseDTO::new)
-                .toList();
-    }
+	@Transactional(readOnly = true)
+	public List<EstoqueCentralResponseDTO> listarEstoqueBaixoPorUnidade(UUID unidadeId) {
+		validarTenantUnidade(unidadeId);
+		return estoqueCentralRepository.findByUnidadePublicIdAndAtivoTrue(unidadeId).stream()
+				.filter(estoque -> estoque.getQuantidadeAtual().compareTo(estoque.getQuantidadeMinima()) <= 0)
+				.map(EstoqueCentralResponseDTO::new).toList();
+	}
 
-    @Transactional
-    public void deletar(UUID id) {
-        EstoqueCentral estoque = buscarEstoqueNoTenant(id);
+	@Transactional
+	public void deletar(UUID id) {
+		EstoqueCentral estoque = buscarEstoqueNoTenant(id);
 
-        if (!Boolean.TRUE.equals(estoque.getAtivo())) {
-            throw new BusinessRuleException("O estoque central já está inativo.");
-        }
+		if (!Boolean.TRUE.equals(estoque.getAtivo())) {
+			throw new BusinessRuleException("O estoque central já está inativo.");
+		}
 
-        estoque.setAtivo(false);
-    }
+		estoque.setAtivo(false);
+	}
 
-    private EstoqueCentral buscarEstoqueNoTenant(UUID id) {
-        // Correção de segurança: o "else" antigo caía para uma busca sem
-        // filtro de unidade (findByPublicId) quando não havia tenant ativo,
-        // permitindo que qualquer um lesse o estoque de outra unidade só
-        // deixando de enviar o header. Agora exigimos o tenant primeiro.
-        exigirTenantAtivo();
+	private EstoqueCentral buscarEstoqueNoTenant(UUID id) {
+		// Correção de segurança: o "else" antigo caía para uma busca sem
+		// filtro de unidade (findByPublicId) quando não havia tenant ativo,
+		// permitindo que qualquer um lesse o estoque de outra unidade só
+		// deixando de enviar o header. Agora exigimos o tenant primeiro.
+		exigirTenantAtivo();
 
-        UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
-        return estoqueCentralRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
-    }
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+		return estoqueCentralRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Estoque central", id));
+	}
 
-    private void validarTenantUnidade(UUID unidadeId) {
-        if (!TenantContext.pertence(unidadeId)) {
-            throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
-        }
-    }
+	private void validarTenantUnidade(UUID unidadeId) {
+		if (!TenantContext.pertence(unidadeId)) {
+			throw new BusinessRuleException("A operação não pode acessar dados de outra unidade.");
+		}
+	}
 
-    /**
-     * Garante que existe uma unidade (tenant) definida para a requisição
-     * atual, ou seja, que o header X-SGL-Unidade-Id foi enviado e é válido.
-     *
-     * Antes desta correção, vários métodos deste service tinham um "modo sem
-     * tenant": se o header não viesse, a consulta virava uma busca global,
-     * devolvendo dados de todas as unidades. Como o sistema ainda não tem
-     * autenticação de verdade (ver TenantContext.pertence), esse "modo sem
-     * tenant" era, na prática, uma porta aberta para vazar dados entre
-     * unidades. Agora, sem tenant definido, a operação é negada.
-     */
-    private void exigirTenantAtivo() {
-        if (!TenantContext.ativo()) {
-            throw new BusinessRuleException(
-                    "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
-        }
-    }
+	/**
+	 * Garante que existe uma unidade (tenant) definida para a requisição atual, ou
+	 * seja, que o header X-SGL-Unidade-Id foi enviado e é válido.
+	 *
+	 * Antes desta correção, vários métodos deste service tinham um "modo sem
+	 * tenant": se o header não viesse, a consulta virava uma busca global,
+	 * devolvendo dados de todas as unidades. Como o sistema ainda não tem
+	 * autenticação de verdade (ver TenantContext.pertence), esse "modo sem tenant"
+	 * era, na prática, uma porta aberta para vazar dados entre unidades. Agora, sem
+	 * tenant definido, a operação é negada.
+	 */
+	private void exigirTenantAtivo() {
+		if (!TenantContext.ativo()) {
+			throw new BusinessRuleException("Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
+		}
+	}
 
-    private Unidade buscarUnidade(UUID unidadeId) {
-        return unidadeRepository.findByPublicId(unidadeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Unidade", unidadeId));
-    }
+	private Unidade buscarUnidade(UUID unidadeId) {
+		return unidadeRepository.findByPublicId(unidadeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Unidade", unidadeId));
+	}
 }

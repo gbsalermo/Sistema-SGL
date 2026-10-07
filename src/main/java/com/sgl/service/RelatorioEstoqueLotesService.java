@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,12 +25,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RelatorioEstoqueLotesService {
 
-    private static final int DIAS_VENCIMENTO_PADRAO = 30;
+	private static final int DIAS_VENCIMENTO_PADRAO = 30;
 
-    private final EstoqueCentralRepository estoqueCentralRepository;
-    private final LoteRepository loteRepository;
+	private final EstoqueCentralRepository estoqueCentralRepository;
+	private final LoteRepository loteRepository;
 
-    @Transactional(readOnly = true)
+	@Transactional(readOnly = true)
     public RelatorioEstoqueLotesResponseDTO gerar(
             UUID unidadeId,
             UUID produtoId,
@@ -95,8 +96,9 @@ public class RelatorioEstoqueLotesService {
                 .estoquesAtivos((int) estoques.stream().filter(e -> Boolean.TRUE.equals(e.getAtivo())).count())
                 .estoquesAbaixoMinimo((int) estoques.stream().filter(this::estaAbaixoMinimo).count())
                 .quantidadeTotalEstoque(estoques.stream()
-                        .mapToLong(e -> e.getQuantidadeAtual() == null ? 0L : e.getQuantidadeAtual())
-                        .sum())
+                		.map(EstoqueCentral::getQuantidadeAtual)
+                		.filter(java.util.Objects::nonNull)
+                		.reduce(BigDecimal.ZERO, BigDecimal::add)
                 .totalLotes(lotes.size())
                 .lotesAtivos((int) lotes.stream().filter(this::loteDisponivelAtivo).count())
                 .lotesVencidos((int) lotes.stream()
@@ -113,113 +115,88 @@ public class RelatorioEstoqueLotesService {
                 .build();
     }
 
-    private RelatorioEstoqueLotesResponseDTO.EstoqueItem mapearEstoque(
-            EstoqueCentral estoque,
-            List<Lote> lotesFiltrados,
-            LocalDate hoje,
-            LocalDate limiteVencimento) {
+	private RelatorioEstoqueLotesResponseDTO.EstoqueItem mapearEstoque(EstoqueCentral estoque,
+			List<Lote> lotesFiltrados, LocalDate hoje, LocalDate limiteVencimento) {
 
-        List<Lote> lotesDoEstoque = lotesFiltrados.stream()
-                .filter(lote -> lote.getEstoqueCentral().getId().equals(estoque.getId()))
-                .toList();
+		List<Lote> lotesDoEstoque = lotesFiltrados.stream()
+				.filter(lote -> lote.getEstoqueCentral().getId().equals(estoque.getId())).toList();
 
-        return RelatorioEstoqueLotesResponseDTO.EstoqueItem.builder()
-                .estoqueId(estoque.getPublicId())
-                .unidadeId(estoque.getUnidade().getPublicId())
-                .unidadeNome(estoque.getUnidade().getNome())
-                .unidadeSigla(estoque.getUnidade().getSigla())
-                .produtoId(estoque.getProduto().getPublicId())
-                .produtoNome(estoque.getProduto().getNome())
-                .codigoReferencia(estoque.getProduto().getCodigoReferencia())
-                .unidadeMedida(estoque.getProduto().getUnidadeMedida().name())
-                .quantidadeAtual(estoque.getQuantidadeAtual())
-                .quantidadeMinima(estoque.getQuantidadeMinima())
-                .abaixoMinimo(estaAbaixoMinimo(estoque))
-                .ativo(Boolean.TRUE.equals(estoque.getAtivo()))
-                .totalLotes(lotesDoEstoque.size())
-                .lotesAtivos((int) lotesDoEstoque.stream().filter(this::loteDisponivelAtivo).count())
-                .lotesVencidos((int) lotesDoEstoque.stream()
-                        .filter(lote -> "VENCIDO".equals(classificarLote(lote, hoje, limiteVencimento)))
-                        .count())
-                .lotesProximosVencimento((int) lotesDoEstoque.stream()
-                        .filter(lote -> "PROXIMO_VENCIMENTO".equals(classificarLote(lote, hoje, limiteVencimento)))
-                        .count())
-                .build();
-    }
+		return RelatorioEstoqueLotesResponseDTO.EstoqueItem.builder().estoqueId(estoque.getPublicId())
+				.unidadeId(estoque.getUnidade().getPublicId()).unidadeNome(estoque.getUnidade().getNome())
+				.unidadeSigla(estoque.getUnidade().getSigla()).produtoId(estoque.getProduto().getPublicId())
+				.produtoNome(estoque.getProduto().getNome())
+				.codigoReferencia(estoque.getProduto().getCodigoReferencia())
+				.unidadeMedida(estoque.getProduto().getUnidadeMedida().name())
+				.quantidadeAtual(estoque.getQuantidadeAtual()).quantidadeMinima(estoque.getQuantidadeMinima())
+				.abaixoMinimo(estaAbaixoMinimo(estoque)).ativo(Boolean.TRUE.equals(estoque.getAtivo()))
+				.totalLotes(lotesDoEstoque.size())
+				.lotesAtivos((int) lotesDoEstoque.stream().filter(this::loteDisponivelAtivo).count())
+				.lotesVencidos((int) lotesDoEstoque.stream()
+						.filter(lote -> "VENCIDO".equals(classificarLote(lote, hoje, limiteVencimento))).count())
+				.lotesProximosVencimento((int) lotesDoEstoque.stream()
+						.filter(lote -> "PROXIMO_VENCIMENTO".equals(classificarLote(lote, hoje, limiteVencimento)))
+						.count())
+				.build();
+	}
 
-    private RelatorioEstoqueLotesResponseDTO.LoteItem mapearLote(
-            Lote lote,
-            LocalDate hoje,
-            LocalDate limiteVencimento) {
+	private RelatorioEstoqueLotesResponseDTO.LoteItem mapearLote(Lote lote, LocalDate hoje,
+			LocalDate limiteVencimento) {
 
-        EstoqueCentral estoque = lote.getEstoqueCentral();
-        return RelatorioEstoqueLotesResponseDTO.LoteItem.builder()
-                .loteId(lote.getPublicId())
-                .estoqueId(estoque.getPublicId())
-                .unidadeId(estoque.getUnidade().getPublicId())
-                .unidadeNome(estoque.getUnidade().getNome())
-                .produtoId(estoque.getProduto().getPublicId())
-                .produtoNome(estoque.getProduto().getNome())
-                .codigoInterno(lote.getCodigoInterno())
-                .numeroLote(lote.getNumeroLote())
-                .quantidadeInicial(lote.getQuantidadeInicial())
-                .quantidadeDisponivel(lote.getQuantidadeDisponivel())
-                .dataEntrada(lote.getDataEntrada())
-                .dataValidade(lote.getDataValidade())
-                .ativo(Boolean.TRUE.equals(lote.getAtivo()))
-                .situacao(classificarLote(lote, hoje, limiteVencimento))
-                .build();
-    }
+		EstoqueCentral estoque = lote.getEstoqueCentral();
+		return RelatorioEstoqueLotesResponseDTO.LoteItem.builder().loteId(lote.getPublicId())
+				.estoqueId(estoque.getPublicId()).unidadeId(estoque.getUnidade().getPublicId())
+				.unidadeNome(estoque.getUnidade().getNome()).produtoId(estoque.getProduto().getPublicId())
+				.produtoNome(estoque.getProduto().getNome()).codigoInterno(lote.getCodigoInterno())
+				.numeroLote(lote.getNumeroLote()).quantidadeInicial(lote.getQuantidadeInicial())
+				.quantidadeDisponivel(lote.getQuantidadeDisponivel()).dataEntrada(lote.getDataEntrada())
+				.dataValidade(lote.getDataValidade()).ativo(Boolean.TRUE.equals(lote.getAtivo()))
+				.situacao(classificarLote(lote, hoje, limiteVencimento)).build();
+	}
 
-    private boolean estaAbaixoMinimo(EstoqueCentral estoque) {
-        int atual = estoque.getQuantidadeAtual() == null ? 0 : estoque.getQuantidadeAtual();
-        int minimo = estoque.getQuantidadeMinima() == null ? 0 : estoque.getQuantidadeMinima();
-        return atual <= minimo;
-    }
+	private boolean estaAbaixoMinimo(EstoqueCentral estoque) {
+		BigDecimal atual = estoque.getQuantidadeAtual() == null ? BigDecimal.ZERO : estoque.getQuantidadeAtual();
 
-    private boolean loteDisponivelAtivo(Lote lote) {
-        return Boolean.TRUE.equals(lote.getAtivo())
-                && lote.getQuantidadeDisponivel() != null
-                && lote.getQuantidadeDisponivel() > 0;
-    }
+		BigDecimal minimo = estoque.getQuantidadeMinima() == null ? BigDecimal.ZERO : estoque.getQuantidadeMinima();
 
-    private String classificarLote(Lote lote, LocalDate hoje, LocalDate limiteVencimento) {
-        if (!Boolean.TRUE.equals(lote.getAtivo())) {
-            return "INATIVO";
-        }
-        if (lote.getQuantidadeDisponivel() == null || lote.getQuantidadeDisponivel() <= 0) {
-            return "ESGOTADO";
-        }
-        if (lote.getDataValidade() == null) {
-            return "SEM_VALIDADE";
-        }
-        if (lote.getDataValidade().isBefore(hoje)) {
-            return "VENCIDO";
-        }
-        if (!lote.getDataValidade().isAfter(limiteVencimento)) {
-            return "PROXIMO_VENCIMENTO";
-        }
-        return "VALIDO";
-    }
+		return atual.compareTo(minimo) <= 0;
+	}
 
-    private String normalizarValidade(String validade) {
-        if (validade == null || validade.isBlank()) {
-            return null;
-        }
+	private boolean loteDisponivelAtivo(Lote lote) {
+		return Boolean.TRUE.equals(lote.getAtivo()) && lote.getQuantidadeDisponivel() != null
+				&& lote.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) > 0;
+	}
 
-        String valor = validade.trim().toUpperCase(Locale.ROOT);
-        Set<String> permitidos = Set.of(
-                "VALIDO",
-                "PROXIMO_VENCIMENTO",
-                "VENCIDO",
-                "SEM_VALIDADE",
-                "ESGOTADO",
-                "INATIVO"
-        );
+	private String classificarLote(Lote lote, LocalDate hoje, LocalDate limiteVencimento) {
+		if (!Boolean.TRUE.equals(lote.getAtivo())) {
+			return "INATIVO";
+		}
+		if (lote.getQuantidadeDisponivel() == null || lote.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) <= 0) {
+			return "ESGOTADO";
+		}
+		if (lote.getDataValidade() == null) {
+			return "SEM_VALIDADE";
+		}
+		if (lote.getDataValidade().isBefore(hoje)) {
+			return "VENCIDO";
+		}
+		if (!lote.getDataValidade().isAfter(limiteVencimento)) {
+			return "PROXIMO_VENCIMENTO";
+		}
+		return "VALIDO";
+	}
 
-        if (!permitidos.contains(valor)) {
-            throw new BusinessRuleException("Situação de lote inválida para o relatório.");
-        }
-        return valor;
-    }
+	private String normalizarValidade(String validade) {
+		if (validade == null || validade.isBlank()) {
+			return null;
+		}
+
+		String valor = validade.trim().toUpperCase(Locale.ROOT);
+		Set<String> permitidos = Set.of("VALIDO", "PROXIMO_VENCIMENTO", "VENCIDO", "SEM_VALIDADE", "ESGOTADO",
+				"INATIVO");
+
+		if (!permitidos.contains(valor)) {
+			throw new BusinessRuleException("Situação de lote inválida para o relatório.");
+		}
+		return valor;
+	}
 }

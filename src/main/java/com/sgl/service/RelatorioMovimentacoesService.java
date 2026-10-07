@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -54,11 +55,11 @@ public class RelatorioMovimentacoesService {
                 .sorted(Comparator.comparing(MovimentacaoEstoque::getDataMovimentacao).reversed())
                 .toList();
 
-        int entradas = somar(filtradas, TipoMovimentacao.ENTRADA);
-        int saidas = somar(filtradas, TipoMovimentacao.SAIDA);
-        int ajustes = somar(filtradas, TipoMovimentacao.AJUSTE);
-        int devolucoes = somar(filtradas, TipoMovimentacao.DEVOLUCAO);
-        int descartes = somar(filtradas, TipoMovimentacao.DESCARTE_VENCIMENTO);
+        BigDecimal entradas = somar(filtradas, TipoMovimentacao.ENTRADA);
+        BigDecimal saidas = somar(filtradas, TipoMovimentacao.SAIDA);
+        BigDecimal ajustes = somar(filtradas, TipoMovimentacao.AJUSTE);
+        BigDecimal devolucoes = somar(filtradas, TipoMovimentacao.DEVOLUCAO);
+        BigDecimal descartes = somar(filtradas, TipoMovimentacao.DESCARTE_VENCIMENTO);
 
         List<MovimentacaoEstoqueResponseDTO> itens = filtradas.stream()
                 .map(MovimentacaoEstoqueResponseDTO::new)
@@ -76,13 +77,15 @@ public class RelatorioMovimentacoesService {
         );
     }
 
-    private int somar(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {
+    private BigDecimal somar(
+            List<MovimentacaoEstoque> movimentacoes,
+            TipoMovimentacao tipo) {
+
         return movimentacoes.stream()
                 .filter(item -> item.getTipoMovimentacao() == tipo)
                 .map(MovimentacaoEstoque::getQuantidadeMovimentada)
-                .filter(valor -> valor != null)
-                .mapToInt(Integer::intValue)
-                .sum();
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private void validarPeriodoOpcional(LocalDate dataInicio, LocalDate dataFim) {

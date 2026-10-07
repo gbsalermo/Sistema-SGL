@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.ItemPedido;
@@ -31,11 +32,11 @@ public class ItemPedidoResponseDTO {
     private Boolean produtoPerecivel;
     private TipoPerecivel produtoTipoPerecivel;
     private String produtoCondicoesArmazenamento;
-    private Integer quantidadeSolicitada;
-    private Integer quantidadeAprovada;
+    private BigDecimal quantidadeSolicitada;
+    private BigDecimal quantidadeAprovada;
     private TipoEmbalagem tipoEmbalagemSolicitada;
     private Integer quantidadeEmbalagensSolicitada;
-    private Integer multiplicadorSolicitado;
+    private BigDecimal multiplicadorSolicitado;
 
     public ItemPedidoResponseDTO(ItemPedido entity) {
         this.id = entity.getPublicId();

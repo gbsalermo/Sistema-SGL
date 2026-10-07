@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -39,7 +40,7 @@ public class LoteResponseDTO {
     @Schema(description = "Quantidade de embalagens/unidades físicas recebidas.", example = "2")
     private Integer quantidadeApresentacoes;
     @Schema(description = "Multiplicador de unidades individuais por embalagem.", example = "50")
-    private Integer conteudoPorApresentacao;
+    private BigDecimal conteudoPorApresentacao;
     @Schema(description = "Indica se a embalagem permite saída parcial.", example = "true")
     private Boolean fracionavel;
     @Schema(description = "Observação cadastral do lote.", example = "Material recebido lacrado.")
@@ -48,9 +49,9 @@ public class LoteResponseDTO {
     private UnidadeMedida unidadeBase;
 
     @Schema(description = "Quantidade inicial convertida para unidades individuais do produto.", example = "100")
-    private Integer quantidadeInicial;
+    private BigDecimal quantidadeInicial;
     @Schema(description = "Quantidade disponível convertida para unidades individuais do produto.", example = "80")
-    private Integer quantidadeDisponivel;
+    private BigDecimal quantidadeDisponivel;
     private LocalDate dataEntrada;
     private LocalDate dataValidade;
     private Boolean ativo;

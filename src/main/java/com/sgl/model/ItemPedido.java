@@ -2,7 +2,6 @@ package com.sgl.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.enums.TipoEmbalagem;

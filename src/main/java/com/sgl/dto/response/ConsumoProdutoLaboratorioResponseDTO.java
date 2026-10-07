@@ -30,7 +30,7 @@ public class ConsumoProdutoLaboratorioResponseDTO {
     @Schema(description = "Quantidade de pedidos considerados no período.", example = "4")
     private Long quantidadePedidos;
     @Schema(description = "Quantidade total efetivamente recebida no período.", example = "32")
-    private Integer quantidadeTotalRecebida;
+    private BigDecimal quantidadeTotalRecebida;
     @Schema(description = "Média de quantidade recebida por pedido.", example = "8.00")
     private BigDecimal mediaQuantidadePorPedido;
     @Schema(description = "Número de meses considerados no cálculo.", example = "1")
@@ -38,5 +38,5 @@ public class ConsumoProdutoLaboratorioResponseDTO {
     @Schema(description = "Média de consumo mensal calculada.", example = "32.00")
     private BigDecimal mediaConsumoMensal;
     @Schema(description = "Quantidade mínima sugerida com base no consumo calculado.", example = "32")
-    private Integer quantidadeMinimaSugerida;
+    private BigDecimal quantidadeMinimaSugerida;
 }

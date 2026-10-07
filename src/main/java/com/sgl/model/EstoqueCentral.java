@@ -54,10 +54,10 @@ public class EstoqueCentral implements Serializable {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal quantidadeAtual = BigDecimal.ZERO;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal quantidadeMinima = BigDecimal.ZERO;
 
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.EstoqueCentral;
@@ -30,8 +31,8 @@ public class EstoqueCentralResponseDTO {
     private String produtoUnidadeArmazenamento;
     @Schema(description = "Unidade-base usada para consolidar saldo entre lotes.", example = "UNIDADE")
     private UnidadeMedida produtoUnidadeMedida;
-    private Integer quantidadeAtual;
-    private Integer quantidadeMinima;
+    private BigDecimal quantidadeAtual;
+    private BigDecimal quantidadeMinima;
     private Boolean ativo;
 
     public EstoqueCentralResponseDTO(EstoqueCentral entity) {

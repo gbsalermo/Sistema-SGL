@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +19,7 @@ public class RelatorioEstoqueLotesResponseDTO {
     private Integer totalEstoques;
     private Integer estoquesAtivos;
     private Integer estoquesAbaixoMinimo;
-    private Long quantidadeTotalEstoque;
+    private BigDecimal quantidadeTotalEstoque;
     private Integer totalLotes;
     private Integer lotesAtivos;
     private Integer lotesVencidos;
@@ -39,8 +40,8 @@ public class RelatorioEstoqueLotesResponseDTO {
         private String produtoNome;
         private String codigoReferencia;
         private String unidadeMedida;
-        private Integer quantidadeAtual;
-        private Integer quantidadeMinima;
+        private BigDecimal quantidadeAtual;
+        private BigDecimal quantidadeMinima;
         private Boolean abaixoMinimo;
         private Boolean ativo;
         private Integer totalLotes;
@@ -61,8 +62,8 @@ public class RelatorioEstoqueLotesResponseDTO {
         private String produtoNome;
         private String codigoInterno;
         private String numeroLote;
-        private Integer quantidadeInicial;
-        private Integer quantidadeDisponivel;
+        private BigDecimal quantidadeInicial;
+        private BigDecimal quantidadeDisponivel;
         private LocalDate dataEntrada;
         private LocalDate dataValidade;
         private Boolean ativo;
