@@ -137,7 +137,14 @@ class RelatorioExportacaoServiceTest {
     @Test
     void deveExportarMovimentacoesEmXlsx() {
         RelatorioMovimentacoesResponseDTO relatorio = new RelatorioMovimentacoesResponseDTO(
-                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, List.<MovimentacaoEstoqueResponseDTO>of());
+                LocalDateTime.now(),
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                List.<MovimentacaoEstoqueResponseDTO>of());
 
         ArquivoRelatorioDTO arquivo = service.exportarMovimentacoes(relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
 
@@ -168,7 +175,16 @@ class RelatorioExportacaoServiceTest {
     @Test
     void deveExportarResumoOperacionalEmXlsx() {
         RelatorioResumoOperacionalResponseDTO relatorio = new RelatorioResumoOperacionalResponseDTO(
-                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of());
+                LocalDateTime.now(),
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                0,
+                0,
+                List.of(),
+                List.of(),
+                List.of());
 
         ArquivoRelatorioDTO arquivo = service.exportarResumoOperacional(relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
 

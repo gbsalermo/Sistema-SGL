@@ -137,7 +137,7 @@ class MovimentacaoEstoqueControllerTest {
         dto.setNumeroLote("FAB-2026-8841");
         dto.setTipoEmbalagem(TipoEmbalagem.KIT);
         dto.setApresentacao("kit com 50 unidades");
-        dto.setQuantidade(BigDecimal.valueOf(2));
+        dto.setQuantidade(2);
         dto.setConteudoPorApresentacao(BigDecimal.valueOf(50));
         dto.setFracionavel(true);
         dto.setDataValidade(LocalDate.of(2027, 8, 31));
