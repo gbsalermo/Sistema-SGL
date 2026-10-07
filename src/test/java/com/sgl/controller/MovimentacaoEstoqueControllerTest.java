@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -116,9 +117,9 @@ class MovimentacaoEstoqueControllerTest {
         dto.setNumeroLote("FAB-2026-8841");
         dto.setTipoMovimentacao(TipoMovimentacao.ENTRADA);
         dto.setOrigem(OrigemMovimentacao.COMPRA);
-        dto.setQuantidadeMovimentada(100);
-        dto.setQuantidadeAnterior(0);
-        dto.setQuantidadeAtual(100);
+        dto.setQuantidadeMovimentada(BigDecimal.valueOf(100));
+        dto.setQuantidadeAnterior(BigDecimal.valueOf(0));
+        dto.setQuantidadeAtual(BigDecimal.valueOf(100));
         dto.setObservacao("Material recebido conforme nota fiscal.");
         return dto;
     }
@@ -136,8 +137,8 @@ class MovimentacaoEstoqueControllerTest {
         dto.setNumeroLote("FAB-2026-8841");
         dto.setTipoEmbalagem(TipoEmbalagem.KIT);
         dto.setApresentacao("kit com 50 unidades");
-        dto.setQuantidade(2);
-        dto.setConteudoPorApresentacao(50);
+        dto.setQuantidade(BigDecimal.valueOf(2));
+        dto.setConteudoPorApresentacao(BigDecimal.valueOf(50));
         dto.setFracionavel(true);
         dto.setDataValidade(LocalDate.of(2027, 8, 31));
         dto.setOrigem(OrigemMovimentacao.COMPRA);
@@ -154,8 +155,8 @@ class MovimentacaoEstoqueControllerTest {
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
         dto.setProdutoNome("Etanol Absoluto PA");
         dto.setNumeroLote("FAB-2026-8841");
-        dto.setQuantidadeInicial(100);
-        dto.setQuantidadeDisponivel(100);
+        dto.setQuantidadeInicial(BigDecimal.valueOf(100));
+        dto.setQuantidadeDisponivel(BigDecimal.valueOf(100));
         dto.setAtivo(true);
         return dto;
     }
@@ -301,8 +302,7 @@ class MovimentacaoEstoqueControllerTest {
         Usuario usuario = montarUsuario();
         when(usuarioRepository.findByPublicId(USUARIO_PUBLIC_ID)).thenReturn(Optional.of(usuario));
 
-        DescarteProdutoRequestDTO dto = new DescarteProdutoRequestDTO(
-                5, "Lotes vencidos identificados durante conferência mensal.");
+        DescarteProdutoRequestDTO dto = new DescarteProdutoRequestDTO(BigDecimal.valueOf(5), "Lotes vencidos identificados durante conferência mensal.");
 
         MovimentacaoEstoqueResponseDTO movimentacao = montarResponseDTO();
         movimentacao.setTipoMovimentacao(TipoMovimentacao.DESCARTE_VENCIMENTO);

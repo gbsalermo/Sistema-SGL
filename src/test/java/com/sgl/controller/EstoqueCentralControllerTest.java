@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -77,7 +78,7 @@ class EstoqueCentralControllerTest {
     private EstoqueCentralService estoqueCentralService;
 
     private EstoqueCentralRequestDTO montarRequestDTO() {
-        return new EstoqueCentralRequestDTO(UNIDADE_PUBLIC_ID, PRODUTO_PUBLIC_ID, 5, true);
+        return new EstoqueCentralRequestDTO(UNIDADE_PUBLIC_ID, PRODUTO_PUBLIC_ID, BigDecimal.valueOf(5), true);
     }
 
     // Diferente de ProdutoResponseDTO, EstoqueCentralResponseDTO tem
@@ -95,8 +96,8 @@ class EstoqueCentralControllerTest {
         dto.setProdutoLocalizacaoFisica("Armário B - Prateleira 1");
         dto.setProdutoUnidadeArmazenamento("frasco de 1L");
         dto.setProdutoUnidadeMedida(UnidadeMedida.L);
-        dto.setQuantidadeAtual(10);
-        dto.setQuantidadeMinima(5);
+        dto.setQuantidadeAtual(BigDecimal.valueOf(10));
+        dto.setQuantidadeMinima(BigDecimal.valueOf(5));
         dto.setAtivo(true);
         return dto;
     }

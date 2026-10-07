@@ -1,5 +1,6 @@
 package com.sgl.repository;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -142,8 +143,8 @@ class MovimentacaoEstoqueRepositoryTest {
         EstoqueCentral estoque = EstoqueCentral.builder()
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(100)
-                .quantidadeMinima(1)
+                .quantidadeAtual(BigDecimal.valueOf(100))
+                .quantidadeMinima(BigDecimal.valueOf(1))
                 .ativo(true)
                 .build();
         return entityManager.persistAndFlush(estoque);
@@ -154,8 +155,8 @@ class MovimentacaoEstoqueRepositoryTest {
         lote.setEstoqueCentral(estoqueCentral);
         lote.setNumeroLote(numeroLote);
         lote.definirCodigoInterno("LOT-" + numeroLote, 1);
-        lote.setQuantidadeInicial(50);
-        lote.setQuantidadeDisponivel(50);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(50));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(50));
         lote.setDataEntrada(LocalDateTime.now().toLocalDate());
         lote.setAtivo(true);
         return entityManager.persistAndFlush(lote);
@@ -171,9 +172,9 @@ class MovimentacaoEstoqueRepositoryTest {
                 .lote(lote)
                 .tipoMovimentacao(tipo)
                 .origem(OrigemMovimentacao.AJUSTE)
-                .quantidadeMovimentada(5)
-                .quantidadeAnterior(10)
-                .quantidadeAtual(5)
+                .quantidadeMovimentada(BigDecimal.valueOf(5))
+                .quantidadeAnterior(BigDecimal.valueOf(10))
+                .quantidadeAtual(BigDecimal.valueOf(5))
                 .dataMovimentacao(dataMovimentacao)
                 .estoqueCentral(estoque)
                 .build();

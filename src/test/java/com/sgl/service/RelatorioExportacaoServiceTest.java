@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -166,7 +167,7 @@ class RelatorioExportacaoServiceTest {
                 .totalEstoques(0)
                 .estoquesAtivos(0)
                 .estoquesAbaixoMinimo(0)
-                .quantidadeTotalEstoque(0L)
+                .quantidadeTotalEstoque(BigDecimal.valueOf(0))
                 .totalLotes(0)
                 .lotesAtivos(0)
                 .lotesVencidos(0)
@@ -189,7 +190,7 @@ class RelatorioExportacaoServiceTest {
                 .totalEstoques(0)
                 .estoquesAtivos(0)
                 .estoquesAbaixoMinimo(0)
-                .quantidadeTotalEstoque(0L)
+                .quantidadeTotalEstoque(BigDecimal.valueOf(0))
                 .totalLotes(0)
                 .lotesAtivos(0)
                 .lotesVencidos(0)
@@ -210,12 +211,12 @@ class RelatorioExportacaoServiceTest {
         RelatorioFiscalizacaoResponseDTO relatorio = RelatorioFiscalizacaoResponseDTO.builder()
                 .geradoEm(LocalDateTime.now())
                 .totalProdutosFiscalizados(0)
-                .saldoAtualTotal(0)
+                .saldoAtualTotal(BigDecimal.valueOf(0))
                 .lotesAtivos(0)
                 .lotesVencidos(0)
                 .lotesProximosVencimento(0)
-                .quantidadeEntradas(0)
-                .quantidadeSaidas(0)
+                .quantidadeEntradas(BigDecimal.valueOf(0))
+                .quantidadeSaidas(BigDecimal.valueOf(0))
                 .produtos(List.of())
                 .movimentacoes(List.of())
                 .build();
@@ -231,12 +232,12 @@ class RelatorioExportacaoServiceTest {
         RelatorioFiscalizacaoResponseDTO relatorio = RelatorioFiscalizacaoResponseDTO.builder()
                 .geradoEm(LocalDateTime.now())
                 .totalProdutosFiscalizados(0)
-                .saldoAtualTotal(0)
+                .saldoAtualTotal(BigDecimal.valueOf(0))
                 .lotesAtivos(0)
                 .lotesVencidos(0)
                 .lotesProximosVencimento(0)
-                .quantidadeEntradas(0)
-                .quantidadeSaidas(0)
+                .quantidadeEntradas(BigDecimal.valueOf(0))
+                .quantidadeSaidas(BigDecimal.valueOf(0))
                 .produtos(List.of())
                 .movimentacoes(List.of())
                 .build();

@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -105,10 +106,10 @@ class PedidoControllerTest {
     private PedidoRequestDTO montarPedidoRequestDTO() {
         ItemPedidoRequestDTO item = new ItemPedidoRequestDTO();
         item.setProdutoId(PRODUTO_PUBLIC_ID);
-        item.setQuantidadeSolicitada(50);
+        item.setQuantidadeSolicitada(BigDecimal.valueOf(50));
         item.setTipoEmbalagemSolicitada(TipoEmbalagem.KIT);
         item.setQuantidadeEmbalagensSolicitada(1);
-        item.setMultiplicadorSolicitado(50);
+        item.setMultiplicadorSolicitado(BigDecimal.valueOf(50));
 
         PedidoRequestDTO dto = new PedidoRequestDTO();
         dto.setUsuarioId(USUARIO_PUBLIC_ID);
@@ -121,7 +122,7 @@ class PedidoControllerTest {
 
     private AprovarPedidoRequestDTO montarAprovarRequestDTO() {
         AprovarPedidoRequestDTO.ItemAprovacaoDTO item =
-                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, 50);
+                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, BigDecimal.valueOf(50));
 
         AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
         dto.setUsuarioAprovadorId(USUARIO_PUBLIC_ID);

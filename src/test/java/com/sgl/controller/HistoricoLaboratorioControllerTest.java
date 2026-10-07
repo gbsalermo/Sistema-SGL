@@ -87,7 +87,7 @@ class HistoricoLaboratorioControllerTest {
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
         dto.setProdutoNome("Extrato de DNA Plant Wizard");
         dto.setProdutoUnidadeArmazenamento("kit com 50 reações");
-        dto.setQuantidade(8);
+        dto.setQuantidade(BigDecimal.valueOf(8));
         dto.setDataRecebimento(LocalDate.of(2026, 8, 20));
         dto.setPedidoId(PEDIDO_PUBLIC_ID);
         dto.setAtivo(true);
@@ -104,11 +104,11 @@ class HistoricoLaboratorioControllerTest {
                 LocalDate.of(2026, 8, 1),
                 LocalDate.of(2026, 8, 31),
                 4L,
-                32,
+                BigDecimal.valueOf(32),
                 new BigDecimal("8.00"),
                 1,
                 new BigDecimal("32.00"),
-                32);
+                BigDecimal.valueOf(32));
     }
 
     @Test
