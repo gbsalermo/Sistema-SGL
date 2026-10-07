@@ -138,11 +138,11 @@ class RelatorioMovimentacoesServiceTest {
                 null, null, null, null, null, null, null, null);
 
         assertEquals(3, resultado.getTotalMovimentacoes());
-        assertEquals(10, resultado.getQuantidadeEntradas());
-        assertEquals(4, resultado.getQuantidadeSaidas());
-        assertEquals(0, resultado.getQuantidadeAjustes());
-        assertEquals(0, resultado.getQuantidadeDevolucoes());
-        assertEquals(2, resultado.getQuantidadeDescartes());
+        assertEquals(BigDecimal.valueOf(10), resultado.getQuantidadeEntradas());
+        assertEquals(BigDecimal.valueOf(4), resultado.getQuantidadeSaidas());
+        assertEquals(BigDecimal.valueOf(0), resultado.getQuantidadeAjustes());
+        assertEquals(BigDecimal.valueOf(0), resultado.getQuantidadeDevolucoes());
+        assertEquals(BigDecimal.valueOf(2), resultado.getQuantidadeDescartes());
         // Ordenado da mais recente para a mais antiga.
         assertEquals(descarte.getPublicId(), resultado.getItens().get(0).getId());
         assertEquals(entrada.getPublicId(), resultado.getItens().get(2).getId());

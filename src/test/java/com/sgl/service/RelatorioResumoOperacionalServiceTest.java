@@ -164,27 +164,27 @@ class RelatorioResumoOperacionalServiceTest {
                 null, null, null, null);
 
         assertEquals(4, resultado.getTotalMovimentacoes());
-        assertEquals(16, resultado.getQuantidadeEntradas());
-        assertEquals(4, resultado.getQuantidadeSaidas());
-        assertEquals(1, resultado.getQuantidadeDescartes());
+        assertEquals(BigDecimal.valueOf(16), resultado.getQuantidadeEntradas());
+        assertEquals(BigDecimal.valueOf(4), resultado.getQuantidadeSaidas());
+        assertEquals(BigDecimal.valueOf(1), resultado.getQuantidadeDescartes());
         assertEquals(2, resultado.getProdutosMovimentados());
         assertEquals(1, resultado.getLotesMovimentados());
 
         // Ranking de entradas: produto A (10) na frente do produto B (6).
         assertEquals(2, resultado.getPrincipaisEntradas().size());
         assertEquals(PRODUTO_A_PUBLIC_ID, resultado.getPrincipaisEntradas().get(0).getProdutoId());
-        assertEquals(10, resultado.getPrincipaisEntradas().get(0).getQuantidade());
+        assertEquals(BigDecimal.valueOf(10), resultado.getPrincipaisEntradas().get(0).getQuantidade());
 
         assertEquals(1, resultado.getPrincipaisSaidas().size());
-        assertEquals(4, resultado.getPrincipaisSaidas().get(0).getQuantidade());
+        assertEquals(BigDecimal.valueOf(4), resultado.getPrincipaisSaidas().get(0).getQuantidade());
 
         // O único lote acumula as 3 movimentações do produto A.
         assertEquals(1, resultado.getLotesMaisMovimentados().size());
         RelatorioResumoOperacionalResponseDTO.LoteRanking loteRanking = resultado.getLotesMaisMovimentados().get(0);
-        assertEquals(15, loteRanking.getQuantidadeMovimentada());
+        assertEquals(BigDecimal.valueOf(15), loteRanking.getQuantidadeMovimentada());
         assertEquals(3, loteRanking.getMovimentacoes());
-        assertEquals(10, loteRanking.getQuantidadeEntradas());
-        assertEquals(4, loteRanking.getQuantidadeSaidas());
+        assertEquals(BigDecimal.valueOf(10), loteRanking.getQuantidadeEntradas());
+        assertEquals(BigDecimal.valueOf(4), loteRanking.getQuantidadeSaidas());
     }
 
     @Test

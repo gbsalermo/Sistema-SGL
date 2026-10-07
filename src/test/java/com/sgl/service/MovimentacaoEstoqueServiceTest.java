@@ -136,7 +136,7 @@ class MovimentacaoEstoqueServiceTest {
 
         service.registrarEntradaLote(ESTOQUE_PUBLIC_ID, dto, usuario);
 
-        assertEquals(15, estoque.getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(15), estoque.getQuantidadeAtual());
 
         ArgumentCaptor<Lote> loteCaptor = ArgumentCaptor.forClass(Lote.class);
         verify(loteRepository).save(loteCaptor.capture());
@@ -145,8 +145,8 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals("LOT-PROD-TESTE-001", lote.getCodigoInterno());
         assertEquals(1, lote.getSequencialInterno());
         assertEquals("LT-001", lote.getNumeroLote());
-        assertEquals(5, lote.getQuantidadeInicial());
-        assertEquals(5, lote.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(5), lote.getQuantidadeInicial());
+        assertEquals(BigDecimal.valueOf(5), lote.getQuantidadeDisponivel());
         assertEquals(null, lote.getDataValidade());
 
         ArgumentCaptor<MovimentacaoEstoque> movCaptor =
@@ -156,8 +156,8 @@ class MovimentacaoEstoqueServiceTest {
         MovimentacaoEstoque mov = movCaptor.getValue();
         assertEquals(TipoMovimentacao.ENTRADA, mov.getTipoMovimentacao());
         assertEquals(lote, mov.getLote());
-        assertEquals(10, mov.getQuantidadeAnterior());
-        assertEquals(15, mov.getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(10), mov.getQuantidadeAnterior());
+        assertEquals(BigDecimal.valueOf(15), mov.getQuantidadeAtual());
     }
 
     @Test
@@ -212,9 +212,9 @@ class MovimentacaoEstoqueServiceTest {
                 "Saída FIFO"
         );
 
-        assertEquals(0, primeiro.getQuantidadeDisponivel());
-        assertEquals(5, segundo.getQuantidadeDisponivel());
-        assertEquals(5, estoque.getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(0), primeiro.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(5), segundo.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(5), estoque.getQuantidadeAtual());
         verify(loteRepository, never()).buscarDisponiveisPorFefoComBloqueio(any(), any());
     }
 
@@ -252,18 +252,18 @@ class MovimentacaoEstoqueServiceTest {
                 "Saída FEFO"
         );
 
-        assertEquals(0, vencePrimeiro.getQuantidadeDisponivel());
-        assertEquals(5, venceDepois.getQuantidadeDisponivel());
-        assertEquals(5, estoque.getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(0), vencePrimeiro.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(5), venceDepois.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(5), estoque.getQuantidadeAtual());
 
         ArgumentCaptor<MovimentacaoEstoque> captor =
                 ArgumentCaptor.forClass(MovimentacaoEstoque.class);
         verify(movimentacaoRepository, org.mockito.Mockito.times(2)).save(captor.capture());
 
         assertEquals(20L, captor.getAllValues().get(0).getLote().getId());
-        assertEquals(3, captor.getAllValues().get(0).getQuantidadeMovimentada());
+        assertEquals(BigDecimal.valueOf(3), captor.getAllValues().get(0).getQuantidadeMovimentada());
         assertEquals(21L, captor.getAllValues().get(1).getLote().getId());
-        assertEquals(2, captor.getAllValues().get(1).getQuantidadeMovimentada());
+        assertEquals(BigDecimal.valueOf(2), captor.getAllValues().get(1).getQuantidadeMovimentada());
     }
 
     @Test
@@ -300,7 +300,7 @@ class MovimentacaoEstoqueServiceTest {
                 "Estoque utilizável insuficiente para a forma de retirada selecionada. Disponível nos lotes compatíveis: 2, solicitado: 3",
                 exception.getMessage()
         );
-        assertEquals(10, estoque.getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(10), estoque.getQuantidadeAtual());
         verify(movimentacaoRepository, never()).save(any());
     }
 
@@ -332,9 +332,9 @@ class MovimentacaoEstoqueServiceTest {
 
         service.registrarDescarteVencimento(ESTOQUE_PUBLIC_ID, BigDecimal.valueOf(5), "Vencidos", usuario);
 
-        assertEquals(0, vencido1.getQuantidadeDisponivel());
-        assertEquals(1, vencido2.getQuantidadeDisponivel());
-        assertEquals(5, estoque.getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(0), vencido1.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(1), vencido2.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(5), estoque.getQuantidadeAtual());
     }
 
     @Test
@@ -381,9 +381,9 @@ class MovimentacaoEstoqueServiceTest {
 
         service.devolverSaidasDoPedido(pedido, null, "Cancelamento");
 
-        assertEquals(5, loteA.getQuantidadeDisponivel());
-        assertEquals(5, loteB.getQuantidadeDisponivel());
-        assertEquals(10, estoque.getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(5), loteA.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(5), loteB.getQuantidadeDisponivel());
+        assertEquals(BigDecimal.valueOf(10), estoque.getQuantidadeAtual());
     }
 
     private Lote criarLote(

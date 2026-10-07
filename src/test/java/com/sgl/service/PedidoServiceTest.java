@@ -200,7 +200,7 @@ class PedidoServiceTest {
 
         assertEquals(StatusPedido.APROVADO, resultado.getStatus());
         assertEquals(PEDIDO_PUBLIC_ID, resultado.getId());
-        assertEquals(3, item.getQuantidadeAprovada());
+        assertEquals(BigDecimal.valueOf(3), item.getQuantidadeAprovada());
         assertEquals("Aprovação parcial", pedido.getObservacao());
 
         // PedidoService.aprovar() sempre chama a sobrecarga de 9 argumentos

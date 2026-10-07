@@ -182,17 +182,17 @@ class RelatorioFiscalizacaoServiceTest {
                 null, null, null, null, null, null);
 
         assertEquals(1, resultado.getTotalProdutosFiscalizados());
-        assertEquals(8, resultado.getSaldoAtualTotal());
+        assertEquals(BigDecimal.valueOf(8), resultado.getSaldoAtualTotal());
         assertEquals(2, resultado.getLotesAtivos());
         assertEquals(1, resultado.getLotesVencidos());
         assertEquals(1, resultado.getLotesProximosVencimento());
-        assertEquals(5, resultado.getQuantidadeEntradas());
-        assertEquals(2, resultado.getQuantidadeSaidas());
+        assertEquals(BigDecimal.valueOf(5), resultado.getQuantidadeEntradas());
+        assertEquals(BigDecimal.valueOf(2), resultado.getQuantidadeSaidas());
 
         assertEquals(1, resultado.getProdutos().size());
         RelatorioFiscalizacaoResponseDTO.ProdutoFiscalizadoItem item = resultado.getProdutos().get(0);
         assertEquals(PRODUTO_PUBLIC_ID, item.getProdutoId());
-        assertEquals(8, item.getSaldoAtual());
+        assertEquals(BigDecimal.valueOf(8), item.getSaldoAtual());
         assertEquals(LocalDate.now().plusDays(10), item.getProximoVencimento());
 
         // Trilha de movimentações ordenada da mais recente para a mais antiga.

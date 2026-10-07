@@ -227,7 +227,7 @@ class EstoqueCentralServiceTest {
 
         EstoqueCentralResponseDTO resultado = estoqueCentralService.atualizar(ESTOQUE_PUBLIC_ID, dto);
 
-        assertEquals(8, resultado.getQuantidadeMinima());
+        assertEquals(BigDecimal.valueOf(8), resultado.getQuantidadeMinima());
         assertFalse(resultado.getAtivo());
     }
 
@@ -260,7 +260,7 @@ class EstoqueCentralServiceTest {
         List<EstoqueCentralResponseDTO> resultado = estoqueCentralService.listarEstoqueBaixoPorUnidade(UNIDADE_PUBLIC_ID);
 
         assertEquals(1, resultado.size());
-        assertEquals(1, resultado.get(0).getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(1), resultado.get(0).getQuantidadeAtual());
     }
 
     @Test
