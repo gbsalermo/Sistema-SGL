@@ -213,26 +213,33 @@ class PedidoConcorrenciaIntegrationTest {
         EstoqueCentral estoqueAtual = estoqueCentralRepository.findById(estoqueId).orElseThrow();
         Lote loteAtual = loteRepository.findById(loteId).orElseThrow();
 
-        assertEquals(3, estoqueAtual.getQuantidadeAtual(),
+        assertEquals(BigDecimal.valueOf(3), estoqueAtual.getQuantidadeAtual(),
                 "O estoque agregado deve terminar com 3 unidades.");
-        assertEquals(3, loteAtual.getQuantidadeDisponivel(),
+        assertEquals(BigDecimal.valueOf(3), loteAtual.getQuantidadeDisponivel(),
                 "O lote deve terminar com 3 unidades.");
-        assertTrue(estoqueAtual.getQuantidadeAtual() >= 0, "O estoque nunca pode ficar negativo.");
-        assertTrue(loteAtual.getQuantidadeDisponivel() >= 0, "O lote nunca pode ficar negativo.");
+        assertTrue(
+                estoqueAtual.getQuantidadeAtual().compareTo(BigDecimal.ZERO) >= 0,
+                "O estoque nunca pode ficar negativo."
+        );
+        assertTrue(
+                loteAtual.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) >= 0,
+                "O lote nunca pode ficar negativo."
+        );
 
         List<MovimentacaoEstoque> saidas = movimentacaoEstoqueRepository
                 .findByTipoMovimentacao(TipoMovimentacao.SAIDA);
 
-        int totalSaidas = saidas.stream()
+        BigDecimal totalSaidas = saidas.stream()
                 .filter(m -> m.getEstoqueCentral().getId().equals(estoqueId))
-                .mapToInt(MovimentacaoEstoque::getQuantidadeMovimentada)
-                .sum();
+                .map(MovimentacaoEstoque::getQuantidadeMovimentada)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long quantidadeMovimentacoesSaida = saidas.stream()
                 .filter(m -> m.getEstoqueCentral().getId().equals(estoqueId))
                 .count();
 
-        assertEquals(7, totalSaidas,
+        assertEquals(BigDecimal.valueOf(7), totalSaidas,
                 "Somente 7 unidades podem ser registradas como SAIDA.");
         assertEquals(1, quantidadeMovimentacoesSaida,
                 "Com um único lote, deve existir somente uma SAIDA para o pedido vencedor.");
@@ -257,6 +264,9 @@ class PedidoConcorrenciaIntegrationTest {
                 .pedido(pedido)
                 .produto(produto)
                 .quantidadeSolicitada(BigDecimal.valueOf(quantidade))
+                .tipoEmbalagemSolicitada(com.sgl.model.enums.TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(quantidade)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
 
         pedido.getItens().add(item);
