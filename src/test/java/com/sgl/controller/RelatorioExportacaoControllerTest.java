@@ -146,7 +146,14 @@ class RelatorioExportacaoControllerTest {
     @Test
     void deveExportarMovimentacoesERetornarBytes() throws Exception {
         RelatorioMovimentacoesResponseDTO relatorio = new RelatorioMovimentacoesResponseDTO(
-                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, List.<MovimentacaoEstoqueResponseDTO>of());
+                LocalDateTime.now(),
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                List.<MovimentacaoEstoqueResponseDTO>of());
         ArquivoRelatorioDTO arquivo = montarArquivo("sgl-movimentacoes-20260919.xlsx");
 
         when(movimentacoesService.gerar(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(relatorio);
@@ -162,7 +169,16 @@ class RelatorioExportacaoControllerTest {
     @Test
     void deveExportarResumoOperacionalERetornarBytes() throws Exception {
         RelatorioResumoOperacionalResponseDTO relatorio = new RelatorioResumoOperacionalResponseDTO(
-                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of());
+                LocalDateTime.now(),
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                0,
+                0,
+                List.of(),
+                List.of(),
+                List.of());
         ArquivoRelatorioDTO arquivo = montarArquivo("sgl-resumo-operacional-20260919.pdf");
 
         when(resumoService.gerar(any(), any(), any(), any())).thenReturn(relatorio);
