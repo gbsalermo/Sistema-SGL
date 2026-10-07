@@ -136,7 +136,7 @@ public class HistoricoLaboratorioService {
 		BigDecimal mediaConsumoMensal = quantidadeTotal
 				.divide(BigDecimal.valueOf(mesesConsiderados), 2, RoundingMode.HALF_UP);
 
-		BigDecimal quantidadeMinimaSugerida = mediaConsumoMensal.setScale(6, RoundingMode.HALF_UP);
+		BigDecimal quantidadeMinimaSugerida = mediaConsumoMensal.setScale(0, RoundingMode.CEILING);
 
 		return new ConsumoProdutoLaboratorioResponseDTO(laboratorio.getPublicId(), laboratorio.getNome(),
 				produto.getPublicId(), produto.getNome(), produto.getUnidadeArmazenamento(), dataInicio, dataFim,

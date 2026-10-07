@@ -158,7 +158,7 @@ class HistoricoLaboratorioServiceTest {
         assertEquals(1, resultado.size());
         assertEquals(HISTORICO_PUBLIC_ID, resultado.get(0).getId());
         assertEquals(PEDIDO_PUBLIC_ID, resultado.get(0).getPedidoId());
-        assertEquals(7, resultado.get(0).getQuantidade());
+        assertEquals(0, BigDecimal.valueOf(7).compareTo(resultado.get(0).getQuantidade()));
 
         verify(historicoLaboratorioRepository).findByLaboratorioProjetoEPeriodo(
                 2L,
@@ -221,11 +221,11 @@ class HistoricoLaboratorioServiceTest {
         assertEquals(LABORATORIO_PUBLIC_ID, resultado.getLaboratorioId());
         assertEquals(PRODUTO_PUBLIC_ID, resultado.getProdutoId());
         assertEquals(2L, resultado.getQuantidadePedidos());
-        assertEquals(16, resultado.getQuantidadeTotalRecebida());
+        assertEquals(0, BigDecimal.valueOf(16).compareTo(resultado.getQuantidadeTotalRecebida()));
         assertEquals(new BigDecimal("8.00"), resultado.getMediaQuantidadePorPedido());
         assertEquals(3, resultado.getMesesConsiderados());
         assertEquals(new BigDecimal("5.33"), resultado.getMediaConsumoMensal());
-        assertEquals(6, resultado.getQuantidadeMinimaSugerida());
+        assertEquals(0, BigDecimal.valueOf(6).compareTo(resultado.getQuantidadeMinimaSugerida()));
     }
 
     @Test
@@ -251,10 +251,10 @@ class HistoricoLaboratorioServiceTest {
                 );
 
         assertEquals(0L, resultado.getQuantidadePedidos());
-        assertEquals(0, resultado.getQuantidadeTotalRecebida());
+        assertEquals(0, BigDecimal.ZERO.compareTo(resultado.getQuantidadeTotalRecebida()));
         assertEquals(new BigDecimal("0.00"), resultado.getMediaQuantidadePorPedido());
         assertEquals(new BigDecimal("0.00"), resultado.getMediaConsumoMensal());
-        assertEquals(0, resultado.getQuantidadeMinimaSugerida());
+        assertEquals(0, BigDecimal.ZERO.compareTo(resultado.getQuantidadeMinimaSugerida()));
     }
 
     @Test

@@ -213,10 +213,16 @@ class PedidoConcorrenciaIntegrationTest {
         EstoqueCentral estoqueAtual = estoqueCentralRepository.findById(estoqueId).orElseThrow();
         Lote loteAtual = loteRepository.findById(loteId).orElseThrow();
 
-        assertEquals(BigDecimal.valueOf(3), estoqueAtual.getQuantidadeAtual(),
-                "O estoque agregado deve terminar com 3 unidades.");
-        assertEquals(BigDecimal.valueOf(3), loteAtual.getQuantidadeDisponivel(),
-                "O lote deve terminar com 3 unidades.");
+        assertEquals(
+                0,
+                BigDecimal.valueOf(3).compareTo(estoqueAtual.getQuantidadeAtual()),
+                "O estoque agregado deve terminar com 3 unidades."
+        );
+        assertEquals(
+                0,
+                BigDecimal.valueOf(3).compareTo(loteAtual.getQuantidadeDisponivel()),
+                "O lote deve terminar com 3 unidades."
+        );
         assertTrue(
                 estoqueAtual.getQuantidadeAtual().compareTo(BigDecimal.ZERO) >= 0,
                 "O estoque nunca pode ficar negativo."
@@ -239,8 +245,11 @@ class PedidoConcorrenciaIntegrationTest {
                 .filter(m -> m.getEstoqueCentral().getId().equals(estoqueId))
                 .count();
 
-        assertEquals(BigDecimal.valueOf(7), totalSaidas,
-                "Somente 7 unidades podem ser registradas como SAIDA.");
+        assertEquals(
+                0,
+                BigDecimal.valueOf(7).compareTo(totalSaidas),
+                "Somente 7 unidades podem ser registradas como SAIDA."
+        );
         assertEquals(1, quantidadeMovimentacoesSaida,
                 "Com um único lote, deve existir somente uma SAIDA para o pedido vencedor.");
     }
