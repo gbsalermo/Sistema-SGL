@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,8 +94,8 @@ class LoteServiceTest {
                 .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(2)
-                .quantidadeMinima(1)
+                .quantidadeAtual(BigDecimal.valueOf(2))
+                .quantidadeMinima(BigDecimal.valueOf(1))
                 .ativo(true)
                 .build();
 
@@ -109,11 +110,11 @@ class LoteServiceTest {
         lote.setTipoEmbalagem(TipoEmbalagem.UNITARIO);
         lote.setApresentacao("Frasco de 1 kg");
         lote.setQuantidadeApresentacoes(2);
-        lote.setConteudoPorApresentacao(1);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(1));
         lote.setFracionavel(true);
         lote.setObservacao("Lote de teste");
-        lote.setQuantidadeInicial(2);
-        lote.setQuantidadeDisponivel(2);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(2));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(2));
         lote.setDataEntrada(LocalDate.of(2026, 1, 10));
         lote.setDataValidade(null);
         lote.setAtivo(true);
@@ -168,8 +169,8 @@ class LoteServiceTest {
         loteVencidoComSaldo.definirCodigoInterno("LOT-AGAR-002", 2);
         loteVencidoComSaldo.setNumeroLote("FAB-2025-999");
         loteVencidoComSaldo.setFracionavel(true);
-        loteVencidoComSaldo.setQuantidadeInicial(1);
-        loteVencidoComSaldo.setQuantidadeDisponivel(1);
+        loteVencidoComSaldo.setQuantidadeInicial(BigDecimal.valueOf(1));
+        loteVencidoComSaldo.setQuantidadeDisponivel(BigDecimal.valueOf(1));
         loteVencidoComSaldo.setDataEntrada(LocalDate.of(2025, 1, 1));
         loteVencidoComSaldo.setDataValidade(LocalDate.now().minusDays(1));
         loteVencidoComSaldo.setAtivo(true);
@@ -186,8 +187,8 @@ class LoteServiceTest {
         loteVencidoSemSaldo.definirCodigoInterno("LOT-AGAR-003", 3);
         loteVencidoSemSaldo.setNumeroLote("FAB-2025-998");
         loteVencidoSemSaldo.setFracionavel(true);
-        loteVencidoSemSaldo.setQuantidadeInicial(1);
-        loteVencidoSemSaldo.setQuantidadeDisponivel(0);
+        loteVencidoSemSaldo.setQuantidadeInicial(BigDecimal.valueOf(1));
+        loteVencidoSemSaldo.setQuantidadeDisponivel(BigDecimal.valueOf(0));
         loteVencidoSemSaldo.setDataEntrada(LocalDate.of(2025, 1, 1));
         loteVencidoSemSaldo.setDataValidade(LocalDate.now().minusDays(1));
         loteVencidoSemSaldo.setAtivo(true);
@@ -322,7 +323,7 @@ class LoteServiceTest {
 
     @Test
     void deveInativarLote() {
-        lote.setQuantidadeDisponivel(0);
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(0));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(loteRepository.findByPublicIdAndEstoqueCentralUnidadePublicId(LOTE_PUBLIC_ID, UNIDADE_PUBLIC_ID))

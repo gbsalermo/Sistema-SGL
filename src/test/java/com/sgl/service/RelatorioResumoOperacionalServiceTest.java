@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
@@ -78,8 +79,8 @@ class RelatorioResumoOperacionalServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produtoA)
-                .quantidadeAtual(6)
-                .quantidadeMinima(1)
+                .quantidadeAtual(BigDecimal.valueOf(6))
+                .quantidadeMinima(BigDecimal.valueOf(1))
                 .ativo(true)
                 .build();
 
@@ -91,8 +92,8 @@ class RelatorioResumoOperacionalServiceTest {
         loteA.setNumeroLote("FAB-2026-001");
         loteA.setTipoEmbalagem(TipoEmbalagem.UNITARIO);
         loteA.setFracionavel(true);
-        loteA.setQuantidadeInicial(20);
-        loteA.setQuantidadeDisponivel(6);
+        loteA.setQuantidadeInicial(BigDecimal.valueOf(20));
+        loteA.setQuantidadeDisponivel(BigDecimal.valueOf(6));
         loteA.setDataEntrada(LocalDate.of(2026, 1, 1));
         loteA.setDataValidade(LocalDate.of(2027, 1, 1));
         loteA.setAtivo(true);
@@ -111,7 +112,7 @@ class RelatorioResumoOperacionalServiceTest {
                 .lote(loteA)
                 .tipoMovimentacao(TipoMovimentacao.ENTRADA)
                 .origem(OrigemMovimentacao.COMPRA)
-                .quantidadeMovimentada(10)
+                .quantidadeMovimentada(BigDecimal.valueOf(10))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 10, 8, 0))
                 .build();
 
@@ -124,7 +125,7 @@ class RelatorioResumoOperacionalServiceTest {
                 .lote(loteA)
                 .tipoMovimentacao(TipoMovimentacao.SAIDA)
                 .origem(OrigemMovimentacao.PEDIDO)
-                .quantidadeMovimentada(4)
+                .quantidadeMovimentada(BigDecimal.valueOf(4))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 15, 8, 0))
                 .build();
 
@@ -137,7 +138,7 @@ class RelatorioResumoOperacionalServiceTest {
                 .lote(loteA)
                 .tipoMovimentacao(TipoMovimentacao.DESCARTE_VENCIMENTO)
                 .origem(OrigemMovimentacao.DESCARTE)
-                .quantidadeMovimentada(1)
+                .quantidadeMovimentada(BigDecimal.valueOf(1))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 20, 8, 0))
                 .build();
 
@@ -149,7 +150,7 @@ class RelatorioResumoOperacionalServiceTest {
                 .estoqueCentral(estoqueA)
                 .tipoMovimentacao(TipoMovimentacao.ENTRADA)
                 .origem(OrigemMovimentacao.COMPRA)
-                .quantidadeMovimentada(6)
+                .quantidadeMovimentada(BigDecimal.valueOf(6))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 12, 8, 0))
                 .build();
     }

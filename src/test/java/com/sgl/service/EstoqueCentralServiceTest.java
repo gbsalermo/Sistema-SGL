@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,8 +94,8 @@ class EstoqueCentralServiceTest {
                 .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(5)
-                .quantidadeMinima(2)
+                .quantidadeAtual(BigDecimal.valueOf(5))
+                .quantidadeMinima(BigDecimal.valueOf(2))
                 .ativo(true)
                 .build();
     }
@@ -109,7 +110,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
         dto.setAtivo(true);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -131,7 +132,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
@@ -152,7 +153,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
@@ -216,7 +217,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(8);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(8));
         dto.setAtivo(false);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -237,8 +238,8 @@ class EstoqueCentralServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(1)
-                .quantidadeMinima(5)
+                .quantidadeAtual(BigDecimal.valueOf(1))
+                .quantidadeMinima(BigDecimal.valueOf(5))
                 .ativo(true)
                 .build();
 
@@ -247,8 +248,8 @@ class EstoqueCentralServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(10)
-                .quantidadeMinima(5)
+                .quantidadeAtual(BigDecimal.valueOf(10))
+                .quantidadeMinima(BigDecimal.valueOf(5))
                 .ativo(true)
                 .build();
 
@@ -307,7 +308,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(OUTRA_UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
 

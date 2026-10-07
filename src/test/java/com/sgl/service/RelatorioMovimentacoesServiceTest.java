@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
@@ -78,8 +79,8 @@ class RelatorioMovimentacoesServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(4)
-                .quantidadeMinima(1)
+                .quantidadeAtual(BigDecimal.valueOf(4))
+                .quantidadeMinima(BigDecimal.valueOf(1))
                 .ativo(true)
                 .build();
 
@@ -92,9 +93,9 @@ class RelatorioMovimentacoesServiceTest {
                 .estoqueCentral(estoqueCentral)
                 .tipoMovimentacao(TipoMovimentacao.ENTRADA)
                 .origem(OrigemMovimentacao.COMPRA)
-                .quantidadeMovimentada(10)
-                .quantidadeAnterior(0)
-                .quantidadeAtual(10)
+                .quantidadeMovimentada(BigDecimal.valueOf(10))
+                .quantidadeAnterior(BigDecimal.valueOf(0))
+                .quantidadeAtual(BigDecimal.valueOf(10))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 10, 8, 0))
                 .build();
 
@@ -107,9 +108,9 @@ class RelatorioMovimentacoesServiceTest {
                 .estoqueCentral(estoqueCentral)
                 .tipoMovimentacao(TipoMovimentacao.SAIDA)
                 .origem(OrigemMovimentacao.PEDIDO)
-                .quantidadeMovimentada(4)
-                .quantidadeAnterior(10)
-                .quantidadeAtual(6)
+                .quantidadeMovimentada(BigDecimal.valueOf(4))
+                .quantidadeAnterior(BigDecimal.valueOf(10))
+                .quantidadeAtual(BigDecimal.valueOf(6))
                 .dataMovimentacao(LocalDateTime.of(2026, 2, 5, 10, 0))
                 .build();
 
@@ -122,9 +123,9 @@ class RelatorioMovimentacoesServiceTest {
                 .estoqueCentral(estoqueCentral)
                 .tipoMovimentacao(TipoMovimentacao.DESCARTE_VENCIMENTO)
                 .origem(OrigemMovimentacao.DESCARTE)
-                .quantidadeMovimentada(2)
-                .quantidadeAnterior(6)
-                .quantidadeAtual(4)
+                .quantidadeMovimentada(BigDecimal.valueOf(2))
+                .quantidadeAnterior(BigDecimal.valueOf(6))
+                .quantidadeAtual(BigDecimal.valueOf(4))
                 .dataMovimentacao(LocalDateTime.of(2026, 3, 1, 9, 0))
                 .build();
     }

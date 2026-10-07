@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
@@ -111,8 +112,8 @@ class RelatorioFiscalizacaoServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produtoFiscalizado)
-                .quantidadeAtual(8)
-                .quantidadeMinima(2)
+                .quantidadeAtual(BigDecimal.valueOf(8))
+                .quantidadeMinima(BigDecimal.valueOf(2))
                 .ativo(true)
                 .build();
 
@@ -132,9 +133,9 @@ class RelatorioFiscalizacaoServiceTest {
                 .estoqueCentral(estoque)
                 .tipoMovimentacao(TipoMovimentacao.ENTRADA)
                 .origem(OrigemMovimentacao.COMPRA)
-                .quantidadeMovimentada(5)
-                .quantidadeAnterior(0)
-                .quantidadeAtual(5)
+                .quantidadeMovimentada(BigDecimal.valueOf(5))
+                .quantidadeAnterior(BigDecimal.valueOf(0))
+                .quantidadeAtual(BigDecimal.valueOf(5))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 1, 8, 0))
                 .build();
 
@@ -146,9 +147,9 @@ class RelatorioFiscalizacaoServiceTest {
                 .estoqueCentral(estoque)
                 .tipoMovimentacao(TipoMovimentacao.SAIDA)
                 .origem(OrigemMovimentacao.PEDIDO)
-                .quantidadeMovimentada(2)
-                .quantidadeAnterior(5)
-                .quantidadeAtual(3)
+                .quantidadeMovimentada(BigDecimal.valueOf(2))
+                .quantidadeAnterior(BigDecimal.valueOf(5))
+                .quantidadeAtual(BigDecimal.valueOf(3))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 1, 10, 0))
                 .build();
     }
@@ -162,8 +163,8 @@ class RelatorioFiscalizacaoServiceTest {
         lote.setNumeroLote("FAB-" + codigoInterno);
         lote.setTipoEmbalagem(TipoEmbalagem.UNITARIO);
         lote.setFracionavel(true);
-        lote.setQuantidadeInicial(5);
-        lote.setQuantidadeDisponivel(quantidadeDisponivel);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(5));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidadeDisponivel));
         lote.setDataEntrada(LocalDate.of(2026, 1, 1));
         lote.setDataValidade(dataValidade);
         lote.setAtivo(true);

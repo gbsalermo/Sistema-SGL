@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -141,8 +142,8 @@ class PedidoServiceTest {
                 .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(10)
-                .quantidadeMinima(2)
+                .quantidadeAtual(BigDecimal.valueOf(10))
+                .quantidadeMinima(BigDecimal.valueOf(2))
                 .ativo(true)
                 .build();
 
@@ -161,7 +162,7 @@ class PedidoServiceTest {
                 .publicId(ITEM_PUBLIC_ID)
                 .pedido(pedido)
                 .produto(produto)
-                .quantidadeSolicitada(5)
+                .quantidadeSolicitada(BigDecimal.valueOf(5))
                 // Sem isso, tipoEmbalagemSolicitada fica nulo (!= UNITARIO),
                 // e PedidoService.aprovar() tenta validar o multiplicador de
                 // embalagem do item — que também não foi definido aqui. Os
@@ -211,7 +212,7 @@ class PedidoServiceTest {
         // o método antes de chegar aqui.
         verify(movimentacaoEstoqueService).registrarSaida(
                 6L,
-                3,
+                BigDecimal.valueOf(3),
                 aprovador,
                 OrigemMovimentacao.PEDIDO,
                 pedido,
@@ -278,7 +279,7 @@ class PedidoServiceTest {
         // deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService acima.
         when(movimentacaoEstoqueService.registrarSaida(
                 6L,
-                3,
+                BigDecimal.valueOf(3),
                 aprovador,
                 OrigemMovimentacao.PEDIDO,
                 pedido,
@@ -454,7 +455,7 @@ class PedidoServiceTest {
 
     private AprovarPedidoRequestDTO criarAprovacaoDTO(Integer quantidadeAprovada) {
         AprovarPedidoRequestDTO.ItemAprovacaoDTO itemDTO =
-                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, quantidadeAprovada);
+                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, quantidadeAprovada == null ? null : BigDecimal.valueOf(quantidadeAprovada));
 
         AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
         dto.setUsuarioAprovadorId(APROVADOR_PUBLIC_ID);

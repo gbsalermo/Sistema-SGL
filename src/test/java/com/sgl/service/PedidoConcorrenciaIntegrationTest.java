@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -129,8 +130,8 @@ class PedidoConcorrenciaIntegrationTest {
                 EstoqueCentral.builder()
                         .unidade(unidade)
                         .produto(produto)
-                        .quantidadeAtual(10)
-                        .quantidadeMinima(2)
+                        .quantidadeAtual(BigDecimal.valueOf(10))
+                        .quantidadeMinima(BigDecimal.valueOf(2))
                         .ativo(true)
                         .build()
         );
@@ -141,10 +142,10 @@ class PedidoConcorrenciaIntegrationTest {
         lote.setNumeroLote("CONC-LOTE-001");
         lote.setApresentacao("unidade");
         lote.setQuantidadeApresentacoes(10);
-        lote.setConteudoPorApresentacao(1);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(1));
         lote.setFracionavel(true);
-        lote.setQuantidadeInicial(10);
-        lote.setQuantidadeDisponivel(10);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(10));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(10));
         lote.setDataEntrada(LocalDate.now());
         lote.setDataValidade(null);
         lote.setAtivo(true);
@@ -255,7 +256,7 @@ class PedidoConcorrenciaIntegrationTest {
         ItemPedido item = ItemPedido.builder()
                 .pedido(pedido)
                 .produto(produto)
-                .quantidadeSolicitada(quantidade)
+                .quantidadeSolicitada(BigDecimal.valueOf(quantidade))
                 .build();
 
         pedido.getItens().add(item);
@@ -279,7 +280,7 @@ class PedidoConcorrenciaIntegrationTest {
             AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
             dto.setUsuarioAprovadorId(usuarioAprovadorId);
             dto.setObservacao("Teste de concorrência");
-            dto.setItens(List.of(new AprovarPedidoRequestDTO.ItemAprovacaoDTO(itemId, 7)));
+            dto.setItens(List.of(new AprovarPedidoRequestDTO.ItemAprovacaoDTO(itemId, BigDecimal.valueOf(7))));
 
             try {
                 pedidoService.aprovar(pedidoId, dto);

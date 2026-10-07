@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -101,8 +102,8 @@ class MovimentacaoEstoqueServiceTest {
                 .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(10)
-                .quantidadeMinima(2)
+                .quantidadeAtual(BigDecimal.valueOf(10))
+                .quantidadeMinima(BigDecimal.valueOf(2))
                 .ativo(true)
                 .build();
 
@@ -203,7 +204,7 @@ class MovimentacaoEstoqueServiceTest {
 
         service.registrarSaida(
                 3L,
-                5,
+                BigDecimal.valueOf(5),
                 usuario,
                 OrigemMovimentacao.AJUSTE,
                 null,
@@ -243,7 +244,7 @@ class MovimentacaoEstoqueServiceTest {
 
         service.registrarSaida(
                 3L,
-                5,
+                BigDecimal.valueOf(5),
                 usuario,
                 OrigemMovimentacao.PEDIDO,
                 null,
@@ -286,7 +287,7 @@ class MovimentacaoEstoqueServiceTest {
                 BusinessRuleException.class,
                 () -> service.registrarSaida(
                         3L,
-                        3,
+                        BigDecimal.valueOf(3),
                         usuario,
                         OrigemMovimentacao.PEDIDO,
                         null,
@@ -329,7 +330,7 @@ class MovimentacaoEstoqueServiceTest {
         when(loteRepository.buscarVencidosComBloqueio(any(), any(LocalDate.class)))
                 .thenReturn(List.of(vencido1, vencido2));
 
-        service.registrarDescarteVencimento(ESTOQUE_PUBLIC_ID, 5, "Vencidos", usuario);
+        service.registrarDescarteVencimento(ESTOQUE_PUBLIC_ID, BigDecimal.valueOf(5), "Vencidos", usuario);
 
         assertEquals(0, vencido1.getQuantidadeDisponivel());
         assertEquals(1, vencido2.getQuantidadeDisponivel());
@@ -339,11 +340,11 @@ class MovimentacaoEstoqueServiceTest {
     @Test
     void deveRestaurarOsMesmosLotesConsumidosNoCancelamento() {
         Lote loteA = criarLote(50L, "RET-A", 0, null, LocalDate.now().minusDays(10));
-        loteA.setQuantidadeInicial(5);
+        loteA.setQuantidadeInicial(BigDecimal.valueOf(5));
         Lote loteB = criarLote(51L, "RET-B", 2, null, LocalDate.now().minusDays(5));
-        loteB.setQuantidadeInicial(5);
+        loteB.setQuantidadeInicial(BigDecimal.valueOf(5));
 
-        estoque.setQuantidadeAtual(2);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(2));
 
         com.sgl.model.Pedido pedido = com.sgl.model.Pedido.builder()
                 .id(60L)
@@ -354,7 +355,7 @@ class MovimentacaoEstoqueServiceTest {
                 .estoqueCentral(estoque)
                 .lote(loteA)
                 .pedido(pedido)
-                .quantidadeMovimentada(5)
+                .quantidadeMovimentada(BigDecimal.valueOf(5))
                 .tipoMovimentacao(TipoMovimentacao.SAIDA)
                 .build();
 
@@ -363,7 +364,7 @@ class MovimentacaoEstoqueServiceTest {
                 .estoqueCentral(estoque)
                 .lote(loteB)
                 .pedido(pedido)
-                .quantidadeMovimentada(3)
+                .quantidadeMovimentada(BigDecimal.valueOf(3))
                 .tipoMovimentacao(TipoMovimentacao.SAIDA)
                 .build();
 
@@ -398,8 +399,8 @@ class MovimentacaoEstoqueServiceTest {
         lote.setEstoqueCentral(estoque);
         lote.definirCodigoInterno("LOT-TESTE-" + String.format("%03d", id), id.intValue());
         lote.setNumeroLote(numero);
-        lote.setQuantidadeInicial(quantidade);
-        lote.setQuantidadeDisponivel(quantidade);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
         lote.setDataValidade(validade);
         lote.setDataEntrada(entrada);
         lote.setAtivo(true);
