@@ -2167,7 +2167,9 @@ Enums de medida/apresentação e conversor implementados.
 7.1-C ✅ V33 aplicada e aplicação validada
 7.1-D ✅ RecipienteEstoque + repository
 7.1-E ✅ V34 aplicada e suíte verde
-7.1-F 🔧 próximo — MovimentacaoRecipiente + repository
+7.1-F ✅ MovimentacaoRecipiente + repository
+7.1-G ✅ V35 aplicada e suíte verde
+7.1-H 🔧 próximo — entrada de lote materializando recipientes
 ```
 
 A suíte ainda precisa ser executada no ambiente local/CI antes de considerar validação concluída.
@@ -2217,4 +2219,27 @@ Próximo bloco:
 ```text
 7.1-F — MovimentacaoRecipiente + Repository
 7.1-G — V35__create_container_movement_details.sql
+```
+
+
+### 15.4 Fechamento do 7.1-F/G
+
+Em 08/10/2026:
+
+- `MovimentacaoRecipiente` criada;
+- repository criado;
+- `V35__create_container_movement_details.sql` aplicada;
+- aplicação iniciou normalmente;
+- suíte de testes permaneceu integralmente verde.
+
+Commit:
+
+```text
+0628b1d — Feat: MovimentacaoRecipiente + repository e V35
+```
+
+Próximo bloco:
+
+```text
+7.1-H — entrada de lote materializando recipientes
 ```
