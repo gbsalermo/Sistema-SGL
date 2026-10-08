@@ -2163,7 +2163,32 @@ Enums de medida/apresentação e conversor implementados.
 
 ```text
 7.1-A ✅ implementado
-7.1-B 🔧 próximo — BigDecimal nas entidades/DTOs
+7.1-B ✅ BigDecimal nas entidades/DTOs e Services
+7.1-C ✅ V33 aplicada e aplicação validada
+7.1-D 🔧 próximo — RecipienteEstoque + repository
 ```
 
 A suíte ainda precisa ser executada no ambiente local/CI antes de considerar validação concluída.
+
+
+### 15.2 Fechamento do 7.1-B/C
+
+Em 08/10/2026:
+
+- conversão `Integer → BigDecimal` concluída;
+- testes estabilizados após a migração dos contratos;
+- `V33__normalize_stock_quantities.sql` criada e aplicada;
+- aplicação validada executando com o schema PostgreSQL atualizado.
+
+Commit da V33:
+
+```text
+7495c9a — Feat: V33
+```
+
+Próximo bloco:
+
+```text
+7.1-D — RecipienteEstoque + Repository
+7.1-E — V34__create_stock_containers.sql
+```
