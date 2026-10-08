@@ -2165,7 +2165,9 @@ Enums de medida/apresentação e conversor implementados.
 7.1-A ✅ implementado
 7.1-B ✅ BigDecimal nas entidades/DTOs e Services
 7.1-C ✅ V33 aplicada e aplicação validada
-7.1-D 🔧 próximo — RecipienteEstoque + repository
+7.1-D ✅ RecipienteEstoque + repository
+7.1-E ✅ V34 aplicada e suíte verde
+7.1-F 🔧 próximo — MovimentacaoRecipiente + repository
 ```
 
 A suíte ainda precisa ser executada no ambiente local/CI antes de considerar validação concluída.
@@ -2191,4 +2193,28 @@ Próximo bloco:
 ```text
 7.1-D — RecipienteEstoque + Repository
 7.1-E — V34__create_stock_containers.sql
+```
+
+
+### 15.3 Fechamento do 7.1-D/E
+
+Em 08/10/2026:
+
+- `RecipienteEstoque` criado;
+- repository criado;
+- `V34__create_stock_containers.sql` aplicada;
+- aplicação iniciou normalmente;
+- suíte de testes permaneceu integralmente verde.
+
+Commit:
+
+```text
+c10f438 — Feat: Criação do RecipienteEstoque + repository e V34
+```
+
+Próximo bloco:
+
+```text
+7.1-F — MovimentacaoRecipiente + Repository
+7.1-G — V35__create_container_movement_details.sql
 ```
