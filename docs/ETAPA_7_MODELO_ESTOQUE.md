@@ -539,6 +539,40 @@ Situação:
 7.1-A ✅
 7.1-B ✅
 7.1-C ✅
-7.1-D 🔧 próximo — RecipienteEstoque + repository
-7.1-E ⏳ V34
+7.1-D ✅ RecipienteEstoque + repository
+7.1-E ✅ V34 aplicada e validada
+7.1-F 🔧 próximo — MovimentacaoRecipiente + repository
+7.1-G ⏳ V35
+```
+
+
+---
+
+## 13. Implementação 7.1-D e 7.1-E
+
+Validação confirmada em 08/10/2026.
+
+Concluído:
+
+- entidade `RecipienteEstoque`;
+- `RecipienteEstoqueRepository`;
+- migration `V34__create_stock_containers.sql`;
+- constraints de capacidade, saldo e estado físico;
+- índices por Lote e estado;
+- validação da aplicação com Flyway/Hibernate;
+- suíte de testes integral verde.
+
+Commit funcional:
+
+```text
+c10f438 — Feat: Criação do RecipienteEstoque + repository e V34
+```
+
+Situação atual:
+
+```text
+7.1-D ✅
+7.1-E ✅
+7.1-F 🔧 próximo — MovimentacaoRecipiente + repository
+7.1-G ⏳ V35
 ```
