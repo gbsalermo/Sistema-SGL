@@ -498,3 +498,47 @@ Próximo bloco:
 ```text
 7.1-B — BigDecimal nas entidades e DTOs
 ```
+
+
+---
+
+## 12. Implementação 7.1-B e 7.1-C
+
+Validação confirmada em 08/10/2026.
+
+### 7.1-B — BigDecimal
+
+Concluído:
+
+- entidades migradas para `BigDecimal`;
+- DTOs de entrada/saída atualizados;
+- Services adaptados;
+- relatórios adaptados;
+- initializers adaptados;
+- suíte de testes novamente estabilizada.
+
+### 7.1-C — V33
+
+Migration aplicada:
+
+```text
+V33__normalize_stock_quantities.sql
+```
+
+Commit funcional:
+
+```text
+7495c9a — Feat: V33
+```
+
+A aplicação foi validada rodando com o PostgreSQL já migrado para `NUMERIC(19,6)`.
+
+Situação:
+
+```text
+7.1-A ✅
+7.1-B ✅
+7.1-C ✅
+7.1-D 🔧 próximo — RecipienteEstoque + repository
+7.1-E ⏳ V34
+```
