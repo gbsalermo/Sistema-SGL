@@ -541,8 +541,9 @@ Situação:
 7.1-C ✅
 7.1-D ✅ RecipienteEstoque + repository
 7.1-E ✅ V34 aplicada e validada
-7.1-F 🔧 próximo — MovimentacaoRecipiente + repository
-7.1-G ⏳ V35
+7.1-F ✅ MovimentacaoRecipiente + repository
+7.1-G ✅ V35 aplicada e validada
+7.1-H 🔧 próximo — entrada de lote materializando recipientes
 ```
 
 
@@ -575,4 +576,37 @@ Situação atual:
 7.1-E ✅
 7.1-F 🔧 próximo — MovimentacaoRecipiente + repository
 7.1-G ⏳ V35
+```
+
+
+---
+
+## 14. Implementação 7.1-F e 7.1-G
+
+Validação confirmada em 08/10/2026.
+
+Concluído:
+
+- entidade `MovimentacaoRecipiente`;
+- `MovimentacaoRecipienteRepository`;
+- migration `V35__create_container_movement_details.sql`;
+- vínculo 1:N entre movimentação de estoque e detalhes por recipiente;
+- quantidades físicas em `NUMERIC(19,6)`;
+- estados anterior/atual e flags de abertura/esgotamento;
+- índices por movimentação e recipiente;
+- aplicação validada com Flyway/Hibernate;
+- suíte de testes integral verde.
+
+Commit funcional:
+
+```text
+0628b1d — Feat: MovimentacaoRecipiente + repository e V35
+```
+
+Situação atual:
+
+```text
+7.1-F ✅
+7.1-G ✅
+7.1-H 🔧 próximo — entrada de lote materializando recipientes
 ```
