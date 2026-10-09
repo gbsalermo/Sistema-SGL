@@ -33,6 +33,7 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoPerecivel;
@@ -260,6 +261,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                     e.setAtivo(true);
                     e.setDataInicioEstagio(LocalDate.now().minusMonths(2));
                     e.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
+                    e.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
                     e.setObservacao("Usuario ficticio para teste multitenant do IB.");
                     return estagiarioRepository.save(e);
                 });
