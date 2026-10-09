@@ -913,67 +913,358 @@ class MovimentacaoEstoqueServiceTest {
                 LocalDate.now().minusMonths(1)
         );
 
+        RecipienteEstoque recipiente1 =
+                criarRecipiente(
+                        vencido1,
+                        1,
+                        2,
+                        2,
+                        EstadoRecipienteEstoque.FECHADO
+                );
+        RecipienteEstoque recipiente2 =
+                criarRecipiente(
+                        vencido2,
+                        1,
+                        4,
+                        4,
+                        EstadoRecipienteEstoque.FECHADO
+                );
+
         when(estoqueCentralRepository.findByPublicId(ESTOQUE_PUBLIC_ID))
                 .thenReturn(Optional.of(estoque));
         when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarVencidosComBloqueio(any(), any(LocalDate.class)))
                 .thenReturn(List.of(vencido1, vencido2));
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(40L))
+                .thenReturn(List.of(recipiente1));
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(41L))
+                .thenReturn(List.of(recipiente2));
 
-        service.registrarDescarteVencimento(ESTOQUE_PUBLIC_ID, BigDecimal.valueOf(5), "Vencidos", usuario);
+        service.registrarDescarteVencimento(
+                ESTOQUE_PUBLIC_ID,
+                BigDecimal.valueOf(5),
+                "Vencidos",
+                usuario
+        );
 
-        assertEquals(BigDecimal.valueOf(0), vencido1.getQuantidadeDisponivel());
-        assertEquals(BigDecimal.valueOf(1), vencido2.getQuantidadeDisponivel());
-        assertEquals(BigDecimal.valueOf(5), estoque.getQuantidadeAtual());
+        assertEquals(0, BigDecimal.ZERO.compareTo(vencido1.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.ONE.compareTo(vencido2.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(5).compareTo(estoque.getQuantidadeAtual()));
+
+        assertEquals(EstadoRecipienteEstoque.ESGOTADO, recipiente1.getEstado());
+        assertEquals(0, BigDecimal.ZERO.compareTo(recipiente1.getQuantidadeDisponivel()));
+
+        assertEquals(EstadoRecipienteEstoque.ABERTO, recipiente2.getEstado());
+        assertEquals(0, BigDecimal.ONE.compareTo(recipiente2.getQuantidadeDisponivel()));
+        assertEquals(true, recipiente2.getDataAbertura() != null);
+
+        verify(movimentacaoRecipienteRepository, org.mockito.Mockito.times(2))
+                .saveAll(any());
+    }
+
+
+    @Test
+    void deveRestaurarRecipienteFechadoEsgotadoNoCancelamento() {
+        Lote lote = criarLote(
+                50L,
+                "RET-FECHADO",
+                0,
+                null,
+                LocalDate.now().minusDays(10)
+        );
+        lote.setQuantidadeInicial(BigDecimal.valueOf(5));
+
+        estoque.setQuantidadeAtual(BigDecimal.ZERO);
+
+        RecipienteEstoque recipiente =
+                criarRecipiente(
+                        lote,
+                        1,
+                        5,
+                        0,
+                        EstadoRecipienteEstoque.ESGOTADO
+                );
+
+        com.sgl.model.Pedido pedido =
+                com.sgl.model.Pedido.builder()
+                        .id(60L)
+                        .build();
+
+        MovimentacaoEstoque saida =
+                MovimentacaoEstoque.builder()
+                        .id(70L)
+                        .estoqueCentral(estoque)
+                        .lote(lote)
+                        .pedido(pedido)
+                        .usuario(usuario)
+                        .quantidadeMovimentada(BigDecimal.valueOf(5))
+                        .tipoMovimentacao(TipoMovimentacao.SAIDA)
+                        .build();
+
+        MovimentacaoRecipiente detalhe =
+                MovimentacaoRecipiente.builder()
+                        .id(80L)
+                        .movimentacaoEstoque(saida)
+                        .recipienteEstoque(recipiente)
+                        .quantidadeAnterior(BigDecimal.valueOf(5))
+                        .quantidadeMovimentada(BigDecimal.valueOf(5))
+                        .quantidadeAtual(BigDecimal.ZERO)
+                        .estadoAnterior(EstadoRecipienteEstoque.FECHADO)
+                        .estadoAtual(EstadoRecipienteEstoque.ESGOTADO)
+                        .abriuRecipiente(false)
+                        .esgotouRecipiente(true)
+                        .build();
+
+        prepararDevolucao(
+                pedido,
+                saida,
+                lote,
+                List.of(),
+                List.of(detalhe)
+        );
+        when(recipienteEstoqueRepository.buscarPorIdComBloqueio(recipiente.getId()))
+                .thenReturn(Optional.of(recipiente));
+
+        service.devolverSaidasDoPedido(
+                pedido,
+                null,
+                "Cancelamento"
+        );
+
+        assertEquals(0, BigDecimal.valueOf(5).compareTo(recipiente.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.FECHADO, recipiente.getEstado());
+        assertEquals(null, recipiente.getDataAbertura());
+        assertEquals(null, recipiente.getDataEsgotamento());
+
+        assertEquals(0, BigDecimal.valueOf(5).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(5).compareTo(estoque.getQuantidadeAtual()));
+
+        ArgumentCaptor<MovimentacaoEstoque> movimentoCaptor =
+                ArgumentCaptor.forClass(MovimentacaoEstoque.class);
+        verify(movimentacaoRepository).save(movimentoCaptor.capture());
+
+        assertEquals(
+                TipoMovimentacao.DEVOLUCAO,
+                movimentoCaptor.getValue().getTipoMovimentacao()
+        );
+
+        List<MovimentacaoRecipiente> reversoes =
+                capturarDetalhesDeRecipiente();
+
+        assertEquals(1, reversoes.size());
+        assertEquals(EstadoRecipienteEstoque.ESGOTADO, reversoes.get(0).getEstadoAnterior());
+        assertEquals(EstadoRecipienteEstoque.FECHADO, reversoes.get(0).getEstadoAtual());
+        assertEquals(0, BigDecimal.ZERO.compareTo(reversoes.get(0).getQuantidadeAnterior()));
+        assertEquals(0, BigDecimal.valueOf(5).compareTo(reversoes.get(0).getQuantidadeAtual()));
     }
 
     @Test
-    void deveRestaurarOsMesmosLotesConsumidosNoCancelamento() {
-        Lote loteA = criarLote(50L, "RET-A", 0, null, LocalDate.now().minusDays(10));
-        loteA.setQuantidadeInicial(BigDecimal.valueOf(5));
-        Lote loteB = criarLote(51L, "RET-B", 2, null, LocalDate.now().minusDays(5));
-        loteB.setQuantidadeInicial(BigDecimal.valueOf(5));
+    void deveRestaurarRecipienteAbertoEsgotadoNoCancelamento() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
 
-        estoque.setQuantidadeAtual(BigDecimal.valueOf(2));
+        Lote lote = criarLote(
+                51L,
+                "RET-ABERTO",
+                0,
+                null,
+                LocalDate.now().minusDays(5)
+        );
+        lote.setQuantidadeInicial(BigDecimal.valueOf(500));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
 
-        com.sgl.model.Pedido pedido = com.sgl.model.Pedido.builder()
-                .id(60L)
-                .build();
+        estoque.setQuantidadeAtual(BigDecimal.ZERO);
 
-        MovimentacaoEstoque saidaA = MovimentacaoEstoque.builder()
-                .id(70L)
-                .estoqueCentral(estoque)
-                .lote(loteA)
-                .pedido(pedido)
-                .quantidadeMovimentada(BigDecimal.valueOf(5))
-                .tipoMovimentacao(TipoMovimentacao.SAIDA)
-                .build();
+        RecipienteEstoque recipiente =
+                criarRecipiente(
+                        lote,
+                        1,
+                        500,
+                        0,
+                        EstadoRecipienteEstoque.ESGOTADO
+                );
+        LocalDateTime aberturaOriginal =
+                LocalDateTime.now().minusDays(2);
+        recipiente.setDataAbertura(aberturaOriginal);
 
-        MovimentacaoEstoque saidaB = MovimentacaoEstoque.builder()
-                .id(71L)
-                .estoqueCentral(estoque)
-                .lote(loteB)
-                .pedido(pedido)
-                .quantidadeMovimentada(BigDecimal.valueOf(3))
-                .tipoMovimentacao(TipoMovimentacao.SAIDA)
-                .build();
+        com.sgl.model.Pedido pedido =
+                com.sgl.model.Pedido.builder()
+                        .id(61L)
+                        .build();
 
-        when(movimentacaoRepository.findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(
-                60L,
-                TipoMovimentacao.SAIDA
-        )).thenReturn(List.of(saidaA, saidaB));
-        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+        MovimentacaoEstoque saida =
+                MovimentacaoEstoque.builder()
+                        .id(71L)
+                        .estoqueCentral(estoque)
+                        .lote(lote)
+                        .pedido(pedido)
+                        .usuario(usuario)
+                        .quantidadeMovimentada(BigDecimal.valueOf(300))
+                        .tipoMovimentacao(TipoMovimentacao.SAIDA)
+                        .build();
+
+        MovimentacaoRecipiente detalhe =
+                MovimentacaoRecipiente.builder()
+                        .id(81L)
+                        .movimentacaoEstoque(saida)
+                        .recipienteEstoque(recipiente)
+                        .quantidadeAnterior(BigDecimal.valueOf(300))
+                        .quantidadeMovimentada(BigDecimal.valueOf(300))
+                        .quantidadeAtual(BigDecimal.ZERO)
+                        .estadoAnterior(EstadoRecipienteEstoque.ABERTO)
+                        .estadoAtual(EstadoRecipienteEstoque.ESGOTADO)
+                        .abriuRecipiente(false)
+                        .esgotouRecipiente(true)
+                        .build();
+
+        prepararDevolucao(
+                pedido,
+                saida,
+                lote,
+                List.of(),
+                List.of(detalhe)
+        );
+        when(recipienteEstoqueRepository.buscarPorIdComBloqueio(recipiente.getId()))
+                .thenReturn(Optional.of(recipiente));
+
+        service.devolverSaidasDoPedido(
+                pedido,
+                null,
+                "Cancelamento"
+        );
+
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(recipiente.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, recipiente.getEstado());
+        assertEquals(aberturaOriginal, recipiente.getDataAbertura());
+        assertEquals(null, recipiente.getDataEsgotamento());
+
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(estoque.getQuantidadeAtual()));
+    }
+
+    @Test
+    void deveBloquearCancelamentoQuandoRecipienteFoiMovimentadoDepoisDaSaida() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+
+        Lote lote = criarLote(
+                52L,
+                "RET-CONFLITO",
+                100,
+                null,
+                LocalDate.now().minusDays(4)
+        );
+        lote.setQuantidadeInicial(BigDecimal.valueOf(500));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(100));
+
+        RecipienteEstoque recipiente =
+                criarRecipiente(
+                        lote,
+                        1,
+                        500,
+                        100,
+                        EstadoRecipienteEstoque.ABERTO
+                );
+
+        com.sgl.model.Pedido pedido =
+                com.sgl.model.Pedido.builder()
+                        .id(62L)
+                        .build();
+
+        MovimentacaoEstoque saida =
+                MovimentacaoEstoque.builder()
+                        .id(72L)
+                        .estoqueCentral(estoque)
+                        .lote(lote)
+                        .pedido(pedido)
+                        .usuario(usuario)
+                        .quantidadeMovimentada(BigDecimal.valueOf(200))
+                        .tipoMovimentacao(TipoMovimentacao.SAIDA)
+                        .build();
+
+        MovimentacaoRecipiente detalhe =
+                MovimentacaoRecipiente.builder()
+                        .id(82L)
+                        .movimentacaoEstoque(saida)
+                        .recipienteEstoque(recipiente)
+                        .quantidadeAnterior(BigDecimal.valueOf(500))
+                        .quantidadeMovimentada(BigDecimal.valueOf(200))
+                        .quantidadeAtual(BigDecimal.valueOf(300))
+                        .estadoAnterior(EstadoRecipienteEstoque.FECHADO)
+                        .estadoAtual(EstadoRecipienteEstoque.ABERTO)
+                        .abriuRecipiente(true)
+                        .esgotouRecipiente(false)
+                        .build();
+
+        prepararDevolucao(
+                pedido,
+                saida,
+                lote,
+                List.of(recipiente),
+                List.of(detalhe)
+        );
+        when(recipienteEstoqueRepository.buscarPorIdComBloqueio(recipiente.getId()))
+                .thenReturn(Optional.of(recipiente));
+
+        StockConflictException exception =
+                assertThrows(
+                        StockConflictException.class,
+                        () -> service.devolverSaidasDoPedido(
+                                pedido,
+                                null,
+                                "Cancelamento"
+                        )
+                );
+
+        assertEquals(
+                "O recipiente "
+                        + recipiente.getCodigoInterno()
+                        + " sofreu outra movimentação após a saída "
+                        + "deste pedido e não pode ser restaurado automaticamente.",
+                exception.getMessage()
+        );
+
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(recipiente.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(estoque.getQuantidadeAtual()));
+
+        verify(movimentacaoRepository, never()).save(any());
+        verify(movimentacaoRecipienteRepository, never()).saveAll(any());
+    }
+
+
+    private void prepararDevolucao(
+            com.sgl.model.Pedido pedido,
+            MovimentacaoEstoque saida,
+            Lote lote,
+            List<RecipienteEstoque> disponiveis,
+            List<MovimentacaoRecipiente> detalhes) {
+
+        when(movimentacaoRepository
+                .findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(
+                        pedido.getId(),
+                        TipoMovimentacao.SAIDA
+                ))
+                .thenReturn(List.of(saida));
+
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(estoque.getId()))
                 .thenReturn(Optional.of(estoque));
-        when(loteRepository.buscarPorIdComBloqueio(50L))
-                .thenReturn(Optional.of(loteA));
-        when(loteRepository.buscarPorIdComBloqueio(51L))
-                .thenReturn(Optional.of(loteB));
 
-        service.devolverSaidasDoPedido(pedido, null, "Cancelamento");
+        when(loteRepository.buscarPorIdComBloqueio(lote.getId()))
+                .thenReturn(Optional.of(lote));
 
-        assertEquals(BigDecimal.valueOf(5), loteA.getQuantidadeDisponivel());
-        assertEquals(BigDecimal.valueOf(5), loteB.getQuantidadeDisponivel());
-        assertEquals(BigDecimal.valueOf(10), estoque.getQuantidadeAtual());
+        when(recipienteEstoqueRepository
+                .buscarDisponiveisPorLoteComBloqueio(lote.getId()))
+                .thenReturn(disponiveis);
+
+        when(movimentacaoRecipienteRepository
+                .findByMovimentacaoEstoqueIdOrderByIdAsc(saida.getId()))
+                .thenReturn(detalhes);
     }
 
     private AjusteEstoqueRequestDTO novoAjusteBase(
