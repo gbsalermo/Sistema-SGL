@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
@@ -43,4 +44,18 @@ public class ItemPedidoRequestDTO {
 	@NotNull(message = "Multiplicador da forma de retirada é obrigatório")
 	@DecimalMin(value = "0.0", inclusive = false, message = "Multiplicador deve ser maior que zero")
 	private BigDecimal multiplicadorSolicitado;
+
+    @Schema(description = "Em Solucoes, quantidadeSolicitada e expressa nesta unidade.")
+    private UnidadeMedida unidadeMedidaSolicitada;
+
+    // Construtor legado: pedidos comuns usam embalagem e multiplicador.
+    public ItemPedidoRequestDTO(UUID produtoId, BigDecimal quantidadeSolicitada,
+            TipoEmbalagem tipoEmbalagemSolicitada, Integer quantidadeEmbalagensSolicitada,
+            BigDecimal multiplicadorSolicitado) {
+        this.produtoId = produtoId;
+        this.quantidadeSolicitada = quantidadeSolicitada;
+        this.tipoEmbalagemSolicitada = tipoEmbalagemSolicitada;
+        this.quantidadeEmbalagensSolicitada = quantidadeEmbalagensSolicitada;
+        this.multiplicadorSolicitado = multiplicadorSolicitado;
+    }
 }

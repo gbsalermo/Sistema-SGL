@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.sgl.model.Pedido;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoPedido;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -33,6 +34,11 @@ public class PedidoResponseDTO {
     private LocalDateTime dataSolicitacao;
     private LocalDateTime dataEntrega;
     private StatusPedido status;
+    private TipoPedido tipo;
+    private String nomeSolucao;
+    private UUID modeloSolucaoId;
+    private Boolean solucaoPreparadaNoCancelamento;
+    private Boolean estoqueRevertidoNoCancelamento;
     private Boolean urgente;
     private String motivoUrgencia;
     private String observacao;
@@ -53,6 +59,11 @@ public class PedidoResponseDTO {
         this.dataSolicitacao = entity.getDataSolicitacao();
         this.dataEntrega = entity.getDataEntrega();
         this.status = entity.getStatus();
+        this.tipo = entity.getTipo() == null ? TipoPedido.PRODUTOS : entity.getTipo();
+        this.nomeSolucao = entity.getNomeSolucao();
+        this.modeloSolucaoId = entity.getModeloSolucao() == null ? null : entity.getModeloSolucao().getPublicId();
+        this.solucaoPreparadaNoCancelamento = entity.getSolucaoPreparadaNoCancelamento();
+        this.estoqueRevertidoNoCancelamento = entity.getEstoqueRevertidoNoCancelamento();
         this.urgente = Boolean.TRUE.equals(entity.getUrgente());
         this.motivoUrgencia = entity.getMotivoUrgencia();
         this.observacao = entity.getObservacao();

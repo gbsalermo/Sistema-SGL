@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.TipoPedido;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -60,6 +62,10 @@ public class ItemPedido implements Serializable {
     private BigDecimal quantidadeAprovada;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "unidade_medida_solicitada", length = 30)
+    private UnidadeMedida unidadeMedidaSolicitada;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo_embalagem_solicitada")
     private TipoEmbalagem tipoEmbalagemSolicitada;
 
@@ -74,6 +80,9 @@ public class ItemPedido implements Serializable {
         if (publicId == null) {
             publicId = UUID.randomUUID();
         }
+
+        // Solucoes usam quantidades fisicas; embalagens sao tratadas no estoque.
+        if (pedido != null && pedido.getTipo() == TipoPedido.SOLUCAO) return;
 
         if (tipoEmbalagemSolicitada == null) {
             tipoEmbalagemSolicitada = TipoEmbalagem.UNITARIO;

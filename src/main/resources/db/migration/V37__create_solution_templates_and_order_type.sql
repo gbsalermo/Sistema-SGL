@@ -25,7 +25,6 @@ CREATE TABLE componentes_modelo_solucao (
     unidade_medida VARCHAR(30) NOT NULL,
     CONSTRAINT uk_componente_modelo_solucao_public_id UNIQUE(public_id),
     CONSTRAINT uk_componente_modelo_solucao_produto UNIQUE(modelo_solucao_id, produto_id),
-    CONSTRAINT uk_componente_modelo_solucao_ordem UNIQUE(modelo_solucao_id, ordem),
     CONSTRAINT fk_componente_solucao_modelo FOREIGN KEY(modelo_solucao_id) REFERENCES modelos_solucao(id),
     CONSTRAINT fk_componente_solucao_produto FOREIGN KEY(produto_id) REFERENCES produtos(id),
     CONSTRAINT ck_componente_solucao_quantidade CHECK(quantidade > 0),

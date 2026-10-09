@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.sgl.model.enums.TipoPedido;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -46,6 +49,35 @@ public class PedidoRequestDTO {
 
     @Schema(description = "Itens e quantidades solicitadas no pedido.", requiredMode = Schema.RequiredMode.REQUIRED)
     @Valid
-    @NotEmpty(message = "Pedido deve ter pelo menos 1 item")
     private List<ItemPedidoRequestDTO> itens;
+
+    @Schema(description = "PRODUTOS (padrao) ou SOLUCAO; Solucao e uma unica preparacao.")
+    private TipoPedido tipo;
+
+    @Size(max = 150)
+    private String nomeSolucao;
+
+    @Schema(description = "Modelo de Solucao predefinido. Quando selecionado, itens nao sao enviados.")
+    private UUID modeloSolucaoId;
+
+    @JsonIgnore
+    @AssertTrue(message = "Informe componentes ou selecione modelo de Solução")
+    public boolean isComposicaoPresente() {
+        return (tipo == TipoPedido.SOLUCAO && modeloSolucaoId != null)
+            || (itens != null && !itens.isEmpty());
+    }
+
+    // Construtor legado para preservar os clientes e testes ja existentes.
+    public PedidoRequestDTO(UUID usuarioId, UUID laboratorioId, UUID projetoId,
+            Boolean urgente, String motivoUrgencia, String observacao,
+            String arquivoDocumento, List<ItemPedidoRequestDTO> itens) {
+        this.usuarioId = usuarioId;
+        this.laboratorioId = laboratorioId;
+        this.projetoId = projetoId;
+        this.urgente = urgente;
+        this.motivoUrgencia = motivoUrgencia;
+        this.observacao = observacao;
+        this.arquivoDocumento = arquivoDocumento;
+        this.itens = itens;
+    }
 }

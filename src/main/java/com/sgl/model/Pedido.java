@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoPedido;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -69,6 +70,25 @@ public class Pedido implements Serializable {
     private LocalDateTime dataEntrega;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "tipo", nullable = false, length = 20)
+    @Builder.Default
+    private TipoPedido tipo = TipoPedido.PRODUTOS;
+
+    @Column(name = "nome_solucao", length = 150)
+    private String nomeSolucao;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "modelo_solucao_id")
+    @ToString.Exclude
+    private ModeloSolucao modeloSolucao;
+
+    @Column(name = "solucao_preparada_no_cancelamento")
+    private Boolean solucaoPreparadaNoCancelamento;
+
+    @Column(name = "estoque_revertido_no_cancelamento")
+    private Boolean estoqueRevertidoNoCancelamento;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusPedido status;
 
@@ -92,6 +112,7 @@ public class Pedido implements Serializable {
         if (publicId == null) {
             publicId = UUID.randomUUID();
         }
+        if (tipo == null) tipo = TipoPedido.PRODUTOS;
         if (urgente == null) {
             urgente = false;
         }

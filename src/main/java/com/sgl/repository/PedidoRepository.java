@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import com.sgl.model.Pedido;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoPedido;
 
 import jakarta.persistence.LockModeType;
 
@@ -44,6 +45,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByLaboratorioId(Long laboratorioId);
     List<Pedido> findByLaboratorioUnidadePublicId(UUID unidadePublicId);
+    List<Pedido> findByLaboratorioUnidadePublicIdAndTipo(UUID unidadePublicId, TipoPedido tipo);
 
     List<Pedido> findByStatus(StatusPedido status);
     List<Pedido> findByLaboratorioUnidadePublicIdAndStatus(UUID unidadePublicId, StatusPedido status);
