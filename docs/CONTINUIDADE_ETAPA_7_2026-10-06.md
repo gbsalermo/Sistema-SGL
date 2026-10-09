@@ -2396,12 +2396,12 @@ Commits:
 4df96d0 — Test: consolidar invariantes do estoque fisico
 ```
 
-Aguardando validação local final:
+Validação local final:
 
 ```text
-mvn test
-profile DEV com banco recriado
-profile DEMO
+profile DEMO ✅ subiu com H2 e carga fictícia completa
+mvn test ⏳ repetir após os últimos ajustes
+profile DEV com banco recriado ⏳
 ```
 
-Após essas três validações verdes, o bloco 7.1 pode ser encerrado.
+Após as duas validações restantes, o bloco 7.1 pode ser encerrado.
