@@ -2401,7 +2401,7 @@ Validação local final:
 ```text
 profile DEMO ✅ subiu com H2 e carga fictícia completa
 suíte completa ✅ verde após os últimos ajustes
-profile DEV com banco recriado ⏳
+profile DEV com banco recriado ✅ subiu com PostgreSQL, Flyway e massas DEV/IB
 ```
 
-Após as duas validações restantes, o bloco 7.1 pode ser encerrado.
+Bloco 7.1 encerrado em 09/10/2026 após validação de suíte, DEMO e DEV limpo.
