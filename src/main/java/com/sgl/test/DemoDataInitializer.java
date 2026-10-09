@@ -26,10 +26,12 @@ import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Residuo;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.OrigemMovimentacao;
@@ -54,6 +56,7 @@ import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
@@ -82,6 +85,7 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final LoteRepository loteRepository;
+    private final RecipienteEstoqueRepository recipienteEstoqueRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
@@ -1029,8 +1033,15 @@ public class DemoDataInitializer implements CommandLineRunner {
         lote.setNumeroLote(numeroFornecedor);
         lote.setTipoEmbalagem(tipoEmbalagem);
         lote.setApresentacao(apresentacao);
-        lote.setQuantidadeApresentacoes(quantidadeInicial);
-        lote.setConteudoPorApresentacao(BigDecimal.ONE);
+
+        if (fracionavel) {
+            lote.setQuantidadeApresentacoes(1);
+            lote.setConteudoPorApresentacao(BigDecimal.valueOf(quantidadeInicial));
+        } else {
+            lote.setQuantidadeApresentacoes(quantidadeInicial);
+            lote.setConteudoPorApresentacao(BigDecimal.ONE);
+        }
+
         lote.setFracionavel(fracionavel);
         lote.setObservacao(observacao);
         lote.setQuantidadeInicial(BigDecimal.valueOf(quantidadeInicial));
@@ -1038,7 +1049,84 @@ public class DemoDataInitializer implements CommandLineRunner {
         lote.setDataEntrada(dataEntrada);
         lote.setDataValidade(dataValidade);
         lote.setAtivo(ativo);
-        return loteRepository.save(lote);
+
+        lote = loteRepository.save(lote);
+        materializarSaldoFisicoDemo(lote);
+        return lote;
+    }
+
+    private void materializarSaldoFisicoDemo(Lote lote) {
+
+        if (!recipienteEstoqueRepository
+                .findByLoteIdOrderBySequencialAsc(lote.getId())
+                .isEmpty()) {
+            return;
+        }
+
+        BigDecimal inicial = lote.getQuantidadeInicial();
+        BigDecimal disponivel = lote.getQuantidadeDisponivel();
+
+        if (!lote.permiteFracionamento()) {
+            int total = inicial.intValueExact();
+            int disponiveis = disponivel.intValueExact();
+
+            List<RecipienteEstoque> recipientes = new ArrayList<>();
+
+            for (int i = 1; i <= total; i++) {
+                boolean possuiSaldo = i <= disponiveis;
+
+                RecipienteEstoque recipiente = new RecipienteEstoque();
+                recipiente.setLote(lote);
+                recipiente.definirIdentificacao(
+                        lote.getCodigoInterno() + "-R" + String.format(Locale.ROOT, "%03d", i),
+                        i
+                );
+                recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+                recipiente.setCapacidadeInicial(BigDecimal.ONE);
+                recipiente.setQuantidadeDisponivel(
+                        possuiSaldo ? BigDecimal.ONE : BigDecimal.ZERO
+                );
+                recipiente.setUnidadeMedida(
+                        lote.getEstoqueCentral().getProduto().getUnidadeMedida()
+                );
+
+                if (possuiSaldo) {
+                    recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+                } else {
+                    recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
+                    recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+                }
+
+                recipientes.add(recipiente);
+            }
+
+            recipienteEstoqueRepository.saveAll(recipientes);
+            return;
+        }
+
+        RecipienteEstoque recipiente = new RecipienteEstoque();
+        recipiente.setLote(lote);
+        recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R001", 1);
+        recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+        recipiente.setCapacidadeInicial(inicial);
+        recipiente.setQuantidadeDisponivel(disponivel);
+        recipiente.setUnidadeMedida(
+                lote.getEstoqueCentral().getProduto().getUnidadeMedida()
+        );
+
+        if (disponivel.compareTo(BigDecimal.ZERO) == 0) {
+            recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
+            recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+        } else if (disponivel.compareTo(inicial) == 0) {
+            recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+        } else {
+            recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
+            recipiente.setDataAbertura(
+                    lote.getDataEntrada().plusDays(1).atStartOfDay()
+            );
+        }
+
+        recipienteEstoqueRepository.save(recipiente);
     }
 
     private Pedido criarPedido(

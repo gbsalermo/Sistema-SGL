@@ -23,9 +23,11 @@ import com.sgl.model.Lote;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
@@ -44,6 +46,7 @@ import com.sgl.repository.LoteRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
@@ -65,6 +68,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final LoteRepository loteRepository;
+    private final RecipienteEstoqueRepository recipienteEstoqueRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
@@ -298,32 +302,80 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                         .build()));
     }
 
-    private Lote lote(EstoqueCentral estoque, String numeroLote, TipoEmbalagem tipoEmbalagem,
-                      String apresentacao, int quantidade, LocalDate validade) {
-        return loteRepository.findByEstoqueCentralId(estoque.getId()).stream()
-                .filter(l -> numeroLote.equals(l.getNumeroLote()))
+    private Lote lote(
+            EstoqueCentral estoque,
+            String numeroLote,
+            TipoEmbalagem tipoEmbalagem,
+            String apresentacao,
+            int quantidade,
+            LocalDate validade) {
+
+        Lote lote = loteRepository.findByEstoqueCentralId(estoque.getId()).stream()
+                .filter(item -> numeroLote.equals(item.getNumeroLote()))
                 .findFirst()
                 .orElseGet(() -> {
                     Produto produto = estoque.getProduto();
-                    int sequencial = loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId()) + 1;
-                    String sigla = produto.getCodigoReferencia().trim().toUpperCase(Locale.ROOT)
-                            .replaceAll("[^A-Z0-9]+", "-").replaceAll("^-+|-+$", "");
-                    Lote l = new Lote();
-                    l.setEstoqueCentral(estoque);
-                    l.definirCodigoInterno("LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial), sequencial);
-                    l.setNumeroLote(numeroLote);
-                    l.setTipoEmbalagem(tipoEmbalagem);
-                    l.setApresentacao(apresentacao);
-                    l.setQuantidadeApresentacoes(quantidade);
-                    l.setConteudoPorApresentacao(BigDecimal.ONE);
-                    l.setFracionavel(true);
-                    l.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
-                    l.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
-                    l.setDataEntrada(LocalDate.now().minusDays(12));
-                    l.setDataValidade(validade);
-                    l.setAtivo(true);
-                    return loteRepository.save(l);
+                    int sequencial =
+                            loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId()) + 1;
+                    String sigla = produto.getCodigoReferencia()
+                            .trim()
+                            .toUpperCase(Locale.ROOT)
+                            .replaceAll("[^A-Z0-9]+", "-")
+                            .replaceAll("^-+|-+$", "");
+
+                    Lote novo = new Lote();
+                    novo.setEstoqueCentral(estoque);
+                    novo.definirCodigoInterno(
+                            "LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial),
+                            sequencial
+                    );
+                    novo.setNumeroLote(numeroLote);
+                    novo.setTipoEmbalagem(tipoEmbalagem);
+                    novo.setApresentacao(apresentacao);
+                    novo.setQuantidadeApresentacoes(1);
+                    novo.setConteudoPorApresentacao(BigDecimal.valueOf(quantidade));
+                    novo.setFracionavel(true);
+                    novo.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
+                    novo.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
+                    novo.setDataEntrada(LocalDate.now().minusDays(12));
+                    novo.setDataValidade(validade);
+                    novo.setAtivo(true);
+                    return loteRepository.save(novo);
                 });
+
+        garantirRecipienteFisico(lote);
+        return lote;
+    }
+
+    private void garantirRecipienteFisico(Lote lote) {
+        if (!recipienteEstoqueRepository
+                .findByLoteIdOrderBySequencialAsc(lote.getId())
+                .isEmpty()) {
+            return;
+        }
+
+        RecipienteEstoque recipiente = new RecipienteEstoque();
+        recipiente.setLote(lote);
+        recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R001", 1);
+        recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+        recipiente.setCapacidadeInicial(lote.getQuantidadeInicial());
+        recipiente.setQuantidadeDisponivel(lote.getQuantidadeDisponivel());
+        recipiente.setUnidadeMedida(
+                lote.getEstoqueCentral().getProduto().getUnidadeMedida()
+        );
+
+        if (lote.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) == 0) {
+            recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
+            recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+        } else if (lote.getQuantidadeDisponivel()
+                .compareTo(lote.getQuantidadeInicial()) == 0) {
+            recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+        } else {
+            recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
+            recipiente.setDataAbertura(LocalDateTime.now().minusDays(1));
+        }
+
+        recipienteEstoqueRepository.save(recipiente);
     }
 
     private void pedido(String marcador, Usuario usuario, Laboratorio lab, Projeto projeto,

@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,12 +29,14 @@ import com.sgl.model.LocalArmazenamentoResiduo;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.VinculoEstagioAtividadeCultura;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
@@ -43,6 +46,7 @@ import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
@@ -60,6 +64,7 @@ import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
@@ -71,6 +76,7 @@ import lombok.RequiredArgsConstructor;
 
 @Profile("dev")
 @Component
+@Order(0)
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -80,6 +86,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final LoteRepository loteRepository;
+    private final RecipienteEstoqueRepository recipienteEstoqueRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
@@ -99,6 +106,7 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) throws Exception {
         if (unidadeRepository.count() > 0) {
+            validarMassaEstoqueEtapa7Existente();
             garantirCadastrosResiduos();
             garantirDadosEtapa5();
             garantirDadosEtapa6();
@@ -1411,6 +1419,12 @@ public class DataInitializer implements CommandLineRunner {
                 .replaceAll("[^A-Z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
 
+        TipoEmbalagem tipoEmbalagem = switch (produto.getUnidadeMedida()) {
+            case UNIDADE -> TipoEmbalagem.CAIXA;
+            case REACAO -> TipoEmbalagem.KIT;
+            default -> TipoEmbalagem.FRASCO;
+        };
+
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
         lote.definirCodigoInterno(
@@ -1418,9 +1432,14 @@ public class DataInitializer implements CommandLineRunner {
                 sequencial
         );
         lote.setNumeroLote(numeroLote);
-        lote.setApresentacao("Legado");
-        lote.setQuantidadeApresentacoes(quantidade);
-        lote.setConteudoPorApresentacao(BigDecimal.ONE);
+        lote.setTipoEmbalagem(tipoEmbalagem);
+        lote.setApresentacao(
+                produto.getUnidadeArmazenamento() == null
+                        ? "Apresentação DEV Etapa 7"
+                        : produto.getUnidadeArmazenamento()
+        );
+        lote.setQuantidadeApresentacoes(1);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(quantidade));
         lote.setFracionavel(true);
         lote.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
         lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
@@ -1428,5 +1447,36 @@ public class DataInitializer implements CommandLineRunner {
         lote.setDataValidade(dataValidade);
         lote.setAtivo(true);
         loteRepository.save(lote);
+
+        RecipienteEstoque recipiente = new RecipienteEstoque();
+        recipiente.setLote(lote);
+        recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R001", 1);
+        recipiente.setTipoEmbalagem(tipoEmbalagem);
+        recipiente.setCapacidadeInicial(BigDecimal.valueOf(quantidade));
+        recipiente.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
+        recipiente.setUnidadeMedida(produto.getUnidadeMedida());
+        recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+        recipienteEstoqueRepository.save(recipiente);
     }
+
+    private void validarMassaEstoqueEtapa7Existente() {
+        List<Lote> lotes = loteRepository.findAll();
+
+        if (lotes.isEmpty()) {
+            return;
+        }
+
+        boolean existeLoteSemRecipiente = lotes.stream()
+                .anyMatch(lote -> recipienteEstoqueRepository
+                        .findByLoteIdOrderBySequencialAsc(lote.getId())
+                        .isEmpty());
+
+        if (existeLoteSemRecipiente) {
+            throw new IllegalStateException(
+                    "Massa DEV anterior à Etapa 7 detectada. "
+                            + "Recrie o banco DEV para popular lotes e recipientes no novo modelo físico."
+            );
+        }
+    }
+
 }
