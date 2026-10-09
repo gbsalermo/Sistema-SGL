@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +29,7 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
+import com.sgl.model.MovimentacaoRecipiente;
 import com.sgl.model.Produto;
 import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Unidade;
@@ -41,6 +43,7 @@ import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
+import com.sgl.repository.MovimentacaoRecipienteRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.RecipienteEstoqueRepository;
@@ -74,6 +77,9 @@ class MovimentacaoEstoqueServiceTest {
 
     @Mock
     private RecipienteEstoqueRepository recipienteEstoqueRepository;
+
+    @Mock
+    private MovimentacaoRecipienteRepository movimentacaoRecipienteRepository;
 
     @InjectMocks
     private MovimentacaoEstoqueService service;
@@ -283,6 +289,10 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
                 .thenReturn(List.of(primeiro, segundo));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(10L))
+                .thenReturn(List.of(criarRecipiente(primeiro, 1, 4, 4, EstadoRecipienteEstoque.FECHADO)));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(11L))
+                .thenReturn(List.of(criarRecipiente(segundo, 1, 6, 6, EstadoRecipienteEstoque.FECHADO)));
 
         service.registrarSaida(
                 3L,
@@ -323,6 +333,10 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorFefoComBloqueio(any(), any(LocalDate.class)))
                 .thenReturn(List.of(vencePrimeiro, venceDepois));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(20L))
+                .thenReturn(List.of(criarRecipiente(vencePrimeiro, 1, 3, 3, EstadoRecipienteEstoque.FECHADO)));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(21L))
+                .thenReturn(List.of(criarRecipiente(venceDepois, 1, 7, 7, EstadoRecipienteEstoque.FECHADO)));
 
         service.registrarSaida(
                 3L,
@@ -346,6 +360,219 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals(BigDecimal.valueOf(3), captor.getAllValues().get(0).getQuantidadeMovimentada());
         assertEquals(21L, captor.getAllValues().get(1).getLote().getId());
         assertEquals(BigDecimal.valueOf(2), captor.getAllValues().get(1).getQuantidadeMovimentada());
+    }
+
+    @Test
+    void devePriorizarRecipienteFechadoParaRetiradaInteira() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(1300));
+
+        Lote lote = criarLote(60L, "FISICO-500", 1300, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque aberto =
+                criarRecipiente(lote, 1, 500, 300, EstadoRecipienteEstoque.ABERTO);
+        RecipienteEstoque fechado1 =
+                criarRecipiente(lote, 2, 500, 500, EstadoRecipienteEstoque.FECHADO);
+        RecipienteEstoque fechado2 =
+                criarRecipiente(lote, 3, 500, 500, EstadoRecipienteEstoque.FECHADO);
+
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
+                .thenReturn(List.of(lote));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(60L))
+                .thenReturn(List.of(aberto, fechado1, fechado2));
+
+        service.registrarSaida(
+                3L,
+                BigDecimal.valueOf(500),
+                usuario,
+                OrigemMovimentacao.PEDIDO,
+                null,
+                null,
+                "Retirada inteira"
+        );
+
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(aberto.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, aberto.getEstado());
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(fechado1.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ESGOTADO, fechado1.getEstado());
+        assertEquals(EstadoRecipienteEstoque.FECHADO, fechado2.getEstado());
+
+        assertEquals(0, BigDecimal.valueOf(800).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(800).compareTo(estoque.getQuantidadeAtual()));
+
+        List<MovimentacaoRecipiente> detalhes = capturarDetalhesDeRecipiente();
+        assertEquals(1, detalhes.size());
+        assertEquals(fechado1, detalhes.get(0).getRecipienteEstoque());
+        assertEquals(EstadoRecipienteEstoque.FECHADO, detalhes.get(0).getEstadoAnterior());
+        assertEquals(EstadoRecipienteEstoque.ESGOTADO, detalhes.get(0).getEstadoAtual());
+        assertEquals(false, detalhes.get(0).getAbriuRecipiente());
+        assertEquals(true, detalhes.get(0).getEsgotouRecipiente());
+    }
+
+    @Test
+    void devePriorizarRecipienteAbertoParaRetiradaFracionaria() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(800));
+
+        Lote lote = criarLote(61L, "FISICO-200", 800, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque aberto =
+                criarRecipiente(lote, 1, 500, 300, EstadoRecipienteEstoque.ABERTO);
+        RecipienteEstoque fechado =
+                criarRecipiente(lote, 2, 500, 500, EstadoRecipienteEstoque.FECHADO);
+
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
+                .thenReturn(List.of(lote));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(61L))
+                .thenReturn(List.of(aberto, fechado));
+
+        service.registrarSaida(
+                3L,
+                BigDecimal.valueOf(200),
+                usuario,
+                OrigemMovimentacao.PEDIDO,
+                null,
+                null,
+                "Retirada fracionária"
+        );
+
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(aberto.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, aberto.getEstado());
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(fechado.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.FECHADO, fechado.getEstado());
+
+        assertEquals(0, BigDecimal.valueOf(600).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(600).compareTo(estoque.getQuantidadeAtual()));
+
+        List<MovimentacaoRecipiente> detalhes = capturarDetalhesDeRecipiente();
+        assertEquals(1, detalhes.size());
+        assertEquals(aberto, detalhes.get(0).getRecipienteEstoque());
+        assertEquals(false, detalhes.get(0).getAbriuRecipiente());
+        assertEquals(false, detalhes.get(0).getEsgotouRecipiente());
+    }
+
+    @Test
+    void deveCombinarRecipienteFechadoEAbertoNaRetiradaDeSetecentos() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(1300));
+
+        Lote lote = criarLote(62L, "FISICO-700", 1300, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque aberto =
+                criarRecipiente(lote, 1, 500, 300, EstadoRecipienteEstoque.ABERTO);
+        RecipienteEstoque fechado1 =
+                criarRecipiente(lote, 2, 500, 500, EstadoRecipienteEstoque.FECHADO);
+        RecipienteEstoque fechado2 =
+                criarRecipiente(lote, 3, 500, 500, EstadoRecipienteEstoque.FECHADO);
+
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
+                .thenReturn(List.of(lote));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(62L))
+                .thenReturn(List.of(aberto, fechado1, fechado2));
+
+        service.registrarSaida(
+                3L,
+                BigDecimal.valueOf(700),
+                usuario,
+                OrigemMovimentacao.PEDIDO,
+                null,
+                null,
+                "Retirada 700 mL"
+        );
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(fechado1.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ESGOTADO, fechado1.getEstado());
+
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(aberto.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, aberto.getEstado());
+
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(fechado2.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.FECHADO, fechado2.getEstado());
+
+        assertEquals(0, BigDecimal.valueOf(600).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(600).compareTo(estoque.getQuantidadeAtual()));
+
+        List<MovimentacaoRecipiente> detalhes = capturarDetalhesDeRecipiente();
+        assertEquals(2, detalhes.size());
+
+        MovimentacaoRecipiente detalheFechado = detalhes.stream()
+                .filter(d -> d.getRecipienteEstoque() == fechado1)
+                .findFirst()
+                .orElseThrow();
+        MovimentacaoRecipiente detalheAberto = detalhes.stream()
+                .filter(d -> d.getRecipienteEstoque() == aberto)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(detalheFechado.getQuantidadeMovimentada()));
+        assertEquals(true, detalheFechado.getEsgotouRecipiente());
+        assertEquals(false, detalheFechado.getAbriuRecipiente());
+
+        assertEquals(0, BigDecimal.valueOf(200).compareTo(detalheAberto.getQuantidadeMovimentada()));
+        assertEquals(false, detalheAberto.getEsgotouRecipiente());
+        assertEquals(false, detalheAberto.getAbriuRecipiente());
+    }
+
+    @Test
+    void deveAbrirRecipienteFechadoQuandoNaoExisteAbertoParaFracao() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(500));
+
+        Lote lote = criarLote(63L, "FISICO-ABRIR", 500, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque fechado =
+                criarRecipiente(lote, 1, 500, 500, EstadoRecipienteEstoque.FECHADO);
+
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
+                .thenReturn(List.of(lote));
+        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(63L))
+                .thenReturn(List.of(fechado));
+
+        service.registrarSaida(
+                3L,
+                BigDecimal.valueOf(200),
+                usuario,
+                OrigemMovimentacao.PEDIDO,
+                null,
+                null,
+                "Abrir frasco"
+        );
+
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(fechado.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, fechado.getEstado());
+        assertEquals(true, fechado.getDataAbertura() != null);
+        assertEquals(null, fechado.getDataEsgotamento());
+
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(estoque.getQuantidadeAtual()));
+
+        List<MovimentacaoRecipiente> detalhes = capturarDetalhesDeRecipiente();
+        assertEquals(1, detalhes.size());
+        assertEquals(EstadoRecipienteEstoque.FECHADO, detalhes.get(0).getEstadoAnterior());
+        assertEquals(EstadoRecipienteEstoque.ABERTO, detalhes.get(0).getEstadoAtual());
+        assertEquals(true, detalhes.get(0).getAbriuRecipiente());
+        assertEquals(false, detalhes.get(0).getEsgotouRecipiente());
     }
 
     @Test
@@ -466,6 +693,52 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals(BigDecimal.valueOf(5), loteA.getQuantidadeDisponivel());
         assertEquals(BigDecimal.valueOf(5), loteB.getQuantidadeDisponivel());
         assertEquals(BigDecimal.valueOf(10), estoque.getQuantidadeAtual());
+    }
+
+    private RecipienteEstoque criarRecipiente(
+            Lote lote,
+            int sequencial,
+            int capacidade,
+            int quantidadeDisponivel,
+            EstadoRecipienteEstoque estado) {
+
+        RecipienteEstoque recipiente = new RecipienteEstoque();
+        recipiente.setId(1000L + lote.getId() * 10 + sequencial);
+        recipiente.setPublicId(UUID.randomUUID());
+        recipiente.setLote(lote);
+        recipiente.definirIdentificacao(
+                lote.getCodigoInterno() + "-R" + String.format("%03d", sequencial),
+                sequencial
+        );
+        recipiente.setTipoEmbalagem(
+                lote.getTipoEmbalagem() == null ? TipoEmbalagem.UNITARIO : lote.getTipoEmbalagem()
+        );
+        recipiente.setCapacidadeInicial(BigDecimal.valueOf(capacidade));
+        recipiente.setQuantidadeDisponivel(BigDecimal.valueOf(quantidadeDisponivel));
+        recipiente.setUnidadeMedida(produto.getUnidadeMedida());
+        recipiente.setEstado(estado);
+
+        if (estado == EstadoRecipienteEstoque.ABERTO) {
+            recipiente.setDataAbertura(LocalDateTime.now().minusDays(1));
+        }
+
+        if (estado == EstadoRecipienteEstoque.ESGOTADO) {
+            recipiente.setDataEsgotamento(LocalDateTime.now().minusHours(1));
+        }
+
+        return recipiente;
+    }
+
+    private List<MovimentacaoRecipiente> capturarDetalhesDeRecipiente() {
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        ArgumentCaptor<Iterable<MovimentacaoRecipiente>> captor =
+                ArgumentCaptor.forClass((Class) Iterable.class);
+
+        verify(movimentacaoRecipienteRepository).saveAll(captor.capture());
+
+        return StreamSupport
+                .stream(captor.getValue().spliterator(), false)
+                .toList();
     }
 
     private Lote criarLote(
