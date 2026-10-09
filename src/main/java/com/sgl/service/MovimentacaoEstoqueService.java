@@ -272,11 +272,9 @@ public class MovimentacaoEstoqueService {
 			BigDecimal saldoLoteAtual = lote.getQuantidadeDisponivel().subtract(consumido);
 
 			if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
-					throw new StockConflictException("O estoque foi alterado por outra operação. "
-							+ "O saldo físico dos recipientes não é mais compatível "
-							+ "com o saldo disponível do lote.");
-				}
-			
+				throw new StockConflictException("O estoque foi alterado por outra operação. "
+						+ "O saldo físico dos recipientes não é mais compatível " + "com o saldo disponível do lote.");
+			}
 
 			lote.setQuantidadeDisponivel(saldoLoteAtual);
 
@@ -312,38 +310,75 @@ public class MovimentacaoEstoqueService {
 	@Transactional
 	public List<MovimentacaoEstoqueResponseDTO> registrarDescarteVencimento(UUID estoqueId, BigDecimal quantidade,
 			String justificativa, Usuario usuario) {
+
 		validarQuantidade(quantidade);
 		validarUsuarioResponsavel(usuario);
+
 		EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
 
 		if (!Boolean.TRUE.equals(estoque.getProduto().getPerecivel())) {
+
 			throw new BusinessRuleException("Somente produtos perecíveis podem ser descartados por vencimento.");
 		}
 
 		List<Lote> lotesVencidos = loteRepository.buscarVencidosComBloqueio(estoque.getId(), LocalDate.now());
+
 		BigDecimal saldoVencido = lotesVencidos.stream().map(Lote::getQuantidadeDisponivel)
 				.filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+
 		if (saldoVencido.compareTo(quantidade) < 0) {
 			throw new BusinessRuleException(
-					"Quantidade de descarte maior que o saldo vencido disponível. Disponível: " + saldoVencido);
+					"Quantidade de descarte maior que o saldo vencido disponível. " + "Disponível: " + saldoVencido);
 		}
 
 		List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
+
 		BigDecimal restante = quantidade;
+
 		for (Lote lote : lotesVencidos) {
-			if (restante.compareTo(BigDecimal.ZERO) == 0)
+
+			if (restante.compareTo(BigDecimal.ZERO) == 0) {
 				break;
-			BigDecimal descartado = calcularQuantidadeCompativel(lote, restante);
-			if (descartado.compareTo(BigDecimal.ZERO) <= 0)
+			}
+
+			List<RecipienteEstoque> recipientes = recipienteEstoqueRepository
+					.buscarDisponiveisPorLoteComBloqueio(lote.getId());
+
+			revalidarSaldoFisicoLote(lote, recipientes);
+
+			BigDecimal quantidadeDoLote = calcularQuantidadeFisicamenteConsumivel(lote, restante, recipientes);
+
+			if (quantidadeDoLote.compareTo(BigDecimal.ZERO) <= 0) {
 				continue;
+			}
+
+			List<ConsumoRecipiente> consumos = consumirRecipientes(lote, recipientes, quantidadeDoLote);
+
+			BigDecimal descartado = consumos.stream().map(ConsumoRecipiente::quantidadeMovimentada)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			if (descartado.compareTo(quantidadeDoLote) != 0) {
+				throw new StockConflictException("Não foi possível compatibilizar os recipientes "
+						+ "com o saldo vencido do lote " + lote.getCodigoInterno() + ".");
+			}
 
 			BigDecimal saldoAnterior = estoque.getQuantidadeAtual();
 
 			BigDecimal saldoAtual = saldoAnterior.subtract(descartado);
 
-			lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel().subtract(descartado));
+			BigDecimal saldoLoteAtual = lote.getQuantidadeDisponivel().subtract(descartado);
+
+			if (saldoAtual.compareTo(BigDecimal.ZERO) < 0 || saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
+
+				throw new StockConflictException(
+						"O saldo agregado não é compatível " + "com o descarte físico solicitado.");
+			}
+
+			lote.setQuantidadeDisponivel(saldoLoteAtual);
 
 			estoque.setQuantidadeAtual(saldoAtual);
+
+			recipienteEstoqueRepository.saveAll(consumos.stream().map(ConsumoRecipiente::recipiente).toList());
 
 			loteRepository.save(lote);
 			estoqueCentralRepository.save(estoque);
@@ -352,6 +387,8 @@ public class MovimentacaoEstoqueService {
 					TipoMovimentacao.DESCARTE_VENCIMENTO, OrigemMovimentacao.DESCARTE, descartado, saldoAnterior,
 					saldoAtual, justificativa);
 
+			registrarMovimentacoesDosRecipientes(movimentacao, consumos);
+
 			movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
 
 			restante = restante.subtract(descartado);
@@ -359,50 +396,103 @@ public class MovimentacaoEstoqueService {
 
 		if (restante.compareTo(BigDecimal.ZERO) > 0) {
 			throw new BusinessRuleException(
-					"A quantidade informada não pode ser descartada sem fracionar uma embalagem fechada. Informe uma quantidade compatível com os lotes vencidos.");
+					"A quantidade informada não pode ser descartada " + "com os recipientes físicos disponíveis.");
 		}
+
 		return movimentacoes;
 	}
 
 	@Transactional
 	public void devolverSaidasDoPedido(Pedido pedido, Usuario usuarioResponsavel, String observacao) {
+
 		List<MovimentacaoEstoque> saidas = movimentacaoRepository
 				.findByPedidoIdAndTipoMovimentacaoOrderByIdAsc(pedido.getId(), TipoMovimentacao.SAIDA).stream()
 				.filter(m -> m.getLote() != null)
 				.sorted(Comparator.comparing((MovimentacaoEstoque m) -> m.getEstoqueCentral().getId())
-						.thenComparing(m -> m.getLote().getId()))
+						.thenComparing(m -> m.getLote().getId()).thenComparing(MovimentacaoEstoque::getId))
 				.toList();
 
-		if (saidas.isEmpty())
+		if (saidas.isEmpty()) {
 			throw new BusinessRuleException("Não foram encontradas saídas por lote para devolver este pedido.");
+		}
 
 		for (MovimentacaoEstoque saida : saidas) {
+
 			EstoqueCentral estoque = estoqueCentralRepository.buscarPorIdComBloqueio(saida.getEstoqueCentral().getId())
 					.orElseThrow(
 							() -> new ResourceNotFoundException("Estoque central", saida.getEstoqueCentral().getId()));
+
 			Lote lote = loteRepository.buscarPorIdComBloqueio(saida.getLote().getId())
 					.orElseThrow(() -> new ResourceNotFoundException("Lote", saida.getLote().getId()));
 
-			BigDecimal quantidade = saida.getQuantidadeMovimentada();
-			BigDecimal saldoAnterior = estoque.getQuantidadeAtual();
-			BigDecimal saldoAtual = saldoAnterior.add(quantidade);
-			if (lote.getQuantidadeDisponivel().add(quantidade).compareTo(lote.getQuantidadeInicial()) > 0) {
-				throw new BusinessRuleException(
-						"A devolução ultrapassaria a quantidade inicial do lote " + lote.getCodigoInterno() + ".");
+			List<RecipienteEstoque> disponiveis = recipienteEstoqueRepository
+					.buscarDisponiveisPorLoteComBloqueio(lote.getId());
+
+			revalidarSaldoFisicoLote(lote, disponiveis);
+
+			List<MovimentacaoRecipiente> detalhesOriginais = movimentacaoRecipienteRepository
+					.findByMovimentacaoEstoqueIdOrderByIdAsc(saida.getId()).stream()
+					.sorted(Comparator.comparing(detalhe -> detalhe.getRecipienteEstoque().getId())).toList();
+
+			if (detalhesOriginais.isEmpty()) {
+				throw new StockConflictException("A saída do pedido não possui detalhamento físico "
+						+ "dos recipientes e não pode ser revertida automaticamente.");
 			}
 
+			BigDecimal totalDetalhado = detalhesOriginais.stream().map(MovimentacaoRecipiente::getQuantidadeMovimentada)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			if (totalDetalhado.compareTo(saida.getQuantidadeMovimentada()) != 0) {
+
+				throw new StockConflictException(
+						"O detalhamento físico da saída não corresponde " + "à quantidade registrada na movimentação.");
+			}
+
+			List<ConsumoRecipiente> reversoes = new ArrayList<>();
+
+			for (MovimentacaoRecipiente detalhe : detalhesOriginais) {
+
+				reversoes.add(restaurarRecipienteAposCancelamento(detalhe));
+			}
+
+			BigDecimal quantidade = saida.getQuantidadeMovimentada();
+
+			BigDecimal saldoAnterior = estoque.getQuantidadeAtual();
+
+			BigDecimal saldoAtual = saldoAnterior.add(quantidade);
+
 			lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel().add(quantidade));
+
 			lote.setAtivo(true);
+
 			estoque.setQuantidadeAtual(saldoAtual);
+
+			recipienteEstoqueRepository.saveAll(reversoes.stream().map(ConsumoRecipiente::recipiente).toList());
+
 			loteRepository.save(lote);
 			estoqueCentralRepository.save(estoque);
 
-			if (usuarioResponsavel != null) {
-				validarUsuarioResponsavel(usuarioResponsavel);
-				registrarMovimentacao(estoque, lote, usuarioResponsavel, pedido, pedido.getLaboratorio(),
-						TipoMovimentacao.DEVOLUCAO, OrigemMovimentacao.DEVOLUCAO, quantidade, saldoAnterior, saldoAtual,
-						observacao);
+			/*
+			 * O cancelamento de Pedido APROVADO ocorre antes de ENTREGUE. Portanto esta
+			 * operação desfaz a alocação física original.
+			 *
+			 * Enquanto o contrato de cancelamento não possui usuarioId próprio, usamos o
+			 * responsável da saída original como referência auditável.
+			 */
+			Usuario responsavel = usuarioResponsavel != null ? usuarioResponsavel : saida.getUsuario();
+
+			if (responsavel == null) {
+				throw new BusinessRuleException(
+						"Não foi possível determinar o responsável " + "pela reversão do estoque.");
 			}
+
+			validarUsuarioResponsavel(responsavel);
+
+			MovimentacaoEstoque devolucao = registrarMovimentacao(estoque, lote, responsavel, pedido,
+					pedido.getLaboratorio(), TipoMovimentacao.DEVOLUCAO, OrigemMovimentacao.DEVOLUCAO, quantidade,
+					saldoAnterior, saldoAtual, observacao);
+
+			registrarMovimentacoesDosRecipientes(devolucao, reversoes);
 		}
 	}
 
@@ -1111,22 +1201,66 @@ public class MovimentacaoEstoqueService {
 
 		movimentacaoRecipienteRepository.save(detalhe);
 	}
-	private String montarObservacaoAjuste(
-	        AjusteEstoqueRequestDTO dto) {
 
-	    String justificativa =
-	            dto.getJustificativa().trim();
+	private String montarObservacaoAjuste(AjusteEstoqueRequestDTO dto) {
 
-	    if (dto.getObservacao() == null
-	            || dto.getObservacao().isBlank()) {
+		String justificativa = dto.getJustificativa().trim();
 
-	        return "Justificativa: "
-	                + justificativa;
-	    }
+		if (dto.getObservacao() == null || dto.getObservacao().isBlank()) {
 
-	    return "Justificativa: "
-	            + justificativa
-	            + " | Observação: "
-	            + dto.getObservacao().trim();
+			return "Justificativa: " + justificativa;
+		}
+
+		return "Justificativa: " + justificativa + " | Observação: " + dto.getObservacao().trim();
+	}
+
+	private ConsumoRecipiente restaurarRecipienteAposCancelamento(MovimentacaoRecipiente detalheOriginal) {
+
+		RecipienteEstoque referencia = detalheOriginal.getRecipienteEstoque();
+
+		RecipienteEstoque recipiente = recipienteEstoqueRepository.buscarPorIdComBloqueio(referencia.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Recipiente", referencia.getPublicId()));
+
+		/*
+		 * Se o recipiente sofreu qualquer outra movimentação depois da saída do Pedido,
+		 * não podemos sobrescrever silenciosamente esse estado posterior.
+		 */
+		if (recipiente.getQuantidadeDisponivel().compareTo(detalheOriginal.getQuantidadeAtual()) != 0
+				|| recipiente.getEstado() != detalheOriginal.getEstadoAtual()) {
+
+			throw new StockConflictException(
+					"O recipiente " + recipiente.getCodigoInterno() + " sofreu outra movimentação após a saída "
+							+ "deste pedido e não pode ser restaurado automaticamente.");
+		}
+
+		BigDecimal quantidadeAntesDaReversao = recipiente.getQuantidadeDisponivel();
+
+		EstadoRecipienteEstoque estadoAntesDaReversao = recipiente.getEstado();
+
+		recipiente.setQuantidadeDisponivel(detalheOriginal.getQuantidadeAnterior());
+
+		recipiente.setEstado(detalheOriginal.getEstadoAnterior());
+
+		/*
+		 * Restaura também a coerência temporal do estado físico.
+		 */
+		if (recipiente.getEstado() == EstadoRecipienteEstoque.FECHADO) {
+
+			recipiente.setDataAbertura(null);
+			recipiente.setDataEsgotamento(null);
+
+		} else if (recipiente.getEstado() == EstadoRecipienteEstoque.ABERTO) {
+
+			if (recipiente.getDataAbertura() == null) {
+				throw new StockConflictException("O recipiente " + recipiente.getCodigoInterno()
+						+ " não possui histórico físico suficiente " + "para restaurar o estado ABERTO.");
+			}
+
+			recipiente.setDataEsgotamento(null);
+		}
+
+		return new ConsumoRecipiente(recipiente, quantidadeAntesDaReversao, detalheOriginal.getQuantidadeMovimentada(),
+				detalheOriginal.getQuantidadeAnterior(), estadoAntesDaReversao, detalheOriginal.getEstadoAnterior(),
+				false, false);
 	}
 }
