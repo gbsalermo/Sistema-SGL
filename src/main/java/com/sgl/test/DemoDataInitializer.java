@@ -39,6 +39,7 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
@@ -878,6 +879,11 @@ public class DemoDataInitializer implements CommandLineRunner {
         estagiario.setDataInicioEstagio(inicio);
         estagiario.setDataFimEstagio(fim);
         estagiario.setTipoBolsa(bolsa);
+        estagiario.setSituacaoEstagio(
+                !ativo || (fim != null && fim.isBefore(LocalDate.now()))
+                        ? SituacaoEstagio.FINALIZADO
+                        : SituacaoEstagio.EM_ANDAMENTO
+        );
         estagiario.setObservacao(observacao);
         return estagiarioRepository.save(estagiario);
     }
