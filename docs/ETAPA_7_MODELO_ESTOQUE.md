@@ -545,7 +545,8 @@ Situação:
 7.1-G ✅ V35 aplicada e validada
 7.1-H ✅ entrada de lote materializando recipientes
 7.1-I ✅ seleção FEFO + aberto/fechado
-7.1-J 🔧 próximo — concorrência + revalidação
+7.1-J ✅ concorrência + revalidação
+7.1-K 🔧 próximo — ajuste de estoque
 ```
 
 
@@ -681,4 +682,38 @@ Situação atual:
 ```text
 7.1-I ✅
 7.1-J 🔧 próximo — concorrência + revalidação
+```
+
+
+---
+
+## 17. Implementação 7.1-J
+
+Validação confirmada em 09/10/2026.
+
+Concluído:
+
+- `RecipienteEstoque` passou a possuir consulta com `PESSIMISTIC_WRITE` por Lote;
+- locks físicos são adquiridos em ordem determinística por sequencial/id;
+- saldo físico dos recipientes é revalidado após aquisição do lock;
+- divergência entre `Lote.quantidadeDisponivel` e soma dos recipientes gera conflito;
+- conflitos concorrentes passaram a usar `StockConflictException`;
+- `RestExceptionHandler` responde conflito de estoque como HTTP 409;
+- Pedido concorrente perdedor permanece `PENDENTE`;
+- teste de concorrência valida saldo agregado e saldo físico por recipiente;
+- teste específico cobre divergência entre saldo do Lote e soma física dos recipientes;
+- suíte completa permaneceu verde.
+
+Commits principais:
+
+```text
+e8b4a54 — Feat: novo tratamento de exceções
+4484efe — Test: validar locks e revalidacao fisica do estoque
+```
+
+Situação atual:
+
+```text
+7.1-J ✅
+7.1-K 🔧 próximo — ajuste de estoque
 ```
