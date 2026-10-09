@@ -5,7 +5,7 @@
 **Branch backend:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Branch frontend:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Dependências:** Etapas 1–6 concluídas e validadas  
-**Estado:** Etapa 7 iniciada — bloco 7.0 em auditoria
+**Estado:** 7.2 encerrada e validada; 7.3 em redefinição funcional (backend sem implementação da 7.3)
 
 ---
 
@@ -2462,3 +2462,75 @@ Validado em 09/10/2026:
 7.2 ✅ encerrado em 09/10/2026
 7.3 🔧 próximo/atual — Domínio de Soluções
 ```
+
+
+---
+
+## 15. Etapa 7.3 — Redefinição do conceito de Soluções (09/10/2026)
+
+### 15.1 Correção de rumo e estado da implementação
+
+A implementação inicial de Soluções foi **descartada antes da validação**, após esclarecimento das regras reais com o responsável pelo projeto. A branch de trabalho retornou ao commit \`c7734db8344c016fac75e4dd3385e1c3ae233f47\` (fechamento da 7.2); o código anterior ficou isolado em \`backup/etapa-7-3-descartada-2026-10-09\`, somente como recuperação histórica, **não como implementação aprovada**.
+
+Portanto, **não há Solução, SolucaoComponente, DTO, Service, Controller nem migration V37 validados ou presentes na branch de desenvolvimento**. Não reutilizar automaticamente a modelagem abandonada. Etapa 7.2 permanece concluída.
+
+### 15.2 Significado funcional — Solução não é apenas conveniência de Pedido
+
+**Solução** é uma solicitação de preparação física com composição definida de **Produtos reais**. O usuário vinculado ao contexto de um Projeto solicita uma Solução ao Gestor. O Gestor analisa/aprova; no atendimento/liberação são retiradas do estoque as quantidades dos Produtos que a compõem, e a Solução é preparada fisicamente. A solicitação e seu atendimento são rastreáveis.
+
+Comparação conceitual com o fluxo de **Resíduos**: ambos são processos operacionais com solicitação, avaliação do Gestor, execução e histórico, mas sem assumir tabelas, estados ou responsabilidades idênticos. Para Solução, ocorre **consumo de componentes do estoque**; não há saldo/entrada/saída de uma Solução já preparada como Produto estocável.
+
+Exemplo ilustrativo: uma Solução solicitada com 10 mL de Produto A e 5 g de Produto B implica, quando efetivamente atendida, as respectivas baixas de A e B, mantendo a Solução como objeto da solicitação.
+
+### 15.3 Duas origens de Solução, com destinos distintos
+
+1. **Padrão de catálogo:** o **Gestor cadastra diretamente** a definição reutilizável, que pode ser escolhida por usuários em pedidos.
+2. **Personalizada/avulsa:** o **usuário cria a composição durante a própria solicitação**, indicando os Produtos e suas quantidades/unidades. Esta composição pertence somente àquele Pedido e **não entra automaticamente no catálogo**.
+
+**Promoção opcional:** o Gestor poderá transformar a composição de uma solicitação personalizada em novo modelo reutilizável no catálogo. A ideia de sugerir essa ação quando houver recorrência de pedidos semelhantes é apenas uma **possibilidade futura**; o limiar de recorrência e a estratégia de comparação entre composições ainda não foram definidos. Nenhuma criação automática de padrão foi autorizada.
+
+Mesmo quando a origem é um padrão do catálogo, o histórico do Pedido deve preservar a composição efetivamente solicitada/aprovada, sem depender de futuras alterações do modelo reutilizável.
+
+### 15.4 Fluxo esperado, sem antecipar decisões da Etapa 8
+
+\`\`\`text
+Usuário no contexto de Projeto
+    |
+    +-- escolhe Solução padrão do catálogo
+    |                 OU
+    +-- define Solução personalizada na solicitação
+                       |
+                       v
+                Pedido ao Gestor
+                       |
+                       v
+                Análise/aprovação
+                       |
+                       v
+            Atendimento/liberação
+                       |
+                       +-- verificar componentes/estoque
+                       +-- baixar Produtos (não "saldo de Solução")
+                       +-- registrar preparo físico e rastreabilidade
+\`\`\`
+
+**A aprovação por si só não deve ser presumida como baixa instantânea.** A baixa deve ocorrer no ponto correto do fluxo efetivo de atendimento/liberação de Pedidos, definido em conjunto com o modelo vigente. A operação multicomponente deve ser consistente/transacional: evitar retirada parcial não intencional ou duplicação de baixas.
+
+### 15.5 Limites e itens a verificar antes de qualquer código
+
+- Verificar **o fluxo atual de Pedidos e o fluxo de Resíduos** antes de propor classes, relacionamentos, API, estados e eventos.
+- Distinguir tecnicamente **modelo de catálogo** de **composição personalizada vinculada a um Pedido**, evitando exigir cadastro prévio para uma solicitação personalizada.
+- Reaproveitar \`Produto\`, unidades/quantidades decimais da 7.1/7.2, estoque físico e as regras de Unidade/Projeto já existentes.
+- Garantir compatibilidade dimensional por componente, disponibilidade, rastreabilidade, contexto de Unidade e histórico da composição aprovada.
+- Confirmar no desenho funcional **quem realiza o preparo físico**, como o Gestor altera/nega componentes, como ocorre cancelamento e qual é exatamente o instante da baixa — não inventar regras.
+- Não tratar Solução como \`Produto\` normal com estoque próprio e não gerar movimentação fictícia de Solução.
+- Manter a integração efetiva com Pedido/estoque no planejamento da **Etapa 8**, mas auditar o contrato necessário já na 7.3.
+
+### 15.6 Regra permanente do fluxo colaborativo
+
+- **Backend:** o responsável pelo projeto implementa manualmente, após decisões discutidas. O assistente pode auditar o repositório, propor modelagem, preparar trechos de código e instruções, mas **não deve publicar mudanças de código/migrations/testes no backend** sem alteração expressa desta regra.
+- **Frontend:** implementações diretas pelo assistente são permitidas dentro da etapa e branch combinadas.
+- **Validação:** testes e inicialização local pelo responsável; só concluir a etapa após confirmação.
+- **Documentação:** manter as decisões e o estado real sincronizados, sem marcar trabalho não validado como concluído.
+
+**Situação:** \`7.3 = redefinição funcional / auditoria pendente\`; **nenhum desenvolvimento de backend iniciado após o retorno à 7.2**.
