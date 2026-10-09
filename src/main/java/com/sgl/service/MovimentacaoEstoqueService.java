@@ -23,7 +23,9 @@ import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
@@ -33,6 +35,7 @@ import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.tenant.TenantContext;
 
@@ -49,6 +52,7 @@ public class MovimentacaoEstoqueService {
 	private final LaboratorioRepository laboratorioRepository;
 	private final UsuarioRepository usuarioRepository;
 	private final PedidoRepository pedidoRepository;
+	private final RecipienteEstoqueRepository recipienteEstoqueRepository;
 
 	@Transactional(readOnly = true)
 	public List<MovimentacaoEstoqueResponseDTO> listarTodos() {
@@ -130,48 +134,61 @@ public class MovimentacaoEstoqueService {
 
 	@Transactional
 	public LoteResponseDTO registrarEntradaLote(UUID estoqueId, EntradaLoteRequestDTO dto, Usuario usuario) {
+
 		validarUsuarioResponsavel(usuario);
+
 		EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
+
 		validarEntradaLote(estoque.getProduto(), dto);
 
 		if (loteRepository.existsByEstoqueCentralIdAndNumeroLote(estoque.getId(), dto.getNumeroLote())) {
+
 			throw new BusinessRuleException("Já existe lote com esse número de fornecedor neste estoque.");
 		}
 
 		Produto produtoBloqueado = produtoRepository.buscarPorIdComBloqueio(estoque.getProduto().getId())
 				.orElseThrow(() -> new ResourceNotFoundException("Produto", estoque.getProduto().getId()));
 
-		BigDecimal multiplicador = dto.getConteudoPorApresentacao() == null ? BigDecimal.ONE
+		BigDecimal conteudoPorApresentacao = dto.getConteudoPorApresentacao() == null ? BigDecimal.ONE
 				: dto.getConteudoPorApresentacao();
 
-		BigDecimal quantidadeUnitaria = BigDecimal.valueOf(dto.getQuantidade()).multiply(multiplicador);
+		BigDecimal quantidadeTotal = BigDecimal.valueOf(dto.getQuantidade()).multiply(conteudoPorApresentacao);
 
 		BigDecimal quantidadeAnterior = estoque.getQuantidadeAtual();
-		BigDecimal quantidadeAtual = quantidadeAnterior.add(quantidadeUnitaria);
+
+		BigDecimal quantidadeAtual = quantidadeAnterior.add(quantidadeTotal);
+
 		CodigoLoteGerado codigoGerado = gerarCodigoInternoLote(produtoBloqueado);
 
 		Lote lote = new Lote();
+
 		lote.setEstoqueCentral(estoque);
 		lote.definirCodigoInterno(codigoGerado.codigo(), codigoGerado.sequencial());
 		lote.setNumeroLote(dto.getNumeroLote().trim());
 		lote.setTipoEmbalagem(dto.getTipoEmbalagem());
 		lote.setApresentacao(normalizarApresentacao(produtoBloqueado, dto.getApresentacao()));
 		lote.setQuantidadeApresentacoes(dto.getQuantidade());
-		lote.setConteudoPorApresentacao(multiplicador);
+		lote.setConteudoPorApresentacao(conteudoPorApresentacao);
 		lote.setFracionavel(dto.getFracionavel() == null ? true : dto.getFracionavel());
 		lote.setObservacao(
 				dto.getObservacao() == null || dto.getObservacao().isBlank() ? null : dto.getObservacao().trim());
-		lote.setQuantidadeInicial(quantidadeUnitaria);
-		lote.setQuantidadeDisponivel(quantidadeUnitaria);
+		lote.setQuantidadeInicial(quantidadeTotal);
+		lote.setQuantidadeDisponivel(quantidadeTotal);
 		lote.setDataEntrada(LocalDate.now());
 		lote.setDataValidade(dto.getDataValidade());
 		lote.setAtivo(true);
+
 		loteRepository.save(lote);
 
+		materializarRecipientes(lote, produtoBloqueado, dto.getQuantidade(), conteudoPorApresentacao);
+
 		estoque.setQuantidadeAtual(quantidadeAtual);
+
 		estoqueCentralRepository.save(estoque);
+
 		registrarMovimentacao(estoque, lote, usuario, null, null, TipoMovimentacao.ENTRADA, dto.getOrigem(),
-				quantidadeUnitaria, quantidadeAnterior, quantidadeAtual, dto.getObservacao());
+				quantidadeTotal, quantidadeAnterior, quantidadeAtual, dto.getObservacao());
+
 		return new LoteResponseDTO(lote);
 	}
 
@@ -220,19 +237,8 @@ public class MovimentacaoEstoqueService {
 			loteRepository.save(lote);
 			estoqueCentralRepository.save(estoque);
 
-			MovimentacaoEstoque movimentacao = registrarMovimentacao(
-					estoque,
-					lote,
-					usuario,
-					pedido,
-					laboratorio,
-					TipoMovimentacao.SAIDA,
-					origem,
-					consumido,
-					saldoAnterior,
-					saldoAtual,
-					observacao
-			);
+			MovimentacaoEstoque movimentacao = registrarMovimentacao(estoque, lote, usuario, pedido, laboratorio,
+					TipoMovimentacao.SAIDA, origem, consumido, saldoAnterior, saldoAtual, observacao);
 
 			movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
 			restante = restante.subtract(consumido);
@@ -436,9 +442,7 @@ public class MovimentacaoEstoqueService {
 
 	private void validarEntradaLote(Produto produto, EntradaLoteRequestDTO dto) {
 		if (dto.getQuantidade() == null || dto.getQuantidade() <= 0) {
-		    throw new BusinessRuleException(
-		            "A quantidade de apresentações deve ser maior que zero."
-		    );
+			throw new BusinessRuleException("A quantidade de apresentações deve ser maior que zero.");
 		}
 		if (dto.getTipoEmbalagem() == null)
 			throw new BusinessRuleException("Tipo de embalagem é obrigatório.");
@@ -469,12 +473,9 @@ public class MovimentacaoEstoqueService {
 	}
 
 	private void validarQuantidade(BigDecimal quantidade) {
-	    if (quantidade == null
-	            || quantidade.compareTo(BigDecimal.ZERO) <= 0) {
-	        throw new BusinessRuleException(
-	                "A quantidade deve ser maior que zero."
-	        );
-	    }
+		if (quantidade == null || quantidade.compareTo(BigDecimal.ZERO) <= 0) {
+			throw new BusinessRuleException("A quantidade deve ser maior que zero.");
+		}
 	}
 
 	/**
@@ -486,5 +487,40 @@ public class MovimentacaoEstoqueService {
 		if (!TenantContext.ativo()) {
 			throw new BusinessRuleException("Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
 		}
+	}
+
+	private void materializarRecipientes(Lote lote, Produto produto, Integer quantidadeApresentacoes,
+			BigDecimal capacidadePorRecipiente) {
+
+		List<RecipienteEstoque> recipientes = new ArrayList<>(quantidadeApresentacoes);
+
+		for (int sequencial = 1; sequencial <= quantidadeApresentacoes; sequencial++) {
+
+			RecipienteEstoque recipiente = new RecipienteEstoque();
+
+			recipiente.setLote(lote);
+			recipiente.definirIdentificacao(formatarCodigoInternoRecipiente(lote.getCodigoInterno(), sequencial),sequencial);
+			recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+			recipiente.setCapacidadeInicial(capacidadePorRecipiente);
+			recipiente.setQuantidadeDisponivel(capacidadePorRecipiente);
+			recipiente.setUnidadeMedida(produto.getUnidadeMedida());
+			recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+			recipientes.add(recipiente);
+		}
+
+		recipienteEstoqueRepository.saveAll(recipientes);
+	}
+	
+	private String formatarCodigoInternoRecipiente(
+	        String codigoLote,
+	        int sequencial) {
+
+	    return codigoLote
+	            + "-R"
+	            + String.format(
+	                    Locale.ROOT,
+	                    "%03d",
+	                    sequencial
+	            );
 	}
 }
