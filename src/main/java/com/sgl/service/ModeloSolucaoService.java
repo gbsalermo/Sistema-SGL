@@ -21,6 +21,7 @@ public class ModeloSolucaoService {
     private final ModeloSolucaoRepository repository;
     private final UnidadeRepository unidadeRepository;
     private final ProdutoRepository produtoRepository;
+    private final PedidoRepository pedidoRepository;
 
     @Transactional
     public ModeloSolucaoResponseDTO criar(ModeloSolucaoRequestDTO dto) {
@@ -92,6 +93,39 @@ public class ModeloSolucaoService {
     @Transactional
     public void inativar(UUID id) {
         buscarEntidade(id).setAtivo(false);
+    }
+
+    /**
+     * Promocao explicita de uma composicao historica para um modelo reutilizavel.
+     * Nao altera a receita do Pedido original, nem movimenta estoque.
+     */
+    @Transactional
+    public ModeloSolucaoResponseDTO promoverDePedido(UUID pedidoId, PromoverSolucaoRequestDTO dto) {
+        UUID tenant = exigirTenant();
+        Pedido pedido = pedidoRepository.findByPublicIdAndLaboratorioUnidadePublicId(pedidoId, tenant)
+            .orElseThrow(() -> new ResourceNotFoundException("Pedido", pedidoId));
+        if (pedido.getTipo() != com.sgl.model.enums.TipoPedido.SOLUCAO)
+            throw new BusinessRuleException("Somente Pedidos de Solução podem ser transformados em modelo.");
+        if (pedido.getItens() == null || pedido.getItens().isEmpty())
+            throw new BusinessRuleException("Este Pedido não possui componentes de Solução.");
+
+        List<ComponenteModeloSolucaoRequestDTO> itens = new ArrayList<>();
+        for (ItemPedido item : pedido.getItens()) {
+            com.sgl.model.enums.UnidadeMedida unidade = item.getUnidadeMedidaSolicitada() != null
+                ? item.getUnidadeMedidaSolicitada() : item.getProduto().getUnidadeMedida();
+            BigDecimal quantidade = ConversorUnidadeMedida.converter(
+                item.getQuantidadeSolicitada(), item.getProduto().getUnidadeMedida(), unidade);
+            itens.add(new ComponenteModeloSolucaoRequestDTO(item.getProduto().getPublicId(),
+                quantidade, unidade));
+        }
+        ModeloSolucaoRequestDTO novo = new ModeloSolucaoRequestDTO();
+        novo.setUnidadeId(tenant);
+        novo.setNome(dto.getNome());
+        novo.setDescricao(dto.getDescricao());
+        novo.setInstrucoesPreparo(dto.getInstrucoesPreparo());
+        novo.setAtivo(true);
+        novo.setComponentes(itens);
+        return criar(novo);
     }
 
     @Transactional(readOnly=true)

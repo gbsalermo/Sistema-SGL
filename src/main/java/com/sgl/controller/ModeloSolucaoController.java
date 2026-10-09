@@ -19,6 +19,11 @@ public class ModeloSolucaoController {
     public ResponseEntity<ModeloSolucaoResponseDTO> criar(@Valid @RequestBody ModeloSolucaoRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(dto));
     }
+    @PostMapping("/promover-pedido/{pedidoId}")
+    public ResponseEntity<ModeloSolucaoResponseDTO> promover(@PathVariable UUID pedidoId,
+            @Valid @RequestBody com.sgl.dto.request.PromoverSolucaoRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.promoverDePedido(pedidoId, dto));
+    }
     @GetMapping
     public List<ModeloSolucaoResponseDTO> listar() { return service.listar(false); }
     @GetMapping("/ativos")
