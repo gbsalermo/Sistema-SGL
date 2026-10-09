@@ -2169,7 +2169,8 @@ Enums de medida/apresentação e conversor implementados.
 7.1-E ✅ V34 aplicada e suíte verde
 7.1-F ✅ MovimentacaoRecipiente + repository
 7.1-G ✅ V35 aplicada e suíte verde
-7.1-H 🔧 próximo — entrada de lote materializando recipientes
+7.1-H ✅ entrada de lote materializando recipientes
+7.1-I 🔧 próximo — seleção FEFO + aberto/fechado
 ```
 
 A suíte ainda precisa ser executada no ambiente local/CI antes de considerar validação concluída.
@@ -2242,4 +2243,30 @@ Próximo bloco:
 
 ```text
 7.1-H — entrada de lote materializando recipientes
+```
+
+
+### 15.5 Fechamento do 7.1-H
+
+Em 09/10/2026:
+
+- `registrarEntradaLote` passou a criar recipientes físicos automaticamente;
+- cada apresentação recebida gera um `RecipienteEstoque`;
+- todos os recipientes novos iniciam `FECHADO`;
+- códigos `R001`, `R002`, ... são gerados dentro do Lote;
+- capacidade/saldo usam o conteúdo por apresentação na unidade canônica do Produto;
+- teste específico de materialização foi adicionado;
+- suíte de testes permaneceu integralmente verde.
+
+Commits:
+
+```text
+fc5e300 — Feat: Adição de nova modelagem para as apresentações físicas dos lotes e produtos
+6581864 — Test: validar materializacao de recipientes na entrada de lote
+```
+
+Próximo bloco:
+
+```text
+7.1-I — seleção FEFO + preferência entre recipientes abertos/fechados
 ```
