@@ -874,4 +874,19 @@ Os testes acrescentados validam explicitamente:
 0,750 L - 0,125 L = 0,625 L
 ```
 
-A validação final do 7.2 depende apenas da execução da suíte após essa cobertura.
+Validação final concluída em 09/10/2026: suíte integral verde e aplicação iniciando normalmente. O bloco 7.2 está encerrado.
+
+
+### Fechamento do 7.2
+
+Validado em 09/10/2026:
+
+- suíte completa verde após a cobertura decimal adicional;
+- aplicação iniciou normalmente;
+- nenhuma nova migration foi necessária;
+- nenhuma regressão funcional identificada.
+
+```text
+7.2 ✅ encerrado em 09/10/2026
+7.3 🔧 próximo/atual — Domínio de Soluções
+```
