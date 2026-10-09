@@ -839,5 +839,5 @@ Validação:
 ```text
 profile DEMO ✅ validado em 09/10/2026
 suíte completa ✅ validada em 09/10/2026
-recriação/boot do profile DEV ⏳
+recriação/boot do profile DEV ✅ validado em 09/10/2026
 ```
