@@ -2514,7 +2514,7 @@ Usuário no contexto de Projeto
                        +-- registrar preparo físico e rastreabilidade
 ```
 
-**A aprovação por si só não deve ser presumida como baixa instantânea.** A baixa deve ocorrer no ponto correto do fluxo efetivo de atendimento/liberação de Pedidos, definido em conjunto com o modelo vigente. A operação multicomponente deve ser consistente/transacional: evitar retirada parcial não intencional ou duplicação de baixas.
+**Decisão posterior (seções 15.8–15.11):** aprovação efetua uma única baixa/alocação operacional dos Produtos, como no Pedido atual. Entrega não efetua segunda baixa; cancelamento anterior ao preparo desfaz essa alocação mediante confirmação.
 
 ### 15.5 Limites e itens a verificar antes de qualquer código
 
@@ -2567,77 +2567,83 @@ Usuário no contexto de Projeto
 - promoção da composição de uma solicitação ao catálogo somente mediante ação explícita do Gestor;
 - avaliar se estados atuais de Pedido bastam ou se Soluções exigem etapa explícita de separação/preparo.
 
-**Decisão funcional prioritária pendente:** distinguir aprovação, baixa/alocação dos Produtos, preparação física e entrega. Definir em qual momento cada evento ocorre e se é necessário registrar uma etapa própria de preparo. **Não modelar ou escrever Java/migration enquanto essa decisão estiver aberta.**
+**Decisão posterior:** o comportamento de aprovação, baixa/alocação e entrega foi definido nas seções 15.8–15.11. Ainda é necessária a revisão de contratos/DTOs/validações antes da implementação manual do backend.
 
 
-### 15.8 Decisões operacionais confirmadas após auditoria (09/10/2026)
+### 15.8 Decisão de domínio definitiva: Solução é um tipo de Pedido (09/10/2026)
 
-As decisões abaixo **substituem** a observação preliminar da seção 15.4 de que o instante da baixa ainda estaria indefinido. O fluxo de Soluções usa a mesma baixa operacional de Pedidos **na aprovação**, conforme decisão do responsável pelo projeto. A preparação física não será minuciosamente acompanhada pelo sistema.
+**Regra aprovada pelo responsável:** a Solução não é outra entidade de solicitação paralela. **É um Pedido cujo tipo é SOLUCAO**, distinguindo-se de um Pedido convencional de Produtos pela forma de entrega: os Produtos/componentes são preparados/misturados e entregues como **uma única solução física**.
 
-**Fluxo conceitual, sem implementação:**
+Representação conceitual mínima (nomes ainda sujeitos à adequação ao código existente):
 
-```text
-PENDENTE
-  -> Gestor aprova
-  -> baixa transacional dos Produtos componentes (como Pedido atual)
-  -> EM_PREPARACAO (status proposto para solicitações de Solução)
-  -> preparo físico realizado fora do registro detalhado no SGL
-  -> Gestor confirma entrega
-  -> ENTREGUE (registrar recebimento e validar/confirmar a baixa já lançada)
-```
+\`\`\`text
+Pedido
+  tipo: PRODUTOS | SOLUCAO
+  usuario / laboratorio / projeto / status
+  itens: List<ItemPedido>
+     -> Produto A, 10 mL
+     -> Produto B, 5 g
+     -> Produto C, 20 mL
+\`\`\`
 
-**A entrega não deve baixar o estoque uma segunda vez.** A expressão operacional "standby" neste contexto significa produtos já debitados/alocados para o pedido, e não reserva contábil independente de saldo: hoje `PedidoService.aprovar` efetua `SAIDA` de estoque. Não inventar nova operação de reserva nem desfazer a baixa para reexecutá-la na entrega.
+- O relacionamento existente \`Pedido -> ItemPedido -> Produto\` **já agrupa todos os componentes**. Não criar outra entidade \`SolucaoSolicitada\` nem adicionar \`solucaoId\` por item **apenas** para vincular os componentes à mesma preparação: o próprio Pedido faz isso.
+- Cada Pedido do tipo \`SOLUCAO\` descreve a preparação de uma Solução e sua entrega única. Um mesmo Pedido não agrupa várias Soluções distintas nesta definição.
+- **Catálogo:** Gestor cadastra modelos reutilizáveis de composição (conceitualmente \`ModeloSolucao\`), vinculados à Unidade. Usuário escolhe um modelo ou preenche livremente os Produtos e as respectivas quantidades no próprio Pedido; o caso personalizado é privado daquela solicitação e não vira modelo.
+- Opcionalmente, o Pedido pode registrar qual modelo originou o preenchimento, **sem depender dele para reconstruir** a composição histórica. O snapshot efetivo já consiste nos Itens e suas quantidades no Pedido; preservar quantidades/unidades e os dados acordados na aprovação para auditoria. Não duplicar a receita só por duplicar.
+- Promoção de composição de Pedido personalizado para modelo de catálogo depende de ação explícita do Gestor. Sugestões por recorrência são possibilidade futura, não automação já decidida.
+- A saída de cada componente usa o fluxo existente de \`ItemPedido\`/\`MovimentacaoEstoque\`/\`Lote\`/\`RecipienteEstoque\`. **Não há estoque de Solução como regra do Pedido.**
+- Quantidades devem usar \`BigDecimal\` e unidades compatíveis com os Produtos, conforme 7.1/7.2.
 
-Para preservar os Pedidos comuns, **proposta técnica a validar**: `EM_PREPARACAO` aplica-se ao pedido que contém Solução, sem mudar automaticamente o fluxo dos pedidos exclusivamente de Produtos.
+**Simplificação importante em relação à proposta anterior:** rejeitada a exigência de agrupar os \`ItemPedido\` por uma segunda entidade de "solução dentro do pedido". A informação necessária de agrupamento é \`Pedido.tipo == SOLUCAO\`, pois todos os itens desse Pedido formam uma única Solução.
 
-**Modelagem mínima desejada pelo responsável:**
-- manter `ItemPedido` como Produto físico solicitado, com baixa normal;
-- vincular cada item componente à **instância da Solução dentro do próprio Pedido**, e não apenas ao ID de uma receita padrão; isso suporta uma Solução personalizada sem identidade no catálogo;
-- armazenar snapshot da composição e das quantidades/unidades aprovadas, inclusive quando a origem for um modelo padrão de catálogo;
-- evitar hierarquia paralela de estoque/Produto só para representar o pedido de Solução;
-- conferir regra atual de proibição de Produto duplicado no mesmo Pedido: é possível que Produto X apareça em duas Soluções distintas no mesmo Pedido, hipótese que deverá ter comportamento definido antes de codificar.
+### 15.9 Fluxo aprovado — preparação sem detalhamento físico
 
-### 15.9 Cancelamento antes/depois do preparo físico
+\`\`\`text
+Pedido.tipo == PRODUTOS
+  PENDENTE -> APROVADO (baixa de Produtos) -> ENTREGUE
 
-No cancelamento de uma Solução em preparação, o sistema deve consultar o operador/gestor se o **preparo físico já ocorreu**.
+Pedido.tipo == SOLUCAO
+  PENDENTE -> aprovação + baixa/alocação dos Produtos -> EM_PREPARACAO
+  -> gestor confirma entrega/recebimento -> ENTREGUE
+\`\`\`
 
-**Não preparada:**
-- permitir reversão da saída existente do Pedido **somente quando fisicamente admissível**, observando integridade, fechamento e histórico de Recipientes; preservar restrição consolidada de que material fracionado retirado/contaminável não pode ser devolvido normalmente ao estoque;
-- se os produtos já tiverem sido abertos/fracionados ou estiverem sob condições incompatíveis, não permitir reversão automática fictícia; requerer tratamento operacional adequado.
+- \`EM_PREPARACAO\` identifica uma Solução aprovada e aguardando preparo/entrega. Não registrar cada atividade física de mistura.
+- A **aprovação** realiza **uma única** baixa/alocação de Produtos exatamente como hoje nos Pedidos comuns. É o "standby" operacional referido pelo responsável.
+- A **entrega** confirma o recebimento e conclui o Pedido; **não debita os mesmos Produtos novamente**. A expressão "confirma o desconto" significa validar o desconto já registrado, não repetir a \`SAIDA\`.
+- Pedido exclusivamente de Produtos mantém os estados e fluxo anteriores.
+- A composição da Solução deve ser considerada **integralmente** no atendimento; examinar a validação da lista de itens aprovados para evitar omissão silenciosa e preservar atomicidade.
+- A implementação do novo \`TipoPedido\`, status e contratos somente deve ocorrer **manualmente no backend**, após revisão do restante das regras da etapa.
 
-**Já preparada:**
-- **não restaurar Produtos componentes no estoque**, pois a mistura já aconteceu;
-- identificar a Solução como preparada, com identidade de sua receita/composição real, quantidade restante, contexto e rastreabilidade; evitar perda silenciosa do histórico;
-- ideia levantada pelo responsável: viabilizar que a preparação física cancelada se transforme em **Produto do tipo Solução** ou registro equivalente reutilizável, de modo que uma futura solicitação compatível seja atendida com o preparo já existente;
-- **não implementar conversão automática** ou disponibilidade para reuso sem decisão adicional: avaliar validade, segurança, armazenamento, concentração, lote/recipiente físico, compatibilidade da receita, permissões e gestão de descarte. Esse caso é uma **exceção de estoque de preparação pronta**, não muda a regra geral de que Soluções solicitadas não possuem saldo próprio.
+### 15.10 Regra corrigida de cancelamento da Solução em preparação
 
-**Encaminhamento proposto:** o fluxo essencial de Soluções é prioritário; manter o reaproveitamento de preparações canceladas como subfluxo opcional a especificar, sem inflar a primeira implementação. Se a possibilidade de preparar antes do cancelamento fizer parte do MVP, é necessário ao menos registrar corretamente o cancelamento sem devolver componentes. O eventual cadastro como item reaproveitável depende de autorização do Gestor.
+**A regra específica aqui prevalece sobre a orientação preliminar da seção 15.9 anterior, agora substituída, de bloquear indiscriminadamente a reversão só porque o item é fracionável.** A premissa operacional é que a aprovação põe componentes em standby no fluxo de Pedido; o Gestor confirma se a preparação realmente ocorreu.
 
-### 15.10 Pontos ainda pendentes de definição, antes de escrever código
+Ao tentar cancelar um Pedido \`SOLUCAO\` em \`EM_PREPARACAO\`, apresentar:
 
-1. No instante em que o Gestor declara que a Solução já foi preparada e cancela a solicitação: ela ficará aguardando destinação/decisão de reuso, ou deverá ser disponibilizada no estoque como preparação acabada após conferência explícita?
-2. O status `EM_PREPARACAO` será exclusivo dos pedidos com Soluções ou poderá abranger outros tipos de Pedido?
-3. A regra de aprovação aceita reduzir/substituir componente e obter uma composição diferente da originalmente solicitada, ou exige revisão/consentimento e nova composição?
-4. Como agrupar itens quando um mesmo Produto compõe múltiplas Soluções no mesmo Pedido, sem perder auditabilidade nem gerar baixas duplicadas?
+\`\`\`text
+A Solução já foi preparada fisicamente?
+   NÃO -> cancelar o Pedido e reverter as saídas/alocações dos seus Produtos
+   SIM -> não repor os Produtos; encaminhar decisão sobre o Pedido pronto
+\`\`\`
 
-**Estado da 7.3:** decisões funcionais atualizadas, **sem novas classes, DTOs, controllers, migrations ou testes de backend**. A revisão e implementação do código seguem sendo manuais pelo responsável.
+**NÃO preparada:** nenhum componente foi utilizado no preparo. **Reverter integralmente as saídas do Pedido e retornar os saldos ao estoque**, inclusive quantidades fracionáveis que estavam apenas alocadas e não foram efetivamente consumidas. Isto é **reversão de alocação não consumida**, distinta da devolução física de substâncias já usadas ou recebidas pelo laboratório. Registrar confirmação, agente e motivo. Utilizar a restauração auditável do próprio Pedido/recipientes, ajustando seu contrato conforme necessário; não criar movimentação de entrada avulsa para compensar uma baixa.
 
+**SIM preparada:** os componentes já foram consumidos para formar a Solução. **Nunca restaurar os ingredientes como se ainda fossem Produtos isolados.** O Gestor pode negar o pedido de cancelamento e manter a Solução para entrega, ou avaliar seu reaproveitamento como um Produto físico **cadastrado manualmente**.
 
-### 15.11 Simplificação recomendada para cancelamento de Solução (09/10/2026)
+- **Negar cancelamento**: conservar \`EM_PREPARACAO\` e orientar a entrega. Marcar \`ENTREGUE\` **somente após entrega/recebimento real**, sem registrar confirmação fictícia, mesmo que o pedido de cancelamento tenha sido rejeitado.
+- **Cadastrar como Produto físico** (alternativa excepcional sugerida pelo responsável): permitir que o Gestor descreva a Solução já preparada e a disponibilize posteriormente a outros usuários, se adequada. Trata-se de um **novo Produto físico/entrada real correspondente**, com composição/identificação suficientes, sem recreditar ingredientes originais e sem baixa dupla. Exige ainda definição de regras mínimas de identificação, validade, quantidade, lote/recipiente, segurança e vínculo com o Pedido original. Não criar automaticamente no cancelamento nem incorporar no fluxo comum de Soluções.
+- A interface poderá apresentar ao Gestor as opções de **recusar cancelamento/prosseguir entrega** ou **avaliar cadastro como Produto físico**. A escolha de cadastrar é excepcional e não transforma todas as Soluções em Produtos.
 
-**Proposta trazida pelo responsável, recomendada após discussão, aguardando confirmação final antes da implementação.** Esta proposta **substituiria** a hipótese de transformar uma Solução já preparada e cancelada em Produto estocável, discutida na seção 15.9.
+Registrar decisões e responsáveis no histórico. Um Pedido já \`ENTREGUE\` continua fora do cancelamento comum; soluções especiais após entrega dependem de regra explícita.
 
-Não haverá, no fluxo inicial da 7.3, nova entidade de "Solução pronta em estoque", conversão para Produto físico, nem módulo de reuso de preparações canceladas. A preparação física fica fora do detalhamento operacional do SGL.
+**Cuidado técnico já identificado:** \`devolverSaidasDoPedido()\` atual reverte Recipientes verificando o estado físico posterior. Precisará ser adaptado/testado ao contrato de *standby não preparado* para que fracionamento, por si só, não impeça reverter o Pedido, sem sobrescrever movimentações legítimas de outros Pedidos. Esse cuidado técnico não altera a **regra funcional aprovada** de cancelamento integral da Solução ainda não preparada.
 
-Fluxo sugerido ao solicitar cancelamento de um Pedido de Solução com componentes já debitados na aprovação:
+### 15.11 Pendências focadas para fechar a implementação
 
-1. Perguntar ao responsável operacional se a solução **já foi preparada fisicamente**.
-2. **Não preparada:** permitir cancelar e tentar reverter as saídas do pedido **apenas se fisicamente reversíveis**, preservando a política da 7.1 que veda devolução normal de materiais fracionados/contamináveis e respeitando o histórico/estado dos recipientes. Se a reversão não for segura/possível, bloquear a restauração fictícia e exigir resolução operacional; não repor o estoque artificialmente.
-3. **Preparada:** **não cancelar**, **não devolver os componentes ao estoque**. Informar que a preparação já consumiu os materiais e oferecer ao responsável **recusar a solicitação de cancelamento e prosseguir para entrega**. Manter status `EM_PREPARACAO` até ocorrer confirmação real da entrega/recebimento. Não marcar `ENTREGUE` no ato de recusar o cancelamento.
-4. Registrar a tentativa de cancelamento, a informação prestada pelo responsável e a decisão, com usuário e data, preservando rastreabilidade sem criar novo fluxo físico.
+1. Definir o comportamento mínimo de um **Produto físico gerado excepcionalmente de uma Solução pronta**, caso se opte por disponibilizar essa função na primeira entrega; nunca confundir isso com modelo do catálogo.
+2. Especificar se o Gestor pode ajustar componentes/quantidades durante a aprovação ou se solicita retificação antes de aprovar, evitando modificar silenciosamente a mistura solicitada.
+3. Definir contrato de confirmação de "preparada?": responsável autorizado, trilha auditável e interface de cancelamento; nenhum detalhe contínuo do preparo precisa ser registrado.
+4. Adequar/validar apresentação/unidade de \`ItemPedido\` para quantidades fracionadas da solução e para saída FEFO/FIFO.
+5. Manter contexto do Projeto/Unidade/laboratório coerente com a 7.4 e futura Etapa 8.
 
-O status `EM_PREPARACAO` continua proposto para pedidos com Solução; os pedidos comuns mantêm seu fluxo. Aprovação realiza uma única saída; confirmação de entrega não causa segunda baixa.
-
-**Ressalva de escopo:** se uma preparação pronta não puder mais ser entregue ou houver necessidade de descarte, isso exigirá orientação operacional específica; não introduzir automaticamente estoque de solução pronta ou baixa dupla.
-
-**Pendência decisória principal:** confirmar esta regra simplificada como definitiva. A questão do reuso como novo Produto fica fora do escopo inicial, sem implementação ou cadastro automático.
+**Status:** 7.3 em análise funcional; **nenhum código, migration ou teste de backend implementado**. Toda implementação de backend continua sob responsabilidade manual do desenvolvedor; documentação é atualizada separadamente.
