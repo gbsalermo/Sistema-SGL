@@ -26,6 +26,7 @@ class ModeloSolucaoServiceTest {
     @Mock ModeloSolucaoRepository repository;
     @Mock UnidadeRepository unidadeRepository;
     @Mock ProdutoRepository produtoRepository;
+    @Mock PedidoRepository pedidoRepository;
     @InjectMocks ModeloSolucaoService service;
     Unidade unidade;
     Produto produto;
@@ -103,4 +104,29 @@ class ModeloSolucaoServiceTest {
         assertEquals(false, modelo.getAtivo());
         verify(repository, never()).delete(any(ModeloSolucao.class));
     }
+    @Test
+    void permitePromoverPedidoPersonalizadoSemMudarOOriginal() {
+        UUID pedidoId = UUID.randomUUID();
+        Pedido pedido = Pedido.builder().id(15L).publicId(pedidoId)
+            .tipo(com.sgl.model.enums.TipoPedido.SOLUCAO)
+            .laboratorio(Laboratorio.builder().unidade(unidade).build())
+            .nomeSolucao("Solução avulsa")
+            .itens(new ArrayList<>()).build();
+        ItemPedido componente = ItemPedido.builder().pedido(pedido).produto(produto)
+            .quantidadeSolicitada(new BigDecimal("0.500"))
+            .unidadeMedidaSolicitada(UnidadeMedida.ML).build();
+        pedido.getItens().add(componente);
+        when(pedidoRepository.findByPublicIdAndLaboratorioUnidadePublicId(pedidoId, UNIDADE))
+            .thenReturn(Optional.of(pedido));
+        baseCriacao();
+        when(repository.save(any(ModeloSolucao.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var r = service.promoverDePedido(pedidoId,
+            new PromoverSolucaoRequestDTO("Padrão promovido", "Do experimento", "Preparar"));
+        assertEquals("Padrão promovido", r.getNome());
+        assertEquals(0, r.getComponentes().get(0).getQuantidadeCanonica()
+            .compareTo(new BigDecimal("0.500")));
+        assertEquals("Solução avulsa", pedido.getNomeSolucao());
+    }
+
 }
