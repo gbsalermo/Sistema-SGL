@@ -29,8 +29,10 @@ import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
@@ -42,6 +44,7 @@ import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.tenant.TenantContext;
@@ -76,6 +79,9 @@ class PedidoConcorrenciaIntegrationTest {
 
     @Autowired
     private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
+
+    @Autowired
+    private RecipienteEstoqueRepository recipienteEstoqueRepository;
 
     private ExecutorService executor;
 
@@ -150,6 +156,24 @@ class PedidoConcorrenciaIntegrationTest {
         lote.setDataValidade(null);
         lote.setAtivo(true);
         lote = loteRepository.saveAndFlush(lote);
+
+        for (int sequencial = 1; sequencial <= 10; sequencial++) {
+            RecipienteEstoque recipiente = new RecipienteEstoque();
+            recipiente.setLote(lote);
+            recipiente.definirIdentificacao(
+                    "LOT-CONC-001-001-R" + String.format("%03d", sequencial),
+                    sequencial
+            );
+            recipiente.setTipoEmbalagem(com.sgl.model.enums.TipoEmbalagem.UNITARIO);
+            recipiente.setCapacidadeInicial(BigDecimal.ONE);
+            recipiente.setQuantidadeDisponivel(BigDecimal.ONE);
+            recipiente.setUnidadeMedida(UnidadeMedida.UNIDADE);
+            recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+
+            recipienteEstoqueRepository.save(recipiente);
+        }
+
+        recipienteEstoqueRepository.flush();
 
         Pedido pedidoA = criarPedido(usuario, laboratorio, produto, 7, "Pedido concorrente A");
         Pedido pedidoB = criarPedido(usuario, laboratorio, produto, 7, "Pedido concorrente B");
