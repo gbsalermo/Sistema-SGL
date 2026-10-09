@@ -756,3 +756,88 @@ Situação atual:
 7.1-K1 ✅ ajustes explícitos de entrada/saída
 7.1-K2 🔧 próximo — alinhar descarte e devolução ao estoque físico
 ```
+
+
+---
+
+## 19. Implementação 7.1-K2 — descarte e devolução no estoque físico
+
+Implementado em 09/10/2026.
+
+Concluído:
+
+- descarte por vencimento passou a consumir `RecipienteEstoque` reais;
+- descarte registra `MovimentacaoRecipiente`;
+- cancelamento de Pedido APROVADO restaura exatamente os recipientes usados na SAIDA original;
+- restauração exige que o recipiente ainda esteja no estado/saldo deixado pela movimentação original;
+- alteração posterior do recipiente gera `StockConflictException` e rollback;
+- restauração física preserva coerência entre FECHADO/ABERTO/ESGOTADO e datas;
+- DEVOLUCAO registra detalhes físicos da reversão;
+- testes cobrem descarte físico, restauração de recipiente fechado, restauração de recipiente aberto e conflito após movimentação posterior.
+
+Commits principais:
+
+```text
+545249b — Feat: Remodelagem de DescarteVenc. e devolverSaida
+60ec8b2 — Test: validar descarte e devolucao por recipientes
+```
+
+Situação:
+
+```text
+7.1-K ✅ implementação completa
+7.1-L 🔧 massa DEV/DEMO no novo modelo físico
+7.1-M 🔧 testes finais do bloco 7.1
+```
+
+
+---
+
+## 20. Implementação 7.1-L/M — dados e consolidação de testes
+
+Implementado em 09/10/2026; aguardando validação local final.
+
+### 7.1-L — DEV/DEMO
+
+- `DataInitializer` passou a criar recipientes físicos junto com os lotes;
+- massa DEV antiga sem recipientes é detectada e exige recriação do banco, evitando backfill fictício silencioso;
+- ordem dos initializers DEV foi explicitada para a massa base existir antes da massa multitenant IB;
+- `IBMultiTenantDataInitializer` materializa recipiente físico para os lotes complementares;
+- `DemoDataInitializer` materializa o saldo atual de cada Lote em recipientes coerentes;
+- lotes não fracionáveis da DEMO são representados por apresentações unitárias fechadas/esgotadas;
+- lotes fracionáveis da DEMO usam recipiente físico com estado FECHADO, ABERTO ou ESGOTADO conforme o saldo atual;
+- unidade dos recipientes é sempre a unidade canônica do Produto.
+
+Commit:
+
+```text
+26be1e7 — Feat: reconstruir massa DEV e DEMO com estoque fisico
+```
+
+### 7.1-M — testes finais
+
+Adicionados testes específicos para:
+
+- invariantes de `RecipienteEstoque`;
+- recipiente ABERTO poder voltar à capacidade máxima sem restaurar lacre;
+- rejeição de FECHADO parcial;
+- rejeição de ESGOTADO com saldo;
+- unidade canônica obrigatória;
+- consulta pessimista de recipientes disponíveis;
+- exclusão de ESGOTADO da seleção operacional;
+- ordenação determinística por sequencial;
+- cálculo do maior sequencial físico do Lote.
+
+Commit:
+
+```text
+4df96d0 — Test: consolidar invariantes do estoque fisico
+```
+
+Validação pendente:
+
+```text
+mvn test
++ recriação/boot do profile DEV
++ boot do profile DEMO
+```
