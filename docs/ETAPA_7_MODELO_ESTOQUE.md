@@ -717,3 +717,42 @@ Situação atual:
 7.1-J ✅
 7.1-K 🔧 próximo — ajuste de estoque
 ```
+
+
+---
+
+## 18. Implementação 7.1-K1 — ajustes explícitos de estoque
+
+Validação confirmada em 09/10/2026.
+
+Concluído:
+
+- `TipoMovimentacao.AJUSTE` foi substituído por `AJUSTE_ENTRADA` e `AJUSTE_SAIDA`;
+- criado `AjusteEstoqueRequestDTO`;
+- criado endpoint operacional de ajuste de estoque;
+- ajuste restrito a Gestor/Administrador da mesma Unidade;
+- `AJUSTE_ENTRADA` pode criar novo recipiente físico ou atuar sobre recipiente existente;
+- recipiente esgotado não recebe ajuste de entrada;
+- ajuste em recipiente existente respeita a capacidade física original;
+- recipiente aberto permanece aberto mesmo ao voltar à capacidade máxima;
+- `AJUSTE_SAIDA` exige recipiente específico e registra transição física;
+- toda alteração registra `MovimentacaoEstoque` e `MovimentacaoRecipiente`;
+- relatório consolida `AJUSTE_ENTRADA` + `AJUSTE_SAIDA` como total de ajustes;
+- V36 removeu a constraint legada que impedia saldo de Lote superior à quantidade inicial após ajuste positivo;
+- testes de Service, Controller e relatório foram adicionados/adaptados;
+- suíte completa permaneceu verde.
+
+Commits principais:
+
+```text
+93ba0b6 — Feat: Modelagem de AJUSTE_ENTRADA/AJUSTE_SAIDA
+4abcfeb — Test: cobrir ajustes fisicos de estoque
+cbe8557 — feat: adcao V36
+```
+
+Situação atual:
+
+```text
+7.1-K1 ✅ ajustes explícitos de entrada/saída
+7.1-K2 🔧 próximo — alinhar descarte e devolução ao estoque físico
+```
