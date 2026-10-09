@@ -918,28 +918,61 @@ Cobrir fluxos críticos finais, execução headless e scripts reproduzíveis.
 
 ---
 
-## Etapa 13 — Revisão estrutural e legibilidade
+## Etapa 13 — Revisão estrutural, packages e manutenibilidade
 
-Última etapa técnica.
+Última etapa técnica antes do fechamento de pré-produção.
+
+Objetivo: reduzir a complexidade acumulada durante as etapas funcionais sem alterar o comportamento já validado, deixando o projeto mais intuitivo para manutenção, evolução e onboarding de novos desenvolvedores.
 
 Revisar especialmente:
 
-- `Residuo`;
-- Services grandes;
-- DTOs extensos;
-- Controllers concentrados;
-- métodos longos;
-- organização de packages;
-- documentação de snapshots/invariantes.
+- classes excessivamente grandes, principalmente Services que concentram regras, consultas, validações e persistência;
+- Controllers concentrados e contratos que estejam assumindo responsabilidades de domínio;
+- DTOs extensos ou com responsabilidades misturadas;
+- métodos longos, condicionais encadeados e blocos difíceis de testar isoladamente;
+- organização de packages no backend e no frontend;
+- nomes de packages/classes que não expressem claramente o domínio ou responsabilidade;
+- classes utilitárias genéricas que possam ser substituídas por componentes de domínio mais explícitos;
+- código duplicado, dependências desnecessárias e trechos mortos;
+- documentação de snapshots, invariantes e regras de negócio relevantes.
 
-Critério:
+Direção de refactor:
+
+```text
+Service orquestrador
+→ coordena o caso de uso
+
+regras/validações específicas
+→ componentes/policies/validators próprios
+
+consultas complexas
+→ services/repositories de consulta quando fizer sentido
+
+mapeamento
+→ mappers dedicados quando houver repetição
+
+packages
+→ organizados por domínio/responsabilidade clara
+→ evitando pastas genéricas gigantes
+```
+
+A revisão deve considerar tanto backend quanto frontend, mantendo uma estrutura previsível e navegável.
+
+Critérios de conclusão:
 
 ```text
 sem mudança funcional intencional
-+ contratos preservados
++ contratos públicos preservados
 + migrations preservadas
++ comportamento validado mantido
++ classes críticas menores e com responsabilidade clara
++ packages coerentes e intuitivos
++ dependências entre camadas/domínios compreensíveis
 + testes da Etapa 12 reexecutados
++ suíte backend integral verde
 ```
+
+Esta etapa não deve virar uma reescrita do sistema. O refactor será incremental, orientado por risco e coberto pelos testes finais.
 
 ---
 
