@@ -397,6 +397,9 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                 .pedido(pedido)
                 .produto(produto)
                 .quantidadeSolicitada(BigDecimal.valueOf(quantidade))
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(quantidade)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
         pedido.getItens().add(item);
         pedidoRepository.save(pedido);

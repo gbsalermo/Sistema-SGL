@@ -341,6 +341,9 @@ public class DataInitializer implements CommandLineRunner {
                 .pedido(pedido1)
                 .produto(p1)
                 .quantidadeSolicitada(BigDecimal.valueOf(5))
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(5)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
         pedido1.getItens().add(item1);
 
@@ -348,6 +351,9 @@ public class DataInitializer implements CommandLineRunner {
                 .pedido(pedido1)
                 .produto(p5)
                 .quantidadeSolicitada(BigDecimal.valueOf(2))
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(2)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
         pedido1.getItens().add(item2);
         pedidoRepository.save(pedido1);
@@ -366,6 +372,9 @@ public class DataInitializer implements CommandLineRunner {
                 .pedido(pedido2)
                 .produto(p4)
                 .quantidadeSolicitada(BigDecimal.valueOf(3))
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(3)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
         pedido2.getItens().add(item3);
         pedidoRepository.save(pedido2);

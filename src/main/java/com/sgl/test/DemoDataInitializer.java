@@ -1166,6 +1166,9 @@ public class DemoDataInitializer implements CommandLineRunner {
                     .produto(item.produto())
                     .quantidadeSolicitada(BigDecimal.valueOf(item.solicitada()))
                     .quantidadeAprovada(item.aprovada() == null ? null : BigDecimal.valueOf(item.aprovada()))
+                    .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                    .quantidadeEmbalagensSolicitada(item.solicitada())
+                    .multiplicadorSolicitado(BigDecimal.ONE)
                     .build();
             pedido.getItens().add(entidade);
         }
