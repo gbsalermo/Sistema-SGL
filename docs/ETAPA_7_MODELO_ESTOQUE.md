@@ -838,6 +838,6 @@ Validação:
 
 ```text
 profile DEMO ✅ validado em 09/10/2026
-mvn test ⏳ repetir após os últimos ajustes
+suíte completa ✅ validada em 09/10/2026
 recriação/boot do profile DEV ⏳
 ```
