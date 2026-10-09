@@ -2355,3 +2355,53 @@ Próximo subbloco:
 ```text
 7.1-K2 — descarte e devolução no nível dos recipientes físicos
 ```
+
+
+### 15.9 Implementação do 7.1-K2
+
+Em 09/10/2026:
+
+- descarte por vencimento foi integrado aos recipientes físicos;
+- cancelamento de Pedido APROVADO passou a restaurar os mesmos recipientes da saída;
+- restauração usa o detalhe original em `MovimentacaoRecipiente`;
+- qualquer alteração posterior no recipiente bloqueia reversão automática;
+- devolução física gera novo detalhe de movimentação;
+- testes específicos foram adicionados.
+
+Commits:
+
+```text
+545249b — Feat: Remodelagem de DescarteVenc. e devolverSaida
+60ec8b2 — Test: validar descarte e devolucao por recipientes
+```
+
+Com isso, a implementação funcional do 7.1-K está completa.
+
+
+### 15.10 Implementação do 7.1-L/M
+
+Em 09/10/2026:
+
+- massa DEV principal passa a criar recipientes desde o início;
+- banco DEV antigo sem distribuição física é recusado e deve ser recriado;
+- initializer multitenant IB passa a criar recipientes;
+- massa DEMO passa a representar o saldo atual em `RecipienteEstoque`;
+- ordem de inicialização DEV foi explicitada;
+- testes de domínio e repository foram adicionados para consolidar as invariantes físicas.
+
+Commits:
+
+```text
+26be1e7 — Feat: reconstruir massa DEV e DEMO com estoque fisico
+4df96d0 — Test: consolidar invariantes do estoque fisico
+```
+
+Aguardando validação local final:
+
+```text
+mvn test
+profile DEV com banco recriado
+profile DEMO
+```
+
+Após essas três validações verdes, o bloco 7.1 pode ser encerrado.
