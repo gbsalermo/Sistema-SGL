@@ -22,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import com.sgl.dto.request.AprovarPedidoRequestDTO;
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.exception.StockConflictException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
@@ -256,6 +257,30 @@ class PedidoConcorrenciaIntegrationTest {
                 "O lote nunca pode ficar negativo."
         );
 
+        List<RecipienteEstoque> recipientesAtuais =
+                recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(loteId);
+
+        BigDecimal saldoFisico = recipientesAtuais.stream()
+                .map(RecipienteEstoque::getQuantidadeDisponivel)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long recipientesEsgotados = recipientesAtuais.stream()
+                .filter(r -> r.getEstado() == EstadoRecipienteEstoque.ESGOTADO)
+                .count();
+
+        long recipientesFechados = recipientesAtuais.stream()
+                .filter(r -> r.getEstado() == EstadoRecipienteEstoque.FECHADO)
+                .count();
+
+        assertEquals(10, recipientesAtuais.size(),
+                "O lote deve continuar rastreando os 10 recipientes físicos.");
+        assertEquals(0, BigDecimal.valueOf(3).compareTo(saldoFisico),
+                "A soma física dos recipientes deve terminar em 3 unidades.");
+        assertEquals(7, recipientesEsgotados,
+                "Os 7 recipientes consumidos devem terminar ESGOTADOS.");
+        assertEquals(3, recipientesFechados,
+                "Os 3 recipientes restantes devem permanecer FECHADOS.");
+
         List<MovimentacaoEstoque> saidas = movimentacaoEstoqueRepository
                 .findByTipoMovimentacao(TipoMovimentacao.SAIDA);
 
@@ -329,6 +354,10 @@ class PedidoConcorrenciaIntegrationTest {
                 pedidoService.aprovar(pedidoId, dto);
                 return true;
             } catch (BusinessRuleException exception) {
+                assertTrue(
+                        exception instanceof StockConflictException,
+                        "A falha concorrente deve ser representada como conflito de estoque."
+                );
                 assertTrue(
                         exception.getMessage().startsWith("Estoque utilizável insuficiente para a forma de retirada"),
                         "A única falha de negócio esperada é estoque utilizável insuficiente. Mensagem recebida: "

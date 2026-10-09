@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.exception.StockConflictException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
@@ -289,9 +290,9 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
                 .thenReturn(List.of(primeiro, segundo));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(10L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(10L))
                 .thenReturn(List.of(criarRecipiente(primeiro, 1, 4, 4, EstadoRecipienteEstoque.FECHADO)));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(11L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(11L))
                 .thenReturn(List.of(criarRecipiente(segundo, 1, 6, 6, EstadoRecipienteEstoque.FECHADO)));
 
         service.registrarSaida(
@@ -333,9 +334,9 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorFefoComBloqueio(any(), any(LocalDate.class)))
                 .thenReturn(List.of(vencePrimeiro, venceDepois));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(20L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(20L))
                 .thenReturn(List.of(criarRecipiente(vencePrimeiro, 1, 3, 3, EstadoRecipienteEstoque.FECHADO)));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(21L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(21L))
                 .thenReturn(List.of(criarRecipiente(venceDepois, 1, 7, 7, EstadoRecipienteEstoque.FECHADO)));
 
         service.registrarSaida(
@@ -383,7 +384,7 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
                 .thenReturn(List.of(lote));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(60L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(60L))
                 .thenReturn(List.of(aberto, fechado1, fechado2));
 
         service.registrarSaida(
@@ -434,7 +435,7 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
                 .thenReturn(List.of(lote));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(61L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(61L))
                 .thenReturn(List.of(aberto, fechado));
 
         service.registrarSaida(
@@ -483,7 +484,7 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
                 .thenReturn(List.of(lote));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(62L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(62L))
                 .thenReturn(List.of(aberto, fechado1, fechado2));
 
         service.registrarSaida(
@@ -546,7 +547,7 @@ class MovimentacaoEstoqueServiceTest {
                 .thenReturn(Optional.of(estoque));
         when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
                 .thenReturn(List.of(lote));
-        when(recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(63L))
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(63L))
                 .thenReturn(List.of(fechado));
 
         service.registrarSaida(
@@ -573,6 +574,69 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals(EstadoRecipienteEstoque.ABERTO, detalhes.get(0).getEstadoAtual());
         assertEquals(true, detalhes.get(0).getAbriuRecipiente());
         assertEquals(false, detalhes.get(0).getEsgotouRecipiente());
+    }
+
+    @Test
+    void deveFalharComConflitoQuandoSaldoDoLoteDivergeDosRecipientesAposLock() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(500));
+
+        Lote lote = criarLote(
+                64L,
+                "FISICO-DIVERGENTE",
+                500,
+                null,
+                LocalDate.now().minusDays(1)
+        );
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque recipiente =
+                criarRecipiente(
+                        lote,
+                        1,
+                        500,
+                        300,
+                        EstadoRecipienteEstoque.ABERTO
+                );
+
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
+                .thenReturn(List.of(lote));
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(64L))
+                .thenReturn(List.of(recipiente));
+
+        StockConflictException exception = assertThrows(
+                StockConflictException.class,
+                () -> service.registrarSaida(
+                        3L,
+                        BigDecimal.valueOf(200),
+                        usuario,
+                        OrigemMovimentacao.PEDIDO,
+                        null,
+                        null,
+                        "Revalidar saldo físico"
+                )
+        );
+
+        assertEquals(
+                "O estoque físico foi alterado ou está inconsistente com o saldo do lote "
+                        + lote.getCodigoInterno()
+                        + ". Revise a disponibilidade antes de aprovar.",
+                exception.getMessage()
+        );
+
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(estoque.getQuantidadeAtual()));
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(recipiente.getQuantidadeDisponivel()));
+
+        verify(recipienteEstoqueRepository, never()).saveAll(any());
+        verify(loteRepository, never()).save(any());
+        verify(estoqueCentralRepository, never()).save(any());
+        verify(movimentacaoRepository, never()).save(any());
+        verify(movimentacaoRecipienteRepository, never()).saveAll(any());
     }
 
     @Test
@@ -606,7 +670,7 @@ class MovimentacaoEstoqueServiceTest {
         );
 
         assertEquals(
-                "Estoque utilizável insuficiente para a forma de retirada selecionada. Disponível nos lotes compatíveis: 2, solicitado: 3",
+                "Estoque utilizável insuficiente para a forma de retirada selecionada. Disponível nos lotes compatíveis: 2, solicitado: 3. Revise a disponibilidade antes de aprovar.",
                 exception.getMessage()
         );
         assertEquals(BigDecimal.valueOf(10), estoque.getQuantidadeAtual());
