@@ -54,8 +54,13 @@ class PedidoSolucaoServiceTest {
         unidade = Unidade.builder().id(1L).publicId(UNIDADE).nome("Unidade").sigla("UNI").build();
         lab = Laboratorio.builder().id(2L).publicId(LAB).unidade(unidade).nome("Laboratório")
             .ativo(true).build();
-        usuario = Usuario.builder().id(3L).publicId(USUARIO).unidade(unidade).laboratorio(lab)
-            .nome("Usuário").ativo(true).build();
+        usuario = new Usuario();
+        usuario.setId(3L);
+        usuario.setPublicId(USUARIO);
+        usuario.setUnidade(unidade);
+        usuario.setLaboratorio(lab);
+        usuario.setNome("Usuário");
+        usuario.setAtivo(true);
         projeto = Projeto.builder().id(5L).publicId(PROJETO).laboratorio(lab)
             .nome("Projeto").ativo(true).build();
         produto = Produto.builder().id(4L).publicId(PRODUTO).nome("Água")
