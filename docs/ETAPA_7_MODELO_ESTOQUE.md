@@ -544,7 +544,8 @@ Situação:
 7.1-F ✅ MovimentacaoRecipiente + repository
 7.1-G ✅ V35 aplicada e validada
 7.1-H ✅ entrada de lote materializando recipientes
-7.1-I 🔧 próximo — seleção FEFO + aberto/fechado
+7.1-I ✅ seleção FEFO + aberto/fechado
+7.1-J 🔧 próximo — concorrência + revalidação
 ```
 
 
@@ -643,4 +644,41 @@ Situação atual:
 ```text
 7.1-H ✅
 7.1-I 🔧 próximo — seleção FEFO + aberto/fechado
+```
+
+
+---
+
+## 16. Implementação 7.1-I
+
+Validação confirmada em 09/10/2026.
+
+Concluído:
+
+- saída passou a consumir `RecipienteEstoque` reais;
+- prioridade de Lote continua por FEFO/FIFO;
+- dentro do Lote, retirada inteira prioriza recipiente `FECHADO`;
+- retirada fracionária prioriza recipiente `ABERTO`;
+- quando não existe aberto suficiente, um fechado pode ser aberto para completar a fração;
+- recipiente zerado transita para `ESGOTADO`;
+- retirada integral de um fechado pode transitar diretamente `FECHADO → ESGOTADO`;
+- cada alteração física gera `MovimentacaoRecipiente`;
+- saldos de Recipiente, Lote e EstoqueCentral permanecem coerentes;
+- testes específicos de 500 mL, 200 mL, 700 mL, abertura e esgotamento incluídos;
+- teste de concorrência antigo foi adaptado para criar recipientes físicos;
+- suíte de testes permaneceu integralmente verde.
+
+Commits principais:
+
+```text
+db408ec — Feat: adicao da nova modelagem de saida de produtos
+7c22cf7 — Test: cobrir selecao fisica de recipientes na saida
+41c3cfd — Test: adaptar concorrencia ao estoque por recipientes
+```
+
+Situação atual:
+
+```text
+7.1-I ✅
+7.1-J 🔧 próximo — concorrência + revalidação
 ```
