@@ -2170,7 +2170,8 @@ Enums de medida/apresentação e conversor implementados.
 7.1-F ✅ MovimentacaoRecipiente + repository
 7.1-G ✅ V35 aplicada e suíte verde
 7.1-H ✅ entrada de lote materializando recipientes
-7.1-I 🔧 próximo — seleção FEFO + aberto/fechado
+7.1-I ✅ seleção FEFO + aberto/fechado
+7.1-J 🔧 próximo — concorrência + revalidação
 ```
 
 A suíte ainda precisa ser executada no ambiente local/CI antes de considerar validação concluída.
@@ -2269,4 +2270,32 @@ Próximo bloco:
 
 ```text
 7.1-I — seleção FEFO + preferência entre recipientes abertos/fechados
+```
+
+
+### 15.6 Fechamento do 7.1-I
+
+Em 09/10/2026:
+
+- a saída passou a consumir recipientes físicos;
+- FEFO/FIFO continua definindo o Lote prioritário;
+- dentro do Lote, retiradas inteiras preferem recipientes fechados e frações preferem recipientes abertos;
+- recipientes podem transitar de `FECHADO` para `ABERTO` ou `ESGOTADO`, e de `ABERTO` para `ESGOTADO`;
+- cada alteração física gera detalhe em `MovimentacaoRecipiente`;
+- testes específicos de seleção física e transições foram adicionados;
+- `PedidoConcorrenciaIntegrationTest` foi adaptado ao novo estoque por recipientes;
+- suíte completa permaneceu verde.
+
+Commits:
+
+```text
+db408ec — Feat: adicao da nova modelagem de saida de produtos
+7c22cf7 — Test: cobrir selecao fisica de recipientes na saida
+41c3cfd — Test: adaptar concorrencia ao estoque por recipientes
+```
+
+Próximo bloco:
+
+```text
+7.1-J — concorrência + revalidação no nível dos recipientes
 ```
