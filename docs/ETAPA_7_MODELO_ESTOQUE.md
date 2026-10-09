@@ -834,10 +834,10 @@ Commit:
 4df96d0 — Test: consolidar invariantes do estoque fisico
 ```
 
-Validação pendente:
+Validação:
 
 ```text
-mvn test
-+ recriação/boot do profile DEV
-+ boot do profile DEMO
+profile DEMO ✅ validado em 09/10/2026
+mvn test ⏳ repetir após os últimos ajustes
+recriação/boot do profile DEV ⏳
 ```
