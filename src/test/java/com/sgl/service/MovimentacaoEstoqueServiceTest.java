@@ -184,6 +184,64 @@ class MovimentacaoEstoqueServiceTest {
     }
 
     @Test
+    void devePreservarQuantidadeDecimalNaEntradaFisica() {
+        estoque.setQuantidadeAtual(BigDecimal.ZERO);
+        produto.setUnidadeMedida(UnidadeMedida.L);
+
+        EntradaLoteRequestDTO dto = new EntradaLoteRequestDTO();
+        dto.setNumeroLote("FAB-DECIMAL-001");
+        dto.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        dto.setApresentacao("frasco de 250 mL");
+        dto.setQuantidade(3);
+        dto.setConteudoPorApresentacao(new BigDecimal("0.250"));
+        dto.setFracionavel(true);
+        dto.setOrigem(OrigemMovimentacao.COMPRA);
+
+        when(estoqueCentralRepository.findByPublicId(ESTOQUE_PUBLIC_ID))
+                .thenReturn(Optional.of(estoque));
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.existsByEstoqueCentralIdAndNumeroLote(3L, "FAB-DECIMAL-001"))
+                .thenReturn(false);
+
+        service.registrarEntradaLote(ESTOQUE_PUBLIC_ID, dto, usuario);
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        ArgumentCaptor<Iterable<RecipienteEstoque>> recipienteCaptor =
+                ArgumentCaptor.forClass((Class) Iterable.class);
+        verify(recipienteEstoqueRepository).saveAll(recipienteCaptor.capture());
+
+        List<RecipienteEstoque> recipientes = StreamSupport
+                .stream(recipienteCaptor.getValue().spliterator(), false)
+                .toList();
+
+        assertEquals(3, recipientes.size());
+        recipientes.forEach(recipiente -> {
+            assertEquals(0, new BigDecimal("0.250").compareTo(recipiente.getCapacidadeInicial()));
+            assertEquals(0, new BigDecimal("0.250").compareTo(recipiente.getQuantidadeDisponivel()));
+            assertEquals(UnidadeMedida.L, recipiente.getUnidadeMedida());
+        });
+
+        ArgumentCaptor<Lote> loteCaptor = ArgumentCaptor.forClass(Lote.class);
+        verify(loteRepository).save(loteCaptor.capture());
+
+        Lote lote = loteCaptor.getValue();
+        assertEquals(0, new BigDecimal("0.750").compareTo(lote.getQuantidadeInicial()));
+        assertEquals(0, new BigDecimal("0.750").compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, new BigDecimal("0.750").compareTo(estoque.getQuantidadeAtual()));
+
+        ArgumentCaptor<MovimentacaoEstoque> movimentacaoCaptor =
+                ArgumentCaptor.forClass(MovimentacaoEstoque.class);
+        verify(movimentacaoRepository).save(movimentacaoCaptor.capture());
+
+        assertEquals(
+                0,
+                new BigDecimal("0.750")
+                        .compareTo(movimentacaoCaptor.getValue().getQuantidadeMovimentada())
+        );
+    }
+
+    @Test
     void deveMaterializarRecipientesFisicosAoRegistrarEntrada() {
         estoque.setQuantidadeAtual(BigDecimal.ZERO);
         produto.setUnidadeMedida(UnidadeMedida.ML);
@@ -420,6 +478,53 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals(EstadoRecipienteEstoque.ESGOTADO, detalhes.get(0).getEstadoAtual());
         assertEquals(false, detalhes.get(0).getAbriuRecipiente());
         assertEquals(true, detalhes.get(0).getEsgotouRecipiente());
+    }
+
+    @Test
+    void devePreservarQuantidadeDecimalNaSaidaFracionaria() {
+        produto.setUnidadeMedida(UnidadeMedida.L);
+        estoque.setQuantidadeAtual(new BigDecimal("0.750"));
+
+        Lote lote = criarLote(65L, "FISICO-DECIMAL", 1, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(new BigDecimal("0.750"));
+        lote.setFracionavel(true);
+        lote.setQuantidadeInicial(new BigDecimal("0.750"));
+        lote.setQuantidadeDisponivel(new BigDecimal("0.750"));
+
+        RecipienteEstoque recipiente =
+                criarRecipiente(lote, 1, 1, 1, EstadoRecipienteEstoque.FECHADO);
+        recipiente.setCapacidadeInicial(new BigDecimal("0.750"));
+        recipiente.setQuantidadeDisponivel(new BigDecimal("0.750"));
+        recipiente.setUnidadeMedida(UnidadeMedida.L);
+
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.buscarDisponiveisPorEntradaComBloqueio(3L))
+                .thenReturn(List.of(lote));
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(65L))
+                .thenReturn(List.of(recipiente));
+
+        service.registrarSaida(
+                3L,
+                new BigDecimal("0.125"),
+                usuario,
+                OrigemMovimentacao.PEDIDO,
+                null,
+                null,
+                "Retirada decimal"
+        );
+
+        assertEquals(0, new BigDecimal("0.625").compareTo(recipiente.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, recipiente.getEstado());
+        assertEquals(0, new BigDecimal("0.625").compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, new BigDecimal("0.625").compareTo(estoque.getQuantidadeAtual()));
+
+        List<MovimentacaoRecipiente> detalhes = capturarDetalhesDeRecipiente();
+        assertEquals(1, detalhes.size());
+        assertEquals(0, new BigDecimal("0.125").compareTo(detalhes.get(0).getQuantidadeMovimentada()));
+        assertEquals(0, new BigDecimal("0.625").compareTo(detalhes.get(0).getQuantidadeAtual()));
+        assertEquals(true, detalhes.get(0).getAbriuRecipiente());
     }
 
     @Test
