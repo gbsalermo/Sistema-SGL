@@ -2656,30 +2656,38 @@ A solução é um **tipo de Pedido** e seus componentes são os `ItemPedido` exi
 
 **Fronteira do roadmap:** 7.3 fixa os contratos/modelagem de catálogo e tipo de Pedido; 7.5 prevê a interface; 8 integra Pedido, aprovação, baixa/cancelamento e contexto completo; 9 consolida relatórios e auditorias. O sequenciamento detalhado deverá ser reconciliado sem antecipar código no backend.
 
-### 15.12 Margem de erro — tolerância de consumo e reconciliação de estoque (decisão de incorporar ao escopo; parâmetros pendentes)
+### 15.12 Extra futuro — Margem de erro e reconciliação de estoque (ADIADO)
 
-**Motivação:** ao preparar muitas Soluções com ingredientes fracionários, pequenas diferenças entre quantidade solicitada/baixada e quantidade efetivamente utilizada podem se acumular. Ex.: desvios de +1 mL ou +3 g em pedidos distintos tornam-se uma discrepância relevante em uma auditoria de saldo físico.
+**Decisão de 09/10/2026:** a margem de erro para consumo de Soluções foi retirada do escopo obrigatório atual e classificada como **melhoria extra futura, sem etapa ou prazo definido**. É um tema importante, mas exige estudo técnico e validação das regras operacionais antes de implementação.
 
-**Objetivo:** proporcionar **rastreabilidade e capacidade de explicar diferenças**, separando: (a) quantidade nominal solicitada/aprovada; (b) quantidade efetivamente usada ou aferida, quando informada; (c) desvio absoluto e percentual por Produto e Pedido; (d) tolerância aplicável; (e) ajuste e motivo, se houver; e (f) diferenças ainda não explicadas.
+**Não faz parte das entregas obrigatórias das Etapas 7.3, 7.5, 8 ou 9:**
+- novos campos de tolerância no Produto, Pedido ou Solução;
+- parametrização automática por unidade, produto ou tipo de preparo;
+- lançamento de diferenças estimadas;
+- cálculos de tolerância ou alertas cumulativos;
+- relatórios especiais para margem de erro;
+- novas migrations, entidades, endpoints ou interfaces para essa finalidade.
 
-**Princípios e proposta de desenho:**
+**Ideia preservada para estudo futuro:**
 
-1. **Tolerância parametrizável, nunca universal**: definir em contexto de Unidade/Produto e, quando necessário, preparo/modelo de Solução. Suportar limite absoluto em unidade compatível (por exemplo, mL ou g) e/ou percentual; a política de combinação (limite absoluto, percentual ou ambos) precisa ser definida antes de codificar. Não fixar 1 mL ou 3 g como padrões globais.
-2. **Cálculo técnico**: `desvio = quantidade_fisica_registrada - quantidade_nominal_aprovada`. Converter para unidade canônica antes de somar ou comparar; não agregar mL com g, nem somar tolerâncias de unidades/dimensões distintas como se fossem uma métrica única.
-3. **Não mascarar estoque**: dentro da margem **não significa igualdade de saldos**, movimentação automática, aprovação automática de perdas ou estoque artificialmente correto. Registrar diferenças reais; quando se confirmar utilização extra, corrigir a movimentação/saldo físico com lançamento auditável e justificativa, sem alterar o histórico original do Pedido.
-4. **Origem do desvio**: vincular eventual diferença ao Pedido de Solução, Produto, lote/recipiente quando identificável, Unidade, usuário, data, unidade/quantidade, método/observação e classificação `dentro da tolerância` ou `fora da tolerância`. Se não houver medida real por preparo, **não alegar que a tolerância prova a origem da divergência**: ela apenas oferece faixa esperada e os eventos disponíveis para investigação.
-5. **Acúmulo**: em auditoria por Produto e período, mostrar total nominal consumido, consumo adicional/devolução registrados, somatório de desvios conhecidos, saldo contábil x conferência física, orçamento/faixa agregada de tolerância (se aplicável) e diferenças sem explicação. Alertar quando pequenos desvios recorrentes ou a divergência acumulada ultrapassarem o limite configurado.
-6. **Fluxo leve**: não exigir relatório laboratorial extenso a cada preparo. Favorecer registro pontual de divergência na conclusão da Solução ou na conferência física/auditoria, com formulário objetivo, mantendo acesso à composição original.
-7. **Auditoria permanente**: não apagar divergência na correção, nem alterar retroativamente a quantidade solicitada/aprovada; registrar quem informou, conferiu e eventualmente ajustou o saldo.
+Durante a preparação de várias Soluções, diferenças pequenas entre consumo nominal e consumo físico podem se acumular (por exemplo, +1 mL ou +3 g em pedidos distintos). Uma eventual camada de tolerância poderia auxiliar a conciliação e a investigação de divergências em inventário.
 
-**Escopo sugerido:** regra contratual de tolerância estudada na 7.3; integração com Pedido/Movimentação na 8; consultas de conciliação e relatórios na 9. Não implantar margem como mera variável no Produto sem compreender seu impacto no saldo e na rastreabilidade.
+Antes de retomar, será necessário decidir:
+1. se haverá medição do consumo real por preparação ou somente conferência física periódica;
+2. quem define os limites, por Produto, Unidade ou tipo de preparo, e se serão valores absolutos, percentuais ou combinados;
+3. como converter e agrupar quantidades na mesma unidade canônica, sem misturar dimensões físicas incompatíveis;
+4. como distinguir desvios previstos, erros operacionais, divergências de inventário e possíveis falhas do software;
+5. como registrar ajustes auditáveis, justificar diferenças e preservar os valores originais, sem mascarar saldos nem automatizar baixas indevidas;
+6. como tratar acúmulo, relatórios e alertas sem impor burocracia desnecessária ao preparo.
 
-**Pontos que ainda exigem parametrização:** unidade responsável por definir tolerâncias; se configuradas por Produto, tipo de Solução ou ambos; operação com valores absolutos versus percentuais; como registrar medição real sem atrapalhar o fluxo; aprovação necessária para lançar diferenças físicas; como expor alertas por acúmulo.
+**Regra inalterada no presente:** os controles já existentes de estoque físico, rastreabilidade, ajustes e integridade da Etapa 7.1/7.2 seguem funcionando. Adiar a margem de erro **não** autoriza aceitar saldos divergentes nem elimina os registros operacionais normais.
+
+**Critério de retomada:** reabrir o tema apenas após o fluxo principal de Soluções/Pedidos estar consolidado e houver necessidade real de auditoria demonstrada; a decisão de implementar será tomada separadamente.
 
 ### 15.13 Estado e próximos passos após a revisão
 
-**Decidido:** `Pedido.tipo = PRODUTOS | SOLUCAO`; `Pedido -> ItemPedido -> Produto` sem agrupamento paralelo; catálogo de modelos de Solução sob gestão; interface própria de Soluções; aprovação lança uma única baixa/alocação; `EM_PREPARACAO`; entrega confirma recebimento sem segunda baixa; cancelamento permitido **antes ou depois** de preparada com destino de estoque distinto; cadastramento manual eventual de preparação pronta como Produto; camada de margem de erro e auditoria planejada sem ocultar divergências.
+**Decidido:** `Pedido.tipo = PRODUTOS | SOLUCAO`; `Pedido -> ItemPedido -> Produto` sem agrupamento paralelo; catálogo de modelos de Solução sob gestão; interface própria de Soluções; aprovação lança uma única baixa/alocação; `EM_PREPARACAO`; entrega confirma recebimento sem segunda baixa; cancelamento permitido **antes ou depois** de preparada com destino de estoque distinto; cadastramento manual eventual de preparação pronta como Produto; margem de erro classificada como extra futuro, fora do escopo das etapas atuais.
 
-**Ainda para fechar antes do código:** regras de edição de composição na análise/aprovação; contrato de tolerância e medição; validação da reversão do estoque com recipientes; delimitação dos campos mínimos de cadastro de modelo padrão e tipos de Pedido.
+**Ainda para fechar antes do código:** regras de edição de composição na análise/aprovação; validação da reversão do estoque com recipientes; delimitação dos campos mínimos de cadastro de modelo padrão e tipos de Pedido. Tolerância e medição real ficam para estudo futuro, sem bloquear a implementação principal.
 
 **Implementação:** nenhuma alteração Java, SQL, migration ou testes de backend da 7.3 foi feita nesta revisão. Backend será aplicado manualmente pelo responsável após as decisões; somente documentação foi alterada.
