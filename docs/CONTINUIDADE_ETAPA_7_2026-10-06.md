@@ -2462,3 +2462,166 @@ Validado em 09/10/2026:
 7.2 ✅ encerrado em 09/10/2026
 7.3 🔧 próximo/atual — Domínio de Soluções
 ```
+
+
+---
+
+## 15. Etapa 7.3 — Domínio de Soluções
+
+Implementação-base iniciada em **09/10/2026**.
+
+### 15.1 Modelo criado
+
+A Etapa 7.3 introduz um domínio próprio de Soluções:
+
+```text
+Solução != Produto
+
+Solucao
+→ pertence a uma Unidade
+→ possui nome/descrição
+→ possui rendimento final + unidade
+→ pode registrar concentração textual
+→ pode registrar instruções de preparo
+→ possui estado ativo/inativo
+→ possui composição ordenada de Produtos
+
+SolucaoComponente
+→ Produto
+→ ordem na receita
+→ quantidade
+→ unidade de medida informada
+```
+
+Uma Solução não pode conter outra Solução nesta primeira versão.
+
+### 15.2 Compatibilidade física
+
+Cada componente usa a infraestrutura criada no 7.1:
+
+```text
+quantidade do componente
++ unidade informada
+→ precisa ser compatível com a unidade canônica do Produto
+```
+
+Exemplos permitidos:
+
+```text
+500 mL de Produto cuja unidade canônica é L
+250 mg de Produto cuja unidade canônica é g
+```
+
+Exemplo bloqueado:
+
+```text
+500 mL de Produto cuja unidade canônica é g
+```
+
+A API também retorna a quantidade convertida para a unidade canônica do Produto, preparando a integração com estoque/Pedidos da Etapa 8.
+
+### 15.3 Isolamento por Unidade
+
+Solução é explicitamente multitenant:
+
+- toda Solução pertence a uma Unidade;
+- o tenant atual deve existir;
+- criação/edição em outra Unidade é bloqueada;
+- somente Produtos disponíveis no contexto da Unidade podem compor a Solução;
+- Produto inativo não pode entrar em nova composição;
+- nome de Solução deve ser único dentro da Unidade;
+- inativação é lógica.
+
+### 15.4 Composição
+
+Regras atuais:
+
+- ao menos um componente é obrigatório;
+- quantidade de cada componente deve ser positiva;
+- rendimento final deve ser positivo;
+- um mesmo Produto não pode aparecer duas vezes na mesma composição;
+- a ordem da receita é persistida explicitamente;
+- atualização substitui a composição de forma transacional;
+- a remoção dos componentes antigos é sincronizada antes da nova inserção para evitar conflito temporário da restrição `(solucao_id, produto_id)`.
+
+### 15.5 Persistência
+
+Migration adicionada:
+
+```text
+V37__create_solutions_domain.sql
+```
+
+Tabelas:
+
+```text
+solucoes
+solucao_componentes
+```
+
+Quantidades usam:
+
+```text
+NUMERIC(19,6)
+↔ BigDecimal
+```
+
+### 15.6 API inicial
+
+Endpoints:
+
+```text
+POST   /api/v1/solucoes
+GET    /api/v1/solucoes
+GET    /api/v1/solucoes/ativas
+GET    /api/v1/solucoes/{id}
+PUT    /api/v1/solucoes/{id}
+DELETE /api/v1/solucoes/{id}
+```
+
+O `DELETE` apenas inativa a Solução.
+
+### 15.7 Limites deliberados do 7.3
+
+Ainda não faz parte deste bloco:
+
+- pedir uma Solução;
+- baixar os componentes do estoque;
+- reservar/alocar lotes e recipientes;
+- snapshot imutável da receita no Pedido;
+- cancelamento/devolução de consumo de Solução;
+- frontend de cadastro/consulta.
+
+Esses pontos permanecem separados:
+
+```text
+7.4 contexto operacional
+7.5 frontend integrado
+Etapa 8 integração Soluções ↔ Pedidos/estoque
+```
+
+### 15.8 Testes adicionados
+
+Cobertura inicial adicionada para:
+
+- criação de Solução;
+- conversão mL → L na resposta;
+- bloqueio de unidade incompatível;
+- bloqueio de Produto duplicado na composição;
+- isolamento entre Unidades;
+- tenant obrigatório;
+- listagem de ativas;
+- contrato HTTP de criar/listar/buscar/editar/inativar;
+- validação HTTP de composição vazia.
+
+Status atual:
+
+```text
+7.3 implementação backend ✅
+7.3 migration V37 ✅
+7.3 testes automatizados adicionados ✅
+7.3 suíte completa ⏳ validação local
+7.3 boot da aplicação ⏳ validação local
+```
+
+Não avançar para 7.4 antes de a suíte completa e o boot confirmarem o 7.3.
