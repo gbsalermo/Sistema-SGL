@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.dto.request.AjusteEstoqueRequestDTO;
 import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
@@ -27,8 +28,11 @@ import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.DestinoAjusteEntrada;
 import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.TipoAjusteEstoque;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.EstoqueCentralRepository;
@@ -223,15 +227,10 @@ public class MovimentacaoEstoqueService {
 
 			String forma = tipoEmbalagemSolicitada == null ? "selecionada" : tipoEmbalagemSolicitada.name();
 
-			throw new StockConflictException(
-			        "Estoque utilizável insuficiente para a forma de retirada "
-			                + forma
-			                + ". Disponível nos lotes compatíveis: "
-			                + saldoUtilizavel
-			                + ", solicitado: "
-			                + quantidade
-			                + ". Revise a disponibilidade antes de aprovar."
-			);}
+			throw new StockConflictException("Estoque utilizável insuficiente para a forma de retirada " + forma
+					+ ". Disponível nos lotes compatíveis: " + saldoUtilizavel + ", solicitado: " + quantidade
+					+ ". Revise a disponibilidade antes de aprovar.");
+		}
 
 		List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
 
@@ -250,7 +249,6 @@ public class MovimentacaoEstoqueService {
 
 			BigDecimal quantidadeDoLote = calcularQuantidadeFisicamenteConsumivel(lote, restante, recipientes);
 
-
 			if (quantidadeDoLote.compareTo(BigDecimal.ZERO) <= 0) {
 				continue;
 			}
@@ -262,13 +260,9 @@ public class MovimentacaoEstoqueService {
 
 			if (consumido.compareTo(quantidadeDoLote) != 0) {
 
-			    throw new StockConflictException(
-			            "O estoque físico foi alterado durante a operação. "
-			                    + "Não foi possível compatibilizar os recipientes "
-			                    + "com o lote "
-			                    + lote.getCodigoInterno()
-			                    + ". Revise a disponibilidade antes de aprovar."
-			    );
+				throw new StockConflictException("O estoque físico foi alterado durante a operação. "
+						+ "Não foi possível compatibilizar os recipientes " + "com o lote " + lote.getCodigoInterno()
+						+ ". Revise a disponibilidade antes de aprovar.");
 			}
 
 			BigDecimal saldoAnterior = estoque.getQuantidadeAtual();
@@ -280,11 +274,9 @@ public class MovimentacaoEstoqueService {
 			if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
 				if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
 
-				    throw new StockConflictException(
-				            "O estoque foi alterado por outra operação. "
-				                    + "O saldo físico dos recipientes não é mais compatível "
-				                    + "com o saldo disponível do lote."
-				    );
+					throw new StockConflictException("O estoque foi alterado por outra operação. "
+							+ "O saldo físico dos recipientes não é mais compatível "
+							+ "com o saldo disponível do lote.");
 				}
 			}
 
@@ -309,17 +301,11 @@ public class MovimentacaoEstoqueService {
 
 		if (restante.compareTo(BigDecimal.ZERO) > 0) {
 
-		    BigDecimal disponivelFisicamente =
-		            quantidade.subtract(restante);
+			BigDecimal disponivelFisicamente = quantidade.subtract(restante);
 
-		    throw new StockConflictException(
-		            "Estoque físico insuficiente nos recipientes compatíveis. "
-		                    + "Disponível: "
-		                    + disponivelFisicamente
-		                    + ", solicitado: "
-		                    + quantidade
-		                    + ". Revise a disponibilidade antes de aprovar."
-		    );
+			throw new StockConflictException(
+					"Estoque físico insuficiente nos recipientes compatíveis. " + "Disponível: " + disponivelFisicamente
+							+ ", solicitado: " + quantidade + ". Revise a disponibilidade antes de aprovar.");
 		}
 
 		return movimentacoes;
@@ -804,5 +790,345 @@ public class MovimentacaoEstoqueService {
 					"O estoque físico foi alterado ou está inconsistente " + "com o saldo do lote "
 							+ lote.getCodigoInterno() + ". Revise a disponibilidade antes de aprovar.");
 		}
+	}
+
+	@Transactional
+	public MovimentacaoEstoqueResponseDTO ajustarEstoque(UUID estoqueId, AjusteEstoqueRequestDTO dto, Usuario usuario) {
+
+		validarUsuarioResponsavel(usuario);
+		validarPermissaoAjuste(usuario);
+
+		EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
+
+		validarUsuarioNoEstoque(usuario, estoque);
+
+		validarContratoAjuste(estoque, dto);
+
+		Lote lote = buscarLoteDoEstoqueComBloqueio(estoque, dto.getLoteId());
+
+		List<RecipienteEstoque> recipientesAtuais = recipienteEstoqueRepository
+				.buscarDisponiveisPorLoteComBloqueio(lote.getId());
+
+		revalidarSaldoFisicoLote(lote, recipientesAtuais);
+
+		MovimentacaoEstoque movimentacao;
+
+		if (dto.getTipoAjuste() == TipoAjusteEstoque.ENTRADA) {
+
+			movimentacao = registrarAjusteEntrada(estoque, lote, dto, usuario);
+
+		} else {
+
+			movimentacao = registrarAjusteSaida(estoque, lote, dto, usuario);
+		}
+
+		return new MovimentacaoEstoqueResponseDTO(movimentacao);
+	}
+
+	private void validarContratoAjuste(EstoqueCentral estoque, AjusteEstoqueRequestDTO dto) {
+
+		if (dto.getTipoAjuste() == null) {
+			throw new BusinessRuleException("Tipo do ajuste é obrigatório.");
+		}
+
+		if (dto.getLoteId() == null) {
+			throw new BusinessRuleException("Lote é obrigatório para o ajuste.");
+		}
+
+		validarQuantidade(dto.getQuantidade());
+
+		if (dto.getUnidadeMedida() == null) {
+			throw new BusinessRuleException("Unidade de medida é obrigatória.");
+		}
+
+		if (estoque.getProduto().getUnidadeMedida() != dto.getUnidadeMedida()) {
+
+			throw new BusinessRuleException("A unidade do ajuste deve ser igual " + "à unidade canônica do produto.");
+		}
+
+		if (dto.getJustificativa() == null || dto.getJustificativa().isBlank()) {
+
+			throw new BusinessRuleException("Justificativa do ajuste é obrigatória.");
+		}
+
+		if (dto.getTipoAjuste() == TipoAjusteEstoque.ENTRADA) {
+
+			if (dto.getDestinoEntrada() == null) {
+				throw new BusinessRuleException("Destino do ajuste de entrada é obrigatório.");
+			}
+
+			if (dto.getDestinoEntrada() == DestinoAjusteEntrada.NOVO_RECIPIENTE) {
+
+				if (dto.getRecipienteId() != null) {
+					throw new BusinessRuleException("NOVO_RECIPIENTE não deve possuir recipiente de destino.");
+				}
+
+				if (dto.getTipoEmbalagem() == null) {
+					throw new BusinessRuleException("Tipo de embalagem é obrigatório " + "para um novo recipiente.");
+				}
+
+			} else if (dto.getRecipienteId() == null) {
+
+				throw new BusinessRuleException("Informe o recipiente que receberá " + "o ajuste de entrada.");
+			}
+
+		} else if (dto.getRecipienteId() == null) {
+
+			throw new BusinessRuleException("Ajuste de saída exige um recipiente específico.");
+		}
+	}
+
+	private void validarPermissaoAjuste(Usuario usuario) {
+
+		if (usuario.getPerfil() != Perfil.GESTOR && usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+
+			throw new BusinessRuleException("Somente Gestor ou Administrador " + "pode realizar ajuste de estoque.");
+		}
+	}
+
+	private void validarUsuarioNoEstoque(Usuario usuario, EstoqueCentral estoque) {
+
+		if (usuario.getUnidade() == null || estoque.getUnidade() == null
+				|| !usuario.getUnidade().getId().equals(estoque.getUnidade().getId())) {
+
+			throw new BusinessRuleException("O usuário responsável não pertence " + "à unidade deste estoque.");
+		}
+	}
+
+	private Lote buscarLoteDoEstoqueComBloqueio(EstoqueCentral estoque, UUID loteId) {
+
+		Lote referencia = loteRepository.findByPublicId(loteId)
+				.orElseThrow(() -> new ResourceNotFoundException("Lote", loteId));
+
+		if (referencia.getEstoqueCentral() == null || !referencia.getEstoqueCentral().getId().equals(estoque.getId())) {
+
+			throw new ResourceNotFoundException("Lote", loteId);
+		}
+
+		Lote lote = loteRepository.buscarPorIdComBloqueio(referencia.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Lote", loteId));
+
+		if (!Boolean.TRUE.equals(lote.getAtivo())) {
+			throw new BusinessRuleException("Não é possível ajustar um lote inativo.");
+		}
+
+		return lote;
+	}
+
+	private RecipienteEstoque buscarRecipienteDoLoteComBloqueio(Lote lote, UUID recipienteId) {
+
+		RecipienteEstoque referencia = recipienteEstoqueRepository.findByPublicId(recipienteId)
+				.orElseThrow(() -> new ResourceNotFoundException("Recipiente", recipienteId));
+
+		if (referencia.getLote() == null || !referencia.getLote().getId().equals(lote.getId())) {
+
+			throw new ResourceNotFoundException("Recipiente", recipienteId);
+		}
+
+		return recipienteEstoqueRepository.buscarPorIdComBloqueio(referencia.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Recipiente", recipienteId));
+	}
+
+	private MovimentacaoEstoque registrarAjusteEntrada(EstoqueCentral estoque, Lote lote, AjusteEstoqueRequestDTO dto,
+			Usuario usuario) {
+
+		if (dto.getDestinoEntrada() == DestinoAjusteEntrada.NOVO_RECIPIENTE) {
+
+			return registrarAjusteEntradaNovoRecipiente(estoque, lote, dto, usuario);
+		}
+
+		return registrarAjusteEntradaRecipienteExistente(estoque, lote, dto, usuario);
+	}
+
+	private MovimentacaoEstoque registrarAjusteEntradaNovoRecipiente(EstoqueCentral estoque, Lote lote,
+			AjusteEstoqueRequestDTO dto, Usuario usuario) {
+
+		BigDecimal quantidade = dto.getQuantidade();
+
+		int sequencial = recipienteEstoqueRepository.buscarMaiorSequencialPorLote(lote.getId()) + 1;
+
+		String codigo = formatarCodigoInternoRecipiente(lote.getCodigoInterno(), sequencial);
+
+		while (recipienteEstoqueRepository.existsByCodigoInterno(codigo)) {
+
+			sequencial++;
+
+			codigo = formatarCodigoInternoRecipiente(lote.getCodigoInterno(), sequencial);
+		}
+
+		RecipienteEstoque recipiente = new RecipienteEstoque();
+
+		recipiente.setLote(lote);
+
+		recipiente.definirIdentificacao(codigo, sequencial);
+
+		recipiente.setTipoEmbalagem(dto.getTipoEmbalagem());
+
+		/*
+		 * Material reinserido por ajuste não é tratado como uma embalagem lacrada
+		 * original.
+		 *
+		 * A capacidade inicial desta nova unidade física corresponde à quantidade
+		 * efetivamente recebida.
+		 */
+		recipiente.setCapacidadeInicial(quantidade);
+
+		recipiente.setQuantidadeDisponivel(quantidade);
+
+		recipiente.setUnidadeMedida(estoque.getProduto().getUnidadeMedida());
+
+		recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
+
+		recipiente.setDataAbertura(LocalDateTime.now());
+
+		recipienteEstoqueRepository.save(recipiente);
+
+		BigDecimal saldoEstoqueAnterior = estoque.getQuantidadeAtual();
+
+		lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel().add(quantidade));
+
+		estoque.setQuantidadeAtual(saldoEstoqueAnterior.add(quantidade));
+
+		loteRepository.save(lote);
+		estoqueCentralRepository.save(estoque);
+
+		MovimentacaoEstoque movimentacao = registrarMovimentacao(estoque, lote, usuario, null, null,
+				TipoMovimentacao.AJUSTE_ENTRADA, OrigemMovimentacao.AJUSTE, quantidade, saldoEstoqueAnterior,
+				estoque.getQuantidadeAtual(), montarObservacaoAjuste(dto));
+
+		registrarDetalheAjusteRecipiente(movimentacao, recipiente, BigDecimal.ZERO, quantidade, quantidade,
+				EstadoRecipienteEstoque.ABERTO, EstadoRecipienteEstoque.ABERTO, false, false);
+
+		return movimentacao;
+	}
+
+	private MovimentacaoEstoque registrarAjusteEntradaRecipienteExistente(EstoqueCentral estoque, Lote lote,
+			AjusteEstoqueRequestDTO dto, Usuario usuario) {
+
+		RecipienteEstoque recipiente = buscarRecipienteDoLoteComBloqueio(lote, dto.getRecipienteId());
+
+		if (recipiente.getEstado() == EstadoRecipienteEstoque.ESGOTADO) {
+
+			throw new BusinessRuleException(
+					"Recipiente ESGOTADO não pode receber " + "ajuste de entrada. Crie um novo recipiente.");
+		}
+
+		BigDecimal anterior = recipiente.getQuantidadeDisponivel();
+
+		BigDecimal atual = anterior.add(dto.getQuantidade());
+
+		if (atual.compareTo(recipiente.getCapacidadeInicial()) > 0) {
+
+			throw new BusinessRuleException(
+					"O ajuste ultrapassaria a capacidade inicial " + "do recipiente. Utilize NOVO_RECIPIENTE.");
+		}
+
+		EstadoRecipienteEstoque estadoAnterior = recipiente.getEstado();
+
+		recipiente.setQuantidadeDisponivel(atual);
+
+		/*
+		 * Mesmo se voltar a ficar cheio, um recipiente ABERTO continua ABERTO. O
+		 * sistema não recria o lacre físico.
+		 */
+		recipienteEstoqueRepository.save(recipiente);
+
+		BigDecimal saldoEstoqueAnterior = estoque.getQuantidadeAtual();
+
+		lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel().add(dto.getQuantidade()));
+
+		estoque.setQuantidadeAtual(saldoEstoqueAnterior.add(dto.getQuantidade()));
+
+		loteRepository.save(lote);
+		estoqueCentralRepository.save(estoque);
+
+		MovimentacaoEstoque movimentacao = registrarMovimentacao(estoque, lote, usuario, null, null,
+				TipoMovimentacao.AJUSTE_ENTRADA, OrigemMovimentacao.AJUSTE, dto.getQuantidade(), saldoEstoqueAnterior,
+				estoque.getQuantidadeAtual(), montarObservacaoAjuste(dto));
+
+		registrarDetalheAjusteRecipiente(movimentacao, recipiente, anterior, dto.getQuantidade(), atual, estadoAnterior,
+				recipiente.getEstado(), false, false);
+
+		return movimentacao;
+	}
+
+	private MovimentacaoEstoque registrarAjusteSaida(EstoqueCentral estoque, Lote lote, AjusteEstoqueRequestDTO dto,
+			Usuario usuario) {
+
+		RecipienteEstoque recipiente = buscarRecipienteDoLoteComBloqueio(lote, dto.getRecipienteId());
+
+		if (recipiente.getEstado() == EstadoRecipienteEstoque.ESGOTADO) {
+
+			throw new BusinessRuleException("Recipiente ESGOTADO não possui saldo para ajuste de saída.");
+		}
+
+		BigDecimal quantidade = dto.getQuantidade();
+
+		if (recipiente.getQuantidadeDisponivel().compareTo(quantidade) < 0) {
+
+			throw new BusinessRuleException("A quantidade do ajuste de saída " + "ultrapassa o saldo do recipiente.");
+		}
+
+		ConsumoRecipiente consumo = aplicarConsumoRecipiente(recipiente, quantidade);
+
+		BigDecimal novoSaldoLote = lote.getQuantidadeDisponivel().subtract(quantidade);
+
+		BigDecimal saldoEstoqueAnterior = estoque.getQuantidadeAtual();
+
+		BigDecimal novoSaldoEstoque = saldoEstoqueAnterior.subtract(quantidade);
+
+		if (novoSaldoLote.compareTo(BigDecimal.ZERO) < 0 || novoSaldoEstoque.compareTo(BigDecimal.ZERO) < 0) {
+
+			throw new StockConflictException("O saldo agregado não é compatível " + "com o ajuste físico solicitado.");
+		}
+
+		lote.setQuantidadeDisponivel(novoSaldoLote);
+
+		estoque.setQuantidadeAtual(novoSaldoEstoque);
+
+		recipienteEstoqueRepository.save(recipiente);
+
+		loteRepository.save(lote);
+		estoqueCentralRepository.save(estoque);
+
+		MovimentacaoEstoque movimentacao = registrarMovimentacao(estoque, lote, usuario, null, null,
+				TipoMovimentacao.AJUSTE_SAIDA, OrigemMovimentacao.AJUSTE, quantidade, saldoEstoqueAnterior,
+				novoSaldoEstoque, montarObservacaoAjuste(dto));
+
+		registrarMovimentacoesDosRecipientes(movimentacao, List.of(consumo));
+
+		return movimentacao;
+	}
+
+	private void registrarDetalheAjusteRecipiente(MovimentacaoEstoque movimentacao, RecipienteEstoque recipiente,
+			BigDecimal quantidadeAnterior, BigDecimal quantidadeMovimentada, BigDecimal quantidadeAtual,
+			EstadoRecipienteEstoque estadoAnterior, EstadoRecipienteEstoque estadoAtual, boolean abriu,
+			boolean esgotou) {
+
+		MovimentacaoRecipiente detalhe = MovimentacaoRecipiente.builder().movimentacaoEstoque(movimentacao)
+				.recipienteEstoque(recipiente).quantidadeAnterior(quantidadeAnterior)
+				.quantidadeMovimentada(quantidadeMovimentada).quantidadeAtual(quantidadeAtual)
+				.estadoAnterior(estadoAnterior).estadoAtual(estadoAtual).abriuRecipiente(abriu)
+				.esgotouRecipiente(esgotou).build();
+
+		movimentacaoRecipienteRepository.save(detalhe);
+	}
+	private String montarObservacaoAjuste(
+	        AjusteEstoqueRequestDTO dto) {
+
+	    String justificativa =
+	            dto.getJustificativa().trim();
+
+	    if (dto.getObservacao() == null
+	            || dto.getObservacao().isBlank()) {
+
+	        return "Justificativa: "
+	                + justificativa;
+	    }
+
+	    return "Justificativa: "
+	            + justificativa
+	            + " | Observação: "
+	            + dto.getObservacao().trim();
 	}
 }
