@@ -841,3 +841,37 @@ profile DEMO ✅ validado em 09/10/2026
 suíte completa ✅ validada em 09/10/2026
 recriação/boot do profile DEV ✅ validado em 09/10/2026
 ```
+
+
+---
+
+## 21. 7.2 — modelo decimal / compatibilidade de estoque
+
+Auditoria realizada em 09/10/2026.
+
+O escopo decimal previsto para o 7.2 já foi materialmente implementado dentro do 7.1:
+
+- V33 normalizou os saldos para `NUMERIC(19,6)`;
+- entidades e DTOs operacionais usam `BigDecimal`;
+- contagens de recipientes/apresentações permanecem `Integer`;
+- V34/V35 mantêm capacidade, saldo e detalhes físicos em `NUMERIC(19,6)`;
+- relatórios e históricos foram adaptados para quantidades decimais;
+- o conversor de unidades trabalha exclusivamente com `BigDecimal`;
+- compatibilidade de chamadas antigas de entrada foi preservada sem reintroduzir quantidade física inteira.
+
+Não é necessária nova migration para este bloco.
+
+Cobertura adicional:
+
+```text
+975f31d — Test: validar quantidades decimais no estoque fisico
+```
+
+Os testes acrescentados validam explicitamente:
+
+```text
+3 × 0,250 L = 0,750 L
+0,750 L - 0,125 L = 0,625 L
+```
+
+A validação final do 7.2 depende apenas da execução da suíte após essa cobertura.
