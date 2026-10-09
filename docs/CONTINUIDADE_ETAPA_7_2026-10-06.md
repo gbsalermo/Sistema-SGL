@@ -2400,7 +2400,7 @@ Validação local final:
 
 ```text
 profile DEMO ✅ subiu com H2 e carga fictícia completa
-mvn test ⏳ repetir após os últimos ajustes
+suíte completa ✅ verde após os últimos ajustes
 profile DEV com banco recriado ⏳
 ```
 
