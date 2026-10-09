@@ -2171,7 +2171,8 @@ Enums de medida/apresentação e conversor implementados.
 7.1-G ✅ V35 aplicada e suíte verde
 7.1-H ✅ entrada de lote materializando recipientes
 7.1-I ✅ seleção FEFO + aberto/fechado
-7.1-J 🔧 próximo — concorrência + revalidação
+7.1-J ✅ concorrência + revalidação
+7.1-K 🔧 próximo — ajuste de estoque
 ```
 
 A suíte ainda precisa ser executada no ambiente local/CI antes de considerar validação concluída.
@@ -2298,4 +2299,31 @@ Próximo bloco:
 
 ```text
 7.1-J — concorrência + revalidação no nível dos recipientes
+```
+
+
+### 15.7 Fechamento do 7.1-J
+
+Em 09/10/2026:
+
+- concorrência passou a incluir lock pessimista no nível de `RecipienteEstoque`;
+- os recipientes do Lote são bloqueados em ordem determinística;
+- o saldo físico é revalidado depois dos locks;
+- divergência entre saldo agregado e saldo físico interrompe a operação;
+- conflitos concorrentes usam `StockConflictException` e HTTP 409;
+- o Pedido concorrente perdedor permanece `PENDENTE`;
+- o teste integrado confirma que 7 recipientes são consumidos e 3 permanecem disponíveis no cenário de estoque 10 / pedidos 7 + 7;
+- suíte completa permaneceu verde.
+
+Commits:
+
+```text
+e8b4a54 — Feat: novo tratamento de exceções
+4484efe — Test: validar locks e revalidacao fisica do estoque
+```
+
+Próximo bloco:
+
+```text
+7.1-K — ajuste de estoque
 ```
