@@ -682,7 +682,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 2, 20, 18, agora.minusDays(14).withHour(11).withMinute(40), "Entrega para Virologia.");
         mov(lotePbs, gestor, ped06, labVirologia, TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO,
                 4, 40, 36, agora.minusDays(14).withHour(11).withMinute(41), "Entrega para Virologia.");
-        mov(loteEtanol, admin, null, null, TipoMovimentacao.AJUSTE, OrigemMovimentacao.INVENTARIO,
+        mov(loteEtanol, admin, null, null, TipoMovimentacao.AJUSTE_ENTRADA, OrigemMovimentacao.INVENTARIO,
                 1, 45, 46, agora.minusDays(13).withHour(17).withMinute(5), "Ajuste positivo após conferência física.");
         mov(loteDna, gestor, ped09, labVirologia, TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO,
                 10, 80, 70, agora.minusDays(6).withHour(13).withMinute(25), "Entrega para análise molecular.");

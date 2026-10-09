@@ -27,13 +27,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sgl.config.SecurityConfig;
+import com.sgl.dto.request.AjusteEstoqueRequestDTO;
 import com.sgl.dto.request.DescarteProdutoRequestDTO;
 import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.DestinoAjusteEntrada;
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.TipoAjusteEstoque;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.UsuarioRepository;
@@ -295,6 +298,40 @@ class MovimentacaoEstoqueControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveRegistrarAjusteDeEstoqueERetornar200() throws Exception {
+        Usuario usuario = montarUsuario();
+        when(usuarioRepository.findByPublicId(USUARIO_PUBLIC_ID))
+                .thenReturn(Optional.of(usuario));
+
+        AjusteEstoqueRequestDTO dto = new AjusteEstoqueRequestDTO();
+        dto.setTipoAjuste(TipoAjusteEstoque.ENTRADA);
+        dto.setLoteId(LOTE_PUBLIC_ID);
+        dto.setDestinoEntrada(DestinoAjusteEntrada.NOVO_RECIPIENTE);
+        dto.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        dto.setQuantidade(BigDecimal.valueOf(20));
+        dto.setUnidadeMedida(com.sgl.model.enums.UnidadeMedida.ML);
+        dto.setJustificativa("Conferência física");
+
+        MovimentacaoEstoqueResponseDTO resposta = montarResponseDTO();
+        resposta.setTipoMovimentacao(TipoMovimentacao.AJUSTE_ENTRADA);
+        resposta.setOrigem(OrigemMovimentacao.AJUSTE);
+
+        when(movimentacaoService.ajustarEstoque(
+                eq(ESTOQUE_PUBLIC_ID),
+                any(AjusteEstoqueRequestDTO.class),
+                eq(usuario)
+        )).thenReturn(resposta);
+
+        mockMvc.perform(post(BASE_URL + "/estoques/{estoqueId}/ajustes", ESTOQUE_PUBLIC_ID)
+                        .param("usuarioId", USUARIO_PUBLIC_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tipoMovimentacao").value("AJUSTE_ENTRADA"))
+                .andExpect(jsonPath("$.origem").value("AJUSTE"));
     }
 
     @Test

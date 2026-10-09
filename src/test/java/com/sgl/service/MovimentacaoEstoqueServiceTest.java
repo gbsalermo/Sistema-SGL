@@ -24,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sgl.dto.request.AjusteEstoqueRequestDTO;
 import com.sgl.dto.request.EntradaLoteRequestDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.StockConflictException;
@@ -35,8 +36,11 @@ import com.sgl.model.Produto;
 import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.DestinoAjusteEntrada;
 import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.TipoAjusteEstoque;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.model.enums.UnidadeMedida;
@@ -112,6 +116,8 @@ class MovimentacaoEstoqueServiceTest {
         usuario.setId(2L);
         usuario.setPublicId(UUID.fromString("00000000-0000-0000-0000-000000000002"));
         usuario.setNome("Responsável");
+        usuario.setPerfil(Perfil.GESTOR);
+        usuario.setUnidade(unidade);
         usuario.setAtivo(true);
 
         estoque = EstoqueCentral.builder()
@@ -678,6 +684,217 @@ class MovimentacaoEstoqueServiceTest {
     }
 
     @Test
+    void deveRegistrarAjusteEntradaCriandoNovoRecipienteAberto() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(500));
+
+        Lote lote = criarLote(70L, "AJUSTE-NOVO", 500, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque existente =
+                criarRecipiente(lote, 1, 500, 500, EstadoRecipienteEstoque.FECHADO);
+
+        AjusteEstoqueRequestDTO dto = novoAjusteBase(
+                lote,
+                TipoAjusteEstoque.ENTRADA,
+                BigDecimal.valueOf(20)
+        );
+        dto.setDestinoEntrada(DestinoAjusteEntrada.NOVO_RECIPIENTE);
+        dto.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+
+        prepararAjuste(estoque, lote, List.of(existente));
+        when(recipienteEstoqueRepository.buscarMaiorSequencialPorLote(70L)).thenReturn(1);
+        when(recipienteEstoqueRepository.existsByCodigoInterno(any())).thenReturn(false);
+
+        service.ajustarEstoque(ESTOQUE_PUBLIC_ID, dto, usuario);
+
+        ArgumentCaptor<RecipienteEstoque> recipienteCaptor =
+                ArgumentCaptor.forClass(RecipienteEstoque.class);
+        verify(recipienteEstoqueRepository).save(recipienteCaptor.capture());
+
+        RecipienteEstoque criado = recipienteCaptor.getValue();
+        assertEquals("LOT-TESTE-070-R002", criado.getCodigoInterno());
+        assertEquals(2, criado.getSequencial());
+        assertEquals(EstadoRecipienteEstoque.ABERTO, criado.getEstado());
+        assertEquals(UnidadeMedida.ML, criado.getUnidadeMedida());
+        assertEquals(0, BigDecimal.valueOf(20).compareTo(criado.getCapacidadeInicial()));
+        assertEquals(0, BigDecimal.valueOf(20).compareTo(criado.getQuantidadeDisponivel()));
+
+        assertEquals(0, BigDecimal.valueOf(520).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(520).compareTo(estoque.getQuantidadeAtual()));
+
+        ArgumentCaptor<MovimentacaoEstoque> movimentoCaptor =
+                ArgumentCaptor.forClass(MovimentacaoEstoque.class);
+        verify(movimentacaoRepository).save(movimentoCaptor.capture());
+
+        MovimentacaoEstoque movimento = movimentoCaptor.getValue();
+        assertEquals(TipoMovimentacao.AJUSTE_ENTRADA, movimento.getTipoMovimentacao());
+        assertEquals(OrigemMovimentacao.AJUSTE, movimento.getOrigem());
+        assertEquals(0, BigDecimal.valueOf(20).compareTo(movimento.getQuantidadeMovimentada()));
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(movimento.getQuantidadeAnterior()));
+        assertEquals(0, BigDecimal.valueOf(520).compareTo(movimento.getQuantidadeAtual()));
+    }
+
+    @Test
+    void deveRegistrarAjusteEntradaEmRecipienteExistenteSemRestaurarLacre() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(200));
+
+        Lote lote = criarLote(71L, "AJUSTE-EXISTENTE", 200, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque recipiente =
+                criarRecipiente(lote, 1, 500, 200, EstadoRecipienteEstoque.ABERTO);
+
+        AjusteEstoqueRequestDTO dto = novoAjusteBase(
+                lote,
+                TipoAjusteEstoque.ENTRADA,
+                BigDecimal.valueOf(50)
+        );
+        dto.setDestinoEntrada(DestinoAjusteEntrada.RECIPIENTE_EXISTENTE);
+        dto.setRecipienteId(recipiente.getPublicId());
+
+        prepararAjuste(estoque, lote, List.of(recipiente));
+        when(recipienteEstoqueRepository.findByPublicId(recipiente.getPublicId()))
+                .thenReturn(Optional.of(recipiente));
+        when(recipienteEstoqueRepository.buscarPorIdComBloqueio(recipiente.getId()))
+                .thenReturn(Optional.of(recipiente));
+
+        service.ajustarEstoque(ESTOQUE_PUBLIC_ID, dto, usuario);
+
+        assertEquals(0, BigDecimal.valueOf(250).compareTo(recipiente.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, recipiente.getEstado());
+        assertEquals(0, BigDecimal.valueOf(250).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(250).compareTo(estoque.getQuantidadeAtual()));
+
+        ArgumentCaptor<MovimentacaoRecipiente> detalheCaptor =
+                ArgumentCaptor.forClass(MovimentacaoRecipiente.class);
+        verify(movimentacaoRecipienteRepository).save(detalheCaptor.capture());
+
+        MovimentacaoRecipiente detalhe = detalheCaptor.getValue();
+        assertEquals(0, BigDecimal.valueOf(200).compareTo(detalhe.getQuantidadeAnterior()));
+        assertEquals(0, BigDecimal.valueOf(50).compareTo(detalhe.getQuantidadeMovimentada()));
+        assertEquals(0, BigDecimal.valueOf(250).compareTo(detalhe.getQuantidadeAtual()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, detalhe.getEstadoAnterior());
+        assertEquals(EstadoRecipienteEstoque.ABERTO, detalhe.getEstadoAtual());
+        assertEquals(false, detalhe.getAbriuRecipiente());
+    }
+
+    @Test
+    void deveBloquearAjusteEntradaQueUltrapassaCapacidadeDoRecipiente() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(480));
+
+        Lote lote = criarLote(72L, "AJUSTE-CAPACIDADE", 480, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque recipiente =
+                criarRecipiente(lote, 1, 500, 480, EstadoRecipienteEstoque.ABERTO);
+
+        AjusteEstoqueRequestDTO dto = novoAjusteBase(
+                lote,
+                TipoAjusteEstoque.ENTRADA,
+                BigDecimal.valueOf(50)
+        );
+        dto.setDestinoEntrada(DestinoAjusteEntrada.RECIPIENTE_EXISTENTE);
+        dto.setRecipienteId(recipiente.getPublicId());
+
+        prepararAjuste(estoque, lote, List.of(recipiente));
+        when(recipienteEstoqueRepository.findByPublicId(recipiente.getPublicId()))
+                .thenReturn(Optional.of(recipiente));
+        when(recipienteEstoqueRepository.buscarPorIdComBloqueio(recipiente.getId()))
+                .thenReturn(Optional.of(recipiente));
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> service.ajustarEstoque(ESTOQUE_PUBLIC_ID, dto, usuario)
+        );
+
+        assertEquals(
+                "O ajuste ultrapassaria a capacidade inicial do recipiente. Utilize NOVO_RECIPIENTE.",
+                exception.getMessage()
+        );
+
+        assertEquals(0, BigDecimal.valueOf(480).compareTo(recipiente.getQuantidadeDisponivel()));
+        verify(movimentacaoRepository, never()).save(any());
+    }
+
+    @Test
+    void deveRegistrarAjusteSaidaNoRecipienteEspecifico() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        estoque.setQuantidadeAtual(BigDecimal.valueOf(300));
+
+        Lote lote = criarLote(73L, "AJUSTE-SAIDA", 300, null, LocalDate.now().minusDays(1));
+        lote.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        lote.setFracionavel(true);
+
+        RecipienteEstoque recipiente =
+                criarRecipiente(lote, 1, 500, 300, EstadoRecipienteEstoque.ABERTO);
+
+        AjusteEstoqueRequestDTO dto = novoAjusteBase(
+                lote,
+                TipoAjusteEstoque.SAIDA,
+                BigDecimal.valueOf(100)
+        );
+        dto.setRecipienteId(recipiente.getPublicId());
+
+        prepararAjuste(estoque, lote, List.of(recipiente));
+        when(recipienteEstoqueRepository.findByPublicId(recipiente.getPublicId()))
+                .thenReturn(Optional.of(recipiente));
+        when(recipienteEstoqueRepository.buscarPorIdComBloqueio(recipiente.getId()))
+                .thenReturn(Optional.of(recipiente));
+
+        service.ajustarEstoque(ESTOQUE_PUBLIC_ID, dto, usuario);
+
+        assertEquals(0, BigDecimal.valueOf(200).compareTo(recipiente.getQuantidadeDisponivel()));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, recipiente.getEstado());
+        assertEquals(0, BigDecimal.valueOf(200).compareTo(lote.getQuantidadeDisponivel()));
+        assertEquals(0, BigDecimal.valueOf(200).compareTo(estoque.getQuantidadeAtual()));
+
+        ArgumentCaptor<MovimentacaoEstoque> movimentoCaptor =
+                ArgumentCaptor.forClass(MovimentacaoEstoque.class);
+        verify(movimentacaoRepository).save(movimentoCaptor.capture());
+
+        assertEquals(
+                TipoMovimentacao.AJUSTE_SAIDA,
+                movimentoCaptor.getValue().getTipoMovimentacao()
+        );
+        assertEquals(
+                OrigemMovimentacao.AJUSTE,
+                movimentoCaptor.getValue().getOrigem()
+        );
+    }
+
+    @Test
+    void deveImpedirAjustePorPerfilSemPermissao() {
+        usuario.setPerfil(Perfil.TECNICO);
+
+        AjusteEstoqueRequestDTO dto = new AjusteEstoqueRequestDTO();
+        dto.setTipoAjuste(TipoAjusteEstoque.SAIDA);
+        dto.setQuantidade(BigDecimal.ONE);
+        dto.setUnidadeMedida(UnidadeMedida.UNIDADE);
+        dto.setJustificativa("Conferência física");
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> service.ajustarEstoque(ESTOQUE_PUBLIC_ID, dto, usuario)
+        );
+
+        assertEquals(
+                "Somente Gestor ou Administrador pode realizar ajuste de estoque.",
+                exception.getMessage()
+        );
+        verify(estoqueCentralRepository, never()).findByPublicId(any());
+    }
+
+    @Test
     void deveDescartarSomenteSaldoDeLotesVencidos() {
         produto.setPerecivel(true);
 
@@ -757,6 +974,38 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals(BigDecimal.valueOf(5), loteA.getQuantidadeDisponivel());
         assertEquals(BigDecimal.valueOf(5), loteB.getQuantidadeDisponivel());
         assertEquals(BigDecimal.valueOf(10), estoque.getQuantidadeAtual());
+    }
+
+    private AjusteEstoqueRequestDTO novoAjusteBase(
+            Lote lote,
+            TipoAjusteEstoque tipo,
+            BigDecimal quantidade) {
+
+        AjusteEstoqueRequestDTO dto = new AjusteEstoqueRequestDTO();
+        dto.setTipoAjuste(tipo);
+        dto.setLoteId(lote.getPublicId());
+        dto.setQuantidade(quantidade);
+        dto.setUnidadeMedida(produto.getUnidadeMedida());
+        dto.setJustificativa("Conferência física de estoque");
+        dto.setObservacao("Teste de ajuste");
+        return dto;
+    }
+
+    private void prepararAjuste(
+            EstoqueCentral estoque,
+            Lote lote,
+            List<RecipienteEstoque> recipientes) {
+
+        when(estoqueCentralRepository.findByPublicId(ESTOQUE_PUBLIC_ID))
+                .thenReturn(Optional.of(estoque));
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(estoque.getId()))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.findByPublicId(lote.getPublicId()))
+                .thenReturn(Optional.of(lote));
+        when(loteRepository.buscarPorIdComBloqueio(lote.getId()))
+                .thenReturn(Optional.of(lote));
+        when(recipienteEstoqueRepository.buscarDisponiveisPorLoteComBloqueio(lote.getId()))
+                .thenReturn(recipientes);
     }
 
     private RecipienteEstoque criarRecipiente(

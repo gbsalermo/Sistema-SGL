@@ -149,6 +149,54 @@ class RelatorioMovimentacoesServiceTest {
     }
 
     @Test
+    void deveSomarAjustesDeEntradaESaidaNoTotalConsolidado() {
+        MovimentacaoEstoque ajusteEntrada = MovimentacaoEstoque.builder()
+                .id(103L)
+                .publicId(UUID.randomUUID())
+                .produto(entrada.getProduto())
+                .laboratorio(entrada.getLaboratorio())
+                .usuario(entrada.getUsuario())
+                .estoqueCentral(entrada.getEstoqueCentral())
+                .tipoMovimentacao(TipoMovimentacao.AJUSTE_ENTRADA)
+                .origem(OrigemMovimentacao.AJUSTE)
+                .quantidadeMovimentada(BigDecimal.valueOf(3))
+                .quantidadeAnterior(BigDecimal.valueOf(4))
+                .quantidadeAtual(BigDecimal.valueOf(7))
+                .dataMovimentacao(LocalDateTime.of(2026, 3, 2, 9, 0))
+                .build();
+
+        MovimentacaoEstoque ajusteSaida = MovimentacaoEstoque.builder()
+                .id(104L)
+                .publicId(UUID.randomUUID())
+                .produto(entrada.getProduto())
+                .laboratorio(entrada.getLaboratorio())
+                .usuario(entrada.getUsuario())
+                .estoqueCentral(entrada.getEstoqueCentral())
+                .tipoMovimentacao(TipoMovimentacao.AJUSTE_SAIDA)
+                .origem(OrigemMovimentacao.AJUSTE)
+                .quantidadeMovimentada(BigDecimal.valueOf(2))
+                .quantidadeAnterior(BigDecimal.valueOf(7))
+                .quantidadeAtual(BigDecimal.valueOf(5))
+                .dataMovimentacao(LocalDateTime.of(2026, 3, 3, 9, 0))
+                .build();
+
+        when(movimentacaoRepository.findAll())
+                .thenReturn(List.of(ajusteEntrada, ajusteSaida));
+
+        RelatorioMovimentacoesResponseDTO resultado =
+                relatorioMovimentacoesService.gerar(
+                        null, null, null, null, null, null, null, null
+                );
+
+        assertEquals(2, resultado.getTotalMovimentacoes());
+        assertEquals(
+                0,
+                BigDecimal.valueOf(5)
+                        .compareTo(resultado.getQuantidadeAjustes())
+        );
+    }
+
+    @Test
     void deveFiltrarPorTipoDeMovimentacao() {
         when(movimentacaoRepository.findAll()).thenReturn(List.of(entrada, saida, descarte));
 
