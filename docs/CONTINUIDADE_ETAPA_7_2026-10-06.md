@@ -2327,3 +2327,31 @@ Próximo bloco:
 ```text
 7.1-K — ajuste de estoque
 ```
+
+
+### 15.8 Fechamento do 7.1-K1
+
+Em 09/10/2026:
+
+- ajustes de estoque passaram a possuir fluxo explícito de entrada e saída;
+- novo recipiente e recipiente existente são tratados de forma distinta;
+- capacidade, estado físico e unidade canônica são validados;
+- ajuste de saída atua diretamente sobre o recipiente informado;
+- `MovimentacaoRecipiente` registra antes/depois do ajuste;
+- relatório mantém visão consolidada de ajustes;
+- `V36__allow_positive_stock_adjustments.sql` aplicada para permitir saldo atual do Lote acima da quantidade inicial após ajuste positivo auditado;
+- suíte completa permaneceu verde.
+
+Commits:
+
+```text
+93ba0b6 — Feat: Modelagem de AJUSTE_ENTRADA/AJUSTE_SAIDA
+4abcfeb — Test: cobrir ajustes fisicos de estoque
+cbe8557 — feat: adcao V36
+```
+
+Próximo subbloco:
+
+```text
+7.1-K2 — descarte e devolução no nível dos recipientes físicos
+```
