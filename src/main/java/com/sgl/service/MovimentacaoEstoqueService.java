@@ -272,13 +272,11 @@ public class MovimentacaoEstoqueService {
 			BigDecimal saldoLoteAtual = lote.getQuantidadeDisponivel().subtract(consumido);
 
 			if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
-				if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
-
 					throw new StockConflictException("O estoque foi alterado por outra operação. "
 							+ "O saldo físico dos recipientes não é mais compatível "
 							+ "com o saldo disponível do lote.");
 				}
-			}
+			
 
 			lote.setQuantidadeDisponivel(saldoLoteAtual);
 
