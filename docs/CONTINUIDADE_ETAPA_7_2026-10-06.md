@@ -2534,3 +2534,37 @@ Usuário no contexto de Projeto
 - **Documentação:** manter as decisões e o estado real sincronizados, sem marcar trabalho não validado como concluído.
 
 **Situação:** \`7.3 = redefinição funcional / auditoria pendente\`; **nenhum desenvolvimento de backend iniciado após o retorno à 7.2**.
+
+
+### 15.7 Auditoria do código existente — Pedido, Resíduo e ModeloResiduo (09/10/2026)
+
+**Auditoria de leitura; nenhuma alteração de implementação.**
+
+**Referências efetivamente inspecionadas:**
+- \`model/Pedido.java\`, \`model/ItemPedido.java\`, \`service/PedidoService.java\`, \`controller/PedidoController.java\`;
+- \`dto/request/PedidoRequestDTO.java\`, \`ItemPedidoRequestDTO.java\`, \`AprovarPedidoRequestDTO.java\`, \`dto/response/PedidoResponseDTO.java\`;
+- \`model/Residuo.java\`, \`model/ComponenteResiduo.java\`, \`service/ResiduoService.java\`, \`controller/ResiduoController.java\`;
+- \`model/ModeloResiduo.java\`, \`model/ComponenteModeloResiduo.java\`, \`service/ModeloResiduoService.java\`, \`controller/ModeloResiduoController.java\`;
+- \`service/MovimentacaoEstoqueService.java\`, \`model/MovimentacaoEstoque.java\`, enums de estados e origem/tipo de movimentação.
+
+**Achados confirmados:**
+
+1. \`Pedido\` mantém usuário, laboratório, Projeto opcional, itens e estados \`PENDENTE → APROVADO → ENTREGUE\`; pode ser \`REJEITADO\` ou \`CANCELADO\`.
+2. \`PedidoService.aprovar()\` **já baixa imediatamente o estoque dos Produtos** via \`registrarSaida(... OrigemMovimentacao.PEDIDO ...)\`, com seleção de Lotes e Recipientes. \`entregar()\` não efetua segunda baixa; registra \`HistoricoLaboratorio\` e data de entrega.
+3. \`cancelar()\`, quando \`APROVADO\`, reverte as saídas via \`devolverSaidasDoPedido\`, restaurando os Recipientes vinculados se o estado físico não tiver mudado. **Precisamos delimitar o instante da preparação física**, pois a política documentada proíbe devolução física comum de material fracionado já retirado, em razão de contaminação/integridade. Cancelamento antes da separação/preparo não equivale a devolução física após consumo.
+4. \`PedidoService.criar()\` exige ao menos um \`ItemPedido\` vinculado a \`Produto\` existente no estoque da Unidade, **proíbe repetir o mesmo Produto em um Pedido** e exige \`TipoEmbalagem\`, inteiro de embalagens e multiplicador físico. Não recebe objeto/composição de Solução nem unidade de medida informada no item. Uma Solução personalizada **não cabe diretamente** no DTO atual sem evolução.
+5. \`AprovarPedidoRequestDTO\` lista itens aprovados, mas \`aprovar()\` não exige explicitamente que todos os itens originais estejam na lista. Para a operação multicomponente da Solução, é necessário definir integralidade da aprovação/atendimento e não deixar componente obrigatório ignorado silenciosamente. A chamada é transacional; aproveitar essa propriedade para rollback integral.
+6. A saída atual usa \`BigDecimal\`, bloqueios de estoque, Lotes e Recipientes e rastreia \`MovimentacaoEstoque\` por \`Pedido\`, \`Produto\`, \`Lote\`, e detalhes físicos \`MovimentacaoRecipiente\`. Reaproveitar este mecanismo, não criar estoque de Solução.
+7. \`ModeloResiduo\` é catálogo separado, vinculado a \`Unidade\`, com componentes; \`Residuo\` é ocorrência efetiva vinculada a laboratório/gerador/Projeto, com componentes próprios e histórico de etapas. **Excelente precedente estrutural** para \`catálogo de Soluções\` versus \`composição de uma solicitação individual\`. Não copiar as entidades literalmente.
+8. Componentes de Resíduo e de Modelo de Resíduo admitem Produto opcional e quantidade/concentração textual livre; Resíduos **não** movimentam estoque. Componentes de Solução devem exigir \`Produto\` real, quantidade numérica positiva e unidade física compatível.
+9. \`PedidoService.validarConsistenciaPedido()\` exige, no momento, que o laboratório do usuário coincida com o laboratório indicado, além do Projeto pertencer ao laboratório. Deve ser reconciliado com o contexto operacional definido para Estagiários e demais perfis na 7.4/Etapa 8.
+10. \`OrigemMovimentacao.PEDIDO\` já existe; não inventar uma origem de baixa paralela para Solução sem necessidade. Preservar identidade da Solução/receita no Pedido para auditoria.
+
+**Proposta de fronteiras, pendente de confirmação, não é decisão implementada:**
+- modelo de catálogo exclusivo para composição padrão cadastrada pelo Gestor;
+- composição efetiva/snapshot vinculada a uma solicitação/pedido, seja ela originada do catálogo ou criada avulsamente pelo usuário;
+- retirar Produtos por meio do serviço de estoque já existente, dentro de transação;
+- promoção da composição de uma solicitação ao catálogo somente mediante ação explícita do Gestor;
+- avaliar se estados atuais de Pedido bastam ou se Soluções exigem etapa explícita de separação/preparo.
+
+**Decisão funcional prioritária pendente:** distinguir aprovação, baixa/alocação dos Produtos, preparação física e entrega. Definir em qual momento cada evento ocorre e se é necessário registrar uma etapa própria de preparo. **Não modelar ou escrever Java/migration enquanto essa decisão estiver aberta.**
