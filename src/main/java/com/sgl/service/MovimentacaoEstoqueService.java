@@ -17,6 +17,7 @@ import com.sgl.dto.response.LoteResponseDTO;
 import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.exception.StockConflictException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Lote;
@@ -222,9 +223,15 @@ public class MovimentacaoEstoqueService {
 
 			String forma = tipoEmbalagemSolicitada == null ? "selecionada" : tipoEmbalagemSolicitada.name();
 
-			throw new BusinessRuleException("Estoque utilizável insuficiente para a forma de retirada " + forma
-					+ ". Disponível nos lotes compatíveis: " + saldoUtilizavel + ", solicitado: " + quantidade);
-		}
+			throw new StockConflictException(
+			        "Estoque utilizável insuficiente para a forma de retirada "
+			                + forma
+			                + ". Disponível nos lotes compatíveis: "
+			                + saldoUtilizavel
+			                + ", solicitado: "
+			                + quantidade
+			                + ". Revise a disponibilidade antes de aprovar."
+			);}
 
 		List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
 
@@ -237,13 +244,12 @@ public class MovimentacaoEstoqueService {
 			}
 
 			List<RecipienteEstoque> recipientes = recipienteEstoqueRepository
-					.findByLoteIdOrderBySequencialAsc(lote.getId()).stream()
-					.filter(r -> r.getEstado() != EstadoRecipienteEstoque.ESGOTADO)
-					.filter(r -> r.getQuantidadeDisponivel() != null
-							&& r.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) > 0)
-					.toList();
+					.buscarDisponiveisPorLoteComBloqueio(lote.getId());
+
+			revalidarSaldoFisicoLote(lote, recipientes);
 
 			BigDecimal quantidadeDoLote = calcularQuantidadeFisicamenteConsumivel(lote, restante, recipientes);
+
 
 			if (quantidadeDoLote.compareTo(BigDecimal.ZERO) <= 0) {
 				continue;
@@ -255,9 +261,14 @@ public class MovimentacaoEstoqueService {
 					.reduce(BigDecimal.ZERO, BigDecimal::add);
 
 			if (consumido.compareTo(quantidadeDoLote) != 0) {
-				throw new BusinessRuleException(
-						"Não foi possível compatibilizar o saldo físico dos recipientes com o saldo do lote "
-								+ lote.getCodigoInterno() + ".");
+
+			    throw new StockConflictException(
+			            "O estoque físico foi alterado durante a operação. "
+			                    + "Não foi possível compatibilizar os recipientes "
+			                    + "com o lote "
+			                    + lote.getCodigoInterno()
+			                    + ". Revise a disponibilidade antes de aprovar."
+			    );
 			}
 
 			BigDecimal saldoAnterior = estoque.getQuantidadeAtual();
@@ -267,7 +278,14 @@ public class MovimentacaoEstoqueService {
 			BigDecimal saldoLoteAtual = lote.getQuantidadeDisponivel().subtract(consumido);
 
 			if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
-				throw new BusinessRuleException("O saldo físico dos recipientes excede o saldo disponível do lote.");
+				if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
+
+				    throw new StockConflictException(
+				            "O estoque foi alterado por outra operação. "
+				                    + "O saldo físico dos recipientes não é mais compatível "
+				                    + "com o saldo disponível do lote."
+				    );
+				}
 			}
 
 			lote.setQuantidadeDisponivel(saldoLoteAtual);
@@ -291,10 +309,17 @@ public class MovimentacaoEstoqueService {
 
 		if (restante.compareTo(BigDecimal.ZERO) > 0) {
 
-			BigDecimal disponivelFisicamente = quantidade.subtract(restante);
+		    BigDecimal disponivelFisicamente =
+		            quantidade.subtract(restante);
 
-			throw new BusinessRuleException("Estoque físico insuficiente nos recipientes compatíveis. " + "Disponível: "
-					+ disponivelFisicamente + ", solicitado: " + quantidade + ".");
+		    throw new StockConflictException(
+		            "Estoque físico insuficiente nos recipientes compatíveis. "
+		                    + "Disponível: "
+		                    + disponivelFisicamente
+		                    + ", solicitado: "
+		                    + quantidade
+		                    + ". Revise a disponibilidade antes de aprovar."
+		    );
 		}
 
 		return movimentacoes;
@@ -760,15 +785,24 @@ public class MovimentacaoEstoqueService {
 
 		movimentacaoRecipienteRepository.saveAll(detalhes);
 	}
-	
-	private record ConsumoRecipiente(
-	        RecipienteEstoque recipiente,
-	        BigDecimal quantidadeAnterior,
-	        BigDecimal quantidadeMovimentada,
-	        BigDecimal quantidadeAtual,
-	        EstadoRecipienteEstoque estadoAnterior,
-	        EstadoRecipienteEstoque estadoAtual,
-	        boolean abriuRecipiente,
-	        boolean esgotouRecipiente) {
+
+	private record ConsumoRecipiente(RecipienteEstoque recipiente, BigDecimal quantidadeAnterior,
+			BigDecimal quantidadeMovimentada, BigDecimal quantidadeAtual, EstadoRecipienteEstoque estadoAnterior,
+			EstadoRecipienteEstoque estadoAtual, boolean abriuRecipiente, boolean esgotouRecipiente) {
+	}
+
+	private void revalidarSaldoFisicoLote(Lote lote, List<RecipienteEstoque> recipientes) {
+
+		BigDecimal saldoFisico = recipientes.stream().map(RecipienteEstoque::getQuantidadeDisponivel)
+				.filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		BigDecimal saldoLote = lote.getQuantidadeDisponivel();
+
+		if (saldoLote == null || saldoFisico.compareTo(saldoLote) != 0) {
+
+			throw new StockConflictException(
+					"O estoque físico foi alterado ou está inconsistente " + "com o saldo do lote "
+							+ lote.getCodigoInterno() + ". Revise a disponibilidade antes de aprovar.");
+		}
 	}
 }

@@ -55,4 +55,17 @@ public interface RecipienteEstoqueRepository extends JpaRepository<RecipienteEst
 			WHERE recipiente.id = :id
 			""")
 	Optional<RecipienteEstoque> buscarPorIdComBloqueio(@Param("id") Long id);
+	
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+	        SELECT recipiente
+	        FROM RecipienteEstoque recipiente
+	        WHERE recipiente.lote.id = :loteId
+	          AND recipiente.quantidadeDisponivel > 0
+	        ORDER BY recipiente.sequencial ASC,
+	                 recipiente.id ASC
+	        """)
+	List<RecipienteEstoque> buscarDisponiveisPorLoteComBloqueio(
+	        @Param("loteId") Long loteId
+	);
 }
