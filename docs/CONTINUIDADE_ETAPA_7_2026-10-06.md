@@ -802,14 +802,14 @@ A migration deve preservar os valores inteiros existentes convertendo-os para a 
 
 Proposta fechada como base:
 
-\`\`\`java
+```java
 public enum DimensaoMedida {
     VOLUME,
     MASSA,
     COMPRIMENTO,
     CONTAGEM
 }
-\`\`\`
+```
 
 A dimensão classifica o tipo de quantidade, mas **não é suficiente sozinha para autorizar conversão automática**.
 
@@ -817,7 +817,7 @@ A dimensão classifica o tipo de quantidade, mas **não é suficiente sozinha pa
 
 Proposta:
 
-\`\`\`text
+```text
 VOLUME
 → ML
 → L
@@ -833,20 +833,20 @@ COMPRIMENTO
 CONTAGEM
 → UNIDADE
 → REACAO
-\`\`\`
+```
 
 Remover do conceito de unidade de medida:
 
-\`\`\`text
+```text
 CAIXA
 FRASCO
 AMPOLA
 PAR
-\`\`\`
+```
 
 Esses itens passam a pertencer ao conceito de apresentação/embalagem.
 
-\`OUTRO\` também não deve ser usado como unidade canônica automática. Quando necessário, o sistema deverá exigir especificação explícita e bloquear conversões automáticas.
+`OUTRO` também não deve ser usado como unidade canônica automática. Quando necessário, o sistema deverá exigir especificação explícita e bloquear conversões automáticas.
 
 ### 10.3 Compatibilidade de conversão
 
@@ -854,7 +854,7 @@ A regra de conversão não será apenas "mesma dimensão".
 
 Exemplo:
 
-\`\`\`text
+```text
 mL ↔ L       ✅
 mg ↔ g ↔ kg  ✅
 metro        ✅ identidade
@@ -864,13 +864,13 @@ reação       ✅ identidade
 unidade ↔ reação  ❌
 massa ↔ volume    ❌
 frasco ↔ mL       ❌ sem conteúdo declarado da apresentação
-\`\`\`
+```
 
-Portanto, cada \`UnidadeMedida\` deve possuir um grupo/família de conversão explícito.
+Portanto, cada `UnidadeMedida` deve possuir um grupo/família de conversão explícito.
 
 Proposta conceitual:
 
-\`\`\`java
+```java
 public enum GrupoConversaoMedida {
     VOLUME,
     MASSA,
@@ -878,31 +878,31 @@ public enum GrupoConversaoMedida {
     UNIDADE,
     REACAO
 }
-\`\`\`
+```
 
-Assim, \`UNIDADE\` e \`REACAO\` podem compartilhar a dimensão \`CONTAGEM\`, mas não são convertidas automaticamente entre si.
+Assim, `UNIDADE` e `REACAO` podem compartilhar a dimensão `CONTAGEM`, mas não são convertidas automaticamente entre si.
 
 ### 10.4 Unidade base interna por grupo
 
 Bases recomendadas:
 
-\`\`\`text
+```text
 VOLUME       → mL
 MASSA        → mg
 COMPRIMENTO  → m
 UNIDADE      → unidade
 REACAO       → reação
-\`\`\`
+```
 
 A unidade base interna permite comparar/somar saldos com segurança.
 
 Exemplos:
 
-\`\`\`text
+```text
 1 L  → 1000 mL
 1 kg → 1.000.000 mg
 1 g  → 1000 mg
-\`\`\`
+```
 
 A apresentação informada pelo usuário não precisa ser convertida permanentemente para a unidade visual; o backend pode persistir a quantidade canônica e manter metadados de apresentação para exibição/auditoria.
 
@@ -910,15 +910,15 @@ A apresentação informada pelo usuário não precisa ser convertida permanentem
 
 Cada Produto deverá possuir:
 
-\`\`\`text
+```text
 unidadeMedidaCanonica
 dimensão derivada da unidade
 grupo de conversão derivado da unidade
-\`\`\`
+```
 
 Exemplos:
 
-\`\`\`text
+```text
 Etanol
 → unidade canônica: ML
 
@@ -930,46 +930,46 @@ Ponteira
 
 Kit PCR
 → unidade canônica: REACAO
-\`\`\`
+```
 
 A escolha da unidade canônica deve ser estável depois que houver estoque/movimentação. Mudança posterior exige fluxo de migração/conversão auditável, não edição simples do cadastro.
 
 ### 10.6 Apresentação
 
-\`TipoEmbalagem\` continuará separado da unidade e será ampliado/revisado no próximo subbloco.
+`TipoEmbalagem` continuará separado da unidade e será ampliado/revisado no próximo subbloco.
 
 Exemplos:
 
-\`\`\`text
+```text
 FRASCO 500 mL
 AMPOLA 2 mL
 CAIXA 100 unidades
 KIT 50 reações
 PAR
 UNITARIO
-\`\`\`
+```
 
 A relação é:
 
-\`\`\`text
+```text
 apresentação física
 + conteúdo por apresentação
 + unidade do conteúdo
-\`\`\`
+```
 
 e não "embalagem como unidade de medida".
 
 ### 10.7 Precisão
 
-Para quantidades físicas, usar \`BigDecimal\`.
+Para quantidades físicas, usar `BigDecimal`.
 
-A escala exata do banco será fechada na migration, com recomendação inicial de precisão suficiente para laboratório, por exemplo \`DECIMAL(19,6)\`, sem usar \`FLOAT\`/\`DOUBLE\`.
+A escala exata do banco será fechada na migration, com recomendação inicial de precisão suficiente para laboratório, por exemplo `DECIMAL(19,6)`, sem usar `FLOAT`/`DOUBLE`.
 
 ### 10.8 Compatibilidade legada
 
 Mapeamento planejado do enum atual:
 
-\`\`\`text
+```text
 ML       → ML
 L        → L
 MG       → MG
@@ -984,7 +984,7 @@ FRASCO   → apresentação FRASCO
 AMPOLA   → apresentação AMPOLA
 PAR      → apresentação PAR
 OUTRO    → exige revisão/mapeamento explícito
-\`\`\`
+```
 
 Nenhum registro legado deve ser convertido silenciosamente de uma grandeza incompatível.
 
@@ -996,13 +996,13 @@ Nenhum registro legado deve ser convertido silenciosamente de uma grandeza incom
 
 Enum atual:
 
-\`\`\`java
+```java
 UNITARIO,
 KIT,
 CAIXA,
 GARRAFA,
 GALAO
-\`\`\`
+```
 
 Ele já cumpre parcialmente o papel correto: **apresentação física**, não unidade de medida.
 
@@ -1010,7 +1010,7 @@ Entretanto, precisa ser ampliado para cobrir apresentações já existentes no d
 
 Proposta:
 
-\`\`\`java
+```java
 public enum TipoEmbalagem {
     UNITARIO,
     FRASCO,
@@ -1026,31 +1026,31 @@ public enum TipoEmbalagem {
     PAR,
     OUTRO
 }
-\`\`\`
+```
 
 A enumeração representa somente o tipo físico da apresentação.
 
 Exemplos:
 
-\`\`\`text
+```text
 FRASCO + 500 + ML
 AMPOLA + 2 + ML
 CAIXA + 100 + UNIDADE
 KIT + 50 + REACAO
 PACOTE + 1000 + UNIDADE
-\`\`\`
+```
 
-\`OUTRO\` exige descrição textual em \`apresentacao\`.
+`OUTRO` exige descrição textual em `apresentacao`.
 
 ### 11.2 Regra de fracionamento
 
-O atributo \`fracionavel\` permanece útil, mas passa a significar:
+O atributo `fracionavel` permanece útil, mas passa a significar:
 
 > o conteúdo interno de uma apresentação física pode ser retirado parcialmente.
 
 Exemplos:
 
-\`\`\`text
+```text
 Frasco 500 mL de Etanol
 → fracionável = true
 
@@ -1062,7 +1062,7 @@ Caixa com 100 ponteiras
 
 Kit PCR 50 reações
 → pode ser fracionável = true, desde que a regra institucional permita retirada por reação
-\`\`\`
+```
 
 O tipo da embalagem sozinho nunca determina se ela é fracionável.
 
@@ -1074,7 +1074,7 @@ Representar uma **unidade física individual de apresentação** pertencente a u
 
 Estrutura proposta:
 
-\`\`\`java
+```java
 RecipienteEstoque
 - id: Long
 - publicId: UUID
@@ -1090,23 +1090,23 @@ RecipienteEstoque
 - dataEsgotamento: LocalDateTime?
 - ativo: Boolean
 - observacao: String?
-\`\`\`
+```
 
 ### 11.4 EstadoRecipienteEstoque
 
 Proposta:
 
-\`\`\`java
+```java
 public enum EstadoRecipienteEstoque {
     FECHADO,
     ABERTO,
     ESGOTADO
 }
-\`\`\`
+```
 
 Regras:
 
-\`\`\`text
+```text
 FECHADO
 → quantidadeDisponivel = capacidadeInicial
 → dataAbertura = null
@@ -1120,19 +1120,19 @@ ABERTO
 ESGOTADO
 → quantidadeDisponivel = 0
 → dataEsgotamento != null
-\`\`\`
+```
 
 Um recipiente pode passar:
 
-\`\`\`text
+```text
 FECHADO → ABERTO → ESGOTADO
-\`\`\`
+```
 
 ou, em retirada integral:
 
-\`\`\`text
+```text
 FECHADO → ESGOTADO
-\`\`\`
+```
 
 Nesse segundo caso, não é necessário simular uma abertura intermediária apenas para registrar a transição.
 
@@ -1142,7 +1142,7 @@ Cada recipiente precisa de identificação própria e estável para auditoria.
 
 Proposta:
 
-\`\`\`text
+```text
 Lote:
 LOT-ETANOL-001
 
@@ -1151,7 +1151,7 @@ LOT-ETANOL-001-R001
 LOT-ETANOL-001-R002
 LOT-ETANOL-001-R003
 ...
-\`\`\`
+```
 
 O código é imutável após a criação.
 
@@ -1159,24 +1159,24 @@ O código é imutável após a criação.
 
 Exemplo:
 
-\`\`\`text
+```text
 Entrada:
 tipo = FRASCO
 quantidadeApresentacoes = 10
 conteudoPorApresentacao = 500
 unidade = ML
 fracionavel = true
-\`\`\`
+```
 
 Resultado:
 
-\`\`\`text
+```text
 Lote
 ├── R001 — 500 mL — FECHADO
 ├── R002 — 500 mL — FECHADO
 ├── ...
 └── R010 — 500 mL — FECHADO
-\`\`\`
+```
 
 O saldo do Lote e do EstoqueCentral passa a ser derivável/sincronizado pela soma dos recipientes.
 
@@ -1193,16 +1193,16 @@ Para produtos puramente unitários e não fracionáveis, deve ser avaliado se a 
 
 Estratégia recomendada para simplificar invariantes:
 
-> materializar todas as apresentações físicas recebidas como \`RecipienteEstoque\`, inclusive não fracionáveis.
+> materializar todas as apresentações físicas recebidas como `RecipienteEstoque`, inclusive não fracionáveis.
 
 Assim existe uma única fonte operacional para saída, auditoria e concorrência.
 
 Exemplo:
 
-\`\`\`text
+```text
 100 caixas não fracionáveis
 → 100 RecipienteEstoque FECHADO
-\`\`\`
+```
 
 A desvantagem é maior volume de registros, mas para a escala prevista do SGL isso é aceitável e simplifica fortemente o domínio.
 
@@ -1219,17 +1219,17 @@ O Lote continua guardando:
 - quantidade de apresentações recebidas;
 - rastreabilidade institucional.
 
-O saldo agregado em \`Lote.quantidadeDisponivel\` pode ser mantido inicialmente por compatibilidade/performance, mas deverá ser considerado **saldo derivado e validado** contra os recipientes.
+O saldo agregado em `Lote.quantidadeDisponivel` pode ser mantido inicialmente por compatibilidade/performance, mas deverá ser considerado **saldo derivado e validado** contra os recipientes.
 
 ### 11.9 Relação com MovimentacaoEstoque
 
-\`MovimentacaoEstoque\` continua sendo o evento agregado por Produto/Lote/Pedido.
+`MovimentacaoEstoque` continua sendo o evento agregado por Produto/Lote/Pedido.
 
 Para preservar o detalhe físico, será necessário um detalhe de movimentação por recipiente.
 
 Proposta futura:
 
-\`\`\`text
+```text
 MovimentacaoEstoque
 └── MovimentacaoRecipiente
     ├── recipiente
@@ -1238,15 +1238,15 @@ MovimentacaoEstoque
     ├── quantidadeAtual
     ├── estadoAnterior
     └── estadoAtual
-\`\`\`
+```
 
 Isso evita duplicar uma movimentação principal para cada recipiente e permite registrar uma única saída de 700 mL composta por:
 
-\`\`\`text
+```text
 500 mL do R001
 +
 200 mL do R004
-\`\`\`
+```
 
 ### 11.10 Devolução
 
@@ -1256,7 +1256,7 @@ Ela deve usar o detalhe original da movimentação.
 
 Casos:
 
-\`\`\`text
+```text
 saída de recipiente fechado inteiro
 → devolução pode restaurar o mesmo recipiente, se fisicamente devolvido intacto
 
@@ -1265,7 +1265,7 @@ saída parcial de recipiente
    a) retorno ao mesmo recipiente
    b) novo recipiente identificado
    c) não permitir retorno físico ao estoque
-\`\`\`
+```
 
 Essa política ainda precisa ser fechada antes da implementação de devolução no novo modelo.
 
@@ -1275,14 +1275,14 @@ A maior versão existente atualmente é V32.
 
 A primeira migration disponível para esta etapa é:
 
-\`\`\`text
+```text
 V33
-\`\`\`
+```
 
 Nenhuma V33 deve ser criada até o fechamento completo de:
 
-- \`TipoEmbalagem\`;
-- \`RecipienteEstoque\`;
+- `TipoEmbalagem`;
+- `RecipienteEstoque`;
 - detalhes de movimentação por recipiente;
 - política de devolução;
 - estratégia de backfill dos lotes existentes.
@@ -1302,13 +1302,13 @@ Motivo:
 
 Portanto:
 
-\`\`\`text
+```text
 retirada inteira de recipiente fechado
 → pode admitir DEVOLUCAO, desde que o recipiente retorne íntegro/lacrado
 
 retirada fracionada
 → DEVOLUCAO normal proibida
-\`\`\`
+```
 
 ### 11.13 Ajuste de estoque como única forma de reentrada de material fracionado
 
@@ -1327,10 +1327,10 @@ O ajuste deverá exigir:
 
 Destinos possíveis:
 
-\`\`\`text
+```text
 A) NOVO_RECIPIENTE
 B) RECIPIENTE_EXISTENTE
-\`\`\`
+```
 
 #### A) Novo recipiente
 
@@ -1338,7 +1338,7 @@ B) RECIPIENTE_EXISTENTE
 
 Exemplo:
 
-\`\`\`text
+```text
 retornaram 10 mL de acetona
 
 → criar novo RecipienteEstoque
@@ -1346,7 +1346,7 @@ retornaram 10 mL de acetona
 → estado = ABERTO
 → origem = AJUSTE
 → observação/justificativa obrigatória
-\`\`\`
+```
 
 O novo recipiente recebe identificação própria e não é confundido com o recipiente original.
 
@@ -1379,23 +1379,23 @@ A interface deve deixar claro:
 
 O histórico deve permitir distinguir:
 
-\`\`\`text
+```text
 COMPRA
 DEVOLUCAO de recipiente íntegro
 AJUSTE de entrada
 AJUSTE de saída
 INVENTARIO
 DESCARTE
-\`\`\`
+```
 
 ### 11.15 Impacto no modelo atual
 
 O enum atual já possui:
 
-\`\`\`text
+```text
 TipoMovimentacao.AJUSTE
 OrigemMovimentacao.AJUSTE
-\`\`\`
+```
 
 mas o backend atual não possui endpoint operacional específico para ajuste de estoque.
 
@@ -1403,12 +1403,12 @@ Na Etapa 7 deverá ser criado um fluxo explícito de ajuste, sem reutilizar de f
 
 Sugestão de separação:
 
-\`\`\`text
+```text
 AJUSTE_ENTRADA
 AJUSTE_SAIDA
-\`\`\`
+```
 
-como intenção operacional no contrato/DTO, mesmo que a persistência continue usando \`TipoMovimentacao.AJUSTE\` com quantidade/sentido bem definidos.
+como intenção operacional no contrato/DTO, mesmo que a persistência continue usando `TipoMovimentacao.AJUSTE` com quantidade/sentido bem definidos.
 
 A decisão final do contrato será feita antes da V33.
 
@@ -1418,7 +1418,7 @@ A decisão final do contrato será feita antes da V33.
 
 ### 12.1 Auditoria do modelo atual de movimentação
 
-Hoje \`MovimentacaoEstoque\` concentra:
+Hoje `MovimentacaoEstoque` concentra:
 
 - Produto;
 - EstoqueCentral;
@@ -1443,7 +1443,7 @@ Entretanto, para retiradas que usam mais de um recipiente, ele não consegue res
 
 Proposta:
 
-\`\`\`java
+```java
 MovimentacaoRecipiente
 - id: Long
 - publicId: UUID
@@ -1456,43 +1456,43 @@ MovimentacaoRecipiente
 - estadoAtual: EstadoRecipienteEstoque
 - abriuRecipiente: Boolean
 - esgotouRecipiente: Boolean
-\`\`\`
+```
 
 A entidade é detalhe da movimentação principal.
 
 Relação:
 
-\`\`\`text
+```text
 MovimentacaoEstoque 1 → N MovimentacaoRecipiente
-\`\`\`
+```
 
 ### 12.3 Exemplo de retirada de 700 mL
 
 Estado:
 
-\`\`\`text
+```text
 R001 — 500 mL — FECHADO
 R004 — 350 mL — ABERTO
-\`\`\`
+```
 
 Pedido:
 
-\`\`\`text
+```text
 700 mL
-\`\`\`
+```
 
 Movimentação principal:
 
-\`\`\`text
+```text
 SAIDA
 Produto: Etanol
 Quantidade: 700 mL
 Lote: ETANOL-001
-\`\`\`
+```
 
 Detalhes:
 
-\`\`\`text
+```text
 R001
 500 → 0 mL
 FECHADO → ESGOTADO
@@ -1500,7 +1500,7 @@ FECHADO → ESGOTADO
 R004
 350 → 150 mL
 ABERTO → ABERTO
-\`\`\`
+```
 
 ### 12.4 Uma movimentação pode afetar mais de um Lote
 
@@ -1508,7 +1508,7 @@ Como a regra FEFO pode precisar atravessar Lotes para atender um Pedido, o desen
 
 Exemplo:
 
-\`\`\`text
+```text
 Pedido: 900 mL
 
 MovimentacaoEstoque #1
@@ -1520,15 +1520,15 @@ MovimentacaoEstoque #2
 → Lote B
 → 300 mL
 → detalhes dos recipientes de B
-\`\`\`
+```
 
-Isso preserva a rastreabilidade já existente por Lote e evita tornar \`MovimentacaoEstoque.lote\` ambíguo.
+Isso preserva a rastreabilidade já existente por Lote e evita tornar `MovimentacaoEstoque.lote` ambíguo.
 
 ### 12.5 DTO de ajuste
 
 Proposta conceitual:
 
-\`\`\`java
+```java
 AjusteEstoqueRequestDTO
 - tipoAjuste: ENTRADA | SAIDA
 - produtoId: UUID
@@ -1540,11 +1540,11 @@ AjusteEstoqueRequestDTO
 - unidadeMedida: UnidadeMedida
 - justificativa: String
 - observacao: String?
-\`\`\`
+```
 
 Regras:
 
-\`\`\`text
+```text
 AJUSTE_ENTRADA + NOVO_RECIPIENTE
 → recipienteId = null
 → cria RecipienteEstoque próprio
@@ -1561,25 +1561,25 @@ AJUSTE_ENTRADA + RECIPIENTE_EXISTENTE
 AJUSTE_SAIDA
 → recipienteId obrigatório quando houver recipientes individualizados
 → reduz saldo físico explicitamente
-\`\`\`
+```
 
 ### 12.6 Enum de intenção de ajuste
 
 Proposta:
 
-\`\`\`java
+```java
 public enum TipoAjusteEstoque {
     ENTRADA,
     SAIDA
 }
-\`\`\`
+```
 
 Persistência principal:
 
-\`\`\`text
+```text
 TipoMovimentacao = AJUSTE
 OrigemMovimentacao = AJUSTE
-\`\`\`
+```
 
 O enum novo representa a intenção operacional no contrato, sem quebrar a semântica histórica da movimentação.
 
@@ -1587,12 +1587,12 @@ O enum novo representa a intenção operacional no contrato, sem quebrar a semâ
 
 Proposta:
 
-\`\`\`java
+```java
 public enum DestinoAjusteEntrada {
     NOVO_RECIPIENTE,
     RECIPIENTE_EXISTENTE
 }
-\`\`\`
+```
 
 Não permitir valor implícito.
 
@@ -1622,19 +1622,19 @@ Obrigatório:
 
 ### 12.9 Capacidade no ajuste de entrada
 
-Para \`RECIPIENTE_EXISTENTE\`:
+Para `RECIPIENTE_EXISTENTE`:
 
-\`\`\`text
+```text
 quantidadeDisponivel + ajuste
 <= capacidadeInicial
-\`\`\`
+```
 
 Caso contrário:
 
-\`\`\`text
+```text
 bloquear
 → sugerir NOVO_RECIPIENTE
-\`\`\`
+```
 
 O backend não aumenta automaticamente a capacidade original de um recipiente para fazer o ajuste caber.
 
@@ -1642,10 +1642,10 @@ O backend não aumenta automaticamente a capacidade original de um recipiente pa
 
 Decisão recomendada:
 
-\`\`\`text
+```text
 ESGOTADO
 → não recebe ajuste de entrada
-\`\`\`
+```
 
 Se material reaparecer fisicamente, criar novo recipiente.
 
@@ -1667,11 +1667,11 @@ A definição exata desse caso será fechada no desenho da V33/V34.
 
 ### 12.12 Resposta da API
 
-\`MovimentacaoEstoqueResponseDTO\` deverá evoluir para incluir detalhes dos recipientes.
+`MovimentacaoEstoqueResponseDTO` deverá evoluir para incluir detalhes dos recipientes.
 
 Conceito:
 
-\`\`\`text
+```text
 movimentacao
 ├── quantidade total
 ├── lote
@@ -1682,7 +1682,7 @@ movimentacao
     ├── depois
     ├── estado anterior
     └── estado atual
-\`\`\`
+```
 
 A interface pode manter a linha resumida e expandir os detalhes sob demanda.
 
@@ -1690,7 +1690,7 @@ A interface pode manter a linha resumida e expandir os detalhes sob demanda.
 
 O ajuste deve ser uma única transação:
 
-\`\`\`text
+```text
 validar
 → bloquear Estoque/Lote/Recipiente
 → alterar recipiente
@@ -1699,13 +1699,13 @@ validar
 → registrar MovimentacaoEstoque
 → registrar MovimentacaoRecipiente
 → commit
-\`\`\`
+```
 
 Qualquer falha:
 
-\`\`\`text
+```text
 rollback integral
-\`\`\`
+```
 
 ### 12.14 Situação após este subbloco
 
@@ -1726,7 +1726,7 @@ Pendências antes da primeira migration:
 
 1. fechar estratégia de backfill dos Lotes existentes;
 2. definir exatamente quais colunas agregadas permanecem em Lote/EstoqueCentral;
-3. decidir política para registros legados com \`UnidadeMedida\` atualmente igual a CAIXA/FRASCO/AMPOLA/PAR/OUTRO;
+3. decidir política para registros legados com `UnidadeMedida` atualmente igual a CAIXA/FRASCO/AMPOLA/PAR/OUTRO;
 4. dividir as migrations da Etapa 7 em ordem segura.
 
 ---
@@ -1739,9 +1739,9 @@ A auditoria dos initializers confirmou que parte dos dados atuais **não contém
 
 Exemplos encontrados:
 
-- Produtos cadastrados com \`UnidadeMedida.FRASCO\` e \`UnidadeMedida.CAIXA\`;
-- apresentação textual como "frasco de 500 mL", mas Lote com \`conteudoPorApresentacao = 1\`;
-- \`quantidadeApresentacoes\` preenchida com o mesmo valor da quantidade total;
+- Produtos cadastrados com `UnidadeMedida.FRASCO` e `UnidadeMedida.CAIXA`;
+- apresentação textual como "frasco de 500 mL", mas Lote com `conteudoPorApresentacao = 1`;
+- `quantidadeApresentacoes` preenchida com o mesmo valor da quantidade total;
 - lotes antigos tratados como "Legado" e fracionáveis;
 - dados em que o texto da apresentação sugere uma capacidade, mas essa capacidade não está estruturada.
 
@@ -1755,12 +1755,12 @@ Conclusão:
 
 Para cada Lote legado com saldo, criar inicialmente um único registro técnico de compatibilidade:
 
-\`\`\`text
+```text
 RecipienteEstoque LEGADO
 → representa apenas o saldo agregado conhecido do Lote
 → não afirma quantos frascos/caixas reais existem
 → não afirma se estão abertos ou fechados
-\`\`\`
+```
 
 Esse registro serve como ponte de migração, não como representação física definitiva.
 
@@ -1770,32 +1770,32 @@ Adicionar um estado explícito para dados migrados sem distribuição física co
 
 Proposta:
 
-\`\`\`java
+```java
 public enum EstadoRecipienteEstoque {
     NAO_RECONCILIADO,
     FECHADO,
     ABERTO,
     ESGOTADO
 }
-\`\`\`
+```
 
 Regras:
 
-\`\`\`text
+```text
 NAO_RECONCILIADO
 → somente para backfill legado
 → quantidade disponível conhecida
 → distribuição física desconhecida
 → não assume aberto/fechado
-\`\`\`
+```
 
-Novos recipientes criados após a Etapa 7 nunca devem nascer como \`NAO_RECONCILIADO\`.
+Novos recipientes criados após a Etapa 7 nunca devem nascer como `NAO_RECONCILIADO`.
 
 ### 13.4 Criação do recipiente legado
 
 Para Lote existente:
 
-\`\`\`text
+```text
 capacidadeInicial
 → quantidadeInicial atual convertida para BigDecimal
 
@@ -1811,13 +1811,13 @@ estado
 
 codigo
 → <codigo-lote>-RLEGACY
-\`\`\`
+```
 
 Campo recomendado:
 
-\`\`\`text
+```text
 origemLegada = true
-\`\`\`
+```
 
 ou equivalente para impedir que esse registro seja confundido com recipiente físico cadastrado normalmente.
 
@@ -1829,7 +1829,7 @@ O Gestor abre um Lote não reconciliado e informa como o saldo físico realmente
 
 Exemplo:
 
-\`\`\`text
+```text
 Saldo legado conhecido:
 4.950 mL de Etanol
 
@@ -1837,17 +1837,17 @@ Gestor confere fisicamente:
 
 9 frascos fechados × 500 mL
 1 frasco aberto × 450 mL
-\`\`\`
+```
 
 Após confirmar:
 
-\`\`\`text
+```text
 R001 ... R009 → 500 mL FECHADO
 R010          → 450 mL ABERTO
 
 RLEGACY
 → encerrado/substituído pela reconciliação
-\`\`\`
+```
 
 A soma informada deve ser exatamente igual ao saldo legado antes da confirmação.
 
@@ -1855,20 +1855,20 @@ A soma informada deve ser exatamente igual ao saldo legado antes da confirmaçã
 
 Reconciliação:
 
-\`\`\`text
+```text
 não é ENTRADA
 não é SAIDA
 não é DEVOLUCAO
-\`\`\`
+```
 
 Ela apenas transforma:
 
-\`\`\`text
+```text
 saldo agregado conhecido
 → distribuição física conhecida
-\`\`\`
+```
 
-Por isso deve possuir evento próprio de auditoria ou origem \`INVENTARIO\`, sem alterar o total do EstoqueCentral.
+Por isso deve possuir evento próprio de auditoria ou origem `INVENTARIO`, sem alterar o total do EstoqueCentral.
 
 ### 13.7 Operações antes da reconciliação
 
@@ -1877,45 +1877,45 @@ Regra recomendada:
 - consulta e relatórios continuam funcionando;
 - saldo agregado continua visível;
 - novos Lotes usam imediatamente o modelo novo;
-- Lote legado com \`NAO_RECONCILIADO\` não pode executar retirada parcial automatizada;
+- Lote legado com `NAO_RECONCILIADO` não pode executar retirada parcial automatizada;
 - para qualquer operação que dependa de escolher recipiente físico, exigir reconciliação primeiro.
 
 Isso evita que o sistema continue aprofundando uma incerteza histórica.
 
 A interface deve apresentar:
 
-\`\`\`text
+```text
 "Este lote foi migrado do modelo anterior e ainda não possui
 distribuição física dos recipientes confirmada.
 Reconcilie o lote antes de realizar retirada fracionada."
-\`\`\`
+```
 
 ### 13.8 Produtos com unidade legada inválida
 
 Mapeamento automático seguro:
 
-\`\`\`text
+```text
 ML, L, MG, G, KG, METRO, UNIDADE, REACAO
 → mantêm significado
-\`\`\`
+```
 
 Valores antigos que são apresentações:
 
-\`\`\`text
+```text
 CAIXA
 FRASCO
 AMPOLA
 PAR
 OUTRO
-\`\`\`
+```
 
 não devem ser convertidos silenciosamente para uma unidade física arbitrária.
 
 Esses Produtos recebem estado de pendência cadastral, conceitualmente:
 
-\`\`\`text
+```text
 unidadeCanonicaPendente = true
-\`\`\`
+```
 
 e precisam ser revisados pelo Gestor/Administrador.
 
@@ -1923,7 +1923,7 @@ A apresentação antiga deve ser preservada como pista de auditoria.
 
 Exemplos:
 
-\`\`\`text
+```text
 Produto atual:
 Ponteiras
 unidade = CAIXA
@@ -1933,9 +1933,9 @@ Revisão:
 unidade canônica = UNIDADE
 tipo de embalagem = CAIXA
 conteúdo por apresentação = 1000 UNIDADE
-\`\`\`
+```
 
-\`\`\`text
+```text
 Produto atual:
 BHI
 unidade = FRASCO
@@ -1945,7 +1945,7 @@ Revisão:
 unidade canônica = ML
 tipo de embalagem = FRASCO
 conteúdo por apresentação = 500 ML
-\`\`\`
+```
 
 Essa conversão pode ser sugerida pela interface, mas exige confirmação humana.
 
@@ -1953,7 +1953,7 @@ Essa conversão pode ser sugerida pela interface, mas exige confirmação humana
 
 Produtos já cadastrados com unidade física válida podem ser migrados automaticamente:
 
-\`\`\`text
+```text
 L → L ou ML canônico conforme política escolhida
 ML → ML
 G → G ou MG canônico conforme política escolhida
@@ -1962,7 +1962,7 @@ KG → KG ou MG canônico conforme política escolhida
 UNIDADE → UNIDADE
 REACAO → REACAO
 METRO → METRO
-\`\`\`
+```
 
 A migration não deve mudar numericamente o saldo sem aplicar o fator de conversão correspondente.
 
@@ -1970,7 +1970,7 @@ A migration não deve mudar numericamente o saldo sem aplicar o fator de convers
 
 Sequência segura proposta:
 
-\`\`\`text
+```text
 1. adicionar novas estruturas sem remover colunas antigas
 2. converter colunas de saldo para DECIMAL
 3. criar RecipienteEstoque
@@ -1980,13 +1980,13 @@ Sequência segura proposta:
 7. disponibilizar reconciliação no frontend
 8. somente depois tornar recipiente a fonte operacional obrigatória
 9. remover/deprecar campos antigos apenas em etapa posterior
-\`\`\`
+```
 
 Essa estratégia permite rollback e reduz risco de indisponibilidade.
 
 ### 13.11 Backfill das movimentações históricas
 
-Não criar \`MovimentacaoRecipiente\` retroativamente para movimentações antigas.
+Não criar `MovimentacaoRecipiente` retroativamente para movimentações antigas.
 
 Motivo:
 
@@ -1998,13 +1998,13 @@ Somente novas movimentações, depois da ativação do modelo de recipientes, ge
 
 A interface deve aceitar histórico misto:
 
-\`\`\`text
+```text
 movimentação antiga
 → detalhe por Lote
 
 movimentação nova
 → detalhe por Lote + Recipiente
-\`\`\`
+```
 
 ### 13.12 Resultado
 
@@ -2012,11 +2012,11 @@ A migration preserva 100% do saldo conhecido sem fabricar informação física i
 
 O modelo passa a distinguir claramente:
 
-\`\`\`text
+```text
 saldo legado conhecido
 ≠
 distribuição física confirmada
-\`\`\`
+```
 
 Essa distinção é obrigatória para manter a auditoria confiável.
 
@@ -2032,8 +2032,8 @@ Portanto, a estratégia de backfill descrita no item 13 fica **supersedida para 
 
 Não será necessário:
 
-- criar \`RLEGACY\`;
-- adicionar \`NAO_RECONCILIADO\` apenas para preservar dados atuais;
+- criar `RLEGACY`;
+- adicionar `NAO_RECONCILIADO` apenas para preservar dados atuais;
 - reconstruir recipientes a partir de lotes antigos;
 - manter compatibilidade física com saldos fictícios;
 - migrar movimentações históricas de teste;
@@ -2045,7 +2045,7 @@ A Etapa 7 poderá assumir banco limpo para o novo modelo de estoque.
 
 Fluxo recomendado:
 
-\`\`\`text
+```text
 1. implementar novo schema/modelo
 2. atualizar migrations Flyway da Etapa 7
 3. atualizar initializers DEV/DEMO
@@ -2053,49 +2053,49 @@ Fluxo recomendado:
 5. executar Flyway desde o início
 6. popular novamente dados fictícios já no novo formato
 7. validar estoque, recipientes, pedidos e movimentações sobre a nova modelagem
-\`\`\`
+```
 
 ### 14.2 Consequência para EstadoRecipienteEstoque
 
 Como não há necessidade de preservar lote legado real, o estado volta a ser somente:
 
-\`\`\`java
+```java
 public enum EstadoRecipienteEstoque {
     FECHADO,
     ABERTO,
     ESGOTADO
 }
-\`\`\`
+```
 
-\`NAO_RECONCILIADO\` não será criado nesta versão.
+`NAO_RECONCILIADO` não será criado nesta versão.
 
 ### 14.3 Consequência para UnidadeMedida antiga
 
 Valores antigos como:
 
-\`\`\`text
+```text
 CAIXA
 FRASCO
 AMPOLA
 PAR
 OUTRO
-\`\`\`
+```
 
 não precisam ser migrados em registros existentes.
 
 Em vez disso, os initializers serão corrigidos para usar:
 
-\`\`\`text
+```text
 unidade canônica real
 +
 TipoEmbalagem
 +
 conteúdo por apresentação
-\`\`\`
+```
 
 Exemplos:
 
-\`\`\`text
+```text
 Ponteiras
 → UNIDADE
 → CAIXA
@@ -2105,7 +2105,7 @@ BHI
 → ML
 → FRASCO
 → 500 ML
-\`\`\`
+```
 
 ### 14.4 Flyway
 
@@ -2145,16 +2145,16 @@ Foram fechados:
 
 O desenho detalhado das migrations e entidades está em:
 
-\`\`\`text
+```text
 docs/ETAPA_7_MODELO_ESTOQUE.md
-\`\`\`
+```
 
 Situação:
 
-\`\`\`text
+```text
 7.0 ✅
 7.1 🔧 atual
-\`\`\`
+```
 
 
 ### 15.1 Implementação 7.1-A
@@ -2470,7 +2470,7 @@ Validado em 09/10/2026:
 
 ### 15.1 Correção de rumo e estado da implementação
 
-A implementação inicial de Soluções foi **descartada antes da validação**, após esclarecimento das regras reais com o responsável pelo projeto. A branch de trabalho retornou ao commit \`c7734db8344c016fac75e4dd3385e1c3ae233f47\` (fechamento da 7.2); o código anterior ficou isolado em \`backup/etapa-7-3-descartada-2026-10-09\`, somente como recuperação histórica, **não como implementação aprovada**.
+A implementação inicial de Soluções foi **descartada antes da validação**, após esclarecimento das regras reais com o responsável pelo projeto. A branch de trabalho retornou ao commit `c7734db8344c016fac75e4dd3385e1c3ae233f47` (fechamento da 7.2); o código anterior ficou isolado em `backup/etapa-7-3-descartada-2026-10-09`, somente como recuperação histórica, **não como implementação aprovada**.
 
 Portanto, **não há Solução, SolucaoComponente, DTO, Service, Controller nem migration V37 validados ou presentes na branch de desenvolvimento**. Não reutilizar automaticamente a modelagem abandonada. Etapa 7.2 permanece concluída.
 
@@ -2493,7 +2493,7 @@ Mesmo quando a origem é um padrão do catálogo, o histórico do Pedido deve pr
 
 ### 15.4 Fluxo esperado, sem antecipar decisões da Etapa 8
 
-\`\`\`text
+```text
 Usuário no contexto de Projeto
     |
     +-- escolhe Solução padrão do catálogo
@@ -2512,7 +2512,7 @@ Usuário no contexto de Projeto
                        +-- verificar componentes/estoque
                        +-- baixar Produtos (não "saldo de Solução")
                        +-- registrar preparo físico e rastreabilidade
-\`\`\`
+```
 
 **A aprovação por si só não deve ser presumida como baixa instantânea.** A baixa deve ocorrer no ponto correto do fluxo efetivo de atendimento/liberação de Pedidos, definido em conjunto com o modelo vigente. A operação multicomponente deve ser consistente/transacional: evitar retirada parcial não intencional ou duplicação de baixas.
 
@@ -2520,10 +2520,10 @@ Usuário no contexto de Projeto
 
 - Verificar **o fluxo atual de Pedidos e o fluxo de Resíduos** antes de propor classes, relacionamentos, API, estados e eventos.
 - Distinguir tecnicamente **modelo de catálogo** de **composição personalizada vinculada a um Pedido**, evitando exigir cadastro prévio para uma solicitação personalizada.
-- Reaproveitar \`Produto\`, unidades/quantidades decimais da 7.1/7.2, estoque físico e as regras de Unidade/Projeto já existentes.
+- Reaproveitar `Produto`, unidades/quantidades decimais da 7.1/7.2, estoque físico e as regras de Unidade/Projeto já existentes.
 - Garantir compatibilidade dimensional por componente, disponibilidade, rastreabilidade, contexto de Unidade e histórico da composição aprovada.
 - Confirmar no desenho funcional **quem realiza o preparo físico**, como o Gestor altera/nega componentes, como ocorre cancelamento e qual é exatamente o instante da baixa — não inventar regras.
-- Não tratar Solução como \`Produto\` normal com estoque próprio e não gerar movimentação fictícia de Solução.
+- Não tratar Solução como `Produto` normal com estoque próprio e não gerar movimentação fictícia de Solução.
 - Manter a integração efetiva com Pedido/estoque no planejamento da **Etapa 8**, mas auditar o contrato necessário já na 7.3.
 
 ### 15.6 Regra permanente do fluxo colaborativo
@@ -2533,7 +2533,7 @@ Usuário no contexto de Projeto
 - **Validação:** testes e inicialização local pelo responsável; só concluir a etapa após confirmação.
 - **Documentação:** manter as decisões e o estado real sincronizados, sem marcar trabalho não validado como concluído.
 
-**Situação:** \`7.3 = redefinição funcional / auditoria pendente\`; **nenhum desenvolvimento de backend iniciado após o retorno à 7.2**.
+**Situação:** `7.3 = redefinição funcional / auditoria pendente`; **nenhum desenvolvimento de backend iniciado após o retorno à 7.2**.
 
 
 ### 15.7 Auditoria do código existente — Pedido, Resíduo e ModeloResiduo (09/10/2026)
@@ -2541,24 +2541,24 @@ Usuário no contexto de Projeto
 **Auditoria de leitura; nenhuma alteração de implementação.**
 
 **Referências efetivamente inspecionadas:**
-- \`model/Pedido.java\`, \`model/ItemPedido.java\`, \`service/PedidoService.java\`, \`controller/PedidoController.java\`;
-- \`dto/request/PedidoRequestDTO.java\`, \`ItemPedidoRequestDTO.java\`, \`AprovarPedidoRequestDTO.java\`, \`dto/response/PedidoResponseDTO.java\`;
-- \`model/Residuo.java\`, \`model/ComponenteResiduo.java\`, \`service/ResiduoService.java\`, \`controller/ResiduoController.java\`;
-- \`model/ModeloResiduo.java\`, \`model/ComponenteModeloResiduo.java\`, \`service/ModeloResiduoService.java\`, \`controller/ModeloResiduoController.java\`;
-- \`service/MovimentacaoEstoqueService.java\`, \`model/MovimentacaoEstoque.java\`, enums de estados e origem/tipo de movimentação.
+- `model/Pedido.java`, `model/ItemPedido.java`, `service/PedidoService.java`, `controller/PedidoController.java`;
+- `dto/request/PedidoRequestDTO.java`, `ItemPedidoRequestDTO.java`, `AprovarPedidoRequestDTO.java`, `dto/response/PedidoResponseDTO.java`;
+- `model/Residuo.java`, `model/ComponenteResiduo.java`, `service/ResiduoService.java`, `controller/ResiduoController.java`;
+- `model/ModeloResiduo.java`, `model/ComponenteModeloResiduo.java`, `service/ModeloResiduoService.java`, `controller/ModeloResiduoController.java`;
+- `service/MovimentacaoEstoqueService.java`, `model/MovimentacaoEstoque.java`, enums de estados e origem/tipo de movimentação.
 
 **Achados confirmados:**
 
-1. \`Pedido\` mantém usuário, laboratório, Projeto opcional, itens e estados \`PENDENTE → APROVADO → ENTREGUE\`; pode ser \`REJEITADO\` ou \`CANCELADO\`.
-2. \`PedidoService.aprovar()\` **já baixa imediatamente o estoque dos Produtos** via \`registrarSaida(... OrigemMovimentacao.PEDIDO ...)\`, com seleção de Lotes e Recipientes. \`entregar()\` não efetua segunda baixa; registra \`HistoricoLaboratorio\` e data de entrega.
-3. \`cancelar()\`, quando \`APROVADO\`, reverte as saídas via \`devolverSaidasDoPedido\`, restaurando os Recipientes vinculados se o estado físico não tiver mudado. **Precisamos delimitar o instante da preparação física**, pois a política documentada proíbe devolução física comum de material fracionado já retirado, em razão de contaminação/integridade. Cancelamento antes da separação/preparo não equivale a devolução física após consumo.
-4. \`PedidoService.criar()\` exige ao menos um \`ItemPedido\` vinculado a \`Produto\` existente no estoque da Unidade, **proíbe repetir o mesmo Produto em um Pedido** e exige \`TipoEmbalagem\`, inteiro de embalagens e multiplicador físico. Não recebe objeto/composição de Solução nem unidade de medida informada no item. Uma Solução personalizada **não cabe diretamente** no DTO atual sem evolução.
-5. \`AprovarPedidoRequestDTO\` lista itens aprovados, mas \`aprovar()\` não exige explicitamente que todos os itens originais estejam na lista. Para a operação multicomponente da Solução, é necessário definir integralidade da aprovação/atendimento e não deixar componente obrigatório ignorado silenciosamente. A chamada é transacional; aproveitar essa propriedade para rollback integral.
-6. A saída atual usa \`BigDecimal\`, bloqueios de estoque, Lotes e Recipientes e rastreia \`MovimentacaoEstoque\` por \`Pedido\`, \`Produto\`, \`Lote\`, e detalhes físicos \`MovimentacaoRecipiente\`. Reaproveitar este mecanismo, não criar estoque de Solução.
-7. \`ModeloResiduo\` é catálogo separado, vinculado a \`Unidade\`, com componentes; \`Residuo\` é ocorrência efetiva vinculada a laboratório/gerador/Projeto, com componentes próprios e histórico de etapas. **Excelente precedente estrutural** para \`catálogo de Soluções\` versus \`composição de uma solicitação individual\`. Não copiar as entidades literalmente.
-8. Componentes de Resíduo e de Modelo de Resíduo admitem Produto opcional e quantidade/concentração textual livre; Resíduos **não** movimentam estoque. Componentes de Solução devem exigir \`Produto\` real, quantidade numérica positiva e unidade física compatível.
-9. \`PedidoService.validarConsistenciaPedido()\` exige, no momento, que o laboratório do usuário coincida com o laboratório indicado, além do Projeto pertencer ao laboratório. Deve ser reconciliado com o contexto operacional definido para Estagiários e demais perfis na 7.4/Etapa 8.
-10. \`OrigemMovimentacao.PEDIDO\` já existe; não inventar uma origem de baixa paralela para Solução sem necessidade. Preservar identidade da Solução/receita no Pedido para auditoria.
+1. `Pedido` mantém usuário, laboratório, Projeto opcional, itens e estados `PENDENTE → APROVADO → ENTREGUE`; pode ser `REJEITADO` ou `CANCELADO`.
+2. `PedidoService.aprovar()` **já baixa imediatamente o estoque dos Produtos** via `registrarSaida(... OrigemMovimentacao.PEDIDO ...)`, com seleção de Lotes e Recipientes. `entregar()` não efetua segunda baixa; registra `HistoricoLaboratorio` e data de entrega.
+3. `cancelar()`, quando `APROVADO`, reverte as saídas via `devolverSaidasDoPedido`, restaurando os Recipientes vinculados se o estado físico não tiver mudado. **Precisamos delimitar o instante da preparação física**, pois a política documentada proíbe devolução física comum de material fracionado já retirado, em razão de contaminação/integridade. Cancelamento antes da separação/preparo não equivale a devolução física após consumo.
+4. `PedidoService.criar()` exige ao menos um `ItemPedido` vinculado a `Produto` existente no estoque da Unidade, **proíbe repetir o mesmo Produto em um Pedido** e exige `TipoEmbalagem`, inteiro de embalagens e multiplicador físico. Não recebe objeto/composição de Solução nem unidade de medida informada no item. Uma Solução personalizada **não cabe diretamente** no DTO atual sem evolução.
+5. `AprovarPedidoRequestDTO` lista itens aprovados, mas `aprovar()` não exige explicitamente que todos os itens originais estejam na lista. Para a operação multicomponente da Solução, é necessário definir integralidade da aprovação/atendimento e não deixar componente obrigatório ignorado silenciosamente. A chamada é transacional; aproveitar essa propriedade para rollback integral.
+6. A saída atual usa `BigDecimal`, bloqueios de estoque, Lotes e Recipientes e rastreia `MovimentacaoEstoque` por `Pedido`, `Produto`, `Lote`, e detalhes físicos `MovimentacaoRecipiente`. Reaproveitar este mecanismo, não criar estoque de Solução.
+7. `ModeloResiduo` é catálogo separado, vinculado a `Unidade`, com componentes; `Residuo` é ocorrência efetiva vinculada a laboratório/gerador/Projeto, com componentes próprios e histórico de etapas. **Excelente precedente estrutural** para `catálogo de Soluções` versus `composição de uma solicitação individual`. Não copiar as entidades literalmente.
+8. Componentes de Resíduo e de Modelo de Resíduo admitem Produto opcional e quantidade/concentração textual livre; Resíduos **não** movimentam estoque. Componentes de Solução devem exigir `Produto` real, quantidade numérica positiva e unidade física compatível.
+9. `PedidoService.validarConsistenciaPedido()` exige, no momento, que o laboratório do usuário coincida com o laboratório indicado, além do Projeto pertencer ao laboratório. Deve ser reconciliado com o contexto operacional definido para Estagiários e demais perfis na 7.4/Etapa 8.
+10. `OrigemMovimentacao.PEDIDO` já existe; não inventar uma origem de baixa paralela para Solução sem necessidade. Preservar identidade da Solução/receita no Pedido para auditoria.
 
 **Proposta de fronteiras, pendente de confirmação, não é decisão implementada:**
 - modelo de catálogo exclusivo para composição padrão cadastrada pelo Gestor;
@@ -2568,3 +2568,56 @@ Usuário no contexto de Projeto
 - avaliar se estados atuais de Pedido bastam ou se Soluções exigem etapa explícita de separação/preparo.
 
 **Decisão funcional prioritária pendente:** distinguir aprovação, baixa/alocação dos Produtos, preparação física e entrega. Definir em qual momento cada evento ocorre e se é necessário registrar uma etapa própria de preparo. **Não modelar ou escrever Java/migration enquanto essa decisão estiver aberta.**
+
+
+### 15.8 Decisões operacionais confirmadas após auditoria (09/10/2026)
+
+As decisões abaixo **substituem** a observação preliminar da seção 15.4 de que o instante da baixa ainda estaria indefinido. O fluxo de Soluções usa a mesma baixa operacional de Pedidos **na aprovação**, conforme decisão do responsável pelo projeto. A preparação física não será minuciosamente acompanhada pelo sistema.
+
+**Fluxo conceitual, sem implementação:**
+
+```text
+PENDENTE
+  -> Gestor aprova
+  -> baixa transacional dos Produtos componentes (como Pedido atual)
+  -> EM_PREPARACAO (status proposto para solicitações de Solução)
+  -> preparo físico realizado fora do registro detalhado no SGL
+  -> Gestor confirma entrega
+  -> ENTREGUE (registrar recebimento e validar/confirmar a baixa já lançada)
+```
+
+**A entrega não deve baixar o estoque uma segunda vez.** A expressão operacional "standby" neste contexto significa produtos já debitados/alocados para o pedido, e não reserva contábil independente de saldo: hoje `PedidoService.aprovar` efetua `SAIDA` de estoque. Não inventar nova operação de reserva nem desfazer a baixa para reexecutá-la na entrega.
+
+Para preservar os Pedidos comuns, **proposta técnica a validar**: `EM_PREPARACAO` aplica-se ao pedido que contém Solução, sem mudar automaticamente o fluxo dos pedidos exclusivamente de Produtos.
+
+**Modelagem mínima desejada pelo responsável:**
+- manter `ItemPedido` como Produto físico solicitado, com baixa normal;
+- vincular cada item componente à **instância da Solução dentro do próprio Pedido**, e não apenas ao ID de uma receita padrão; isso suporta uma Solução personalizada sem identidade no catálogo;
+- armazenar snapshot da composição e das quantidades/unidades aprovadas, inclusive quando a origem for um modelo padrão de catálogo;
+- evitar hierarquia paralela de estoque/Produto só para representar o pedido de Solução;
+- conferir regra atual de proibição de Produto duplicado no mesmo Pedido: é possível que Produto X apareça em duas Soluções distintas no mesmo Pedido, hipótese que deverá ter comportamento definido antes de codificar.
+
+### 15.9 Cancelamento antes/depois do preparo físico
+
+No cancelamento de uma Solução em preparação, o sistema deve consultar o operador/gestor se o **preparo físico já ocorreu**.
+
+**Não preparada:**
+- permitir reversão da saída existente do Pedido **somente quando fisicamente admissível**, observando integridade, fechamento e histórico de Recipientes; preservar restrição consolidada de que material fracionado retirado/contaminável não pode ser devolvido normalmente ao estoque;
+- se os produtos já tiverem sido abertos/fracionados ou estiverem sob condições incompatíveis, não permitir reversão automática fictícia; requerer tratamento operacional adequado.
+
+**Já preparada:**
+- **não restaurar Produtos componentes no estoque**, pois a mistura já aconteceu;
+- identificar a Solução como preparada, com identidade de sua receita/composição real, quantidade restante, contexto e rastreabilidade; evitar perda silenciosa do histórico;
+- ideia levantada pelo responsável: viabilizar que a preparação física cancelada se transforme em **Produto do tipo Solução** ou registro equivalente reutilizável, de modo que uma futura solicitação compatível seja atendida com o preparo já existente;
+- **não implementar conversão automática** ou disponibilidade para reuso sem decisão adicional: avaliar validade, segurança, armazenamento, concentração, lote/recipiente físico, compatibilidade da receita, permissões e gestão de descarte. Esse caso é uma **exceção de estoque de preparação pronta**, não muda a regra geral de que Soluções solicitadas não possuem saldo próprio.
+
+**Encaminhamento proposto:** o fluxo essencial de Soluções é prioritário; manter o reaproveitamento de preparações canceladas como subfluxo opcional a especificar, sem inflar a primeira implementação. Se a possibilidade de preparar antes do cancelamento fizer parte do MVP, é necessário ao menos registrar corretamente o cancelamento sem devolver componentes. O eventual cadastro como item reaproveitável depende de autorização do Gestor.
+
+### 15.10 Pontos ainda pendentes de definição, antes de escrever código
+
+1. No instante em que o Gestor declara que a Solução já foi preparada e cancela a solicitação: ela ficará aguardando destinação/decisão de reuso, ou deverá ser disponibilizada no estoque como preparação acabada após conferência explícita?
+2. O status `EM_PREPARACAO` será exclusivo dos pedidos com Soluções ou poderá abranger outros tipos de Pedido?
+3. A regra de aprovação aceita reduzir/substituir componente e obter uma composição diferente da originalmente solicitada, ou exige revisão/consentimento e nova composição?
+4. Como agrupar itens quando um mesmo Produto compõe múltiplas Soluções no mesmo Pedido, sem perder auditabilidade nem gerar baixas duplicadas?
+
+**Estado da 7.3:** decisões funcionais atualizadas, **sem novas classes, DTOs, controllers, migrations ou testes de backend**. A revisão e implementação do código seguem sendo manuais pelo responsável.
