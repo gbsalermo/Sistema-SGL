@@ -2614,36 +2614,72 @@ Pedido.tipo == SOLUCAO
 - A composição da Solução deve ser considerada **integralmente** no atendimento; examinar a validação da lista de itens aprovados para evitar omissão silenciosa e preservar atomicidade.
 - A implementação do novo `TipoPedido`, status e contratos somente deve ocorrer **manualmente no backend**, após revisão do restante das regras da etapa.
 
-### 15.10 Regra corrigida de cancelamento da Solução em preparação
+### 15.10 Cancelamento definitivo: antes OU depois da preparação (decisão de 09/10/2026)
 
-**A regra específica aqui prevalece sobre a orientação preliminar da seção 15.9 anterior, agora substituída, de bloquear indiscriminadamente a reversão só porque o item é fracionável.** A premissa operacional é que a aprovação põe componentes em standby no fluxo de Pedido; o Gestor confirma se a preparação realmente ocorreu.
+**Esta seção substitui quaisquer propostas anteriores (15.5, 15.9 preliminar etc.) que impedissem cancelar uma Solução já preparada ou exigissem obrigatoriamente recusar a solicitação de cancelamento.**
 
-Ao tentar cancelar um Pedido `SOLUCAO` em `EM_PREPARACAO`, apresentar:
+Para `Pedido.tipo == SOLUCAO` em `EM_PREPARACAO`, a interface de cancelamento pergunta obrigatoriamente: **"A solução já foi preparada fisicamente?"** O registro inclui responsável, data, confirmação, justificativa e destino das movimentações. A preparação física em si permanece fora do detalhamento do sistema.
 
-```text
-A Solução já foi preparada fisicamente?
-   NÃO -> cancelar o Pedido e reverter as saídas/alocações dos seus Produtos
-   SIM -> não repor os Produtos; encaminhar decisão sobre o Pedido pronto
-```
+**Resposta NÃO — solução ainda não preparada:**
+- **Permitir cancelar o Pedido** e **reverter integralmente as saídas/alocações** dos `ItemPedido` para os saldos originais, inclusive produtos/quantidades fracionáveis que não foram usados. Trata-se da reversão da alocação operacional do Pedido, não de devolução física de material consumido.
+- Reutilizar as saídas por Pedido, `MovimentacaoEstoque`, `MovimentacaoRecipiente` e seus vínculos com Lote/Recipiente, com registro auditável da reversão; se a implementação atual de `devolverSaidasDoPedido` não permitir este contrato, é necessário revisá-la com testes e sem sobrescrever alterações físicas concorrentes de outros Pedidos.
+- Resultado `CANCELADO`, com estado explícito de **estoque revertido**.
 
-**NÃO preparada:** nenhum componente foi utilizado no preparo. **Reverter integralmente as saídas do Pedido e retornar os saldos ao estoque**, inclusive quantidades fracionáveis que estavam apenas alocadas e não foram efetivamente consumidas. Isto é **reversão de alocação não consumida**, distinta da devolução física de substâncias já usadas ou recebidas pelo laboratório. Registrar confirmação, agente e motivo. Utilizar a restauração auditável do próprio Pedido/recipientes, ajustando seu contrato conforme necessário; não criar movimentação de entrada avulsa para compensar uma baixa.
+**Resposta SIM — solução já preparada:**
+- **Permitir cancelar o Pedido também**. Resultado `CANCELADO`, **sem restaurar os Produtos ingredientes ao estoque**, pois já foram consumidos pela preparação.
+- Registrar motivo do cancelamento, confirmação de preparação, saídas definitivas e saldo consumido; nunca mostrar o Pedido como `ENTREGUE` sem entrega real.
+- O Gestor pode **recusar uma solicitação de cancelamento e manter o Pedido para entrega**, quando aplicável, mas isso é uma escolha operacional, não uma trava obrigatória à ação de cancelar.
+- Depois do cancelamento, o Gestor **pode opcionalmente cadastrar a mistura já preparada como Produto físico comum** usando cadastro/entrada reais, com descrição, unidade, quantidade, validade/armazenamento e referência ao Pedido de origem. **Nunca recreditar os ingredientes** nem cadastrar automaticamente esse Produto, e não presumir que toda preparação possa ser reutilizada.
+- Se não houver reaproveitamento, a destinação/descarte pode ser tratada operacionalmente de acordo com as regras aplicáveis, sem falsear o estoque.
 
-**SIM preparada:** os componentes já foram consumidos para formar a Solução. **Nunca restaurar os ingredientes como se ainda fossem Produtos isolados.** O Gestor pode negar o pedido de cancelamento e manter a Solução para entrega, ou avaliar seu reaproveitamento como um Produto físico **cadastrado manualmente**.
+**Critérios obrigatórios:** evitar duplo desconto na entrega, dupla reversão no cancelamento, reabertura arbitrária de Pedido `CANCELADO` e inconsistência entre histórico e movimentações. `ENTREGUE` continua uma confirmação real de recebimento, não um status forçado após cancelamento. A distinção entre `cancelado_com_estoque_revertido` e `cancelado_com_ingredientes_consumidos` deve ser auditável; os nomes exatos das propriedades são decisões técnicas futuras.
 
-- **Negar cancelamento**: conservar `EM_PREPARACAO` e orientar a entrega. Marcar `ENTREGUE` **somente após entrega/recebimento real**, sem registrar confirmação fictícia, mesmo que o pedido de cancelamento tenha sido rejeitado.
-- **Cadastrar como Produto físico** (alternativa excepcional sugerida pelo responsável): permitir que o Gestor descreva a Solução já preparada e a disponibilize posteriormente a outros usuários, se adequada. Trata-se de um **novo Produto físico/entrada real correspondente**, com composição/identificação suficientes, sem recreditar ingredientes originais e sem baixa dupla. Exige ainda definição de regras mínimas de identificação, validade, quantidade, lote/recipiente, segurança e vínculo com o Pedido original. Não criar automaticamente no cancelamento nem incorporar no fluxo comum de Soluções.
-- A interface poderá apresentar ao Gestor as opções de **recusar cancelamento/prosseguir entrega** ou **avaliar cadastro como Produto físico**. A escolha de cadastrar é excepcional e não transforma todas as Soluções em Produtos.
+### 15.11 Soluções com interface operacional separada (decisão de 09/10/2026)
 
-Registrar decisões e responsáveis no histórico. Um Pedido já `ENTREGUE` continua fora do cancelamento comum; soluções especiais após entrega dependem de regra explícita.
+**Uma única infraestrutura de Pedido; duas experiências de usuário.**
 
-**Cuidado técnico já identificado:** `devolverSaidasDoPedido()` atual reverte Recipientes verificando o estado físico posterior. Precisará ser adaptado/testado ao contrato de *standby não preparado* para que fracionamento, por si só, não impeça reverter o Pedido, sem sobrescrever movimentações legítimas de outros Pedidos. Esse cuidado técnico não altera a **regra funcional aprovada** de cancelamento integral da Solução ainda não preparada.
+A solução é um **tipo de Pedido** e seus componentes são os `ItemPedido` existentes, mas **a interface de Soluções será independente** da interface convencional de Pedidos, espelhando a organização operacional da interface de Resíduos.
 
-### 15.11 Pendências focadas para fechar a implementação
+**Visão do solicitante do Projeto:**
+- seção **Soluções** própria no menu;
+- ação **Solicitar solução**, escolhendo **modelo padrão** cadastrado pelo Gestor ou **composição personalizada** que permanece restrita à solicitação;
+- selecionar Produtos reais, quantidades e unidades compatíveis; identificar a preparação como **uma única entrega**;
+- visualizar pedidos de Solução, status, histórico, comprovantes e informações de cancelamento.
 
-1. Definir o comportamento mínimo de um **Produto físico gerado excepcionalmente de uma Solução pronta**, caso se opte por disponibilizar essa função na primeira entrega; nunca confundir isso com modelo do catálogo.
-2. Especificar se o Gestor pode ajustar componentes/quantidades durante a aprovação ou se solicita retificação antes de aprovar, evitando modificar silenciosamente a mistura solicitada.
-3. Definir contrato de confirmação de "preparada?": responsável autorizado, trilha auditável e interface de cancelamento; nenhum detalhe contínuo do preparo precisa ser registrado.
-4. Adequar/validar apresentação/unidade de `ItemPedido` para quantidades fracionadas da solução e para saída FEFO/FIFO.
-5. Manter contexto do Projeto/Unidade/laboratório coerente com a 7.4 e futura Etapa 8.
+**Visão do Gestor:**
+- seção **Gestão de Soluções** com solicitações em análise, em preparação, concluídas e canceladas;
+- analisar, aprovar/rejeitar, acompanhar `EM_PREPARACAO`, confirmar entrega, registrar cancelamento com pergunta sobre preparo físico e observar o destino das baixas;
+- cadastrar, editar, ativar/inativar **Modelos de Solução** do catálogo, com gerenciamento por Unidade;
+- converter **mediante ação explícita** uma composição personalizada de Pedido em modelo de catálogo reutilizável;
+- consultar composição, Produto, Lote/Recipiente, rastreabilidade, divergências e registros de auditoria;
+- opcionalmente cadastrar como Produto físico uma preparação pronta oriunda de cancelamento, via fluxo geral de Produtos, sem conversão automática.
 
-**Status:** 7.3 em análise funcional; **nenhum código, migration ou teste de backend implementado**. Toda implementação de backend continua sob responsabilidade manual do desenvolvedor; documentação é atualizada separadamente.
+**Fronteira do roadmap:** 7.3 fixa os contratos/modelagem de catálogo e tipo de Pedido; 7.5 prevê a interface; 8 integra Pedido, aprovação, baixa/cancelamento e contexto completo; 9 consolida relatórios e auditorias. O sequenciamento detalhado deverá ser reconciliado sem antecipar código no backend.
+
+### 15.12 Margem de erro — tolerância de consumo e reconciliação de estoque (decisão de incorporar ao escopo; parâmetros pendentes)
+
+**Motivação:** ao preparar muitas Soluções com ingredientes fracionários, pequenas diferenças entre quantidade solicitada/baixada e quantidade efetivamente utilizada podem se acumular. Ex.: desvios de +1 mL ou +3 g em pedidos distintos tornam-se uma discrepância relevante em uma auditoria de saldo físico.
+
+**Objetivo:** proporcionar **rastreabilidade e capacidade de explicar diferenças**, separando: (a) quantidade nominal solicitada/aprovada; (b) quantidade efetivamente usada ou aferida, quando informada; (c) desvio absoluto e percentual por Produto e Pedido; (d) tolerância aplicável; (e) ajuste e motivo, se houver; e (f) diferenças ainda não explicadas.
+
+**Princípios e proposta de desenho:**
+
+1. **Tolerância parametrizável, nunca universal**: definir em contexto de Unidade/Produto e, quando necessário, preparo/modelo de Solução. Suportar limite absoluto em unidade compatível (por exemplo, mL ou g) e/ou percentual; a política de combinação (limite absoluto, percentual ou ambos) precisa ser definida antes de codificar. Não fixar 1 mL ou 3 g como padrões globais.
+2. **Cálculo técnico**: `desvio = quantidade_fisica_registrada - quantidade_nominal_aprovada`. Converter para unidade canônica antes de somar ou comparar; não agregar mL com g, nem somar tolerâncias de unidades/dimensões distintas como se fossem uma métrica única.
+3. **Não mascarar estoque**: dentro da margem **não significa igualdade de saldos**, movimentação automática, aprovação automática de perdas ou estoque artificialmente correto. Registrar diferenças reais; quando se confirmar utilização extra, corrigir a movimentação/saldo físico com lançamento auditável e justificativa, sem alterar o histórico original do Pedido.
+4. **Origem do desvio**: vincular eventual diferença ao Pedido de Solução, Produto, lote/recipiente quando identificável, Unidade, usuário, data, unidade/quantidade, método/observação e classificação `dentro da tolerância` ou `fora da tolerância`. Se não houver medida real por preparo, **não alegar que a tolerância prova a origem da divergência**: ela apenas oferece faixa esperada e os eventos disponíveis para investigação.
+5. **Acúmulo**: em auditoria por Produto e período, mostrar total nominal consumido, consumo adicional/devolução registrados, somatório de desvios conhecidos, saldo contábil x conferência física, orçamento/faixa agregada de tolerância (se aplicável) e diferenças sem explicação. Alertar quando pequenos desvios recorrentes ou a divergência acumulada ultrapassarem o limite configurado.
+6. **Fluxo leve**: não exigir relatório laboratorial extenso a cada preparo. Favorecer registro pontual de divergência na conclusão da Solução ou na conferência física/auditoria, com formulário objetivo, mantendo acesso à composição original.
+7. **Auditoria permanente**: não apagar divergência na correção, nem alterar retroativamente a quantidade solicitada/aprovada; registrar quem informou, conferiu e eventualmente ajustou o saldo.
+
+**Escopo sugerido:** regra contratual de tolerância estudada na 7.3; integração com Pedido/Movimentação na 8; consultas de conciliação e relatórios na 9. Não implantar margem como mera variável no Produto sem compreender seu impacto no saldo e na rastreabilidade.
+
+**Pontos que ainda exigem parametrização:** unidade responsável por definir tolerâncias; se configuradas por Produto, tipo de Solução ou ambos; operação com valores absolutos versus percentuais; como registrar medição real sem atrapalhar o fluxo; aprovação necessária para lançar diferenças físicas; como expor alertas por acúmulo.
+
+### 15.13 Estado e próximos passos após a revisão
+
+**Decidido:** `Pedido.tipo = PRODUTOS | SOLUCAO`; `Pedido -> ItemPedido -> Produto` sem agrupamento paralelo; catálogo de modelos de Solução sob gestão; interface própria de Soluções; aprovação lança uma única baixa/alocação; `EM_PREPARACAO`; entrega confirma recebimento sem segunda baixa; cancelamento permitido **antes ou depois** de preparada com destino de estoque distinto; cadastramento manual eventual de preparação pronta como Produto; camada de margem de erro e auditoria planejada sem ocultar divergências.
+
+**Ainda para fechar antes do código:** regras de edição de composição na análise/aprovação; contrato de tolerância e medição; validação da reversão do estoque com recipientes; delimitação dos campos mínimos de cadastro de modelo padrão e tipos de Pedido.
+
+**Implementação:** nenhuma alteração Java, SQL, migration ou testes de backend da 7.3 foi feita nesta revisão. Backend será aplicado manualmente pelo responsável após as decisões; somente documentação foi alterada.
