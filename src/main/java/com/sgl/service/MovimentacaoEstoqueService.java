@@ -21,6 +21,7 @@ import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
+import com.sgl.model.MovimentacaoRecipiente;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.RecipienteEstoque;
@@ -33,6 +34,7 @@ import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
+import com.sgl.repository.MovimentacaoRecipienteRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.RecipienteEstoqueRepository;
@@ -53,6 +55,7 @@ public class MovimentacaoEstoqueService {
 	private final UsuarioRepository usuarioRepository;
 	private final PedidoRepository pedidoRepository;
 	private final RecipienteEstoqueRepository recipienteEstoqueRepository;
+	private final MovimentacaoRecipienteRepository movimentacaoRecipienteRepository;
 
 	@Transactional(readOnly = true)
 	public List<MovimentacaoEstoqueResponseDTO> listarTodos() {
@@ -205,34 +208,73 @@ public class MovimentacaoEstoqueService {
 
 		validarQuantidade(quantidade);
 		validarUsuarioResponsavel(usuario);
+
 		EstoqueCentral estoque = buscarEstoqueAtivoComBloqueio(estoqueId);
+
 		List<Lote> lotes = buscarLotesParaSaida(estoque).stream().filter(
 				lote -> loteCompativelComFormaSolicitada(lote, tipoEmbalagemSolicitada, multiplicadorSolicitado))
 				.toList();
 
 		BigDecimal saldoUtilizavel = lotes.stream().map(Lote::getQuantidadeDisponivel)
 				.filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+
 		if (saldoUtilizavel.compareTo(quantidade) < 0) {
+
 			String forma = tipoEmbalagemSolicitada == null ? "selecionada" : tipoEmbalagemSolicitada.name();
+
 			throw new BusinessRuleException("Estoque utilizável insuficiente para a forma de retirada " + forma
 					+ ". Disponível nos lotes compatíveis: " + saldoUtilizavel + ", solicitado: " + quantidade);
 		}
 
 		List<MovimentacaoEstoqueResponseDTO> movimentacoes = new ArrayList<>();
-		BigDecimal restante = quantidade;
-		for (Lote lote : lotes) {
-			if (restante.compareTo(BigDecimal.ZERO) == 0)
-				break;
-			BigDecimal consumido = calcularQuantidadeCompativel(lote, restante);
 
-			if (consumido.compareTo(BigDecimal.ZERO) <= 0)
+		BigDecimal restante = quantidade;
+
+		for (Lote lote : lotes) {
+
+			if (restante.compareTo(BigDecimal.ZERO) == 0) {
+				break;
+			}
+
+			List<RecipienteEstoque> recipientes = recipienteEstoqueRepository
+					.findByLoteIdOrderBySequencialAsc(lote.getId()).stream()
+					.filter(r -> r.getEstado() != EstadoRecipienteEstoque.ESGOTADO)
+					.filter(r -> r.getQuantidadeDisponivel() != null
+							&& r.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) > 0)
+					.toList();
+
+			BigDecimal quantidadeDoLote = calcularQuantidadeFisicamenteConsumivel(lote, restante, recipientes);
+
+			if (quantidadeDoLote.compareTo(BigDecimal.ZERO) <= 0) {
 				continue;
+			}
+
+			List<ConsumoRecipiente> consumos = consumirRecipientes(lote, recipientes, quantidadeDoLote);
+
+			BigDecimal consumido = consumos.stream().map(ConsumoRecipiente::quantidadeMovimentada)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			if (consumido.compareTo(quantidadeDoLote) != 0) {
+				throw new BusinessRuleException(
+						"Não foi possível compatibilizar o saldo físico dos recipientes com o saldo do lote "
+								+ lote.getCodigoInterno() + ".");
+			}
 
 			BigDecimal saldoAnterior = estoque.getQuantidadeAtual();
+
 			BigDecimal saldoAtual = saldoAnterior.subtract(consumido);
 
-			lote.setQuantidadeDisponivel(lote.getQuantidadeDisponivel().subtract(consumido));
+			BigDecimal saldoLoteAtual = lote.getQuantidadeDisponivel().subtract(consumido);
+
+			if (saldoLoteAtual.compareTo(BigDecimal.ZERO) < 0) {
+				throw new BusinessRuleException("O saldo físico dos recipientes excede o saldo disponível do lote.");
+			}
+
+			lote.setQuantidadeDisponivel(saldoLoteAtual);
+
 			estoque.setQuantidadeAtual(saldoAtual);
+
+			recipienteEstoqueRepository.saveAll(consumos.stream().map(ConsumoRecipiente::recipiente).toList());
 
 			loteRepository.save(lote);
 			estoqueCentralRepository.save(estoque);
@@ -240,14 +282,21 @@ public class MovimentacaoEstoqueService {
 			MovimentacaoEstoque movimentacao = registrarMovimentacao(estoque, lote, usuario, pedido, laboratorio,
 					TipoMovimentacao.SAIDA, origem, consumido, saldoAnterior, saldoAtual, observacao);
 
+			registrarMovimentacoesDosRecipientes(movimentacao, consumos);
+
 			movimentacoes.add(new MovimentacaoEstoqueResponseDTO(movimentacao));
+
 			restante = restante.subtract(consumido);
 		}
 
 		if (restante.compareTo(BigDecimal.ZERO) > 0) {
-			throw new BusinessRuleException(
-					"A quantidade solicitada não pode ser atendida com a forma de retirada escolhida sem fracionar uma embalagem fechada.");
+
+			BigDecimal disponivelFisicamente = quantidade.subtract(restante);
+
+			throw new BusinessRuleException("Estoque físico insuficiente nos recipientes compatíveis. " + "Disponível: "
+					+ disponivelFisicamente + ", solicitado: " + quantidade + ".");
 		}
+
 		return movimentacoes;
 	}
 
@@ -499,7 +548,8 @@ public class MovimentacaoEstoqueService {
 			RecipienteEstoque recipiente = new RecipienteEstoque();
 
 			recipiente.setLote(lote);
-			recipiente.definirIdentificacao(formatarCodigoInternoRecipiente(lote.getCodigoInterno(), sequencial),sequencial);
+			recipiente.definirIdentificacao(formatarCodigoInternoRecipiente(lote.getCodigoInterno(), sequencial),
+					sequencial);
 			recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
 			recipiente.setCapacidadeInicial(capacidadePorRecipiente);
 			recipiente.setQuantidadeDisponivel(capacidadePorRecipiente);
@@ -510,17 +560,215 @@ public class MovimentacaoEstoqueService {
 
 		recipienteEstoqueRepository.saveAll(recipientes);
 	}
-	
-	private String formatarCodigoInternoRecipiente(
-	        String codigoLote,
-	        int sequencial) {
 
-	    return codigoLote
-	            + "-R"
-	            + String.format(
-	                    Locale.ROOT,
-	                    "%03d",
-	                    sequencial
-	            );
+	private String formatarCodigoInternoRecipiente(String codigoLote, int sequencial) {
+
+		return codigoLote + "-R" + String.format(Locale.ROOT, "%03d", sequencial);
+	}
+
+	private BigDecimal calcularQuantidadeFisicamenteConsumivel(Lote lote, BigDecimal restante,
+			List<RecipienteEstoque> recipientes) {
+
+		if (recipientes.isEmpty()) {
+			return BigDecimal.ZERO;
+		}
+
+		if (lote.permiteFracionamento()) {
+
+			BigDecimal saldoFisico = recipientes.stream().map(RecipienteEstoque::getQuantidadeDisponivel)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			return restante.min(saldoFisico);
+		}
+
+		BigDecimal fator = lote.fatorApresentacao();
+
+		BigDecimal quantidadeInteiraSolicitada = restante.divideToIntegralValue(fator).multiply(fator);
+
+		if (quantidadeInteiraSolicitada.compareTo(BigDecimal.ZERO) <= 0) {
+
+			return BigDecimal.ZERO;
+		}
+
+		BigDecimal saldoFechado = recipientes.stream().filter(r -> r.getEstado() == EstadoRecipienteEstoque.FECHADO)
+				.filter(r -> r.getQuantidadeDisponivel().compareTo(r.getCapacidadeInicial()) == 0)
+				.map(RecipienteEstoque::getQuantidadeDisponivel).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		return quantidadeInteiraSolicitada.min(saldoFechado);
+	}
+
+	private List<ConsumoRecipiente> consumirRecipientes(Lote lote, List<RecipienteEstoque> recipientes,
+			BigDecimal quantidadeAlvo) {
+
+		List<ConsumoRecipiente> consumos = new ArrayList<>();
+
+		BigDecimal restante = quantidadeAlvo;
+
+		List<RecipienteEstoque> fechados = recipientes.stream()
+				.filter(r -> r.getEstado() == EstadoRecipienteEstoque.FECHADO)
+				.sorted(Comparator.comparing(RecipienteEstoque::getSequencial)).toList();
+
+		if (!lote.permiteFracionamento()) {
+
+			for (RecipienteEstoque recipiente : fechados) {
+
+				if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+					break;
+				}
+
+				BigDecimal capacidade = recipiente.getQuantidadeDisponivel();
+
+				if (restante.compareTo(capacidade) < 0) {
+					continue;
+				}
+
+				consumos.add(aplicarConsumoRecipiente(recipiente, capacidade));
+
+				restante = restante.subtract(capacidade);
+			}
+
+			return consumos;
+		}
+
+		BigDecimal fator = lote.fatorApresentacao();
+
+		BigDecimal parteInteira = restante.divideToIntegralValue(fator).multiply(fator);
+
+		/*
+		 * Para apresentações inteiras, priorizamos recipientes ainda fechados.
+		 */
+		for (RecipienteEstoque recipiente : fechados) {
+
+			if (parteInteira.compareTo(BigDecimal.ZERO) <= 0) {
+				break;
+			}
+
+			BigDecimal capacidade = recipiente.getQuantidadeDisponivel();
+
+			if (parteInteira.compareTo(capacidade) < 0) {
+				continue;
+			}
+
+			consumos.add(aplicarConsumoRecipiente(recipiente, capacidade));
+
+			restante = restante.subtract(capacidade);
+
+			parteInteira = parteInteira.subtract(capacidade);
+		}
+
+		/*
+		 * Para a fração restante, priorizamos recipientes já abertos.
+		 */
+		List<RecipienteEstoque> abertos = recipientes.stream()
+				.filter(r -> r.getEstado() == EstadoRecipienteEstoque.ABERTO)
+				.sorted(Comparator
+						.comparing(RecipienteEstoque::getDataAbertura, Comparator.nullsLast(Comparator.naturalOrder()))
+						.thenComparing(RecipienteEstoque::getQuantidadeDisponivel)
+						.thenComparing(RecipienteEstoque::getSequencial))
+				.toList();
+
+		for (RecipienteEstoque recipiente : abertos) {
+
+			if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+				break;
+			}
+
+			BigDecimal retirar = restante.min(recipiente.getQuantidadeDisponivel());
+
+			consumos.add(aplicarConsumoRecipiente(recipiente, retirar));
+
+			restante = restante.subtract(retirar);
+		}
+
+		/*
+		 * Se ainda faltar quantidade, abrimos um recipiente fechado.
+		 */
+		for (RecipienteEstoque recipiente : fechados) {
+
+			if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+				break;
+			}
+
+			boolean jaUtilizado = consumos.stream().anyMatch(c -> c.recipiente() == recipiente);
+
+			if (jaUtilizado) {
+				continue;
+			}
+
+			BigDecimal retirar = restante.min(recipiente.getQuantidadeDisponivel());
+
+			consumos.add(aplicarConsumoRecipiente(recipiente, retirar));
+
+			restante = restante.subtract(retirar);
+		}
+
+		return consumos;
+	}
+
+	private ConsumoRecipiente aplicarConsumoRecipiente(RecipienteEstoque recipiente, BigDecimal quantidade) {
+
+		BigDecimal quantidadeAnterior = recipiente.getQuantidadeDisponivel();
+
+		EstadoRecipienteEstoque estadoAnterior = recipiente.getEstado();
+
+		BigDecimal quantidadeAtual = quantidadeAnterior.subtract(quantidade);
+
+		if (quantidadeAtual.compareTo(BigDecimal.ZERO) < 0) {
+			throw new BusinessRuleException(
+					"A retirada ultrapassa o saldo do recipiente " + recipiente.getCodigoInterno() + ".");
+		}
+
+		LocalDateTime agora = LocalDateTime.now();
+
+		boolean abriu = false;
+		boolean esgotou = false;
+
+		recipiente.setQuantidadeDisponivel(quantidadeAtual);
+
+		if (quantidadeAtual.compareTo(BigDecimal.ZERO) == 0) {
+
+			recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
+
+			recipiente.setDataEsgotamento(agora);
+
+			esgotou = true;
+
+		} else if (estadoAnterior == EstadoRecipienteEstoque.FECHADO) {
+
+			recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
+
+			recipiente.setDataAbertura(agora);
+
+			abriu = true;
+		}
+
+		return new ConsumoRecipiente(recipiente, quantidadeAnterior, quantidade, quantidadeAtual, estadoAnterior,
+				recipiente.getEstado(), abriu, esgotou);
+	}
+
+	private void registrarMovimentacoesDosRecipientes(MovimentacaoEstoque movimentacao,
+			List<ConsumoRecipiente> consumos) {
+
+		List<MovimentacaoRecipiente> detalhes = consumos.stream()
+				.map(consumo -> MovimentacaoRecipiente.builder().movimentacaoEstoque(movimentacao)
+						.recipienteEstoque(consumo.recipiente()).quantidadeAnterior(consumo.quantidadeAnterior())
+						.quantidadeMovimentada(consumo.quantidadeMovimentada())
+						.quantidadeAtual(consumo.quantidadeAtual()).estadoAnterior(consumo.estadoAnterior())
+						.estadoAtual(consumo.estadoAtual()).abriuRecipiente(consumo.abriuRecipiente())
+						.esgotouRecipiente(consumo.esgotouRecipiente()).build())
+				.toList();
+
+		movimentacaoRecipienteRepository.saveAll(detalhes);
+	}
+	
+	private record ConsumoRecipiente(
+	        RecipienteEstoque recipiente,
+	        BigDecimal quantidadeAnterior,
+	        BigDecimal quantidadeMovimentada,
+	        BigDecimal quantidadeAtual,
+	        EstadoRecipienteEstoque estadoAnterior,
+	        EstadoRecipienteEstoque estadoAtual,
+	        boolean abriuRecipiente,
+	        boolean esgotouRecipiente) {
 	}
 }
