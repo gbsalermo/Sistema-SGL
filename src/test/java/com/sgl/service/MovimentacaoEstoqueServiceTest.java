@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,16 +29,21 @@ import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Produto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,6 +72,9 @@ class MovimentacaoEstoqueServiceTest {
     @Mock
     private PedidoRepository pedidoRepository;
 
+    @Mock
+    private RecipienteEstoqueRepository recipienteEstoqueRepository;
+
     @InjectMocks
     private MovimentacaoEstoqueService service;
 
@@ -80,6 +89,7 @@ class MovimentacaoEstoqueServiceTest {
                 .publicId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
                 .nome("Produto Teste")
                 .codigoReferencia("PROD-TESTE")
+                .unidadeMedida(UnidadeMedida.UNIDADE)
                 .perecivel(false)
                 .ativo(true)
                 .build();
@@ -158,6 +168,78 @@ class MovimentacaoEstoqueServiceTest {
         assertEquals(lote, mov.getLote());
         assertEquals(BigDecimal.valueOf(10), mov.getQuantidadeAnterior());
         assertEquals(BigDecimal.valueOf(15), mov.getQuantidadeAtual());
+    }
+
+    @Test
+    void deveMaterializarRecipientesFisicosAoRegistrarEntrada() {
+        estoque.setQuantidadeAtual(BigDecimal.ZERO);
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+
+        EntradaLoteRequestDTO dto = new EntradaLoteRequestDTO();
+        dto.setNumeroLote("FAB-ETANOL-001");
+        dto.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        dto.setApresentacao("frasco de 500 mL");
+        dto.setQuantidade(3);
+        dto.setConteudoPorApresentacao(BigDecimal.valueOf(500));
+        dto.setFracionavel(true);
+        dto.setOrigem(OrigemMovimentacao.COMPRA);
+
+        when(estoqueCentralRepository.findByPublicId(ESTOQUE_PUBLIC_ID))
+                .thenReturn(Optional.of(estoque));
+        when(estoqueCentralRepository.buscarPorIdComBloqueio(3L))
+                .thenReturn(Optional.of(estoque));
+        when(loteRepository.existsByEstoqueCentralIdAndNumeroLote(3L, "FAB-ETANOL-001"))
+                .thenReturn(false);
+
+        service.registrarEntradaLote(ESTOQUE_PUBLIC_ID, dto, usuario);
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        ArgumentCaptor<Iterable<RecipienteEstoque>> recipienteCaptor =
+                ArgumentCaptor.forClass((Class) Iterable.class);
+
+        verify(recipienteEstoqueRepository).saveAll(recipienteCaptor.capture());
+
+        List<RecipienteEstoque> recipientes = StreamSupport
+                .stream(recipienteCaptor.getValue().spliterator(), false)
+                .toList();
+
+        assertEquals(3, recipientes.size());
+
+        assertEquals("LOT-PROD-TESTE-001-R001", recipientes.get(0).getCodigoInterno());
+        assertEquals("LOT-PROD-TESTE-001-R002", recipientes.get(1).getCodigoInterno());
+        assertEquals("LOT-PROD-TESTE-001-R003", recipientes.get(2).getCodigoInterno());
+
+        for (int i = 0; i < recipientes.size(); i++) {
+            RecipienteEstoque recipiente = recipientes.get(i);
+
+            assertEquals(i + 1, recipiente.getSequencial());
+            assertEquals(TipoEmbalagem.FRASCO, recipiente.getTipoEmbalagem());
+            assertEquals(0, BigDecimal.valueOf(500).compareTo(recipiente.getCapacidadeInicial()));
+            assertEquals(0, BigDecimal.valueOf(500).compareTo(recipiente.getQuantidadeDisponivel()));
+            assertEquals(UnidadeMedida.ML, recipiente.getUnidadeMedida());
+            assertEquals(EstadoRecipienteEstoque.FECHADO, recipiente.getEstado());
+        }
+
+        assertEquals(0, BigDecimal.valueOf(1500).compareTo(estoque.getQuantidadeAtual()));
+
+        ArgumentCaptor<Lote> loteCaptor = ArgumentCaptor.forClass(Lote.class);
+        verify(loteRepository).save(loteCaptor.capture());
+
+        Lote lote = loteCaptor.getValue();
+        assertEquals(3, lote.getQuantidadeApresentacoes());
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(lote.getConteudoPorApresentacao()));
+        assertEquals(0, BigDecimal.valueOf(1500).compareTo(lote.getQuantidadeInicial()));
+        assertEquals(0, BigDecimal.valueOf(1500).compareTo(lote.getQuantidadeDisponivel()));
+
+        ArgumentCaptor<MovimentacaoEstoque> movimentacaoCaptor =
+                ArgumentCaptor.forClass(MovimentacaoEstoque.class);
+        verify(movimentacaoRepository).save(movimentacaoCaptor.capture());
+
+        MovimentacaoEstoque movimentacao = movimentacaoCaptor.getValue();
+        assertEquals(TipoMovimentacao.ENTRADA, movimentacao.getTipoMovimentacao());
+        assertEquals(0, BigDecimal.valueOf(1500).compareTo(movimentacao.getQuantidadeMovimentada()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(movimentacao.getQuantidadeAnterior()));
+        assertEquals(0, BigDecimal.valueOf(1500).compareTo(movimentacao.getQuantidadeAtual()));
     }
 
     @Test
