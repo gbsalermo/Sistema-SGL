@@ -140,6 +140,17 @@ public class SolucaoService {
         }
 
         solucao.limparComponentes();
+
+        /*
+         * Em atualização, remove os órfãos antes de inserir a nova composição.
+         * Isso evita conflito temporário com a unicidade (solucao_id, produto_id)
+         * quando um Produto permanece na receita com quantidade/unidade alteradas.
+         * Qualquer falha posterior continua coberta pelo rollback da transação.
+         */
+        if (solucao.getId() != null) {
+            solucaoRepository.flush();
+        }
+
         novosComponentes.forEach(solucao::adicionarComponente);
     }
 
