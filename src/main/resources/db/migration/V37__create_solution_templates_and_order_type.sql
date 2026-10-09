@@ -41,5 +41,13 @@ ALTER TABLE pedidos ADD CONSTRAINT fk_pedidos_modelo_solucao
     FOREIGN KEY(modelo_solucao_id) REFERENCES modelos_solucao(id);
 CREATE INDEX idx_pedidos_tipo ON pedidos(tipo);
 
+-- V9 tornou embalagem e multiplicador obrigatorios para Pedidos comuns.
+-- Em Solucoes os componentes sao medidos em massa/volume diretamente,
+-- portanto esses campos devem aceitar NULL; Pedidos comuns continuam
+-- exigindo os campos por validacao no service e no DTO.
+ALTER TABLE itens_pedido ALTER COLUMN tipo_embalagem_solicitada DROP NOT NULL;
+ALTER TABLE itens_pedido ALTER COLUMN quantidade_embalagens_solicitada DROP NOT NULL;
+ALTER TABLE itens_pedido ALTER COLUMN multiplicador_solicitado DROP NOT NULL;
+
 ALTER TABLE itens_pedido ADD COLUMN unidade_medida_solicitada VARCHAR(30);
 
