@@ -2621,3 +2621,23 @@ No cancelamento de uma Solução em preparação, o sistema deve consultar o ope
 4. Como agrupar itens quando um mesmo Produto compõe múltiplas Soluções no mesmo Pedido, sem perder auditabilidade nem gerar baixas duplicadas?
 
 **Estado da 7.3:** decisões funcionais atualizadas, **sem novas classes, DTOs, controllers, migrations ou testes de backend**. A revisão e implementação do código seguem sendo manuais pelo responsável.
+
+
+### 15.11 Simplificação recomendada para cancelamento de Solução (09/10/2026)
+
+**Proposta trazida pelo responsável, recomendada após discussão, aguardando confirmação final antes da implementação.** Esta proposta **substituiria** a hipótese de transformar uma Solução já preparada e cancelada em Produto estocável, discutida na seção 15.9.
+
+Não haverá, no fluxo inicial da 7.3, nova entidade de "Solução pronta em estoque", conversão para Produto físico, nem módulo de reuso de preparações canceladas. A preparação física fica fora do detalhamento operacional do SGL.
+
+Fluxo sugerido ao solicitar cancelamento de um Pedido de Solução com componentes já debitados na aprovação:
+
+1. Perguntar ao responsável operacional se a solução **já foi preparada fisicamente**.
+2. **Não preparada:** permitir cancelar e tentar reverter as saídas do pedido **apenas se fisicamente reversíveis**, preservando a política da 7.1 que veda devolução normal de materiais fracionados/contamináveis e respeitando o histórico/estado dos recipientes. Se a reversão não for segura/possível, bloquear a restauração fictícia e exigir resolução operacional; não repor o estoque artificialmente.
+3. **Preparada:** **não cancelar**, **não devolver os componentes ao estoque**. Informar que a preparação já consumiu os materiais e oferecer ao responsável **recusar a solicitação de cancelamento e prosseguir para entrega**. Manter status `EM_PREPARACAO` até ocorrer confirmação real da entrega/recebimento. Não marcar `ENTREGUE` no ato de recusar o cancelamento.
+4. Registrar a tentativa de cancelamento, a informação prestada pelo responsável e a decisão, com usuário e data, preservando rastreabilidade sem criar novo fluxo físico.
+
+O status `EM_PREPARACAO` continua proposto para pedidos com Solução; os pedidos comuns mantêm seu fluxo. Aprovação realiza uma única saída; confirmação de entrega não causa segunda baixa.
+
+**Ressalva de escopo:** se uma preparação pronta não puder mais ser entregue ou houver necessidade de descarte, isso exigirá orientação operacional específica; não introduzir automaticamente estoque de solução pronta ou baixa dupla.
+
+**Pendência decisória principal:** confirmar esta regra simplificada como definitiva. A questão do reuso como novo Produto fica fora do escopo inicial, sem implementação ou cadastro automático.
