@@ -543,7 +543,8 @@ Situação:
 7.1-E ✅ V34 aplicada e validada
 7.1-F ✅ MovimentacaoRecipiente + repository
 7.1-G ✅ V35 aplicada e validada
-7.1-H 🔧 próximo — entrada de lote materializando recipientes
+7.1-H ✅ entrada de lote materializando recipientes
+7.1-I 🔧 próximo — seleção FEFO + aberto/fechado
 ```
 
 
@@ -609,4 +610,37 @@ Situação atual:
 7.1-F ✅
 7.1-G ✅
 7.1-H 🔧 próximo — entrada de lote materializando recipientes
+```
+
+
+---
+
+## 15. Implementação 7.1-H
+
+Validação confirmada em 09/10/2026.
+
+Concluído:
+
+- entrada de lote passou a materializar `RecipienteEstoque`;
+- uma apresentação física gera um recipiente individual;
+- código determinístico por lote: `<codigo-lote>-RNNN`;
+- capacidade e saldo inicial iguais ao conteúdo por apresentação;
+- recipientes novos iniciam como `FECHADO`;
+- unidade do recipiente usa a unidade canônica do Produto;
+- saldo do Lote e do EstoqueCentral continua agregado;
+- teste específico incluído para entrada de `3 × 500 mL`;
+- suíte de testes permaneceu integralmente verde.
+
+Commits principais:
+
+```text
+fc5e300 — Feat: Adição de nova modelagem para as apresentações físicas dos lotes e produtos
+6581864 — Test: validar materializacao de recipientes na entrada de lote
+```
+
+Situação atual:
+
+```text
+7.1-H ✅
+7.1-I 🔧 próximo — seleção FEFO + aberto/fechado
 ```
