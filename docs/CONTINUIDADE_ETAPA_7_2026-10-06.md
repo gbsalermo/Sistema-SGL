@@ -2690,4 +2690,101 @@ Antes de retomar, será necessário decidir:
 
 **Ainda para fechar antes do código:** regras de edição de composição na análise/aprovação; validação da reversão do estoque com recipientes; delimitação dos campos mínimos de cadastro de modelo padrão e tipos de Pedido. Tolerância e medição real ficam para estudo futuro, sem bloquear a implementação principal.
 
-**Implementação:** nenhuma alteração Java, SQL, migration ou testes de backend da 7.3 foi feita nesta revisão. Backend será aplicado manualmente pelo responsável após as decisões; somente documentação foi alterada.
+**Nota histórica:** até esta revisão conceitual, nenhuma alteração Java/SQL havia sido aplicada. **Situação posterior:** implementação direta excepcionalmente autorizada pelo responsável, conforme seção 16. Permanece proibido considerar a 7.3 validada sem testes e boot local.
+
+
+---
+
+## 16. Avanço direto autorizado — implementação-base da Etapa 7.3 (09/10/2026)
+
+**Autorização pontual:** o responsável solicitou que o assistente adiantasse diretamente a implementação do backend nesta etapa. A regra usual de alterações manuais de backend não está revogada permanentemente; a autorização aplica-se **a este avanço direto da 7.3**. Branch: `collab/etapa-7-unidades-solucoes-contexto`. Não realizar merge sem confirmação da validação.
+
+### 16.1 Implementado — Modelo de Solução
+
+- `ModeloSolucao` é um catálogo reutilizável **da Unidade**, distinto de Produto e da solicitação efetiva.
+- `ComponenteModeloSolucao` guarda Produto real, ordem, quantidade decimal e unidade física, com conversão para canônica e isolamento por Unidade.
+- Inativação lógica; nome único na Unidade; validação de Produto ativo e não repetido.
+- CRUD `/api/v1/modelos-solucao` e `/ativos`.
+- Promoção **manual** da composição de um Pedido de Solução para modelo reutilizável:
+  `POST /api/v1/modelos-solucao/promover-pedido/{pedidoId}`.
+  Isso não altera a composição histórica ou movimenta estoque.
+
+### 16.2 Implementado — Solução é um tipo de Pedido
+
+- Enum `TipoPedido = PRODUTOS | SOLUCAO`, com padrão `PRODUTOS` para compatibilidade dos registros existentes.
+- `Pedido` passa a guardar `tipo`, `nomeSolucao`, vínculo **opcional** ao modelo que originou a solicitação, e o resultado da confirmação de preparo no cancelamento.
+- Os componentes solicitados permanecem **exatamente os `ItemPedido` do próprio Pedido**. Não existe `SolucaoSolicitada` paralela.
+- Pedido de Solução personalizado informa `nomeSolucao`, `itens` (Produto, quantidade, unidade de medida) e Projeto; pedido por modelo informa `modeloSolucaoId` e o backend monta os itens a partir do catálogo.
+- Itens guardam `unidadeMedidaSolicitada`; `quantidadeSolicitada` física é convertida para a unidade canônica do Produto. O DTO de resposta disponibiliza também a quantidade na unidade originalmente informada.
+- Mantida a proibição de Produto duplicado dentro da mesma solicitação e a validação de Produto cadastrado na Unidade.
+
+### 16.3 Implementado — fluxo e cancelamentos
+
+```text
+PRODUTOS: PENDENTE -> APROVADO (baixa) -> ENTREGUE
+
+SOLUCAO: PENDENTE -> EM_PREPARACAO (aprovacao e uma baixa)
+                     -> ENTREGUE (sem segunda baixa)
+
+SOLUCAO em preparacao -> cancelar:
+  preparada=false -> reverter saidas vinculadas aos Lotes/Recipientes e CANCELADO
+  preparada=true  -> manter consumo dos componentes e CANCELADO
+```
+
+- Aprovação de Solução exige **todos os componentes**, sem alterações de quantidades. Se a receita precisar ser alterada, no contrato inicial o gestor deve rejeitar e solicitar nova composição; reajuste durante análise poderá ser discutido posteriormente.
+- Baixa usa `MovimentacaoEstoqueService.registrarSaida` transacional, com lógica de Lotes/Recipientes e sem requisitos artificiais de embalagem para componentes medidos fisicamente.
+- `cancelarSolucao` exige justificativa e resposta sobre preparo físico **quando já estiver EM_PREPARACAO**; quando ainda `PENDENTE`, permite cancelar sem baixa a reverter.
+- `cancelar` convencional rejeita Pedidos de Solução sem confirmação (para impedir reverter ingredientes preparados indevidamente).
+- Reversão de Solução não preparada reutiliza `devolverSaidasDoPedido` e mantém proteção de concorrência: **se Recipiente sofreu outra movimentação, não sobrescrever o estado físico**. Esse conflito requer conciliação operacional; não simular devolução.
+- Para Solução preparada cancelada, ingredientes **não** retornam ao estoque; o eventual novo Produto físico preparado é um **cadastro/entrada manual**, fora do fluxo automático de Solução. Sua vinculação futura explícita ao Pedido de origem ainda precisa de revisão funcional.
+
+**Endpoints operacionais especializados** sob `/api/v1/solucoes/pedidos`: `POST`, `GET`, `GET /{id}`, `PUT /{id}/aprovar`, `PUT /{id}/entregar`, `PUT /{id}/cancelar`, `PUT /{id}/rejeitar`. O serviço `PedidoService` é único, e os endpoints convencionais de Pedidos continuam disponíveis.
+
+### 16.4 Persistência / compatibilidade
+
+Migration nova: `V37__create_solution_templates_and_order_type.sql`.
+
+- Cria `modelos_solucao` e `componentes_modelo_solucao`.
+- Acrescenta campos ao `pedidos`, incluindo tipo com `DEFAULT 'PRODUTOS'`.
+- Acrescenta `unidade_medida_solicitada` em `itens_pedido`.
+- Relaxa as três colunas de embalagem de `itens_pedido` para permitir `NULL` **em componentes de Solução**. A validação Java continua exigindo embalagem para pedidos comuns.
+- Não há estoque separado de Soluções nem mudança de saldos legados por migration.
+
+**Atenção:** caso uma V37 experimental antiga tenha sido executada em um banco local antes do rollback anterior, poderá haver conflito de checksum/nome de Flyway. Não executar `repair` sem identificar a origem; apenas em dados DEV descartáveis, preferir uma recriação controlada da base.
+
+### 16.5 Testes adicionados, ainda não executados aqui
+
+- `ModeloSolucaoServiceTest`: criação, conversão, dimensões incompatíveis, Produto duplicado, outra Unidade, tenant ausente, inativação e promoção de Pedido ao catálogo.
+- `PedidoSolucaoServiceTest`: personalizado, aprovação integral sem embalagem, bloqueio de ajuste da receita, cancelamentos preparado/não preparado, confirmação obrigatória, entrega sem segunda baixa, bloqueio do cancelamento legado.
+- Testes já existentes de Pedido, conciliação de Lotes, Recipientes, concorrência e Flyway precisam permanecer verdes.
+
+**Verificação local solicitada ao responsável:**
+
+```bash
+git fetch github
+git switch collab/etapa-7-unidades-solucoes-contexto
+git pull --ff-only github collab/etapa-7-unidades-solucoes-contexto
+mvn test
+```
+
+Depois confirmar inicialização no perfil `dev`, que aplicará V37, e realizar smoke HTTP na ordem:
+
+1. Criar/listar/inativar um Modelo de Solução.
+2. Criar um Pedido personalizado (com quantidade em mL para Produto cuja unidade é L).
+3. Criar um Pedido a partir de `modeloSolucaoId`, sem informar itens.
+4. Aprovar com todos os componentes e verificar `EM_PREPARACAO` + saída única.
+5. Entregar e garantir `ENTREGUE` sem segunda baixa.
+6. Cancelar **não preparada** e verificar reversão de estoque por Lote e Recipiente.
+7. Cancelar **preparada** e verificar `CANCELADO` **sem** reversão.
+8. Verificar isolamento de Unidade, validações e Pedidos comuns inalterados.
+
+**Não executar testes/boot foi uma limitação do ambiente de edição remota; status NÃO pode ser marcado como verde sem validação real.**
+
+### 16.6 Pendências e limites assumidos
+
+- **7.3 ainda não encerrada:** aguarda `mvn test`, startup com V37 e testes manuais.
+- Interface visual de Soluções para solicitante/Gestor: **Etapa 7.5**, não implementada neste avanço de backend.
+- Conferência e permissão reais do Gestor: `SecurityConfig` ainda usa `permitAll` temporário, portanto a segurança/identidade dos endpoints de gestão deve ser tratada antes de produção; o tenant por cabeçalho não substitui autenticação confiável.
+- Histórico operacional mais granular, usuário responsável pelo cancelamento e tratamento específico da reversão em caso de movimentação concorrente: pontos para auditar/aperfeiçoar no desenvolvimento integrado à Etapa 8.
+- Margem de erro de Soluções: **extra futuro adiado, NÃO integra este escopo**.
+- **Não realizar merge automaticamente**.
