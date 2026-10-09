@@ -240,8 +240,8 @@ A Etapa 7 deve fechar o contrato; a aplicação efetiva em Pedido será Etapa 8.
 
 ```text
 7.0 Auditoria + decisões de domínio          ✅ concluído
-7.1 Unidade de medida x apresentação         🔧 atual
-7.2 Modelo decimal/compatibilidade estoque   ⏳
+7.1 Unidade de medida x apresentação         ✅ concluído
+7.2 Modelo decimal/compatibilidade estoque   🔧 atual
 7.3 Domínio de Soluções                      ⏳
 7.4 Contexto operacional                     ⏳
 7.5 Frontend integrado                       ⏳
@@ -2405,3 +2405,44 @@ profile DEV com banco recriado ✅ subiu com PostgreSQL, Flyway e massas DEV/IB
 ```
 
 Bloco 7.1 encerrado em 09/10/2026 após validação de suíte, DEMO e DEV limpo.
+
+
+### 15.11 Início do 7.2 — modelo decimal / compatibilidade de estoque
+
+Auditoria executada em 09/10/2026.
+
+Conclusão técnica: a maior parte do escopo originalmente previsto para o 7.2 foi absorvida pelo 7.1-B/C e pela consolidação do estoque físico.
+
+Já está implementado:
+
+- saldos físicos em `BigDecimal`;
+- persistência física em `NUMERIC(19,6)` via V33/V34/V35;
+- `EstoqueCentral`, `Lote`, `MovimentacaoEstoque`, `HistoricoLaboratorio` e `ItemPedido` com quantidades físicas decimais;
+- DTOs de estoque, descarte, aprovação, movimentação e histórico com `BigDecimal`;
+- relatórios somando saldos/movimentações com `BigDecimal`;
+- contagens físicas (`quantidadeApresentacoes`, quantidade de embalagens e sequenciais) permanecendo `Integer`;
+- conversor de unidades usando `BigDecimal` e bloqueando grupos incompatíveis;
+- construtor de compatibilidade de `EntradaLoteRequestDTO` preservado para chamadas/testes antigos.
+
+Não foi encontrada necessidade de nova migration nem de alteração funcional de produção para o 7.2.
+
+Foi adicionada cobertura de regressão específica para quantidades decimais no estoque físico:
+
+```text
+975f31d — Test: validar quantidades decimais no estoque fisico
+```
+
+Cenários adicionados:
+
+- entrada de 3 recipientes de 0,250 L → saldo agregado 0,750 L;
+- saída fracionária de 0,125 L → saldo restante 0,625 L;
+- preservação do decimal em Recipiente, Lote, EstoqueCentral e MovimentacaoRecipiente.
+
+Status:
+
+```text
+7.2 implementação/auditoria ✅
+7.2 validação da suíte ⏳
+```
+
+Após a suíte permanecer verde, o 7.2 pode ser encerrado sem nova alteração funcional.
