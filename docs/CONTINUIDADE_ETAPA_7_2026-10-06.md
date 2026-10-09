@@ -2576,7 +2576,7 @@ Usuário no contexto de Projeto
 
 Representação conceitual mínima (nomes ainda sujeitos à adequação ao código existente):
 
-\`\`\`text
+```text
 Pedido
   tipo: PRODUTOS | SOLUCAO
   usuario / laboratorio / projeto / status
@@ -2584,66 +2584,66 @@ Pedido
      -> Produto A, 10 mL
      -> Produto B, 5 g
      -> Produto C, 20 mL
-\`\`\`
+```
 
-- O relacionamento existente \`Pedido -> ItemPedido -> Produto\` **já agrupa todos os componentes**. Não criar outra entidade \`SolucaoSolicitada\` nem adicionar \`solucaoId\` por item **apenas** para vincular os componentes à mesma preparação: o próprio Pedido faz isso.
-- Cada Pedido do tipo \`SOLUCAO\` descreve a preparação de uma Solução e sua entrega única. Um mesmo Pedido não agrupa várias Soluções distintas nesta definição.
-- **Catálogo:** Gestor cadastra modelos reutilizáveis de composição (conceitualmente \`ModeloSolucao\`), vinculados à Unidade. Usuário escolhe um modelo ou preenche livremente os Produtos e as respectivas quantidades no próprio Pedido; o caso personalizado é privado daquela solicitação e não vira modelo.
+- O relacionamento existente `Pedido -> ItemPedido -> Produto` **já agrupa todos os componentes**. Não criar outra entidade `SolucaoSolicitada` nem adicionar `solucaoId` por item **apenas** para vincular os componentes à mesma preparação: o próprio Pedido faz isso.
+- Cada Pedido do tipo `SOLUCAO` descreve a preparação de uma Solução e sua entrega única. Um mesmo Pedido não agrupa várias Soluções distintas nesta definição.
+- **Catálogo:** Gestor cadastra modelos reutilizáveis de composição (conceitualmente `ModeloSolucao`), vinculados à Unidade. Usuário escolhe um modelo ou preenche livremente os Produtos e as respectivas quantidades no próprio Pedido; o caso personalizado é privado daquela solicitação e não vira modelo.
 - Opcionalmente, o Pedido pode registrar qual modelo originou o preenchimento, **sem depender dele para reconstruir** a composição histórica. O snapshot efetivo já consiste nos Itens e suas quantidades no Pedido; preservar quantidades/unidades e os dados acordados na aprovação para auditoria. Não duplicar a receita só por duplicar.
 - Promoção de composição de Pedido personalizado para modelo de catálogo depende de ação explícita do Gestor. Sugestões por recorrência são possibilidade futura, não automação já decidida.
-- A saída de cada componente usa o fluxo existente de \`ItemPedido\`/\`MovimentacaoEstoque\`/\`Lote\`/\`RecipienteEstoque\`. **Não há estoque de Solução como regra do Pedido.**
-- Quantidades devem usar \`BigDecimal\` e unidades compatíveis com os Produtos, conforme 7.1/7.2.
+- A saída de cada componente usa o fluxo existente de `ItemPedido`/`MovimentacaoEstoque`/`Lote`/`RecipienteEstoque`. **Não há estoque de Solução como regra do Pedido.**
+- Quantidades devem usar `BigDecimal` e unidades compatíveis com os Produtos, conforme 7.1/7.2.
 
-**Simplificação importante em relação à proposta anterior:** rejeitada a exigência de agrupar os \`ItemPedido\` por uma segunda entidade de "solução dentro do pedido". A informação necessária de agrupamento é \`Pedido.tipo == SOLUCAO\`, pois todos os itens desse Pedido formam uma única Solução.
+**Simplificação importante em relação à proposta anterior:** rejeitada a exigência de agrupar os `ItemPedido` por uma segunda entidade de "solução dentro do pedido". A informação necessária de agrupamento é `Pedido.tipo == SOLUCAO`, pois todos os itens desse Pedido formam uma única Solução.
 
 ### 15.9 Fluxo aprovado — preparação sem detalhamento físico
 
-\`\`\`text
+```text
 Pedido.tipo == PRODUTOS
   PENDENTE -> APROVADO (baixa de Produtos) -> ENTREGUE
 
 Pedido.tipo == SOLUCAO
   PENDENTE -> aprovação + baixa/alocação dos Produtos -> EM_PREPARACAO
   -> gestor confirma entrega/recebimento -> ENTREGUE
-\`\`\`
+```
 
-- \`EM_PREPARACAO\` identifica uma Solução aprovada e aguardando preparo/entrega. Não registrar cada atividade física de mistura.
+- `EM_PREPARACAO` identifica uma Solução aprovada e aguardando preparo/entrega. Não registrar cada atividade física de mistura.
 - A **aprovação** realiza **uma única** baixa/alocação de Produtos exatamente como hoje nos Pedidos comuns. É o "standby" operacional referido pelo responsável.
-- A **entrega** confirma o recebimento e conclui o Pedido; **não debita os mesmos Produtos novamente**. A expressão "confirma o desconto" significa validar o desconto já registrado, não repetir a \`SAIDA\`.
+- A **entrega** confirma o recebimento e conclui o Pedido; **não debita os mesmos Produtos novamente**. A expressão "confirma o desconto" significa validar o desconto já registrado, não repetir a `SAIDA`.
 - Pedido exclusivamente de Produtos mantém os estados e fluxo anteriores.
 - A composição da Solução deve ser considerada **integralmente** no atendimento; examinar a validação da lista de itens aprovados para evitar omissão silenciosa e preservar atomicidade.
-- A implementação do novo \`TipoPedido\`, status e contratos somente deve ocorrer **manualmente no backend**, após revisão do restante das regras da etapa.
+- A implementação do novo `TipoPedido`, status e contratos somente deve ocorrer **manualmente no backend**, após revisão do restante das regras da etapa.
 
 ### 15.10 Regra corrigida de cancelamento da Solução em preparação
 
 **A regra específica aqui prevalece sobre a orientação preliminar da seção 15.9 anterior, agora substituída, de bloquear indiscriminadamente a reversão só porque o item é fracionável.** A premissa operacional é que a aprovação põe componentes em standby no fluxo de Pedido; o Gestor confirma se a preparação realmente ocorreu.
 
-Ao tentar cancelar um Pedido \`SOLUCAO\` em \`EM_PREPARACAO\`, apresentar:
+Ao tentar cancelar um Pedido `SOLUCAO` em `EM_PREPARACAO`, apresentar:
 
-\`\`\`text
+```text
 A Solução já foi preparada fisicamente?
    NÃO -> cancelar o Pedido e reverter as saídas/alocações dos seus Produtos
    SIM -> não repor os Produtos; encaminhar decisão sobre o Pedido pronto
-\`\`\`
+```
 
 **NÃO preparada:** nenhum componente foi utilizado no preparo. **Reverter integralmente as saídas do Pedido e retornar os saldos ao estoque**, inclusive quantidades fracionáveis que estavam apenas alocadas e não foram efetivamente consumidas. Isto é **reversão de alocação não consumida**, distinta da devolução física de substâncias já usadas ou recebidas pelo laboratório. Registrar confirmação, agente e motivo. Utilizar a restauração auditável do próprio Pedido/recipientes, ajustando seu contrato conforme necessário; não criar movimentação de entrada avulsa para compensar uma baixa.
 
 **SIM preparada:** os componentes já foram consumidos para formar a Solução. **Nunca restaurar os ingredientes como se ainda fossem Produtos isolados.** O Gestor pode negar o pedido de cancelamento e manter a Solução para entrega, ou avaliar seu reaproveitamento como um Produto físico **cadastrado manualmente**.
 
-- **Negar cancelamento**: conservar \`EM_PREPARACAO\` e orientar a entrega. Marcar \`ENTREGUE\` **somente após entrega/recebimento real**, sem registrar confirmação fictícia, mesmo que o pedido de cancelamento tenha sido rejeitado.
+- **Negar cancelamento**: conservar `EM_PREPARACAO` e orientar a entrega. Marcar `ENTREGUE` **somente após entrega/recebimento real**, sem registrar confirmação fictícia, mesmo que o pedido de cancelamento tenha sido rejeitado.
 - **Cadastrar como Produto físico** (alternativa excepcional sugerida pelo responsável): permitir que o Gestor descreva a Solução já preparada e a disponibilize posteriormente a outros usuários, se adequada. Trata-se de um **novo Produto físico/entrada real correspondente**, com composição/identificação suficientes, sem recreditar ingredientes originais e sem baixa dupla. Exige ainda definição de regras mínimas de identificação, validade, quantidade, lote/recipiente, segurança e vínculo com o Pedido original. Não criar automaticamente no cancelamento nem incorporar no fluxo comum de Soluções.
 - A interface poderá apresentar ao Gestor as opções de **recusar cancelamento/prosseguir entrega** ou **avaliar cadastro como Produto físico**. A escolha de cadastrar é excepcional e não transforma todas as Soluções em Produtos.
 
-Registrar decisões e responsáveis no histórico. Um Pedido já \`ENTREGUE\` continua fora do cancelamento comum; soluções especiais após entrega dependem de regra explícita.
+Registrar decisões e responsáveis no histórico. Um Pedido já `ENTREGUE` continua fora do cancelamento comum; soluções especiais após entrega dependem de regra explícita.
 
-**Cuidado técnico já identificado:** \`devolverSaidasDoPedido()\` atual reverte Recipientes verificando o estado físico posterior. Precisará ser adaptado/testado ao contrato de *standby não preparado* para que fracionamento, por si só, não impeça reverter o Pedido, sem sobrescrever movimentações legítimas de outros Pedidos. Esse cuidado técnico não altera a **regra funcional aprovada** de cancelamento integral da Solução ainda não preparada.
+**Cuidado técnico já identificado:** `devolverSaidasDoPedido()` atual reverte Recipientes verificando o estado físico posterior. Precisará ser adaptado/testado ao contrato de *standby não preparado* para que fracionamento, por si só, não impeça reverter o Pedido, sem sobrescrever movimentações legítimas de outros Pedidos. Esse cuidado técnico não altera a **regra funcional aprovada** de cancelamento integral da Solução ainda não preparada.
 
 ### 15.11 Pendências focadas para fechar a implementação
 
 1. Definir o comportamento mínimo de um **Produto físico gerado excepcionalmente de uma Solução pronta**, caso se opte por disponibilizar essa função na primeira entrega; nunca confundir isso com modelo do catálogo.
 2. Especificar se o Gestor pode ajustar componentes/quantidades durante a aprovação ou se solicita retificação antes de aprovar, evitando modificar silenciosamente a mistura solicitada.
 3. Definir contrato de confirmação de "preparada?": responsável autorizado, trilha auditável e interface de cancelamento; nenhum detalhe contínuo do preparo precisa ser registrado.
-4. Adequar/validar apresentação/unidade de \`ItemPedido\` para quantidades fracionadas da solução e para saída FEFO/FIFO.
+4. Adequar/validar apresentação/unidade de `ItemPedido` para quantidades fracionadas da solução e para saída FEFO/FIFO.
 5. Manter contexto do Projeto/Unidade/laboratório coerente com a 7.4 e futura Etapa 8.
 
 **Status:** 7.3 em análise funcional; **nenhum código, migration ou teste de backend implementado**. Toda implementação de backend continua sob responsabilidade manual do desenvolvedor; documentação é atualizada separadamente.
