@@ -22,6 +22,9 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.HistoricoLaboratorio;
 import com.sgl.model.ItemPedido;
+import com.sgl.model.ModeloSolucao;
+import com.sgl.model.ComponenteModeloSolucao;
+import com.sgl.model.medida.ConversorUnidadeMedida;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
@@ -29,10 +32,13 @@ import com.sgl.model.Projeto;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.StatusPedido;
+import com.sgl.model.enums.TipoPedido;
+import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.ModeloSolucaoRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -53,6 +59,7 @@ public class PedidoService {
 	private final UsuarioRepository usuarioRepository;
 	private final ProjetoRepository projetoRepository;
 	private final MovimentacaoEstoqueService movimentacaoEstoqueService;
+	private final ModeloSolucaoRepository modeloSolucaoRepository;
 
 	@Transactional
 	public PedidoResponseDTO criar(PedidoRequestDTO dto) {
@@ -77,19 +84,60 @@ public class PedidoService {
 		if (projeto != null)
 			projeto.validateActive();
 
+        TipoPedido tipo = dto.getTipo() == null ? TipoPedido.PRODUTOS : dto.getTipo();
+        ModeloSolucao modelo = null;
+        String nomeSolucao = null;
+        List<ItemPedidoRequestDTO> itensSolicitados = dto.getItens();
+
+        if (tipo == TipoPedido.SOLUCAO) {
+            if (projeto == null)
+                throw new BusinessRuleException("Projeto é obrigatório para pedir uma Solução.");
+            if (dto.getModeloSolucaoId() != null) {
+                if (itensSolicitados != null && !itensSolicitados.isEmpty())
+                    throw new BusinessRuleException("Ao selecionar um modelo, os itens são gerados pelo servidor.");
+                UUID unidade = laboratorio.getUnidade().getPublicId();
+                modelo = modeloSolucaoRepository.findByPublicIdAndUnidadePublicId(dto.getModeloSolucaoId(), unidade)
+                    .orElseThrow(() -> new ResourceNotFoundException("Modelo de Solução", dto.getModeloSolucaoId()));
+                if (!Boolean.TRUE.equals(modelo.getAtivo()))
+                    throw new BusinessRuleException("O modelo de Solução está inativo.");
+                nomeSolucao = modelo.getNome();
+                itensSolicitados = modelo.getComponentes().stream()
+                    .sorted(java.util.Comparator.comparing(ComponenteModeloSolucao::getOrdem))
+                    .map(c -> {
+                        ItemPedidoRequestDTO item = new ItemPedidoRequestDTO();
+                        item.setProdutoId(c.getProduto().getPublicId());
+                        item.setQuantidadeSolicitada(c.getQuantidade());
+                        item.setUnidadeMedidaSolicitada(c.getUnidadeMedida());
+                        return item;
+                    }).toList();
+            } else {
+                nomeSolucao = dto.getNomeSolucao();
+                if (nomeSolucao == null || nomeSolucao.isBlank())
+                    throw new BusinessRuleException("Informe o nome da Solução personalizada.");
+                nomeSolucao = nomeSolucao.trim();
+            }
+        } else if (dto.getModeloSolucaoId() != null || dto.getNomeSolucao() != null) {
+            throw new BusinessRuleException("Modelo e nome de Solução só são permitidos em pedidos de Solução.");
+        }
+        if (itensSolicitados == null || itensSolicitados.isEmpty())
+            throw new BusinessRuleException("O pedido precisa de pelo menos um Produto.");
+
 		boolean urgente = Boolean.TRUE.equals(dto.getUrgente());
 		String motivoUrgencia = normalizarTexto(dto.getMotivoUrgencia());
 		if (!urgente)
 			motivoUrgencia = null;
 
 		Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
-				.dataSolicitacao(LocalDateTime.now()).status(StatusPedido.PENDENTE).urgente(urgente)
+				.dataSolicitacao(LocalDateTime.now()).status(StatusPedido.PENDENTE).tipo(tipo)
+                .nomeSolucao(nomeSolucao).modeloSolucao(modelo).urgente(urgente)
 				.motivoUrgencia(motivoUrgencia).observacao(dto.getObservacao())
 				.arquivoDocumento(dto.getArquivoDocumento()).itens(new ArrayList<>()).build();
 
 		Set<Long> produtosAdicionados = new HashSet<>();
 
-		for (ItemPedidoRequestDTO itemDTO : dto.getItens()) {
+		for (ItemPedidoRequestDTO itemDTO : itensSolicitados) {
+            if (itemDTO == null || itemDTO.getProdutoId() == null)
+                throw new BusinessRuleException("Produto obrigatório na composição.");
 			Produto produto = produtoRepository.findByPublicId(itemDTO.getProdutoId())
 					.orElseThrow(() -> new ResourceNotFoundException("Produto", itemDTO.getProdutoId()));
 
@@ -117,13 +165,28 @@ public class PedidoService {
 							+ "' na unidade " + laboratorio.getUnidade().getNome()));
 			estoque.validateActive();
 
-			validarFormaRetirada(itemDTO);
+            BigDecimal quantidadeCanonica = itemDTO.getQuantidadeSolicitada();
+            UnidadeMedida unidadeInformada = null;
+            if (tipo == TipoPedido.SOLUCAO) {
+                unidadeInformada = itemDTO.getUnidadeMedidaSolicitada();
+                if (unidadeInformada == null || quantidadeCanonica == null
+                        || quantidadeCanonica.compareTo(BigDecimal.ZERO) <= 0)
+                    throw new BusinessRuleException("Cada componente exige quantidade positiva e unidade física.");
+                quantidadeCanonica = ConversorUnidadeMedida.converterParaCanonica(
+                    quantidadeCanonica, unidadeInformada, produto.getUnidadeMedida());
+                if (quantidadeCanonica.stripTrailingZeros().scale() > 6)
+                    throw new BusinessRuleException("Quantidade convertida excede 6 casas decimais.");
+            } else {
+                validarFormaRetirada(itemDTO);
+            }
 
-			ItemPedido item = ItemPedido.builder().pedido(pedido).produto(produto)
-					.quantidadeSolicitada(itemDTO.getQuantidadeSolicitada())
-					.tipoEmbalagemSolicitada(itemDTO.getTipoEmbalagemSolicitada())
-					.quantidadeEmbalagensSolicitada(itemDTO.getQuantidadeEmbalagensSolicitada())
-					.multiplicadorSolicitado(itemDTO.getMultiplicadorSolicitado()).build();
+            ItemPedido item = ItemPedido.builder().pedido(pedido).produto(produto)
+                    .quantidadeSolicitada(quantidadeCanonica)
+                    .unidadeMedidaSolicitada(unidadeInformada)
+                    .tipoEmbalagemSolicitada(tipo == TipoPedido.PRODUTOS ? itemDTO.getTipoEmbalagemSolicitada() : null)
+                    .quantidadeEmbalagensSolicitada(tipo == TipoPedido.PRODUTOS ? itemDTO.getQuantidadeEmbalagensSolicitada() : null)
+                    .multiplicadorSolicitado(tipo == TipoPedido.PRODUTOS ? itemDTO.getMultiplicadorSolicitado() : null)
+                    .build();
 			pedido.getItens().add(item);
 		}
 
@@ -141,6 +204,21 @@ public class PedidoService {
 				.findByLaboratorioUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 		return pedidos.stream().map(PedidoResponseDTO::new).toList();
 	}
+
+    @Transactional(readOnly = true)
+    public List<PedidoResponseDTO> listarSolucoes() {
+        exigirTenantAtivo();
+        return pedidoRepository.findByLaboratorioUnidadePublicIdAndTipo(
+                TenantContext.unidadeAtual().orElseThrow(), TipoPedido.SOLUCAO)
+                .stream().map(PedidoResponseDTO::new).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PedidoResponseDTO buscarSolucao(UUID id) {
+        Pedido pedido = buscarPedidoNoTenant(id);
+        exigirTipoSolucao(pedido);
+        return new PedidoResponseDTO(pedido);
+    }
 
 	@Transactional(readOnly = true)
 	public PedidoResponseDTO buscarPorId(UUID id) {
@@ -211,6 +289,16 @@ public class PedidoService {
 					"Apenas pedidos PENDENTES podem ser aprovados. Status atual: " + pedido.getStatus());
 		}
 
+        if (pedido.getTipo() == TipoPedido.SOLUCAO) {
+            if (dto.getItens() == null || dto.getItens().size() != pedido.getItens().size())
+                throw new BusinessRuleException("Todos os componentes da Solução devem ser aprovados.");
+            Set<UUID> componentes = new HashSet<>();
+            for (AprovarPedidoRequestDTO.ItemAprovacaoDTO item : dto.getItens()) {
+                if (item == null || item.getItemId() == null || !componentes.add(item.getItemId()))
+                    throw new BusinessRuleException("Não repita componentes da Solução.");
+            }
+        }
+
 		for (AprovarPedidoRequestDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
 			ItemPedido item = pedido.getItens().stream().filter(i -> i.getPublicId().equals(itemAprovacao.getItemId()))
 					.findFirst()
@@ -225,7 +313,12 @@ public class PedidoService {
 								+ item.getQuantidadeSolicitada() + ", aprovada: " + quantidadeAprovada);
 			}
 
-			if (item.getTipoEmbalagemSolicitada() != TipoEmbalagem.UNITARIO) {
+            if (pedido.getTipo() == TipoPedido.SOLUCAO
+                    && quantidadeAprovada.compareTo(item.getQuantidadeSolicitada()) != 0)
+                throw new BusinessRuleException("Para alterar a composição, rejeite o pedido e solicite nova receita.");
+
+			if (pedido.getTipo() != TipoPedido.SOLUCAO
+                    && item.getTipoEmbalagemSolicitada() != TipoEmbalagem.UNITARIO) {
 				// Correção de bug: "multiplicadorSolicitado" é um Integer
 				// (objeto), que pode ser nulo — por exemplo, num item que
 				// foi persistido antes desse campo existir, ou criado sem
@@ -254,14 +347,16 @@ public class PedidoService {
 					.orElseThrow(() -> new ResourceNotFoundException("Estoque do produto '" + produto.getNome()
 							+ "' na unidade " + pedido.getLaboratorio().getUnidade().getNome()));
 
-			movimentacaoEstoqueService.registrarSaida(estoque.getId(), quantidadeAprovada, usuarioAprovador,
-					OrigemMovimentacao.PEDIDO, pedido, pedido.getLaboratorio(), dto.getObservacao(),
-					item.getTipoEmbalagemSolicitada(), item.getMultiplicadorSolicitado());
+            movimentacaoEstoqueService.registrarSaida(estoque.getId(), quantidadeAprovada, usuarioAprovador,
+                    OrigemMovimentacao.PEDIDO, pedido, pedido.getLaboratorio(), dto.getObservacao(),
+                    pedido.getTipo() == TipoPedido.SOLUCAO ? null : item.getTipoEmbalagemSolicitada(),
+                    pedido.getTipo() == TipoPedido.SOLUCAO ? null : item.getMultiplicadorSolicitado());
 
 			item.setQuantidadeAprovada(quantidadeAprovada);
 		}
 
-		pedido.setStatus(StatusPedido.APROVADO);
+        pedido.setStatus(pedido.getTipo() == TipoPedido.SOLUCAO
+                ? StatusPedido.EM_PREPARACAO : StatusPedido.APROVADO);
 		pedido.setObservacao(dto.getObservacao());
 		return new PedidoResponseDTO(pedidoRepository.save(pedido));
 	}
@@ -281,10 +376,11 @@ public class PedidoService {
 	@Transactional
 	public PedidoResponseDTO entregar(UUID id) {
 		Pedido pedido = buscarPedidoComBloqueio(id);
-		if (pedido.getStatus() != StatusPedido.APROVADO) {
-			throw new BusinessRuleException(
-					"Apenas pedidos APROVADOS podem ser entregues. Status atual: " + pedido.getStatus());
-		}
+        boolean solucaoEmPreparo = pedido.getTipo() == TipoPedido.SOLUCAO
+                && pedido.getStatus() == StatusPedido.EM_PREPARACAO;
+        if (!solucaoEmPreparo && pedido.getStatus() != StatusPedido.APROVADO) {
+            throw new BusinessRuleException("Pedido deve estar aprovado para entrega. Status atual: " + pedido.getStatus());
+        }
 
 		for (ItemPedido item : pedido.getItens()) {
 			if (item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada().compareTo(BigDecimal.ZERO) > 0) {
@@ -303,6 +399,8 @@ public class PedidoService {
 	@Transactional
 	public PedidoResponseDTO cancelar(UUID id, String observacao) {
 		Pedido pedido = buscarPedidoComBloqueio(id);
+        if (pedido.getTipo() == TipoPedido.SOLUCAO)
+            throw new BusinessRuleException("Use o cancelamento específico de Soluções com confirmação de preparo.");
 		if (pedido.getStatus() == StatusPedido.REJEITADO)
 			throw new BusinessRuleException("Pedidos REJEITADOS já estão encerrados e não podem ser cancelados.");
 		if (pedido.getStatus() == StatusPedido.ENTREGUE)
@@ -317,6 +415,50 @@ public class PedidoService {
 		pedido.setObservacao(observacao);
 		return new PedidoResponseDTO(pedidoRepository.save(pedido));
 	}
+
+    @Transactional
+    public PedidoResponseDTO cancelarSolucao(UUID id, Boolean preparada, String justificativa) {
+        Pedido pedido = buscarPedidoComBloqueio(id);
+        exigirTipoSolucao(pedido);
+        if (justificativa == null || justificativa.isBlank())
+            throw new BusinessRuleException("Informe a justificativa de cancelamento da Solução.");
+        if (pedido.getStatus() == StatusPedido.ENTREGUE || pedido.getStatus() == StatusPedido.REJEITADO
+                || pedido.getStatus() == StatusPedido.CANCELADO)
+            throw new BusinessRuleException("A Solução já está encerrada.");
+        if (pedido.getStatus() == StatusPedido.EM_PREPARACAO) {
+            if (preparada == null)
+                throw new BusinessRuleException("Confirme se a Solução já foi preparada fisicamente.");
+            if (!preparada)
+                movimentacaoEstoqueService.devolverSaidasDoPedido(pedido, null, justificativa);
+            pedido.setSolucaoPreparadaNoCancelamento(preparada);
+            pedido.setEstoqueRevertidoNoCancelamento(!preparada);
+        } else if (pedido.getStatus() == StatusPedido.PENDENTE) {
+            pedido.setSolucaoPreparadaNoCancelamento(false);
+            pedido.setEstoqueRevertidoNoCancelamento(false); // Nao existiram saidas.
+        } else {
+            throw new BusinessRuleException("A Solução só pode ser cancelada quando pendente ou em preparação.");
+        }
+        pedido.setStatus(StatusPedido.CANCELADO);
+        pedido.setObservacao(justificativa.trim());
+        return new PedidoResponseDTO(pedidoRepository.save(pedido));
+    }
+
+    @Transactional
+    public PedidoResponseDTO aprovarSolucao(UUID id, AprovarPedidoRequestDTO dto) {
+        exigirTipoSolucao(buscarPedidoNoTenant(id));
+        return aprovar(id, dto);
+    }
+
+    @Transactional
+    public PedidoResponseDTO entregarSolucao(UUID id) {
+        exigirTipoSolucao(buscarPedidoNoTenant(id));
+        return entregar(id);
+    }
+
+    private void exigirTipoSolucao(Pedido pedido) {
+        if (pedido.getTipo() != TipoPedido.SOLUCAO)
+            throw new BusinessRuleException("Pedido informado não é uma Solução.");
+    }
 
 	private Pedido buscarPedidoNoTenant(UUID id) {
 		// Correção de segurança: antes, sem tenant ativo, buscava sem
