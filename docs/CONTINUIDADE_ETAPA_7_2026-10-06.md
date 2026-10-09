@@ -241,8 +241,8 @@ A Etapa 7 deve fechar o contrato; a aplicação efetiva em Pedido será Etapa 8.
 ```text
 7.0 Auditoria + decisões de domínio          ✅ concluído
 7.1 Unidade de medida x apresentação         ✅ concluído
-7.2 Modelo decimal/compatibilidade estoque   🔧 atual
-7.3 Domínio de Soluções                      ⏳
+7.2 Modelo decimal/compatibilidade estoque   ✅ concluído
+7.3 Domínio de Soluções                      🔧 atual
 7.4 Contexto operacional                     ⏳
 7.5 Frontend integrado                       ⏳
 7.6 Dados DEV + testes                       ⏳
@@ -2442,7 +2442,23 @@ Status:
 
 ```text
 7.2 implementação/auditoria ✅
-7.2 validação da suíte ⏳
+7.2 validação da suíte ✅
+7.2 boot da aplicação ✅
 ```
 
 Após a suíte permanecer verde, o 7.2 pode ser encerrado sem nova alteração funcional.
+
+
+### Fechamento do 7.2
+
+Validado em 09/10/2026:
+
+- suíte completa verde após a cobertura decimal adicional;
+- aplicação iniciou normalmente;
+- nenhuma nova migration foi necessária;
+- nenhuma regressão funcional identificada.
+
+```text
+7.2 ✅ encerrado em 09/10/2026
+7.3 🔧 próximo/atual — Domínio de Soluções
+```
