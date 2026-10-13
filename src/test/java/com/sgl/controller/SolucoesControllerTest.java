@@ -13,6 +13,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -29,6 +33,14 @@ import com.sgl.service.PedidoService;
 @WebMvcTest(SolucoesController.class)
 @Import(SecurityConfig.class)
 class SolucoesControllerTest {
+
+    @TestConfiguration
+    static class JacksonTestConfig {
+        @Bean
+        ObjectMapper objectMapper() {
+            return new ObjectMapper().registerModule(new JavaTimeModule());
+        }
+    }
 
     private static final UUID USUARIO = UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID LAB = UUID.fromString("00000000-0000-0000-0000-000000000003");
