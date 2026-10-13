@@ -410,7 +410,8 @@ public class ResiduoService {
 	}
 
 	private void validarGeradorNoLaboratorio(Usuario gerador, Laboratorio laboratorio) {
-		if (gerador.getLaboratorio() != null && !gerador.getLaboratorio().getId().equals(laboratorio.getId())) {
+		boolean gestor = gerador.getPerfil() == Perfil.GESTOR || gerador.getPerfil() == Perfil.ADMINISTRADOR;
+		if (!gestor && (gerador.getLaboratorio() == null || !gerador.getLaboratorio().getId().equals(laboratorio.getId()))) {
 			throw new BusinessRuleException("O usuário gerador não pertence ao laboratório informado.");
 		}
 	}
