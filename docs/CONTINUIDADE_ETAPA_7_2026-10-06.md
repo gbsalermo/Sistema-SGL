@@ -2873,3 +2873,20 @@ O cliente relatou que as Soluções são geralmente **padronizadas por cartilha*
 **Regressão adicionada:** `SolucoesControllerTest` cobre POST avulsa com `REACAO` sem embalagem, modelo com `itens=[]`, e falha sem quantidade; `PedidoControllerTest` confirma que Pedidos comuns ainda rejeitam ausência de forma de retirada. `@Schema` atualizado para refletir o caráter condicional de embalagem.
 
 **Validação pendente:** executar suite Maven e inicialização local; conferir pela interface com o mesmo cenário que falhou. Nenhum merge.
+
+
+### 16.12 Confirmação dos seis cenários funcionais da 7.4 — 13/10/2026
+
+**Resultado informado pelo responsável após testes locais via UI:** 
+1. Cadastro de Modelo de Solução padrão — **VALIDADO**.
+2. Solicitação de Solução padrão — **VALIDADO**.
+3. Aprovação, movimentação/baixa dos componentes e entrega — **VALIDADO**.
+4. Solicitação excepcional fora do catálogo após correção da API — **VALIDADO**.
+5. Cancelamento após aprovação, **antes do preparo**, com devolução dos componentes — **VALIDADO**.
+6. Cancelamento após aprovação, **depois do preparo**, sem devolução dos componentes consumidos — **VALIDADO**.
+
+O registro **atualiza as notas de smoke funcional pendente** escritas antes desses testes. O fluxo principal da Etapa 7.4 está confirmado, mas a etapa não está encerrada integralmente até finalizar regressões e QA: rejeição sem baixa, Pedido comum de Produtos, modelo inativo/snapshot, segregação tenant/Unidade, resultados finais de `mvn test` e `npm run build`, conferência visual Light/Dark e autorização para merge. Os testes e builds mais recentes não foram executados pelo assistente.
+
+**Decisão de interface mantida:** Solução é um Pedido de preparação integral; rejeitar aplica-se ao estado `PENDENTE`, cancelar preparação a `EM_PREPARACAO`; a tabela da Gestão usa seta de expansão e apresenta quantidades necessárias, sem “quantidade aprovada” redundante. Margem de erro segue extra futuro.
+
+**Sequência após fechamento da 7.4:** 7.5 — contexto operacional Projeto / SCI / Atividade. **Nenhum merge executado nesta confirmação.**
