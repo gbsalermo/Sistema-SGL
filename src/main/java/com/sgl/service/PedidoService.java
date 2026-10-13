@@ -33,6 +33,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoPedido;
+import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.repository.EstoqueCentralRepository;
@@ -506,7 +507,8 @@ public class PedidoService {
 	}
 
 	private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
-		if (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
+		boolean gestor = usuario.getPerfil() == Perfil.GESTOR || usuario.getPerfil() == Perfil.ADMINISTRADOR;
+		if (!gestor && (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId()))) {
 			throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
 		}
 		if (usuario.getUnidade() == null || laboratorio.getUnidade() == null) {
