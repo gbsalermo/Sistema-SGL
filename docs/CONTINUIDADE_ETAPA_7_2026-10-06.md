@@ -2890,3 +2890,10 @@ O registro **atualiza as notas de smoke funcional pendente** escritas antes dess
 **Decisão de interface mantida:** Solução é um Pedido de preparação integral; rejeitar aplica-se ao estado `PENDENTE`, cancelar preparação a `EM_PREPARACAO`; a tabela da Gestão usa seta de expansão e apresenta quantidades necessárias, sem “quantidade aprovada” redundante. Margem de erro segue extra futuro.
 
 **Sequência após fechamento da 7.4:** 7.5 — contexto operacional Projeto / SCI / Atividade. **Nenhum merge executado nesta confirmação.**
+
+
+### 16.13 Rejeição de Solução pendente — teste funcional validado
+
+O responsável confirmou a validação local do cenário de **rejeição de Solução ainda PENDENTE**, com justificativa e sem baixa dos componentes. Agora são **sete cenários funcionais de Soluções confirmados** (os seis da seção 16.12 + rejeição pendente).
+
+**Próximo passo:** regressão de Pedido comum de Produtos, especialmente a validação de forma de retirada/embalagem preservada após a correção do contrato de Soluções avulsas, aprovação e movimentações. Não declarar a 7.4 encerrada sem a conferência final da suíte/build e pendências restantes. Nenhum merge nesta atualização.
