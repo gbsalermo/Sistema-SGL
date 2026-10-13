@@ -2849,3 +2849,16 @@ O responsável validou a inicialização local e apresentou comparação entre a
 **Permissões:** a rota de catálogo é exclusiva de `ADMINISTRADOR` no router/frontend; **API backend ainda não possui verificação real de perfis** (`permitAll` temporário). Trata-se de separação de apresentação/fluxo, não segurança final. Antes de produção, reforçar autorização do lado do servidor para criação, alteração, inativação e promoção dos modelos.
 
 **Pendente:** `npm run build`, teste visual em tema claro/escuro, cadastro pelo Administrador e ciclo de Pedido pela central. A margem de erro permanece extra futuro. Nenhum merge autorizado ou executado.
+
+
+### 16.10 Cartilha de preparo vinculada ao Pedido (13/10/2026)
+
+O cliente relatou que as Soluções são geralmente **padronizadas por cartilha**. O fluxo do Solicitante passa a privilegiar pedido de **Modelo de Solução existente**, com instruções acessíveis antes de enviar; composições avulsas são situações excepcionais, acompanhadas de exigências e avaliação do Gestor.
+
+**Integridade histórica implementada na branch:** `Pedido.instrucoesPreparoSolucao` recebe um snapshot das instruções da receita do `ModeloSolucao` na criação do Pedido. Novo campo `PedidoResponseDTO.instrucoesPreparoSolucao`. Migration `V38__snapshot_instrucoes_preparo_pedido_solucao.sql` acrescenta coluna e preenche inicialmente para pedidos históricos que tenham Modelo associado (observação: preenchimento histórico usa o estado atual do modelo na data da migration, não recupera revisões anteriores inexistentes). Assim, modelos alterados posteriormente não afetam pedidos criados após V38.
+
+**Interface:** `/minhas-solucoes` é somente acompanhamento; `/solucoes/solicitar` e `/solucoes/nova` são formulários próprios com ênfase em modelos/catálogo e orientações de preparo. Gestor consulta cartilha diretamente nos detalhes do Pedido.
+
+**Não introduzir instruções automáticas fictícias ou novas receitas geradas pelo sistema.** A modalidade fora do catálogo permanece com os campos de composição por Produtos obrigatórios no contrato atual. O cenário de pedido sem ingredientes conhecidos exige redefinição funcional posterior.
+
+**Validação pendente:** executar Maven/boot com V38, validar criação/edição do catálogo, snapshot e teste funcional da tela. Nenhum merge realizado. Margem de erro continua extra futuro.
