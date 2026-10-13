@@ -2788,3 +2788,27 @@ Depois confirmar inicialização no perfil `dev`, que aplicará V37, e realizar 
 - Histórico operacional mais granular, usuário responsável pelo cancelamento e tratamento específico da reversão em caso de movimentação concorrente: pontos para auditar/aperfeiçoar no desenvolvimento integrado à Etapa 8.
 - Margem de erro de Soluções: **extra futuro adiado, NÃO integra este escopo**.
 - **Não realizar merge automaticamente**.
+
+### 16.7 Validação técnica local confirmada pelo responsável — 13/10/2026
+
+O responsável informou que, após atualizar o backend para a implementação direta da 7.3:
+
+- **Suíte automatizada integral: VERDE**, conforme execução local do responsável.
+- **Aplicação: iniciou normalmente**, conforme execução local do responsável.
+
+Estes resultados validam o conjunto de testes existente e a inicialização da aplicação na configuração utilizada localmente. **O ambiente/perfil exato não foi especificado nesta confirmação**, portanto não afirmar separadamente que o Flyway V37 foi inspecionado ou que a inicialização foi feita no perfil DEV, a menos que haja evidência adicional.
+
+**Status da etapa:** `7.3 = implementação-base concluída; validação técnica local verde; smoke funcional pendente`. **Ainda não marcar como encerrada integralmente nem fazer merge.**
+
+**Smoke funcional prioritário, a executar/confirmar:**
+
+1. Gestor cria e lista um modelo de Solução (produto, quantidade e unidade).
+2. Usuário de Projeto solicita Solução personalizada; validar itens como componentes do Pedido.
+3. Usuário de Projeto solicita uma Solução a partir de modelo ativo; conferir composição copiada para o Pedido.
+4. Gestor aprova e confere `PENDENTE -> EM_PREPARACAO` e **uma única** saída dos componentes, vinculada ao Pedido.
+5. Gestor entrega e confere `EM_PREPARACAO -> ENTREGUE`, histórico de recebimento e **nenhuma segunda baixa**.
+6. Cancelamento **antes do preparo**: estado `CANCELADO`, devolução integral das saídas ao saldo correto de Produtos/Lotes/Recipientes.
+7. Cancelamento **após o preparo**: estado `CANCELADO` sem devolver os ingredientes consumidos; nenhuma entrega fictícia.
+8. Verificar regressão de Pedido comum e isolamento entre Unidades.
+
+**Nota para próximas etapas:** a interface própria de Soluções continua prevista para 7.5. Margem de erro segue extra futuro, fora do escopo obrigatório.
