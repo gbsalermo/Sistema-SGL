@@ -2862,3 +2862,14 @@ O cliente relatou que as Soluções são geralmente **padronizadas por cartilha*
 **Não introduzir instruções automáticas fictícias ou novas receitas geradas pelo sistema.** A modalidade fora do catálogo permanece com os campos de composição por Produtos obrigatórios no contrato atual. O cenário de pedido sem ingredientes conhecidos exige redefinição funcional posterior.
 
 **Validação pendente:** executar Maven/boot com V38, validar criação/edição do catálogo, snapshot e teste funcional da tela. Nenhum merge realizado. Margem de erro continua extra futuro.
+
+
+### 16.11 Correção de solicitação de Solução fora do catálogo (13/10/2026)
+
+**Defeito identificado em teste funcional:** POST `/api/v1/solucoes/pedidos` devolvia 400 ("Um ou mais campos estão inválidos") para uma Solução avulsa com Produto/quantidade/unidade válidos. Duas divergências de contrato: cliente enviava `quantidade`/`unidadeMedida` (formato do catálogo) em vez de `quantidadeSolicitada`/`unidadeMedidaSolicitada` (formato de `ItemPedidoRequestDTO`); `ItemPedidoRequestDTO` exigia campos de embalagem mesmo para `tipo=SOLUCAO`.
+
+**Correção aplicada:** `ItemPedidoRequestDTO` não torna embalagem universalmente obrigatória via `@NotNull`. O `PedidoRequestDTO` exige os três campos de embalagem **somente em Pedidos comuns de Produtos**, através de validação condicional. O `PedidoService.validarFormaRetirada` continua validando forma/quantidade/multiplicador e consistência física em Pedidos comuns. Soluções exigem `quantidadeSolicitada > 0` e `unidadeMedidaSolicitada`, conferidas pelo service; sem embalagem ou multiplicador.
+
+**Regressão adicionada:** `SolucoesControllerTest` cobre POST avulsa com `REACAO` sem embalagem, modelo com `itens=[]`, e falha sem quantidade; `PedidoControllerTest` confirma que Pedidos comuns ainda rejeitam ausência de forma de retirada. `@Schema` atualizado para refletir o caráter condicional de embalagem.
+
+**Validação pendente:** executar suite Maven e inicialização local; conferir pela interface com o mesmo cenário que falhou. Nenhum merge.
