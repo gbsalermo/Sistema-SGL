@@ -26,21 +26,21 @@ public class ItemPedidoRequestDTO {
 	@NotNull(message = "Id do produto é obrigatório")
 	private UUID produtoId;
 
-	@Schema(description = "Quantidade total solicitada em unidades individuais.", example = "50", minimum = "1", description = "Obrigatoria apenas para pedidos comuns de PRODUTOS")
+	@Schema(description = "Quantidade solicitada. Em Soluções, expressa na unidade física informada; em Pedidos comuns, na unidade individual.", example = "50", minimum = "0.000001", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "Quantidade solicitada é obrigatória")
 	@DecimalMin(value = "0.0", inclusive = false, message = "Quantidade solicitada deve ser maior que zero")
 	private BigDecimal quantidadeSolicitada;
 
-	@Schema(description = "Forma física escolhida para retirada.", example = "KIT", description = "Obrigatoria apenas para pedidos comuns de PRODUTOS")
+	@Schema(description = "Forma física de retirada. Obrigatória somente em Pedidos de produtos.", example = "KIT")
 	// Obrigatorio apenas para Pedido de PRODUTOS. O pedido-pai valida
 	// a forma de retirada conforme o tipo; Solucao utiliza unidade fisica.
 	private TipoEmbalagem tipoEmbalagemSolicitada;
 
-	@Schema(description = "Quantidade de embalagens/unidades solicitadas pelo usuário.", example = "1", minimum = "1", description = "Obrigatoria apenas para pedidos comuns de PRODUTOS")
+	@Schema(description = "Quantidade de embalagens solicitadas. Obrigatória somente em Pedidos de produtos.", example = "1", minimum = "1")
 	@Min(value = 1, message = "Quantidade da forma de retirada deve ser no mínimo 1")
 	private Integer quantidadeEmbalagensSolicitada;
 
-	@Schema(description = "Quantidade de unidades individuais representada por cada embalagem escolhida.", example = "50", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "Multiplicador de unidades por embalagem. Obrigatório somente em Pedidos de produtos.", example = "50", minimum = "0.000001")
 	@DecimalMin(value = "0.0", inclusive = false, message = "Multiplicador deve ser maior que zero")
 	private BigDecimal multiplicadorSolicitado;
 
