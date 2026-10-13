@@ -2838,3 +2838,14 @@ Nova sequência:
 **Smoke preferencial:** UI solicitante -> gestão -> estoque/movimentações -> entrega; repetir com cancelamento antes do preparo e após o preparo, conferindo saldos e status; então verificar regressões em Pedidos comuns. Não considerar a etapa concluída até `npm run build` e o smoke local serem confirmados.
 
 **Observação de segurança:** a identidade DEV e o `permitAll` do backend não impõem permissão de gestão real. As rotas/frontend só ajudam a experiência e não substituem autenticação/autorização no backend; antes de produção precisa haver proteção de endpoints. A margem de erro continua adiada sem prazo.
+
+
+### 16.9 Polimento funcional da interface da 7.4 (13/10/2026)
+
+O responsável validou a inicialização local e apresentou comparação entre a primeira Central de Soluções e a Central de Resíduos. Solicitou aplicar a mesma linguagem de cards e abas, corrigir o Dark Mode e deslocar o catálogo de Soluções para o espaço administrativo compartilhado com modelos de Resíduos.
+
+**Frontend atualizado na branch:** Central de Soluções com filtros horizontais e contadores, cards e tabela; folha de estilos alinhada aos tokens de tema; cadastro dos modelos removido da operação de Gestor e inserido em `Administração → Cadastros → Resíduos e Soluções`, compartilhando template e separando os modelos de cada tipo. Administrador pode promover receita de Pedido personalizado ao catálogo pelo cadastro, com histórico preservado.
+
+**Permissões:** a rota de catálogo é exclusiva de `ADMINISTRADOR` no router/frontend; **API backend ainda não possui verificação real de perfis** (`permitAll` temporário). Trata-se de separação de apresentação/fluxo, não segurança final. Antes de produção, reforçar autorização do lado do servidor para criação, alteração, inativação e promoção dos modelos.
+
+**Pendente:** `npm run build`, teste visual em tema claro/escuro, cadastro pelo Administrador e ciclo de Pedido pela central. A margem de erro permanece extra futuro. Nenhum merge autorizado ou executado.
