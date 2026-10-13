@@ -36,6 +36,7 @@ public class PedidoResponseDTO {
     private StatusPedido status;
     private TipoPedido tipo;
     private String nomeSolucao;
+    private String instrucoesPreparoSolucao;
     private UUID modeloSolucaoId;
     private Boolean solucaoPreparadaNoCancelamento;
     private Boolean estoqueRevertidoNoCancelamento;
@@ -61,6 +62,7 @@ public class PedidoResponseDTO {
         this.status = entity.getStatus();
         this.tipo = entity.getTipo() == null ? TipoPedido.PRODUTOS : entity.getTipo();
         this.nomeSolucao = entity.getNomeSolucao();
+        this.instrucoesPreparoSolucao = entity.getInstrucoesPreparoSolucao();
         this.modeloSolucaoId = entity.getModeloSolucao() == null ? null : entity.getModeloSolucao().getPublicId();
         this.solucaoPreparadaNoCancelamento = entity.getSolucaoPreparadaNoCancelamento();
         this.estoqueRevertidoNoCancelamento = entity.getEstoqueRevertidoNoCancelamento();

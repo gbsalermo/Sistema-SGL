@@ -87,6 +87,7 @@ public class PedidoService {
         TipoPedido tipo = dto.getTipo() == null ? TipoPedido.PRODUTOS : dto.getTipo();
         ModeloSolucao modelo = null;
         String nomeSolucao = null;
+        String instrucoesPreparoSolucao = null;
         List<ItemPedidoRequestDTO> itensSolicitados = dto.getItens();
 
         if (tipo == TipoPedido.SOLUCAO) {
@@ -101,6 +102,7 @@ public class PedidoService {
                 if (!Boolean.TRUE.equals(modelo.getAtivo()))
                     throw new BusinessRuleException("O modelo de Solução está inativo.");
                 nomeSolucao = modelo.getNome();
+                instrucoesPreparoSolucao = modelo.getInstrucoesPreparo();
                 itensSolicitados = modelo.getComponentes().stream()
                     .sorted(java.util.Comparator.comparing(ComponenteModeloSolucao::getOrdem))
                     .map(c -> {
@@ -129,7 +131,8 @@ public class PedidoService {
 
 		Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
 				.dataSolicitacao(LocalDateTime.now()).status(StatusPedido.PENDENTE).tipo(tipo)
-                .nomeSolucao(nomeSolucao).modeloSolucao(modelo).urgente(urgente)
+                .nomeSolucao(nomeSolucao).instrucoesPreparoSolucao(instrucoesPreparoSolucao)
+                .modeloSolucao(modelo).urgente(urgente)
 				.motivoUrgencia(motivoUrgencia).observacao(dto.getObservacao())
 				.arquivoDocumento(dto.getArquivoDocumento()).itens(new ArrayList<>()).build();
 

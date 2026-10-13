@@ -77,6 +77,9 @@ public class Pedido implements Serializable {
     @Column(name = "nome_solucao", length = 150)
     private String nomeSolucao;
 
+    @Column(name = "instrucoes_preparo_solucao", length = 4000)
+    private String instrucoesPreparoSolucao;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "modelo_solucao_id")
     @ToString.Exclude
