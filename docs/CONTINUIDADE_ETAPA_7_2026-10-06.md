@@ -2897,3 +2897,10 @@ O registro **atualiza as notas de smoke funcional pendente** escritas antes dess
 O responsável confirmou a validação local do cenário de **rejeição de Solução ainda PENDENTE**, com justificativa e sem baixa dos componentes. Agora são **sete cenários funcionais de Soluções confirmados** (os seis da seção 16.12 + rejeição pendente).
 
 **Próximo passo:** regressão de Pedido comum de Produtos, especialmente a validação de forma de retirada/embalagem preservada após a correção do contrato de Soluções avulsas, aprovação e movimentações. Não declarar a 7.4 encerrada sem a conferência final da suíte/build e pendências restantes. Nenhum merge nesta atualização.
+
+
+### 16.14 Regressão de Pedido comum validada
+
+O responsável confirmou a validação local do **Pedido convencional de Produtos** depois da correção do contrato de Soluções avulsas. Foi testado o fluxo de criação com forma de retirada/embalagem, aprovação, movimentação do estoque e confirmação de entrega sem segunda baixa.
+
+**Conclusão restrita:** a regressão funcional do fluxo tradicional está validada, além dos sete cenários de Soluções já confirmados. Permanecem: preservação histórica da cartilha e composição após edição do modelo, inativação, eventual promoção de avulsa, isolamento por Unidade/perfis, execução final de suíte Maven/build frontend e autorização de merge. Não declarar encerramento integral da 7.4 nesta etapa.
