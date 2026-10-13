@@ -67,6 +67,18 @@ public class PedidoRequestDTO {
             || (itens != null && !itens.isEmpty());
     }
 
+    @JsonIgnore
+    @AssertTrue(message = "Pedidos de produtos exigem forma de retirada, quantidade de embalagens e multiplicador em todos os itens")
+    public boolean isFormaRetiradaValida() {
+        if (tipo == TipoPedido.SOLUCAO || itens == null) {
+            return true;
+        }
+        return itens.stream().allMatch(item -> item == null ||
+                (item.getTipoEmbalagemSolicitada() != null
+                    && item.getQuantidadeEmbalagensSolicitada() != null
+                    && item.getMultiplicadorSolicitado() != null));
+    }
+
     // Construtor legado para preservar os clientes e testes ja existentes.
     public PedidoRequestDTO(UUID usuarioId, UUID laboratorioId, UUID projetoId,
             Boolean urgente, String motivoUrgencia, String observacao,
