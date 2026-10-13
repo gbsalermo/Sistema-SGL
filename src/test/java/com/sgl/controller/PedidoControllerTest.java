@@ -145,6 +145,23 @@ class PedidoControllerTest {
     }
 
     @Test
+    void deveRejeitarPedidoComumSemFormaDeRetirada() throws Exception {
+        ItemPedidoRequestDTO item = new ItemPedidoRequestDTO();
+        item.setProdutoId(PRODUTO_PUBLIC_ID);
+        item.setQuantidadeSolicitada(BigDecimal.ONE);
+        // Apenas Solucoes podem omitir os campos de embalagem.
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(USUARIO_PUBLIC_ID);
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setItens(List.of(item));
+        mockMvc.perform(post(BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.fieldErrors").isArray());
+    }
+
+    @Test
     void deveRetornar400AoCriarPedidoComCorpoInvalido() throws Exception {
         // PedidoRequestDTO exige usuarioId, laboratorioId e itens (@NotNull/
         // @NotEmpty) - corpo vazio viola todos.
