@@ -242,9 +242,9 @@ A Etapa 7 deve fechar o contrato; a aplicação efetiva em Pedido será Etapa 8.
 7.0 Auditoria + decisões de domínio          ✅ concluído
 7.1 Unidade de medida x apresentação         ✅ concluído
 7.2 Modelo decimal/compatibilidade estoque   ✅ concluído
-7.3 Domínio de Soluções                      🔧 atual
-7.4 Contexto operacional                     ⏳
-7.5 Frontend integrado                       ⏳
+7.3 Domínio de Soluções                      ✅ suíte/boot verde; smoke a validar
+7.4 Frontend Soluções + validação ida/volta   🔧 implementação inicial publicada
+7.5 Contexto operacional Projeto/SCI/Ativ.   ⏳ (invertido com a antiga 7.4)
 7.6 Dados DEV + testes                       ⏳
 7.7 Validação + documentação                 ⏳
 ```
@@ -2654,7 +2654,7 @@ A solução é um **tipo de Pedido** e seus componentes são os `ItemPedido` exi
 - consultar composição, Produto, Lote/Recipiente, rastreabilidade, divergências e registros de auditoria;
 - opcionalmente cadastrar como Produto físico uma preparação pronta oriunda de cancelamento, via fluxo geral de Produtos, sem conversão automática.
 
-**Fronteira do roadmap:** 7.3 fixa os contratos/modelagem de catálogo e tipo de Pedido; 7.5 prevê a interface; 8 integra Pedido, aprovação, baixa/cancelamento e contexto completo; 9 consolida relatórios e auditorias. O sequenciamento detalhado deverá ser reconciliado sem antecipar código no backend.
+**Roadmap atualizado em 13/10/2026:** 7.3 implementou os contratos iniciais e passou na suíte/boot local; **7.4 agora é a interface de Soluções e smoke funcional ponta a ponta**; **7.5 passa a ser o contexto Projeto/SCI/Atividade**; 8 integra pendências com Pedidos/participação; 9 consolida relatórios.
 
 ### 15.12 Extra futuro — Margem de erro e reconciliação de estoque (ADIADO)
 
@@ -2782,8 +2782,8 @@ Depois confirmar inicialização no perfil `dev`, que aplicará V37, e realizar 
 
 ### 16.6 Pendências e limites assumidos
 
-- **7.3 ainda não encerrada:** aguarda `mvn test`, startup com V37 e testes manuais.
-- Interface visual de Soluções para solicitante/Gestor: **Etapa 7.5**, não implementada neste avanço de backend.
+- **7.3 implementada e tecnicamente validada:** suíte e inicialização local confirmadas; testes funcionais integrados continuam pendentes e foram priorizados na nova 7.4.
+- Interface visual de Soluções para solicitante/Gestor: **movida da 7.5 para 7.4**; primeira implementação publicada no frontend, ainda sem validação local de build/fluxo real.
 - Conferência e permissão reais do Gestor: `SecurityConfig` ainda usa `permitAll` temporário, portanto a segurança/identidade dos endpoints de gestão deve ser tratada antes de produção; o tenant por cabeçalho não substitui autenticação confiável.
 - Histórico operacional mais granular, usuário responsável pelo cancelamento e tratamento específico da reversão em caso de movimentação concorrente: pontos para auditar/aperfeiçoar no desenvolvimento integrado à Etapa 8.
 - Margem de erro de Soluções: **extra futuro adiado, NÃO integra este escopo**.
@@ -2811,4 +2811,30 @@ Estes resultados validam o conjunto de testes existente e a inicialização da a
 7. Cancelamento **após o preparo**: estado `CANCELADO` sem devolver os ingredientes consumidos; nenhuma entrega fictícia.
 8. Verificar regressão de Pedido comum e isolamento entre Unidades.
 
-**Nota para próximas etapas:** a interface própria de Soluções continua prevista para 7.5. Margem de erro segue extra futuro, fora do escopo obrigatório.
+**Atualização posterior (13/10/2026):** interface própria de Soluções antecipada para **7.4**; contexto operacional ficou na **7.5**. Margem de erro segue extra futuro, fora do escopo obrigatório.
+
+
+### 16.8 Reordenação expressa — frontend antes do contexto operacional (13/10/2026)
+
+**Decisão do responsável:** inverter a ordem das antigas **7.4** e **7.5** para manter o foco no teste de ida e volta pela interface. O trabalho de backend realizado na 7.3 teve a suíte automatizada e a inicialização local confirmadas como verdes, mas o smoke funcional ainda não ocorreu.
+
+Nova sequência:
+
+```text
+7.3 Backend Soluções + catálogo + Pedido SOLUCAO      ✅ suíte e boot local verdes
+7.4 Interface de Soluções + teste funcional integrado  🔧 frontend publicado, build/smoke pendentes
+7.5 Contexto Projeto/SCI/Atividade                     ⏳ após validação da interface
+7.6 DEV/DEMO + complementos de testes                 ⏳
+7.7 Integração/fechamento + documentação              ⏳
+```
+
+**Frontend (branch `collab/etapa-7-unidades-solucoes-contexto`):**
+- `/minhas-solucoes` e `/solucoes/solicitar?nova=1` — solicitante: histórico, catálogo, composição personalizada, solicitação;
+- `/solucoes` — gestor/administrador: solicitações, consulta de movimentações e catálogo de modelos;
+- `/solucoes/nova?nova=1` — rota de solicitação para usuários da gestão que possuam laboratório e Projeto vinculados;
+- ações de gestor: aprovação integral, rejeição, entrega real, cancelamento com confirmação de preparo e promoção explícita ao catálogo;
+- os serviços de Pedidos comuns passaram a ocultar `tipo = SOLUCAO` nas listagens próprias; os dados permanecem vinculados à entidade `Pedido` no backend.
+
+**Smoke preferencial:** UI solicitante -> gestão -> estoque/movimentações -> entrega; repetir com cancelamento antes do preparo e após o preparo, conferindo saldos e status; então verificar regressões em Pedidos comuns. Não considerar a etapa concluída até `npm run build` e o smoke local serem confirmados.
+
+**Observação de segurança:** a identidade DEV e o `permitAll` do backend não impõem permissão de gestão real. As rotas/frontend só ajudam a experiência e não substituem autenticação/autorização no backend; antes de produção precisa haver proteção de endpoints. A margem de erro continua adiada sem prazo.
