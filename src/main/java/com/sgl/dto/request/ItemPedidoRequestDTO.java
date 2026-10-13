@@ -26,17 +26,17 @@ public class ItemPedidoRequestDTO {
 	@NotNull(message = "Id do produto é obrigatório")
 	private UUID produtoId;
 
-	@Schema(description = "Quantidade total solicitada em unidades individuais.", example = "50", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "Quantidade total solicitada em unidades individuais.", example = "50", minimum = "1", description = "Obrigatoria apenas para pedidos comuns de PRODUTOS")
 	@NotNull(message = "Quantidade solicitada é obrigatória")
 	@DecimalMin(value = "0.0", inclusive = false, message = "Quantidade solicitada deve ser maior que zero")
 	private BigDecimal quantidadeSolicitada;
 
-	@Schema(description = "Forma física escolhida para retirada.", example = "KIT", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "Forma física escolhida para retirada.", example = "KIT", description = "Obrigatoria apenas para pedidos comuns de PRODUTOS")
 	// Obrigatorio apenas para Pedido de PRODUTOS. O pedido-pai valida
 	// a forma de retirada conforme o tipo; Solucao utiliza unidade fisica.
 	private TipoEmbalagem tipoEmbalagemSolicitada;
 
-	@Schema(description = "Quantidade de embalagens/unidades solicitadas pelo usuário.", example = "1", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "Quantidade de embalagens/unidades solicitadas pelo usuário.", example = "1", minimum = "1", description = "Obrigatoria apenas para pedidos comuns de PRODUTOS")
 	@Min(value = 1, message = "Quantidade da forma de retirada deve ser no mínimo 1")
 	private Integer quantidadeEmbalagensSolicitada;
 
