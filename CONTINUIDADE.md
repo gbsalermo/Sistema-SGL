@@ -1108,3 +1108,10 @@ Após confirmação expressa do roadmap, o responsável autorizou iniciar a **7.
 Com a confirmação de que JUnit e startup da 7.5.1 funcionaram no ambiente local, **7.5.1 foi considerada VALIDADA**. Publicado backend da 7.5.2: `ContextoOperacionalConsultaService`, `ContextoOperacionalController`, `ContextoOperacionalResponseDTO` e 3 consultas JPA em `VinculoEstagioAtividadeRepository`. Consultas disponíveis para usuário Estagiário, Atividade e lote de Projeto em `GET /api/v1/contextos-operacionais/...`, preservando história e `aberta` separada de `elegivel`. Testes unitários acrescentados em `ContextoOperacionalConsultaServiceTest`. Ver contratos, ressalvas e roteiro em `docs/ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md`.
 
 **Ainda precisa de Maven e boot local para validar JPA dos endpoints.** Atenção: `SecurityConfig` DEV não possui autenticação/autorização definitiva — filtros de tenant por header não garantem titularidade. Não declarar produção segura. Não criar migration ou vincular isso a Pedidos antes da Etapa 8. Próximo: 7.5.3 (Hub Projeto → SCI → Atividade: participantes) após validação da 7.5.2. Sem merge.
+
+
+### Validação confirmada da 7.5.2 — 14/10/2026
+
+Após publicar as consultas de contexto por Estagiário, participantes por Atividade e consulta em lote por Projeto, o responsável respondeu **"subiu verde"** após receber as instruções de executar o JUnit e subir o backend. Registrar como **7.5.2 validada localmente pelo responsável (testes/inicialização reportados verdes)**; não alegar que esta sessão executou Maven ou smoke HTTP adicional. Nenhum merge.
+
+Próximo bloco em execução: **7.5.3 — exibição dos Estagiários por Atividade no hub Projetos (frontend)**, alimentada por `GET /api/v1/contextos-operacionais/projetos/{projetoId}/participacoes`. Persiste a separação entre `aberta` (não encerrada) e `elegivel` (pode originar nova solicitação), histórico preservado, sem alterações de Pedido/Solução. Build e smoke visual do frontend ainda aguardam validação.
