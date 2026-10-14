@@ -71,6 +71,10 @@ public final class ElegibilidadeContextoOperacional {
         }
 
         Estagiario estagiario = vinculo.getEstagiario();
+        if (vinculo.getDataInicio() == null || participacao.getDataInicioParticipacao() == null
+                || atividade.getDataInicio() == null) {
+            return Resultado.bloqueado(Motivo.CONTEXTO_INCOMPLETO);
+        }
         if (estagiario.getPerfil() != Perfil.ESTAGIARIO) {
             return Resultado.bloqueado(Motivo.PERFIL_INCOMPATIVEL);
         }
@@ -97,6 +101,10 @@ public final class ElegibilidadeContextoOperacional {
         Laboratorio laboratorio = projeto == null ? null : projeto.getLaboratorio();
         if (sci == null || projeto == null || laboratorio == null || laboratorio.getUnidade() == null
                 || estagiario.getUnidade() == null) {
+            return Resultado.bloqueado(Motivo.CONTEXTO_INCOMPLETO);
+        }
+
+        if (sci.getDataInicio() == null) {
             return Resultado.bloqueado(Motivo.CONTEXTO_INCOMPLETO);
         }
 
