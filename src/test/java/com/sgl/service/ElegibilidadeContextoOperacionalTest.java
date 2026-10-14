@@ -107,6 +107,34 @@ class ElegibilidadeContextoOperacionalTest {
     }
 
     @Test
+    void permiteDuasParticipacoesEmLaboratoriosDiferentesDaMesmaUnidade() {
+        Unidade unidade = laboratorio.getUnidade();
+        Laboratorio segundoLaboratorio = Laboratorio.builder()
+                .unidade(unidade).ativo(true).nome("Laboratorio B").build();
+        Projeto segundoProjeto = Projeto.builder()
+                .laboratorio(segundoLaboratorio).ativo(true)
+                .status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO)
+                .dataInicio(LocalDate.of(2026, 1, 1)).build();
+        Sci segundoSci = Sci.builder()
+                .projeto(segundoProjeto).ativo(true)
+                .status(StatusProjeto.ATIVO)
+                .dataInicio(LocalDate.of(2026, 1, 1)).build();
+        Atividade segundaAtividade = Atividade.builder()
+                .sci(segundoSci).ativo(true)
+                .status(StatusProjeto.ATIVO)
+                .dataInicio(LocalDate.of(2026, 3, 1)).build();
+
+        VinculoEstagioAtividade outraParticipacao = new VinculoEstagioAtividade();
+        outraParticipacao.setVinculoEstagio(vinculo);
+        outraParticipacao.setAtividade(segundaAtividade);
+        outraParticipacao.setDataInicioParticipacao(LocalDate.of(2026, 4, 1));
+
+        assertTrue(ElegibilidadeContextoOperacional.avaliar(participacao, HOJE, UNIDADE).elegivel());
+        assertTrue(ElegibilidadeContextoOperacional.avaliar(outraParticipacao, HOJE, UNIDADE).elegivel());
+    }
+
+    @Test
     void bloqueiaUsuarioInativo() {
         estagiario.setAtivo(false);
         bloqueado(USUARIO_INATIVO);
