@@ -2,11 +2,33 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 01/10/2026  
+**Última atualização:** 14/10/2026 — checkpoint vigente da Etapa 7  
 **Status:** Etapas 1–6 concluídas e validadas; Etapa 7 — Unidades + Soluções + contexto operacional em andamento
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
+
+### Checkpoint vigente do roadmap — 14/10/2026
+
+**Atualização prioritária sobre a numeração histórica mais abaixo:** o responsável autorizou o **encerramento funcional da 7.4** e pediu confirmação do roadmap antes de qualquer execução da 7.5. A inversão aprovada em 13/10 significa que o antigo 7.5 (frontend de Soluções) foi realizado na **7.4**, e o antigo 7.4 (contexto operacional) é agora **7.5**. Os subtítulos originais que aparecem mais abaixo são documentação histórica supersedida por este checkpoint.
+
+| Etapa atualizada | Escopo | Estado |
+| --- | --- | --- |
+| 7.0 | Auditoria e decisões | ✅ concluída |
+| 7.1 | Unidades de medida, apresentação e estoque por recipientes | ✅ concluída |
+| 7.2 | Quantidades decimais e compatibilidades | ✅ concluída |
+| 7.3 | Domínio/backend de Soluções | ✅ implementada e exercitada |
+| 7.4 | Frontend Soluções e fluxo integrado Solicitante/Gestor/Estoque/Pedidos | ✅ encerrada **por aceite funcional** em 14/10; QA transversal transferido |
+| 7.5 | **Contexto operacional Projeto → SCI → Atividade** | ⏳ próxima (a iniciar somente após confirmação do roadmap) |
+| 7.6 | Massa DEV/DEMO, regressões e testes automatizados | ⏳ pendente |
+| 7.7 | Consolidação, QA e documentação | ⏳ pendente |
+
+**Escopo da 7.5:** formalizar o contexto de Pedidos a partir de Projeto/SCI/Atividade. Para Estagiários, a origem é a participação aberta `VinculoEstagioAtividade`; Projeto, Laboratório e Unidade derivam da Atividade selecionada, incluindo escolha explícita em caso de múltiplas participações. Para perfis não Estagiários, Projeto selecionado determina Laboratório; sem Projeto, preservar contexto institucional/base quando permitido. Não aceitar combinações contraditórias no cliente/servidor. **A aplicação estrutural integral desses contratos aos Pedidos permanece na Etapa 8, conforme decisão vigente.**
+
+**Sequência macro vigente após a 7:** 8 — Pedidos + Soluções + contexto de participação; 9 — Relatórios consolidados (incluindo Projetos e unificação de Movimentações/Resumo operacional na interface); 10 — Rótulos/impressão; 11 — Manual do Usuário e revisão de delete lógico; 12 — testes automatizados do frontend; 13 — revisão estrutural. Depois: matriz de permissões, congelamento funcional, homologação integrada final, autenticação/autorização/auditoria definitiva, integração corporativa e produção. Referências históricas abaixo que repetem Unidade/Solução como “Etapa 8”, Pedidos como “Etapa 9” ou Relatórios antes disso **não prevalecem** sobre esta sequência.
+
+**Encerramento funcional com ressalvas:** testes locais do responsável validaram os fluxos principais da 7.4, snapshots e catálogo, cancelamentos, rejeição, Pedidos comuns e visão unificada. **Não há comprovação anexada de build/Maven finais e isolamento IB/IQ/perfis**, repassados a 7.6/7.7. A autorização real dos endpoints permanece risco a resolver antes de produção. A proposta de renomear o quadro "Últimas movimentações" para "Últimas atividades operacionais" e incluir transições administrativas com histórico datado **não foi implementada nem validada**; preservar como refinamento posterior auditável. **Nenhum merge foi feito**, e qualquer integração à main exige autorização específica.
+
 
 > **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual do backend é `collab/etapa-7-unidades-solucoes-contexto`, criada sobre a `main` pós-Etapa 5.
 
@@ -742,7 +764,7 @@ A modelagem deve definir:
 - preparo/instruções quando necessário;
 - histórico/snapshot suficiente para Pedidos.
 
-### 7.4 — contexto operacional
+### 7.4 — contexto operacional (escopo histórico, agora 7.5)
 
 Fechar o contrato que será consumido pela Etapa 8:
 
@@ -764,7 +786,7 @@ Para TECNICO/ANALISTA/PESQUISADOR:
 - sem Projeto: contexto-base pode continuar vindo de `Usuario.laboratorio`;
 - o frontend não deve oferecer Projeto e Laboratório como escolhas independentes quando Projeto já determina Laboratório.
 
-### 7.5 — frontend e validação
+### 7.5 — frontend e validação (escopo histórico, concluído na 7.4)
 
 Após estabilizar contratos:
 
@@ -777,7 +799,7 @@ Após estabilizar contratos:
 ---
 
 
-## Etapa 8 — Unidades, Soluções e contexto operacional
+## Etapa 8 — Unidades, Soluções e contexto operacional (bloco histórico supersedido)
 
 Ordem:
 
@@ -834,7 +856,7 @@ Essa decisão prepara a Etapa 9 sem antecipar a alteração funcional de Pedido.
 
 ---
 
-## Etapa 9 — Pedidos + Soluções + contexto de participação
+## Etapa 9 — Pedidos + Soluções + contexto de participação (bloco histórico supersedido)
 
 **Dependência:** Etapa 8.
 
