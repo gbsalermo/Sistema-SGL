@@ -2904,3 +2904,12 @@ O responsável confirmou a validação local do cenário de **rejeição de Solu
 O responsável confirmou a validação local do **Pedido convencional de Produtos** depois da correção do contrato de Soluções avulsas. Foi testado o fluxo de criação com forma de retirada/embalagem, aprovação, movimentação do estoque e confirmação de entrega sem segunda baixa.
 
 **Conclusão restrita:** a regressão funcional do fluxo tradicional está validada, além dos sete cenários de Soluções já confirmados. Permanecem: preservação histórica da cartilha e composição após edição do modelo, inativação, eventual promoção de avulsa, isolamento por Unidade/perfis, execução final de suíte Maven/build frontend e autorização de merge. Não declarar encerramento integral da 7.4 nesta etapa.
+
+
+### 16.15 Integridade histórica do catálogo de Soluções validada — 14/10/2026
+
+**Confirmação de teste funcional pelo responsável:** edição de Modelo de Solução padrão, preservação da composição dos componentes e das instruções de preparo em Pedidos antigos, novas solicitações adotando o modelo atualizado e inativação do Modelo removendo-o das opções de novas solicitações, com histórico anterior preservado. Resultado **VALIDADO** no cenário testado.
+
+Já validados em registros anteriores: cadastro/solicitação padrão, aprovação com baixa única e entrega, avulsa, rejeição pendente, cancelamentos antes/depois do preparo e regressão de Pedido comum.
+
+**A conferir para encerramento da 7.4:** promoção explícita de Solução avulsa ao catálogo, segregação entre Unidades e perfis, `mvn test` e `npm run build` finais, QA visual. Este registro não declara validação automática nem merge. Após conclusão, avançar para 7.5 (contexto Projeto/SCI/Atividade).
