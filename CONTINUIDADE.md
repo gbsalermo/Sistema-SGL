@@ -3,7 +3,7 @@
 **Projeto:** Sistema de Gestão de Laboratórios  
 **Backend:** `gbsalermo/Sistema-SGL`  
 **Frontend:** `gbsalermo/SGL-FRONTEND`  
-**Última atualização:** 02/10/2026  
+**Última atualização:** 14/10/2026  
 **Branch estável:** `main` do GitLab institucional  
 **Branch histórica da Etapa 4:** `feat/etapa-4-residuos` — referência; não mergear integralmente  
 **Branch atual de trabalho:** `collab/etapa-7-unidades-solucoes-contexto`  
@@ -12,7 +12,7 @@
 **Etapa atual:** Etapa 7 — Unidades + Soluções + contexto operacional 🔧  
 **Etapa 4:** 4.1–4.4 reconciliados, testados e validados ponta a ponta ✅
 **Plano oficial:** `docs/PLANO_PRE_PRODUCAO.md`  
-**Checkpoint validado atual:** `docs/VALIDACAO_ETAPA_6_6.md`  
+**Checkpoint validado atual:** `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md` (7.4 encerrada por aceite funcional; próxima 7.5)  
 **Decisão do bloco 6.4:** `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`
 
 Este arquivo é o checkpoint principal de retomada. Para detalhes do módulo de Resíduos, usar `docs/MODULO_RESIDUOS.md`. Para contratos HTTP, confirmar sempre no Swagger/OpenAPI em execução.
@@ -1074,3 +1074,12 @@ A validação formal de build/suíte permanece para o 6.6.
 - checkpoint: `docs/VALIDACAO_ETAPA_6_6.md`.
 
 **Etapa 6 encerrada. Próxima etapa: 7 — Relatórios consolidados.**
+
+
+### Checkpoint principal — 14/10/2026
+
+A Etapa **7.4 (Frontend de Soluções + fluxo integrado)** foi **encerrada por aceite funcional expresso do responsável**. Confirmados: catálogo, snapshots, Soluções padrão/avulsas, importação de modelo, aprovação e entrega, rejeição, cancelamento antes/depois do preparo, regressão de Pedidos comuns e visão unificada de Produtos/Soluções na Gestão/Dashboard/Alertas.
+
+**Próxima fase 7.5:** fechar o contexto operacional Projeto → SCI → Atividade para a origem do Pedido (especialmente vínculo de participação ativa do Estagiário), sem antecipar a refatoração integral de Pedidos prevista na Etapa 8. 7.6 cuidará de DEV/DEMO e testes; 7.7 de QA/integração/documentação. Há addendum prioritário de roadmap em `docs/PLANO_PRE_PRODUCAO.md`.
+
+Ressalvas transferidas: resultado final de suíte e build, isolamento real IB/IQ/perfis, QA de tema/responsividade; autorização real da API é requisito pré-produção. A ampliação de "Últimas movimentações" para histórico administrativo datado foi **somente proposta**, não implementada. O responsável solicitou confirmar o roadmap antes de começar a 7.5. **Sem merge nesta atualização.**
