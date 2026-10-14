@@ -87,3 +87,43 @@ Consulta de participantes ativos/históricos **para interface de Gestão**, filt
 `X-SGL-Unidade-Id` é temporariamente controlado pelo cliente em DEV e `SecurityConfig` usa permissividade transitória. Testes de recorte por tenant e navegação no frontend **não** provam autenticação/autorização real. O contrato de contexto deve prever que identidade e Unidade virão da sessão autenticada na versão de produção.
 
 **Não executar migrations nem alterar o Pedido existente apenas com base nesta auditoria.** Preservar os fluxos 7.4 homologados. Sem merge; iniciar implementação técnica 7.5.1/7.5.2 depois de fixar a semântica de elegibilidade e o contrato de leitura.
+
+
+---
+
+## 8. 7.5.1 — Política de elegibilidade implementada (14/10/2026)
+
+**Código entregue nesta branch:** `src/main/java/com/sgl/service/ElegibilidadeContextoOperacional.java`. Classe final/pura (sem consulta a banco, sem Spring e sem efeito colateral), método:
+
+```java
+Resultado resultado = ElegibilidadeContextoOperacional.avaliar(
+    participacao, dataReferenciaServidor, unidadeSolicitanteValidada);
+```
+
+`Resultado` é `record(boolean elegivel, Motivo motivo)`, com código de motivo estável para clientes/serviços. A política **não modifica** `VinculoEstagioAtividade.ativa`, status institucional, períodos, associação ou Pedido. `ativa` do DTO atual continua representando apenas participação não encerrada; `elegivel` é um conceito adicional para **criar novas solicitações**. A data deve ser obtida pelo backend, nunca escolhida pelo cliente para contornar vigência.
+
+### Ordem de verificações do contrato
+
+| Checagem | Motivo do bloqueio |
+|---|---|
+| Grafo, referências/IDs obrigatórios e datas de início do vínculo/participação/SCI/Atividade | `CONTEXTO_INCOMPLETO` |
+| Perfil do usuário = `ESTAGIARIO` | `PERFIL_INCOMPATIVEL` |
+| Usuário ativo | `USUARIO_INATIVO` |
+| Vínculo não `FINALIZADO`, sem data fim efetiva, situação institucional preenchida | `VINCULO_FINALIZADO` |
+| Hoje dentro de início e fim previsto do vínculo (quando conhecido) | `VINCULO_FORA_DA_VIGENCIA` |
+| Participação sem fim efetivo | `PARTICIPACAO_ENCERRADA` |
+| Hoje a partir do início da participação | `PARTICIPACAO_FORA_DA_VIGENCIA` |
+| Unidade de usuário = Unidade do Laboratório derivado = tenant informado e não nulos | `UNIDADE_DIVERGENTE` |
+| `ativo=true` em Laboratório, Projeto, SCI e Atividade | `HIERARQUIA_INATIVA` |
+| Status `ATIVO` e situação de execução diferente de `EXECUCAO_CANCELADA` nos três níveis Projeto/SCI/Atividade | `HIERARQUIA_NAO_OPERACIONAL` |
+| Data do servidor dentro dos períodos informados nos três níveis (fim nulo = sem fim cadastrado; Projeto pode ter início nulo) | `HIERARQUIA_FORA_DA_VIGENCIA` |
+
+Datas-limite são inclusivas. `SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO` **não** bloqueia por si só, mas período encerrado bloqueia. `SituacaoEstagio.PRORROGADO` permanece válido quando dentro do novo prazo. Não confundir prazo previsto com situação institucional finalizada. Não usar `Usuario.laboratorio` do Estagiário na derivação.
+
+**O comportamento de 7.5.1 exige confirmação de domínio caso o cliente institucional permita atividade atrasada fora do período sem prorrogação; nesse caso rever explicitamente a política antes de ligar ao fluxo de Pedidos.** A aprovação dessa regra não altera históricos passados.
+
+### Testes preparados, ainda sem log Maven
+
+`src/test/java/com/sgl/service/ElegibilidadeContextoOperacionalTest.java` cobre sucesso, prorrogação, múltiplas participações em laboratórios distintos da mesma Unidade, usuário inativo, perfil incompatível, fim institucional, início futuro/prazo expirado, participação encerrada/futura, tenant e Unidade divergentes, cada nível hierárquico inativo, status e cancelamento de execução, períodos da hierarquia, limites inclusivos e dados incompletos.
+
+**Estado:** 7.5.1 implementada no código, revisão estática realizada; `mvn test` e inicialização **não executados aqui**. Não existe endpoint novo nesta fase. **7.5.2 é a próxima frente:** criar consulta read-only por usuário e por Atividade com filtros reais, DTO próprio (`elegivel`/`motivo`), cache/carga adequada, testes de acesso/tenant e ausência de N+1; 7.5.3 adapta o hub frontend. **Sem migration, sem alteração de Pedido/Solução, sem merge.**
