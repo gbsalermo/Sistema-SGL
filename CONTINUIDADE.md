@@ -1101,3 +1101,10 @@ Após confirmação expressa do roadmap, o responsável autorizou iniciar a **7.
 **Testes acrescentados, ainda sem execução Maven:** `src/test/java/com/sgl/service/ElegibilidadeContextoOperacionalTest.java` (sucesso/limites, tenant, 0/1/N base, status de vínculo, status de hierarquia, dados ausentes, múltiplos laboratórios). Contrato e matriz completa em `docs/ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md`.
 
 **Delimitação:** implementação da regra independente, **não conectada ainda a endpoints, Pedidos ou Soluções**, sem mudança de UI/migrations/estoque. Próximo bloco: **7.5.2 — consultas read-only tenant-safe por usuário e por Atividade, DTO de contexto e testes de serviço/controller**. Após build/QA do backend, 7.5.3 adiciona participantes no hub de Projetos. A integração persistente em Pedido permanece Etapa 8. Sem merge.
+
+
+### 7.5.2 — APIs read-only de contextos publicadas (14/10/2026)
+
+Com a confirmação de que JUnit e startup da 7.5.1 funcionaram no ambiente local, **7.5.1 foi considerada VALIDADA**. Publicado backend da 7.5.2: `ContextoOperacionalConsultaService`, `ContextoOperacionalController`, `ContextoOperacionalResponseDTO` e 3 consultas JPA em `VinculoEstagioAtividadeRepository`. Consultas disponíveis para usuário Estagiário, Atividade e lote de Projeto em `GET /api/v1/contextos-operacionais/...`, preservando história e `aberta` separada de `elegivel`. Testes unitários acrescentados em `ContextoOperacionalConsultaServiceTest`. Ver contratos, ressalvas e roteiro em `docs/ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md`.
+
+**Ainda precisa de Maven e boot local para validar JPA dos endpoints.** Atenção: `SecurityConfig` DEV não possui autenticação/autorização definitiva — filtros de tenant por header não garantem titularidade. Não declarar produção segura. Não criar migration ou vincular isso a Pedidos antes da Etapa 8. Próximo: 7.5.3 (Hub Projeto → SCI → Atividade: participantes) após validação da 7.5.2. Sem merge.
