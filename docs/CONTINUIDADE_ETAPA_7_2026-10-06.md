@@ -2913,3 +2913,10 @@ O responsável confirmou a validação local do **Pedido convencional de Produto
 Já validados em registros anteriores: cadastro/solicitação padrão, aprovação com baixa única e entrega, avulsa, rejeição pendente, cancelamentos antes/depois do preparo e regressão de Pedido comum.
 
 **A conferir para encerramento da 7.4:** promoção explícita de Solução avulsa ao catálogo, segregação entre Unidades e perfis, `mvn test` e `npm run build` finais, QA visual. Este registro não declara validação automática nem merge. Após conclusão, avançar para 7.5 (contexto Projeto/SCI/Atividade).
+
+
+### 16.16 Importação de Solução personalizada ao catálogo validada — 14/10/2026
+
+**VALIDADO pelo responsável em teste local:** promoção/importação explícita de Pedido de Solução personalizado para um Modelo reutilizável em `Administração → Cadastros → Resíduos e Soluções`, sem modificar o Pedido originário nem suas movimentações. Regra de promoção administrativa não automática confirmada.
+
+Permanecem pendentes de confirmação: isolamento dos dados de catálogos/pedidos entre Unidades e verificação de perfis no frontend, além de execução final de `mvn test`, `npm run build` e QA visual. A autenticação/autorização real de endpoints deve ser tratada antes da produção — a ausência dela em DEV não autoriza afirmar isolamento de acesso por perfis. Não declarar a 7.4 formalmente encerrada nem efetuar merge sem autorização.
