@@ -5,7 +5,7 @@
 **Branch backend:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Branch frontend:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Dependências:** Etapas 1–6 concluídas e validadas  
-**Estado:** 7.2 encerrada e validada; 7.3 em redefinição funcional (backend sem implementação da 7.3)
+**Estado atualizado (14/10/2026):** 7.0–7.3 concluídas; **7.4 encerrada por aceite funcional do responsável, com ressalvas técnicas transferidas a 7.6/7.7**; 7.5 é a próxima fase (contexto operacional Projeto/SCI/Atividade). As observações antigas deste documento são histórico e não substituem este checkpoint.
 
 ---
 
@@ -2920,3 +2920,24 @@ Já validados em registros anteriores: cadastro/solicitação padrão, aprovaç�
 **VALIDADO pelo responsável em teste local:** promoção/importação explícita de Pedido de Solução personalizado para um Modelo reutilizável em `Administração → Cadastros → Resíduos e Soluções`, sem modificar o Pedido originário nem suas movimentações. Regra de promoção administrativa não automática confirmada.
 
 Permanecem pendentes de confirmação: isolamento dos dados de catálogos/pedidos entre Unidades e verificação de perfis no frontend, além de execução final de `mvn test`, `npm run build` e QA visual. A autenticação/autorização real de endpoints deve ser tratada antes da produção — a ausência dela em DEV não autoriza afirmar isolamento de acesso por perfis. Não declarar a 7.4 formalmente encerrada nem efetuar merge sem autorização.
+
+
+### 16.17 Fechamento formal por aceite funcional da 7.4 — 14/10/2026
+
+**Decisão expressa do responsável:** "pode fechar e vamos para a proxima, antes de iniciar a proxima me confirme o roadmap". **7.4 encerrada por aceite funcional**, sem interpretar esse aceite como execução comprovada de QA completo ou autorização para merge. **A próxima etapa é 7.5; ainda não iniciar implementação até confirmar o roadmap com o responsável.**
+
+**Confirmado em validações locais informadas pelo responsável:** cadastro e manutenção de Modelos de Solução, solicitações padrão e fora de catálogo; composição/cartilha preservadas em Pedidos antigos após alteração da receita; inativação dos modelos; promoção/importação explícita de solicitação personalizada ao catálogo; aprovação integral, movimentação dos componentes, entrega sem dupla baixa; rejeição pendente; cancelamentos antes do preparo (reversão) e após o preparo (consumo preservado); regressão de Pedidos convencionais; listagem unificada Pedidos + Soluções no Dashboard, na Gestão de Pedidos e nos Alertas. O usuário confirmou que essa última integração ficou correta.
+
+**Aceite com ressalvas conhecidas e não omitidas:**
+- **7.6 — massa DEV/DEMO e testes:** executar/registrar suíte Maven e build frontend no HEAD consolidado; regressões adicionais de estoque, concorrência, modelos e dados multitenant; confirmar perfil DEV/DEMO e migrações.
+- **7.7 — validação final:** smoke explícito de isolamento Unidade A × B e perfis de acesso na interface; responsividade/Light/Dark e documentação geral; condições de merge a serem decididas pelo responsável.
+- **Fora da validação funcional da 7.4:** autorização **real** em endpoints/identidade (ainda temporária em DEV), requisito de pré-produção/segurança. Não declarar proteção API comprovada.
+- **Melhoria proposta, ainda NÃO implementada:** ampliar quadro "Últimas movimentações" para histórico de "Últimas atividades operacionais" com decisões administrativas datadas (aprovação/rejeição/entrega/cancelamento sem saída física). Deve usar fonte auditável, sem inventar registros retroativos, e ser planejada antes da implementação.
+- Margem de erro/reconciliação segue extra futuro, fora da entrega obrigatória.
+
+**Roadmap aprovado, em vigor (substitui menções históricas à ordem antiga):**
+`7.0 Auditoria` ✅ → `7.1 Unidades/apresentações/estoque físico` ✅ → `7.2 Decimais` ✅ → `7.3 Domínio Soluções` ✅ → `7.4 Frontend e fluxo Soluções` ✅ aceite funcional → `7.5 Contexto operacional Projeto/SCI/Atividade` próximo → `7.6 Dados DEV/DEMO e testes` → `7.7 Integração/QA/documentação`.
+
+**Etapas posteriores:** 8 — integração do contexto de participação ao domínio de Pedidos (e complementos do contrato de Soluções), 9 — Relatórios consolidados (incluir Projetos e unificar acesso a Movimentações/Resumo operacional), 10 — Rótulos/impressão, 11 — Manual + avaliação de delete lógico, 12 — testes automatizados frontend, 13 — revisão estrutural final. Ver addendum de versão no `docs/PLANO_PRE_PRODUCAO.md`.
+
+**Git:** continuar na `collab/etapa-7-unidades-solucoes-contexto` em ambos os repositórios; **nenhum merge** nesta confirmação. O GitLab/main permanece canônico e a integração depende de autorização expressa.
