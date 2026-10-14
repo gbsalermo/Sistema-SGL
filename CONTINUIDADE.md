@@ -1092,3 +1092,12 @@ Após confirmação expressa do roadmap, o responsável autorizou iniciar a **7.
 **Achados-chave:** a Etapa 6 já implementou `VinculoEstagioAtividade` e derivação Atividade/SCI/Projeto/Laboratório; falta endpoint eficiente do contexto elegível do solicitante e participantes por Atividade para o hub de Projetos. `PedidoService.validarConsistenciaPedido` e formulários atuais usam laboratório-base para perfis comuns, incompatível com um Estagiário que participa de vários projetos/laboratórios. O DTO de Pedido ainda não contém a participação. **Não migrar esses fluxos na 7.5**, porque a aplicação estrutural pertence à Etapa 8. Nenhuma regra funcional do backend foi alterada durante a auditoria; sem migration/merge.
 
 **Próximo trabalho:** aprovar contrato 7.5.1 e construir consultas elegíveis read-only + visualização de estagiários por Atividade (7.5.2/7.5.3), com testes de tenant/usuário/hierarquia e regressão.
+
+
+### 7.5.1 — Política de elegibilidade implementada (14/10/2026)
+
+**Entregue em código:** `src/main/java/com/sgl/service/ElegibilidadeContextoOperacional.java`, regra pura `avaliar(participacao, dataReferencia, unidadeSolicitante)` que retorna `Resultado(elegivel, motivo)`. Rejeita vínculo institucional finalizado/fora de vigência, participação encerrada/futura, usuário inativo, Unidade divergente e hierarquia inativa, encerrada, cancelada ou fora do período. Não usa Laboratório legado do Estagiário; permite várias participações elegíveis dentro de laboratórios distintos da mesma Unidade.
+
+**Testes acrescentados, ainda sem execução Maven:** `src/test/java/com/sgl/service/ElegibilidadeContextoOperacionalTest.java` (sucesso/limites, tenant, 0/1/N base, status de vínculo, status de hierarquia, dados ausentes, múltiplos laboratórios). Contrato e matriz completa em `docs/ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md`.
+
+**Delimitação:** implementação da regra independente, **não conectada ainda a endpoints, Pedidos ou Soluções**, sem mudança de UI/migrations/estoque. Próximo bloco: **7.5.2 — consultas read-only tenant-safe por usuário e por Atividade, DTO de contexto e testes de serviço/controller**. Após build/QA do backend, 7.5.3 adiciona participantes no hub de Projetos. A integração persistente em Pedido permanece Etapa 8. Sem merge.
