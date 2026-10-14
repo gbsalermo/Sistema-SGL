@@ -127,3 +127,43 @@ Datas-limite são inclusivas. `SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO` **
 `src/test/java/com/sgl/service/ElegibilidadeContextoOperacionalTest.java` cobre sucesso, prorrogação, múltiplas participações em laboratórios distintos da mesma Unidade, usuário inativo, perfil incompatível, fim institucional, início futuro/prazo expirado, participação encerrada/futura, tenant e Unidade divergentes, cada nível hierárquico inativo, status e cancelamento de execução, períodos da hierarquia, limites inclusivos e dados incompletos.
 
 **Estado:** 7.5.1 implementada no código, revisão estática realizada; `mvn test` e inicialização **não executados aqui**. Não existe endpoint novo nesta fase. **7.5.2 é a próxima frente:** criar consulta read-only por usuário e por Atividade com filtros reais, DTO próprio (`elegivel`/`motivo`), cache/carga adequada, testes de acesso/tenant e ausência de N+1; 7.5.3 adapta o hub frontend. **Sem migration, sem alteração de Pedido/Solução, sem merge.**
+
+
+---
+
+## 9. 7.5.2 — Consultas e APIs de contexto operacional publicadas (14/10/2026)
+
+**Estado:** implementação backend publicada na branch; **JUnit da 7.5.2, teste do boot e teste HTTP ainda pendentes de execução pelo responsável**.
+
+### Endpoints read-only (NOVOS)
+
+| Método | Rota | Resultado |
+|---|---|---|
+| GET | `/api/v1/contextos-operacionais/usuarios/{usuarioId}` | Todas as participações do Estagiário indicado (elegíveis e inelegíveis, incluindo histórico), ordenadas por início mais recente |
+| GET | `/api/v1/contextos-operacionais/atividades/{atividadeId}/participacoes` | Participações atuais e históricas vinculadas à Atividade, com elegibilidade calculada |
+| GET | `/api/v1/contextos-operacionais/projetos/{projetoId}/participacoes` | Participações de todas as Atividades do Projeto, em **consulta única de lote** para o hub Projetos |
+
+Todos exigem Unidade corrente e cruzam Unidade de origem (Estagiário) e Unidade do destino (Projeto/Laboratório) diretamente no repositório. Se o usuário, Atividade ou Projeto não pertence à Unidade, a operação falha antes da consulta de participantes. **Estagiário com zero participações válidas ou sem histórico** retorna lista vazia, não `Usuario.laboratorio`.
+
+### DTO de resposta
+
+`ContextoOperacionalResponseDTO` expõe: `origem = PARTICIPACAO_ESTAGIO`, `participacaoId`, `vinculoEstagioId`, `usuarioId`, `usuarioNome`, `atividadeId`, `atividadeNome`, `atividadeCodigoSeg`, `sciId`, `sciNome`, `projetoId`, `projetoNome`, `laboratorioId`, `laboratorioNome`, `unidadeId`, `dataInicioParticipacao`, `dataFimParticipacao`, `aberta`, `elegivel`, `motivoInelegibilidade`. **`aberta` não significa `elegivel`**. `motivoInelegibilidade` é null se elegível, senão é o enum estável da política.
+
+### Arquivos alterados/adicionados
+
+- `repository/VinculoEstagioAtividadeRepository.java`: 3 JPQL queries filtradas por usuário/destino/tenant + `@EntityGraph` para leitura da hierarquia sem consultas por participação.
+- `dto/response/ContextoOperacionalResponseDTO.java`: DTO serializável/read-only de contexto.
+- `service/ContextoOperacionalConsultaService.java`: valida recurso no tenant, aplica `ElegibilidadeContextoOperacional.avaliar(..., LocalDate.now(), unidadeId)` em uma data de referência obtida no servidor.
+- `controller/ContextoOperacionalController.java`: exposição em REST.
+- `test/service/ContextoOperacionalConsultaServiceTest.java`: sucesso do Estagiário, participante encerrado/histórico, lote por Projeto, 0 participações, perfil não Estagiário, cross-tenant, ausência de tenant e contexto recusado.
+
+**Comandos de homologação local pelo responsável:**
+```bash
+mvn -Dtest=ContextoOperacionalConsultaServiceTest,ElegibilidadeContextoOperacionalTest test
+mvn test
+```
+Executar boot para validação de inicialização de Spring Data JPA (`@Query` / `@EntityGraph`), além de smoke GET via Swagger/Postman. Não marcar como verde sem log local.
+
+**Limite obrigatório de segurança:** como a identidade/autorização definitiva ainda não existe, a URL com `usuarioId` permite consultas de outros usuários da mesma Unidade no estado DEV, e a Unidade vem do header controlado pelo cliente. O filtro de tenant evita divergências nas queries **mas não substitui autorização real**. Este contrato precisa de controle de titularidade para consulta pessoal e perfil Gestor/Admin para listar participantes em produção. Não ligar estas APIs públicas a um ambiente de produção sem essa etapa de segurança. Nunca tratar o `usuarioId` da URL como identidade autenticada.
+
+**Não houve alteração de migrations, fluxos de criação de Pedido/Solução ou movimentações de estoque.** 7.5.3 (frontend do hub de Projetos) inicia após validação local dos testes e boot da 7.5.2. Sem merge.
