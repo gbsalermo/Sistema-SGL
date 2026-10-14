@@ -167,3 +167,10 @@ Executar boot para validação de inicialização de Spring Data JPA (`@Query` /
 **Limite obrigatório de segurança:** como a identidade/autorização definitiva ainda não existe, a URL com `usuarioId` permite consultas de outros usuários da mesma Unidade no estado DEV, e a Unidade vem do header controlado pelo cliente. O filtro de tenant evita divergências nas queries **mas não substitui autorização real**. Este contrato precisa de controle de titularidade para consulta pessoal e perfil Gestor/Admin para listar participantes em produção. Não ligar estas APIs públicas a um ambiente de produção sem essa etapa de segurança. Nunca tratar o `usuarioId` da URL como identidade autenticada.
 
 **Não houve alteração de migrations, fluxos de criação de Pedido/Solução ou movimentações de estoque.** 7.5.3 (frontend do hub de Projetos) inicia após validação local dos testes e boot da 7.5.2. Sem merge.
+
+
+## 10. Validação da 7.5.2 e início do hub frontend — 14/10/2026
+
+Após o pedido de executar os testes 7.5.2 e subir o backend, o responsável confirmou **"subiu verde"**. Estado da 7.5.2: **validada localmente pelo responsável**; a evidência é o relato do responsável, não logs Maven ou HTTP anexados. O backend permanece sem alterações funcionais adicionais nesta transição.
+
+O frontend iniciou 7.5.3 usando a consulta de Projeto em lote, exibindo participantes atuais/históricos por Atividade, mantendo nome do responsável. Nenhuma relação artificial criada, nenhuma migration; frontend aguarda `npm run build` e validação visual. Aplicação estrutural ao Pedido permanece exclusivamente na Etapa 8.
