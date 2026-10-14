@@ -1083,3 +1083,12 @@ A Etapa **7.4 (Frontend de Soluções + fluxo integrado)** foi **encerrada por a
 **Próxima fase 7.5:** fechar o contexto operacional Projeto → SCI → Atividade para a origem do Pedido (especialmente vínculo de participação ativa do Estagiário), sem antecipar a refatoração integral de Pedidos prevista na Etapa 8. 7.6 cuidará de DEV/DEMO e testes; 7.7 de QA/integração/documentação. Há addendum prioritário de roadmap em `docs/PLANO_PRE_PRODUCAO.md`.
 
 Ressalvas transferidas: resultado final de suíte e build, isolamento real IB/IQ/perfis, QA de tema/responsividade; autorização real da API é requisito pré-produção. A ampliação de "Últimas movimentações" para histórico administrativo datado foi **somente proposta**, não implementada. O responsável solicitou confirmar o roadmap antes de começar a 7.5. **Sem merge nesta atualização.**
+
+
+### Início técnico da 7.5 — auditoria de contexto operacional (14/10/2026)
+
+Após confirmação expressa do roadmap, o responsável autorizou iniciar a **7.5**. Auditoria técnica efetuada diretamente no backend e frontend, com o inventário, matriz por perfil, riscos, propostas de APIs read-only e roteiro de testes registrados em **`docs/ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md`**. Complemento específico do frontend em `gbsalermo/SGL-FRONTEND/docs/ETAPA_7_5_MAPA_IMPLEMENTACAO_FRONTEND.md`.
+
+**Achados-chave:** a Etapa 6 já implementou `VinculoEstagioAtividade` e derivação Atividade/SCI/Projeto/Laboratório; falta endpoint eficiente do contexto elegível do solicitante e participantes por Atividade para o hub de Projetos. `PedidoService.validarConsistenciaPedido` e formulários atuais usam laboratório-base para perfis comuns, incompatível com um Estagiário que participa de vários projetos/laboratórios. O DTO de Pedido ainda não contém a participação. **Não migrar esses fluxos na 7.5**, porque a aplicação estrutural pertence à Etapa 8. Nenhuma regra funcional do backend foi alterada durante a auditoria; sem migration/merge.
+
+**Próximo trabalho:** aprovar contrato 7.5.1 e construir consultas elegíveis read-only + visualização de estagiários por Atividade (7.5.2/7.5.3), com testes de tenant/usuário/hierarquia e regressão.
