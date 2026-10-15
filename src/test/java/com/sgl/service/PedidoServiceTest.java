@@ -39,6 +39,8 @@ import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.TipoPedido;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
@@ -222,6 +224,37 @@ class PedidoServiceTest {
                 null
         );
         verify(pedidoRepository).save(pedido);
+    }
+
+    @Test
+    void deveAprovarQuantidadeFisicaDecimalSemExigirMultiploDeEmbalagem() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        pedido.setTipo(TipoPedido.PRODUTOS);
+        item.setUnidadeMedidaSolicitada(UnidadeMedida.ML);
+        item.setTipoEmbalagemSolicitada(null);
+        item.setQuantidadeEmbalagensSolicitada(null);
+        item.setMultiplicadorSolicitado(null);
+        item.setQuantidadeSolicitada(new BigDecimal("0.700"));
+
+        AprovarPedidoRequestDTO dto = criarAprovacaoDTO(1);
+        dto.getItens().get(0).setQuantidadeAprovada(new BigDecimal("0.200"));
+
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(aprovador));
+        prepararBuscaPedidoComBloqueio();
+        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
+                .thenReturn(Optional.of(estoque));
+        when(pedidoRepository.save(any(Pedido.class)))
+                .thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        PedidoResponseDTO resultado = pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto);
+
+        assertEquals(StatusPedido.APROVADO, resultado.getStatus());
+        assertEquals(0, new BigDecimal("0.200").compareTo(item.getQuantidadeAprovada()));
+        verify(movimentacaoEstoqueService).registrarSaida(
+                6L, new BigDecimal("0.200"), aprovador,
+                OrigemMovimentacao.PEDIDO, pedido, laboratorio, "Aprovação parcial",
+                null, null);
     }
 
     @Test
