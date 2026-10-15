@@ -26,7 +26,7 @@ public class ItemPedidoRequestDTO {
 	@NotNull(message = "Id do produto é obrigatório")
 	private UUID produtoId;
 
-	@Schema(description = "Quantidade solicitada. Em Soluções, expressa na unidade física informada; em Pedidos comuns, na unidade individual.", example = "50", minimum = "0.000001", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "Quantidade solicitada: na unidade informada para quantidade física ou Soluções; na unidade canônica para retirada por apresentação.", example = "50", minimum = "0.000001", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "Quantidade solicitada é obrigatória")
 	@DecimalMin(value = "0.0", inclusive = false, message = "Quantidade solicitada deve ser maior que zero")
 	private BigDecimal quantidadeSolicitada;
@@ -44,7 +44,7 @@ public class ItemPedidoRequestDTO {
 	@DecimalMin(value = "0.0", inclusive = false, message = "Multiplicador deve ser maior que zero")
 	private BigDecimal multiplicadorSolicitado;
 
-    @Schema(description = "Em Solucoes, quantidadeSolicitada e expressa nesta unidade.")
+    @Schema(description = "Unidade física informada para Soluções ou Pedidos convencionais por quantidade física. Não combinar com campos de apresentação.")
     private UnidadeMedida unidadeMedidaSolicitada;
 
     // Construtor legado: pedidos comuns usam embalagem e multiplicador.
