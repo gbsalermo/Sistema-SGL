@@ -68,13 +68,18 @@ public class PedidoRequestDTO {
     }
 
     @JsonIgnore
-    @AssertTrue(message = "Pedidos de produtos exigem forma de retirada, quantidade de embalagens e multiplicador em todos os itens")
+    @AssertTrue(message = "Cada item de Produto exige apresentação completa ou quantidade física com unidade, sem misturar modos")
     public boolean isFormaRetiradaValida() {
         if (tipo == TipoPedido.SOLUCAO || itens == null) {
             return true;
         }
         return itens.stream().allMatch(item -> item == null ||
-                (item.getTipoEmbalagemSolicitada() != null
+                (item.getUnidadeMedidaSolicitada() != null
+                    && item.getTipoEmbalagemSolicitada() == null
+                    && item.getQuantidadeEmbalagensSolicitada() == null
+                    && item.getMultiplicadorSolicitado() == null)
+                || (item.getUnidadeMedidaSolicitada() == null
+                    && item.getTipoEmbalagemSolicitada() != null
                     && item.getQuantidadeEmbalagensSolicitada() != null
                     && item.getMultiplicadorSolicitado() != null));
     }
