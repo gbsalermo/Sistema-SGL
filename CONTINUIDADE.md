@@ -1131,3 +1131,18 @@ Após confirmação do responsável de que o polimento do botão **Salvar refer�
 Frontend criou tipos/seleção de contextos 0/1/N e serviço read-only central em `src/modules/operacao`; o hub de Projetos mantém interface externa, mas delega ao serviço comum. **Formulários de Pedido/Solução, persistência e API de criação permaneceram inalterados na 7.5.4**.
 
 **Estado:** 7.5.1/7.5.2 relatadas verdes; 7.5.3 aceita funcionalmente; 7.5.4 publicada, aguardando `npm run build` do frontend. Sem alegar que esse build já foi executado. Após retorno positivo, fechar implementação funcional da 7.5 e avançar para **7.6 — massa DEV/DEMO, regressões e testes complementares**, mantendo QA transversal 7.7 e autorização real obrigatória antes de produção. **Sem merge.**
+
+
+### Fechamento funcional da 7.5 e liberação da 7.6 — 15/10/2026
+
+Após a correção dos dois erros TS2339 na tela administrativa do frontend, o responsável confirmou **"agora foi"** em resposta ao comando `npm run build`. Assim, foi **validado localmente o build frontend no HEAD da 7.5.4**. A correção técnica aplicada em `src/modules/admin/views/CadastrosAdminView.vue` manteve a linha de Laboratórios usando apenas seus campos disponíveis e exibiu Código SEG/status na tabela de Projetos (commit frontend `f7dfc79`). A confirmação de build não é, por si, homologação visual de todos os módulos.
+
+**Etapa 7.5 encerrada funcionalmente:**
+- 7.5.1: elegibilidade por participação — JUnit e boot reportados verdes;
+- 7.5.2: endpoints read-only por usuário/Atividade/Projeto — JUnit e boot reportados verdes;
+- 7.5.3: Estagiários na hierarquia Projetos → SCI → Atividades — aceite funcional do responsável; polimento de prazo previsto/fim efetivo e botão Salvar referência aplicado;
+- 7.5.4: tipos e serviço compartilhados de contexto frontend, seleção 0/1/N para preparação da Etapa 8, documentação de passagem; **build frontend reportado verde em 15/10**.
+
+**Ressalvas:** não foi conectada `participacaoId` a `PedidoRequestDTO`/`PedidoService` nem aos formulários Produto/Solução, intencionalmente reservado à Etapa 8. QA transversal (regressão, massa DEV/DEMO, isolamento de tenant, perfis, Light/Dark e responsividade) segue 7.6/7.7. Autenticação/autorização definitiva permanece requisito antes de produção; header DEV não é principal autenticado. Roadmap canônico: `docs/PLANO_PRE_PRODUCAO.md`. Contrato da Etapa 8: `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md`.
+
+**Próxima etapa: 7.6 — massa DEV/DEMO e testes complementares**. Nenhum merge autorizado ou executado.
