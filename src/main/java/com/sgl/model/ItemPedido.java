@@ -84,6 +84,9 @@ public class ItemPedido implements Serializable {
         // Solucoes usam quantidades fisicas; embalagens sao tratadas no estoque.
         if (pedido != null && pedido.getTipo() == TipoPedido.SOLUCAO) return;
 
+        // Pedidos físicos informam unidade e não possuem apresentação solicitada.
+        if (unidadeMedidaSolicitada != null) return;
+
         if (tipoEmbalagemSolicitada == null) {
             tipoEmbalagemSolicitada = TipoEmbalagem.UNITARIO;
         }
