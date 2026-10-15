@@ -35,6 +35,7 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.service.PedidoService;
 
 /**
@@ -159,6 +160,35 @@ class PedidoControllerTest {
                 .content(objectMapper.writeValueAsString(dto)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.fieldErrors").isArray());
+    }
+
+    @Test
+    void deveAceitarPedidoComQuantidadeFisicaDecimalEUnidade() throws Exception {
+        PedidoRequestDTO dto = montarPedidoRequestDTO();
+        ItemPedidoRequestDTO item = dto.getItens().get(0);
+        item.setQuantidadeSolicitada(new BigDecimal("0.200"));
+        item.setUnidadeMedidaSolicitada(UnidadeMedida.L);
+        item.setTipoEmbalagemSolicitada(null);
+        item.setQuantidadeEmbalagensSolicitada(null);
+        item.setMultiplicadorSolicitado(null);
+
+        when(pedidoService.criar(any(PedidoRequestDTO.class)))
+                .thenReturn(montarPedidoResponseDTO(StatusPedido.PENDENTE));
+        mockMvc.perform(post(BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    void deveRejeitarMisturaDeQuantidadeFisicaEApresentacao() throws Exception {
+        PedidoRequestDTO dto = montarPedidoRequestDTO();
+        dto.getItens().get(0).setUnidadeMedidaSolicitada(UnidadeMedida.ML);
+
+        mockMvc.perform(post(BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
