@@ -2,13 +2,13 @@
 
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 14/10/2026 — checkpoint vigente da Etapa 7  
+**Última atualização:** 15/10/2026 — 7.5.4 publicada e aguardando build frontend  
 **Status:** Etapas 1–6 concluídas e validadas; Etapa 7 — Unidades + Soluções + contexto operacional em andamento
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
-### Checkpoint vigente do roadmap — 14/10/2026
+### Checkpoint vigente do roadmap — 15/10/2026
 
 **Atualização prioritária sobre a numeração histórica mais abaixo:** o responsável autorizou o **encerramento funcional da 7.4** e pediu confirmação do roadmap antes de qualquer execução da 7.5. A inversão aprovada em 13/10 significa que o antigo 7.5 (frontend de Soluções) foi realizado na **7.4**, e o antigo 7.4 (contexto operacional) é agora **7.5**. Os subtítulos originais que aparecem mais abaixo são documentação histórica supersedida por este checkpoint.
 
@@ -19,9 +19,11 @@ Este documento é a referência canônica do bloco de pré-produção. As etapas
 | 7.2 | Quantidades decimais e compatibilidades | ✅ concluída |
 | 7.3 | Domínio/backend de Soluções | ✅ implementada e exercitada |
 | 7.4 | Frontend Soluções e fluxo integrado Solicitante/Gestor/Estoque/Pedidos | ✅ encerrada **por aceite funcional** em 14/10; QA transversal transferido |
-| 7.5 | **Contexto operacional Projeto → SCI → Atividade** | ⏳ próxima (a iniciar somente após confirmação do roadmap) |
+| 7.5 | **Contexto operacional Projeto → SCI → Atividade** | 🟡 7.5.1/7.5.2 JUnit/boot relatados verdes; 7.5.3 aceita; 7.5.4 preparada, aguardando build frontend |
 | 7.6 | Massa DEV/DEMO, regressões e testes automatizados | ⏳ pendente |
 | 7.7 | Consolidação, QA e documentação | ⏳ pendente |
+
+**Checkpoint de integração da 7.5 (15/10):** a política de elegibilidade por participação e as consultas read-only por Estagiário/Atividade/Projeto estão implementadas, com testes/backend relatados verdes. O hub de Projetos exibe Estagiários por Atividade e foi aceito pelo responsável; refinamentos de início programado e distinção entre prazo institucional/fim efetivo foram publicados. A 7.5.4 preparou `operacao/types/contextoOperacional.ts` (seleção 0/1/N) e o cliente compartilhado `operacao/services/contextoOperacionalService.ts` no frontend, **sem conectá-los ao submit de Pedidos/Soluções**. `npm run build` desta mudança ainda precisa de validação local. Contrato da etapa 8 em `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md`. Ver ressalvas de autorização, tenant e regressão em 7.6/7.7. **Não fazer merge.**
 
 **Escopo da 7.5:** formalizar o contexto de Pedidos a partir de Projeto/SCI/Atividade. Para Estagiários, a origem é a participação aberta `VinculoEstagioAtividade`; Projeto, Laboratório e Unidade derivam da Atividade selecionada, incluindo escolha explícita em caso de múltiplas participações. Para perfis não Estagiários, Projeto selecionado determina Laboratório; sem Projeto, preservar contexto institucional/base quando permitido. Não aceitar combinações contraditórias no cliente/servidor. **A aplicação estrutural integral desses contratos aos Pedidos permanece na Etapa 8, conforme decisão vigente.**
 
