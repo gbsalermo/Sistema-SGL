@@ -35,31 +35,41 @@ Testes existentes em `MovimentacaoEstoqueServiceTest`: FIFO, FEFO multi-lote, fe
 | PF-02 | `NovoPedidoView.vue` soma saldos por lote, cria opções `UNITARIO::1`, calcula outras formas por `Math.floor(saldoLote / conteudoPorApresentacao)`, e solicita `quantidadeForma` inteira com `min=1` | Não oferece seleção explícita de **quantidade física com unidade**; disponibilidade de embalagem fechada é apenas estimada |
 | PF-03 | `PedidosGestaoView.vue` valida com `Number.isInteger`, `<input min=1>`, step 1 (UNITARIO) ou multiplicador | Bloqueia aprovações físicas decimais mesmo quando backend suporta `BigDecimal` |
 | PF-04 | `PedidoService.validarFormaRetirada` e aprovação exigem múltiplos da apresentação para Pedido comum não-UNITARIO | A flexibilização exige **contrato backend mínimo**, não só retirada do `min=1` no Vue |
-| PF-05 | `MovimentacaoEstoqueService.loteCompativelComFormaSolicitada` filtra lote por tipo/fator; para lote fracionável, `consumirRecipientes` pode completar quantidade de apresentação usando recipientes `ABERTO` se não houver fechados | Selecionar "1 GARRAFA/FRASCO lacrado" **não garante** lacre no atendimento por si só. Confirmar semântica e reforçar a seleção/revalidação se o pedido exige embalagem fechada |
+| PF-05 | `loteCompativelComFormaSolicitada` filtra tipo/fator; `consumirRecipientes` prioriza FECHADOS para múltiplos completos, depois ABERTOS para a fração e só abre outros fechados para o restante | **Contrato já fechado nas seções 9.9/9.13 da continuidade 7**: preservar recipientes abertos quando uma apresentação inteira fechada compatível está disponível; NÃO inventar uma obrigação geral de lacre. Verificar no teste a priorização e o fallback físico real, sem prometer lacre indiscriminadamente |
 | PF-06 | `LoteResponseDTO` traz `unidadeBase` e demais informações do lote; o tipo frontend `LotePedidoResponse` omite a unidade e apresenta enum de embalagem limitado (`UNITARIO`, `KIT`, `CAIXA`, `GARRAFA`, `GALAO`) frente ao domínio ampliado | UI não consegue rotular corretamente todas as unidades/apresentações do estoque; expandir type compatível antes dos controles |
-| PF-07 | Disponibilidade em lotes é `quantidadeDisponivel` agregada; pode existir saldo apenas em recipientes ABERTOS | Contagem `floor(saldo/fator)` não é disponibilidade autoritativa de apresentações lacradas. Somente o backend, ao inspecionar recipientes, decide; UX deve distinguir estimativa do garantido |
+| PF-07 | Disponibilidade em lotes é `quantidadeDisponivel` agregada; pode existir saldo apenas em recipientes ABERTOS | `floor(saldo/fator)` não mede o número de FECHADOS nem a retirada física exata. A UI não deve prometer recipiente fechado com base apenas no total agregado; o servidor decide a seleção conforme 9.9/9.13 |
 | PF-08 | Código de Pedidos tem estilos legados globais com `!important`, fontes de 6,5–7,5 px e cores fixas | Revisar primeiro a origem da regra CSS, sem adicionar outra folha de overrides; seguir `SGL-FRONTEND/docs/REGRA_PADRONIZACAO_NOVOS_MODULOS.md` |
 
 O uso de `BigDecimal` **não** implica que o contrato de retirada física já esteja pronto para todo tipo de Pedido.
 
-## 4. Contrato-alvo, sem decidir um schema prematuramente
+## 4. Contrato funcional ORIGINAL — já decidido, não rediscutir
 
-Manter duas escolhas funcionalmente distintas:
+**Fonte autoritativa:** `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md`, **§9.9 (FEFO acima de estado aberto/fechado)** e **§9.13 (retirada inteira preserva recipientes abertos)**, com exemplos aprovados no §9.3. A implementação vigente está em `MovimentacaoEstoqueService.buscarLotesParaSaida`, `calcularQuantidadeFisicamenteConsumivel`, `consumirRecipientes` e `aplicarConsumoRecipiente`.
 
-1. **Apresentação completa** — pessoa escolhe tipo de embalagem + número inteiro de apresentações; a aprovação deve garantir unidades físicas inteiras e, **quando a opção promete lacre**, recipientes efetivamente FECHADOS. Não reunir frações de recipientes ABERTOS para fingir embalagem lacrada.
-2. **Quantidade fracionada** — pessoa escolhe quantidade física positiva e unidade compatível com o Produto (ex.: 150 mL, 0,5 g); somente lotes/recipientes que **permitem fracionamento** podem atendê-la; o backend converte para unidade canônica e valida precisão e saldo. Em medida discreta (unidades/reação), não presumir fração sem regra institucional.
+**Precedência imutável:**
 
-**Ambas continuam submetidas à FEFO/FIFO de lotes.** Dentro do lote, priorizar ABERTO em retirada fracionária; para apresentação fechada, FECHADO. Ao atingir zero, estado ESGOTADO. Não escolher lote ou recipiente autoritativamente no navegador. Apresentação completa em vários lotes compatíveis requer preservação do compromisso físico; se não puder cumprir, resposta de negócio clara sem baixa parcial.
+1. Entre lotes, vale **FEFO para perecíveis, FIFO para os demais**. Recipiente aberto de lote posterior não ultrapassa o lote mais prioritário.
+2. Dentro do lote, a **parcela inteira da apresentação** prioriza recipientes **FECHADOS**, preservando os ABERTOS.
+3. Para a **parcela fracionária restante**, prioriza recipientes **ABERTOS**, ordenados por data de abertura, menor saldo e sequencial para desempate.
+4. Abrir outro FECHADO **somente quando os abertos disponíveis não forem suficientes** para o restante; consumir unidades fechadas completas primeiro reduz a abertura desnecessária em pedidos grandes. Isto é **uma estratégia de minimização de novas aberturas**, não um limite numérico arbitrário de recipientes abertos inventado no frontend.
+5. Lote marcado **não fracionável** só admite apresentação inteira/recipiente inteiro; registrar estados e quantidades exatas por recipiente, revalidando após locks na aprovação.
 
-Os dados históricos/DTOs existentes devem permanecer legíveis. Definir no próximo bloco se a escrita utilizará discriminador de modo e campos opcionais novos ou outra estratégia compatível — a ideia **não** é fazer `quantidadeEmbalagensSolicitada` aceitar decimal ou transformar `UNITARIO` implicitamente em modo físico fracionário sem distinguir intenção.
+**Exemplos expressamente aprovados** (lote prioritário com 1 aberto de 300 mL e 2 fechados de 500 mL):
+- Pedido 500 mL → retirar um FECHADO de 500 mL; preservar aberto.
+- Pedido 200 mL → retirar 200 mL do ABERTO; restam 100 mL.
+- Pedido 700 mL → retirar FECHADO de 500 mL + 200 mL do ABERTO; não abrir outro.
+
+**Não foi aprovada regra nova "toda apresentação completa é lacrada garantida mesmo sem fechado compatível".** O contrato fala em **prioridade por fechado** e em evitar aberturas desnecessárias; se a UI oferecer explicitamente `lacrado` como promessa futura, isso deverá ser sustentado pelo contrato físico próprio, e não pressuposto nesta etapa.
+
+**Lacuna de integração, não lacuna de decisão:** Pedido comum continua exigindo contagem inteira de embalagens no `ItemPedidoRequestDTO`, e o frontend impede quantidade/aprovação decimal. Adaptar a **representação da quantidade física solicitada e sua unidade** para chegar ao motor existente, preservando compatibilidade com apresentações e histórico. Não converter `quantidadeEmbalagensSolicitada` para decimal (continua contagem) nem duplicar FEFO/FIFO no browser. O formato exato do request será determinado pela implementação mínima retrocompatível, e não por redefinição de regras de estoque.
 
 ## 5. Ordem para mudança segura
 
-- **7.6.0-A — Contrato de Pedido:** estabelecer no backend os dois modos (apresentação inteira / quantidade fracionada) com validação inequívoca, unidade canônica, precisão e invariantes de recipiente. Alterar somente o necessário na borda de Pedido/Movimentação; **não reescrever FIFO/FEFO, locks, V33–V35 ou estoque físico**.
-- **7.6.0-B — Testes do contrato:** documentar/incluir testes focados nos comportamentos novos: fração decimal com unidade, recusa em lote não fracionável, seleção ABERTO antes de FECHADO, lacrado indisponível apesar de saldo agregado, prioridade FEFO/FIFO, lotes mistos, quantidade inválida, concorrência e rollback. Reexecutar os testes já existentes.
+- **7.6.0-A — Borda de Pedido:** adaptar o request/validação para encaminhar quantidades físicas decimais e unidade compatível, mantendo contagem inteira para apresentações; **preservar as regras já fechadas §9.9/§9.13**. Não reescrever FIFO/FEFO, seleção física, locks, V33–V35 ou inventar restrição de lacre.
+- **7.6.0-B — Testes do contrato:** usar os testes existentes de FEFO/FIFO e de 200/500/700 mL como referência. Adicionar somente testes de integração de Pedido→estoque para quantidade decimal, lote não fracionável, pedidos grandes sem abertura desnecessária, lote mais antigo prioritário, limites de saldo e rollback. Não duplicar testes do algoritmo puro.
 - **7.6.0-C — Frontend Solicitante:** separar apresentação inteira de quantidade física fracionária, com unidades apropriadas, disponibilidade explicada, estados carregando/erro, normalização de dados, sem calcular FEFO/FIFO no browser.
 - **7.6.0-D — Frontend Gestão:** aprovar quantidade decimal ou apresentações, com passos e limites correspondentes, exibir modo/unidade e baixa rastreada. Não alterar o contrato atômico de Soluções.
-- **7.6.0-E — Regressão:** criar/aprovar/entregar/cancelar, verificar saldos Recipiente→Lote→Estoque, movimentos, sem dupla baixa e sem falsos lacres; validação Light/Dark/mobile/desktop; confirmar `mvn test`, boot e `npm run build`.
+- **7.6.0-E — Regressão:** criar/aprovar/entregar/cancelar, verificar saldos Recipiente→Lote→Estoque, movimentos, sem dupla baixa e sem promessa de lacre não verificada; validar exemplos 200/500/700 mL, Light/Dark/mobile/desktop, `mvn test`, boot e `npm run build`.
 
 ## 6. Critérios de não regressão
 
