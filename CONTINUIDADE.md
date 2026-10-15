@@ -1122,3 +1122,12 @@ Próximo bloco em execução: **7.5.3 — exibição dos Estagiários por Ativid
 O responsável confirmou **a 7.5.3 como validada** (Estagiários por Atividade no hub de Projetos). Confirmada a regra já existente: o início da participação `VinculoEstagioAtividade.dataInicioParticipacao` pode ser informado/alterado antecipadamente dentro dos limites do vínculo e da hierarquia, enquanto a participação não esteja encerrada. A política de elegibilidade 7.5.1 impede iniciar novas solicitações com participação ainda futura, preservando o registro aberto.
 
 **Frontend: polimento visual novo, aguardando validação:** diferenciar **Prazo da Atividade/Projeto** de **Encerramento efetivo da participação**; não usar `atividadeDataFim`/`projetoDataFim` como `dataFimParticipacao` no card do Estagiário. Mostrar status visual **Início programado** para início futuro, sem alterar `ativa` nem regras do backend. Veja `SGL-FRONTEND/docs/ETAPA_7_5_MAPA_IMPLEMENTACAO_FRONTEND.md`. Sem merge; avançar à 7.5.4 após smoke deste ajuste.
+
+
+### 7.5.4 — Camada compartilhada e contrato de passagem para Etapa 8 (15/10/2026)
+
+Após confirmação do responsável de que o polimento do botão **Salvar referência** ficou bom e pedido de retorno ao fluxo, retomada a 7.5.4. O contrato para a **Etapa 8** foi consolidado em `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md`, com derivação hierárquica pelo backend `participacaoId → Atividade → SCI → Projeto → Laboratório → Unidade`, proposta de request `participacaoId`, manutenção de snapshot histórico de Pedido e obrigação de revalidar tenant/usuário/elegibilidade no servidor no instante da criação. Pedido de Produtos e Soluções compartilharão a origem da participação, sem permitir projeto e laboratório divergentes.
+
+Frontend criou tipos/seleção de contextos 0/1/N e serviço read-only central em `src/modules/operacao`; o hub de Projetos mantém interface externa, mas delega ao serviço comum. **Formulários de Pedido/Solução, persistência e API de criação permaneceram inalterados na 7.5.4**.
+
+**Estado:** 7.5.1/7.5.2 relatadas verdes; 7.5.3 aceita funcionalmente; 7.5.4 publicada, aguardando `npm run build` do frontend. Sem alegar que esse build já foi executado. Após retorno positivo, fechar implementação funcional da 7.5 e avançar para **7.6 — massa DEV/DEMO, regressões e testes complementares**, mantendo QA transversal 7.7 e autorização real obrigatória antes de produção. **Sem merge.**
