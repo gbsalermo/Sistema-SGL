@@ -143,6 +143,33 @@ class PedidoEstoqueFisicoIntegrationTest {
     }
 
     @Test
+    void retirada200ConsomeApenasAberto() {
+        Cenario c = cenario(false);
+        Lote l = lote(c, 1, null, true, new BigDecimal("300"), new BigDecimal("500"));
+        PedidoResponseDTO criado = criar(c, "200", UnidadeMedida.ML);
+        aprovar(c, criado, "200");
+        List<RecipienteEstoque> r = recipientes.findByLoteIdOrderBySequencialAsc(l.getId());
+        assertEquals(0, r.get(0).getQuantidadeDisponivel().compareTo(new BigDecimal("100")));
+        assertEquals(EstadoRecipienteEstoque.FECHADO, r.get(1).getEstado());
+        saldo(l, "600");
+    }
+
+    @Test
+    void retirada500PreservaAbertoEEntregaNaoBaixaNovamente() {
+        Cenario c = cenario(false);
+        Lote l = lote(c, 1, null, true, new BigDecimal("300"), new BigDecimal("500"));
+        PedidoResponseDTO criado = criar(c, "500", UnidadeMedida.ML);
+        aprovar(c, criado, "500");
+        List<RecipienteEstoque> r = recipientes.findByLoteIdOrderBySequencialAsc(l.getId());
+        assertEquals(0, r.get(0).getQuantidadeDisponivel().compareTo(new BigDecimal("300")));
+        assertEquals(EstadoRecipienteEstoque.ABERTO, r.get(0).getEstado());
+        assertEquals(EstadoRecipienteEstoque.ESGOTADO, r.get(1).getEstado());
+        saldo(l, "300");
+        assertEquals(StatusPedido.ENTREGUE, pedidos.entregar(criado.getId()).getStatus());
+        saldo(l, "300");
+    }
+
+    @Test
     void retirada700UsaFechadoEAbertoSemAbrirSegundoFechado() {
         Cenario c = cenario(false);
         Lote l = lote(c, 1, null, true,
