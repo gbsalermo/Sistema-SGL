@@ -180,6 +180,20 @@ public class PedidoService {
                     quantidadeCanonica, unidadeInformada, produto.getUnidadeMedida());
                 if (quantidadeCanonica.stripTrailingZeros().scale() > 6)
                     throw new BusinessRuleException("Quantidade convertida excede 6 casas decimais.");
+            } else if (itemDTO.getUnidadeMedidaSolicitada() != null) {
+                // Pedido convencional por quantidade física: sem contagem de apresentações.
+                if (itemDTO.getTipoEmbalagemSolicitada() != null
+                        || itemDTO.getQuantidadeEmbalagensSolicitada() != null
+                        || itemDTO.getMultiplicadorSolicitado() != null) {
+                    throw new BusinessRuleException(
+                        "Informe quantidade física com unidade OU apresentação inteira, não as duas formas.");
+                }
+                unidadeInformada = itemDTO.getUnidadeMedidaSolicitada();
+                quantidadeCanonica = ConversorUnidadeMedida.converterParaCanonica(
+                    quantidadeCanonica, unidadeInformada, produto.getUnidadeMedida());
+                if (quantidadeCanonica.stripTrailingZeros().scale() > 6) {
+                    throw new BusinessRuleException("Quantidade convertida excede 6 casas decimais.");
+                }
             } else {
                 validarFormaRetirada(itemDTO);
             }
@@ -321,7 +335,8 @@ public class PedidoService {
                     && quantidadeAprovada.compareTo(item.getQuantidadeSolicitada()) != 0)
                 throw new BusinessRuleException("Para alterar a composição, rejeite o pedido e solicite nova receita.");
 
-			if (pedido.getTipo() != TipoPedido.SOLUCAO
+			if (pedido.getTipo() == TipoPedido.PRODUTOS
+                    && item.getUnidadeMedidaSolicitada() == null
                     && item.getTipoEmbalagemSolicitada() != TipoEmbalagem.UNITARIO) {
 				// Correção de bug: "multiplicadorSolicitado" é um Integer
 				// (objeto), que pode ser nulo — por exemplo, num item que
