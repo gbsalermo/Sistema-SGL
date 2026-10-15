@@ -1115,3 +1115,10 @@ Com a confirmação de que JUnit e startup da 7.5.1 funcionaram no ambiente loca
 Após publicar as consultas de contexto por Estagiário, participantes por Atividade e consulta em lote por Projeto, o responsável respondeu **"subiu verde"** após receber as instruções de executar o JUnit e subir o backend. Registrar como **7.5.2 validada localmente pelo responsável (testes/inicialização reportados verdes)**; não alegar que esta sessão executou Maven ou smoke HTTP adicional. Nenhum merge.
 
 Próximo bloco em execução: **7.5.3 — exibição dos Estagiários por Atividade no hub Projetos (frontend)**, alimentada por `GET /api/v1/contextos-operacionais/projetos/{projetoId}/participacoes`. Persiste a separação entre `aberta` (não encerrada) e `elegivel` (pode originar nova solicitação), histórico preservado, sem alterações de Pedido/Solução. Build e smoke visual do frontend ainda aguardam validação.
+
+
+### Aceite da 7.5.3 e regra de data inicial futura — 15/10/2026
+
+O responsável confirmou **a 7.5.3 como validada** (Estagiários por Atividade no hub de Projetos). Confirmada a regra já existente: o início da participação `VinculoEstagioAtividade.dataInicioParticipacao` pode ser informado/alterado antecipadamente dentro dos limites do vínculo e da hierarquia, enquanto a participação não esteja encerrada. A política de elegibilidade 7.5.1 impede iniciar novas solicitações com participação ainda futura, preservando o registro aberto.
+
+**Frontend: polimento visual novo, aguardando validação:** diferenciar **Prazo da Atividade/Projeto** de **Encerramento efetivo da participação**; não usar `atividadeDataFim`/`projetoDataFim` como `dataFimParticipacao` no card do Estagiário. Mostrar status visual **Início programado** para início futuro, sem alterar `ativa` nem regras do backend. Veja `SGL-FRONTEND/docs/ETAPA_7_5_MAPA_IMPLEMENTACAO_FRONTEND.md`. Sem merge; avançar à 7.5.4 após smoke deste ajuste.
