@@ -1146,3 +1146,14 @@ Após a correção dos dois erros TS2339 na tela administrativa do frontend, o r
 **Ressalvas:** não foi conectada `participacaoId` a `PedidoRequestDTO`/`PedidoService` nem aos formulários Produto/Solução, intencionalmente reservado à Etapa 8. QA transversal (regressão, massa DEV/DEMO, isolamento de tenant, perfis, Light/Dark e responsividade) segue 7.6/7.7. Autenticação/autorização definitiva permanece requisito antes de produção; header DEV não é principal autenticado. Roadmap canônico: `docs/PLANO_PRE_PRODUCAO.md`. Contrato da Etapa 8: `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md`.
 
 **Próxima etapa: 7.6 — massa DEV/DEMO e testes complementares**. Nenhum merge autorizado ou executado.
+
+
+### Início da 7.6.0 — auditoria de Pedido versus estoque físico (15/10/2026)
+
+Antes de implementar o fracionamento no Pedido de Produtos, o responsável exigiu confrontar regras decididas, implementação backend e padrões visuais para evitar redundâncias e regressões. **Auditoria estática realizada e registrada** em `docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md` (backend) e `SGL-FRONTEND/docs/ETAPA_7_6_0_AUDITORIA_FRONTEND_PADRAO_VISUAL_PEDIDOS.md` (interface).
+
+O backend já tem BigDecimal, V33/V34/V35, RecipienteEstoque, MovimentacaoRecipiente, FEFO/FIFO por Lote, seleção de ABERTO/FECHADO/ESGOTADO, locks e rollback/conflitos. **Não reconstruir o motor.** Lacunas nas bordas: ItemPedido comum obriga quantidade inteira de apresentações; Gestao bloqueia decimais; seleção atual de embalagem em lote fracionável pode completar a saída com recipientes abertos; quantidade agregada não prova disponibilidade de recipiente lacrado. A primeira implementação da 7.6.0 deverá **fixar o contrato de retirada de apresentação completa ou quantidade física fracionada** e testes pontuais, antes da UI.
+
+A auditoria visual revisou hierarquia documental, tokens, componentes Sgl*, dark mode, hover/foco e efeitos. Achou dívida de fontes 6,5–7,5px e cores hardcoded/`!important` em `src/styles/main.css` nos detalhes de aprovação de Pedido. **Corrigir na origem, não empilhar CSS corretivo.**
+
+**Situação:** 7.6.0 auditada; **nenhuma alteração funcional de Pedido ou Estoque**, nenhuma migration ou build/teste executado neste checkpoint. Próximo: 7.6.0-A (contrato backend mínimo), 7.6.0-B (testes focados), 7.6.0-C/D (frontend Solicitante/Gestão), 7.6.0-E (regressão). Depois 7.6.1 e 7.7. Etapa 8 preservada para o contexto operacional do solicitante. Sem merge.
