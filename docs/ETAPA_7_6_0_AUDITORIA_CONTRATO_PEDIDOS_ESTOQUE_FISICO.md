@@ -82,3 +82,17 @@ O uso de `BigDecimal` **não** implica que o contrato de retirada física já es
 - Nenhum merge sem autorização.
 
 **Estado da auditoria:** evidências conferidas por leitura estática de arquivos da branch; sem testes executados nesta rodada. A implementação da 7.6.0 **ainda não começou**.
+
+
+## 7. Checkpoint de implementação 7.6-A — 15/10/2026
+
+A borda de Pedido convencional foi ajustada na branch de trabalho para aceitar **dois modos exclusivos**:
+
+- **Apresentação:** conserva `tipoEmbalagemSolicitada`, `quantidadeEmbalagensSolicitada: Integer` e `multiplicadorSolicitado: BigDecimal`, bem como a validação do total solicitado.
+- **Quantidade física:** informa `quantidadeSolicitada: BigDecimal` e `unidadeMedidaSolicitada`, **sem os três campos de apresentação**; a quantidade é convertida à unidade canônica do Produto e deve caber em seis casas decimais.
+
+`PedidoRequestDTO.isFormaRetiradaValida` impede combinar os modos. `ItemPedido.@PrePersist` preserva os campos nulos de apresentação no modo físico (sem preenchê-los como `UNITARIO`); a aprovação de produto físico deixa de impor múltiplos da embalagem, mas continua validando quantidade positiva, teto solicitado e invocando `MovimentacaoEstoqueService.registrarSaida` de forma transacional. O motor físico não foi alterado.
+
+Testes adicionados em `PedidoControllerTest` para aceitação decimal e rejeição de payload misto e em `PedidoServiceTest` para aprovação fracionada sem restrição de embalagem. **Testes não executados nesta sessão**: GitHub acessível pelo conector, mas o ambiente local de execução não consegue resolver `github.com` para clonar a branch. Não declarar a etapa verde antes de executar `mvn test` no ambiente do projeto.
+
+**Pendente para encerrar 7.6-A/B:** regressão de criação e aprovação ponta a ponta, comprovação dos cenários 200/500/700 mL, misto de lotes e não fracionáveis, rollback/conflito e compatibilidade das apresentações legadas. Frontend e Soluções não modificados neste checkpoint. Sem merge.
