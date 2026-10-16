@@ -8,6 +8,12 @@
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
+### Atualização 16/10/2026 — 7.6.0 A–D aceitas; E em regressão curta
+
+O responsável confirmou build/suíte/backend na 7.6-A, captura dos seis testes integrados JUnit da 7.6-B e aceites funcionais/visuais das telas Solicitante (C) e Gestão (D). As adaptações dos pedidos convencionais ao contrato de quantidade física estão publicadas nas branches de trabalho; **não houve merge**.
+
+A 7.6-E realiza regressão curta e conferência documental, detalhada em `docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md`, §8. O roteiro operacional manual exaustivo Cadastro → Entrada → Pedido → Aprovação → Entrega → Rastreabilidade fica reservado à Etapa 8, a pedido do responsável, sem dispensar verificações básicas antes da conclusão da 7.6-E. Massa DEV/DEMO incoerente com as medidas atuais (ex.: Formaldeído) será tratada na 7.6.1. Ainda faltam validações atuais de build/smoke para concluir E; não declarar QA integral finalizado.
+
 ### Checkpoint vigente do roadmap — 15/10/2026
 
 **Atualização prioritária sobre a numeração histórica mais abaixo:** o responsável autorizou o **encerramento funcional da 7.4** e pediu confirmação do roadmap antes de qualquer execução da 7.5. A inversão aprovada em 13/10 significa que o antigo 7.5 (frontend de Soluções) foi realizado na **7.4**, e o antigo 7.4 (contexto operacional) é agora **7.5**. Os subtítulos originais que aparecem mais abaixo são documentação histórica supersedida por este checkpoint.
