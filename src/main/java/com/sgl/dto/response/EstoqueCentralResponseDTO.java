@@ -34,6 +34,21 @@ public class EstoqueCentralResponseDTO {
     private BigDecimal quantidadeAtual;
     private BigDecimal quantidadeMinima;
     private Boolean ativo;
+    @Schema(description = "Resumo dos recipientes físicos ativos por apresentação.")
+    private java.util.List<ApresentacaoFisicaDTO> apresentacoesFisicas = java.util.List.of();
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ApresentacaoFisicaDTO {
+        private String tipoEmbalagem;
+        private BigDecimal capacidade;
+        private String unidadeMedida;
+        private long fechados;
+        private long abertos;
+        private long esgotados;
+    }
 
     public EstoqueCentralResponseDTO(EstoqueCentral entity) {
         this.id = entity.getPublicId();
