@@ -240,21 +240,23 @@ public class DataInitializer implements CommandLineRunner {
                 .ativo(true)
                 .build());
 
-        EstoqueCentral e1 = criarEstoque(u1, p1, 80, 20);
-        EstoqueCentral e2 = criarEstoque(u2, p1, 100, 20);
+        // Massa DEV 7.6.1: estoques na unidade canônica, recipientes por embalagem.
+        // A descrição da apresentação não é usada para inferir quantidade.
+        EstoqueCentral e1 = criarEstoque(u1, p1, 80000, 20000);
+        EstoqueCentral e2 = criarEstoque(u2, p1, 100000, 20000);
         EstoqueCentral e3 = criarEstoque(u1, p2, 50, 10);
-        EstoqueCentral e4 = criarEstoque(u1, p3, 30, 5);
-        EstoqueCentral e5 = criarEstoque(u3, p4, 15, 5);
+        EstoqueCentral e4 = criarEstoque(u1, p3, 15000, 2500);
+        EstoqueCentral e5 = criarEstoque(u3, p4, 7500, 2500);
         EstoqueCentral e6 = criarEstoque(u2, p5, 200, 30);
-        EstoqueCentral e7 = criarEstoque(u3, p6, 10, 3);
+        EstoqueCentral e7 = criarEstoque(u3, p6, 500, 150);
 
-        criarLoteInicial(e1, "INI-ALC-IB", 80, null);
-        criarLoteInicial(e2, "INI-ALC-IF", 100, null);
-        criarLoteInicial(e3, "INI-MIC-IB", 50, null);
-        criarLoteInicial(e4, "INI-BHI-IB", 30, LocalDate.now().plusMonths(6));
-        criarLoteInicial(e5, "INI-FOR-IQ", 15, null);
-        criarLoteInicial(e6, "INI-PIP-IF", 200, null);
-        criarLoteInicial(e7, "INI-DNA-IQ", 10, LocalDate.now().plusMonths(3));
+        criarLoteInicial(e1, "INI-ALC-IB", 80, 1000, null, true);
+        criarLoteInicial(e2, "INI-ALC-IF", 100, 1000, null, true);
+        criarLoteInicial(e3, "INI-MIC-IB", 50, 1, null, true);
+        criarLoteInicial(e4, "INI-BHI-IB", 30, 500, LocalDate.now().plusMonths(6), true);
+        criarLoteInicial(e5, "INI-FOR-IQ", 15, 500, null, true);
+        criarLoteInicial(e6, "INI-PIP-IF", 2, 100, null, false);
+        criarLoteInicial(e7, "INI-DNA-IQ", 10, 50, LocalDate.now().plusMonths(3), true);
 
         Projeto proj1 = projetoRepository.save(Projeto.builder()
                 .laboratorio(lab3)
@@ -1416,56 +1418,51 @@ public class DataInitializer implements CommandLineRunner {
     private void criarLoteInicial(
             EstoqueCentral estoque,
             String numeroLote,
-            int quantidade,
-            LocalDate dataValidade) {
+            int quantidadeEmbalagens,
+            int conteudoPorEmbalagem,
+            LocalDate dataValidade,
+            boolean fracionavel) {
 
         Produto produto = estoque.getProduto();
-        int maiorSequencial = loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId());
-        int sequencial = maiorSequencial + 1;
-        String sigla = produto.getCodigoReferencia()
-                .trim()
-                .toUpperCase(Locale.ROOT)
-                .replaceAll("[^A-Z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
+        int sequencial = loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId()) + 1;
+        String sigla = produto.getCodigoReferencia().trim().toUpperCase(Locale.ROOT)
+                .replaceAll("[^A-Z0-9]+", "-").replaceAll("^-+|-+$", "");
 
         TipoEmbalagem tipoEmbalagem = switch (produto.getUnidadeMedida()) {
             case UNIDADE -> TipoEmbalagem.CAIXA;
             case REACAO -> TipoEmbalagem.KIT;
             default -> TipoEmbalagem.FRASCO;
         };
+        BigDecimal capacidade = BigDecimal.valueOf(conteudoPorEmbalagem);
+        BigDecimal total = capacidade.multiply(BigDecimal.valueOf(quantidadeEmbalagens));
 
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
-        lote.definirCodigoInterno(
-                "LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial),
-                sequencial
-        );
+        lote.definirCodigoInterno("LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial), sequencial);
         lote.setNumeroLote(numeroLote);
         lote.setTipoEmbalagem(tipoEmbalagem);
-        lote.setApresentacao(
-                produto.getUnidadeArmazenamento() == null
-                        ? "Apresentação DEV Etapa 7"
-                        : produto.getUnidadeArmazenamento()
-        );
-        lote.setQuantidadeApresentacoes(1);
-        lote.setConteudoPorApresentacao(BigDecimal.valueOf(quantidade));
-        lote.setFracionavel(true);
-        lote.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
-        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
+        lote.setApresentacao(produto.getUnidadeArmazenamento() == null ? "Apresentação DEV Etapa 7" : produto.getUnidadeArmazenamento());
+        lote.setQuantidadeApresentacoes(quantidadeEmbalagens);
+        lote.setConteudoPorApresentacao(capacidade);
+        lote.setFracionavel(fracionavel);
+        lote.setQuantidadeInicial(total);
+        lote.setQuantidadeDisponivel(total);
         lote.setDataEntrada(LocalDate.now().minusDays(30));
         lote.setDataValidade(dataValidade);
         lote.setAtivo(true);
         loteRepository.save(lote);
 
-        RecipienteEstoque recipiente = new RecipienteEstoque();
-        recipiente.setLote(lote);
-        recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R001", 1);
-        recipiente.setTipoEmbalagem(tipoEmbalagem);
-        recipiente.setCapacidadeInicial(BigDecimal.valueOf(quantidade));
-        recipiente.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
-        recipiente.setUnidadeMedida(produto.getUnidadeMedida());
-        recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
-        recipienteEstoqueRepository.save(recipiente);
+        for (int i = 1; i <= quantidadeEmbalagens; i++) {
+            RecipienteEstoque recipiente = new RecipienteEstoque();
+            recipiente.setLote(lote);
+            recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R" + String.format(Locale.ROOT, "%03d", i), i);
+            recipiente.setTipoEmbalagem(tipoEmbalagem);
+            recipiente.setCapacidadeInicial(capacidade);
+            recipiente.setQuantidadeDisponivel(capacidade);
+            recipiente.setUnidadeMedida(produto.getUnidadeMedida());
+            recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+            recipienteEstoqueRepository.save(recipiente);
+        }
     }
 
     private void validarMassaEstoqueEtapa7Existente() {
