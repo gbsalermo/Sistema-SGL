@@ -45,3 +45,12 @@ O frontend `estoqueService.ts` orientava "main" e migrations V7/V8 ao encontrar 
 
 - Backend: `EstoqueCentralController`, `EstoqueCentralService`, `EstoqueCentralResponseDTO`, `RecipienteEstoqueRepository`, `PedidoController`, `ItemPedidoRequestDTO`, `LoteResponseDTO`, `DemoDataInitializer`.
 - Frontend: `EstoqueGestaoView.vue`, `EstoqueDetalheView.vue`, `estoqueService.ts`, `pedidoService.ts`, `solucaoService.ts`, `types/pedido.ts`, `types/estoque.ts`.
+
+## 7.7 — Remediação automatizada (16/10/2026)
+
+- **P1 tratado:** `EstoqueCentralService` utiliza `comResumoFisico` em criar, atualizar, buscar por ID, buscar por unidade/produto e estoque baixo; listagens usam `comResumosFisicos`. A resposta `apresentacoesFisicas` passa a ter o mesmo significado em todos esses endpoints.
+- **P2 desempenho tratado para listagem:** `RecipienteEstoqueRepository.buscarPorUnidadeParaResumo` consulta os recipientes da unidade uma vez, com `JOIN FETCH` do lote, e o serviço distribui o resultado por ID do estoque. Consultas individuais ainda buscam recipientes do registro solicitado, sem necessidade de uma busca da unidade inteira.
+- **P2 terminologia parcialmente tratado:** descrições de `LoteResponseDTO` usam unidade canônica; formulário de entrada da tela Estoque deixa de chamar indistintamente o multiplicador de "unidades".
+- **P2 DEMO permanece sob ressalva:** itens não fracionáveis como caixas de ponteiras/luvas têm `UNIDADE` canônica e valores originais que não estabelecem uma correspondência inequívoca entre o conteúdo comercial descrito e cada unidade de saldo. Reinterpretar essas quantidades automaticamente criaria saldos históricos fictícios. Exige revisão explícita dos cenários da massa descartável e seus pedidos de demonstração antes do aceite total, sem alterar o motor do estoque.
+
+**Limite de validação:** mudanças publicadas na branch; não foi executado build/teste backend ou frontend por esta sessão. Não encerrar a 7.7 sem `mvn test`, boot e `npm run build`. A validação operacional exaustiva permanece na Etapa 8.
