@@ -57,7 +57,7 @@ public class EstoqueCentralService {
 				.quantidadeAtual(BigDecimal.ZERO).quantidadeMinima(dto.getQuantidadeMinima())
 				.ativo(dto.getAtivo() != null ? dto.getAtivo() : true).build();
 
-		return new EstoqueCentralResponseDTO(estoqueCentralRepository.save(estoque));
+		return comResumoFisico(estoqueCentralRepository.save(estoque));
 	}
 
 	@Transactional(readOnly = true)
@@ -70,12 +70,12 @@ public class EstoqueCentralService {
 		List<EstoqueCentral> estoques = estoqueCentralRepository
 				.findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
-		return estoques.stream().map(EstoqueCentralResponseDTO::new).toList();
+		return estoques.stream().map(this::comResumoFisico).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public EstoqueCentralResponseDTO buscarPorId(UUID id) {
-		return new EstoqueCentralResponseDTO(buscarEstoqueNoTenant(id));
+		return comResumoFisico(buscarEstoqueNoTenant(id));
 	}
 
 	@Transactional(readOnly = true)
@@ -88,7 +88,7 @@ public class EstoqueCentralService {
 		EstoqueCentral estoque = estoqueCentralRepository.findByUnidadeIdAndProdutoId(unidade.getId(), produto.getId())
 				.orElseThrow(() -> new ResourceNotFoundException(
 						"Estoque da unidade " + unidadeId + " para o produto " + produtoId));
-		return new EstoqueCentralResponseDTO(estoque);
+		return comResumoFisico(estoque);
 	}
 
 	@Transactional(readOnly = true)
@@ -107,7 +107,7 @@ public class EstoqueCentralService {
 			estoque.setAtivo(dto.getAtivo());
 		}
 
-		return new EstoqueCentralResponseDTO(estoqueCentralRepository.save(estoque));
+		return comResumoFisico(estoqueCentralRepository.save(estoque));
 	}
 
 	@Transactional(readOnly = true)
