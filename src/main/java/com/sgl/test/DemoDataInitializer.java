@@ -1041,8 +1041,12 @@ public class DemoDataInitializer implements CommandLineRunner {
         lote.setApresentacao(apresentacao);
 
         if (fracionavel) {
-            lote.setQuantidadeApresentacoes(1);
-            lote.setConteudoPorApresentacao(BigDecimal.valueOf(quantidadeInicial));
+            BigDecimal capacidade = capacidadeEmbalagemDemo(estoque.getProduto().getCodigoReferencia(),
+                    BigDecimal.valueOf(quantidadeInicial));
+            int embalagens = BigDecimal.valueOf(quantidadeInicial).divide(capacidade, 0,
+                    java.math.RoundingMode.CEILING).intValueExact();
+            lote.setQuantidadeApresentacoes(embalagens);
+            lote.setConteudoPorApresentacao(capacidade);
         } else {
             lote.setQuantidadeApresentacoes(quantidadeInicial);
             lote.setConteudoPorApresentacao(BigDecimal.ONE);
@@ -1059,6 +1063,18 @@ public class DemoDataInitializer implements CommandLineRunner {
         lote = loteRepository.save(lote);
         materializarSaldoFisicoDemo(lote);
         return lote;
+    }
+
+    private BigDecimal capacidadeEmbalagemDemo(String codigoProduto, BigDecimal inicial) {
+        return switch (codigoProduto) {
+            case "CNPMF-ETA-70", "CNPMF-HIP-25", "CNPMF-MET-HPLC" -> BigDecimal.ONE; // L
+            case "CNPMF-HCL-37" -> BigDecimal.valueOf(1000); // mL
+            case "CNPMF-FOR-37", "CNPMF-PBS-10X" -> BigDecimal.valueOf(500); // mL
+            case "CNPMF-TMB-ELISA" -> BigDecimal.valueOf(100); // mL
+            case "CNPMF-AGR-MOL" -> BigDecimal.valueOf(500); // g
+            case "CNPMF-KCL-PA" -> BigDecimal.valueOf(1000); // g
+            default -> inicial;
+        };
     }
 
     private void materializarSaldoFisicoDemo(Lote lote) {
@@ -1083,16 +1099,8 @@ public class DemoDataInitializer implements CommandLineRunner {
 
                 // 7.6.1: recipientes físicos correspondem à apresentação comercial.
         // Não usar o saldo inteiro de um lote como capacidade de um único frasco.
-        String codigoProduto = lote.getEstoqueCentral().getProduto().getCodigoReferencia();
-        BigDecimal capacidade = switch (codigoProduto) {
-            case "CNPMF-ETA-70", "CNPMF-HIP-25", "CNPMF-MET-HPLC" -> BigDecimal.ONE; // Unidade canônica: L
-            case "CNPMF-HCL-37" -> BigDecimal.valueOf(1000); // mL
-            case "CNPMF-FOR-37", "CNPMF-PBS-10X" -> BigDecimal.valueOf(500); // mL
-            case "CNPMF-TMB-ELISA" -> BigDecimal.valueOf(100); // mL
-            case "CNPMF-AGR-MOL" -> BigDecimal.valueOf(500); // g
-            case "CNPMF-KCL-PA" -> BigDecimal.valueOf(1000); // g
-            default -> inicial; // Apresentação legada sem capacidade física verificável
-        };
+        BigDecimal capacidade = capacidadeEmbalagemDemo(
+                lote.getEstoqueCentral().getProduto().getCodigoReferencia(), inicial);
         // O total inicial pode não ser múltiplo de uma embalagem em cenários legados:
         // evita inventar embalagens com conteúdo maior que a capacidade cadastrada.
         BigDecimal saldoRestante = disponivel;
