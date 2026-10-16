@@ -550,7 +550,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         Lote loteTmb = criarLote(estTmb, 2, "TMB-0826-04", TipoEmbalagem.UNITARIO,
                 "frasco de 100 mL", 4, 4, hoje.minusDays(3), hoje.plusMonths(5), true, true,
                 "Reposição recente.");
-        Lote loteFormaldeido = criarLote(estFormaldeido, 1, "FOR-0826-07", TipoEmbalagem.GARRAFA,
+        Lote loteFormaldeido = criarLote(estFormaldeido, 1, "FOR-0826-07", TipoEmbalagem.FRASCO,
                 "frasco de 500 mL", 3000, 2500, hoje.minusDays(16), null, true, true,
                 "Documentação de produto controlado anexada ao processo de compra.");
 
@@ -1081,58 +1081,50 @@ public class DemoDataInitializer implements CommandLineRunner {
             for (int i = 1; i <= total; i++) {
                 boolean possuiSaldo = i <= disponiveis;
 
-                RecipienteEstoque recipiente = new RecipienteEstoque();
-                recipiente.setLote(lote);
-                recipiente.definirIdentificacao(
-                        lote.getCodigoInterno() + "-R" + String.format(Locale.ROOT, "%03d", i),
-                        i
-                );
-                recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
-                recipiente.setCapacidadeInicial(BigDecimal.ONE);
-                recipiente.setQuantidadeDisponivel(
-                        possuiSaldo ? BigDecimal.ONE : BigDecimal.ZERO
-                );
-                recipiente.setUnidadeMedida(
-                        lote.getEstoqueCentral().getProduto().getUnidadeMedida()
-                );
-
-                if (possuiSaldo) {
-                    recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
-                } else {
-                    recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
-                    recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
-                }
-
-                recipientes.add(recipiente);
+                // 7.6.1: recipientes físicos correspondem à apresentação comercial.
+        // Não usar o saldo inteiro de um lote como capacidade de um único frasco.
+        String codigoProduto = lote.getEstoqueCentral().getProduto().getCodigoReferencia();
+        BigDecimal capacidade = switch (codigoProduto) {
+            case "CNPMF-ETA-70", "CNPMF-HIP-25", "CNPMF-MET-HPLC" -> BigDecimal.ONE; // Unidade canônica: L
+            case "CNPMF-HCL-37" -> BigDecimal.valueOf(1000); // mL
+            case "CNPMF-FOR-37", "CNPMF-PBS-10X" -> BigDecimal.valueOf(500); // mL
+            case "CNPMF-TMB-ELISA" -> BigDecimal.valueOf(100); // mL
+            case "CNPMF-AGR-MOL" -> BigDecimal.valueOf(500); // g
+            case "CNPMF-KCL-PA" -> BigDecimal.valueOf(1000); // g
+            default -> inicial; // Apresentação legada sem capacidade física verificável
+        };
+        // O total inicial pode não ser múltiplo de uma embalagem em cenários legados:
+        // evita inventar embalagens com conteúdo maior que a capacidade cadastrada.
+        BigDecimal saldoRestante = disponivel;
+        BigDecimal inicialRestante = inicial;
+        int sequencial = 0;
+        List<RecipienteEstoque> recipientes = new ArrayList<>();
+        while (inicialRestante.signum() > 0) {
+            BigDecimal capacidadeRecipiente = inicialRestante.min(capacidade);
+            BigDecimal saldoRecipiente = saldoRestante.min(capacidadeRecipiente);
+            sequencial++;
+            RecipienteEstoque recipiente = new RecipienteEstoque();
+            recipiente.setLote(lote);
+            recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R"
+                    + String.format(Locale.ROOT, "%03d", sequencial), sequencial);
+            recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+            recipiente.setCapacidadeInicial(capacidadeRecipiente);
+            recipiente.setQuantidadeDisponivel(saldoRecipiente);
+            recipiente.setUnidadeMedida(lote.getEstoqueCentral().getProduto().getUnidadeMedida());
+            if (saldoRecipiente.signum() == 0) {
+                recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
+                recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+            } else if (saldoRecipiente.compareTo(capacidadeRecipiente) == 0) {
+                recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+            } else {
+                recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
+                recipiente.setDataAbertura(lote.getDataEntrada().plusDays(1).atStartOfDay());
             }
-
-            recipienteEstoqueRepository.saveAll(recipientes);
-            return;
+            recipientes.add(recipiente);
+            inicialRestante = inicialRestante.subtract(capacidadeRecipiente);
+            saldoRestante = saldoRestante.subtract(saldoRecipiente);
         }
-
-        RecipienteEstoque recipiente = new RecipienteEstoque();
-        recipiente.setLote(lote);
-        recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R001", 1);
-        recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
-        recipiente.setCapacidadeInicial(inicial);
-        recipiente.setQuantidadeDisponivel(disponivel);
-        recipiente.setUnidadeMedida(
-                lote.getEstoqueCentral().getProduto().getUnidadeMedida()
-        );
-
-        if (disponivel.compareTo(BigDecimal.ZERO) == 0) {
-            recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
-            recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
-        } else if (disponivel.compareTo(inicial) == 0) {
-            recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
-        } else {
-            recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
-            recipiente.setDataAbertura(
-                    lote.getDataEntrada().plusDays(1).atStartOfDay()
-            );
-        }
-
-        recipienteEstoqueRepository.save(recipiente);
+        recipienteEstoqueRepository.saveAll(recipientes);
     }
 
     private Pedido criarPedido(
