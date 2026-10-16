@@ -35,6 +35,29 @@ public class EstoqueCentralService {
 	private final RecipienteEstoqueRepository recipienteEstoqueRepository;
 	private final UnidadeRepository unidadeRepository;
 
+	private void configurarMinimo(EstoqueCentral estoque, EstoqueCentralRequestDTO dto) {
+		if (dto.getQuantidadeMinima() == null || dto.getQuantidadeMinima().signum() < 0) {
+			throw new BusinessRuleException("A quantidade mínima deve ser maior ou igual a zero.");
+		}
+		var tipo = dto.getMinimoTipoEmbalagem();
+		var fator = dto.getMinimoMultiplicador();
+		if ((tipo == null) != (fator == null)) {
+			throw new BusinessRuleException("Informe a apresentação e o conteúdo por embalagem juntos.");
+		}
+		if (tipo != null) {
+			if (fator.signum() <= 0 || fator.scale() > 6) {
+				throw new BusinessRuleException("O conteúdo por embalagem deve ser positivo e ter até seis casas decimais.");
+			}
+			var quantidade = dto.getQuantidadeMinima().divideAndRemainder(fator);
+			if (quantidade[1].signum() != 0 || quantidade[0].scale() > 0) {
+				throw new BusinessRuleException("O mínimo em embalagens deve ser inteiro.");
+			}
+		}
+		estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
+		estoque.setMinimoTipoEmbalagem(tipo);
+		estoque.setMinimoMultiplicador(fator);
+	}
+
 	@Transactional
 	public EstoqueCentralResponseDTO criar(EstoqueCentralRequestDTO dto) {
 		validarTenantUnidade(dto.getUnidadeId());
@@ -57,6 +80,7 @@ public class EstoqueCentralService {
 				.quantidadeAtual(BigDecimal.ZERO).quantidadeMinima(dto.getQuantidadeMinima())
 				.ativo(dto.getAtivo() != null ? dto.getAtivo() : true).build();
 
+		configurarMinimo(estoque, dto);
 		return comResumoFisico(estoqueCentralRepository.save(estoque));
 	}
 
@@ -101,7 +125,7 @@ public class EstoqueCentralService {
 	public EstoqueCentralResponseDTO atualizar(UUID id, EstoqueCentralRequestDTO dto) {
 		EstoqueCentral estoque = buscarEstoqueNoTenant(id);
 
-		estoque.setQuantidadeMinima(dto.getQuantidadeMinima());
+		configurarMinimo(estoque, dto);
 		if (dto.getAtivo() != null) {
 			estoque.setAtivo(dto.getAtivo());
 		}
