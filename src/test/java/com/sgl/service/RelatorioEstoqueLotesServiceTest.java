@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
@@ -76,8 +77,8 @@ class RelatorioEstoqueLotesServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(5)
-                .quantidadeMinima(10)
+                .quantidadeAtual(BigDecimal.valueOf(5))
+                .quantidadeMinima(BigDecimal.valueOf(10))
                 .ativo(true)
                 .build();
 
@@ -98,8 +99,8 @@ class RelatorioEstoqueLotesServiceTest {
         lote.setNumeroLote("FAB-" + codigoInterno);
         lote.setTipoEmbalagem(TipoEmbalagem.UNITARIO);
         lote.setFracionavel(true);
-        lote.setQuantidadeInicial(5);
-        lote.setQuantidadeDisponivel(quantidadeDisponivel);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(5));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidadeDisponivel));
         lote.setDataEntrada(LocalDate.of(2026, 1, 1));
         lote.setDataValidade(dataValidade);
         lote.setAtivo(ativo);
@@ -118,7 +119,7 @@ class RelatorioEstoqueLotesServiceTest {
         assertEquals(1, resultado.getTotalEstoques());
         assertEquals(1, resultado.getEstoquesAtivos());
         assertEquals(1, resultado.getEstoquesAbaixoMinimo());
-        assertEquals(5L, resultado.getQuantidadeTotalEstoque());
+        assertEquals(BigDecimal.valueOf(5), resultado.getQuantidadeTotalEstoque());
 
         assertEquals(5, resultado.getTotalLotes());
         // Ativos e com saldo: vencido, próximo e válido (o esgotado tem

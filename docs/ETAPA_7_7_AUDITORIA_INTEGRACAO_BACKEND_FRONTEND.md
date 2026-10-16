@@ -1,0 +1,91 @@
+# Etapa 7.7 — Auditoria inicial de integração backend/frontend
+
+Data: 16/10/2026. Branch: `collab/etapa-7-unidades-solucoes-contexto`.
+Escopo: Estoque, Pedidos e Soluções; conferência de contratos, documentos e pendências. **Leitura estática** dos repositórios, sem execução de build/JUnit nesta rodada e sem merge.
+
+## Integrações conferidas
+
+- `PedidoController` expõe `/api/v1/pedidos`, `/{id}/aprovar`, `/{id}/rejeitar`, `/{id}/entregar`, `/{id}/cancelar`, `/por-usuario`, `/por-status` e `/por-urgencia`. O `pedidoService.ts` usa caminhos correspondentes.
+- `ItemPedidoRequestDTO` permite quantidade decimal física com `unidadeMedidaSolicitada` ou apresentação com os campos de embalagem, coerente com os tipos do frontend; Soluções continua possuindo serviço e endpoints próprios.
+- `EstoqueCentralResponseDTO` contém `produtoUnidadeMedida`, `quantidadeAtual`, `quantidadeMinima` e resumo `apresentacoesFisicas`, conforme o contrato usado pela tabela principal.
+- `RecipienteEstoqueRepository` disponibiliza consulta por estoque para a composição do resumo, sem estimar estado no frontend.
+- Confirmações já fornecidas pelo responsável em turnos anteriores: backend/JUnit/API verdes, build frontend verde, solicitação/aprovação/entrega curta validada, apresentação de embalagens/saldo/estados na tabela validada.
+
+## Pendências reais identificadas — priorização
+
+### P1 — Consistência do DTO de estoque entre endpoints
+
+`EstoqueCentralService.listarPorUnidade()` enriquece o `EstoqueCentralResponseDTO` com `apresentacoesFisicas`; `buscarPorId()`, `listarTodos()` e `buscarPorUnidadeEProduto()` continuam usando o construtor simples e retornam a propriedade vazia. Esse descompasso pode confundir consumidores que reutilizem o DTO. Unificar mapeamento ou oferecer DTO especializado para listagem. **Não é falha comprovada no painel já validado**, que usa `listarPorUnidade()`.
+
+### P2 — Performance de listagem e agregação física
+
+`comResumoFisico()` consulta recipientes separadamente para cada item do estoque (potencial N+1) e soma os estados em memória. Para a massa atual o painel funcionou; antes da produção avaliar consulta agregada por unidade, tipo e capacidade, com isolamento de tenant, principalmente em instalações maiores.
+
+### P2 — Descrições legadas sobre unidades
+
+`LoteResponseDTO` ainda descreve `quantidadeInicial` / `quantidadeDisponivel` como "unidades individuais", enquanto o modelo usa unidade canônica. A tela de detalhes de estoque e fluxos de entrada também preservam termos "unit." e regras de multiplicador inteiro para todo tipo de produto; revisar de forma consistente antes da homologação ampla do ciclo de cadastro/entrada (Etapa 8). Não mudar aritmeticamente os saldos.
+
+### P2 — Massa DEMO com cenários legados
+
+`DemoDataInitializer` usa capacidade física explícita para produtos conhecidos e fallback para outros. Casos `fracionavel=false` ainda são materializados como recipientes de capacidade 1 (ex.: caixas com várias unidades); verificar a representação real de caixas/kits, validade e consistência para utilização operacional. Apenas massa de teste, não regra do motor.
+
+### P3 — Mensagem de erro obsoleta
+
+O frontend `estoqueService.ts` orientava "main" e migrations V7/V8 ao encontrar contrato de lote inválido. Mensagem corrigida na branch, sem mudança funcional de API.
+
+## Portões de fechamento
+
+1. Reconciliar DTO e avaliar custo da agregação de recipientes.
+2. Corrigir textos/contratos de entrada e qualificar massa DEMO não fracionável.
+3. Validar `mvn test`, boot DEV, `npm run build` e smoke Light/Dark após correções.
+4. Preservar o teste manual *exaustivo* Cadastro → Entrada → Pedido → Aprovação → Entrega → Rastreabilidade para Etapa 8, como decidido pelo responsável.
+5. Não declarar produção pronta nem efetuar merge sem autorização.
+
+## Fontes verificadas
+
+- Backend: `EstoqueCentralController`, `EstoqueCentralService`, `EstoqueCentralResponseDTO`, `RecipienteEstoqueRepository`, `PedidoController`, `ItemPedidoRequestDTO`, `LoteResponseDTO`, `DemoDataInitializer`.
+- Frontend: `EstoqueGestaoView.vue`, `EstoqueDetalheView.vue`, `estoqueService.ts`, `pedidoService.ts`, `solucaoService.ts`, `types/pedido.ts`, `types/estoque.ts`.
+
+## 7.7 — Remediação automatizada (16/10/2026)
+
+- **P1 tratado:** `EstoqueCentralService` utiliza `comResumoFisico` em criar, atualizar, buscar por ID, buscar por unidade/produto e estoque baixo; listagens usam `comResumosFisicos`. A resposta `apresentacoesFisicas` passa a ter o mesmo significado em todos esses endpoints.
+- **P2 desempenho tratado para listagem:** `RecipienteEstoqueRepository.buscarPorUnidadeParaResumo` consulta os recipientes da unidade uma vez, com `JOIN FETCH` do lote, e o serviço distribui o resultado por ID do estoque. Consultas individuais ainda buscam recipientes do registro solicitado, sem necessidade de uma busca da unidade inteira.
+- **P2 terminologia parcialmente tratado:** descrições de `LoteResponseDTO` usam unidade canônica; formulário de entrada da tela Estoque deixa de chamar indistintamente o multiplicador de "unidades".
+- **P2 DEMO permanece sob ressalva:** itens não fracionáveis como caixas de ponteiras/luvas têm `UNIDADE` canônica e valores originais que não estabelecem uma correspondência inequívoca entre o conteúdo comercial descrito e cada unidade de saldo. Reinterpretar essas quantidades automaticamente criaria saldos históricos fictícios. Exige revisão explícita dos cenários da massa descartável e seus pedidos de demonstração antes do aceite total, sem alterar o motor do estoque.
+
+**Limite de validação:** mudanças publicadas na branch; não foi executado build/teste backend ou frontend por esta sessão. Não encerrar a 7.7 sem `mvn test`, boot e `npm run build`. A validação operacional exaustiva permanece na Etapa 8.
+
+## Configuração de estoque mínimo por apresentação (16/10/2026)
+
+Implementação publicada, **ainda não testada em execução**. A coluna `estoque_central.quantidade_minima` continua sendo o limiar canônico do produto, preservando o comparador de alertas. A migration V39 acrescenta os campos opcionais `minimo_tipo_embalagem` e `minimo_multiplicador` para recuperar a preferência de exibição/edição do gestor. A alteração do DTO de request/response e do `EstoqueCentralService` mantém compatibilidade com registros anteriores (campos nulos = mínimo na unidade canônica).
+
+Na tela de detalhe, o gestor escolhe entre medida do produto e apresentações dos lotes cadastrados; a quantidade de embalagens é inteira. A interface converte para a unidade canônica antes de salvar. A tabela principal exibe a apresentação selecionada, com conteúdo por embalagem como auxílio. **O alerta mede saldo total equivalente**; não se trata de um alerta sobre frascos lacrados, que teria outra semântica. A nova opção depende da atualização de backend e frontend na mesma branch.
+
+Validação obrigatória antes do aceite: `mvn test`, boot PostgreSQL DEV com V39, `npm run build`, gravar e recarregar (exemplos: 2 frascos de 500 mL = 1000 mL; 10 reações), conferir tabela e alerta, inclusive valores legados.
+
+## Checkpoint de fechamento — cadastro/entrada, fracionamento e DEMO (16/10/2026)
+
+### Semântica operacional consolidada
+- Cadastro do **Produto** define unidade canônica de estoque (mL, L, g, reação, unidade etc.) e apresentação descritiva de referência. Essa apresentação não determina, sozinha, a divisibilidade.
+- **Entrada do lote** define apresentação efetiva, quantidade de embalagens, conteúdo por embalagem e **permissão de retirada parcial do conteúdo** (`fracionavel`). O formulário agora informa expressamente que abrir um KIT para retirar uma REAÇÃO é permitido quando o lote libera retirada parcial; essa reação segue indivisível. Um frasco pode permitir retirada em mL/g; materiais apenas por caixa fechada ficam sem retirada parcial.
+- `fracionavel` é propriedade do **lote**, não preferência global de um produto; dois lotes do mesmo produto podem ter regras distintas. Transição de não fracionável para fracionável permanece irreversível conforme contrato aprovado. UI não deve oferecer “unidade” fictícia por haver conteúdo mensurável na embalagem.
+- O backend já recebe `conteudoPorApresentacao` como BigDecimal. O frontend de entrada não deve exigir inteiro para conteúdos em massa/volume; passou a aceitar até 6 casas decimais.
+- O alerta de mínimo usa saldo canônico; sua apresentação escolhida pelo gestor é separada da unidade de consumo.
+
+### Massa DEMO — decisão segura de qualificação
+- Para `CNPMF-PON-1000` e `CNPMF-LUV-NIT`, as quantidades existentes nos lotes, movimentos e Pedidos demonstrativos representam **caixas lacradas**. Os nomes e especificações da carga passaram a explicitar **1 unidade de estoque = 1 caixa**, sem inventar “unidades internas” a partir de descrições (racks/100 luvas).
+- As caixas permanecem `fracionavel=false`, com capacidade física 1 caixa por recipiente; consumo inteiro e histórico mantidos. Se a operação desejar dispensar *ponteiras ou luvas individualmente*, esse cenário exige cadastro do produto com unidade canônica da peça e entrada coerente com número de peças por caixa, e `fracionavel=true` no lote. Não converter automaticamente massa histórica demonstrativa.
+- A alteração do inicializador DEMO só se reflete em **nova sessão H2 vazia** (perfil demo); não exige migration corretiva de dados.
+
+### Estado de QA e encerramento
+Códigos e documentação desta rodada **publicados na branch**, mas `mvn test`, inicialização DEV/DEMO e `npm run build` **ainda aguardam nova execução pelo responsável após os commits**. O aceite anterior foi antes destas edições. Não declarar etapa 7.7 encerrada nem efetuar merge até validação.
+
+Testes manuais curtos recomendados: entrada fracionável de kit 50 reações e pedido de 1 reação; entrada não fracionável de caixa e bloqueio de unidade interna; entrada de frasco mL com conteúdo decimal, pedido por medida, aprovação parcial; mínimo por embalagem exibido persistente; interface Light/Dark. Teste operacional exaustivo permanece reservado à Etapa 8.
+
+## Aceite final e preparação de merge — 16/10/2026
+
+O responsável confirmou testes e funcionamento satisfatórios após o último ciclo da Etapa 7; os ajustes da 7.7 (fracionamento por lote e unidade mínima de consumo, massa DEMO, mínimo configurável por apresentação, DTOs, tabela de Estoque e aprovação por embalagem) estão **aceitos funcionalmente**. Testes Maven/JUnit, inicialização da API e build frontend foram relatados verdes, além da validação manual dos cenários exercitados.
+
+**Etapa 7 encerrada funcionalmente.** Manter o teste exaustivo de cadastro → entrada → Pedido → aprovação → entrega → rastreabilidade na Etapa 8. A aprovação funcional não comprova homologação integral para produção. **Nenhum merge foi efetuado pelo assistente**: o responsável fará a integração de ambos os repositórios e verificará o alinhamento com o GitLab/main canônico.
+
+Referências atuais: `CONTINUIDADE.md` em ambos os repositórios, `docs/PLANO_PRE_PRODUCAO.md` no backend e o documento de continuidade da Etapa 7. Trechos anteriores marcados “pendente” refletem o estado na data em que foram redigidos e não são o checkpoint de encerramento.

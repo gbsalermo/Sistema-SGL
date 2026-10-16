@@ -1,10 +1,13 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.ItemPedido;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.medida.ConversorUnidadeMedida;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 
@@ -25,23 +28,27 @@ public class ItemPedidoResponseDTO {
     private UUID produtoId;
     private String produtoNome;
     private String produtoUnidadeArmazenamento;
+    private UnidadeMedida produtoUnidadeMedida;
     private NivelRisco produtoRisco;
     private TipoRisco produtoTipoRisco;
     private String produtoDescricaoRisco;
     private Boolean produtoPerecivel;
     private TipoPerecivel produtoTipoPerecivel;
     private String produtoCondicoesArmazenamento;
-    private Integer quantidadeSolicitada;
-    private Integer quantidadeAprovada;
+    private BigDecimal quantidadeSolicitada;
+    private BigDecimal quantidadeAprovada;
+    private UnidadeMedida unidadeMedidaSolicitada;
+    private BigDecimal quantidadeNaUnidadeSolicitada;
     private TipoEmbalagem tipoEmbalagemSolicitada;
     private Integer quantidadeEmbalagensSolicitada;
-    private Integer multiplicadorSolicitado;
+    private BigDecimal multiplicadorSolicitado;
 
     public ItemPedidoResponseDTO(ItemPedido entity) {
         this.id = entity.getPublicId();
         this.produtoId = entity.getProduto().getPublicId();
         this.produtoNome = entity.getProduto().getNome();
         this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
+        this.produtoUnidadeMedida = entity.getProduto().getUnidadeMedida();
         this.produtoRisco = entity.getProduto().getRisco();
         this.produtoTipoRisco = entity.getProduto().getTipoRisco();
         this.produtoDescricaoRisco = entity.getProduto().getDescricaoRisco();
@@ -50,6 +57,10 @@ public class ItemPedidoResponseDTO {
         this.produtoCondicoesArmazenamento = entity.getProduto().getCondicoesArmazenamento();
         this.quantidadeSolicitada = entity.getQuantidadeSolicitada();
         this.quantidadeAprovada = entity.getQuantidadeAprovada();
+        this.unidadeMedidaSolicitada = entity.getUnidadeMedidaSolicitada();
+        this.quantidadeNaUnidadeSolicitada = entity.getUnidadeMedidaSolicitada() == null ? null
+            : ConversorUnidadeMedida.converter(entity.getQuantidadeSolicitada(),
+                entity.getProduto().getUnidadeMedida(), entity.getUnidadeMedidaSolicitada());
         this.tipoEmbalagemSolicitada = entity.getTipoEmbalagemSolicitada();
         this.quantidadeEmbalagensSolicitada = entity.getQuantidadeEmbalagensSolicitada();
         this.multiplicadorSolicitado = entity.getMultiplicadorSolicitado();

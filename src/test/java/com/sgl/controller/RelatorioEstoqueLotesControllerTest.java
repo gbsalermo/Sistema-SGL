@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -61,7 +62,7 @@ class RelatorioEstoqueLotesControllerTest {
                 .totalEstoques(3)
                 .estoquesAtivos(3)
                 .estoquesAbaixoMinimo(1)
-                .quantidadeTotalEstoque(150L)
+                .quantidadeTotalEstoque(BigDecimal.valueOf(150))
                 .totalLotes(4)
                 .lotesAtivos(3)
                 .lotesVencidos(1)

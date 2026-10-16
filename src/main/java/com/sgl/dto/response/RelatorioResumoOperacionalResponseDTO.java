@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,9 +17,9 @@ public class RelatorioResumoOperacionalResponseDTO {
 
     private LocalDateTime geradoEm;
     private Integer totalMovimentacoes;
-    private Integer quantidadeEntradas;
-    private Integer quantidadeSaidas;
-    private Integer quantidadeDescartes;
+    private BigDecimal quantidadeEntradas;
+    private BigDecimal quantidadeSaidas;
+    private BigDecimal quantidadeDescartes;
     private Integer produtosMovimentados;
     private Integer lotesMovimentados;
     private List<ProdutoRanking> principaisEntradas;
@@ -30,7 +31,7 @@ public class RelatorioResumoOperacionalResponseDTO {
     public static class ProdutoRanking {
         private UUID produtoId;
         private String produtoNome;
-        private Integer quantidade;
+        private BigDecimal quantidade;
         private Integer movimentacoes;
     }
 
@@ -42,11 +43,11 @@ public class RelatorioResumoOperacionalResponseDTO {
         private String numeroLote;
         private UUID produtoId;
         private String produtoNome;
-        private Integer quantidadeMovimentada;
+        private BigDecimal quantidadeMovimentada;
         private Integer movimentacoes;
-        private Integer quantidadeEntradas;
-        private Integer quantidadeSaidas;
-        private Integer saldoAtual;
+        private BigDecimal quantidadeEntradas;
+        private BigDecimal quantidadeSaidas;
+        private BigDecimal saldoAtual;
         private LocalDate dataValidade;
     }
 }

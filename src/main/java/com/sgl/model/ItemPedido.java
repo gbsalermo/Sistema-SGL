@@ -1,9 +1,12 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.TipoPedido;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,10 +55,15 @@ public class ItemPedido implements Serializable {
     @ToString.Exclude
     private Produto produto;
 
-    @Column(nullable = false)
-    private Integer quantidadeSolicitada;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidadeSolicitada;
 
-    private Integer quantidadeAprovada;
+    @Column(precision = 19, scale = 6)
+    private BigDecimal quantidadeAprovada;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "unidade_medida_solicitada", length = 30)
+    private UnidadeMedida unidadeMedidaSolicitada;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_embalagem_solicitada")
@@ -64,8 +72,8 @@ public class ItemPedido implements Serializable {
     @Column(name = "quantidade_embalagens_solicitada")
     private Integer quantidadeEmbalagensSolicitada;
 
-    @Column(name = "multiplicador_solicitado")
-    private Integer multiplicadorSolicitado;
+    @Column(name = "multiplicador_solicitado", precision = 19, scale = 6)
+    private BigDecimal multiplicadorSolicitado;
 
     @PrePersist
     private void prepareForPersistence() {
@@ -73,16 +81,19 @@ public class ItemPedido implements Serializable {
             publicId = UUID.randomUUID();
         }
 
+        // Solucoes usam quantidades fisicas; embalagens sao tratadas no estoque.
+        if (pedido != null && pedido.getTipo() == TipoPedido.SOLUCAO) return;
+
+        // Pedidos físicos informam unidade e não possuem apresentação solicitada.
+        if (unidadeMedidaSolicitada != null) return;
+
         if (tipoEmbalagemSolicitada == null) {
             tipoEmbalagemSolicitada = TipoEmbalagem.UNITARIO;
         }
 
-        if (multiplicadorSolicitado == null || multiplicadorSolicitado <= 0) {
-            multiplicadorSolicitado = 1;
-        }
-
-        if (quantidadeEmbalagensSolicitada == null || quantidadeEmbalagensSolicitada <= 0) {
-            quantidadeEmbalagensSolicitada = quantidadeSolicitada;
+        if (multiplicadorSolicitado == null
+                || multiplicadorSolicitado.compareTo(BigDecimal.ZERO) <= 0) {
+            multiplicadorSolicitado = BigDecimal.ONE;
         }
     }
 }

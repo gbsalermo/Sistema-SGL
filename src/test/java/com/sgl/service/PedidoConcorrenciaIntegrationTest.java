@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import com.sgl.dto.request.AprovarPedidoRequestDTO;
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.exception.StockConflictException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.ItemPedido;
 import com.sgl.model.Laboratorio;
@@ -28,8 +30,10 @@ import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
@@ -41,6 +45,7 @@ import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.tenant.TenantContext;
@@ -75,6 +80,9 @@ class PedidoConcorrenciaIntegrationTest {
 
     @Autowired
     private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
+
+    @Autowired
+    private RecipienteEstoqueRepository recipienteEstoqueRepository;
 
     private ExecutorService executor;
 
@@ -129,8 +137,8 @@ class PedidoConcorrenciaIntegrationTest {
                 EstoqueCentral.builder()
                         .unidade(unidade)
                         .produto(produto)
-                        .quantidadeAtual(10)
-                        .quantidadeMinima(2)
+                        .quantidadeAtual(BigDecimal.valueOf(10))
+                        .quantidadeMinima(BigDecimal.valueOf(2))
                         .ativo(true)
                         .build()
         );
@@ -141,14 +149,32 @@ class PedidoConcorrenciaIntegrationTest {
         lote.setNumeroLote("CONC-LOTE-001");
         lote.setApresentacao("unidade");
         lote.setQuantidadeApresentacoes(10);
-        lote.setConteudoPorApresentacao(1);
+        lote.setConteudoPorApresentacao(BigDecimal.valueOf(1));
         lote.setFracionavel(true);
-        lote.setQuantidadeInicial(10);
-        lote.setQuantidadeDisponivel(10);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(10));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(10));
         lote.setDataEntrada(LocalDate.now());
         lote.setDataValidade(null);
         lote.setAtivo(true);
         lote = loteRepository.saveAndFlush(lote);
+
+        for (int sequencial = 1; sequencial <= 10; sequencial++) {
+            RecipienteEstoque recipiente = new RecipienteEstoque();
+            recipiente.setLote(lote);
+            recipiente.definirIdentificacao(
+                    "LOT-CONC-001-001-R" + String.format("%03d", sequencial),
+                    sequencial
+            );
+            recipiente.setTipoEmbalagem(com.sgl.model.enums.TipoEmbalagem.UNITARIO);
+            recipiente.setCapacidadeInicial(BigDecimal.ONE);
+            recipiente.setQuantidadeDisponivel(BigDecimal.ONE);
+            recipiente.setUnidadeMedida(UnidadeMedida.UNIDADE);
+            recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+
+            recipienteEstoqueRepository.save(recipiente);
+        }
+
+        recipienteEstoqueRepository.flush();
 
         Pedido pedidoA = criarPedido(usuario, laboratorio, produto, 7, "Pedido concorrente A");
         Pedido pedidoB = criarPedido(usuario, laboratorio, produto, 7, "Pedido concorrente B");
@@ -212,27 +238,67 @@ class PedidoConcorrenciaIntegrationTest {
         EstoqueCentral estoqueAtual = estoqueCentralRepository.findById(estoqueId).orElseThrow();
         Lote loteAtual = loteRepository.findById(loteId).orElseThrow();
 
-        assertEquals(3, estoqueAtual.getQuantidadeAtual(),
-                "O estoque agregado deve terminar com 3 unidades.");
-        assertEquals(3, loteAtual.getQuantidadeDisponivel(),
-                "O lote deve terminar com 3 unidades.");
-        assertTrue(estoqueAtual.getQuantidadeAtual() >= 0, "O estoque nunca pode ficar negativo.");
-        assertTrue(loteAtual.getQuantidadeDisponivel() >= 0, "O lote nunca pode ficar negativo.");
+        assertEquals(
+                0,
+                BigDecimal.valueOf(3).compareTo(estoqueAtual.getQuantidadeAtual()),
+                "O estoque agregado deve terminar com 3 unidades."
+        );
+        assertEquals(
+                0,
+                BigDecimal.valueOf(3).compareTo(loteAtual.getQuantidadeDisponivel()),
+                "O lote deve terminar com 3 unidades."
+        );
+        assertTrue(
+                estoqueAtual.getQuantidadeAtual().compareTo(BigDecimal.ZERO) >= 0,
+                "O estoque nunca pode ficar negativo."
+        );
+        assertTrue(
+                loteAtual.getQuantidadeDisponivel().compareTo(BigDecimal.ZERO) >= 0,
+                "O lote nunca pode ficar negativo."
+        );
+
+        List<RecipienteEstoque> recipientesAtuais =
+                recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(loteId);
+
+        BigDecimal saldoFisico = recipientesAtuais.stream()
+                .map(RecipienteEstoque::getQuantidadeDisponivel)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long recipientesEsgotados = recipientesAtuais.stream()
+                .filter(r -> r.getEstado() == EstadoRecipienteEstoque.ESGOTADO)
+                .count();
+
+        long recipientesFechados = recipientesAtuais.stream()
+                .filter(r -> r.getEstado() == EstadoRecipienteEstoque.FECHADO)
+                .count();
+
+        assertEquals(10, recipientesAtuais.size(),
+                "O lote deve continuar rastreando os 10 recipientes físicos.");
+        assertEquals(0, BigDecimal.valueOf(3).compareTo(saldoFisico),
+                "A soma física dos recipientes deve terminar em 3 unidades.");
+        assertEquals(7, recipientesEsgotados,
+                "Os 7 recipientes consumidos devem terminar ESGOTADOS.");
+        assertEquals(3, recipientesFechados,
+                "Os 3 recipientes restantes devem permanecer FECHADOS.");
 
         List<MovimentacaoEstoque> saidas = movimentacaoEstoqueRepository
                 .findByTipoMovimentacao(TipoMovimentacao.SAIDA);
 
-        int totalSaidas = saidas.stream()
+        BigDecimal totalSaidas = saidas.stream()
                 .filter(m -> m.getEstoqueCentral().getId().equals(estoqueId))
-                .mapToInt(MovimentacaoEstoque::getQuantidadeMovimentada)
-                .sum();
+                .map(MovimentacaoEstoque::getQuantidadeMovimentada)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long quantidadeMovimentacoesSaida = saidas.stream()
                 .filter(m -> m.getEstoqueCentral().getId().equals(estoqueId))
                 .count();
 
-        assertEquals(7, totalSaidas,
-                "Somente 7 unidades podem ser registradas como SAIDA.");
+        assertEquals(
+                0,
+                BigDecimal.valueOf(7).compareTo(totalSaidas),
+                "Somente 7 unidades podem ser registradas como SAIDA."
+        );
         assertEquals(1, quantidadeMovimentacoesSaida,
                 "Com um único lote, deve existir somente uma SAIDA para o pedido vencedor.");
     }
@@ -255,7 +321,10 @@ class PedidoConcorrenciaIntegrationTest {
         ItemPedido item = ItemPedido.builder()
                 .pedido(pedido)
                 .produto(produto)
-                .quantidadeSolicitada(quantidade)
+                .quantidadeSolicitada(BigDecimal.valueOf(quantidade))
+                .tipoEmbalagemSolicitada(com.sgl.model.enums.TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(quantidade)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
 
         pedido.getItens().add(item);
@@ -279,12 +348,16 @@ class PedidoConcorrenciaIntegrationTest {
             AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
             dto.setUsuarioAprovadorId(usuarioAprovadorId);
             dto.setObservacao("Teste de concorrência");
-            dto.setItens(List.of(new AprovarPedidoRequestDTO.ItemAprovacaoDTO(itemId, 7)));
+            dto.setItens(List.of(new AprovarPedidoRequestDTO.ItemAprovacaoDTO(itemId, BigDecimal.valueOf(7))));
 
             try {
                 pedidoService.aprovar(pedidoId, dto);
                 return true;
             } catch (BusinessRuleException exception) {
+                assertTrue(
+                        exception instanceof StockConflictException,
+                        "A falha concorrente deve ser representada como conflito de estoque."
+                );
                 assertTrue(
                         exception.getMessage().startsWith("Estoque utilizável insuficiente para a forma de retirada"),
                         "A única falha de negócio esperada é estoque utilizável insuficiente. Mensagem recebida: "

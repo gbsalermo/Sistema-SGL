@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -59,12 +60,12 @@ class RelatorioFiscalizacaoControllerTest {
         return RelatorioFiscalizacaoResponseDTO.builder()
                 .geradoEm(LocalDateTime.of(2026, 9, 19, 10, 0))
                 .totalProdutosFiscalizados(2)
-                .saldoAtualTotal(100)
+                .saldoAtualTotal(BigDecimal.valueOf(100))
                 .lotesAtivos(2)
                 .lotesVencidos(0)
                 .lotesProximosVencimento(1)
-                .quantidadeEntradas(50)
-                .quantidadeSaidas(20)
+                .quantidadeEntradas(BigDecimal.valueOf(50))
+                .quantidadeSaidas(BigDecimal.valueOf(20))
                 .produtos(List.of())
                 .movimentacoes(List.of())
                 .build();

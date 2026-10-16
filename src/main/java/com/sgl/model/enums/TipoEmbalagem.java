@@ -2,8 +2,16 @@ package com.sgl.model.enums;
 
 public enum TipoEmbalagem {
     UNITARIO,
-    KIT,
-    CAIXA,
+    FRASCO,
+    AMPOLA,
     GARRAFA,
-    GALAO
+    GALAO,
+    CAIXA,
+    KIT,
+    PACOTE,
+    SACO,
+    TUBO,
+    POTE,
+    PAR,
+    OUTRO
 }

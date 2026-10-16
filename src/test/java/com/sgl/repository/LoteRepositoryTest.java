@@ -1,5 +1,6 @@
 package com.sgl.repository;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -91,8 +92,8 @@ class LoteRepositoryTest {
         EstoqueCentral estoque = EstoqueCentral.builder()
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(100)
-                .quantidadeMinima(1)
+                .quantidadeAtual(BigDecimal.valueOf(100))
+                .quantidadeMinima(BigDecimal.valueOf(1))
                 .ativo(true)
                 .build();
         return entityManager.persistAndFlush(estoque);
@@ -104,8 +105,8 @@ class LoteRepositoryTest {
         lote.setEstoqueCentral(estoqueCentral);
         lote.setNumeroLote(numeroLote);
         lote.definirCodigoInterno("LOT-" + numeroLote + "-" + sequencialGerador.get(), sequencialGerador.getAndIncrement());
-        lote.setQuantidadeInicial(quantidade);
-        lote.setQuantidadeDisponivel(quantidade);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(quantidade));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidade));
         lote.setDataEntrada(dataEntrada);
         lote.setDataValidade(dataValidade);
         lote.setAtivo(ativo);
@@ -444,7 +445,7 @@ class LoteRepositoryTest {
         Unidade unidade = criarUnidade("LT29");
         EstoqueCentral estoque = criarEstoque(unidade, criarProduto("Produto LT29", "COD-LT29"));
         Lote lote = criarLote(estoque, "L029", 10, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), true);
-        lote.setQuantidadeDisponivel(0);
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(0));
         entityManager.persistAndFlush(lote);
 
         List<Lote> resultado = loteRepository.buscarDisponiveisPorFefoComBloqueio(estoque.getId(), LocalDate.of(2026, 1, 1));

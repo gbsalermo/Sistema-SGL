@@ -36,10 +36,26 @@ public class RestExceptionHandler {
         );
     }
 
+    @ExceptionHandler(StockConflictException.class)
+    public ResponseEntity<ApiError> handleStockConflict(
+            StockConflictException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                "Conflito de estoque",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+    }
+    
     @ExceptionHandler({
             BusinessRuleException.class,
             IllegalArgumentException.class
     })
+    
+    
+    
     public ResponseEntity<ApiError> handleBusinessRule(
             RuntimeException ex,
             HttpServletRequest request) {

@@ -1,14 +1,66 @@
 # Plano de Pré-Produção do SGL
 
+## Checkpoint de encerramento funcional — Etapa 7 (16/10/2026)
+
+**Estado:** Etapa 7 (7.0–7.7) concluída funcionalmente e validada pelo responsável; código e documentação preparados na branch `collab/etapa-7-unidades-solucoes-contexto` para merge **a ser realizado pelo responsável**. Não afirmar que o merge, publicação ou homologação integral de produção ocorreram.
+
+**Entregas:** unidades de medida e apresentações físicas, conversão e decimais, recipientes individuais, FEFO/FIFO, Soluções, contrato de Pedidos convencionais por embalagem ou medida, aprovação em embalagens com conversão canônica, retirada individual de reações/unidades de kits quando o lote permite abertura, massa DEV/DEMO revisada, resumo físico na listagem de Estoque, mínimo configurável em embalagem ou medida (V39), revisão da nomenclatura e da configuração `fracionavel` por lote, QA e auditoria de integração. O valor mínimo salvo continua canônico; a preferência de apresentação é persistida separadamente.
+
+**Aceites relatados pelo responsável:** suítes Maven/JUnit verdes, API iniciando normalmente, build do frontend verde, solicitações/aprovações e refinamento de estoque validados, correções finais de cadastro/entrada, massa DEMO e documentação testadas e aceitas. Não extrapolar esses aceites para teste exaustivo de todos os perfis ou homologação para produção.
+
+**Regras importantes:** `fracionavel` controla permitir abrir embalagem e consumir parte do conteúdo; não permite dividir uma unidade indivisível como 1 reação. O lote governa a permissão; pedidos por medida não são pedidos de embalagem; pedidos por embalagem são aprovados visualmente em apresentações inteiras, enviados ao backend em quantidade canônica. FEFO/FIFO e baixa única na aprovação continuam no servidor. Kit fracionável admite retirada de uma reação individual; frasco de 500 mL admite pedido por medida, sem inventar “500 unidades”.
+
+**Etapa 8, próximo passo:** integração do contexto de participação do Estagiário (Projeto/SCI/Atividade) aos Pedidos/Soluções, incluindo regras de vínculo, acesso e aprovação. Executar também **roteiro operacional exaustivo ainda não realizado**: cadastro de produto → entrada de lotes → escolha de embalagem ou medida → pedido → liberação/aprovação → entrega → movimentação/rastreabilidade, com casos de abertura, estoque mínimo, validade, FEFO/FIFO e múltiplas unidades. Nenhuma mudança da Etapa 8 deve ser inferida como implementada.
+
+**Infra e migrations:** DEV PostgreSQL com Flyway; DEMO H2 em memória; massa de teste por inicializadores. V39 acrescenta metadados opcionais para exibição do mínimo. Flyway para evolução estrutural/dados de referência necessários, não para atualizar dados fictícios descartáveis. Confirmar ambos os repositórios após o merge e criar branch separada para a Etapa 8.
+
+**Documentação canônica:** backend `docs/PLANO_PRE_PRODUCAO.md`, `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md`, `docs/ETAPA_7_7_AUDITORIA_INTEGRACAO_BACKEND_FRONTEND.md`; frontend `docs/PADRAO_VISUAL_PRE_PRODUCAO.md`, `docs/ETAPA_7_6_0_AUDITORIA_FRONTEND_PADRAO_VISUAL_PEDIDOS.md`. Registros datados anteriores refletem checkpoints históricos, não substituem este encerramento.
+
+
 **Projeto:** Sistema de Gestão de Laboratórios (SGL)  
 **Data de consolidação:** 04/09/2026  
-**Última atualização:** 01/10/2026  
-**Status:** Etapas 1–5 concluídas e validadas; Etapa 6 em andamento com 6.1–6.2 concluídos e validados; 6.3 em execução  
+**Última atualização:** 16/10/2026 — Etapa 7 encerrada funcionalmente; merge sob responsabilidade do usuário
+**Status:** Etapas 1–7 concluídas funcionalmente; Etapa 8 planejada
 **Fase:** pré-produção pós-aprovação funcional
 
 Este documento é a referência canônica do bloco de pré-produção. As etapas devem ser executadas em sequência, respeitando dependências de domínio, backend e frontend.
 
-> **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual do backend é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
+### Atualização 16/10/2026 — 7.6.0 A–D aceitas; E em regressão curta
+
+O responsável confirmou build/suíte/backend na 7.6-A, captura dos seis testes integrados JUnit da 7.6-B e aceites funcionais/visuais das telas Solicitante (C) e Gestão (D). As adaptações dos pedidos convencionais ao contrato de quantidade física estão publicadas nas branches de trabalho; **não houve merge**.
+
+A 7.6-E realiza regressão curta e conferência documental, detalhada em `docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md`, §8. O roteiro operacional manual exaustivo Cadastro → Entrada → Pedido → Aprovação → Entrega → Rastreabilidade fica reservado à Etapa 8, a pedido do responsável, sem dispensar verificações básicas antes da conclusão da 7.6-E. Massa DEV/DEMO incoerente com as medidas atuais (ex.: Formaldeído) será tratada na 7.6.1. Ainda faltam validações atuais de build/smoke para concluir E; não declarar QA integral finalizado.
+
+### Checkpoint vigente do roadmap — 15/10/2026
+
+**Atualização prioritária sobre a numeração histórica mais abaixo:** o responsável autorizou o **encerramento funcional da 7.4** e pediu confirmação do roadmap antes de qualquer execução da 7.5. A inversão aprovada em 13/10 significa que o antigo 7.5 (frontend de Soluções) foi realizado na **7.4**, e o antigo 7.4 (contexto operacional) é agora **7.5**. Os subtítulos originais que aparecem mais abaixo são documentação histórica supersedida por este checkpoint.
+
+| Etapa atualizada | Escopo | Estado |
+| --- | --- | --- |
+| 7.0 | Auditoria e decisões | ✅ concluída |
+| 7.1 | Unidades de medida, apresentação e estoque por recipientes | ✅ concluída |
+| 7.2 | Quantidades decimais e compatibilidades | ✅ concluída |
+| 7.3 | Domínio/backend de Soluções | ✅ implementada e exercitada |
+| 7.4 | Frontend Soluções e fluxo integrado Solicitante/Gestor/Estoque/Pedidos | ✅ encerrada **por aceite funcional** em 14/10; QA transversal transferido |
+| 7.5 | **Contexto operacional Projeto → SCI → Atividade** | ✅ implementação concluída; JUnit/boot 7.5.1/7.5.2 relatados verdes, 7.5.3 aceita funcionalmente, build da 7.5.4 verde após correção TS administrativa |
+| 7.6.0 | **Adequação do Pedido convencional ao estoque físico e fracionamento** | 🟡 auditoria de backend/frontend e padrão visual concluída; implementação ainda pendente |
+| 7.6 | Massa DEV/DEMO, regressões e testes automatizados (após 7.6.0) | ⏳ pendente |
+| 7.7 | Consolidação, QA e documentação | ⏳ pendente |
+
+**Checkpoint de integração da 7.5 (15/10):** a política de elegibilidade por participação e as consultas read-only por Estagiário/Atividade/Projeto estão implementadas, com testes/backend relatados verdes. O hub de Projetos exibe Estagiários por Atividade e foi aceito pelo responsável; refinamentos de início programado e distinção entre prazo institucional/fim efetivo foram publicados. A 7.5.4 preparou `operacao/types/contextoOperacional.ts` (seleção 0/1/N) e o cliente compartilhado `operacao/services/contextoOperacionalService.ts` no frontend, **sem conectá-los ao submit de Pedidos/Soluções**. o responsável confirmou o **`npm run build` verde em 15/10/2026**, após correção de duas referências inválidas no template da tabela de Laboratórios (`CadastrosAdminView.vue`, linha 881: `codigoSeg`/`status` movidos para tabela de Projetos). Isso comprova a compilação do frontend atualizado, não a regressão integral nem segurança. Contrato da etapa 8 em `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md`. Ver ressalvas de autorização, tenant e regressão em 7.6/7.7. **Não fazer merge.**
+
+**Fechamento da 7.5 (15/10):** implementação funcional encerrada com a confirmação do build verde. Os testes da 7.5.1/7.5.2 e boot foram reportados pelo responsável, e a 7.5.3 recebeu aceite funcional explícito. **QA completo, testes cross-tenant/perfis e regressão DEV/DEMO seguem 7.6/7.7**; contexto de participação em Pedidos/Soluções segue exclusivamente Etapa 8. Não houve merge nem migração de Pedido.
+
+**Ajuste de sequência aprovado em 15/10 — 7.6.0:** antes da bateria final de 7.6.1, adequar os Pedidos convencionais às regras físicas já consolidadas de recipientes fracionáveis/inteiros, FEFO/FIFO e baixa rastreável. A auditoria está em `docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md`; auditoria visual em `SGL-FRONTEND/docs/ETAPA_7_6_0_AUDITORIA_FRONTEND_PADRAO_VISUAL_PEDIDOS.md`. Não reimplementar a seleção física do backend; reutilizar **sem rediscutir** as decisões FEFO/FIFO e priorização dos recipientes já aprovadas em `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md` (§9.9, §9.13), e revisar apenas o contrato de entrada/validação do Pedido, testes de integração e identidade visual. **7.6.0 no momento somente auditada, ainda sem implementação funcional**. Após ela: 7.6.1 DEV/DEMO e regressão; 7.7 QA e consolidação; Etapa 8 para contexto de participação nos Pedidos.
+
+**Escopo da 7.5:** formalizar o contexto de Pedidos a partir de Projeto/SCI/Atividade. Para Estagiários, a origem é a participação aberta `VinculoEstagioAtividade`; Projeto, Laboratório e Unidade derivam da Atividade selecionada, incluindo escolha explícita em caso de múltiplas participações. Para perfis não Estagiários, Projeto selecionado determina Laboratório; sem Projeto, preservar contexto institucional/base quando permitido. Não aceitar combinações contraditórias no cliente/servidor. **A aplicação estrutural integral desses contratos aos Pedidos permanece na Etapa 8, conforme decisão vigente.**
+
+**Sequência macro vigente após a 7:** 8 — Pedidos + Soluções + contexto de participação; 9 — Relatórios consolidados (incluindo Projetos e unificação de Movimentações/Resumo operacional na interface); 10 — Rótulos/impressão; 11 — Manual do Usuário e revisão de delete lógico; 12 — testes automatizados do frontend; 13 — revisão estrutural. Depois: matriz de permissões, congelamento funcional, homologação integrada final, autenticação/autorização/auditoria definitiva, integração corporativa e produção. Referências históricas abaixo que repetem Unidade/Solução como “Etapa 8”, Pedidos como “Etapa 9” ou Relatórios antes disso **não prevalecem** sobre esta sequência.
+
+**Encerramento funcional com ressalvas:** testes locais do responsável validaram os fluxos principais da 7.4, snapshots e catálogo, cancelamentos, rejeição, Pedidos comuns e visão unificada. **Não há comprovação anexada de build/Maven finais e isolamento IB/IQ/perfis**, repassados a 7.6/7.7. A autorização real dos endpoints permanece risco a resolver antes de produção. A proposta de renomear o quadro "Últimas movimentações" para "Últimas atividades operacionais" e incluir transições administrativas com histórico datado **não foi implementada nem validada**; preservar como refinamento posterior auditável. **Nenhum merge foi feito**, e qualquer integração à main exige autorização específica.
+
+
+> **Checkpoint de infraestrutura — 01/10/2026:** GitLab continua sendo a fonte canônica de `main`; GitHub é espelho de `main` e ponto de colaboração para `collab/*`. A branch atual do backend é `collab/etapa-7-unidades-solucoes-contexto`, criada sobre a `main` pós-Etapa 5.
 
 Roadmap formal posterior:
 
@@ -662,114 +714,122 @@ Esse refinamento não faz parte do fechamento da Etapa 6 e não deve atrasar sua
 
 ---
 
-## Etapa 7 — Relatórios consolidados
+## Etapa 7 — Unidades + Soluções + contexto operacional 🔧 ATUAL
 
-**Dependência:** Etapas 5 e 6.
+**Dependência:** Etapas 5 e 6 estabilizadas.
 
-### 7.1 Filtros/dimensões
+### 7.0 — auditoria do modelo atual
 
-Laboratório, responsável, Projeto, Código SEG, líder, SCI, Atividade, Orientador, Bolsa, Curso, Cultura, situação e período.
+Antes de migration ou contrato novo, revisar:
 
-### 7.2 Relatório consolidado de Projetos
+- `UnidadeMedida`;
+- `TipoEmbalagem`;
+- Produto;
+- EstoqueCentral;
+- Lote;
+- ItemPedido;
+- Pedido;
+- movimentações;
+- telas e DTOs que exibem/recebem quantidade.
 
-Adicionar **Projetos** como opção própria na Central de Relatórios.
+Achados iniciais já confirmados:
 
-Cobertura base derivada da Etapa 5:
+- `UnidadeMedida` mistura unidade física e apresentação;
+- estoque e pedido usam quantidades inteiras;
+- não existe domínio `Solucao` no backend atual.
 
-- Projeto;
-- Código SEG;
-- Laboratório responsável/contextual;
-- líder/responsável;
-- início e fim;
-- status;
-- situação de execução;
-- recurso externo/empresa quando aplicável;
-- quantidade de SCI;
-- quantidade de Atividades.
+### 7.1 — normalização de unidade x apresentação
 
-Após estabilização da Etapa 6, o relatório pode incorporar dimensões consolidadas de vínculos/Estagiários sem duplicar a entidade Projeto.
-
-Filtros previstos:
-
-- Laboratório;
-- Projeto;
-- Código SEG;
-- responsável/líder;
-- status;
-- situação de execução;
-- período.
-
-A prévia deve permitir sair da visão consolidada do Projeto para seus SCI/Atividades quando necessário, sem transformar o relatório em substituto do hub operacional `/projetos`.
-
-### 7.3 Consolidação de Movimentações + Resumo operacional
-
-Na Central de Relatórios, **Movimentações** e **Resumo operacional** deixam de ocupar opções separadas.
-
-Novo desenho:
+Regra:
 
 ```text
-Movimentações
-├── Resumo
-│   ├── total de movimentações
-│   ├── entradas / saídas / devoluções / descartes / ajustes
-│   ├── produtos movimentados
-│   ├── lotes movimentados
-│   ├── principais entradas
-│   ├── principais saídas
-│   └── lotes mais movimentados
-│
-└── Detalhamento
-    └── tabela completa de movimentações e rastreabilidade
+unidade de medida
+≠
+apresentação física
 ```
 
-A consolidação é inicialmente **de experiência de interface**, não uma obrigação de quebrar contratos backend.
-
-Por compatibilidade, os endpoints atuais podem permanecer:
+Exemplos de dimensão/unidade:
 
 ```text
-GET /api/v1/relatorios/movimentacoes
-GET /api/v1/relatorios/resumo-operacional
+VOLUME: mL, L
+MASSA: mg, g, kg
+COMPRIMENTO: m
+CONTAGEM: unidade
 ```
 
-O frontend passa a tratá-los como duas visões do mesmo relatório. Refactor posterior pode compartilhar consulta/service internamente desde que não altere comportamento ou exportações.
-
-Com isso, a lista principal da Central passa a tender para:
+Apresentação física permanece separada, por exemplo:
 
 ```text
-Estagiários
-Produtos
-Movimentações
-Estoque e lotes
-Resíduos
-Fiscalização
-Projetos
+frasco
+ampola
+caixa
+kit
+par
 ```
 
-### 7.4 Consultas/agregações
+Conversão automática somente dentro da mesma dimensão.
 
-Contagens por Laboratório, Orientador, responsável, Bolsa, Curso, Cultura, Projeto, SCI e Atividade.
+### 7.2 — modelo de quantidade e compatibilidade
 
-### 7.5 Prévia/telas
+Definir antes de alterar schema:
 
-Visões consolidadas de Laboratórios, Projetos e Estagiários.
+- unidade canônica por Produto;
+- precisão decimal necessária;
+- estratégia para dados legados;
+- impacto em estoque, lotes, pedidos e movimentações;
+- como multiplicadores de embalagem convivem com unidade física.
 
-### 7.6 PDF/XLSX
+### 7.3 — domínio de Soluções
 
-A exportação deve usar a mesma consulta/filtros da tela.
+Modelar Solução como composição reutilizável, distinta de Produto.
 
-Para Movimentações, definir no fechamento do contrato se a exportação inclui:
+A modelagem deve definir:
 
-- visão resumida;
-- detalhamento;
-- ou ambas em seções/abas do mesmo arquivo.
+- identidade e status;
+- Unidade/tenant;
+- nome/descrição;
+- componentes Produtos;
+- quantidade e unidade de cada componente;
+- rendimento/volume ou massa final quando aplicável;
+- preparo/instruções quando necessário;
+- histórico/snapshot suficiente para Pedidos.
 
-### 7.7 Organização estrutural
+### 7.4 — contexto operacional (escopo histórico, agora 7.5)
 
-Mover controllers/services/DTOs de Relatórios para packages específicos, sem alterar contratos ou comportamento.
+Fechar o contrato que será consumido pela Etapa 8:
+
+Para Estagiários:
+
+```text
+Pedido
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratório
+→ Unidade
+```
+
+Para TECNICO/ANALISTA/PESQUISADOR:
+
+- com Projeto: Projeto determina Laboratório;
+- sem Projeto: contexto-base pode continuar vindo de `Usuario.laboratorio`;
+- o frontend não deve oferecer Projeto e Laboratório como escolhas independentes quando Projeto já determina Laboratório.
+
+### 7.5 — frontend e validação (escopo histórico, concluído na 7.4)
+
+Após estabilizar contratos:
+
+- atualizar cadastros/estoque onde necessário;
+- preparar UI de Soluções;
+- validar dados legados;
+- ampliar testes backend;
+- preservar relatórios atuais sem consolidá-los ainda.
 
 ---
 
-## Etapa 8 — Unidades, Soluções e contexto operacional
+
+## Etapa 8 — Unidades, Soluções e contexto operacional (bloco histórico supersedido)
 
 Ordem:
 
@@ -826,7 +886,7 @@ Essa decisão prepara a Etapa 9 sem antecipar a alteração funcional de Pedido.
 
 ---
 
-## Etapa 9 — Pedidos + Soluções + contexto de participação
+## Etapa 9 — Pedidos + Soluções + contexto de participação (bloco histórico supersedido)
 
 **Dependência:** Etapa 8.
 
@@ -910,28 +970,61 @@ Cobrir fluxos críticos finais, execução headless e scripts reproduzíveis.
 
 ---
 
-## Etapa 13 — Revisão estrutural e legibilidade
+## Etapa 13 — Revisão estrutural, packages e manutenibilidade
 
-Última etapa técnica.
+Última etapa técnica antes do fechamento de pré-produção.
+
+Objetivo: reduzir a complexidade acumulada durante as etapas funcionais sem alterar o comportamento já validado, deixando o projeto mais intuitivo para manutenção, evolução e onboarding de novos desenvolvedores.
 
 Revisar especialmente:
 
-- `Residuo`;
-- Services grandes;
-- DTOs extensos;
-- Controllers concentrados;
-- métodos longos;
-- organização de packages;
-- documentação de snapshots/invariantes.
+- classes excessivamente grandes, principalmente Services que concentram regras, consultas, validações e persistência;
+- Controllers concentrados e contratos que estejam assumindo responsabilidades de domínio;
+- DTOs extensos ou com responsabilidades misturadas;
+- métodos longos, condicionais encadeados e blocos difíceis de testar isoladamente;
+- organização de packages no backend e no frontend;
+- nomes de packages/classes que não expressem claramente o domínio ou responsabilidade;
+- classes utilitárias genéricas que possam ser substituídas por componentes de domínio mais explícitos;
+- código duplicado, dependências desnecessárias e trechos mortos;
+- documentação de snapshots, invariantes e regras de negócio relevantes.
 
-Critério:
+Direção de refactor:
+
+```text
+Service orquestrador
+→ coordena o caso de uso
+
+regras/validações específicas
+→ componentes/policies/validators próprios
+
+consultas complexas
+→ services/repositories de consulta quando fizer sentido
+
+mapeamento
+→ mappers dedicados quando houver repetição
+
+packages
+→ organizados por domínio/responsabilidade clara
+→ evitando pastas genéricas gigantes
+```
+
+A revisão deve considerar tanto backend quanto frontend, mantendo uma estrutura previsível e navegável.
+
+Critérios de conclusão:
 
 ```text
 sem mudança funcional intencional
-+ contratos preservados
++ contratos públicos preservados
 + migrations preservadas
++ comportamento validado mantido
++ classes críticas menores e com responsabilidade clara
++ packages coerentes e intuitivos
++ dependências entre camadas/domínios compreensíveis
 + testes da Etapa 12 reexecutados
++ suíte backend integral verde
 ```
+
+Esta etapa não deve virar uma reescrita do sistema. O refactor será incremental, orientado por risco e coberto pelos testes finais.
 
 ---
 
@@ -942,10 +1035,9 @@ Etapa 1 → Etapa 2 → Etapa 3 → Etapa 4
 
 Etapa 5 Projeto/Atividade
 → Etapa 6 Estagiários/vínculos
-→ Etapa 7 Relatórios
-
-Etapa 8 Unidades/Soluções
-→ Etapa 9 Pedidos/Soluções
+→ Etapa 7 Unidades/Soluções/contexto
+→ Etapa 8 Pedidos/Soluções
+→ Etapa 9 Relatórios
 
 Produto + Resíduo + Solução estabilizados
 → Etapa 10 Rótulos
@@ -967,8 +1059,9 @@ Etapa 2 — Dark Mode                                 ✅
 Etapa 3 — refinamentos de Resíduos                  ✅ concluída e validada
 Etapa 4 — expansão operacional de Resíduos          ✅ concluída e validada
 Etapa 5 — Projetos e Atividades                     ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos                    🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
-Etapas 7–13                                         ⏳
+Etapa 6 — Estagiários e vínculos                    ✅ concluída e validada
+Etapa 7 — Unidades + Soluções + contexto            🔧 atual
+Etapas 8–13                                         ⏳
 ```
 
 A matriz de permissões não é a próxima tarefa enquanto este bloco estiver aberto.
@@ -990,7 +1083,7 @@ status
 
 Nova necessidade deve ser posicionada neste roadmap antes da implementação.
 
-Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 6.5 — frontend integrado implementado; validação visual/local pendente.
+Fechamento da Etapa 5: `docs/VALIDACAO_ETAPA_5.md`. Checkpoint validado atual: `docs/VALIDACAO_ETAPA_6_4.md`. Bloco atual: 7.0 — auditoria do modelo de unidades, apresentações, quantidades e Soluções.
 
 
 ### Revisão híbrida 02/10/2026 — Etapa 6

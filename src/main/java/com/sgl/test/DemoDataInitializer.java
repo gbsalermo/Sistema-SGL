@@ -26,10 +26,12 @@ import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Residuo;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.OrigemMovimentacao;
@@ -37,6 +39,7 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.StatusProjeto;
+import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
@@ -54,6 +57,7 @@ import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
@@ -82,6 +86,7 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final LoteRepository loteRepository;
+    private final RecipienteEstoqueRepository recipienteEstoqueRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
@@ -416,23 +421,23 @@ public class DemoDataInitializer implements CommandLineRunner {
                 false, Set.of(), null
         );
         Produto ponteiras = criarProduto(
-                "Ponteiras 1000 µL com filtro", "CNPMF-PON-1000", UnidadeMedida.CAIXA,
-                "Ponteiras estéreis com filtro para micropipetas.",
+                "Caixa de ponteiras 1000 µL com filtro", "CNPMF-PON-1000", UnidadeMedida.UNIDADE,
+                "Caixa lacrada de ponteiras estéreis com filtro; a unidade de controle é uma caixa completa.",
                 "Armário M3 - Materiais descartáveis",
                 NivelRisco.NENHUM, null, null,
-                false, null, "Ambiente limpo e seco.", "caixa com racks",
+                false, null, "Ambiente limpo e seco.", "caixa lacrada com racks (1 unidade de estoque por caixa)",
                 false, Set.of(), null
         );
         Produto luvas = criarProduto(
-                "Luvas Nitrílicas sem pó", "CNPMF-LUV-NIT", UnidadeMedida.CAIXA,
-                "Luvas de procedimento para uso laboratorial.",
+                "Caixa de Luvas Nitrílicas sem pó", "CNPMF-LUV-NIT", UnidadeMedida.UNIDADE,
+                "Caixa lacrada de luvas de procedimento; a unidade de controle é uma caixa completa.",
                 "Armário EPI - Almoxarifado",
                 NivelRisco.NENHUM, null, null,
-                false, null, "Ambiente seco.", "caixa com 100 unidades",
+                false, null, "Ambiente seco.", "caixa lacrada com 100 luvas (1 unidade de estoque por caixa)",
                 false, Set.of(), null
         );
         Produto bda = criarProduto(
-                "Meio BDA preparado", "CNPMF-BDA", UnidadeMedida.FRASCO,
+                "Meio BDA preparado", "CNPMF-BDA", UnidadeMedida.UNIDADE,
                 "Meio Batata Dextrose Ágar preparado para cultivo de fungos.",
                 "Geladeira 2-8 °C - Fitopatologia",
                 NivelRisco.BAIXO, TipoRisco.BIOLOGICO, "Material destinado a cultivo microbiológico.",
@@ -449,7 +454,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "Produto fiscalizado no cenário de demonstração."
         );
         Produto pbs = criarProduto(
-                "Tampão PBS 10X", "CNPMF-PBS-10X", UnidadeMedida.FRASCO,
+                "Tampão PBS 10X", "CNPMF-PBS-10X", UnidadeMedida.ML,
                 "Tampão concentrado para rotinas de biologia molecular e imunodiagnóstico.",
                 "Geladeira 2-8 °C - Central de Soluções",
                 NivelRisco.NENHUM, null, null,
@@ -465,7 +470,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 false, Set.of(), null
         );
         Produto tmb = criarProduto(
-                "Substrato ELISA TMB", "CNPMF-TMB-ELISA", UnidadeMedida.FRASCO,
+                "Substrato ELISA TMB", "CNPMF-TMB-ELISA", UnidadeMedida.ML,
                 "Substrato cromogênico para ensaios ELISA.",
                 "Geladeira 2-8 °C - Virologia",
                 NivelRisco.BAIXO, TipoRisco.IRRITANTE, "Evitar contato com pele e olhos.",
@@ -519,11 +524,11 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "frasco de 500 g", 1500, 1200, hoje.minusDays(22), null, true, true,
                 null);
         Lote lotePonteiras = criarLote(estPonteiras, 1, "PON-0826-03", TipoEmbalagem.CAIXA,
-                "caixa com racks", 15, 11, hoje.minusDays(10), null, true, false,
-                "Material não fracionável por caixa.");
+                "caixa lacrada com racks (1 unidade de estoque por caixa)", 15, 11, hoje.minusDays(10), null, true, false,
+                "Saída exclusivamente de caixas fechadas; quantidade do lote contada em caixas.");
         Lote loteLuvas = criarLote(estLuvas, 1, "LUV-0826-02", TipoEmbalagem.CAIXA,
-                "caixa com 100 unidades", 20, 4, hoje.minusDays(26), null, true, false,
-                "Saldo abaixo do mínimo.");
+                "caixa lacrada com 100 luvas (1 unidade de estoque por caixa)", 20, 4, hoje.minusDays(26), null, true, false,
+                "Saldo em caixas fechadas abaixo do mínimo.");
         Lote loteBdaDescartado = criarLote(estBda, 1, "BDA-0726-04", TipoEmbalagem.UNITARIO,
                 "frasco preparado", 8, 0, hoje.minusDays(35), hoje.minusDays(5), false, true,
                 "Lote vencido e descartado no período.");
@@ -545,7 +550,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         Lote loteTmb = criarLote(estTmb, 2, "TMB-0826-04", TipoEmbalagem.UNITARIO,
                 "frasco de 100 mL", 4, 4, hoje.minusDays(3), hoje.plusMonths(5), true, true,
                 "Reposição recente.");
-        Lote loteFormaldeido = criarLote(estFormaldeido, 1, "FOR-0826-07", TipoEmbalagem.GARRAFA,
+        Lote loteFormaldeido = criarLote(estFormaldeido, 1, "FOR-0826-07", TipoEmbalagem.FRASCO,
                 "frasco de 500 mL", 3000, 2500, hoje.minusDays(16), null, true, true,
                 "Documentação de produto controlado anexada ao processo de compra.");
 
@@ -682,7 +687,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 2, 20, 18, agora.minusDays(14).withHour(11).withMinute(40), "Entrega para Virologia.");
         mov(lotePbs, gestor, ped06, labVirologia, TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO,
                 4, 40, 36, agora.minusDays(14).withHour(11).withMinute(41), "Entrega para Virologia.");
-        mov(loteEtanol, admin, null, null, TipoMovimentacao.AJUSTE, OrigemMovimentacao.INVENTARIO,
+        mov(loteEtanol, admin, null, null, TipoMovimentacao.AJUSTE_ENTRADA, OrigemMovimentacao.INVENTARIO,
                 1, 45, 46, agora.minusDays(13).withHour(17).withMinute(5), "Ajuste positivo após conferência física.");
         mov(loteDna, gestor, ped09, labVirologia, TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO,
                 10, 80, 70, agora.minusDays(6).withHour(13).withMinute(25), "Entrega para análise molecular.");
@@ -874,6 +879,11 @@ public class DemoDataInitializer implements CommandLineRunner {
         estagiario.setDataInicioEstagio(inicio);
         estagiario.setDataFimEstagio(fim);
         estagiario.setTipoBolsa(bolsa);
+        estagiario.setSituacaoEstagio(
+                !ativo || (fim != null && fim.isBefore(LocalDate.now()))
+                        ? SituacaoEstagio.FINALIZADO
+                        : SituacaoEstagio.EM_ANDAMENTO
+        );
         estagiario.setObservacao(observacao);
         return estagiarioRepository.save(estagiario);
     }
@@ -993,8 +1003,8 @@ public class DemoDataInitializer implements CommandLineRunner {
                 EstoqueCentral.builder()
                         .unidade(unidade)
                         .produto(produto)
-                        .quantidadeAtual(atual)
-                        .quantidadeMinima(minimo)
+                        .quantidadeAtual(BigDecimal.valueOf(atual))
+                        .quantidadeMinima(BigDecimal.valueOf(minimo))
                         .ativo(true)
                         .build()
         );
@@ -1029,16 +1039,110 @@ public class DemoDataInitializer implements CommandLineRunner {
         lote.setNumeroLote(numeroFornecedor);
         lote.setTipoEmbalagem(tipoEmbalagem);
         lote.setApresentacao(apresentacao);
-        lote.setQuantidadeApresentacoes(quantidadeInicial);
-        lote.setConteudoPorApresentacao(1);
+
+        if (fracionavel) {
+            BigDecimal capacidade = capacidadeEmbalagemDemo(estoque.getProduto().getCodigoReferencia(),
+                    BigDecimal.valueOf(quantidadeInicial));
+            int embalagens = BigDecimal.valueOf(quantidadeInicial).divide(capacidade, 0,
+                    java.math.RoundingMode.CEILING).intValueExact();
+            lote.setQuantidadeApresentacoes(embalagens);
+            lote.setConteudoPorApresentacao(capacidade);
+        } else {
+            lote.setQuantidadeApresentacoes(quantidadeInicial);
+            lote.setConteudoPorApresentacao(BigDecimal.ONE);
+        }
+
         lote.setFracionavel(fracionavel);
         lote.setObservacao(observacao);
-        lote.setQuantidadeInicial(quantidadeInicial);
-        lote.setQuantidadeDisponivel(quantidadeDisponivel);
+        lote.setQuantidadeInicial(BigDecimal.valueOf(quantidadeInicial));
+        lote.setQuantidadeDisponivel(BigDecimal.valueOf(quantidadeDisponivel));
         lote.setDataEntrada(dataEntrada);
         lote.setDataValidade(dataValidade);
         lote.setAtivo(ativo);
-        return loteRepository.save(lote);
+
+        lote = loteRepository.save(lote);
+        materializarSaldoFisicoDemo(lote);
+        return lote;
+    }
+
+    private BigDecimal capacidadeEmbalagemDemo(String codigoProduto, BigDecimal inicial) {
+        return switch (codigoProduto) {
+            case "CNPMF-ETA-70", "CNPMF-HIP-25", "CNPMF-MET-HPLC" -> BigDecimal.ONE; // L
+            case "CNPMF-HCL-37" -> BigDecimal.valueOf(1000); // mL
+            case "CNPMF-FOR-37", "CNPMF-PBS-10X" -> BigDecimal.valueOf(500); // mL
+            case "CNPMF-TMB-ELISA" -> BigDecimal.valueOf(100); // mL
+            case "CNPMF-AGR-MOL" -> BigDecimal.valueOf(500); // g
+            case "CNPMF-KCL-PA" -> BigDecimal.valueOf(1000); // g
+            default -> inicial;
+        };
+    }
+
+    private void materializarSaldoFisicoDemo(Lote lote) {
+        if (!recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(lote.getId()).isEmpty()) {
+            return;
+        }
+
+        BigDecimal inicial = lote.getQuantidadeInicial();
+        BigDecimal disponivel = lote.getQuantidadeDisponivel();
+        List<RecipienteEstoque> recipientes = new ArrayList<>();
+
+        if (!lote.permiteFracionamento()) {
+            // Materiais contados e não fracionáveis: um recipiente por unidade.
+            int total = inicial.intValueExact();
+            int disponiveis = disponivel.intValueExact();
+            for (int i = 1; i <= total; i++) {
+                boolean comSaldo = i <= disponiveis;
+                RecipienteEstoque recipiente = new RecipienteEstoque();
+                recipiente.setLote(lote);
+                recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R"
+                        + String.format(Locale.ROOT, "%03d", i), i);
+                recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+                recipiente.setCapacidadeInicial(BigDecimal.ONE);
+                recipiente.setQuantidadeDisponivel(comSaldo ? BigDecimal.ONE : BigDecimal.ZERO);
+                recipiente.setUnidadeMedida(lote.getEstoqueCentral().getProduto().getUnidadeMedida());
+                recipiente.setEstado(comSaldo ? EstadoRecipienteEstoque.FECHADO : EstadoRecipienteEstoque.ESGOTADO);
+                if (!comSaldo) {
+                    recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+                }
+                recipientes.add(recipiente);
+            }
+        } else {
+            // Materiais fracionáveis: capacidade comercial, não o saldo inteiro do lote.
+            BigDecimal capacidade = capacidadeEmbalagemDemo(
+                    lote.getEstoqueCentral().getProduto().getCodigoReferencia(), inicial);
+            BigDecimal inicialRestante = inicial;
+            BigDecimal saldoRestante = disponivel;
+            int sequencial = 0;
+
+            while (inicialRestante.signum() > 0) {
+                BigDecimal capacidadeRecipiente = inicialRestante.min(capacidade);
+                BigDecimal saldoRecipiente = saldoRestante.min(capacidadeRecipiente);
+                sequencial++;
+                RecipienteEstoque recipiente = new RecipienteEstoque();
+                recipiente.setLote(lote);
+                recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R"
+                        + String.format(Locale.ROOT, "%03d", sequencial), sequencial);
+                recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+                recipiente.setCapacidadeInicial(capacidadeRecipiente);
+                recipiente.setQuantidadeDisponivel(saldoRecipiente);
+                recipiente.setUnidadeMedida(lote.getEstoqueCentral().getProduto().getUnidadeMedida());
+
+                if (saldoRecipiente.signum() == 0) {
+                    recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
+                    recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+                } else if (saldoRecipiente.compareTo(capacidadeRecipiente) == 0) {
+                    recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+                } else {
+                    recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
+                    recipiente.setDataAbertura(lote.getDataEntrada().plusDays(1).atStartOfDay());
+                }
+                recipientes.add(recipiente);
+                inicialRestante = inicialRestante.subtract(capacidadeRecipiente);
+                saldoRestante = saldoRestante.subtract(saldoRecipiente);
+            }
+        }
+
+        recipienteEstoqueRepository.saveAll(recipientes);
     }
 
     private Pedido criarPedido(
@@ -1070,8 +1174,11 @@ public class DemoDataInitializer implements CommandLineRunner {
             ItemPedido entidade = ItemPedido.builder()
                     .pedido(pedido)
                     .produto(item.produto())
-                    .quantidadeSolicitada(item.solicitada())
-                    .quantidadeAprovada(item.aprovada())
+                    .quantidadeSolicitada(BigDecimal.valueOf(item.solicitada()))
+                    .quantidadeAprovada(item.aprovada() == null ? null : BigDecimal.valueOf(item.aprovada()))
+                    .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                    .quantidadeEmbalagensSolicitada(item.solicitada())
+                    .multiplicadorSolicitado(BigDecimal.ONE)
                     .build();
             pedido.getItens().add(entidade);
         }
@@ -1104,9 +1211,9 @@ public class DemoDataInitializer implements CommandLineRunner {
                         .lote(lote)
                         .tipoMovimentacao(tipo)
                         .origem(origem)
-                        .quantidadeMovimentada(quantidade)
-                        .quantidadeAnterior(anterior)
-                        .quantidadeAtual(atual)
+                        .quantidadeMovimentada(BigDecimal.valueOf(quantidade))
+                        .quantidadeAnterior(BigDecimal.valueOf(anterior))
+                        .quantidadeAtual(BigDecimal.valueOf(atual))
                         .dataMovimentacao(quando)
                         .observacao(observacao)
                         .estoqueCentral(lote.getEstoqueCentral())

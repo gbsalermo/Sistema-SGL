@@ -1,5 +1,6 @@
 package com.sgl.test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,12 +29,14 @@ import com.sgl.model.LocalArmazenamentoResiduo;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.VinculoEstagioAtividadeCultura;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrigemSincronizacaoVinculoEstagio;
@@ -42,6 +46,7 @@ import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
@@ -59,6 +64,7 @@ import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
@@ -70,6 +76,7 @@ import lombok.RequiredArgsConstructor;
 
 @Profile("dev")
 @Component
+@Order(0)
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -79,6 +86,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final LoteRepository loteRepository;
+    private final RecipienteEstoqueRepository recipienteEstoqueRepository;
     private final PedidoRepository pedidoRepository;
     private final ProjetoRepository projetoRepository;
     private final SciRepository sciRepository;
@@ -98,6 +106,7 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) throws Exception {
         if (unidadeRepository.count() > 0) {
+            validarMassaEstoqueEtapa7Existente();
             garantirCadastrosResiduos();
             garantirDadosEtapa5();
             garantirDadosEtapa6();
@@ -178,7 +187,7 @@ public class DataInitializer implements CommandLineRunner {
                 .nome("Midio de Cultivo BHI")
                 .descricao("Brain Heart Infusion - para cultivo de bactérias")
                 .codigoReferencia("MID-BHI-500")
-                .unidadeMedida(UnidadeMedida.FRASCO)
+                .unidadeMedida(UnidadeMedida.ML)
                 .localizacaoFisica("Prateleira C2 - Meios de cultivo")
                 .risco(NivelRisco.MEDIO)
                 .tipoRisco(TipoRisco.BIOLOGICO)
@@ -209,7 +218,7 @@ public class DataInitializer implements CommandLineRunner {
                 .nome("Pipetas Sterile 1000uL")
                 .descricao("Pipetas descartáveis estéreis")
                 .codigoReferencia("PIP-1000-E")
-                .unidadeMedida(UnidadeMedida.CAIXA)
+                .unidadeMedida(UnidadeMedida.UNIDADE)
                 .localizacaoFisica("Armário B1 - Material descartável")
                 .risco(NivelRisco.NENHUM)
                 .perecivel(false)
@@ -221,7 +230,7 @@ public class DataInitializer implements CommandLineRunner {
                 .nome("Extrato de DNA Plant Wizard")
                 .descricao("Kit de extração de DNA genômico de plantas")
                 .codigoReferencia("EXT-DNA-PL")
-                .unidadeMedida(UnidadeMedida.FRASCO)
+                .unidadeMedida(UnidadeMedida.REACAO)
                 .localizacaoFisica("Freezer -80°C - Sala de Biologia Molecular")
                 .risco(NivelRisco.NENHUM)
                 .perecivel(true)
@@ -231,21 +240,23 @@ public class DataInitializer implements CommandLineRunner {
                 .ativo(true)
                 .build());
 
+        // Massa DEV 7.6.1: estoques na unidade canônica, recipientes por embalagem.
+        // A descrição da apresentação não é usada para inferir quantidade.
         EstoqueCentral e1 = criarEstoque(u1, p1, 80, 20);
         EstoqueCentral e2 = criarEstoque(u2, p1, 100, 20);
         EstoqueCentral e3 = criarEstoque(u1, p2, 50, 10);
-        EstoqueCentral e4 = criarEstoque(u1, p3, 30, 5);
-        EstoqueCentral e5 = criarEstoque(u3, p4, 15, 5);
+        EstoqueCentral e4 = criarEstoque(u1, p3, 15000, 2500);
+        EstoqueCentral e5 = criarEstoque(u3, p4, 7500, 2500);
         EstoqueCentral e6 = criarEstoque(u2, p5, 200, 30);
-        EstoqueCentral e7 = criarEstoque(u3, p6, 10, 3);
+        EstoqueCentral e7 = criarEstoque(u3, p6, 500, 150);
 
-        criarLoteInicial(e1, "INI-ALC-IB", 80, null);
-        criarLoteInicial(e2, "INI-ALC-IF", 100, null);
-        criarLoteInicial(e3, "INI-MIC-IB", 50, null);
-        criarLoteInicial(e4, "INI-BHI-IB", 30, LocalDate.now().plusMonths(6));
-        criarLoteInicial(e5, "INI-FOR-IQ", 15, null);
-        criarLoteInicial(e6, "INI-PIP-IF", 200, null);
-        criarLoteInicial(e7, "INI-DNA-IQ", 10, LocalDate.now().plusMonths(3));
+        criarLoteInicial(e1, "INI-ALC-IB", 80, 1, null, true);
+        criarLoteInicial(e2, "INI-ALC-IF", 100, 1, null, true);
+        criarLoteInicial(e3, "INI-MIC-IB", 50, 1, null, true);
+        criarLoteInicial(e4, "INI-BHI-IB", 30, 500, LocalDate.now().plusMonths(6), true);
+        criarLoteInicial(e5, "INI-FOR-IQ", 15, 500, null, true);
+        criarLoteInicial(e6, "INI-PIP-IF", 2, 100, null, false);
+        criarLoteInicial(e7, "INI-DNA-IQ", 10, 50, LocalDate.now().plusMonths(3), true);
 
         Projeto proj1 = projetoRepository.save(Projeto.builder()
                 .laboratorio(lab3)
@@ -331,14 +342,20 @@ public class DataInitializer implements CommandLineRunner {
         ItemPedido item1 = ItemPedido.builder()
                 .pedido(pedido1)
                 .produto(p1)
-                .quantidadeSolicitada(5)
+                .quantidadeSolicitada(BigDecimal.valueOf(5))
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(5)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
         pedido1.getItens().add(item1);
 
         ItemPedido item2 = ItemPedido.builder()
                 .pedido(pedido1)
                 .produto(p5)
-                .quantidadeSolicitada(2)
+                .quantidadeSolicitada(BigDecimal.valueOf(2))
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(2)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
         pedido1.getItens().add(item2);
         pedidoRepository.save(pedido1);
@@ -356,7 +373,10 @@ public class DataInitializer implements CommandLineRunner {
         ItemPedido item3 = ItemPedido.builder()
                 .pedido(pedido2)
                 .produto(p4)
-                .quantidadeSolicitada(3)
+                .quantidadeSolicitada(BigDecimal.valueOf(3))
+                .tipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO)
+                .quantidadeEmbalagensSolicitada(3)
+                .multiplicadorSolicitado(BigDecimal.ONE)
                 .build();
         pedido2.getItens().add(item3);
         pedidoRepository.save(pedido2);
@@ -1389,8 +1409,8 @@ public class DataInitializer implements CommandLineRunner {
         return estoqueCentralRepository.save(EstoqueCentral.builder()
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(quantidade)
-                .quantidadeMinima(quantidadeMinima)
+                .quantidadeAtual(BigDecimal.valueOf(quantidade))
+                .quantidadeMinima(BigDecimal.valueOf(quantidadeMinima))
                 .ativo(true)
                 .build());
     }
@@ -1398,34 +1418,71 @@ public class DataInitializer implements CommandLineRunner {
     private void criarLoteInicial(
             EstoqueCentral estoque,
             String numeroLote,
-            int quantidade,
-            LocalDate dataValidade) {
+            int quantidadeEmbalagens,
+            int conteudoPorEmbalagem,
+            LocalDate dataValidade,
+            boolean fracionavel) {
 
         Produto produto = estoque.getProduto();
-        int maiorSequencial = loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId());
-        int sequencial = maiorSequencial + 1;
-        String sigla = produto.getCodigoReferencia()
-                .trim()
-                .toUpperCase(Locale.ROOT)
-                .replaceAll("[^A-Z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
+        int sequencial = loteRepository.buscarMaiorSequencialInternoPorProduto(produto.getId()) + 1;
+        String sigla = produto.getCodigoReferencia().trim().toUpperCase(Locale.ROOT)
+                .replaceAll("[^A-Z0-9]+", "-").replaceAll("^-+|-+$", "");
+
+        TipoEmbalagem tipoEmbalagem = switch (produto.getUnidadeMedida()) {
+            case UNIDADE -> TipoEmbalagem.CAIXA;
+            case REACAO -> TipoEmbalagem.KIT;
+            default -> TipoEmbalagem.FRASCO;
+        };
+        BigDecimal capacidade = BigDecimal.valueOf(conteudoPorEmbalagem);
+        BigDecimal total = capacidade.multiply(BigDecimal.valueOf(quantidadeEmbalagens));
 
         Lote lote = new Lote();
         lote.setEstoqueCentral(estoque);
-        lote.definirCodigoInterno(
-                "LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial),
-                sequencial
-        );
+        lote.definirCodigoInterno("LOT-" + sigla + "-" + String.format(Locale.ROOT, "%03d", sequencial), sequencial);
         lote.setNumeroLote(numeroLote);
-        lote.setApresentacao("Legado");
-        lote.setQuantidadeApresentacoes(quantidade);
-        lote.setConteudoPorApresentacao(1);
-        lote.setFracionavel(true);
-        lote.setQuantidadeInicial(quantidade);
-        lote.setQuantidadeDisponivel(quantidade);
+        lote.setTipoEmbalagem(tipoEmbalagem);
+        lote.setApresentacao(produto.getUnidadeArmazenamento() == null ? "Apresentação DEV Etapa 7" : produto.getUnidadeArmazenamento());
+        lote.setQuantidadeApresentacoes(quantidadeEmbalagens);
+        lote.setConteudoPorApresentacao(capacidade);
+        lote.setFracionavel(fracionavel);
+        lote.setQuantidadeInicial(total);
+        lote.setQuantidadeDisponivel(total);
         lote.setDataEntrada(LocalDate.now().minusDays(30));
         lote.setDataValidade(dataValidade);
         lote.setAtivo(true);
         loteRepository.save(lote);
+
+        for (int i = 1; i <= quantidadeEmbalagens; i++) {
+            RecipienteEstoque recipiente = new RecipienteEstoque();
+            recipiente.setLote(lote);
+            recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R" + String.format(Locale.ROOT, "%03d", i), i);
+            recipiente.setTipoEmbalagem(tipoEmbalagem);
+            recipiente.setCapacidadeInicial(capacidade);
+            recipiente.setQuantidadeDisponivel(capacidade);
+            recipiente.setUnidadeMedida(produto.getUnidadeMedida());
+            recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+            recipienteEstoqueRepository.save(recipiente);
+        }
     }
+
+    private void validarMassaEstoqueEtapa7Existente() {
+        List<Lote> lotes = loteRepository.findAll();
+
+        if (lotes.isEmpty()) {
+            return;
+        }
+
+        boolean existeLoteSemRecipiente = lotes.stream()
+                .anyMatch(lote -> recipienteEstoqueRepository
+                        .findByLoteIdOrderBySequencialAsc(lote.getId())
+                        .isEmpty());
+
+        if (existeLoteSemRecipiente) {
+            throw new IllegalStateException(
+                    "Massa DEV anterior à Etapa 7 detectada. "
+                            + "Recrie o banco DEV para popular lotes e recipientes no novo modelo físico."
+            );
+        }
+    }
+
 }

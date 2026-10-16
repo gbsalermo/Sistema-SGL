@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -111,12 +112,12 @@ class LoteControllerTest {
         dto.setTipoEmbalagem(TipoEmbalagem.KIT);
         dto.setApresentacao("kit com 50 unidades");
         dto.setQuantidadeApresentacoes(2);
-        dto.setConteudoPorApresentacao(50);
+        dto.setConteudoPorApresentacao(BigDecimal.valueOf(50));
         dto.setFracionavel(true);
         dto.setObservacao("Material recebido lacrado.");
         dto.setUnidadeBase(UnidadeMedida.L);
-        dto.setQuantidadeInicial(100);
-        dto.setQuantidadeDisponivel(80);
+        dto.setQuantidadeInicial(BigDecimal.valueOf(100));
+        dto.setQuantidadeDisponivel(BigDecimal.valueOf(80));
         dto.setDataEntrada(LocalDate.of(2026, 9, 1));
         dto.setDataValidade(LocalDate.of(2027, 8, 31));
         dto.setAtivo(true);

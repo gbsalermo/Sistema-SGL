@@ -1,6 +1,7 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -47,8 +48,8 @@ public class HistoricoLaboratorio implements Serializable {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
-    @Column(nullable = false)
-    private Integer quantidade;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidade;
 
     @Column(nullable = false)
     private LocalDate dataRecebimento;

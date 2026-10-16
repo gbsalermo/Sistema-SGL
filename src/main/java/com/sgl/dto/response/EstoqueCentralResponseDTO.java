@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.model.EstoqueCentral;
@@ -30,9 +31,26 @@ public class EstoqueCentralResponseDTO {
     private String produtoUnidadeArmazenamento;
     @Schema(description = "Unidade-base usada para consolidar saldo entre lotes.", example = "UNIDADE")
     private UnidadeMedida produtoUnidadeMedida;
-    private Integer quantidadeAtual;
-    private Integer quantidadeMinima;
+    private BigDecimal quantidadeAtual;
+    private BigDecimal quantidadeMinima;
+    private com.sgl.model.enums.TipoEmbalagem minimoTipoEmbalagem;
+    private BigDecimal minimoMultiplicador;
     private Boolean ativo;
+    @Schema(description = "Resumo dos recipientes físicos ativos por apresentação.")
+    private java.util.List<ApresentacaoFisicaDTO> apresentacoesFisicas = java.util.List.of();
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ApresentacaoFisicaDTO {
+        private String tipoEmbalagem;
+        private BigDecimal capacidade;
+        private String unidadeMedida;
+        private long fechados;
+        private long abertos;
+        private long esgotados;
+    }
 
     public EstoqueCentralResponseDTO(EstoqueCentral entity) {
         this.id = entity.getPublicId();
@@ -47,6 +65,8 @@ public class EstoqueCentralResponseDTO {
         this.produtoUnidadeMedida = entity.getProduto().getUnidadeMedida();
         this.quantidadeAtual = entity.getQuantidadeAtual();
         this.quantidadeMinima = entity.getQuantidadeMinima();
+        this.minimoTipoEmbalagem = entity.getMinimoTipoEmbalagem();
+        this.minimoMultiplicador = entity.getMinimoMultiplicador();
         this.ativo = entity.getAtivo();
     }
 }

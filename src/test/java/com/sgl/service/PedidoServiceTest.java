@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,6 +39,8 @@ import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.TipoPedido;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
@@ -141,8 +144,8 @@ class PedidoServiceTest {
                 .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(10)
-                .quantidadeMinima(2)
+                .quantidadeAtual(BigDecimal.valueOf(10))
+                .quantidadeMinima(BigDecimal.valueOf(2))
                 .ativo(true)
                 .build();
 
@@ -161,7 +164,7 @@ class PedidoServiceTest {
                 .publicId(ITEM_PUBLIC_ID)
                 .pedido(pedido)
                 .produto(produto)
-                .quantidadeSolicitada(5)
+                .quantidadeSolicitada(BigDecimal.valueOf(5))
                 // Sem isso, tipoEmbalagemSolicitada fica nulo (!= UNITARIO),
                 // e PedidoService.aprovar() tenta validar o multiplicador de
                 // embalagem do item — que também não foi definido aqui. Os
@@ -199,7 +202,7 @@ class PedidoServiceTest {
 
         assertEquals(StatusPedido.APROVADO, resultado.getStatus());
         assertEquals(PEDIDO_PUBLIC_ID, resultado.getId());
-        assertEquals(3, item.getQuantidadeAprovada());
+        assertEquals(BigDecimal.valueOf(3), item.getQuantidadeAprovada());
         assertEquals("Aprovação parcial", pedido.getObservacao());
 
         // PedidoService.aprovar() sempre chama a sobrecarga de 9 argumentos
@@ -211,7 +214,7 @@ class PedidoServiceTest {
         // o método antes de chegar aqui.
         verify(movimentacaoEstoqueService).registrarSaida(
                 6L,
-                3,
+                BigDecimal.valueOf(3),
                 aprovador,
                 OrigemMovimentacao.PEDIDO,
                 pedido,
@@ -221,6 +224,37 @@ class PedidoServiceTest {
                 null
         );
         verify(pedidoRepository).save(pedido);
+    }
+
+    @Test
+    void deveAprovarQuantidadeFisicaDecimalSemExigirMultiploDeEmbalagem() {
+        produto.setUnidadeMedida(UnidadeMedida.ML);
+        pedido.setTipo(TipoPedido.PRODUTOS);
+        item.setUnidadeMedidaSolicitada(UnidadeMedida.ML);
+        item.setTipoEmbalagemSolicitada(null);
+        item.setQuantidadeEmbalagensSolicitada(null);
+        item.setMultiplicadorSolicitado(null);
+        item.setQuantidadeSolicitada(new BigDecimal("0.700"));
+
+        AprovarPedidoRequestDTO dto = criarAprovacaoDTO(1);
+        dto.getItens().get(0).setQuantidadeAprovada(new BigDecimal("0.200"));
+
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(aprovador));
+        prepararBuscaPedidoComBloqueio();
+        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L))
+                .thenReturn(Optional.of(estoque));
+        when(pedidoRepository.save(any(Pedido.class)))
+                .thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        PedidoResponseDTO resultado = pedidoService.aprovar(PEDIDO_PUBLIC_ID, dto);
+
+        assertEquals(StatusPedido.APROVADO, resultado.getStatus());
+        assertEquals(0, new BigDecimal("0.200").compareTo(item.getQuantidadeAprovada()));
+        verify(movimentacaoEstoqueService).registrarSaida(
+                6L, new BigDecimal("0.200"), aprovador,
+                OrigemMovimentacao.PEDIDO, pedido, laboratorio, "Aprovação parcial",
+                null, null);
     }
 
     @Test
@@ -278,7 +312,7 @@ class PedidoServiceTest {
         // deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService acima.
         when(movimentacaoEstoqueService.registrarSaida(
                 6L,
-                3,
+                BigDecimal.valueOf(3),
                 aprovador,
                 OrigemMovimentacao.PEDIDO,
                 pedido,
@@ -454,7 +488,7 @@ class PedidoServiceTest {
 
     private AprovarPedidoRequestDTO criarAprovacaoDTO(Integer quantidadeAprovada) {
         AprovarPedidoRequestDTO.ItemAprovacaoDTO itemDTO =
-                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, quantidadeAprovada);
+                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, quantidadeAprovada == null ? null : BigDecimal.valueOf(quantidadeAprovada));
 
         AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
         dto.setUsuarioAprovadorId(APROVADOR_PUBLIC_ID);

@@ -1,6 +1,7 @@
 package com.sgl.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
@@ -53,11 +54,18 @@ public class EstoqueCentral implements Serializable {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
-    @Column(nullable = false)
-    private Integer quantidadeAtual = 0;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidadeAtual = BigDecimal.ZERO;
 
-    @Column(nullable = false)
-    private Integer quantidadeMinima = 0;
+    @Column(nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantidadeMinima = BigDecimal.ZERO;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "minimo_tipo_embalagem", length = 30)
+    private com.sgl.model.enums.TipoEmbalagem minimoTipoEmbalagem;
+
+    @Column(name = "minimo_multiplicador", precision = 19, scale = 6)
+    private BigDecimal minimoMultiplicador;
 
     @Column(nullable = false)
     private Boolean ativo = true;

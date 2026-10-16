@@ -1,5 +1,6 @@
 package com.sgl.repository;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -131,7 +132,7 @@ class HistoricoLaboratorioRepositoryTest {
                 .laboratorio(laboratorio)
                 .produto(produto)
                 .pedido(pedido)
-                .quantidade(5)
+                .quantidade(BigDecimal.valueOf(5))
                 .dataRecebimento(dataRecebimento)
                 .ativo(ativo)
                 .build();

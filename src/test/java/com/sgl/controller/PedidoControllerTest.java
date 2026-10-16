@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -34,6 +35,7 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.service.PedidoService;
 
 /**
@@ -105,10 +107,10 @@ class PedidoControllerTest {
     private PedidoRequestDTO montarPedidoRequestDTO() {
         ItemPedidoRequestDTO item = new ItemPedidoRequestDTO();
         item.setProdutoId(PRODUTO_PUBLIC_ID);
-        item.setQuantidadeSolicitada(50);
+        item.setQuantidadeSolicitada(BigDecimal.valueOf(50));
         item.setTipoEmbalagemSolicitada(TipoEmbalagem.KIT);
         item.setQuantidadeEmbalagensSolicitada(1);
-        item.setMultiplicadorSolicitado(50);
+        item.setMultiplicadorSolicitado(BigDecimal.valueOf(50));
 
         PedidoRequestDTO dto = new PedidoRequestDTO();
         dto.setUsuarioId(USUARIO_PUBLIC_ID);
@@ -121,7 +123,7 @@ class PedidoControllerTest {
 
     private AprovarPedidoRequestDTO montarAprovarRequestDTO() {
         AprovarPedidoRequestDTO.ItemAprovacaoDTO item =
-                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, 50);
+                new AprovarPedidoRequestDTO.ItemAprovacaoDTO(ITEM_PUBLIC_ID, BigDecimal.valueOf(50));
 
         AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
         dto.setUsuarioAprovadorId(USUARIO_PUBLIC_ID);
@@ -141,6 +143,52 @@ class PedidoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(PEDIDO_PUBLIC_ID.toString()))
                 .andExpect(jsonPath("$.status").value("PENDENTE"));
+    }
+
+    @Test
+    void deveRejeitarPedidoComumSemFormaDeRetirada() throws Exception {
+        ItemPedidoRequestDTO item = new ItemPedidoRequestDTO();
+        item.setProdutoId(PRODUTO_PUBLIC_ID);
+        item.setQuantidadeSolicitada(BigDecimal.ONE);
+        // Apenas Solucoes podem omitir os campos de embalagem.
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(USUARIO_PUBLIC_ID);
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setItens(List.of(item));
+        mockMvc.perform(post(BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.fieldErrors").isArray());
+    }
+
+    @Test
+    void deveAceitarPedidoComQuantidadeFisicaDecimalEUnidade() throws Exception {
+        PedidoRequestDTO dto = montarPedidoRequestDTO();
+        ItemPedidoRequestDTO item = dto.getItens().get(0);
+        item.setQuantidadeSolicitada(new BigDecimal("0.200"));
+        item.setUnidadeMedidaSolicitada(UnidadeMedida.L);
+        item.setTipoEmbalagemSolicitada(null);
+        item.setQuantidadeEmbalagensSolicitada(null);
+        item.setMultiplicadorSolicitado(null);
+
+        when(pedidoService.criar(any(PedidoRequestDTO.class)))
+                .thenReturn(montarPedidoResponseDTO(StatusPedido.PENDENTE));
+        mockMvc.perform(post(BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    void deveRejeitarMisturaDeQuantidadeFisicaEApresentacao() throws Exception {
+        PedidoRequestDTO dto = montarPedidoRequestDTO();
+        dto.getItens().get(0).setUnidadeMedidaSolicitada(UnidadeMedida.ML);
+
+        mockMvc.perform(post(BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test

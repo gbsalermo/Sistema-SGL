@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -31,7 +32,7 @@ public class HistoricoLaboratorioResponseDTO {
     @Schema(description = "Unidade de armazenamento do produto.", example = "kit com 50 reações")
     private String produtoUnidadeArmazenamento;
     @Schema(description = "Quantidade efetivamente recebida pelo laboratório.", example = "8")
-    private Integer quantidade;
+    private BigDecimal quantidade;
     @Schema(description = "Data em que o material foi recebido.", example = "2026-08-20")
     private LocalDate dataRecebimento;
     @Schema(description = "Identificador público UUID do pedido de origem, quando houver.", example = "550e8400-e29b-41d4-a716-446655440010")

@@ -4,7 +4,8 @@ public enum TipoMovimentacao {
 
     ENTRADA,
     SAIDA,
-    AJUSTE,
+    AJUSTE_ENTRADA,
+    AJUSTE_SAIDA,
     DEVOLUCAO,
     DESCARTE_VENCIMENTO
 }

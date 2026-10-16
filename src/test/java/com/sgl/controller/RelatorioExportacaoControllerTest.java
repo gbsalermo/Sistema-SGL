@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -145,7 +146,14 @@ class RelatorioExportacaoControllerTest {
     @Test
     void deveExportarMovimentacoesERetornarBytes() throws Exception {
         RelatorioMovimentacoesResponseDTO relatorio = new RelatorioMovimentacoesResponseDTO(
-                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, List.<MovimentacaoEstoqueResponseDTO>of());
+                LocalDateTime.now(),
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                List.<MovimentacaoEstoqueResponseDTO>of());
         ArquivoRelatorioDTO arquivo = montarArquivo("sgl-movimentacoes-20260919.xlsx");
 
         when(movimentacoesService.gerar(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(relatorio);
@@ -161,7 +169,16 @@ class RelatorioExportacaoControllerTest {
     @Test
     void deveExportarResumoOperacionalERetornarBytes() throws Exception {
         RelatorioResumoOperacionalResponseDTO relatorio = new RelatorioResumoOperacionalResponseDTO(
-                LocalDateTime.now(), 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of());
+                LocalDateTime.now(),
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                0,
+                0,
+                List.of(),
+                List.of(),
+                List.of());
         ArquivoRelatorioDTO arquivo = montarArquivo("sgl-resumo-operacional-20260919.pdf");
 
         when(resumoService.gerar(any(), any(), any(), any())).thenReturn(relatorio);
@@ -181,7 +198,7 @@ class RelatorioExportacaoControllerTest {
                 .totalEstoques(0)
                 .estoquesAtivos(0)
                 .estoquesAbaixoMinimo(0)
-                .quantidadeTotalEstoque(0L)
+                .quantidadeTotalEstoque(BigDecimal.valueOf(0))
                 .totalLotes(0)
                 .lotesAtivos(0)
                 .lotesVencidos(0)
@@ -207,12 +224,12 @@ class RelatorioExportacaoControllerTest {
         RelatorioFiscalizacaoResponseDTO relatorio = RelatorioFiscalizacaoResponseDTO.builder()
                 .geradoEm(LocalDateTime.now())
                 .totalProdutosFiscalizados(0)
-                .saldoAtualTotal(0)
+                .saldoAtualTotal(BigDecimal.valueOf(0))
                 .lotesAtivos(0)
                 .lotesVencidos(0)
                 .lotesProximosVencimento(0)
-                .quantidadeEntradas(0)
-                .quantidadeSaidas(0)
+                .quantidadeEntradas(BigDecimal.valueOf(0))
+                .quantidadeSaidas(BigDecimal.valueOf(0))
                 .produtos(List.of())
                 .movimentacoes(List.of())
                 .build();

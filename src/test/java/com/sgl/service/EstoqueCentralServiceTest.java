@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,6 +29,7 @@ import com.sgl.model.Unidade;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.tenant.TenantContext;
 
@@ -64,6 +66,9 @@ class EstoqueCentralServiceTest {
     private ProdutoRepository produtoRepository;
 
     @Mock
+    private RecipienteEstoqueRepository recipienteEstoqueRepository;
+
+    @Mock
     private UnidadeRepository unidadeRepository;
 
     @InjectMocks
@@ -93,8 +98,8 @@ class EstoqueCentralServiceTest {
                 .publicId(ESTOQUE_PUBLIC_ID)
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(5)
-                .quantidadeMinima(2)
+                .quantidadeAtual(BigDecimal.valueOf(5))
+                .quantidadeMinima(BigDecimal.valueOf(2))
                 .ativo(true)
                 .build();
     }
@@ -109,7 +114,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
         dto.setAtivo(true);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -131,7 +136,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
@@ -152,7 +157,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
@@ -216,7 +221,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(8);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(8));
         dto.setAtivo(false);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -226,7 +231,7 @@ class EstoqueCentralServiceTest {
 
         EstoqueCentralResponseDTO resultado = estoqueCentralService.atualizar(ESTOQUE_PUBLIC_ID, dto);
 
-        assertEquals(8, resultado.getQuantidadeMinima());
+        assertEquals(BigDecimal.valueOf(8), resultado.getQuantidadeMinima());
         assertFalse(resultado.getAtivo());
     }
 
@@ -237,8 +242,8 @@ class EstoqueCentralServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(1)
-                .quantidadeMinima(5)
+                .quantidadeAtual(BigDecimal.valueOf(1))
+                .quantidadeMinima(BigDecimal.valueOf(5))
                 .ativo(true)
                 .build();
 
@@ -247,8 +252,8 @@ class EstoqueCentralServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(10)
-                .quantidadeMinima(5)
+                .quantidadeAtual(BigDecimal.valueOf(10))
+                .quantidadeMinima(BigDecimal.valueOf(5))
                 .ativo(true)
                 .build();
 
@@ -259,7 +264,7 @@ class EstoqueCentralServiceTest {
         List<EstoqueCentralResponseDTO> resultado = estoqueCentralService.listarEstoqueBaixoPorUnidade(UNIDADE_PUBLIC_ID);
 
         assertEquals(1, resultado.size());
-        assertEquals(1, resultado.get(0).getQuantidadeAtual());
+        assertEquals(BigDecimal.valueOf(1), resultado.get(0).getQuantidadeAtual());
     }
 
     @Test
@@ -307,7 +312,7 @@ class EstoqueCentralServiceTest {
         EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
         dto.setUnidadeId(OUTRA_UNIDADE_PUBLIC_ID);
         dto.setProdutoId(PRODUTO_PUBLIC_ID);
-        dto.setQuantidadeMinima(3);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(3));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
 

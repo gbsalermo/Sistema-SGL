@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
@@ -78,8 +79,8 @@ class RelatorioMovimentacoesServiceTest {
                 .publicId(UUID.randomUUID())
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(4)
-                .quantidadeMinima(1)
+                .quantidadeAtual(BigDecimal.valueOf(4))
+                .quantidadeMinima(BigDecimal.valueOf(1))
                 .ativo(true)
                 .build();
 
@@ -92,9 +93,9 @@ class RelatorioMovimentacoesServiceTest {
                 .estoqueCentral(estoqueCentral)
                 .tipoMovimentacao(TipoMovimentacao.ENTRADA)
                 .origem(OrigemMovimentacao.COMPRA)
-                .quantidadeMovimentada(10)
-                .quantidadeAnterior(0)
-                .quantidadeAtual(10)
+                .quantidadeMovimentada(BigDecimal.valueOf(10))
+                .quantidadeAnterior(BigDecimal.valueOf(0))
+                .quantidadeAtual(BigDecimal.valueOf(10))
                 .dataMovimentacao(LocalDateTime.of(2026, 1, 10, 8, 0))
                 .build();
 
@@ -107,9 +108,9 @@ class RelatorioMovimentacoesServiceTest {
                 .estoqueCentral(estoqueCentral)
                 .tipoMovimentacao(TipoMovimentacao.SAIDA)
                 .origem(OrigemMovimentacao.PEDIDO)
-                .quantidadeMovimentada(4)
-                .quantidadeAnterior(10)
-                .quantidadeAtual(6)
+                .quantidadeMovimentada(BigDecimal.valueOf(4))
+                .quantidadeAnterior(BigDecimal.valueOf(10))
+                .quantidadeAtual(BigDecimal.valueOf(6))
                 .dataMovimentacao(LocalDateTime.of(2026, 2, 5, 10, 0))
                 .build();
 
@@ -122,9 +123,9 @@ class RelatorioMovimentacoesServiceTest {
                 .estoqueCentral(estoqueCentral)
                 .tipoMovimentacao(TipoMovimentacao.DESCARTE_VENCIMENTO)
                 .origem(OrigemMovimentacao.DESCARTE)
-                .quantidadeMovimentada(2)
-                .quantidadeAnterior(6)
-                .quantidadeAtual(4)
+                .quantidadeMovimentada(BigDecimal.valueOf(2))
+                .quantidadeAnterior(BigDecimal.valueOf(6))
+                .quantidadeAtual(BigDecimal.valueOf(4))
                 .dataMovimentacao(LocalDateTime.of(2026, 3, 1, 9, 0))
                 .build();
     }
@@ -137,14 +138,62 @@ class RelatorioMovimentacoesServiceTest {
                 null, null, null, null, null, null, null, null);
 
         assertEquals(3, resultado.getTotalMovimentacoes());
-        assertEquals(10, resultado.getQuantidadeEntradas());
-        assertEquals(4, resultado.getQuantidadeSaidas());
-        assertEquals(0, resultado.getQuantidadeAjustes());
-        assertEquals(0, resultado.getQuantidadeDevolucoes());
-        assertEquals(2, resultado.getQuantidadeDescartes());
+        assertEquals(BigDecimal.valueOf(10), resultado.getQuantidadeEntradas());
+        assertEquals(BigDecimal.valueOf(4), resultado.getQuantidadeSaidas());
+        assertEquals(BigDecimal.valueOf(0), resultado.getQuantidadeAjustes());
+        assertEquals(BigDecimal.valueOf(0), resultado.getQuantidadeDevolucoes());
+        assertEquals(BigDecimal.valueOf(2), resultado.getQuantidadeDescartes());
         // Ordenado da mais recente para a mais antiga.
         assertEquals(descarte.getPublicId(), resultado.getItens().get(0).getId());
         assertEquals(entrada.getPublicId(), resultado.getItens().get(2).getId());
+    }
+
+    @Test
+    void deveSomarAjustesDeEntradaESaidaNoTotalConsolidado() {
+        MovimentacaoEstoque ajusteEntrada = MovimentacaoEstoque.builder()
+                .id(103L)
+                .publicId(UUID.randomUUID())
+                .produto(entrada.getProduto())
+                .laboratorio(entrada.getLaboratorio())
+                .usuario(entrada.getUsuario())
+                .estoqueCentral(entrada.getEstoqueCentral())
+                .tipoMovimentacao(TipoMovimentacao.AJUSTE_ENTRADA)
+                .origem(OrigemMovimentacao.AJUSTE)
+                .quantidadeMovimentada(BigDecimal.valueOf(3))
+                .quantidadeAnterior(BigDecimal.valueOf(4))
+                .quantidadeAtual(BigDecimal.valueOf(7))
+                .dataMovimentacao(LocalDateTime.of(2026, 3, 2, 9, 0))
+                .build();
+
+        MovimentacaoEstoque ajusteSaida = MovimentacaoEstoque.builder()
+                .id(104L)
+                .publicId(UUID.randomUUID())
+                .produto(entrada.getProduto())
+                .laboratorio(entrada.getLaboratorio())
+                .usuario(entrada.getUsuario())
+                .estoqueCentral(entrada.getEstoqueCentral())
+                .tipoMovimentacao(TipoMovimentacao.AJUSTE_SAIDA)
+                .origem(OrigemMovimentacao.AJUSTE)
+                .quantidadeMovimentada(BigDecimal.valueOf(2))
+                .quantidadeAnterior(BigDecimal.valueOf(7))
+                .quantidadeAtual(BigDecimal.valueOf(5))
+                .dataMovimentacao(LocalDateTime.of(2026, 3, 3, 9, 0))
+                .build();
+
+        when(movimentacaoRepository.findAll())
+                .thenReturn(List.of(ajusteEntrada, ajusteSaida));
+
+        RelatorioMovimentacoesResponseDTO resultado =
+                relatorioMovimentacoesService.gerar(
+                        null, null, null, null, null, null, null, null
+                );
+
+        assertEquals(2, resultado.getTotalMovimentacoes());
+        assertEquals(
+                0,
+                BigDecimal.valueOf(5)
+                        .compareTo(resultado.getQuantidadeAjustes())
+        );
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.sgl.repository;
 
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,8 +87,8 @@ class ProdutoRepositoryTest {
         EstoqueCentral estoque = EstoqueCentral.builder()
                 .unidade(unidade)
                 .produto(produto)
-                .quantidadeAtual(10)
-                .quantidadeMinima(1)
+                .quantidadeAtual(BigDecimal.valueOf(10))
+                .quantidadeMinima(BigDecimal.valueOf(1))
                 .ativo(true)
                 .build();
         return entityManager.persistAndFlush(estoque);

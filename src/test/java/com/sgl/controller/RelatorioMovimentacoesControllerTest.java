@@ -1,5 +1,6 @@
 package com.sgl.controller;
 
+import java.math.BigDecimal;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
@@ -60,11 +61,11 @@ class RelatorioMovimentacoesControllerTest {
         return new RelatorioMovimentacoesResponseDTO(
                 LocalDateTime.of(2026, 9, 19, 10, 0),
                 10,
-                6,
-                3,
-                1,
-                0,
-                0,
+                BigDecimal.valueOf(6),
+                BigDecimal.valueOf(3),
+                BigDecimal.ONE,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 List.of());
     }
 

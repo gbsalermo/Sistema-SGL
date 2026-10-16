@@ -1,5 +1,6 @@
 package com.sgl.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -35,9 +36,9 @@ public class MovimentacaoEstoqueResponseDTO {
     private String numeroLote;
     private TipoMovimentacao tipoMovimentacao;
     private OrigemMovimentacao origem;
-    private Integer quantidadeMovimentada;
-    private Integer quantidadeAnterior;
-    private Integer quantidadeAtual;
+    private BigDecimal quantidadeMovimentada;
+    private BigDecimal quantidadeAnterior;
+    private BigDecimal quantidadeAtual;
     private LocalDateTime dataMovimentacao;
     private String observacao;
 
