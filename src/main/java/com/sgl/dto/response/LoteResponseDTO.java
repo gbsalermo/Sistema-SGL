@@ -39,7 +39,7 @@ public class LoteResponseDTO {
     private String apresentacao;
     @Schema(description = "Quantidade de embalagens/unidades físicas recebidas.", example = "2")
     private Integer quantidadeApresentacoes;
-    @Schema(description = "Multiplicador de unidades individuais por embalagem.", example = "50")
+    @Schema(description = "Conteúdo por apresentação na unidade canônica do produto.", example = "50")
     private BigDecimal conteudoPorApresentacao;
     @Schema(description = "Indica se a embalagem permite saída parcial.", example = "true")
     private Boolean fracionavel;
@@ -48,9 +48,9 @@ public class LoteResponseDTO {
     @Schema(description = "Unidade interna de controle do produto.", example = "UNIDADE")
     private UnidadeMedida unidadeBase;
 
-    @Schema(description = "Quantidade inicial convertida para unidades individuais do produto.", example = "100")
+    @Schema(description = "Quantidade inicial na unidade canônica do produto.", example = "100")
     private BigDecimal quantidadeInicial;
-    @Schema(description = "Quantidade disponível convertida para unidades individuais do produto.", example = "80")
+    @Schema(description = "Quantidade disponível na unidade canônica do produto.", example = "80")
     private BigDecimal quantidadeDisponivel;
     private LocalDate dataEntrada;
     private LocalDate dataValidade;
