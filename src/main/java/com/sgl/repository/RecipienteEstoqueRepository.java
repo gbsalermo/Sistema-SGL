@@ -37,6 +37,9 @@ public interface RecipienteEstoqueRepository extends JpaRepository<RecipienteEst
 
 	List<RecipienteEstoque> findByLoteEstoqueCentralIdOrderByLoteIdAscSequencialAsc(Long estoqueId);
 
+	@Query("SELECT r FROM RecipienteEstoque r JOIN FETCH r.lote l WHERE l.estoqueCentral.unidade.publicId = :unidadeId ORDER BY l.id, r.sequencial")
+	List<RecipienteEstoque> buscarPorUnidadeParaResumo(@Param("unidadeId") UUID unidadeId);
+
 	boolean existsByCodigoInterno(String codigoInterno);
 
 	boolean existsByLoteIdAndSequencial(Long loteId, Integer sequencial);
