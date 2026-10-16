@@ -70,7 +70,7 @@ public class EstoqueCentralService {
 		List<EstoqueCentral> estoques = estoqueCentralRepository
 				.findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
-		return estoques.stream().map(this::comResumoFisico).toList();
+		return comResumosFisicos(estoques, TenantContext.unidadeAtual().orElseThrow());
 	}
 
 	@Transactional(readOnly = true)
@@ -94,8 +94,7 @@ public class EstoqueCentralService {
 	@Transactional(readOnly = true)
 	public List<EstoqueCentralResponseDTO> listarPorUnidade(UUID unidadeId) {
 		validarTenantUnidade(unidadeId);
-		return estoqueCentralRepository.findByUnidadePublicId(unidadeId).stream()
-				.map(this::comResumoFisico).toList();
+		return comResumosFisicos(estoqueCentralRepository.findByUnidadePublicId(unidadeId), unidadeId);
 	}
 
 	@Transactional
@@ -115,7 +114,7 @@ public class EstoqueCentralService {
 		validarTenantUnidade(unidadeId);
 		return estoqueCentralRepository.findByUnidadePublicIdAndAtivoTrue(unidadeId).stream()
 				.filter(estoque -> estoque.getQuantidadeAtual().compareTo(estoque.getQuantidadeMinima()) <= 0)
-				.map(EstoqueCentralResponseDTO::new).toList();
+				.map(this::comResumoFisico).toList();
 	}
 
 	@Transactional
@@ -129,18 +128,32 @@ public class EstoqueCentralService {
 		estoque.setAtivo(false);
 	}
 
+
+	private List<EstoqueCentralResponseDTO> comResumosFisicos(List<EstoqueCentral> estoques, UUID unidadeId) {
+		Map<Long, List<RecipienteEstoque>> porEstoque = new LinkedHashMap<>();
+		for (RecipienteEstoque recipiente : recipienteEstoqueRepository.buscarPorUnidadeParaResumo(unidadeId)) {
+			porEstoque.computeIfAbsent(recipiente.getLote().getEstoqueCentral().getId(), ignorado -> new ArrayList<>())
+					.add(recipiente);
+		}
+		return estoques.stream().map(estoque ->
+				montarResumoFisico(estoque, porEstoque.getOrDefault(estoque.getId(), List.of()))).toList();
+	}
+
 	private EstoqueCentralResponseDTO comResumoFisico(EstoqueCentral estoque) {
+		return montarResumoFisico(estoque,
+				recipienteEstoqueRepository.findByLoteEstoqueCentralIdOrderByLoteIdAscSequencialAsc(estoque.getId()));
+	}
+
+	private EstoqueCentralResponseDTO montarResumoFisico(EstoqueCentral estoque, List<RecipienteEstoque> recipientes) {
 		EstoqueCentralResponseDTO dto = new EstoqueCentralResponseDTO(estoque);
 		Map<String, EstoqueCentralResponseDTO.ApresentacaoFisicaDTO> porApresentacao = new LinkedHashMap<>();
-		for (RecipienteEstoque recipiente : recipienteEstoqueRepository
-				.findByLoteEstoqueCentralIdOrderByLoteIdAscSequencialAsc(estoque.getId())) {
+		for (RecipienteEstoque recipiente : recipientes) {
 			if (!Boolean.TRUE.equals(recipiente.getLote().getAtivo())) continue;
 			String chave = recipiente.getTipoEmbalagem().name() + ":"
 					+ recipiente.getCapacidadeInicial().stripTrailingZeros().toPlainString();
 			var resumo = porApresentacao.computeIfAbsent(chave, ignorado ->
 					new EstoqueCentralResponseDTO.ApresentacaoFisicaDTO(
-						recipiente.getTipoEmbalagem().name(),
-						recipiente.getCapacidadeInicial(),
+						recipiente.getTipoEmbalagem().name(), recipiente.getCapacidadeInicial(),
 						recipiente.getUnidadeMedida().name(), 0, 0, 0));
 			switch (recipiente.getEstado()) {
 				case FECHADO -> resumo.setFechados(resumo.getFechados() + 1);
