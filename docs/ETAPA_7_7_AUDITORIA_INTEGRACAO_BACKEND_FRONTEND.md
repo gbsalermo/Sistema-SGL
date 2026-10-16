@@ -81,3 +81,11 @@ Validação obrigatória antes do aceite: `mvn test`, boot PostgreSQL DEV com V3
 Códigos e documentação desta rodada **publicados na branch**, mas `mvn test`, inicialização DEV/DEMO e `npm run build` **ainda aguardam nova execução pelo responsável após os commits**. O aceite anterior foi antes destas edições. Não declarar etapa 7.7 encerrada nem efetuar merge até validação.
 
 Testes manuais curtos recomendados: entrada fracionável de kit 50 reações e pedido de 1 reação; entrada não fracionável de caixa e bloqueio de unidade interna; entrada de frasco mL com conteúdo decimal, pedido por medida, aprovação parcial; mínimo por embalagem exibido persistente; interface Light/Dark. Teste operacional exaustivo permanece reservado à Etapa 8.
+
+## Aceite final e preparação de merge — 16/10/2026
+
+O responsável confirmou testes e funcionamento satisfatórios após o último ciclo da Etapa 7; os ajustes da 7.7 (fracionamento por lote e unidade mínima de consumo, massa DEMO, mínimo configurável por apresentação, DTOs, tabela de Estoque e aprovação por embalagem) estão **aceitos funcionalmente**. Testes Maven/JUnit, inicialização da API e build frontend foram relatados verdes, além da validação manual dos cenários exercitados.
+
+**Etapa 7 encerrada funcionalmente.** Manter o teste exaustivo de cadastro → entrada → Pedido → aprovação → entrega → rastreabilidade na Etapa 8. A aprovação funcional não comprova homologação integral para produção. **Nenhum merge foi efetuado pelo assistente**: o responsável fará a integração de ambos os repositórios e verificará o alinhamento com o GitLab/main canônico.
+
+Referências atuais: `CONTINUIDADE.md` em ambos os repositórios, `docs/PLANO_PRE_PRODUCAO.md` no backend e o documento de continuidade da Etapa 7. Trechos anteriores marcados “pendente” refletem o estado na data em que foram redigidos e não são o checkpoint de encerramento.
