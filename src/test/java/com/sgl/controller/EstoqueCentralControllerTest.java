@@ -78,7 +78,12 @@ class EstoqueCentralControllerTest {
     private EstoqueCentralService estoqueCentralService;
 
     private EstoqueCentralRequestDTO montarRequestDTO() {
-        return new EstoqueCentralRequestDTO(UNIDADE_PUBLIC_ID, PRODUTO_PUBLIC_ID, BigDecimal.valueOf(5), true);
+        EstoqueCentralRequestDTO dto = new EstoqueCentralRequestDTO();
+        dto.setUnidadeId(UNIDADE_PUBLIC_ID);
+        dto.setProdutoId(PRODUTO_PUBLIC_ID);
+        dto.setQuantidadeMinima(BigDecimal.valueOf(5));
+        dto.setAtivo(true);
+        return dto;
     }
 
     // Diferente de ProdutoResponseDTO, EstoqueCentralResponseDTO tem
