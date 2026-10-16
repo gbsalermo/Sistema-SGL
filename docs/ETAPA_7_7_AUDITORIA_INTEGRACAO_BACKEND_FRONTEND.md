@@ -54,3 +54,11 @@ O frontend `estoqueService.ts` orientava "main" e migrations V7/V8 ao encontrar 
 - **P2 DEMO permanece sob ressalva:** itens não fracionáveis como caixas de ponteiras/luvas têm `UNIDADE` canônica e valores originais que não estabelecem uma correspondência inequívoca entre o conteúdo comercial descrito e cada unidade de saldo. Reinterpretar essas quantidades automaticamente criaria saldos históricos fictícios. Exige revisão explícita dos cenários da massa descartável e seus pedidos de demonstração antes do aceite total, sem alterar o motor do estoque.
 
 **Limite de validação:** mudanças publicadas na branch; não foi executado build/teste backend ou frontend por esta sessão. Não encerrar a 7.7 sem `mvn test`, boot e `npm run build`. A validação operacional exaustiva permanece na Etapa 8.
+
+## Configuração de estoque mínimo por apresentação (16/10/2026)
+
+Implementação publicada, **ainda não testada em execução**. A coluna `estoque_central.quantidade_minima` continua sendo o limiar canônico do produto, preservando o comparador de alertas. A migration V39 acrescenta os campos opcionais `minimo_tipo_embalagem` e `minimo_multiplicador` para recuperar a preferência de exibição/edição do gestor. A alteração do DTO de request/response e do `EstoqueCentralService` mantém compatibilidade com registros anteriores (campos nulos = mínimo na unidade canônica).
+
+Na tela de detalhe, o gestor escolhe entre medida do produto e apresentações dos lotes cadastrados; a quantidade de embalagens é inteira. A interface converte para a unidade canônica antes de salvar. A tabela principal exibe a apresentação selecionada, com conteúdo por embalagem como auxílio. **O alerta mede saldo total equivalente**; não se trata de um alerta sobre frascos lacrados, que teria outra semântica. A nova opção depende da atualização de backend e frontend na mesma branch.
+
+Validação obrigatória antes do aceite: `mvn test`, boot PostgreSQL DEV com V39, `npm run build`, gravar e recarregar (exemplos: 2 frascos de 500 mL = 1000 mL; 10 reações), conferir tabela e alerta, inclusive valores legados.
