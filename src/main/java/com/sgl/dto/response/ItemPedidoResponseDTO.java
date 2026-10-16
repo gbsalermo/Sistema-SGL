@@ -28,6 +28,7 @@ public class ItemPedidoResponseDTO {
     private UUID produtoId;
     private String produtoNome;
     private String produtoUnidadeArmazenamento;
+    private UnidadeMedida produtoUnidadeMedida;
     private NivelRisco produtoRisco;
     private TipoRisco produtoTipoRisco;
     private String produtoDescricaoRisco;
@@ -47,6 +48,7 @@ public class ItemPedidoResponseDTO {
         this.produtoId = entity.getProduto().getPublicId();
         this.produtoNome = entity.getProduto().getNome();
         this.produtoUnidadeArmazenamento = entity.getProduto().getUnidadeArmazenamento();
+        this.produtoUnidadeMedida = entity.getProduto().getUnidadeMedida();
         this.produtoRisco = entity.getProduto().getRisco();
         this.produtoTipoRisco = entity.getProduto().getTipoRisco();
         this.produtoDescricaoRisco = entity.getProduto().getDescricaoRisco();
