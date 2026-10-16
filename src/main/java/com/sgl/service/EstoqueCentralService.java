@@ -16,6 +16,11 @@ import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
+import com.sgl.model.RecipienteEstoque;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.tenant.TenantContext;
 
@@ -27,6 +32,7 @@ public class EstoqueCentralService {
 
 	private final EstoqueCentralRepository estoqueCentralRepository;
 	private final ProdutoRepository produtoRepository;
+	private final RecipienteEstoqueRepository recipienteEstoqueRepository;
 	private final UnidadeRepository unidadeRepository;
 
 	@Transactional
@@ -88,8 +94,8 @@ public class EstoqueCentralService {
 	@Transactional(readOnly = true)
 	public List<EstoqueCentralResponseDTO> listarPorUnidade(UUID unidadeId) {
 		validarTenantUnidade(unidadeId);
-		return estoqueCentralRepository.findByUnidadePublicId(unidadeId).stream().map(EstoqueCentralResponseDTO::new)
-				.toList();
+		return estoqueCentralRepository.findByUnidadePublicId(unidadeId).stream()
+				.map(this::comResumoFisico).toList();
 	}
 
 	@Transactional
@@ -121,6 +127,29 @@ public class EstoqueCentralService {
 		}
 
 		estoque.setAtivo(false);
+	}
+
+	private EstoqueCentralResponseDTO comResumoFisico(EstoqueCentral estoque) {
+		EstoqueCentralResponseDTO dto = new EstoqueCentralResponseDTO(estoque);
+		Map<String, EstoqueCentralResponseDTO.ApresentacaoFisicaDTO> porApresentacao = new LinkedHashMap<>();
+		for (RecipienteEstoque recipiente : recipienteEstoqueRepository
+				.findByLoteEstoqueCentralIdOrderByLoteIdAscSequencialAsc(estoque.getId())) {
+			if (!Boolean.TRUE.equals(recipiente.getLote().getAtivo())) continue;
+			String chave = recipiente.getTipoEmbalagem().name() + ":"
+					+ recipiente.getCapacidadeInicial().stripTrailingZeros().toPlainString();
+			var resumo = porApresentacao.computeIfAbsent(chave, ignorado ->
+					new EstoqueCentralResponseDTO.ApresentacaoFisicaDTO(
+						recipiente.getTipoEmbalagem().name(),
+						recipiente.getCapacidadeInicial(),
+						recipiente.getUnidadeMedida().name(), 0, 0, 0));
+			switch (recipiente.getEstado()) {
+				case FECHADO -> resumo.setFechados(resumo.getFechados() + 1);
+				case ABERTO -> resumo.setAbertos(resumo.getAbertos() + 1);
+				case ESGOTADO -> resumo.setEsgotados(resumo.getEsgotados() + 1);
+			}
+		}
+		dto.setApresentacoesFisicas(new ArrayList<>(porApresentacao.values()));
+		return dto;
 	}
 
 	private EstoqueCentral buscarEstoqueNoTenant(UUID id) {
