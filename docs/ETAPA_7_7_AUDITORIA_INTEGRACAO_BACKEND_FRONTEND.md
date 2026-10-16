@@ -62,3 +62,22 @@ Implementação publicada, **ainda não testada em execução**. A coluna `estoq
 Na tela de detalhe, o gestor escolhe entre medida do produto e apresentações dos lotes cadastrados; a quantidade de embalagens é inteira. A interface converte para a unidade canônica antes de salvar. A tabela principal exibe a apresentação selecionada, com conteúdo por embalagem como auxílio. **O alerta mede saldo total equivalente**; não se trata de um alerta sobre frascos lacrados, que teria outra semântica. A nova opção depende da atualização de backend e frontend na mesma branch.
 
 Validação obrigatória antes do aceite: `mvn test`, boot PostgreSQL DEV com V39, `npm run build`, gravar e recarregar (exemplos: 2 frascos de 500 mL = 1000 mL; 10 reações), conferir tabela e alerta, inclusive valores legados.
+
+## Checkpoint de fechamento — cadastro/entrada, fracionamento e DEMO (16/10/2026)
+
+### Semântica operacional consolidada
+- Cadastro do **Produto** define unidade canônica de estoque (mL, L, g, reação, unidade etc.) e apresentação descritiva de referência. Essa apresentação não determina, sozinha, a divisibilidade.
+- **Entrada do lote** define apresentação efetiva, quantidade de embalagens, conteúdo por embalagem e **permissão de retirada parcial do conteúdo** (`fracionavel`). O formulário agora informa expressamente que abrir um KIT para retirar uma REAÇÃO é permitido quando o lote libera retirada parcial; essa reação segue indivisível. Um frasco pode permitir retirada em mL/g; materiais apenas por caixa fechada ficam sem retirada parcial.
+- `fracionavel` é propriedade do **lote**, não preferência global de um produto; dois lotes do mesmo produto podem ter regras distintas. Transição de não fracionável para fracionável permanece irreversível conforme contrato aprovado. UI não deve oferecer “unidade” fictícia por haver conteúdo mensurável na embalagem.
+- O backend já recebe `conteudoPorApresentacao` como BigDecimal. O frontend de entrada não deve exigir inteiro para conteúdos em massa/volume; passou a aceitar até 6 casas decimais.
+- O alerta de mínimo usa saldo canônico; sua apresentação escolhida pelo gestor é separada da unidade de consumo.
+
+### Massa DEMO — decisão segura de qualificação
+- Para `CNPMF-PON-1000` e `CNPMF-LUV-NIT`, as quantidades existentes nos lotes, movimentos e Pedidos demonstrativos representam **caixas lacradas**. Os nomes e especificações da carga passaram a explicitar **1 unidade de estoque = 1 caixa**, sem inventar “unidades internas” a partir de descrições (racks/100 luvas).
+- As caixas permanecem `fracionavel=false`, com capacidade física 1 caixa por recipiente; consumo inteiro e histórico mantidos. Se a operação desejar dispensar *ponteiras ou luvas individualmente*, esse cenário exige cadastro do produto com unidade canônica da peça e entrada coerente com número de peças por caixa, e `fracionavel=true` no lote. Não converter automaticamente massa histórica demonstrativa.
+- A alteração do inicializador DEMO só se reflete em **nova sessão H2 vazia** (perfil demo); não exige migration corretiva de dados.
+
+### Estado de QA e encerramento
+Códigos e documentação desta rodada **publicados na branch**, mas `mvn test`, inicialização DEV/DEMO e `npm run build` **ainda aguardam nova execução pelo responsável após os commits**. O aceite anterior foi antes destas edições. Não declarar etapa 7.7 encerrada nem efetuar merge até validação.
+
+Testes manuais curtos recomendados: entrada fracionável de kit 50 reações e pedido de 1 reação; entrada não fracionável de caixa e bloqueio de unidade interna; entrada de frasco mL com conteúdo decimal, pedido por medida, aprovação parcial; mínimo por embalagem exibido persistente; interface Light/Dark. Teste operacional exaustivo permanece reservado à Etapa 8.
