@@ -29,6 +29,7 @@ import com.sgl.model.Unidade;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.tenant.TenantContext;
 
@@ -63,6 +64,9 @@ class EstoqueCentralServiceTest {
 
     @Mock
     private ProdutoRepository produtoRepository;
+
+    @Mock
+    private RecipienteEstoqueRepository recipienteEstoqueRepository;
 
     @Mock
     private UnidadeRepository unidadeRepository;
