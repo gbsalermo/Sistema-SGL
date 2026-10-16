@@ -117,3 +117,14 @@ Testes adicionados em `PedidoControllerTest` para aceitação decimal e rejeiç�
 **Fora do aceite atual por decisão do responsável:** roteiro manual exaustivo Cadastro de Produto → Entrada → Pedido → Aprovação → Entrega → Rastreabilidade, reservado à Etapa 8. Antes dele, 7.6.1 corrige massas DEV/DEMO e 7.7 realiza QA/consolidação.
 
 **Estado:** auditoria estática e roteiro registrados. Não alegar execução local de build ou smoke nesta rodada; os resultados anteriores A–D foram comunicados pelo responsável. Sem merge.
+
+## 9. Implementação 7.6.1 — Massa DEV/DEMO (16/10/2026)
+
+Alterados os inicializadores `DataInitializer` e `DemoDataInitializer` na branch colaborativa, **sem migrar retroativamente registros existentes**.
+
+- DEV: agora gera lote com `quantidadeApresentacoes × conteudoPorApresentacao = quantidadeInicial`; materializa **um recipiente por embalagem**, com capacidade e saldo próprios. Formaldeído (ML) passa a 15 frascos de 500 mL = 7.500 mL; álcool em unidade canônica L permanece 80 L/100 L em garrafas de 1 L; DNA, pipetas e demais produtos recebem lotes expressos na unidade canônica. A quantidade mínima foi acompanhada nos cenários modificados.
+- DEMO: produtos com apresentação conhecida (L, mL e g) têm capacidade física explícita no inicializador, contagem de apresentações coerente com o conteúdo inicial e recipientes separados. Cada recipiente recebe estado FECHADO, ABERTO ou ESGOTADO de acordo com saldo individual; soma dos saldos dos recipientes igual ao saldo do lote. As massas legadas sem capacidade confiável mantêm fallback de um recipiente, sinalizando dívida de qualificação na rodada de QA.
+- Em ambos, a guarda de dados já existentes foi preservada. No DEV o fluxo `unidadeRepository.count() > 0` não recria a massa; no DEMO esse mesmo predicado evita carga sobre dados persistidos. Portanto **reiniciar o aplicativo não corrigirá um banco DEV antigo**. Para observar os cenários novos usar **banco descartável/novo de teste**, sem apagar banco com pedidos ou movimentações de interesse.
+- Pendências para comprovação: compilar/rodar inicializadores em bases novas; conferir total de recipientes, soma de saldos, lotes não fracionáveis e FEFO/FIFO; executar suíte e regressão. Não alegar testes executados no ambiente remoto por ausência de execução local.
+
+Sem merge; não houve alteração de `MovimentacaoEstoqueService`, serviço de aprovação, migrations ou dados persistidos.
