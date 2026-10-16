@@ -96,3 +96,24 @@ A borda de Pedido convencional foi ajustada na branch de trabalho para aceitar *
 Testes adicionados em `PedidoControllerTest` para aceitação decimal e rejeição de payload misto e em `PedidoServiceTest` para aprovação fracionada sem restrição de embalagem. **Testes não executados nesta sessão**: GitHub acessível pelo conector, mas o ambiente local de execução não consegue resolver `github.com` para clonar a branch. Não declarar a etapa verde antes de executar `mvn test` no ambiente do projeto.
 
 **Pendente para encerrar 7.6-A/B:** regressão de criação e aprovação ponta a ponta, comprovação dos cenários 200/500/700 mL, misto de lotes e não fracionáveis, rollback/conflito e compatibilidade das apresentações legadas. Frontend e Soluções não modificados neste checkpoint. Sem merge.
+
+## 8. Checkpoint 7.6-E — regressão curta e pendências (16/10/2026)
+
+**Aceites informados pelo responsável:** 7.6-A backend (build/suíte/boot), 7.6-B seis testes JUnit integrados (captura verde), 7.6-C Novo Pedido e 7.6-D aprovação na Gestão após refinamento visual. A validação visual da D é aceite funcional, **não** homologação ponta a ponta de todo o SGL.
+
+**Conferência estática nesta rodada:** formulário Solicitante mantém dois modos exclusivos; pedidos por unidade/REAÇÃO não mostram campo livre de fração; request por medida envia quantidade e unidade, deixando embalagem nula. Gestão distingue modo físico, permite aprovação decimal até 6 casas e preserva múltiplos para embalagens. Frontend e backend mantêm seleção FEFO/FIFO e recipientes **somente no servidor**. Dados DEV do Formaldeído ("frasco 500 mL", saldo 8 mL, multiplicador histórico 15) são incoerentes após migração e **não** demonstram falha do algoritmo; revisar na 7.6.1 sem converter históricos automaticamente.
+
+### Checklist mínimo para aceite de regressão curta
+
+1. Backend `mvn test` (suíte integral, não apenas classe nova) e inicialização DEV sem erro.
+2. Frontend `npm run build` / type-check; Novo Pedido apresentação inteira e medida decimal.
+3. Pedido por medida de material fracionável, unidade compatível, aprovação (total ou parcial), baixa uma vez, entrega sem segunda baixa.
+4. Pedido por apresentação inteira e não fracionável; bloqueio de fracionamento indevido e conservação de status/saldos no conflito.
+5. Lotes vencidos e priorização FEFO/FIFO, rastreio do lote/recipiente, cancelamento reversível quando aplicável (comparar com testes JUnit existentes).
+6. Pedidos antigos e Soluções (aprovação/preparo/cancelamento) permanecem funcionais, sem mudança de receita.
+7. Layout em Light/Dark, desktop 720p/1080p/1440p e mobile; foco, contraste, avisos, inputs e ausência de cortes no painel Gestão.
+8. Conferir estoque coerente na 7.6.1 DEV/DEMO e registrar divergências em dados iniciais, sem ajustar o algoritmo para acomodar massa antiga.
+
+**Fora do aceite atual por decisão do responsável:** roteiro manual exaustivo Cadastro de Produto → Entrada → Pedido → Aprovação → Entrega → Rastreabilidade, reservado à Etapa 8. Antes dele, 7.6.1 corrige massas DEV/DEMO e 7.7 realiza QA/consolidação.
+
+**Estado:** auditoria estática e roteiro registrados. Não alegar execução local de build ou smoke nesta rodada; os resultados anteriores A–D foram comunicados pelo responsável. Sem merge.
