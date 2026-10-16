@@ -49,7 +49,7 @@ public class EstoqueCentralService {
 				throw new BusinessRuleException("O conteúdo por embalagem deve ser positivo e ter até seis casas decimais.");
 			}
 			var quantidade = dto.getQuantidadeMinima().divideAndRemainder(fator);
-			if (quantidade[1].signum() != 0 || quantidade[0].scale() > 0) {
+			if (quantidade[1].signum() != 0) {
 				throw new BusinessRuleException("O mínimo em embalagens deve ser inteiro.");
 			}
 		}
