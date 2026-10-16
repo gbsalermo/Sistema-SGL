@@ -60,6 +60,13 @@ public class EstoqueCentral implements Serializable {
     @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal quantidadeMinima = BigDecimal.ZERO;
 
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "minimo_tipo_embalagem", length = 30)
+    private com.sgl.model.enums.TipoEmbalagem minimoTipoEmbalagem;
+
+    @Column(name = "minimo_multiplicador", precision = 19, scale = 6)
+    private BigDecimal minimoMultiplicador;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
