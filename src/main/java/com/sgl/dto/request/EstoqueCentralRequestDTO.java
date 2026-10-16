@@ -31,6 +31,9 @@ public class EstoqueCentralRequestDTO {
 	@DecimalMin(value = "0.0", inclusive = true, message = "Quantidade mínima não pode ser negativa")
 	private BigDecimal quantidadeMinima;
 
+    private com.sgl.model.enums.TipoEmbalagem minimoTipoEmbalagem;
+    private BigDecimal minimoMultiplicador;
+
 	@Schema(description = "Indica se o registro de estoque está ativo.", example = "true")
 	private Boolean ativo;
 }
