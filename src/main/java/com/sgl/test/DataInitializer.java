@@ -242,16 +242,16 @@ public class DataInitializer implements CommandLineRunner {
 
         // Massa DEV 7.6.1: estoques na unidade canônica, recipientes por embalagem.
         // A descrição da apresentação não é usada para inferir quantidade.
-        EstoqueCentral e1 = criarEstoque(u1, p1, 80000, 20000);
-        EstoqueCentral e2 = criarEstoque(u2, p1, 100000, 20000);
+        EstoqueCentral e1 = criarEstoque(u1, p1, 80, 20);
+        EstoqueCentral e2 = criarEstoque(u2, p1, 100, 20);
         EstoqueCentral e3 = criarEstoque(u1, p2, 50, 10);
         EstoqueCentral e4 = criarEstoque(u1, p3, 15000, 2500);
         EstoqueCentral e5 = criarEstoque(u3, p4, 7500, 2500);
         EstoqueCentral e6 = criarEstoque(u2, p5, 200, 30);
         EstoqueCentral e7 = criarEstoque(u3, p6, 500, 150);
 
-        criarLoteInicial(e1, "INI-ALC-IB", 80, 1000, null, true);
-        criarLoteInicial(e2, "INI-ALC-IF", 100, 1000, null, true);
+        criarLoteInicial(e1, "INI-ALC-IB", 80, 1, null, true);
+        criarLoteInicial(e2, "INI-ALC-IF", 100, 1, null, true);
         criarLoteInicial(e3, "INI-MIC-IB", 50, 1, null, true);
         criarLoteInicial(e4, "INI-BHI-IB", 30, 500, LocalDate.now().plusMonths(6), true);
         criarLoteInicial(e5, "INI-FOR-IQ", 15, 500, null, true);
