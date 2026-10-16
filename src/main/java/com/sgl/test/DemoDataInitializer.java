@@ -1078,60 +1078,70 @@ public class DemoDataInitializer implements CommandLineRunner {
     }
 
     private void materializarSaldoFisicoDemo(Lote lote) {
-
-        if (!recipienteEstoqueRepository
-                .findByLoteIdOrderBySequencialAsc(lote.getId())
-                .isEmpty()) {
+        if (!recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(lote.getId()).isEmpty()) {
             return;
         }
 
         BigDecimal inicial = lote.getQuantidadeInicial();
         BigDecimal disponivel = lote.getQuantidadeDisponivel();
+        List<RecipienteEstoque> recipientes = new ArrayList<>();
 
         if (!lote.permiteFracionamento()) {
+            // Materiais contados e não fracionáveis: um recipiente por unidade.
             int total = inicial.intValueExact();
             int disponiveis = disponivel.intValueExact();
-
-            List<RecipienteEstoque> recipientes = new ArrayList<>();
-
             for (int i = 1; i <= total; i++) {
-                boolean possuiSaldo = i <= disponiveis;
-
-                // 7.6.1: recipientes físicos correspondem à apresentação comercial.
-        // Não usar o saldo inteiro de um lote como capacidade de um único frasco.
-        BigDecimal capacidade = capacidadeEmbalagemDemo(
-                lote.getEstoqueCentral().getProduto().getCodigoReferencia(), inicial);
-        // O total inicial pode não ser múltiplo de uma embalagem em cenários legados:
-        // evita inventar embalagens com conteúdo maior que a capacidade cadastrada.
-        BigDecimal saldoRestante = disponivel;
-        BigDecimal inicialRestante = inicial;
-        int sequencial = 0;
-        List<RecipienteEstoque> recipientes = new ArrayList<>();
-        while (inicialRestante.signum() > 0) {
-            BigDecimal capacidadeRecipiente = inicialRestante.min(capacidade);
-            BigDecimal saldoRecipiente = saldoRestante.min(capacidadeRecipiente);
-            sequencial++;
-            RecipienteEstoque recipiente = new RecipienteEstoque();
-            recipiente.setLote(lote);
-            recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R"
-                    + String.format(Locale.ROOT, "%03d", sequencial), sequencial);
-            recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
-            recipiente.setCapacidadeInicial(capacidadeRecipiente);
-            recipiente.setQuantidadeDisponivel(saldoRecipiente);
-            recipiente.setUnidadeMedida(lote.getEstoqueCentral().getProduto().getUnidadeMedida());
-            if (saldoRecipiente.signum() == 0) {
-                recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
-                recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
-            } else if (saldoRecipiente.compareTo(capacidadeRecipiente) == 0) {
-                recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
-            } else {
-                recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
-                recipiente.setDataAbertura(lote.getDataEntrada().plusDays(1).atStartOfDay());
+                boolean comSaldo = i <= disponiveis;
+                RecipienteEstoque recipiente = new RecipienteEstoque();
+                recipiente.setLote(lote);
+                recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R"
+                        + String.format(Locale.ROOT, "%03d", i), i);
+                recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+                recipiente.setCapacidadeInicial(BigDecimal.ONE);
+                recipiente.setQuantidadeDisponivel(comSaldo ? BigDecimal.ONE : BigDecimal.ZERO);
+                recipiente.setUnidadeMedida(lote.getEstoqueCentral().getProduto().getUnidadeMedida());
+                recipiente.setEstado(comSaldo ? EstadoRecipienteEstoque.FECHADO : EstadoRecipienteEstoque.ESGOTADO);
+                if (!comSaldo) {
+                    recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+                }
+                recipientes.add(recipiente);
             }
-            recipientes.add(recipiente);
-            inicialRestante = inicialRestante.subtract(capacidadeRecipiente);
-            saldoRestante = saldoRestante.subtract(saldoRecipiente);
+        } else {
+            // Materiais fracionáveis: capacidade comercial, não o saldo inteiro do lote.
+            BigDecimal capacidade = capacidadeEmbalagemDemo(
+                    lote.getEstoqueCentral().getProduto().getCodigoReferencia(), inicial);
+            BigDecimal inicialRestante = inicial;
+            BigDecimal saldoRestante = disponivel;
+            int sequencial = 0;
+
+            while (inicialRestante.signum() > 0) {
+                BigDecimal capacidadeRecipiente = inicialRestante.min(capacidade);
+                BigDecimal saldoRecipiente = saldoRestante.min(capacidadeRecipiente);
+                sequencial++;
+                RecipienteEstoque recipiente = new RecipienteEstoque();
+                recipiente.setLote(lote);
+                recipiente.definirIdentificacao(lote.getCodigoInterno() + "-R"
+                        + String.format(Locale.ROOT, "%03d", sequencial), sequencial);
+                recipiente.setTipoEmbalagem(lote.getTipoEmbalagem());
+                recipiente.setCapacidadeInicial(capacidadeRecipiente);
+                recipiente.setQuantidadeDisponivel(saldoRecipiente);
+                recipiente.setUnidadeMedida(lote.getEstoqueCentral().getProduto().getUnidadeMedida());
+
+                if (saldoRecipiente.signum() == 0) {
+                    recipiente.setEstado(EstadoRecipienteEstoque.ESGOTADO);
+                    recipiente.setDataEsgotamento(LocalDateTime.now().minusDays(1));
+                } else if (saldoRecipiente.compareTo(capacidadeRecipiente) == 0) {
+                    recipiente.setEstado(EstadoRecipienteEstoque.FECHADO);
+                } else {
+                    recipiente.setEstado(EstadoRecipienteEstoque.ABERTO);
+                    recipiente.setDataAbertura(lote.getDataEntrada().plusDays(1).atStartOfDay());
+                }
+                recipientes.add(recipiente);
+                inicialRestante = inicialRestante.subtract(capacidadeRecipiente);
+                saldoRestante = saldoRestante.subtract(saldoRecipiente);
+            }
         }
+
         recipienteEstoqueRepository.saveAll(recipientes);
     }
 
