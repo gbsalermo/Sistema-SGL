@@ -421,19 +421,19 @@ public class DemoDataInitializer implements CommandLineRunner {
                 false, Set.of(), null
         );
         Produto ponteiras = criarProduto(
-                "Ponteiras 1000 µL com filtro", "CNPMF-PON-1000", UnidadeMedida.UNIDADE,
-                "Ponteiras estéreis com filtro para micropipetas.",
+                "Caixa de ponteiras 1000 µL com filtro", "CNPMF-PON-1000", UnidadeMedida.UNIDADE,
+                "Caixa lacrada de ponteiras estéreis com filtro; a unidade de controle é uma caixa completa.",
                 "Armário M3 - Materiais descartáveis",
                 NivelRisco.NENHUM, null, null,
-                false, null, "Ambiente limpo e seco.", "caixa com racks",
+                false, null, "Ambiente limpo e seco.", "caixa lacrada com racks (1 unidade de estoque por caixa)",
                 false, Set.of(), null
         );
         Produto luvas = criarProduto(
-                "Luvas Nitrílicas sem pó", "CNPMF-LUV-NIT", UnidadeMedida.UNIDADE,
-                "Luvas de procedimento para uso laboratorial.",
+                "Caixa de Luvas Nitrílicas sem pó", "CNPMF-LUV-NIT", UnidadeMedida.UNIDADE,
+                "Caixa lacrada de luvas de procedimento; a unidade de controle é uma caixa completa.",
                 "Armário EPI - Almoxarifado",
                 NivelRisco.NENHUM, null, null,
-                false, null, "Ambiente seco.", "caixa com 100 unidades",
+                false, null, "Ambiente seco.", "caixa lacrada com 100 luvas (1 unidade de estoque por caixa)",
                 false, Set.of(), null
         );
         Produto bda = criarProduto(
@@ -524,11 +524,11 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "frasco de 500 g", 1500, 1200, hoje.minusDays(22), null, true, true,
                 null);
         Lote lotePonteiras = criarLote(estPonteiras, 1, "PON-0826-03", TipoEmbalagem.CAIXA,
-                "caixa com racks", 15, 11, hoje.minusDays(10), null, true, false,
-                "Material não fracionável por caixa.");
+                "caixa lacrada com racks (1 unidade de estoque por caixa)", 15, 11, hoje.minusDays(10), null, true, false,
+                "Saída exclusivamente de caixas fechadas; quantidade do lote contada em caixas.");
         Lote loteLuvas = criarLote(estLuvas, 1, "LUV-0826-02", TipoEmbalagem.CAIXA,
-                "caixa com 100 unidades", 20, 4, hoje.minusDays(26), null, true, false,
-                "Saldo abaixo do mínimo.");
+                "caixa lacrada com 100 luvas (1 unidade de estoque por caixa)", 20, 4, hoje.minusDays(26), null, true, false,
+                "Saldo em caixas fechadas abaixo do mínimo.");
         Lote loteBdaDescartado = criarLote(estBda, 1, "BDA-0726-04", TipoEmbalagem.UNITARIO,
                 "frasco preparado", 8, 0, hoje.minusDays(35), hoje.minusDays(5), false, true,
                 "Lote vencido e descartado no período.");
