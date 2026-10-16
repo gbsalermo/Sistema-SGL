@@ -33,6 +33,8 @@ public class EstoqueCentralResponseDTO {
     private UnidadeMedida produtoUnidadeMedida;
     private BigDecimal quantidadeAtual;
     private BigDecimal quantidadeMinima;
+    private com.sgl.model.enums.TipoEmbalagem minimoTipoEmbalagem;
+    private BigDecimal minimoMultiplicador;
     private Boolean ativo;
     @Schema(description = "Resumo dos recipientes físicos ativos por apresentação.")
     private java.util.List<ApresentacaoFisicaDTO> apresentacoesFisicas = java.util.List.of();
@@ -63,6 +65,8 @@ public class EstoqueCentralResponseDTO {
         this.produtoUnidadeMedida = entity.getProduto().getUnidadeMedida();
         this.quantidadeAtual = entity.getQuantidadeAtual();
         this.quantidadeMinima = entity.getQuantidadeMinima();
+        this.minimoTipoEmbalagem = entity.getMinimoTipoEmbalagem();
+        this.minimoMultiplicador = entity.getMinimoMultiplicador();
         this.ativo = entity.getAtivo();
     }
 }
