@@ -925,18 +925,22 @@ Aprovação de Soluções deve validar atomicamente todos os componentes, preser
 - avaliação de delete lógico entidade por entidade;
 - não substituir ciclos de vida por `ativo` indiscriminadamente.
 
-## Etapa 12 — testes frontend
+## Etapa 12 — validação transversal: arquitetura, carga, E2E e frontend
 
-```text
-Vitest + Vue Test Utils
-Cypress
-```
+**Escopo ampliado em 20/10/2026** para avaliar o SGL integralmente e prevenir gargalos de consultas, recargas em cascata, timeouts, falta de resiliência e falhas de implantação.
 
-## Etapa 13 — revisão estrutural e legibilidade
+- Frontend: Vitest + Vue Test Utils, Cypress (E2E), responsividade, Light/Dark, dados, estados de erro, acessibilidade.
+- Backend/banco: JUnit, integração PostgreSQL/Flyway, tenant, atomicidade e concorrência, N+1, paginação, planos de consulta e pool.
+- Arquitetura: mapa de dependências e gargalos, chamadas duplicadas, carregamento inicial, bundle e estado de sessão.
+- Carga/estabilidade: baseline, picos, soak, stress e recuperação isolada (k6 ou equivalente), com métricas p50/p95/p99 e limites **definidos a partir de medições e exigência institucional**, não inventados.
+- Fluxos completos: Projetos/SCI/Atividades, Estagiários, Produtos/Lotes/Pedidos, Soluções, Resíduos, relatórios, rótulos, manual, dashboards e segurança de Unidade.
+- Operação: build/artefato implantado, migrations, health/readiness, conectividade, backup/restauração testados em homologação.
 
-Revisar classes grandes, com atenção especial a `Residuo`, Services, DTOs e Controllers.
+**Plano detalhado canônico:** `docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md` e `docs/PLANO_PRE_PRODUCAO.md`, Etapa 12. Não executar testes de carga sem ambiente isolado/autorização.
 
-Não fazer refactor grande agora apenas para reduzir linhas. O refactor final deve ocorrer depois da suíte da Etapa 12 e reexecutar os testes.
+## Etapa 13 — revisão estrutural e auditoria final integral
+
+Revisar classes grandes, com atenção especial a `Residuo`, Services, DTOs e Controllers. Refatorar de modo incremental após obter baseline da Etapa 12. **Repetir matriz de fluxos, testes de arquitetura, carga comparável, resiliência, frontend/backend e auditoria completa depois das correções**, entregando dossiê de evidências e parecer técnico de aceite. Não interpretar aceite técnico como autorização institucional de produção.
 
 ---
 
@@ -956,8 +960,8 @@ Etapa 8 — Pedidos + Soluções + participação           ⏳
 Etapa 9 — relatórios consolidados                     ⏳
 Etapa 10 — Rótulos + impressão operacional            ⏳
 Etapa 11 — Manual + decisão delete lógico             ⏳
-Etapa 12 — testes automatizados frontend              ⏳
-Etapa 13 — revisão estrutural e legibilidade           ⏳
+Etapa 12 — arquitetura, carga, E2E e frontend          ⏳
+Etapa 13 — revisão estrutural + auditoria final        ⏳
 ```
 
 Matriz de permissões, congelamento funcional e autenticação definitiva continuam posteriores ao bloco atual.
