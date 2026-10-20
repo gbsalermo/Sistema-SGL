@@ -55,7 +55,7 @@ A 7.6-E realiza regressão curta e conferência documental, detalhada em `docs/E
 
 **Escopo da 7.5:** formalizar o contexto de Pedidos a partir de Projeto/SCI/Atividade. Para Estagiários, a origem é a participação aberta `VinculoEstagioAtividade`; Projeto, Laboratório e Unidade derivam da Atividade selecionada, incluindo escolha explícita em caso de múltiplas participações. Para perfis não Estagiários, Projeto selecionado determina Laboratório; sem Projeto, preservar contexto institucional/base quando permitido. Não aceitar combinações contraditórias no cliente/servidor. **A aplicação estrutural integral desses contratos aos Pedidos permanece na Etapa 8, conforme decisão vigente.**
 
-**Sequência macro vigente após a 7:** 8 — Pedidos + Soluções + contexto de participação; 9 — Relatórios consolidados (incluindo Projetos e unificação de Movimentações/Resumo operacional na interface); 10 — Rótulos/impressão; 11 — Manual do Usuário e revisão de delete lógico; 12 — testes automatizados do frontend; 13 — revisão estrutural. Depois: matriz de permissões, congelamento funcional, homologação integrada final, autenticação/autorização/auditoria definitiva, integração corporativa e produção. Referências históricas abaixo que repetem Unidade/Solução como “Etapa 8”, Pedidos como “Etapa 9” ou Relatórios antes disso **não prevalecem** sobre esta sequência.
+**Sequência macro vigente após a 7:** 8 — Pedidos + Soluções + contexto de participação; 9 — Relatórios consolidados (incluindo Projetos e unificação de Movimentações/Resumo operacional na interface); 10 — Rótulos/impressão; 11 — Manual do Usuário e revisão de delete lógico; 12 — validação transversal (arquitetura, carga, E2E, frontend e backend); 13 — revisão estrutural e auditoria final integral. Depois: matriz de permissões, congelamento funcional, homologação integrada final, autenticação/autorização/auditoria definitiva, integração corporativa e produção. Referências históricas abaixo que repetem Unidade/Solução como “Etapa 8”, Pedidos como “Etapa 9” ou Relatórios antes disso **não prevalecem** sobre esta sequência.
 
 **Encerramento funcional com ressalvas:** testes locais do responsável validaram os fluxos principais da 7.4, snapshots e catálogo, cancelamentos, rejeição, Pedidos comuns e visão unificada. **Não há comprovação anexada de build/Maven finais e isolamento IB/IQ/perfis**, repassados a 7.6/7.7. A autorização real dos endpoints permanece risco a resolver antes de produção. A proposta de renomear o quadro "Últimas movimentações" para "Últimas atividades operacionais" e incluir transições administrativas com histórico datado **não foi implementada nem validada**; preservar como refinamento posterior auditável. **Nenhum merge foi feito**, e qualquer integração à main exige autorização específica.
 
@@ -957,24 +957,52 @@ Não usar `ativo` indiscriminadamente em entidades que já possuem ciclo de vida
 
 ---
 
-## Etapa 12 — Testes automatizados do Frontend
+## Etapa 12 — Validação transversal de qualidade: frontend, arquitetura, carga e fluxos E2E
 
-Stack:
+**Status:** planejada. **Escopo ampliado em 20/10/2026** para prevenir problemas de desempenho e estabilidade observados no Rascomp. A etapa **não é limitada a testes automatizados de Vue**: testa SGL ponta a ponta, inclusive backend, banco de dados, deploy e utilização simultânea.
 
-```text
-Vitest + Vue Test Utils
-Cypress
-```
+**Plano detalhado obrigatório:** `docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md`.
 
-Cobrir fluxos críticos finais, execução headless e scripts reproduzíveis.
+### 12.1 Arquitetura e consultas
+
+- Mapear dependências frontend → API → services/repositories → PostgreSQL/Flyway; revisar limites, índices, `EXPLAIN`, N+1, paginação, cache, sessões, transações e concorrência.
+- Auditar endpoints críticos, dashboards, relatórios e listagens com dados representativos, evitando consultas multiplicadas por usuário/participação/Produto.
+- Revisar tamanho de bundle, carregamento inicial, rotas, chamadas duplicadas, recargas completas desnecessárias e uso de memória.
+
+### 12.2 Testes automatizados do frontend + contrato backend
+
+- **Vitest + Vue Test Utils:** regras puras, componentes, formulários, filtros, selects, modais, drawers, loading, erros, responsividade e acessibilidade.
+- **Cypress:** cenários E2E de navegador real e fluxos entre módulos; comparar payloads e estado realmente persistido na API/banco.
+- **JUnit/Spring + integração PostgreSQL:** regressão de regras, compatibilidade HTTP/DTO, tenant, integridade e concorrência. Não confundir mocks com validação real de persistência.
+
+### 12.3 Testes funcionais ponta a ponta
+
+- Projetos → SCI → Atividades → Estagiários/vínculos/participações → Pedidos/Soluções → aprovação/preparo/entrega/cancelamento → Estoque/lotes/movimentações/rastreabilidade.
+- Exercitar embalagens, medida física, FEFO/FIFO, fracionamento, estoque mínimo, snapshots e não duplicação de baixa/devolução.
+- Incluir Resíduos, relatórios/exports, rótulos, manual, dashboards, alertas, filtros, perfis, isolamento IB/IQ, dados históricos e cenários negativos.
+
+### 12.4 Carga, performance, estresse e resiliência
+
+- Instrumentar API/banco/frontend e **medir** latência p50/p95/p99, timeouts, erros, throughput, CPU, heap, conexões, número/tempo de queries e fluidez das telas.
+- Com k6 ou ferramenta equivalente, testar baseline, carga nominal, picos, estresse controlado, concorrência de escrita, soak e recuperação de falha **apenas em ambiente isolado e autorizado**.
+- Testar banco indisponível, reinício da API, health/readiness, falhas de conexão, Flyway, configuração de pool, perda de sessão, rotas diretas SPA, build versus artefato implantado e ausência de tela branca.
+- Cobrir desktop/mobile/tablet, zoom 100%, Light/Dark, scroll e listas grandes.
+- Determinar volume de dados, concorrência e **metas mensuráveis aprovadas antes do aceite**; não inventar números de capacidade.
+
+### 12.5 Execução e critérios de aceite
+
+- Rodar verificações rápidas por mudança, regressão do módulo antes do merge e E2E/carga completos em janela controlada; evitar workflows excessivos e spam.
+- Registrar scripts, fixtures, ambiente/commit, evidências, métricas antes/depois, problemas, severidade, correções e reteste.
+- Só encerrar com fluxos críticos, isolamento, startup/migrations, estabilidade, desempenho, carga e mobile validados; riscos bloqueantes impedem aceite.
+- **A revisão de arquitetura e os testes finais deverão ser refeitos após a Etapa 13** para detectar regressões provocadas pelo refactor.
 
 ---
 
-## Etapa 13 — Revisão estrutural, packages e manutenibilidade
+## Etapa 13 — Revisão estrutural, packages, manutenibilidade e auditoria final integral
 
-Última etapa técnica antes do fechamento de pré-produção.
+Última etapa técnica antes do fechamento de pré-produção. A Etapa 12 identifica e mede riscos; a Etapa 13 implementa refactors pontuais, corrige gargalos comprovados e **executa nova auditoria integral de arquitetura, fluxos, desempenho, carga e resiliência depois das alterações**.
 
-Objetivo: reduzir a complexidade acumulada durante as etapas funcionais sem alterar o comportamento já validado, deixando o projeto mais intuitivo para manutenção, evolução e onboarding de novos desenvolvedores.
+Objetivo: reduzir a complexidade acumulada durante as etapas funcionais sem alterar o comportamento já validado, deixando o projeto mais intuitivo para manutenção, evolução e onboarding de novos desenvolvedores. O roteiro e as evidências seguem `docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md`.
 
 Revisar especialmente:
 
@@ -1020,11 +1048,15 @@ sem mudança funcional intencional
 + classes críticas menores e com responsabilidade clara
 + packages coerentes e intuitivos
 + dependências entre camadas/domínios compreensíveis
-+ testes da Etapa 12 reexecutados
++ testes da Etapa 12 reexecutados após o refactor
++ auditoria integral final (arquitetura, E2E, carga e recuperação) com evidência
++ relatório de métricas antes/depois, achados e riscos residuais
 + suíte backend integral verde
 ```
 
 Esta etapa não deve virar uma reescrita do sistema. O refactor será incremental, orientado por risco e coberto pelos testes finais.
+
+**Portão final:** produzir dossiê de homologação do SGL com arquitetura real, evidências de fluxos, indicadores de carga, limitações, problemas/correções, versões testadas e parecer **go/no-go**. Esse parecer técnico não dispensa os portões institucionais posteriores de permissões, autenticação/autorização/auditoria, integração corporativa e liberação de produção.
 
 ---
 
