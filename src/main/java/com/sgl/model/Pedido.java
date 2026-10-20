@@ -39,85 +39,117 @@ import lombok.ToString;
 @Builder
 public class Pedido implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-    private UUID publicId;
+	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
+	private UUID publicId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
-    @ToString.Exclude
-    private Usuario usuario;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "usuario_id", nullable = false)
+	@ToString.Exclude
+	private Usuario usuario;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "laboratorio_id", nullable = false)
-    @ToString.Exclude
-    private Laboratorio laboratorio;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "laboratorio_id", nullable = false)
+	@ToString.Exclude
+	private Laboratorio laboratorio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "projeto_id")
-    @ToString.Exclude
-    private Projeto projeto;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "projeto_id")
+	@ToString.Exclude
+	private Projeto projeto;
 
-    @Column(nullable = false)
-    private LocalDateTime dataSolicitacao;
+	@Column(nullable = false)
+	private LocalDateTime dataSolicitacao;
 
-    @Column(name = "data_entrega")
-    private LocalDateTime dataEntrega;
+	@Column(name = "data_entrega")
+	private LocalDateTime dataEntrega;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false, length = 20)
-    @Builder.Default
-    private TipoPedido tipo = TipoPedido.PRODUTOS;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "tipo", nullable = false, length = 20)
+	@Builder.Default
+	private TipoPedido tipo = TipoPedido.PRODUTOS;
 
-    @Column(name = "nome_solucao", length = 150)
-    private String nomeSolucao;
+	@Column(name = "nome_solucao", length = 150)
+	private String nomeSolucao;
 
-    @Column(name = "instrucoes_preparo_solucao", length = 4000)
-    private String instrucoesPreparoSolucao;
+	@Column(name = "instrucoes_preparo_solucao", length = 4000)
+	private String instrucoesPreparoSolucao;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "modelo_solucao_id")
-    @ToString.Exclude
-    private ModeloSolucao modeloSolucao;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "modelo_solucao_id")
+	@ToString.Exclude
+	private ModeloSolucao modeloSolucao;
 
-    @Column(name = "solucao_preparada_no_cancelamento")
-    private Boolean solucaoPreparadaNoCancelamento;
+	@Column(name = "solucao_preparada_no_cancelamento")
+	private Boolean solucaoPreparadaNoCancelamento;
 
-    @Column(name = "estoque_revertido_no_cancelamento")
-    private Boolean estoqueRevertidoNoCancelamento;
+	@Column(name = "estoque_revertido_no_cancelamento")
+	private Boolean estoqueRevertidoNoCancelamento;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StatusPedido status;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private StatusPedido status;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean urgente = false;
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean urgente = false;
 
-    @Column(length = 500)
-    private String motivoUrgencia;
+	@Column(length = 500)
+	private String motivoUrgencia;
 
-    private String observacao;
+	private String observacao;
 
-    private String arquivoDocumento;
+	private String arquivoDocumento;
 
-    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<ItemPedido> itens = new ArrayList<>();
+	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
+	private List<ItemPedido> itens = new ArrayList<>();
 
-    @PrePersist
-    private void generatePublicId() {
-        if (publicId == null) {
-            publicId = UUID.randomUUID();
-        }
-        if (tipo == null) tipo = TipoPedido.PRODUTOS;
-        if (urgente == null) {
-            urgente = false;
-        }
-    }
+	// Participação que originou o pedido do estagiário.
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "participacao_estagio_atividade_id", updatable = false)
+	@ToString.Exclude
+	private VinculoEstagioAtividade participacaoEstagioAtividade;
+
+	// Atividade e SCI preservados independentemente de mudanças
+	// posteriores na participação.
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "atividade_origem_id", updatable = false)
+	@ToString.Exclude
+	private Atividade atividadeOrigem;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "sci_origem_id", updatable = false)
+	@ToString.Exclude
+	private Sci sciOrigem;
+
+	// Nomes históricos capturados na criação do pedido.
+	@Column(name = "atividade_origem_nome", updatable = false)
+	private String atividadeOrigemNome;
+
+	@Column(name = "sci_origem_nome", updatable = false)
+	private String sciOrigemNome;
+
+	@Column(name = "projeto_origem_nome", updatable = false)
+	private String projetoOrigemNome;
+
+	@Column(name = "laboratorio_origem_nome", updatable = false)
+	private String laboratorioOrigemNome;
+
+	@PrePersist
+	private void generatePublicId() {
+		if (publicId == null) {
+			publicId = UUID.randomUUID();
+		}
+		if (tipo == null)
+			tipo = TipoPedido.PRODUTOS;
+		if (urgente == null) {
+			urgente = false;
+		}
+	}
 }
