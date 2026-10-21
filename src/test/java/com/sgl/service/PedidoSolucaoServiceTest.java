@@ -37,6 +37,7 @@ class PedidoSolucaoServiceTest {
     @Mock ProjetoRepository projetoRepository;
     @Mock MovimentacaoEstoqueService movimentacaoEstoqueService;
     @Mock ModeloSolucaoRepository modeloSolucaoRepository;
+    @Mock VinculoOperacionalUsuarioService vinculoOperacionalService;
     @InjectMocks PedidoService service;
 
     Unidade unidade;
