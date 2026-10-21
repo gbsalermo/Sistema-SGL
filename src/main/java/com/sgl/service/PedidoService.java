@@ -535,6 +535,7 @@ public class PedidoService {
 		// O Estagiário tem o Laboratório derivado de sua participação,
 		// não necessariamente o mesmo Laboratório-base do cadastro.
 		if (!gestor && !estagiario
+                && (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId()))
                 && !vinculoOperacionalService.vinculadoLaboratorio(usuario, laboratorio, LocalDate.now())) {
 			throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
 		}
