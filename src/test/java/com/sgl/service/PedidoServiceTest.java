@@ -87,6 +87,9 @@ class PedidoServiceTest {
     @Mock
     private MovimentacaoEstoqueService movimentacaoEstoqueService;
 
+    @Mock
+    private VinculoOperacionalUsuarioService vinculoOperacionalService;
+
     @InjectMocks
     private PedidoService pedidoService;
 
