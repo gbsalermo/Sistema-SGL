@@ -52,13 +52,13 @@ public class VinculoOperacionalUsuarioService {
         Sci sci = null;
         Atividade atividade = null;
         if (dto.getAtividadeId() != null) {
-            atividade = atividades.findByPublicId(dto.getAtividadeId())
+            atividade = atividades.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(dto.getAtividadeId(), tenant)
                 .orElseThrow(() -> new ResourceNotFoundException("Atividade", dto.getAtividadeId()));
             atividade.validateActive();
             sci = atividade.getSci();
             projeto = sci.getProjeto();
         } else if (dto.getSciId() != null) {
-            sci = scis.findByPublicId(dto.getSciId())
+            sci = scis.findByPublicIdAndProjetoLaboratorioUnidadePublicId(dto.getSciId(), tenant)
                 .orElseThrow(() -> new ResourceNotFoundException("SCI", dto.getSciId()));
             sci.validateActive();
             projeto = sci.getProjeto();
