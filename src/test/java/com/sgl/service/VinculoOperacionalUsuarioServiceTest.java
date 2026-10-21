@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
+import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.*;
@@ -108,6 +109,35 @@ class VinculoOperacionalUsuarioServiceTest {
         when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(usuario));
         assertThrows(BusinessRuleException.class, () -> service.criar(dto));
         verifyNoInteractions(laboratorios, projetos, scis, atividades);
+    }
+
+    @Test void editarVinculoAlteraObservacaoSemMudarContexto() {
+        TenantContext.definir(UNIDADE);
+        VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
+        v.setPublicId(UUID.randomUUID());
+        v.setUsuario(analista());
+        v.setLaboratorio(laboratorio());
+        v.setDataInicio(LocalDate.now().minusDays(3));
+        EditarVinculoOperacionalRequestDTO dto = new EditarVinculoOperacionalRequestDTO();
+        dto.setObservacao("Vínculo conferido pela Gestão");
+        dto.setDataFim(LocalDate.now().plusDays(15));
+        when(vinculos.findByPublicIdAndUsuarioUnidadePublicId(v.getPublicId(), UNIDADE))
+            .thenReturn(Optional.of(v));
+        service.editar(v.getPublicId(), dto);
+        assertEquals("Vínculo conferido pela Gestão", v.getObservacao());
+        assertEquals(LocalDate.now().plusDays(15), v.getDataFim());
+        assertEquals(LAB, v.getLaboratorio().getPublicId());
+    }
+
+    @Test void editarVinculoEncerradoEProibido() {
+        TenantContext.definir(UNIDADE);
+        VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
+        v.setPublicId(UUID.randomUUID());
+        v.setEncerrado(true);
+        when(vinculos.findByPublicIdAndUsuarioUnidadePublicId(v.getPublicId(), UNIDADE))
+            .thenReturn(Optional.of(v));
+        assertThrows(BusinessRuleException.class, () ->
+            service.editar(v.getPublicId(), new EditarVinculoOperacionalRequestDTO()));
     }
 
     @Test void deveEncerrarVinculoImediatamenteSemApagarHistorico() {
