@@ -19,6 +19,7 @@ public class VinculoOperacionalUsuarioResponseDTO {
     private final String atividadeNome;
     private final LocalDate dataInicio;
     private final LocalDate dataFim;
+    private final Boolean encerrado;
     private final String observacao;
     public VinculoOperacionalUsuarioResponseDTO(VinculoOperacionalUsuario v) {
         id=v.getPublicId(); usuarioId=v.getUsuario().getPublicId();
@@ -30,7 +31,7 @@ public class VinculoOperacionalUsuarioResponseDTO {
         sciNome=v.getSci()==null?null:v.getSci().getNome();
         atividadeId=v.getAtividade()==null?null:v.getAtividade().getPublicId();
         atividadeNome=v.getAtividade()==null?null:v.getAtividade().getNome();
-        dataInicio=v.getDataInicio(); dataFim=v.getDataFim();
+        dataInicio=v.getDataInicio(); dataFim=v.getDataFim(); encerrado=Boolean.TRUE.equals(v.getEncerrado());
         observacao=v.getObservacao();
     }
 }
