@@ -28,13 +28,15 @@ public class VinculoOperacionalUsuario {
     private LocalDate dataInicio;
     @Column(name = "data_fim")
     private LocalDate dataFim;
+    @Column(name = "encerrado", nullable = false)
+    private Boolean encerrado = false;
     @Column(length = 500)
     private String observacao;
     @PrePersist void criarId() {
         if (publicId == null) publicId = UUID.randomUUID();
     }
     public boolean vigente(LocalDate hoje) {
-        return !hoje.isBefore(dataInicio) && (dataFim == null || !hoje.isAfter(dataFim));
+        return !Boolean.TRUE.equals(encerrado) && !hoje.isBefore(dataInicio) && (dataFim == null || !hoje.isAfter(dataFim));
     }
     public boolean pertenceAoProjeto(Projeto alvo) {
         return projeto != null && projeto.getId().equals(alvo.getId())
