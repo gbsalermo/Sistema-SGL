@@ -1185,3 +1185,11 @@ A auditoria visual revisou hierarquia documental, tokens, componentes Sgl*, dark
 **Não reabrir decisões sobre prioridades físicas**: em `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md`, §9.9 e §9.13, ficou decidido **FEFO/FIFO entre lotes**; no lote prioritário, **FECHADOS para múltiplos inteiros de apresentação**, **ABERTOS para a parte fracionária**, e **abrir FECHADO somente para completar a falta**. Pedidos grandes (600/700 mL) liberam unidades fechadas completas e usam recipiente aberto para o restante, minimizando abertura de vários frascos; não existe decisão de impor novo limite arbitrário de recipientes abertos. A ordem é preservada pelo `MovimentacaoEstoqueService.consumirRecipientes` e por testes de retirada 200/500/700 mL.
 
 A auditoria inicial de 7.6.0 mencionou equivocadamente necessidade de **decidir** novo comportamento "embalagem completa garante lacre" e novos modos físicos. Essa linguagem está **supersedida** pela atualização de `docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md`. Se não houver FECHADO compatível, não se deve inventar garantia de lacre; a decisão original fala em priorizar recipientes fechados, não em prometer lacre em toda solicitação inteira. O **trabalho real** é adequar o contrato/payload de Pedido comum e interfaces para aceitar quantidades físicas decimais, reaproveitando a seleção física existente e validando os resultados. **Nenhuma regra funcional ou migration alterada nesta retificação; sem merge.**
+
+
+## Etapa 8 — Vínculos operacionais de funcionários (21/10/2026, DEV)
+- Contrato de adaptação registrado em `docs/ETAPA_8_IMPLEMENTACAO_VINCULOS_DEV_2026-10-21.md`.
+- Gerenciamento de laboratório-base e vínculos adicionais no módulo Cadastros; Pedido/Solução/Resíduo usam laboratório autorizado e sinalizam projeto sem vínculo direto para aprovação consciente.
+- Supervisão DEV de orientandos limitada ao laboratório autorizado.
+- Login de desenvolvimento mantido; futuro login institucional não implementado e endpoints administrativos DEV/DEMO não são adequados para produção.
+- **Código enviado, compilação/build/Flyway/testes ainda pendentes. Não realizar merge até homologação.**
