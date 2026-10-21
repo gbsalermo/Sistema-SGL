@@ -33,3 +33,13 @@
 
 ## Decisão externa necessária
 Definir fornecedor real de autenticação institucional (OIDC/SAML/LDAP/API confiável) ou implementar autenticação local segura com controle de provisionamento. Não inferir essa integração pelo login DEV.
+
+## Atualização de escopo — 21/10/2026: homologação exclusivamente em DEV
+
+**Decisão do responsável:** nesta etapa NÃO implementar login real, senha, cadastro automático no primeiro acesso nem provedor externo. A integração institucional permanece como a solução definitiva de identidade. Utilizar somente usuários de teste e sessão DEV para validar os vínculos e as regras de domínio. Não tratar o login de desenvolvimento como autenticação.
+
+**Implementação da Etapa 8 permitida em ambiente isolado:** criar o gerenciamento de vínculos em Administração > Cadastros e testar laboratório-base, associações adicionais e solicitações de usuários de teste. Os testes de regras de negócio devem incluir isolamento de unidade, perfil, validade do vínculo, registros históricos e alertas ao gestor. Não expor a API de concessão/revogação para ambiente público enquanto não houver identidade de servidor confiável; a sessão DEV e o header de unidade são forjáveis.
+
+**Fluxo futuro, fora desta etapa:** login institucional validado -> buscar identidade estável -> localizar usuário -> provisionar registro pendente se ausente -> Gestão concede laboratório-base e vínculos -> uso operacional. O atual cadastro manual de usuários de teste substitui temporariamente apenas o provisionamento da identidade, não a autorização institucional.
+
+**Critério de aceite atual:** regras e interfaces homologadas localmente com massa DEV; autenticação e autorização reais permanecem pendências obrigatórias de pré-produção.
