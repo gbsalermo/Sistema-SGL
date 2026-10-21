@@ -1,6 +1,6 @@
 CREATE TABLE vinculos_operacionais_usuario (
- id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
- public_id CHAR(36) NOT NULL UNIQUE,
+ id BIGSERIAL PRIMARY KEY,
+ public_id UUID NOT NULL UNIQUE,
  usuario_id BIGINT NOT NULL,
  laboratorio_id BIGINT NOT NULL,
  projeto_id BIGINT NULL,
