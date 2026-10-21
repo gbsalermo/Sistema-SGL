@@ -62,6 +62,7 @@ public class ResiduoService {
 	private final ProdutoRepository produtoRepository;
 	private final ClasseResiduoRepository classeResiduoRepository;
 	private final LocalArmazenamentoResiduoRepository localArmazenamentoResiduoRepository;
+	private final VinculoOperacionalUsuarioService vinculoOperacionalService;
 
 	@Transactional
 	public ResiduoResponseDTO criar(CriarResiduoRequestDTO dto) {
@@ -450,7 +451,9 @@ public class ResiduoService {
 
 	private void validarGeradorNoLaboratorio(Usuario gerador, Laboratorio laboratorio) {
 		boolean gestor = gerador.getPerfil() == Perfil.GESTOR || gerador.getPerfil() == Perfil.ADMINISTRADOR;
-		if (!gestor && (gerador.getLaboratorio() == null || !gerador.getLaboratorio().getId().equals(laboratorio.getId()))) {
+		if (!gestor
+                && (gerador.getLaboratorio() == null || !gerador.getLaboratorio().getId().equals(laboratorio.getId()))
+                && !vinculoOperacionalService.vinculadoLaboratorio(gerador, laboratorio, LocalDate.now())) {
 			throw new BusinessRuleException("O usuário gerador não pertence ao laboratório informado.");
 		}
 	}
