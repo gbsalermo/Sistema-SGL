@@ -8,6 +8,7 @@ CREATE TABLE vinculos_operacionais_usuario (
  atividade_id BIGINT NULL,
  data_inicio DATE NOT NULL,
  data_fim DATE NULL,
+ encerrado BOOLEAN NOT NULL DEFAULT FALSE,
  observacao VARCHAR(500),
  CONSTRAINT fk_vinculo_oper_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
  CONSTRAINT fk_vinculo_oper_lab FOREIGN KEY (laboratorio_id) REFERENCES laboratorios(id),
