@@ -38,6 +38,9 @@ public class CriarResiduoRequestDTO {
     @Schema(description = "Projeto relacionado à geração do resíduo, quando aplicável.")
     private UUID projetoId;
 
+    @Schema(description = "Participação operacional obrigatória para estagiários; projeto e laboratório são derivados no servidor.")
+    private UUID participacaoId;
+
     @NotBlank(message = "A descrição do resíduo é obrigatória")
     @Schema(example = "Resíduo líquido do processo de extração de DNA")
     private String descricao;
