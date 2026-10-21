@@ -79,12 +79,15 @@ public class VinculoOperacionalUsuarioService {
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(dto.getDataInicio())) {
             throw new BusinessRuleException("Data final anterior ao início.");
         }
+        final Projeto projetoFinal = projeto;
+        final Sci sciFinal = sci;
+        final Atividade atividadeFinal = atividade;
         boolean repetido = vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), tenant)
             .stream().anyMatch(v -> v.getDataFim() == null
                 && v.getLaboratorio().getId().equals(laboratorio.getId())
-                && java.util.Objects.equals(v.getProjeto() == null ? null : v.getProjeto().getId(), projeto == null ? null : projeto.getId())
-                && java.util.Objects.equals(v.getSci() == null ? null : v.getSci().getId(), sci == null ? null : sci.getId())
-                && java.util.Objects.equals(v.getAtividade() == null ? null : v.getAtividade().getId(), atividade == null ? null : atividade.getId()));
+                && java.util.Objects.equals(v.getProjeto() == null ? null : v.getProjeto().getId(), projetoFinal == null ? null : projetoFinal.getId())
+                && java.util.Objects.equals(v.getSci() == null ? null : v.getSci().getId(), sciFinal == null ? null : sciFinal.getId())
+                && java.util.Objects.equals(v.getAtividade() == null ? null : v.getAtividade().getId(), atividadeFinal == null ? null : atividadeFinal.getId()));
         if (repetido) throw new BusinessRuleException("Já existe vínculo aberto para este contexto.");
         VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
         v.setUsuario(usuario); v.setLaboratorio(laboratorio); v.setProjeto(projeto);
