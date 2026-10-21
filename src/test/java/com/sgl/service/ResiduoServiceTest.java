@@ -62,6 +62,7 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.tenant.TenantContext;
 import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 
@@ -125,6 +126,9 @@ class ResiduoServiceTest {
     @Mock
     private LocalArmazenamentoResiduoRepository
             localArmazenamentoResiduoRepository;
+
+    @Mock
+    private VinculoEstagioAtividadeRepository participacaoRepository;
 
     @InjectMocks
     private ResiduoService residuoService;
@@ -239,6 +243,51 @@ class ResiduoServiceTest {
     // ---------------------------------------------------------------
     // criar()
     // ---------------------------------------------------------------
+
+    @Test
+    void deveExigirParticipacaoParaEstagiarioAoInformarResiduo() {
+        gerador.setPerfil(Perfil.ESTAGIARIO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(GERADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(gerador));
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> residuoService.criar(dtoValidoCriar()));
+
+        assertTrue(erro.getMessage().contains("participação ativa"));
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void deveRejeitarParticipacaoDeOutroTitularOuUnidade() {
+        gerador.setPerfil(Perfil.ESTAGIARIO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        UUID participacaoId = UUID.randomUUID();
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setParticipacaoId(participacaoId);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(GERADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(gerador));
+        when(participacaoRepository.buscarParticipacaoParaPedido(
+                participacaoId, GERADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> residuoService.criar(dto));
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void deveRejeitarParticipacaoDeEstagioParaOutroPerfil() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setParticipacaoId(UUID.randomUUID());
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(GERADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(gerador));
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> residuoService.criar(dto));
+        assertTrue(erro.getMessage().contains("somente pode ser usada por estagiários"));
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
 
     @Test
     void deveCriarResiduoComDadosValidos() {
