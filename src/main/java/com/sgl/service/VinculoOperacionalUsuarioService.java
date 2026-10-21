@@ -83,7 +83,7 @@ public class VinculoOperacionalUsuarioService {
         final Sci sciFinal = sci;
         final Atividade atividadeFinal = atividade;
         boolean repetido = vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), tenant)
-            .stream().anyMatch(v -> v.getDataFim() == null
+            .stream().anyMatch(v -> !Boolean.TRUE.equals(v.getEncerrado()) && v.getDataFim() == null
                 && v.getLaboratorio().getId().equals(laboratorio.getId())
                 && java.util.Objects.equals(v.getProjeto() == null ? null : v.getProjeto().getId(), projetoFinal == null ? null : projetoFinal.getId())
                 && java.util.Objects.equals(v.getSci() == null ? null : v.getSci().getId(), sciFinal == null ? null : sciFinal.getId())
@@ -100,10 +100,11 @@ public class VinculoOperacionalUsuarioService {
     public VinculoOperacionalUsuarioResponseDTO encerrar(UUID id) {
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
-        if (v.getDataFim() != null && !v.getDataFim().isAfter(LocalDate.now())) {
+        if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo já encerrado.");
         }
         v.setDataFim(LocalDate.now());
+        v.setEncerrado(true);
         return new VinculoOperacionalUsuarioResponseDTO(v);
     }
 
