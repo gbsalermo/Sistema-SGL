@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.sgl.model.VinculoOperacionalUsuario;
 
 public interface VinculoOperacionalUsuarioRepository extends JpaRepository<VinculoOperacionalUsuario, Long> {
+    List<VinculoOperacionalUsuario> findByUsuarioUnidadePublicId(UUID unidadeId);
     List<VinculoOperacionalUsuario> findByUsuarioPublicIdAndUsuarioUnidadePublicId(UUID usuarioId, UUID unidadeId);
     Optional<VinculoOperacionalUsuario> findByPublicIdAndUsuarioUnidadePublicId(UUID id, UUID unidadeId);
 }
