@@ -65,6 +65,7 @@ class PedidoContextoOperacionalServiceTest {
     @Mock MovimentacaoEstoqueService movimentacaoEstoqueService;
     @Mock ModeloSolucaoRepository modeloSolucaoRepository;
     @Mock VinculoEstagioAtividadeRepository participacaoRepository;
+    @Mock VinculoOperacionalUsuarioService vinculoOperacionalService;
 
     @InjectMocks PedidoService service;
 
