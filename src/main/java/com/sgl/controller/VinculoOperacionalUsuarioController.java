@@ -19,6 +19,10 @@ import com.sgl.service.VinculoOperacionalUsuarioService;
 @RequiredArgsConstructor
 public class VinculoOperacionalUsuarioController {
     private final VinculoOperacionalUsuarioService service;
+    @GetMapping("/resumo")
+    public List<VinculoOperacionalUsuarioService.ResumoUsuario> resumo() {
+        return service.resumo();
+    }
     @GetMapping("/usuarios/{usuarioId}")
     public List<VinculoOperacionalUsuarioResponseDTO> listar(@PathVariable UUID usuarioId) {
         return service.listar(usuarioId);
