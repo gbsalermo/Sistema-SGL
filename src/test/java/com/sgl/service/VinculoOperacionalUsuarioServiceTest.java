@@ -110,6 +110,22 @@ class VinculoOperacionalUsuarioServiceTest {
         verifyNoInteractions(laboratorios, projetos, scis, atividades);
     }
 
+    @Test void deveEncerrarVinculoImediatamenteSemApagarHistorico() {
+        TenantContext.definir(UNIDADE);
+        VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
+        v.setPublicId(UUID.randomUUID());
+        v.setUsuario(analista());
+        v.setLaboratorio(laboratorio());
+        v.setDataInicio(LocalDate.now().minusDays(1));
+        when(vinculos.findByPublicIdAndUsuarioUnidadePublicId(v.getPublicId(), UNIDADE))
+            .thenReturn(Optional.of(v));
+        service.encerrar(v.getPublicId());
+        assertTrue(v.getEncerrado());
+        assertFalse(v.vigente(LocalDate.now()));
+        assertEquals(LocalDate.now(), v.getDataFim());
+        verify(vinculos, never()).delete(any(VinculoOperacionalUsuario.class));
+    }
+
     @Test void deveBloquearProjetoDeOutroLaboratorio() {
         TenantContext.definir(UNIDADE);
         Usuario usuario = analista();
