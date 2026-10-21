@@ -66,6 +66,7 @@ public class VinculoOperacionalUsuarioService {
             projeto = projetos.findByPublicId(dto.getProjetoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", dto.getProjetoId()));
         }
+        if (sci != null) sci.validateActive();
         if (projeto != null) {
             projeto.validateActive();
             if (!projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
