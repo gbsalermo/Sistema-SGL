@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
+import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
 import com.sgl.service.VinculoOperacionalUsuarioService;
 
@@ -30,6 +31,11 @@ public class VinculoOperacionalUsuarioController {
     @PostMapping
     public VinculoOperacionalUsuarioResponseDTO criar(@Valid @RequestBody VinculoOperacionalUsuarioRequestDTO dto) {
         return service.criar(dto);
+    }
+    @PutMapping("/{id}")
+    public VinculoOperacionalUsuarioResponseDTO editar(@PathVariable UUID id,
+            @RequestBody EditarVinculoOperacionalRequestDTO dto) {
+        return service.editar(id, dto);
     }
     @PutMapping("/{id}/encerrar")
     public VinculoOperacionalUsuarioResponseDTO encerrar(@PathVariable UUID id) {
