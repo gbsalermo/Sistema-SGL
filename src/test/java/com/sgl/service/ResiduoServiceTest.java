@@ -130,6 +130,9 @@ class ResiduoServiceTest {
     @Mock
     private VinculoEstagioAtividadeRepository participacaoRepository;
 
+    @Mock
+    private VinculoOperacionalUsuarioService vinculoOperacionalService;
+
     @InjectMocks
     private ResiduoService residuoService;
 
