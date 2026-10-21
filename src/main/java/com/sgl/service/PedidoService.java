@@ -66,6 +66,7 @@ public class PedidoService {
 	private final MovimentacaoEstoqueService movimentacaoEstoqueService;
 	private final ModeloSolucaoRepository modeloSolucaoRepository;
 	private final VinculoEstagioAtividadeRepository participacaoRepository;
+	private final VinculoOperacionalUsuarioService vinculoOperacionalService;
 
 	@Transactional
 	public PedidoResponseDTO criar(PedidoRequestDTO dto) {
@@ -124,7 +125,14 @@ public class PedidoService {
 		if (!urgente)
 			motivoUrgencia = null;
 
-		Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
+		boolean projetoSemVinculoDireto = projeto != null
+                && usuario.getPerfil() != Perfil.ESTAGIARIO
+                && usuario.getPerfil() != Perfil.GESTOR
+                && usuario.getPerfil() != Perfil.ADMINISTRADOR
+                && !vinculoOperacionalService.vinculadoProjeto(usuario, projeto, dataSolicitacao.toLocalDate());
+
+        Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
+                .projetoSemVinculoDireto(projetoSemVinculoDireto)
 				.participacaoEstagioAtividade(contexto.participacao()).atividadeOrigem(contexto.atividade())
 				.sciOrigem(contexto.sci())
 				.atividadeOrigemNome(contexto.atividade() == null ? null : contexto.atividade().getNome())
@@ -526,8 +534,8 @@ public class PedidoService {
 
 		// O Estagiário tem o Laboratório derivado de sua participação,
 		// não necessariamente o mesmo Laboratório-base do cadastro.
-		if (!gestor && !estagiario && (usuario.getLaboratorio() == null
-				|| !usuario.getLaboratorio().getId().equals(laboratorio.getId()))) {
+		if (!gestor && !estagiario
+                && !vinculoOperacionalService.vinculadoLaboratorio(usuario, laboratorio, LocalDate.now())) {
 			throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
 		}
 
