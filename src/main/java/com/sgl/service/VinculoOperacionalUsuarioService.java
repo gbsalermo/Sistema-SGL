@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
+import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -118,6 +119,24 @@ public class VinculoOperacionalUsuarioService {
         v.setSci(sci); v.setAtividade(atividade);
         v.setDataInicio(dto.getDataInicio()); v.setDataFim(dto.getDataFim()); v.setObservacao(dto.getObservacao());
         return new VinculoOperacionalUsuarioResponseDTO(vinculos.save(v));
+    }
+
+    @Transactional
+    public VinculoOperacionalUsuarioResponseDTO editar(UUID id, EditarVinculoOperacionalRequestDTO dto) {
+        VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
+            .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
+        if (Boolean.TRUE.equals(v.getEncerrado())) {
+            throw new BusinessRuleException("Vínculo encerrado não pode ser editado.");
+        }
+        if (dto.getDataFim() != null && dto.getDataFim().isBefore(v.getDataInicio())) {
+            throw new BusinessRuleException("A data final não pode ser anterior à data de início.");
+        }
+        if (dto.getDataFim() != null && dto.getDataFim().isBefore(LocalDate.now())) {
+            throw new BusinessRuleException("Para encerrar vínculo imediatamente, utilize Encerrar vínculo.");
+        }
+        v.setDataFim(dto.getDataFim());
+        v.setObservacao(dto.getObservacao());
+        return new VinculoOperacionalUsuarioResponseDTO(v);
     }
 
     @Transactional
