@@ -141,6 +141,9 @@ public class Pedido implements Serializable {
 	@Column(name = "laboratorio_origem_nome", updatable = false)
 	private String laboratorioOrigemNome;
 
+    @Column(name = "projeto_sem_vinculo_direto", nullable = false)
+    private Boolean projetoSemVinculoDireto = false;
+
 	@PrePersist
 	private void generatePublicId() {
 		if (publicId == null) {
