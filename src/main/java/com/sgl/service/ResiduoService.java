@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,6 +32,7 @@ import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
 import com.sgl.model.Usuario;
+import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusResiduo;
@@ -42,6 +44,7 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
@@ -53,6 +56,7 @@ public class ResiduoService {
 	private final ResiduoRepository residuoRepository;
 	private final HistoricoResiduoRepository historicoResiduoRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final VinculoEstagioAtividadeRepository participacaoRepository;
 	private final LaboratorioRepository laboratorioRepository;
 	private final ProjetoRepository projetoRepository;
 	private final ProdutoRepository produtoRepository;
@@ -64,13 +68,48 @@ public class ResiduoService {
 		Usuario gerador = buscarUsuario(dto.getUsuarioGeradorId());
 		gerador.validateActive();
 
-		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
-		laboratorio.validateActive();
-		validarGeradorNoLaboratorio(gerador, laboratorio);
+		VinculoEstagioAtividade participacao = null;
+		if (gerador.getPerfil() == Perfil.ESTAGIARIO) {
+			if (dto.getParticipacaoId() == null) {
+				throw new BusinessRuleException("Selecione uma participação ativa para informar o resíduo.");
+			}
+			exigirTenantAtivo();
+			UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+			participacao = participacaoRepository.buscarParticipacaoParaPedido(
+					dto.getParticipacaoId(), gerador.getPublicId(), unidadeId)
+					.orElseThrow(() -> new ResourceNotFoundException("Participação operacional", dto.getParticipacaoId()));
+			var elegibilidade = ElegibilidadeContextoOperacional.avaliar(participacao, LocalDate.now(), unidadeId);
+			if (!elegibilidade.elegivel()) {
+				throw new BusinessRuleException("Participação não elegível para informar resíduo: " + elegibilidade.motivo());
+			}
+		} else if (dto.getParticipacaoId() != null) {
+			throw new BusinessRuleException("A participação de estágio somente pode ser usada por estagiários.");
+		}
 
-		Projeto projeto = buscarProjeto(dto.getProjetoId(), laboratorio);
+		UUID laboratorioId = dto.getLaboratorioId();
+		UUID projetoId = dto.getProjetoId();
+		if (participacao != null) {
+			var projetoOrigem = participacao.getAtividade().getSci().getProjeto();
+			laboratorioId = projetoOrigem.getLaboratorio().getPublicId();
+			projetoId = projetoOrigem.getPublicId();
+			if (dto.getLaboratorioId() != null && !dto.getLaboratorioId().equals(laboratorioId)) {
+				throw new BusinessRuleException("Laboratório informado diverge da participação selecionada.");
+			}
+			if (dto.getProjetoId() != null && !dto.getProjetoId().equals(projetoId)) {
+				throw new BusinessRuleException("Projeto informado diverge da participação selecionada.");
+			}
+		}
+		Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
+		laboratorio.validateActive();
+		if (participacao == null) validarGeradorNoLaboratorio(gerador, laboratorio);
+		Projeto projeto = buscarProjeto(projetoId, laboratorio);
 
 		Residuo residuo = Residuo.builder().laboratorio(laboratorio).gerador(gerador).projeto(projeto)
+				.participacaoEstagioAtividade(participacao)
+				.atividadeOrigemNome(participacao == null ? null : participacao.getAtividade().getNome())
+				.sciOrigemNome(participacao == null ? null : participacao.getAtividade().getSci().getNome())
+				.projetoOrigemNome(participacao == null ? null : projeto.getNome())
+				.laboratorioOrigemNome(participacao == null ? null : laboratorio.getNome())
 				.unidadeIdSnapshot(laboratorio.getUnidade().getPublicId())
 				.unidadeNomeSnapshot(laboratorio.getUnidade().getNome())
 				.unidadeSiglaSnapshot(laboratorio.getUnidade().getSigla()).descricao(dto.getDescricao())
