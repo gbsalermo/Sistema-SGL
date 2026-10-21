@@ -2,6 +2,9 @@ package com.sgl.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +31,26 @@ public class VinculoOperacionalUsuarioService {
     private UUID unidade() {
         return TenantContext.unidadeAtual().orElseThrow(
             () -> new BusinessRuleException("Unidade operacional obrigatória."));
+    }
+
+    /** Resumo de vínculos para a listagem administrativa, sem uma chamada por usuário. */
+    public record ResumoUsuario(UUID usuarioId, int vinculosVigentes, int vinculosEncerrados,
+            List<String> laboratoriosAdicionais) {}
+
+    @Transactional(readOnly = true)
+    public List<ResumoUsuario> resumo() {
+        Map<UUID, List<VinculoOperacionalUsuario>> agrupados = new HashMap<>();
+        for (VinculoOperacionalUsuario v : vinculos.findByUsuarioUnidadePublicId(unidade())) {
+            agrupados.computeIfAbsent(v.getUsuario().getPublicId(), k -> new ArrayList<>()).add(v);
+        }
+        LocalDate hoje = LocalDate.now();
+        return agrupados.entrySet().stream().map(e -> {
+            var ativos = e.getValue().stream().filter(v -> v.vigente(hoje)).toList();
+            var nomes = ativos.stream().map(v -> v.getLaboratorio().getNome())
+                .distinct().sorted().toList();
+            return new ResumoUsuario(e.getKey(), ativos.size(),
+                (int) e.getValue().stream().filter(v -> !v.vigente(hoje)).count(), nomes);
+        }).toList();
     }
 
     @Transactional(readOnly = true)
