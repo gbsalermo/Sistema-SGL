@@ -92,14 +92,14 @@ public class ResiduoResponseDTO {
 		this.status = entity.getStatus();
 
 		this.laboratorioId = entity.getLaboratorio().getPublicId();
-		this.laboratorioNome = entity.getLaboratorio().getNome();
+		this.laboratorioNome = entity.getLaboratorioOrigemNome() != null ? entity.getLaboratorioOrigemNome() : entity.getLaboratorio().getNome();
 
 		this.usuarioGeradorId = entity.getGerador().getPublicId();
 		this.usuarioGeradorNome = entity.getGerador().getNome();
 
 		this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
 
-		this.projetoNome = entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
+		this.projetoNome = entity.getProjetoOrigemNome() != null ? entity.getProjetoOrigemNome() : entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
 		this.participacaoId = entity.getParticipacaoEstagioAtividade() == null ? null : entity.getParticipacaoEstagioAtividade().getPublicId();
 		this.atividadeOrigemNome = entity.getAtividadeOrigemNome();
 		this.sciOrigemNome = entity.getSciOrigemNome();
