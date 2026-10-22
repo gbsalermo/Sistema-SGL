@@ -43,3 +43,13 @@ Definir fornecedor real de autenticação institucional (OIDC/SAML/LDAP/API conf
 **Fluxo futuro, fora desta etapa:** login institucional validado -> buscar identidade estável -> localizar usuário -> provisionar registro pendente se ausente -> Gestão concede laboratório-base e vínculos -> uso operacional. O atual cadastro manual de usuários de teste substitui temporariamente apenas o provisionamento da identidade, não a autorização institucional.
 
 **Critério de aceite atual:** regras e interfaces homologadas localmente com massa DEV; autenticação e autorização reais permanecem pendências obrigatórias de pré-produção.
+
+
+## Homologação 1.5A — 22/10/2026
+- Validado em DEV: o backend bloqueia dois vínculos genéricos adicionais vigentes idênticos.
+- Divergência visual e de contrato apontada pelo responsável: o laboratório-base já concede autorização operacional, portanto um vínculo adicional genérico para **esse mesmo laboratório** é redundante.
+- Regra nova implementada: backend bloqueia vínculo genérico em laboratório-base; **mantém permitido** vínculo específico de Projeto, SCI ou Atividade nessa mesma hierarquia.
+- A troca de laboratório-base para um laboratório com vínculo genérico vigente requer primeiro encerrar esse vínculo genérico (preserva histórico); evita introduzir outra duplicidade.
+- A interface impede a seleção redundante no nível Laboratório, explica a restrição e identifica os registros redundantes da massa DEV já existentes. **Não há exclusão nem encerramento automático** de histórico.
+- Usuários com a redundância já persistida continuam autorizados pelo laboratório-base; o vínculo genérico redundante pode ser encerrado manualmente.
+- O cenário 1.5A está **parcialmente validado**: duplicação do adicional foi impedida, mas as novas proteções base × genérico ainda aguardam revalidação, incluindo build/testes.
