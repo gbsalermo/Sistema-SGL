@@ -156,6 +156,65 @@ class VinculoOperacionalUsuarioServiceTest {
         verify(vinculos, never()).delete(any(VinculoOperacionalUsuario.class));
     }
 
+
+    @Test void laboratorioBaseNaoPermiteNovoVinculoGenerico() {
+        TenantContext.definir(UNIDADE);
+        Usuario usuario = analista();
+        Laboratorio lab = laboratorio();
+        usuario.setLaboratorio(lab);
+        VinculoOperacionalUsuarioRequestDTO dto = new VinculoOperacionalUsuarioRequestDTO();
+        dto.setUsuarioId(USUARIO);
+        dto.setLaboratorioId(LAB);
+        dto.setDataInicio(LocalDate.now());
+        when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(usuario));
+        when(laboratorios.findByPublicIdAndUnidadePublicId(LAB, UNIDADE)).thenReturn(Optional.of(lab));
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class, () -> service.criar(dto));
+        assertTrue(erro.getMessage().contains("laboratório-base"));
+        verify(vinculos, never()).save(any(VinculoOperacionalUsuario.class));
+    }
+
+    @Test void podeVincularProjetoEspecificoDentroDoLaboratorioBase() {
+        TenantContext.definir(UNIDADE);
+        Usuario usuario = analista();
+        Laboratorio lab = laboratorio();
+        usuario.setLaboratorio(lab);
+        Projeto p = new Projeto();
+        p.setId(5L);
+        p.setPublicId(PROJETO);
+        p.setLaboratorio(lab);
+        p.setAtivo(true);
+        VinculoOperacionalUsuarioRequestDTO dto = new VinculoOperacionalUsuarioRequestDTO();
+        dto.setUsuarioId(USUARIO);
+        dto.setLaboratorioId(LAB);
+        dto.setProjetoId(PROJETO);
+        dto.setDataInicio(LocalDate.now());
+        when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(usuario));
+        when(laboratorios.findByPublicIdAndUnidadePublicId(LAB, UNIDADE)).thenReturn(Optional.of(lab));
+        when(projetos.findByPublicId(PROJETO)).thenReturn(Optional.of(p));
+        when(vinculos.save(any(VinculoOperacionalUsuario.class))).thenAnswer(inv -> {
+            VinculoOperacionalUsuario v = inv.getArgument(0);
+            v.setPublicId(UUID.randomUUID());
+            return v;
+        });
+        assertEquals(PROJETO, service.criar(dto).getProjetoId());
+        verify(vinculos).save(any(VinculoOperacionalUsuario.class));
+    }
+
+    @Test void laboratorioComVinculoGenericoNaoPodeVirarBaseSemEncerrarDuplicidade() {
+        TenantContext.definir(UNIDADE);
+        Usuario usuario = analista();
+        Laboratorio lab = laboratorio();
+        VinculoOperacionalUsuario vinculo = new VinculoOperacionalUsuario();
+        vinculo.setLaboratorio(lab);
+        vinculo.setDataInicio(LocalDate.now().minusDays(1));
+        when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(usuario));
+        when(laboratorios.findByPublicIdAndUnidadePublicId(LAB, UNIDADE)).thenReturn(Optional.of(lab));
+        when(vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(USUARIO, UNIDADE))
+            .thenReturn(List.of(vinculo));
+        assertThrows(BusinessRuleException.class, () -> service.definirLaboratorioBase(USUARIO, LAB));
+        assertNull(usuario.getLaboratorio());
+    }
+
     @Test void deveBloquearProjetoDeOutroLaboratorio() {
         TenantContext.definir(UNIDADE);
         Usuario usuario = analista();
