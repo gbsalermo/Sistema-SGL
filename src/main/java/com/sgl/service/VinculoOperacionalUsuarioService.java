@@ -101,6 +101,13 @@ public class VinculoOperacionalUsuarioService {
             || dto.getSciId() != null && (sci == null || !dto.getSciId().equals(sci.getPublicId()))) {
             throw new BusinessRuleException("Contexto hierárquico divergente.");
         }
+        // O laboratório-base já é um vínculo operacional completo com esse laboratório.
+        // Permitir somente associações mais específicas (Projeto, SCI ou Atividade).
+        if (projeto == null && sci == null && atividade == null
+                && usuario.getLaboratorio() != null
+                && usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
+            throw new BusinessRuleException("Este já é o laboratório-base do usuário. Para esse laboratório, associe apenas Projeto, SCI ou Atividade.");
+        }
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(dto.getDataInicio())) {
             throw new BusinessRuleException("Data final anterior ao início.");
         }
@@ -162,7 +169,19 @@ public class VinculoOperacionalUsuarioService {
         Laboratorio lab = laboratorioId == null ? null :
             laboratorios.findByPublicIdAndUnidadePublicId(laboratorioId, tenant)
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
-        if (lab != null) lab.validateActive();
+        if (lab != null) {
+            lab.validateActive();
+            // Evita introduzir duplicidade ao promover um laboratório adicional a base.
+            boolean possuiVinculoGenerico = vinculos
+                .findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), tenant)
+                .stream().anyMatch(v -> v.vigente(LocalDate.now())
+                    && v.getLaboratorio().getId().equals(lab.getId())
+                    && v.getProjeto() == null && v.getSci() == null && v.getAtividade() == null);
+            if (possuiVinculoGenerico && (usuario.getLaboratorio() == null
+                    || !usuario.getLaboratorio().getId().equals(lab.getId()))) {
+                throw new BusinessRuleException("Este laboratório já possui vínculo adicional vigente. Encerre o vínculo genérico antes de defini-lo como laboratório-base.");
+            }
+        }
         usuario.setLaboratorio(lab);
     }
 
