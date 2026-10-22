@@ -87,8 +87,6 @@ public class PedidoService {
 		List<ItemPedidoRequestDTO> itensSolicitados = dto.getItens();
 
 		if (tipo == TipoPedido.SOLUCAO) {
-			if (projeto == null)
-				throw new BusinessRuleException("Projeto é obrigatório para pedir uma Solução.");
 			if (dto.getModeloSolucaoId() != null) {
 				if (itensSolicitados != null && !itensSolicitados.isEmpty())
 					throw new BusinessRuleException("Ao selecionar um modelo, os itens são gerados pelo servidor.");
