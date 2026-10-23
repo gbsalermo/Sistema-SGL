@@ -21,3 +21,7 @@
 - Verificar regressão de resíduos para Gestor, Administrador, Pesquisador e Técnico.
 - Reabrir as novas solicitações de Pedido/Solução e checar `atividadeOrigemNome` e `sciOrigemNome` na resposta real.
 - Não realizar merge sem validação manual.
+
+
+## Estado posterior validado — 23/10/2026 (adendo)
+O texto acima documenta a situação da data original, **não a situação final da Etapa 8**. Os blocos 1–4 (Vínculos, Pedidos, Soluções e Resíduos) foram homologados manualmente no DEV. Migrations V40–V44 validadas em PostgreSQL; build frontend e ArchUnit (5/5) aprovados. Projeto é opcional nos fluxos atuais de Pedidos, Soluções e Resíduos para perfis elegíveis. O escopo de identidade institucional permanece separado. Conferir `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` antes do fechamento: unidades/usuários/novos estagiários dependem de provisionamento/seed. Não há merge autorizado, nem sincronização GitLab comprovada.
