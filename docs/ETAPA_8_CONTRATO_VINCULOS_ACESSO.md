@@ -53,3 +53,7 @@ Definir fornecedor real de autenticação institucional (OIDC/SAML/LDAP/API conf
 - A interface impede a seleção redundante no nível Laboratório, explica a restrição e identifica os registros redundantes da massa DEV já existentes. **Não há exclusão nem encerramento automático** de histórico.
 - Usuários com a redundância já persistida continuam autorizados pelo laboratório-base; o vínculo genérico redundante pode ser encerrado manualmente.
 - O cenário 1.5A está **parcialmente validado**: duplicação do adicional foi impedida, mas as novas proteções base × genérico ainda aguardam revalidação, incluindo build/testes.
+
+
+## Estado posterior validado — 23/10/2026 (adendo)
+O texto acima documenta a situação da data original, **não a situação final da Etapa 8**. Os blocos 1–4 (Vínculos, Pedidos, Soluções e Resíduos) foram homologados manualmente no DEV. Migrations V40–V44 validadas em PostgreSQL; build frontend e ArchUnit (5/5) aprovados. Projeto é opcional nos fluxos atuais de Pedidos, Soluções e Resíduos para perfis elegíveis. O escopo de identidade institucional permanece separado. Conferir `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` antes do fechamento: unidades/usuários/novos estagiários dependem de provisionamento/seed. Não há merge autorizado, nem sincronização GitLab comprovada.
