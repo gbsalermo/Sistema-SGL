@@ -30,3 +30,18 @@
 4. Revisar autorização tenant/perfil e validação de alterações/revogação durante operação, distinguindo escopo DEV e pré-produção.
 5. Fazer regressão estoque/soluções/resíduos + revisão visual e testes de arquitetura/carga em ambiente isolado.
 6. Atualizar roadmap vigente e documentação, confirmar GitLab/GitHub e solicitar aceite antes de merge.
+
+
+## Checkpoint 5.4 — análise estática de consultas e startup DEV (23/10/2026)
+
+**Evidência cruzada com o log de inicialização enviado pelo responsável:**
+- Spring Boot e Hibernate iniciados, 44 migrations validadas. O log também exibiu consultas repetidas de recipientes de lote, Projetos, SCI e Atividades.
+- `src/main/java/com/sgl/test/DataInitializer.java` é `@Profile("dev")`, implementa `CommandLineRunner` e, quando já existe massa, executa `validarMassaEstoqueEtapa7Existente()`, `garantirCadastrosResiduos()`, `garantirDadosEtapa5()` e `garantirDadosEtapa6()`.
+- Em `validarMassaEstoqueEtapa7Existente()`, há `loteRepository.findAll()` e um `anyMatch` que executa `recipienteEstoqueRepository.findByLoteIdOrderBySequencialAsc(lote.getId())` **por lote até encontrar um sem recipiente**, mesmo quando só necessita testar existência. Este é um padrão N+1 confirmado em rotina de validação DEV, não uma falha operacional comprovada da API.
+- As consultas de hierarquia também aparecem em verificações de massa DEV, mas seu peso em requisições reais **não foi medido**.
+
+**Decisão neste checkpoint:** não alterar automaticamente esse inicializador nem o motor de Estoque durante a homologação. A inicialização já passou; uma otimização exigiria teste de regressão preservando a detecção de massa incompatível. Registrar uma melhoria futura para usar consulta de existência/agrupamento no repositório em vez de carregar todos os recipientes por lote.
+
+**Limites da conclusão:** análise estática + log de inicialização NÃO provam latência, número de queries por requisição, uso de CPU, N+1 nas telas ou carga máxima. A medição de endpoints com massa representativa continua na Etapa 12.
+
+**Próximo portão da Etapa 8:** 5.5, revisão de build, testes automatizados disponíveis do frontend e lacunas de arquitetura/fluxos, mantendo MVP e autenticação fora do escopo atual.
