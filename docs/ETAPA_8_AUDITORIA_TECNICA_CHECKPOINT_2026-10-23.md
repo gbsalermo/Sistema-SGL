@@ -45,3 +45,13 @@
 **Limites da conclusão:** análise estática + log de inicialização NÃO provam latência, número de queries por requisição, uso de CPU, N+1 nas telas ou carga máxima. A medição de endpoints com massa representativa continua na Etapa 12.
 
 **Próximo portão da Etapa 8:** 5.5, revisão de build, testes automatizados disponíveis do frontend e lacunas de arquitetura/fluxos, mantendo MVP e autenticação fora do escopo atual.
+
+
+## Checkpoint 5.5 — primeira integração ArchUnit
+
+- Adicionada dependência **somente de testes** `com.tngtech.archunit:archunit-junit5:1.5.1` ao `pom.xml`.
+- Criada suíte `src/test/java/com/sgl/architecture/SglArchitectureTest.java` com cinco regras básicas: entidades, DTOs, repositórios e serviços não dependem de Controllers; DTOs não dependem de Repositories.
+- Não foram introduzidas regras de impedimento de acesso Controller→Repository nem proibição abrangente de ciclos sem inventariar possíveis dependências legadas primeiro.
+- A adição **não altera classes de produção nem a modelagem de Estoque**.
+- **Pendente:** executar `./mvnw -Dtest=SglArchitectureTest test` (ou `mvnw.cmd -Dtest=SglArchitectureTest test` no Windows) e registrar eventuais violações reais. Não declarar verde sem resultado.
+- Os testes arquiteturais completos, métricas e fluxo E2E do sistema inteiro continuam no programa transversal da Etapa 12.
