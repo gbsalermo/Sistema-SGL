@@ -33,6 +33,12 @@ public class ResiduoResponseDTO {
 	private final String usuarioGeradorNome;
 	private final UUID projetoId;
 	private final String projetoNome;
+	private final boolean projetoSemVinculoDireto;
+	private final UUID participacaoId;
+	private final String atividadeOrigemNome;
+	private final String sciOrigemNome;
+	private final String projetoOrigemNome;
+	private final String laboratorioOrigemNome;
 
 	private final String descricao;
 	private final String processoOrigem;
@@ -87,14 +93,20 @@ public class ResiduoResponseDTO {
 		this.status = entity.getStatus();
 
 		this.laboratorioId = entity.getLaboratorio().getPublicId();
-		this.laboratorioNome = entity.getLaboratorio().getNome();
+		this.laboratorioNome = entity.getLaboratorioOrigemNome() != null ? entity.getLaboratorioOrigemNome() : entity.getLaboratorio().getNome();
 
 		this.usuarioGeradorId = entity.getGerador().getPublicId();
 		this.usuarioGeradorNome = entity.getGerador().getNome();
 
 		this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
+		this.projetoSemVinculoDireto = entity.isProjetoSemVinculoDireto();
 
-		this.projetoNome = entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
+		this.projetoNome = entity.getProjetoOrigemNome() != null ? entity.getProjetoOrigemNome() : entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
+		this.participacaoId = entity.getParticipacaoEstagioAtividade() == null ? null : entity.getParticipacaoEstagioAtividade().getPublicId();
+		this.atividadeOrigemNome = entity.getAtividadeOrigemNome();
+		this.sciOrigemNome = entity.getSciOrigemNome();
+		this.projetoOrigemNome = entity.getProjetoOrigemNome();
+		this.laboratorioOrigemNome = entity.getLaboratorioOrigemNome();
 
 		// Gestor que recebeu inicialmente o resíduo.
 		this.gestorRecebedorInicialId = entity.getGestorRecebedorInicial() != null

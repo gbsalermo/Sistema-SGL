@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.TipoPedido;
 import com.sgl.model.enums.TipoMovimentacao;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,6 +31,7 @@ public class MovimentacaoEstoqueResponseDTO {
     private String usuarioNome;
     private UUID estoqueCentralId;
     private UUID pedidoId;
+    private TipoPedido pedidoTipo;
     private String pedidoSolicitanteNome;
     private UUID loteId;
     private String codigoInternoLote;
@@ -52,6 +54,7 @@ public class MovimentacaoEstoqueResponseDTO {
         this.usuarioNome = entity.getUsuario().getNome();
         this.estoqueCentralId = entity.getEstoqueCentral().getPublicId();
         this.pedidoId = entity.getPedido() != null ? entity.getPedido().getPublicId() : null;
+        this.pedidoTipo = entity.getPedido() != null ? entity.getPedido().getTipo() : null;
         this.pedidoSolicitanteNome = entity.getPedido() != null && entity.getPedido().getUsuario() != null
                 ? entity.getPedido().getUsuario().getNome()
                 : null;

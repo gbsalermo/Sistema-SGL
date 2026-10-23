@@ -76,3 +76,16 @@ Essas APIs em DEV validam Unidade de origem e destino, mas **não autenticam o u
 - **7.6/7.7:** massa DEV/DEMO, builds finais no HEAD, regressão, responsividade, Light/Dark e QA de perfis/isolamento. O relato de testes verdes anteriores não valida automaticamente mudanças futuras.
 - **Segurança de pré-produção:** autenticação/autorização real, auditoria, matriz de permissões e fontes autoritativas da identidade/Unidade.
 - **Nenhum merge** foi realizado ou está autorizado pelo presente documento.
+
+
+## Atualização de contrato vigente — fechamento funcional da Etapa 8 (23/10/2026)
+
+**Este adendo substitui, para o MVP atual, as afirmações históricas acima de que Soluções sempre exigem Projeto.** O documento original representa o handoff da Etapa 7.5, não a implementação final.
+
+- **Pedidos de Produtos, Soluções e Resíduos:** Projeto é opcional para os perfis habilitados, condicionado à autorização do laboratório de origem.
+- **Técnico, Analista e Pesquisador:** podem utilizar laboratório-base ou vínculo operacional adicional vigente. Vínculos específicos de Projeto, SCI ou Atividade autorizam o laboratório correspondente; vínculos em SCI/Atividade também derivam o Projeto. Não confundir a herança de contexto com concessão automática de novos vínculos formais.
+- **Projeto selecionado, sem vínculo específico do usuário:** quando pertence a laboratório autorizado, o registro é admitido e mantém indicador/snapshot de ausência de vínculo de Projeto, exibido para confirmação da Gestão no fluxo próprio. Resíduos seguem a confirmação no recebimento.
+- **Estagiário:** permanece dependente de participação elegível validada no backend; origem histórica é preservada.
+- **Banco:** migrations V40–V44 da Etapa 8; histórico de vínculos e indicadores não devem ser recalculados retroativamente com base nas permissões atuais.
+- **Validação:** blocos funcionais 1–4 reportados aprovados em DEV; Flyway validou 44 migrations; suíte ArchUnit 5/5 verde; frontend compilou após correções de tipagem.
+- **Fora deste aceite:** autenticação institucional e testes globais de carga/arquitetura/E2E da Etapa 12. Não há autorização de merge implícita.

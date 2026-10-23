@@ -40,6 +40,16 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             """)
     Optional<Pedido> buscarPorIdComBloqueio(@Param("id") Long id);
 
+    @Query("""
+            SELECT p FROM Pedido p
+            WHERE p.participacaoEstagioAtividade.vinculoEstagio.orientador.publicId = :orientadorId
+              AND p.laboratorio.unidade.publicId = :unidadeId
+            ORDER BY p.dataSolicitacao DESC
+            """)
+    List<Pedido> listarPedidosDeOrientandos(
+            @Param("orientadorId") UUID orientadorId,
+            @Param("unidadeId") UUID unidadeId);
+
     List<Pedido> findByUsuarioId(Long usuarioId);
     List<Pedido> findByUsuarioIdAndLaboratorioUnidadePublicId(Long usuarioId, UUID unidadePublicId);
 

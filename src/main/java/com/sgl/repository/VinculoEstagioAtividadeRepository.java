@@ -98,4 +98,28 @@ public interface VinculoEstagioAtividadeRepository
     long countByVinculoEstagioIdAndDataFimParticipacaoIsNull(
             Long vinculoEstagioId
     );
+    
+    @EntityGraph(attributePaths = {
+    	    "vinculoEstagio",
+    	    "vinculoEstagio.estagiario",
+    	    "vinculoEstagio.estagiario.unidade",
+    	    "atividade",
+    	    "atividade.sci",
+    	    "atividade.sci.projeto",
+    	    "atividade.sci.projeto.laboratorio",
+    	    "atividade.sci.projeto.laboratorio.unidade"
+    	})
+    	@Query("""
+    	    SELECT p
+    	    FROM VinculoEstagioAtividade p
+    	    WHERE p.publicId = :participacaoId
+    	      AND p.vinculoEstagio.estagiario.publicId = :usuarioId
+    	      AND p.vinculoEstagio.estagiario.unidade.publicId = :unidadeId
+    	      AND p.atividade.sci.projeto.laboratorio.unidade.publicId = :unidadeId
+    	    """)
+    	Optional<VinculoEstagioAtividade> buscarParticipacaoParaPedido(
+    	    @Param("participacaoId") UUID participacaoId,
+    	    @Param("usuarioId") UUID usuarioId,
+    	    @Param("unidadeId") UUID unidadeId
+    	);
 }

@@ -19,23 +19,26 @@ import com.sgl.dto.request.PedidoRequestDTO;
 import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.Atividade;
+import com.sgl.model.ComponenteModeloSolucao;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.HistoricoLaboratorio;
 import com.sgl.model.ItemPedido;
-import com.sgl.model.ModeloSolucao;
-import com.sgl.model.ComponenteModeloSolucao;
-import com.sgl.model.medida.ConversorUnidadeMedida;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.ModeloSolucao;
 import com.sgl.model.Pedido;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
+import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
+import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.OrigemMovimentacao;
-import com.sgl.model.enums.StatusPedido;
-import com.sgl.model.enums.TipoPedido;
 import com.sgl.model.enums.Perfil;
-import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.model.enums.TipoPedido;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.medida.ConversorUnidadeMedida;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.HistoricoLaboratorioRepository;
 import com.sgl.repository.LaboratorioRepository;
@@ -44,6 +47,7 @@ import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
@@ -61,87 +65,88 @@ public class PedidoService {
 	private final ProjetoRepository projetoRepository;
 	private final MovimentacaoEstoqueService movimentacaoEstoqueService;
 	private final ModeloSolucaoRepository modeloSolucaoRepository;
+	private final VinculoEstagioAtividadeRepository participacaoRepository;
+	private final VinculoOperacionalUsuarioService vinculoOperacionalService;
 
 	@Transactional
 	public PedidoResponseDTO criar(PedidoRequestDTO dto) {
 		Usuario usuario = buscarUsuarioNoTenant(dto.getUsuarioId());
-
-		Laboratorio laboratorio = laboratorioRepository.findByPublicId(dto.getLaboratorioId())
-				.orElseThrow(() -> new ResourceNotFoundException("Laboratório", dto.getLaboratorioId()));
-		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
-
-		Projeto projeto = null;
-		if (dto.getProjetoId() != null) {
-			projeto = projetoRepository.findByPublicId(dto.getProjetoId())
-					.orElseThrow(() -> new ResourceNotFoundException("Projeto", dto.getProjetoId()));
-			if (projeto.getLaboratorio() != null && projeto.getLaboratorio().getUnidade() != null) {
-				validarTenantUnidade(projeto.getLaboratorio().getUnidade().getPublicId());
-			}
-		}
-
-		validarConsistenciaPedido(usuario, laboratorio, projeto);
 		usuario.validateActive();
-		laboratorio.validateActive();
-		if (projeto != null)
-			projeto.validateActive();
 
-        TipoPedido tipo = dto.getTipo() == null ? TipoPedido.PRODUTOS : dto.getTipo();
-        ModeloSolucao modelo = null;
-        String nomeSolucao = null;
-        String instrucoesPreparoSolucao = null;
-        List<ItemPedidoRequestDTO> itensSolicitados = dto.getItens();
+		LocalDateTime dataSolicitacao = LocalDateTime.now();
 
-        if (tipo == TipoPedido.SOLUCAO) {
-            if (projeto == null)
-                throw new BusinessRuleException("Projeto é obrigatório para pedir uma Solução.");
-            if (dto.getModeloSolucaoId() != null) {
-                if (itensSolicitados != null && !itensSolicitados.isEmpty())
-                    throw new BusinessRuleException("Ao selecionar um modelo, os itens são gerados pelo servidor.");
-                UUID unidade = laboratorio.getUnidade().getPublicId();
-                modelo = modeloSolucaoRepository.findByPublicIdAndUnidadePublicId(dto.getModeloSolucaoId(), unidade)
-                    .orElseThrow(() -> new ResourceNotFoundException("Modelo de Solução", dto.getModeloSolucaoId()));
-                if (!Boolean.TRUE.equals(modelo.getAtivo()))
-                    throw new BusinessRuleException("O modelo de Solução está inativo.");
-                nomeSolucao = modelo.getNome();
-                instrucoesPreparoSolucao = modelo.getInstrucoesPreparo();
-                itensSolicitados = modelo.getComponentes().stream()
-                    .sorted(java.util.Comparator.comparing(ComponenteModeloSolucao::getOrdem))
-                    .map(c -> {
-                        ItemPedidoRequestDTO item = new ItemPedidoRequestDTO();
-                        item.setProdutoId(c.getProduto().getPublicId());
-                        item.setQuantidadeSolicitada(c.getQuantidade());
-                        item.setUnidadeMedidaSolicitada(c.getUnidadeMedida());
-                        return item;
-                    }).toList();
-            } else {
-                nomeSolucao = dto.getNomeSolucao();
-                if (nomeSolucao == null || nomeSolucao.isBlank())
-                    throw new BusinessRuleException("Informe o nome da Solução personalizada.");
-                nomeSolucao = nomeSolucao.trim();
-            }
-        } else if (dto.getModeloSolucaoId() != null || dto.getNomeSolucao() != null) {
-            throw new BusinessRuleException("Modelo e nome de Solução só são permitidos em pedidos de Solução.");
-        }
-        if (itensSolicitados == null || itensSolicitados.isEmpty())
-            throw new BusinessRuleException("O pedido precisa de pelo menos um Produto.");
+		ContextoPedido contexto = resolverContextoPedido(usuario, dto, dataSolicitacao.toLocalDate());
+
+		Laboratorio laboratorio = contexto.laboratorio();
+		Projeto projeto = contexto.projeto();
+
+		TipoPedido tipo = dto.getTipo() == null ? TipoPedido.PRODUTOS : dto.getTipo();
+		ModeloSolucao modelo = null;
+		String nomeSolucao = null;
+		String instrucoesPreparoSolucao = null;
+		List<ItemPedidoRequestDTO> itensSolicitados = dto.getItens();
+
+		if (tipo == TipoPedido.SOLUCAO) {
+			if (dto.getModeloSolucaoId() != null) {
+				if (itensSolicitados != null && !itensSolicitados.isEmpty())
+					throw new BusinessRuleException("Ao selecionar um modelo, os itens são gerados pelo servidor.");
+				UUID unidade = laboratorio.getUnidade().getPublicId();
+				modelo = modeloSolucaoRepository.findByPublicIdAndUnidadePublicId(dto.getModeloSolucaoId(), unidade)
+						.orElseThrow(
+								() -> new ResourceNotFoundException("Modelo de Solução", dto.getModeloSolucaoId()));
+				if (!Boolean.TRUE.equals(modelo.getAtivo()))
+					throw new BusinessRuleException("O modelo de Solução está inativo.");
+				nomeSolucao = modelo.getNome();
+				instrucoesPreparoSolucao = modelo.getInstrucoesPreparo();
+				itensSolicitados = modelo.getComponentes().stream()
+						.sorted(java.util.Comparator.comparing(ComponenteModeloSolucao::getOrdem)).map(c -> {
+							ItemPedidoRequestDTO item = new ItemPedidoRequestDTO();
+							item.setProdutoId(c.getProduto().getPublicId());
+							item.setQuantidadeSolicitada(c.getQuantidade());
+							item.setUnidadeMedidaSolicitada(c.getUnidadeMedida());
+							return item;
+						}).toList();
+			} else {
+				nomeSolucao = dto.getNomeSolucao();
+				if (nomeSolucao == null || nomeSolucao.isBlank())
+					throw new BusinessRuleException("Informe o nome da Solução personalizada.");
+				nomeSolucao = nomeSolucao.trim();
+			}
+		} else if (dto.getModeloSolucaoId() != null || dto.getNomeSolucao() != null) {
+			throw new BusinessRuleException("Modelo e nome de Solução só são permitidos em pedidos de Solução.");
+		}
+		if (itensSolicitados == null || itensSolicitados.isEmpty())
+			throw new BusinessRuleException("O pedido precisa de pelo menos um Produto.");
 
 		boolean urgente = Boolean.TRUE.equals(dto.getUrgente());
 		String motivoUrgencia = normalizarTexto(dto.getMotivoUrgencia());
 		if (!urgente)
 			motivoUrgencia = null;
 
-		Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
-				.dataSolicitacao(LocalDateTime.now()).status(StatusPedido.PENDENTE).tipo(tipo)
-                .nomeSolucao(nomeSolucao).instrucoesPreparoSolucao(instrucoesPreparoSolucao)
-                .modeloSolucao(modelo).urgente(urgente)
+		boolean projetoSemVinculoDireto = projeto != null
+                && usuario.getPerfil() != Perfil.ESTAGIARIO
+                && usuario.getPerfil() != Perfil.GESTOR
+                && usuario.getPerfil() != Perfil.ADMINISTRADOR
+                && !vinculoOperacionalService.vinculadoProjeto(usuario, projeto, dataSolicitacao.toLocalDate());
+
+        Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
+                .projetoSemVinculoDireto(projetoSemVinculoDireto)
+				.participacaoEstagioAtividade(contexto.participacao()).atividadeOrigem(contexto.atividade())
+				.sciOrigem(contexto.sci())
+				.atividadeOrigemNome(contexto.atividade() == null ? null : contexto.atividade().getNome())
+				.sciOrigemNome(contexto.sci() == null ? null : contexto.sci().getNome())
+				.projetoOrigemNome(projeto == null ? null : projeto.getNome())
+				.laboratorioOrigemNome(laboratorio.getNome()).dataSolicitacao(dataSolicitacao)
+				.status(StatusPedido.PENDENTE).tipo(tipo).nomeSolucao(nomeSolucao)
+				.instrucoesPreparoSolucao(instrucoesPreparoSolucao).modeloSolucao(modelo).urgente(urgente)
 				.motivoUrgencia(motivoUrgencia).observacao(dto.getObservacao())
 				.arquivoDocumento(dto.getArquivoDocumento()).itens(new ArrayList<>()).build();
 
 		Set<Long> produtosAdicionados = new HashSet<>();
 
 		for (ItemPedidoRequestDTO itemDTO : itensSolicitados) {
-            if (itemDTO == null || itemDTO.getProdutoId() == null)
-                throw new BusinessRuleException("Produto obrigatório na composição.");
+			if (itemDTO == null || itemDTO.getProdutoId() == null)
+				throw new BusinessRuleException("Produto obrigatório na composição.");
 			Produto produto = produtoRepository.findByPublicId(itemDTO.getProdutoId())
 					.orElseThrow(() -> new ResourceNotFoundException("Produto", itemDTO.getProdutoId()));
 
@@ -169,42 +174,41 @@ public class PedidoService {
 							+ "' na unidade " + laboratorio.getUnidade().getNome()));
 			estoque.validateActive();
 
-            BigDecimal quantidadeCanonica = itemDTO.getQuantidadeSolicitada();
-            UnidadeMedida unidadeInformada = null;
-            if (tipo == TipoPedido.SOLUCAO) {
-                unidadeInformada = itemDTO.getUnidadeMedidaSolicitada();
-                if (unidadeInformada == null || quantidadeCanonica == null
-                        || quantidadeCanonica.compareTo(BigDecimal.ZERO) <= 0)
-                    throw new BusinessRuleException("Cada componente exige quantidade positiva e unidade física.");
-                quantidadeCanonica = ConversorUnidadeMedida.converterParaCanonica(
-                    quantidadeCanonica, unidadeInformada, produto.getUnidadeMedida());
-                if (quantidadeCanonica.stripTrailingZeros().scale() > 6)
-                    throw new BusinessRuleException("Quantidade convertida excede 6 casas decimais.");
-            } else if (itemDTO.getUnidadeMedidaSolicitada() != null) {
-                // Pedido convencional por quantidade física: sem contagem de apresentações.
-                if (itemDTO.getTipoEmbalagemSolicitada() != null
-                        || itemDTO.getQuantidadeEmbalagensSolicitada() != null
-                        || itemDTO.getMultiplicadorSolicitado() != null) {
-                    throw new BusinessRuleException(
-                        "Informe quantidade física com unidade OU apresentação inteira, não as duas formas.");
-                }
-                unidadeInformada = itemDTO.getUnidadeMedidaSolicitada();
-                quantidadeCanonica = ConversorUnidadeMedida.converterParaCanonica(
-                    quantidadeCanonica, unidadeInformada, produto.getUnidadeMedida());
-                if (quantidadeCanonica.stripTrailingZeros().scale() > 6) {
-                    throw new BusinessRuleException("Quantidade convertida excede 6 casas decimais.");
-                }
-            } else {
-                validarFormaRetirada(itemDTO);
-            }
+			BigDecimal quantidadeCanonica = itemDTO.getQuantidadeSolicitada();
+			UnidadeMedida unidadeInformada = null;
+			if (tipo == TipoPedido.SOLUCAO) {
+				unidadeInformada = itemDTO.getUnidadeMedidaSolicitada();
+				if (unidadeInformada == null || quantidadeCanonica == null
+						|| quantidadeCanonica.compareTo(BigDecimal.ZERO) <= 0)
+					throw new BusinessRuleException("Cada componente exige quantidade positiva e unidade física.");
+				quantidadeCanonica = ConversorUnidadeMedida.converterParaCanonica(quantidadeCanonica, unidadeInformada,
+						produto.getUnidadeMedida());
+				if (quantidadeCanonica.stripTrailingZeros().scale() > 6)
+					throw new BusinessRuleException("Quantidade convertida excede 6 casas decimais.");
+			} else if (itemDTO.getUnidadeMedidaSolicitada() != null) {
+				// Pedido convencional por quantidade física: sem contagem de apresentações.
+				if (itemDTO.getTipoEmbalagemSolicitada() != null || itemDTO.getQuantidadeEmbalagensSolicitada() != null
+						|| itemDTO.getMultiplicadorSolicitado() != null) {
+					throw new BusinessRuleException(
+							"Informe quantidade física com unidade OU apresentação inteira, não as duas formas.");
+				}
+				unidadeInformada = itemDTO.getUnidadeMedidaSolicitada();
+				quantidadeCanonica = ConversorUnidadeMedida.converterParaCanonica(quantidadeCanonica, unidadeInformada,
+						produto.getUnidadeMedida());
+				if (quantidadeCanonica.stripTrailingZeros().scale() > 6) {
+					throw new BusinessRuleException("Quantidade convertida excede 6 casas decimais.");
+				}
+			} else {
+				validarFormaRetirada(itemDTO);
+			}
 
-            ItemPedido item = ItemPedido.builder().pedido(pedido).produto(produto)
-                    .quantidadeSolicitada(quantidadeCanonica)
-                    .unidadeMedidaSolicitada(unidadeInformada)
-                    .tipoEmbalagemSolicitada(tipo == TipoPedido.PRODUTOS ? itemDTO.getTipoEmbalagemSolicitada() : null)
-                    .quantidadeEmbalagensSolicitada(tipo == TipoPedido.PRODUTOS ? itemDTO.getQuantidadeEmbalagensSolicitada() : null)
-                    .multiplicadorSolicitado(tipo == TipoPedido.PRODUTOS ? itemDTO.getMultiplicadorSolicitado() : null)
-                    .build();
+			ItemPedido item = ItemPedido.builder().pedido(pedido).produto(produto)
+					.quantidadeSolicitada(quantidadeCanonica).unidadeMedidaSolicitada(unidadeInformada)
+					.tipoEmbalagemSolicitada(tipo == TipoPedido.PRODUTOS ? itemDTO.getTipoEmbalagemSolicitada() : null)
+					.quantidadeEmbalagensSolicitada(
+							tipo == TipoPedido.PRODUTOS ? itemDTO.getQuantidadeEmbalagensSolicitada() : null)
+					.multiplicadorSolicitado(tipo == TipoPedido.PRODUTOS ? itemDTO.getMultiplicadorSolicitado() : null)
+					.build();
 			pedido.getItens().add(item);
 		}
 
@@ -223,20 +227,20 @@ public class PedidoService {
 		return pedidos.stream().map(PedidoResponseDTO::new).toList();
 	}
 
-    @Transactional(readOnly = true)
-    public List<PedidoResponseDTO> listarSolucoes() {
-        exigirTenantAtivo();
-        return pedidoRepository.findByLaboratorioUnidadePublicIdAndTipo(
-                TenantContext.unidadeAtual().orElseThrow(), TipoPedido.SOLUCAO)
-                .stream().map(PedidoResponseDTO::new).toList();
-    }
+	@Transactional(readOnly = true)
+	public List<PedidoResponseDTO> listarSolucoes() {
+		exigirTenantAtivo();
+		return pedidoRepository
+				.findByLaboratorioUnidadePublicIdAndTipo(TenantContext.unidadeAtual().orElseThrow(), TipoPedido.SOLUCAO)
+				.stream().map(PedidoResponseDTO::new).toList();
+	}
 
-    @Transactional(readOnly = true)
-    public PedidoResponseDTO buscarSolucao(UUID id) {
-        Pedido pedido = buscarPedidoNoTenant(id);
-        exigirTipoSolucao(pedido);
-        return new PedidoResponseDTO(pedido);
-    }
+	@Transactional(readOnly = true)
+	public PedidoResponseDTO buscarSolucao(UUID id) {
+		Pedido pedido = buscarPedidoNoTenant(id);
+		exigirTipoSolucao(pedido);
+		return new PedidoResponseDTO(pedido);
+	}
 
 	@Transactional(readOnly = true)
 	public PedidoResponseDTO buscarPorId(UUID id) {
@@ -307,15 +311,15 @@ public class PedidoService {
 					"Apenas pedidos PENDENTES podem ser aprovados. Status atual: " + pedido.getStatus());
 		}
 
-        if (pedido.getTipo() == TipoPedido.SOLUCAO) {
-            if (dto.getItens() == null || dto.getItens().size() != pedido.getItens().size())
-                throw new BusinessRuleException("Todos os componentes da Solução devem ser aprovados.");
-            Set<UUID> componentes = new HashSet<>();
-            for (AprovarPedidoRequestDTO.ItemAprovacaoDTO item : dto.getItens()) {
-                if (item == null || item.getItemId() == null || !componentes.add(item.getItemId()))
-                    throw new BusinessRuleException("Não repita componentes da Solução.");
-            }
-        }
+		if (pedido.getTipo() == TipoPedido.SOLUCAO) {
+			if (dto.getItens() == null || dto.getItens().size() != pedido.getItens().size())
+				throw new BusinessRuleException("Todos os componentes da Solução devem ser aprovados.");
+			Set<UUID> componentes = new HashSet<>();
+			for (AprovarPedidoRequestDTO.ItemAprovacaoDTO item : dto.getItens()) {
+				if (item == null || item.getItemId() == null || !componentes.add(item.getItemId()))
+					throw new BusinessRuleException("Não repita componentes da Solução.");
+			}
+		}
 
 		for (AprovarPedidoRequestDTO.ItemAprovacaoDTO itemAprovacao : dto.getItens()) {
 			ItemPedido item = pedido.getItens().stream().filter(i -> i.getPublicId().equals(itemAprovacao.getItemId()))
@@ -331,13 +335,12 @@ public class PedidoService {
 								+ item.getQuantidadeSolicitada() + ", aprovada: " + quantidadeAprovada);
 			}
 
-            if (pedido.getTipo() == TipoPedido.SOLUCAO
-                    && quantidadeAprovada.compareTo(item.getQuantidadeSolicitada()) != 0)
-                throw new BusinessRuleException("Para alterar a composição, rejeite o pedido e solicite nova receita.");
+			if (pedido.getTipo() == TipoPedido.SOLUCAO
+					&& quantidadeAprovada.compareTo(item.getQuantidadeSolicitada()) != 0)
+				throw new BusinessRuleException("Para alterar a composição, rejeite o pedido e solicite nova receita.");
 
-			if (pedido.getTipo() == TipoPedido.PRODUTOS
-                    && item.getUnidadeMedidaSolicitada() == null
-                    && item.getTipoEmbalagemSolicitada() != TipoEmbalagem.UNITARIO) {
+			if (pedido.getTipo() == TipoPedido.PRODUTOS && item.getUnidadeMedidaSolicitada() == null
+					&& item.getTipoEmbalagemSolicitada() != TipoEmbalagem.UNITARIO) {
 				// Correção de bug: "multiplicadorSolicitado" é um Integer
 				// (objeto), que pode ser nulo — por exemplo, num item que
 				// foi persistido antes desse campo existir, ou criado sem
@@ -366,16 +369,15 @@ public class PedidoService {
 					.orElseThrow(() -> new ResourceNotFoundException("Estoque do produto '" + produto.getNome()
 							+ "' na unidade " + pedido.getLaboratorio().getUnidade().getNome()));
 
-            movimentacaoEstoqueService.registrarSaida(estoque.getId(), quantidadeAprovada, usuarioAprovador,
-                    OrigemMovimentacao.PEDIDO, pedido, pedido.getLaboratorio(), dto.getObservacao(),
-                    pedido.getTipo() == TipoPedido.SOLUCAO ? null : item.getTipoEmbalagemSolicitada(),
-                    pedido.getTipo() == TipoPedido.SOLUCAO ? null : item.getMultiplicadorSolicitado());
+			movimentacaoEstoqueService.registrarSaida(estoque.getId(), quantidadeAprovada, usuarioAprovador,
+					OrigemMovimentacao.PEDIDO, pedido, pedido.getLaboratorio(), dto.getObservacao(),
+					pedido.getTipo() == TipoPedido.SOLUCAO ? null : item.getTipoEmbalagemSolicitada(),
+					pedido.getTipo() == TipoPedido.SOLUCAO ? null : item.getMultiplicadorSolicitado());
 
 			item.setQuantidadeAprovada(quantidadeAprovada);
 		}
 
-        pedido.setStatus(pedido.getTipo() == TipoPedido.SOLUCAO
-                ? StatusPedido.EM_PREPARACAO : StatusPedido.APROVADO);
+		pedido.setStatus(pedido.getTipo() == TipoPedido.SOLUCAO ? StatusPedido.EM_PREPARACAO : StatusPedido.APROVADO);
 		pedido.setObservacao(dto.getObservacao());
 		return new PedidoResponseDTO(pedidoRepository.save(pedido));
 	}
@@ -395,11 +397,12 @@ public class PedidoService {
 	@Transactional
 	public PedidoResponseDTO entregar(UUID id) {
 		Pedido pedido = buscarPedidoComBloqueio(id);
-        boolean solucaoEmPreparo = pedido.getTipo() == TipoPedido.SOLUCAO
-                && pedido.getStatus() == StatusPedido.EM_PREPARACAO;
-        if (!solucaoEmPreparo && pedido.getStatus() != StatusPedido.APROVADO) {
-            throw new BusinessRuleException("Pedido deve estar aprovado para entrega. Status atual: " + pedido.getStatus());
-        }
+		boolean solucaoEmPreparo = pedido.getTipo() == TipoPedido.SOLUCAO
+				&& pedido.getStatus() == StatusPedido.EM_PREPARACAO;
+		if (!solucaoEmPreparo && pedido.getStatus() != StatusPedido.APROVADO) {
+			throw new BusinessRuleException(
+					"Pedido deve estar aprovado para entrega. Status atual: " + pedido.getStatus());
+		}
 
 		for (ItemPedido item : pedido.getItens()) {
 			if (item.getQuantidadeAprovada() != null && item.getQuantidadeAprovada().compareTo(BigDecimal.ZERO) > 0) {
@@ -418,8 +421,8 @@ public class PedidoService {
 	@Transactional
 	public PedidoResponseDTO cancelar(UUID id, String observacao) {
 		Pedido pedido = buscarPedidoComBloqueio(id);
-        if (pedido.getTipo() == TipoPedido.SOLUCAO)
-            throw new BusinessRuleException("Use o cancelamento específico de Soluções com confirmação de preparo.");
+		if (pedido.getTipo() == TipoPedido.SOLUCAO)
+			throw new BusinessRuleException("Use o cancelamento específico de Soluções com confirmação de preparo.");
 		if (pedido.getStatus() == StatusPedido.REJEITADO)
 			throw new BusinessRuleException("Pedidos REJEITADOS já estão encerrados e não podem ser cancelados.");
 		if (pedido.getStatus() == StatusPedido.ENTREGUE)
@@ -435,49 +438,49 @@ public class PedidoService {
 		return new PedidoResponseDTO(pedidoRepository.save(pedido));
 	}
 
-    @Transactional
-    public PedidoResponseDTO cancelarSolucao(UUID id, Boolean preparada, String justificativa) {
-        Pedido pedido = buscarPedidoComBloqueio(id);
-        exigirTipoSolucao(pedido);
-        if (justificativa == null || justificativa.isBlank())
-            throw new BusinessRuleException("Informe a justificativa de cancelamento da Solução.");
-        if (pedido.getStatus() == StatusPedido.ENTREGUE || pedido.getStatus() == StatusPedido.REJEITADO
-                || pedido.getStatus() == StatusPedido.CANCELADO)
-            throw new BusinessRuleException("A Solução já está encerrada.");
-        if (pedido.getStatus() == StatusPedido.EM_PREPARACAO) {
-            if (preparada == null)
-                throw new BusinessRuleException("Confirme se a Solução já foi preparada fisicamente.");
-            if (!preparada)
-                movimentacaoEstoqueService.devolverSaidasDoPedido(pedido, null, justificativa);
-            pedido.setSolucaoPreparadaNoCancelamento(preparada);
-            pedido.setEstoqueRevertidoNoCancelamento(!preparada);
-        } else if (pedido.getStatus() == StatusPedido.PENDENTE) {
-            pedido.setSolucaoPreparadaNoCancelamento(false);
-            pedido.setEstoqueRevertidoNoCancelamento(false); // Nao existiram saidas.
-        } else {
-            throw new BusinessRuleException("A Solução só pode ser cancelada quando pendente ou em preparação.");
-        }
-        pedido.setStatus(StatusPedido.CANCELADO);
-        pedido.setObservacao(justificativa.trim());
-        return new PedidoResponseDTO(pedidoRepository.save(pedido));
-    }
+	@Transactional
+	public PedidoResponseDTO cancelarSolucao(UUID id, Boolean preparada, String justificativa) {
+		Pedido pedido = buscarPedidoComBloqueio(id);
+		exigirTipoSolucao(pedido);
+		if (justificativa == null || justificativa.isBlank())
+			throw new BusinessRuleException("Informe a justificativa de cancelamento da Solução.");
+		if (pedido.getStatus() == StatusPedido.ENTREGUE || pedido.getStatus() == StatusPedido.REJEITADO
+				|| pedido.getStatus() == StatusPedido.CANCELADO)
+			throw new BusinessRuleException("A Solução já está encerrada.");
+		if (pedido.getStatus() == StatusPedido.EM_PREPARACAO) {
+			if (preparada == null)
+				throw new BusinessRuleException("Confirme se a Solução já foi preparada fisicamente.");
+			if (!preparada)
+				movimentacaoEstoqueService.devolverSaidasDoPedido(pedido, null, justificativa);
+			pedido.setSolucaoPreparadaNoCancelamento(preparada);
+			pedido.setEstoqueRevertidoNoCancelamento(!preparada);
+		} else if (pedido.getStatus() == StatusPedido.PENDENTE) {
+			pedido.setSolucaoPreparadaNoCancelamento(false);
+			pedido.setEstoqueRevertidoNoCancelamento(false); // Nao existiram saidas.
+		} else {
+			throw new BusinessRuleException("A Solução só pode ser cancelada quando pendente ou em preparação.");
+		}
+		pedido.setStatus(StatusPedido.CANCELADO);
+		pedido.setObservacao(justificativa.trim());
+		return new PedidoResponseDTO(pedidoRepository.save(pedido));
+	}
 
-    @Transactional
-    public PedidoResponseDTO aprovarSolucao(UUID id, AprovarPedidoRequestDTO dto) {
-        exigirTipoSolucao(buscarPedidoNoTenant(id));
-        return aprovar(id, dto);
-    }
+	@Transactional
+	public PedidoResponseDTO aprovarSolucao(UUID id, AprovarPedidoRequestDTO dto) {
+		exigirTipoSolucao(buscarPedidoNoTenant(id));
+		return aprovar(id, dto);
+	}
 
-    @Transactional
-    public PedidoResponseDTO entregarSolucao(UUID id) {
-        exigirTipoSolucao(buscarPedidoNoTenant(id));
-        return entregar(id);
-    }
+	@Transactional
+	public PedidoResponseDTO entregarSolucao(UUID id) {
+		exigirTipoSolucao(buscarPedidoNoTenant(id));
+		return entregar(id);
+	}
 
-    private void exigirTipoSolucao(Pedido pedido) {
-        if (pedido.getTipo() != TipoPedido.SOLUCAO)
-            throw new BusinessRuleException("Pedido informado não é uma Solução.");
-    }
+	private void exigirTipoSolucao(Pedido pedido) {
+		if (pedido.getTipo() != TipoPedido.SOLUCAO)
+			throw new BusinessRuleException("Pedido informado não é uma Solução.");
+	}
 
 	private Pedido buscarPedidoNoTenant(UUID id) {
 		// Correção de segurança: antes, sem tenant ativo, buscava sem
@@ -522,20 +525,32 @@ public class PedidoService {
 	}
 
 	private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
+
 		boolean gestor = usuario.getPerfil() == Perfil.GESTOR || usuario.getPerfil() == Perfil.ADMINISTRADOR;
-		if (!gestor && (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId()))) {
+
+		boolean estagiario = usuario.getPerfil() == Perfil.ESTAGIARIO;
+
+		// O Estagiário tem o Laboratório derivado de sua participação,
+		// não necessariamente o mesmo Laboratório-base do cadastro.
+		if (!gestor && !estagiario
+                && (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId()))
+                && !vinculoOperacionalService.vinculadoLaboratorio(usuario, laboratorio, LocalDate.now())) {
 			throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
 		}
+
 		if (usuario.getUnidade() == null || laboratorio.getUnidade() == null) {
 			throw new BusinessRuleException("Usuário e laboratório devem possuir uma unidade vinculada.");
 		}
+
 		if (!usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
 			throw new BusinessRuleException("O usuário e o laboratório pertencem a unidades diferentes.");
 		}
+
 		validarTenantUnidade(usuario.getUnidade().getPublicId());
+
 		if (projeto != null && (projeto.getLaboratorio() == null
 				|| !projeto.getLaboratorio().getId().equals(laboratorio.getId()))) {
-			throw new BusinessRuleException("O projeto informado não pertence ao laboratório do pedido.");
+			throw new BusinessRuleException("O Projeto informado não pertence ao laboratório do pedido.");
 		}
 	}
 
@@ -572,5 +587,112 @@ public class PedidoService {
 			return null;
 		String normalizado = valor.trim();
 		return normalizado.isEmpty() ? null : normalizado;
+	}
+
+	private record ContextoPedido(Laboratorio laboratorio, Projeto projeto, VinculoEstagioAtividade participacao,
+			Atividade atividade, Sci sci) {
+	}
+
+	private ContextoPedido resolverContextoPedido(Usuario usuario, PedidoRequestDTO dto, LocalDate dataReferencia) {
+
+		UUID unidadeId = TenantContext.unidadeAtual()
+				.orElseThrow(() -> new BusinessRuleException("Unidade operacional não informada."));
+
+		if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
+
+			if (dto.getParticipacaoId() == null) {
+				throw new BusinessRuleException("Selecione uma participação elegível para criar o pedido.");
+			}
+
+			VinculoEstagioAtividade participacao = participacaoRepository
+					.buscarParticipacaoParaPedido(dto.getParticipacaoId(), usuario.getPublicId(), unidadeId)
+					.orElseThrow(
+							() -> new ResourceNotFoundException("Participação operacional", dto.getParticipacaoId()));
+
+			// A consulta vincula a participação ao usuário informado,
+			// e às Unidades de origem e destino.
+			var elegibilidade = ElegibilidadeContextoOperacional.avaliar(participacao, dataReferencia, unidadeId);
+
+			if (!elegibilidade.elegivel()) {
+				throw new BusinessRuleException(
+						"Participação não elegível para novos pedidos: " + elegibilidade.motivo().name());
+			}
+
+			Atividade atividade = participacao.getAtividade();
+			Sci sci = atividade.getSci();
+			Projeto projeto = sci.getProjeto();
+			Laboratorio laboratorio = projeto.getLaboratorio();
+
+			// Identificadores legados podem ser recebidos,
+			// mas nunca devem contradizer a participação.
+			if (dto.getProjetoId() != null && !dto.getProjetoId().equals(projeto.getPublicId())) {
+				throw new BusinessRuleException("O Projeto informado diverge da participação selecionada.");
+			}
+
+			if (dto.getLaboratorioId() != null && !dto.getLaboratorioId().equals(laboratorio.getPublicId())) {
+				throw new BusinessRuleException("O Laboratório informado diverge da participação selecionada.");
+			}
+
+			validarConsistenciaPedido(usuario, laboratorio, projeto);
+
+			return new ContextoPedido(laboratorio, projeto, participacao, atividade, sci);
+		}
+
+		// Participações são exclusivas de estagiários.
+		if (dto.getParticipacaoId() != null) {
+			throw new BusinessRuleException("Participação de estágio não é permitida para este perfil.");
+		}
+
+		Projeto projeto = null;
+		if (dto.getProjetoId() != null) {
+			projeto = projetoRepository.findByPublicId(dto.getProjetoId())
+					.orElseThrow(() -> new ResourceNotFoundException("Projeto", dto.getProjetoId()));
+
+			if (projeto.getLaboratorio() == null || projeto.getLaboratorio().getUnidade() == null) {
+				throw new BusinessRuleException("O Projeto informado não possui contexto operacional completo.");
+			}
+
+			validarTenantUnidade(projeto.getLaboratorio().getUnidade().getPublicId());
+		}
+
+		Laboratorio laboratorio = null;
+
+		if (dto.getLaboratorioId() != null) {
+			laboratorio = laboratorioRepository.findByPublicId(dto.getLaboratorioId())
+					.orElseThrow(() -> new ResourceNotFoundException("Laboratório", dto.getLaboratorioId()));
+
+			validarTenantUnidade(laboratorio.getUnidade() == null ? null : laboratorio.getUnidade().getPublicId());
+		}
+
+		if (projeto != null) {
+			Laboratorio laboratorioDoProjeto = projeto.getLaboratorio();
+
+			if (laboratorio != null && !laboratorio.getId().equals(laboratorioDoProjeto.getId())) {
+				throw new BusinessRuleException("O Projeto não pertence ao Laboratório informado.");
+			}
+
+			laboratorio = laboratorioDoProjeto;
+
+		} else if (laboratorio == null) {
+			boolean gestor = usuario.getPerfil() == Perfil.GESTOR || usuario.getPerfil() == Perfil.ADMINISTRADOR;
+
+			if (!gestor) {
+				laboratorio = usuario.getLaboratorio();
+			}
+		}
+
+		if (laboratorio == null) {
+			throw new BusinessRuleException("Não foi possível determinar o Laboratório do pedido.");
+		}
+
+		validarConsistenciaPedido(usuario, laboratorio, projeto);
+
+		laboratorio.validateActive();
+
+		if (projeto != null) {
+			projeto.validateActive();
+		}
+
+		return new ContextoPedido(laboratorio, projeto, null, null, null);
 	}
 }

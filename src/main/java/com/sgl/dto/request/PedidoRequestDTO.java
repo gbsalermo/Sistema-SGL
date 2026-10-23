@@ -27,12 +27,14 @@ public class PedidoRequestDTO {
     @NotNull(message = "Id do usuário é obrigatório")
     private UUID usuarioId;
 
-    @Schema(description = "Identificador público UUID do laboratório solicitante.", example = "550e8400-e29b-41d4-a716-446655440002", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "Id do laboratório é obrigatório")
+    @Schema(description = "UUID do laboratório. Opcional quando o backend consegue derivá-lo do Projeto ou da participação.", example = "550e8400-e29b-41d4-a716-446655440002")
     private UUID laboratorioId;
 
     @Schema(description = "Identificador público UUID do projeto vinculado ao pedido, quando houver.", example = "550e8400-e29b-41d4-a716-446655440003")
     private UUID projetoId;
+    
+    @Schema(description = "UUID público da participação do estagiário na atividade. Obrigatório para pedidos do perfil ESTAGIARIO.")
+    private UUID participacaoId;
 
     @Schema(description = "Indica se o solicitante marcou o pedido como urgente. A urgência é informativa e não altera o fluxo do pedido.", example = "true")
     private Boolean urgente;

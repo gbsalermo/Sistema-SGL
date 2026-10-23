@@ -1,5 +1,8 @@
 # Continuidade do Projeto SGL — Backend
 
+> **Checkpoint vigente — 23/10/2026 (Etapa 8, MVP em DEV):** blocos funcionais Vínculos, Pedidos, Soluções e Resíduos homologados manualmente; Pedido/Solução/Resíduo permitem Projeto opcional para os perfis elegíveis; vínculo específico por Projeto/SCI/Atividade deriva contexto operacional sem criar vínculos formais automaticamente. Backend PostgreSQL/Flyway validou 44 migrations; o frontend compilou e o ArchUnit passou 5/5 regras. Auditorias completas de carga/E2E e eventual identidade institucional permanecem fora deste aceite. **Auditoria de campos e entradas:** `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` — há dependência de provisionamento externo/seed para Unidade, Usuário e cadastro inicial de Estagiário, embora os cadastros operacionais restantes tenham telas. **Sem merge; não presumir sincronização GitLab confirmada.** Trechos históricos datados abaixo descrevem o estado *àquela época*, não substituem este checkpoint.
+
+
 ## Checkpoint de encerramento funcional — Etapa 7 (16/10/2026)
 
 **Estado:** Etapa 7 (7.0–7.7) concluída funcionalmente e validada pelo responsável; código e documentação preparados na branch `collab/etapa-7-unidades-solucoes-contexto` para merge **a ser realizado pelo responsável**. Não afirmar que o merge, publicação ou homologação integral de produção ocorreram.
@@ -925,18 +928,22 @@ Aprovação de Soluções deve validar atomicamente todos os componentes, preser
 - avaliação de delete lógico entidade por entidade;
 - não substituir ciclos de vida por `ativo` indiscriminadamente.
 
-## Etapa 12 — testes frontend
+## Etapa 12 — validação transversal: arquitetura, carga, E2E e frontend
 
-```text
-Vitest + Vue Test Utils
-Cypress
-```
+**Escopo ampliado em 20/10/2026** para avaliar o SGL integralmente e prevenir gargalos de consultas, recargas em cascata, timeouts, falta de resiliência e falhas de implantação.
 
-## Etapa 13 — revisão estrutural e legibilidade
+- Frontend: Vitest + Vue Test Utils, Cypress (E2E), responsividade, Light/Dark, dados, estados de erro, acessibilidade.
+- Backend/banco: JUnit, integração PostgreSQL/Flyway, tenant, atomicidade e concorrência, N+1, paginação, planos de consulta e pool.
+- Arquitetura: mapa de dependências e gargalos, chamadas duplicadas, carregamento inicial, bundle e estado de sessão.
+- Carga/estabilidade: baseline, picos, soak, stress e recuperação isolada (k6 ou equivalente), com métricas p50/p95/p99 e limites **definidos a partir de medições e exigência institucional**, não inventados.
+- Fluxos completos: Projetos/SCI/Atividades, Estagiários, Produtos/Lotes/Pedidos, Soluções, Resíduos, relatórios, rótulos, manual, dashboards e segurança de Unidade.
+- Operação: build/artefato implantado, migrations, health/readiness, conectividade, backup/restauração testados em homologação.
 
-Revisar classes grandes, com atenção especial a `Residuo`, Services, DTOs e Controllers.
+**Plano detalhado canônico:** `docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md` e `docs/PLANO_PRE_PRODUCAO.md`, Etapa 12. Não executar testes de carga sem ambiente isolado/autorização.
 
-Não fazer refactor grande agora apenas para reduzir linhas. O refactor final deve ocorrer depois da suíte da Etapa 12 e reexecutar os testes.
+## Etapa 13 — revisão estrutural e auditoria final integral
+
+Revisar classes grandes, com atenção especial a `Residuo`, Services, DTOs e Controllers. Refatorar de modo incremental após obter baseline da Etapa 12. **Repetir matriz de fluxos, testes de arquitetura, carga comparável, resiliência, frontend/backend e auditoria completa depois das correções**, entregando dossiê de evidências e parecer técnico de aceite. Não interpretar aceite técnico como autorização institucional de produção.
 
 ---
 
@@ -956,8 +963,8 @@ Etapa 8 — Pedidos + Soluções + participação           ⏳
 Etapa 9 — relatórios consolidados                     ⏳
 Etapa 10 — Rótulos + impressão operacional            ⏳
 Etapa 11 — Manual + decisão delete lógico             ⏳
-Etapa 12 — testes automatizados frontend              ⏳
-Etapa 13 — revisão estrutural e legibilidade           ⏳
+Etapa 12 — arquitetura, carga, E2E e frontend          ⏳
+Etapa 13 — revisão estrutural + auditoria final        ⏳
 ```
 
 Matriz de permissões, congelamento funcional e autenticação definitiva continuam posteriores ao bloco atual.
@@ -1181,3 +1188,11 @@ A auditoria visual revisou hierarquia documental, tokens, componentes Sgl*, dark
 **Não reabrir decisões sobre prioridades físicas**: em `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md`, §9.9 e §9.13, ficou decidido **FEFO/FIFO entre lotes**; no lote prioritário, **FECHADOS para múltiplos inteiros de apresentação**, **ABERTOS para a parte fracionária**, e **abrir FECHADO somente para completar a falta**. Pedidos grandes (600/700 mL) liberam unidades fechadas completas e usam recipiente aberto para o restante, minimizando abertura de vários frascos; não existe decisão de impor novo limite arbitrário de recipientes abertos. A ordem é preservada pelo `MovimentacaoEstoqueService.consumirRecipientes` e por testes de retirada 200/500/700 mL.
 
 A auditoria inicial de 7.6.0 mencionou equivocadamente necessidade de **decidir** novo comportamento "embalagem completa garante lacre" e novos modos físicos. Essa linguagem está **supersedida** pela atualização de `docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md`. Se não houver FECHADO compatível, não se deve inventar garantia de lacre; a decisão original fala em priorizar recipientes fechados, não em prometer lacre em toda solicitação inteira. O **trabalho real** é adequar o contrato/payload de Pedido comum e interfaces para aceitar quantidades físicas decimais, reaproveitando a seleção física existente e validando os resultados. **Nenhuma regra funcional ou migration alterada nesta retificação; sem merge.**
+
+
+## Etapa 8 — Vínculos operacionais de funcionários (21/10/2026, DEV)
+- Contrato de adaptação registrado em `docs/ETAPA_8_IMPLEMENTACAO_VINCULOS_DEV_2026-10-21.md`.
+- Gerenciamento de laboratório-base e vínculos adicionais no módulo Cadastros; Pedido/Solução/Resíduo usam laboratório autorizado e sinalizam projeto sem vínculo direto para aprovação consciente.
+- Supervisão DEV de orientandos limitada ao laboratório autorizado.
+- Login de desenvolvimento mantido; futuro login institucional não implementado e endpoints administrativos DEV/DEMO não são adequados para produção.
+- **Código enviado, compilação/build/Flyway/testes ainda pendentes. Não realizar merge até homologação.**
