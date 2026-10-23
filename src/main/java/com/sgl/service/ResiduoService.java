@@ -104,8 +104,12 @@ public class ResiduoService {
 		laboratorio.validateActive();
 		if (participacao == null) validarGeradorNoLaboratorio(gerador, laboratorio);
 		Projeto projeto = buscarProjeto(projetoId, laboratorio);
+		boolean projetoSemVinculoDireto = projeto != null && participacao == null
+				&& gerador.getPerfil() != Perfil.GESTOR && gerador.getPerfil() != Perfil.ADMINISTRADOR
+				&& !vinculoOperacionalService.vinculadoProjeto(gerador, projeto, LocalDate.now());
 
 		Residuo residuo = Residuo.builder().laboratorio(laboratorio).gerador(gerador).projeto(projeto)
+				.projetoSemVinculoDireto(projetoSemVinculoDireto)
 				.participacaoEstagioAtividade(participacao)
 				.atividadeOrigemNome(participacao == null ? null : participacao.getAtividade().getNome())
 				.sciOrigemNome(participacao == null ? null : participacao.getAtividade().getSci().getNome())
