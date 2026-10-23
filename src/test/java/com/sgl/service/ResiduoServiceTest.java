@@ -338,6 +338,43 @@ class ResiduoServiceTest {
     }
 
     @Test
+    void devePersistirAlertaQuandoGeradorNaoPossuiVinculoComProjeto() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        stubGeradorELaboratorioAtivos();
+        stubClasseValida();
+        stubSalvarComIdGerado();
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setProjetoId(PROJETO_PUBLIC_ID);
+        ResiduoResponseDTO resposta = residuoService.criar(dto);
+
+        assertTrue(resposta.isProjetoSemVinculoDireto());
+        ArgumentCaptor<Residuo> captor = ArgumentCaptor.forClass(Residuo.class);
+        verify(residuoRepository, times(2)).save(captor.capture());
+        assertTrue(captor.getAllValues().get(0).isProjetoSemVinculoDireto());
+    }
+
+    @Test
+    void deveOmitirAlertaQuandoVinculoComProjetoEstaVigente() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        stubGeradorELaboratorioAtivos();
+        stubClasseValida();
+        stubSalvarComIdGerado();
+        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+        when(vinculoOperacionalService.vinculadoProjeto(gerador, projeto, LocalDate.now()))
+                .thenReturn(true);
+
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setProjetoId(PROJETO_PUBLIC_ID);
+        ResiduoResponseDTO resposta = residuoService.criar(dto);
+
+        assertFalse(resposta.isProjetoSemVinculoDireto());
+    }
+
+    @Test
     void deveRejeitarCriacaoQuandoUsuarioGeradorNaoEncontrado() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GERADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
