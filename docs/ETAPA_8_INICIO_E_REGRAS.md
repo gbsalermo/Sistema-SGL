@@ -49,3 +49,7 @@ Integrar o contexto operacional de participação do Estagiário aos Pedidos de 
 - Respeitar `docs/SINCRONIZACAO_GITLAB_GITHUB.md` e `docs/PLANO_PRE_PRODUCAO.md`.
 - Delete lógico/inativação geral não deve ser incluído por causa de numerações históricas de documentos; seguir roadmap vigente.
 - **Este commit é somente documental, não é implementação funcional nem aceite de sincronização com o GitLab.**
+
+
+## Estado posterior validado — 23/10/2026 (adendo)
+O texto acima documenta a situação da data original, **não a situação final da Etapa 8**. Os blocos 1–4 (Vínculos, Pedidos, Soluções e Resíduos) foram homologados manualmente no DEV. Migrations V40–V44 validadas em PostgreSQL; build frontend e ArchUnit (5/5) aprovados. Projeto é opcional nos fluxos atuais de Pedidos, Soluções e Resíduos para perfis elegíveis. O escopo de identidade institucional permanece separado. Conferir `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` antes do fechamento: unidades/usuários/novos estagiários dependem de provisionamento/seed. Não há merge autorizado, nem sincronização GitLab comprovada.
