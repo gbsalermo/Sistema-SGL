@@ -85,6 +85,9 @@ public class Residuo implements Serializable {
 	@ToString.Exclude
 	private Projeto projeto;
 
+	@Column(name = "projeto_sem_vinculo_direto", nullable = false)
+	private boolean projetoSemVinculoDireto;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "participacao_estagio_atividade_id")
 	@ToString.Exclude
