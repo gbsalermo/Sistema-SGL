@@ -55,3 +55,25 @@
 - A adição **não altera classes de produção nem a modelagem de Estoque**.
 - **Pendente:** executar `./mvnw -Dtest=SglArchitectureTest test` (ou `mvnw.cmd -Dtest=SglArchitectureTest test` no Windows) e registrar eventuais violações reais. Não declarar verde sem resultado.
 - Os testes arquiteturais completos, métricas e fluxo E2E do sistema inteiro continuam no programa transversal da Etapa 12.
+
+
+## Checkpoint 5.5 validado — resultado apresentado pelo responsável (23/10/2026)
+
+- Executado `SglArchitectureTest` em JUnit 5: **5/5 testes aprovados, 0 falhas, 0 erros**, comprovado por captura do executor.
+- A falha Maven anterior, ocorrida durante a compilação de classes principais, não apareceu nesta execução; não atribuir a causa retrospectivamente sem evidência do comando/ambiente que a corrigiu.
+- Build TypeScript/Vite do frontend foi informado como validado após correções de `VinculosUsuariosCadastro.vue` e `SolucaoInput.projetoId`.
+- Inicialização DEV validada com PostgreSQL e **44 migrations Flyway** já aplicadas.
+- Teste 5.3: revisão estática das suítes de estoque e Soluções concluída; testes de carga, consulta por endpoint, concorrência e E2E representativos **não executados nesta auditoria**, mantidos na Etapa 12.
+
+## Checkpoint 5.6 — preparação do fechamento
+
+**Validações funcionais em DEV informadas pelo responsável:** Blocos 1–4 (Vínculos, Pedidos, Soluções, Resíduos) concluídos. A compilação Java/ArchUnit e frontend passou nos cenários reportados. Não se deve confundir este aceite funcional com a avaliação de produção.
+
+**Contrato operacional consolidado:** o Projeto é opcional para Pedidos gerais, Soluções e Resíduos conforme decisões posteriores da Etapa 8; laboratório-base ou vínculos adicionais vigentes definem autorização para perfis comuns; vínculo específico de Projeto, SCI ou Atividade pode gerar contexto de Projeto, inclusive herdado; Projeto do laboratório autorizado sem vínculo específico gera aviso histórico para análise/recebimento, não um impedimento automático.
+
+**Pendências anteriores a qualquer merge:**
+1. Conferir `git status` e `git log` nos clones locais para evitar diferenças não enviadas.
+2. Confirmar sincronização da branch colaborativa no GitHub e GitLab **sem forçar atualização da main institucional**. Não há evidência de sincronização nesta auditoria.
+3. Executar, se ainda não houver resultado recente no HEAD final, `./mvnw test` e `npm run build` nas revisões que irão para MR; ArchUnit isolado aprovado não é substituto da suíte inteira.
+4. Revisão humana do diff e autorização explícita do responsável para merge. Nenhum merge realizado.
+5. Registrar como próximos trabalhos as medições de desempenho, carga e E2E completos da Etapa 12, além de eventual revisão separada de identidade institucional fora do MVP atual.
