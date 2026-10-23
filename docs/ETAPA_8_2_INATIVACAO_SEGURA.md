@@ -1,5 +1,8 @@
 # Etapa 8.2 — Inativação segura e delete lógico
 
+> **Nota de escopo atual — 23/10/2026:** este documento é uma proposta histórica de inativação/delete lógico e NÃO constitui o bloco 8.2 da Etapa 8 de contextos operacionais executada em outubro. O roadmap vigente e o checkpoint de encerramento estão em `docs/PLANO_PRE_PRODUCAO.md` e `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md`. Nenhuma refatoração de delete lógico foi aprovada neste fechamento.
+
+
 **Vínculo no roadmap:** complemento oficial de `docs/PLANO_PRE_PRODUCAO.md` → **Etapa 8.2 — Avaliação de delete lógico**  
 **Status:** requisito registrado para análise e implementação na Etapa 8.2  
 **Origem da decisão:** revisão do comportamento atual de inativação dos cadastros operacionais
