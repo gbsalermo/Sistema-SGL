@@ -123,6 +123,35 @@ class PedidoSolucaoServiceTest {
     }
 
     @Test
+    void permiteSolucaoSemProjetoQuandoLaboratorioEstaAutorizado() {
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
+            .thenReturn(Optional.of(usuario));
+        when(laboratorioRepository.findByPublicId(LAB)).thenReturn(Optional.of(lab));
+        when(produtoRepository.findByPublicId(PRODUTO)).thenReturn(Optional.of(produto));
+        when(produtoRepository.pertenceAUnidade(PRODUTO, UNIDADE)).thenReturn(true);
+        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 4L))
+            .thenReturn(Optional.of(estoque));
+        stubSalvar();
+
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setTipo(TipoPedido.SOLUCAO);
+        dto.setUsuarioId(USUARIO);
+        dto.setLaboratorioId(LAB);
+        dto.setNomeSolucao("Solução sem projeto");
+        ItemPedidoRequestDTO componente = new ItemPedidoRequestDTO();
+        componente.setProdutoId(PRODUTO);
+        componente.setQuantidadeSolicitada(new BigDecimal("10"));
+        componente.setUnidadeMedidaSolicitada(UnidadeMedida.ML);
+        dto.setItens(List.of(componente));
+
+        var resposta = service.criar(dto);
+        assertEquals(TipoPedido.SOLUCAO, resposta.getTipo());
+        assertEquals(StatusPedido.PENDENTE, resposta.getStatus());
+        assertNull(resposta.getProjetoId());
+        verify(projetoRepository, never()).findByPublicId(any());
+    }
+
+    @Test
     void aprovaSolucaoComBaixaUnicaSemExigirEmbalagem() {
         stubPedido();
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
