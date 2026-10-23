@@ -33,6 +33,7 @@ public class ResiduoResponseDTO {
 	private final String usuarioGeradorNome;
 	private final UUID projetoId;
 	private final String projetoNome;
+	private final boolean projetoSemVinculoDireto;
 	private final UUID participacaoId;
 	private final String atividadeOrigemNome;
 	private final String sciOrigemNome;
@@ -98,6 +99,7 @@ public class ResiduoResponseDTO {
 		this.usuarioGeradorNome = entity.getGerador().getNome();
 
 		this.projetoId = entity.getProjeto() != null ? entity.getProjeto().getPublicId() : null;
+		this.projetoSemVinculoDireto = entity.isProjetoSemVinculoDireto();
 
 		this.projetoNome = entity.getProjetoOrigemNome() != null ? entity.getProjetoOrigemNome() : entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
 		this.participacaoId = entity.getParticipacaoEstagioAtividade() == null ? null : entity.getParticipacaoEstagioAtividade().getPublicId();
