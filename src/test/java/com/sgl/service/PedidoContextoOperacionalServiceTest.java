@@ -432,18 +432,22 @@ class PedidoContextoOperacionalServiceTest {
     }
 
     @Test
-    void solucaoDeTecnicoContinuaExigindoProjeto() {
+    void tecnicoPodeSolicitarSolucaoSemProjetoComLaboratorioBaseAutorizado() {
         Usuario tecnico = usuarioDePerfil(Perfil.TECNICO, laboratorio);
         prepararSolicitante(tecnico);
+        prepararProdutoESalvamento();
         PedidoRequestDTO dto = pedido(null);
         dto.setTipo(TipoPedido.SOLUCAO);
         dto.setNomeSolucao("Solucao sem projeto");
 
-        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
-                () -> service.criar(dto));
+        PedidoResponseDTO resultado = service.criar(dto);
 
-        assertTrue(erro.getMessage().contains("Projeto é obrigatório"));
-        confirmarSemGravacao();
+        assertEquals(TipoPedido.SOLUCAO, resultado.getTipo());
+        assertEquals(StatusPedido.PENDENTE, resultado.getStatus());
+        assertEquals(LAB, resultado.getLaboratorioId());
+        assertNull(resultado.getProjetoId());
+        verify(pedidoRepository).save(any(Pedido.class));
+        verifyNoInteractions(movimentacaoEstoqueService);
     }
 
     @Test
