@@ -18,6 +18,7 @@ import com.sgl.dto.response.RelatorioEstoqueLotesResponseDTO;
 import com.sgl.dto.response.RelatorioFiscalizacaoResponseDTO;
 import com.sgl.dto.response.RelatorioMovimentacoesResponseDTO;
 import com.sgl.dto.response.RelatorioProdutosResponseDTO;
+import com.sgl.dto.response.RelatorioProjetosResponseDTO;
 import com.sgl.dto.response.RelatorioResumoOperacionalResponseDTO;
 import com.sgl.model.enums.FormatoExportacaoRelatorio;
 
@@ -305,4 +306,32 @@ class RelatorioExportacaoServiceTest {
 
     // deveLancarExcecaoQuandoFalhaNaGeracaoDoXlsx: não escrito.
     // Ver justificativa detalhada no Javadoc da classe, acima.
+
+    @Test
+    void deveExportarProjetosEmPdfEXlsx() {
+        RelatorioProjetosResponseDTO relatorio = new RelatorioProjetosResponseDTO(
+                LocalDateTime.now(), 1, 2, 3, 4, 1,
+                List.of(new RelatorioProjetosResponseDTO.ProjetoItem(
+                        java.util.UUID.randomUUID(), "10.25.00.085.00.00",
+                        "Projeto de teste", java.util.UUID.randomUUID(), "Laboratório",
+                        "Responsável", java.time.LocalDate.of(2026, 1, 1),
+                        null, com.sgl.model.enums.StatusProjeto.ATIVO,
+                        com.sgl.model.enums.SituacaoExecucaoProjeto.NAO_INFORMADO,
+                        true, false, null, 2, 3, 4, 1)));
+
+        for (FormatoExportacaoRelatorio formato : List.of(
+                FormatoExportacaoRelatorio.PDF, FormatoExportacaoRelatorio.XLSX)) {
+            ArquivoRelatorioDTO arquivo = service.exportarProjetos(
+                    relatorio, formato, List.of("Ativo: Sim"));
+            assertTrue(arquivo.conteudo().length > 100);
+            assertTrue(arquivo.nomeArquivo().contains("sgl-projetos-"));
+            assertTrue(arquivo.nomeArquivo().endsWith(
+                    formato == FormatoExportacaoRelatorio.PDF ? ".pdf" : ".xlsx"));
+            assertEquals(formato == FormatoExportacaoRelatorio.PDF
+                    ? "application/pdf"
+                    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    arquivo.contentType());
+        }
+    }
+
 }
