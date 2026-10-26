@@ -11,48 +11,23 @@
 
 </div>
 
-## Estado atual — 26/10/2026
+## O que é o SGL?
 
-- **Etapa 8 concluída e integrada** à `main` de backend e frontend, via MRs institucionais `nti/sgl-api!10` e `nti/sgl-web!11`; sincronização GitLab → GitHub confirmada.
-- **Etapa 9 em preparação:** Relatórios consolidados, na branch `collab/etapa-9-relatorios-consolidados` de cada repositório. Ainda não há código funcional novo da Etapa 9.
-- Entregas planejadas: **Relatório de Projetos** com consulta/prévia/exportação e uma única opção **Movimentações** com modos **Resumo** e **Detalhamento**, preservando os endpoints atuais quando possível.
-- Referência canônica da etapa: [Contrato de início e checklist](docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md). Continuidade: [CONTINUIDADE.md](CONTINUIDADE.md); roadmap oficial do backend: `docs/PLANO_PRE_PRODUCAO.md`.
-- A autenticação e o provisionamento institucional permanecem em trilho separado; os testes globais de arquitetura, carga e E2E permanecem na Etapa 12.
+O **SGL (Sistema de Gestão de Laboratórios)** é uma plataforma de apoio à organização, execução e acompanhamento das atividades laboratoriais. Seu propósito é reunir em um mesmo ambiente a estrutura dos laboratórios, os projetos e suas atividades, o controle de materiais, as solicitações, os resíduos e as informações necessárias à gestão.
 
-> Trechos datados anteriores deste README são históricos e não devem reclassificar a Etapa 8 como pendente.
+O sistema foi concebido para dar **rastreabilidade às operações**, reduzir controles dispersos e oferecer uma visão consistente dos recursos utilizados por diferentes laboratórios de uma instituição. Cada Unidade possui seu contexto operacional, enquanto Projetos, SCI, Atividades e vínculos permitem relacionar pessoas e operações às suas origens.
 
+No backend, isso se traduz em serviços e regras de negócio para:
 
+- **Materiais e estoque:** catálogo de produtos, entrada de lotes, recipientes, apresentações, fracionamento, critérios FEFO/FIFO e movimentações auditáveis.
+- **Solicitações e soluções:** pedidos de materiais e de soluções, validação dos contextos operacionais, aprovação, preparo, entrega e tratamento das quantidades utilizadas.
+- **Projetos e pessoas:** organização de Projetos, SCI e Atividades, vínculos de usuários, participações de Estagiários e histórico operacional.
+- **Resíduos e segurança:** registro, classificação, acompanhamento, tratamento e destinação de resíduos, além de informações de riscos e fiscalização.
+- **Gestão e relatórios:** consultas, indicadores, rastreabilidade e exportação de dados em PDF/XLSX.
 
----
+A API concentra validações, transações e regras de consistência; a interface web utiliza esses contratos para permitir a operação cotidiana. O SGL está em **evolução de pré-produção**: a integração de identidade institucional e a autorização definitiva são previstas para fases próprias, não devendo ser confundidas com a sessão de desenvolvimento.
 
-## Estado atual — 16/10/2026
-
-O primeiro protótipo do SGL foi aprovado funcionalmente, e as **Etapas 1–7 da pré-produção foram concluídas e validadas pelo responsável**. A Etapa 7 consolidou unidades e apresentações, recipientes físicos, medidas decimais, Soluções, Pedidos por embalagem ou medida, abertura parcial de embalagens, alertas de estoque mínimo configuráveis e integração backend/frontend. **A Etapa 8 é a próxima**, com contexto de participação dos Estagiários em Pedidos/Soluções e teste operacional completo. A homologação integral e a autenticação/autorização definitiva ainda são trabalhos posteriores.
-
-Estado consolidado do backend:
-
-```text
-Pedidos / urgência                                ✅
-Estoque / lotes                                   ✅
-FIFO / FEFO                                       ✅
-Embalagem / multiplicador / fracionamento         ✅
-Movimentações / rastreabilidade                   ✅
-Swagger / OpenAPI                                 ✅
-Fiscalização de produtos                          ✅
-Relatórios operacionais                           ✅
-Exportação PDF/XLSX                               ✅
-Resíduos — fluxo completo                         ✅
-Estagiários — vínculo/edição/encerramento         ✅
-Pessoas por laboratório                           ✅
-Administração / Cadastros                         ✅
-Isolamento operacional por Unidade                ✅
-Autenticação/autorização definitiva               ⏳ etapa formal posterior
-Integração corporativa/SSO                        ⏳ etapa formal posterior
-```
-
-No frontend também estão integrados dashboards, busca global, alertas, tema claro/escuro, sessão DEV, rotas por perfil e propagação do contexto de Unidade.
-
-> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/SINCRONIZACAO_GITLAB_GITHUB.md`](docs/SINCRONIZACAO_GITLAB_GITHUB.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`](docs/CONTINUIDADE_ETAPA_5_2026-09-24.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). O GitLab é a fonte canônica de `main`; contratos HTTP continuam pertencendo ao Swagger/OpenAPI em execução.
+> **Acompanhamento da evolução:** o histórico de entregas, o estado de cada etapa e os próximos passos estão em [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md). A Etapa 9 está documentada em [`docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`](docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md).
 
 ---
 
