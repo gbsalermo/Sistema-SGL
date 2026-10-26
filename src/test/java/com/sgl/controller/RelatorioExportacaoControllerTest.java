@@ -32,6 +32,7 @@ import com.sgl.dto.response.RelatorioEstoqueLotesResponseDTO;
 import com.sgl.dto.response.RelatorioFiscalizacaoResponseDTO;
 import com.sgl.dto.response.RelatorioMovimentacoesResponseDTO;
 import com.sgl.dto.response.RelatorioProdutosResponseDTO;
+import com.sgl.dto.response.RelatorioProjetosResponseDTO;
 import com.sgl.dto.response.RelatorioResumoOperacionalResponseDTO;
 import com.sgl.model.enums.FormatoExportacaoRelatorio;
 import com.sgl.service.RelatorioEstoqueLotesService;
@@ -39,6 +40,7 @@ import com.sgl.service.RelatorioExportacaoService;
 import com.sgl.service.RelatorioFiscalizacaoService;
 import com.sgl.service.RelatorioMovimentacoesService;
 import com.sgl.service.RelatorioProdutosService;
+import com.sgl.service.RelatorioProjetosService;
 import com.sgl.service.RelatorioResumoOperacionalService;
 import com.sgl.service.RelatorioService;
 
@@ -103,6 +105,9 @@ class RelatorioExportacaoControllerTest {
 
     @MockitoBean
     private RelatorioExportacaoService exportacaoService;
+
+    @MockitoBean
+    private RelatorioProjetosService projetosService;
 
     private ArquivoRelatorioDTO montarArquivo(String nomeArquivo) {
         byte[] conteudo = ("conteudo-simulado-" + nomeArquivo).getBytes(StandardCharsets.UTF_8);
@@ -244,4 +249,22 @@ class RelatorioExportacaoControllerTest {
                 .andExpect(header().string("Content-Disposition", containsString("sgl-fiscalizacao-20260919.pdf")))
                 .andExpect(content().bytes(arquivo.conteudo()));
     }
+
+    @Test
+    void deveExportarProjetosComFiltrosERetornarArquivo() throws Exception {
+        RelatorioProjetosResponseDTO relatorio = new RelatorioProjetosResponseDTO(
+                LocalDateTime.now(), 0, 0, 0, 0, 0, List.of());
+        ArquivoRelatorioDTO arquivo = montarArquivo("sgl-projetos-20261026.pdf");
+        when(projetosService.gerar(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(relatorio);
+        when(exportacaoService.exportarProjetos(any(), eq(FormatoExportacaoRelatorio.PDF), any()))
+                .thenReturn(arquivo);
+
+        mockMvc.perform(get(BASE_URL + "/projetos/exportar")
+                        .param("formato", "PDF").param("ativo", "true"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", containsString("sgl-projetos-20261026.pdf")))
+                .andExpect(content().bytes(arquivo.conteudo()));
+    }
+
 }
