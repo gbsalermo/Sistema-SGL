@@ -149,7 +149,7 @@ public class RelatorioEstoqueLotesService {
 				.estoqueId(estoque.getPublicId()).unidadeId(estoque.getUnidade().getPublicId())
 				.unidadeNome(estoque.getUnidade().getNome()).produtoId(estoque.getProduto().getPublicId())
 				.produtoNome(estoque.getProduto().getNome()).codigoInterno(lote.getCodigoInterno())
-				.numeroLote(lote.getNumeroLote()).quantidadeInicial(lote.getQuantidadeInicial())
+				.numeroLote(lote.getNumeroLote()).unidadeMedida(estoque.getProduto().getUnidadeMedida().name()).quantidadeInicial(lote.getQuantidadeInicial())
 				.quantidadeDisponivel(lote.getQuantidadeDisponivel()).dataEntrada(lote.getDataEntrada())
 				.dataValidade(lote.getDataValidade()).ativo(Boolean.TRUE.equals(lote.getAtivo()))
 				.situacao(classificarLote(lote, hoje, limiteVencimento)).build();
