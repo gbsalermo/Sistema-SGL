@@ -50,6 +50,7 @@ import com.sgl.dto.response.RelatorioEstoqueLotesResponseDTO;
 import com.sgl.dto.response.RelatorioFiscalizacaoResponseDTO;
 import com.sgl.dto.response.RelatorioMovimentacoesResponseDTO;
 import com.sgl.dto.response.RelatorioProdutosResponseDTO;
+import com.sgl.dto.response.RelatorioProjetosResponseDTO;
 import com.sgl.dto.response.RelatorioResumoOperacionalResponseDTO;
 import com.sgl.model.enums.FormatoExportacaoRelatorio;
 
@@ -204,6 +205,47 @@ public class RelatorioExportacaoService {
                         texto(i.getSolicitanteNome()), texto(i.getPedidoId()), texto(i.getResponsavelNome()), texto(i.getSaldoAposMovimentacao())
                 )).toList());
         return gerar("Relatório de Fiscalização", "fiscalizacao", formato, filtros, resumo, List.of(produtos, movimentos), true);
+    }
+
+
+    public ArquivoRelatorioDTO exportarProjetos(
+            RelatorioProjetosResponseDTO relatorio,
+            FormatoExportacaoRelatorio formato,
+            List<String> filtros) {
+
+        Map<String, String> indicadores = resumo(
+                "Projetos", relatorio.totalProjetos(),
+                "SCI", relatorio.totalScis(),
+                "Atividades", relatorio.totalAtividades(),
+                "Participações", relatorio.totalParticipacoes(),
+                "Estagiários distintos", relatorio.totalEstagiariosDistintos()
+        );
+
+        Tabela tabela = new Tabela("Projetos",
+                List.of("Código SEG", "Projeto", "Laboratório", "Responsável",
+                        "Início", "Fim", "Status", "Execução", "Ativo",
+                        "Recurso externo", "Empresa", "SCI", "Atividades",
+                        "Participações", "Estagiários distintos"),
+                relatorio.projetos().stream().map(item -> List.of(
+                        texto(item.codigoSeg()),
+                        texto(item.nome()),
+                        texto(item.laboratorioNome()),
+                        texto(item.responsavel()),
+                        data(item.dataInicio()),
+                        data(item.dataFim()),
+                        rotulo(item.status()),
+                        rotulo(item.situacaoExecucao()),
+                        Boolean.TRUE.equals(item.ativo()) ? "Sim" : "Não",
+                        Boolean.TRUE.equals(item.possuiRecursoExterno()) ? "Sim" : "Não",
+                        texto(item.empresaRecursoExterno()),
+                        texto(item.totalScis()),
+                        texto(item.totalAtividades()),
+                        texto(item.totalParticipacoes()),
+                        texto(item.totalEstagiarios())
+                )).toList());
+
+        return gerar("Relatório Consolidado de Projetos", "projetos",
+                formato, filtros, indicadores, List.of(tabela), true);
     }
 
     private ArquivoRelatorioDTO gerar(
