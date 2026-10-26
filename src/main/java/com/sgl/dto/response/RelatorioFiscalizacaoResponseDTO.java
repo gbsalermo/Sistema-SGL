@@ -40,6 +40,7 @@ public class RelatorioFiscalizacaoResponseDTO {
         private Set<OrgaoFiscalizador> orgaosFiscalizadores;
         private String observacaoFiscalizacao;
         private BigDecimal saldoAtual;
+        private String unidadeMedida;
         private Integer lotesAtivos;
         private Integer lotesVencidos;
         private Integer lotesProximosVencimento;
@@ -72,5 +73,6 @@ public class RelatorioFiscalizacaoResponseDTO {
         private UUID responsavelId;
         private String responsavelNome;
         private BigDecimal saldoAposMovimentacao;
+        private String unidadeMedida;
     }
 }
