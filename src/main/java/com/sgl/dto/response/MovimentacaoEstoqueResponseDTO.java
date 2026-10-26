@@ -8,6 +8,7 @@ import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoPedido;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.UnidadeMedida;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -43,11 +44,31 @@ public class MovimentacaoEstoqueResponseDTO {
     private BigDecimal quantidadeAtual;
     private LocalDateTime dataMovimentacao;
     private String observacao;
+    private UnidadeMedida unidadeMedida;
+
+
+    // Mantém compatibilidade com os usos anteriores do construtor completo nos testes.
+    public MovimentacaoEstoqueResponseDTO(
+            UUID id, UUID produtoId, String produtoNome, UUID laboratorioId,
+            String laboratorioNome, UUID usuarioId, String usuarioNome,
+            UUID estoqueCentralId, UUID pedidoId, TipoPedido pedidoTipo,
+            String pedidoSolicitanteNome, UUID loteId, String codigoInternoLote,
+            String numeroLote, TipoMovimentacao tipoMovimentacao,
+            OrigemMovimentacao origem, BigDecimal quantidadeMovimentada,
+            BigDecimal quantidadeAnterior, BigDecimal quantidadeAtual,
+            LocalDateTime dataMovimentacao, String observacao) {
+        this(id, produtoId, produtoNome, laboratorioId, laboratorioNome, usuarioId,
+                usuarioNome, estoqueCentralId, pedidoId, pedidoTipo,
+                pedidoSolicitanteNome, loteId, codigoInternoLote, numeroLote,
+                tipoMovimentacao, origem, quantidadeMovimentada,
+                quantidadeAnterior, quantidadeAtual, dataMovimentacao, observacao, null);
+    }
 
     public MovimentacaoEstoqueResponseDTO(MovimentacaoEstoque entity) {
         this.id = entity.getPublicId();
         this.produtoId = entity.getProduto().getPublicId();
         this.produtoNome = entity.getProduto().getNome();
+        this.unidadeMedida = entity.getProduto().getUnidadeMedida();
         this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
         this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
         this.usuarioId = entity.getUsuario().getPublicId();
