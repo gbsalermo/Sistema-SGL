@@ -64,6 +64,7 @@ public class RelatorioEstoqueLotesResponseDTO {
         private String numeroLote;
         private BigDecimal quantidadeInicial;
         private BigDecimal quantidadeDisponivel;
+        private String unidadeMedida;
         private LocalDate dataEntrada;
         private LocalDate dataValidade;
         private Boolean ativo;
