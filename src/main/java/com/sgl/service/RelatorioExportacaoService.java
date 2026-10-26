@@ -123,9 +123,9 @@ public class RelatorioExportacaoService {
                 List.of("Data", "Produto", "Tipo", "Quantidade", "Lote", "Laboratório", "Origem", "Responsável", "Solicitante", "Saldo"),
                 relatorio.getItens().stream().map(item -> List.of(
                         dataHora(item.getDataMovimentacao()), texto(item.getProdutoNome()), rotulo(item.getTipoMovimentacao()),
-                        texto(item.getQuantidadeMovimentada()), texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
+                        quantidadeComUnidade(item.getQuantidadeMovimentada(), item.getUnidadeMedida()), texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
                         rotulo(item.getOrigem()), texto(item.getUsuarioNome()), texto(item.getPedidoSolicitanteNome()),
-                        texto(item.getQuantidadeAnterior()) + " → " + texto(item.getQuantidadeAtual())
+                        quantidadeComUnidade(item.getQuantidadeAnterior(), item.getUnidadeMedida()) + " → " + quantidadeComUnidade(item.getQuantidadeAtual(), item.getUnidadeMedida())
                 )).toList());
         return gerar("Relatório de Movimentações", "movimentacoes", formato, filtros, resumo, List.of(tabela), true);
     }
@@ -590,6 +590,23 @@ public class RelatorioExportacaoService {
             if (!palavra.isEmpty()) saida.append(Character.toUpperCase(palavra.charAt(0))).append(palavra.substring(1));
         }
         return saida.toString();
+    }
+
+    private String quantidadeComUnidade(java.math.BigDecimal quantidade, com.sgl.model.enums.UnidadeMedida unidade) {
+        if (quantidade == null) return "—";
+        String valor = quantidade.stripTrailingZeros().toPlainString();
+        if (unidade == null) return valor;
+        String simbolo = switch (unidade) {
+            case ML -> "mL";
+            case L -> "L";
+            case MG -> "mg";
+            case G -> "g";
+            case KG -> "kg";
+            case METRO -> "m";
+            case UNIDADE -> "un.";
+            case REACAO -> "reações";
+        };
+        return valor + " " + simbolo;
     }
 
     private String data(LocalDate valor) {
