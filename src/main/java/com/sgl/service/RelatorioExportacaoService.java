@@ -141,14 +141,14 @@ public class RelatorioExportacaoService {
                 "Produtos", relatorio.getProdutosMovimentados(), "Lotes", relatorio.getLotesMovimentados()
         );
         Tabela entradas = new Tabela("Principais entradas", List.of("Produto", "Quantidade", "Movimentações"),
-                relatorio.getPrincipaisEntradas().stream().map(i -> List.of(texto(i.getProdutoNome()), texto(i.getQuantidade()), texto(i.getMovimentacoes()))).toList());
+                relatorio.getPrincipaisEntradas().stream().map(i -> List.of(texto(i.getProdutoNome()), quantidadeComUnidade(i.getQuantidade(), i.getUnidadeMedida()), texto(i.getMovimentacoes()))).toList());
         Tabela saidas = new Tabela("Principais saídas", List.of("Produto", "Quantidade", "Movimentações"),
                 relatorio.getPrincipaisSaidas().stream().map(i -> List.of(texto(i.getProdutoNome()), texto(i.getQuantidade()), texto(i.getMovimentacoes()))).toList());
         Tabela lotes = new Tabela("Lotes mais movimentados",
                 List.of("Lote", "Fornecedor", "Produto", "Movimentado", "Entradas", "Saídas", "Saldo", "Validade"),
                 relatorio.getLotesMaisMovimentados().stream().map(i -> List.of(
-                        texto(i.getCodigoInterno()), texto(i.getNumeroLote()), texto(i.getProdutoNome()), texto(i.getQuantidadeMovimentada()),
-                        texto(i.getQuantidadeEntradas()), texto(i.getQuantidadeSaidas()), texto(i.getSaldoAtual()), data(i.getDataValidade())
+                        texto(i.getCodigoInterno()), texto(i.getNumeroLote()), texto(i.getProdutoNome()), quantidadeComUnidade(i.getQuantidadeMovimentada(), i.getUnidadeMedida()),
+                        quantidadeComUnidade(i.getQuantidadeEntradas(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeSaidas(), i.getUnidadeMedida()), quantidadeComUnidade(i.getSaldoAtual(), i.getUnidadeMedida()), data(i.getDataValidade())
                 )).toList());
         return gerar("Resumo Operacional", "resumo-operacional", formato, filtros, resumo, List.of(entradas, saidas, lotes), true);
     }
@@ -167,14 +167,14 @@ public class RelatorioExportacaoService {
                 List.of("Produto", "Unidade", "Saldo", "Mínimo", "Nível", "Lotes ativos", "Vencidos", "Próx. vencimento"),
                 relatorio.getEstoques().stream().map(i -> List.of(
                         texto(i.getProdutoNome()), texto(i.getUnidadeSigla() != null ? i.getUnidadeSigla() : i.getUnidadeNome()),
-                        texto(i.getQuantidadeAtual()), texto(i.getQuantidadeMinima()), Boolean.TRUE.equals(i.getAbaixoMinimo()) ? "Abaixo do mínimo" : "Normal",
+                        quantidadeComUnidade(i.getQuantidadeAtual(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeMinima(), i.getUnidadeMedida()), Boolean.TRUE.equals(i.getAbaixoMinimo()) ? "Abaixo do mínimo" : "Normal",
                         texto(i.getLotesAtivos()), texto(i.getLotesVencidos()), texto(i.getLotesProximosVencimento())
                 )).toList());
         Tabela lotes = new Tabela("Lotes",
                 List.of("Lote", "Fornecedor", "Produto", "Unidade", "Entrada", "Inicial", "Disponível", "Validade", "Situação"),
                 relatorio.getLotes().stream().map(i -> List.of(
                         texto(i.getCodigoInterno()), texto(i.getNumeroLote()), texto(i.getProdutoNome()), texto(i.getUnidadeNome()),
-                        data(i.getDataEntrada()), texto(i.getQuantidadeInicial()), texto(i.getQuantidadeDisponivel()), data(i.getDataValidade()), rotulo(i.getSituacao())
+                        data(i.getDataEntrada()), quantidadeComUnidade(i.getQuantidadeInicial(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeDisponivel(), i.getUnidadeMedida()), data(i.getDataValidade()), rotulo(i.getSituacao())
                 )).toList());
         return gerar("Relatório de Estoque e Lotes", "estoque-lotes", formato, filtros, resumo, List.of(estoques, lotes), true);
     }
@@ -194,15 +194,15 @@ public class RelatorioExportacaoService {
                 relatorio.getProdutos().stream().map(i -> List.of(
                         texto(i.getProdutoNome()), texto(i.getCodigoReferencia()),
                         i.getOrgaosFiscalizadores() == null ? "—" : i.getOrgaosFiscalizadores().stream().map(this::rotulo).sorted().collect(Collectors.joining(", ")),
-                        texto(i.getSaldoAtual()), texto(i.getLotesAtivos()), texto(i.getLotesVencidos()), texto(i.getLotesProximosVencimento()),
-                        data(i.getProximoVencimento()), texto(i.getQuantidadeEntradas()), texto(i.getQuantidadeSaidas())
+                        quantidadeComUnidade(i.getSaldoAtual(), i.getUnidadeMedida()), texto(i.getLotesAtivos()), texto(i.getLotesVencidos()), texto(i.getLotesProximosVencimento()),
+                        data(i.getProximoVencimento()), quantidadeComUnidade(i.getQuantidadeEntradas(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeSaidas(), i.getUnidadeMedida())
                 )).toList());
         Tabela movimentos = new Tabela("Rastreabilidade",
                 List.of("Data", "Produto", "Tipo", "Qtd", "Lote", "Validade", "Laboratório", "Projeto", "Solicitante", "Pedido", "Responsável", "Saldo"),
                 relatorio.getMovimentacoes().stream().map(i -> List.of(
-                        dataHora(i.getDataMovimentacao()), texto(i.getProdutoNome()), rotulo(i.getTipoMovimentacao()), texto(i.getQuantidadeMovimentada()),
+                        dataHora(i.getDataMovimentacao()), texto(i.getProdutoNome()), rotulo(i.getTipoMovimentacao()), quantidadeComUnidade(i.getQuantidadeMovimentada(), i.getUnidadeMedida()),
                         texto(i.getCodigoInternoLote()), data(i.getDataValidadeLote()), texto(i.getLaboratorioNome()), texto(i.getProjetoNome()),
-                        texto(i.getSolicitanteNome()), texto(i.getPedidoId()), texto(i.getResponsavelNome()), texto(i.getSaldoAposMovimentacao())
+                        texto(i.getSolicitanteNome()), texto(i.getPedidoId()), texto(i.getResponsavelNome()), quantidadeComUnidade(i.getSaldoAposMovimentacao(), i.getUnidadeMedida())
                 )).toList());
         return gerar("Relatório de Fiscalização", "fiscalizacao", formato, filtros, resumo, List.of(produtos, movimentos), true);
     }
@@ -590,6 +590,15 @@ public class RelatorioExportacaoService {
             if (!palavra.isEmpty()) saida.append(Character.toUpperCase(palavra.charAt(0))).append(palavra.substring(1));
         }
         return saida.toString();
+    }
+
+    private String quantidadeComUnidade(java.math.BigDecimal quantidade, String unidade) {
+        if (unidade == null || unidade.isBlank()) return quantidade == null ? "—" : quantidade.stripTrailingZeros().toPlainString();
+        try {
+            return quantidadeComUnidade(quantidade, com.sgl.model.enums.UnidadeMedida.valueOf(unidade));
+        } catch (IllegalArgumentException ex) {
+            return quantidade == null ? "—" : quantidade.stripTrailingZeros().toPlainString() + " " + unidade;
+        }
     }
 
     private String quantidadeComUnidade(java.math.BigDecimal quantidade, com.sgl.model.enums.UnidadeMedida unidade) {
