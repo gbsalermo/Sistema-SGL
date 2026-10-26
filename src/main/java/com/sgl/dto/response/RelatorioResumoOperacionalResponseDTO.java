@@ -33,6 +33,11 @@ public class RelatorioResumoOperacionalResponseDTO {
         private String produtoNome;
         private BigDecimal quantidade;
         private Integer movimentacoes;
+        private String unidadeMedida;
+
+        public ProdutoRanking(UUID produtoId, String produtoNome, BigDecimal quantidade, Integer movimentacoes) {
+            this(produtoId, produtoNome, quantidade, movimentacoes, null);
+        }
     }
 
     @Getter
@@ -49,5 +54,14 @@ public class RelatorioResumoOperacionalResponseDTO {
         private BigDecimal quantidadeSaidas;
         private BigDecimal saldoAtual;
         private LocalDate dataValidade;
+        private String unidadeMedida;
+
+        public LoteRanking(UUID loteId, String codigoInterno, String numeroLote, UUID produtoId,
+                String produtoNome, BigDecimal quantidadeMovimentada, Integer movimentacoes,
+                BigDecimal quantidadeEntradas, BigDecimal quantidadeSaidas, BigDecimal saldoAtual,
+                LocalDate dataValidade) {
+            this(loteId, codigoInterno, numeroLote, produtoId, produtoNome, quantidadeMovimentada,
+                    movimentacoes, quantidadeEntradas, quantidadeSaidas, saldoAtual, dataValidade, null);
+        }
     }
 }
