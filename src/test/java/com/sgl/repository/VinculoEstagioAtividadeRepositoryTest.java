@@ -283,4 +283,53 @@ class VinculoEstagioAtividadeRepositoryTest {
                         estagiario.getId(),
                         SituacaoEstagio.FINALIZADO));
     }
+
+    @Test
+    void relatorioContaParticipacoesHistoricasEDeduplicaEstagiarioEntreProjetos() {
+        Unidade unidadeA = criarUnidade("VR1");
+        Unidade unidadeB = criarUnidade("VR2");
+        Laboratorio labA = criarLaboratorio(unidadeA);
+        Laboratorio labB = criarLaboratorio(unidadeB);
+
+        Estagiario pessoa = criarEstagiario(unidadeA, labA, "vr1@teste.com");
+        VinculoEstagio vinculo = criarVinculo(pessoa, SituacaoEstagio.EM_ANDAMENTO);
+
+        Atividade atividade1 = criarAtividade(labA, "VR1A");
+        Atividade atividade2 = criarAtividade(labA, "VR1B");
+        criarParticipacao(vinculo, atividade1, LocalDate.of(2026, 2, 1),
+                LocalDate.of(2026, 3, 1));
+        criarParticipacao(vinculo, atividade1, LocalDate.of(2026, 3, 2), null);
+        criarParticipacao(vinculo, atividade2, LocalDate.of(2026, 4, 1), null);
+
+        Estagiario outraPessoa = criarEstagiario(unidadeB, labB, "vr2@teste.com");
+        VinculoEstagio outroVinculo = criarVinculo(outraPessoa, SituacaoEstagio.EM_ANDAMENTO);
+        Atividade atividadeOutraUnidade = criarAtividade(labB, "VR2A");
+        criarParticipacao(outroVinculo, atividadeOutraUnidade, LocalDate.of(2026, 2, 1), null);
+
+        UUID projeto1 = atividade1.getSci().getProjeto().getPublicId();
+        UUID projeto2 = atividade2.getSci().getProjeto().getPublicId();
+        List<UUID> ids = List.of(projeto1, projeto2,
+                atividadeOutraUnidade.getSci().getProjeto().getPublicId());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        var agregacoes = participacaoRepository.contarParticipacoesPorProjetos(
+                unidadeA.getPublicId(), ids);
+
+        assertEquals(2, agregacoes.size());
+        var a = agregacoes.stream()
+                .filter(item -> projeto1.equals(item.getProjetoId()))
+                .findFirst().orElseThrow();
+        var b = agregacoes.stream()
+                .filter(item -> projeto2.equals(item.getProjetoId()))
+                .findFirst().orElseThrow();
+
+        assertEquals(2L, a.getTotalParticipacoes());
+        assertEquals(1L, a.getTotalEstagiarios());
+        assertEquals(1L, b.getTotalParticipacoes());
+        assertEquals(1L, b.getTotalEstagiarios());
+        assertEquals(1L, participacaoRepository.contarEstagiariosDistintosNosProjetos(
+                unidadeA.getPublicId(), ids));
+    }
 }
