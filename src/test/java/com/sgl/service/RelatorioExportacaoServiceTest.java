@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
+import java.io.ByteArrayInputStream;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.OrigemMovimentacao;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -331,6 +336,41 @@ class RelatorioExportacaoServiceTest {
                     ? "application/pdf"
                     : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     arquivo.contentType());
+        }
+    }
+
+
+    @Test
+    void exportacaoMovimentacoesDeveExibirUnidadeRealNaPlanilha() throws Exception {
+        MovimentacaoEstoqueResponseDTO movimento = new MovimentacaoEstoqueResponseDTO();
+        movimento.setProdutoNome("Reagente teste");
+        movimento.setUnidadeMedida(UnidadeMedida.ML);
+        movimento.setTipoMovimentacao(TipoMovimentacao.SAIDA);
+        movimento.setOrigem(OrigemMovimentacao.PEDIDO);
+        movimento.setQuantidadeMovimentada(new BigDecimal("50.000000"));
+        movimento.setQuantidadeAnterior(new BigDecimal("60.000000"));
+        movimento.setQuantidadeAtual(new BigDecimal("10.000000"));
+
+        RelatorioMovimentacoesResponseDTO relatorio = new RelatorioMovimentacoesResponseDTO(
+                LocalDateTime.now(), 1, BigDecimal.ZERO, new BigDecimal("50"),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of(movimento));
+        ArquivoRelatorioDTO arquivo = service.exportarMovimentacoes(
+                relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(arquivo.conteudo()))) {
+            var sheet = workbook.getSheet("Movimentações");
+            boolean achouQuantidade = false;
+            boolean achouSaldo = false;
+            for (var row : sheet) {
+                for (var cell : row) {
+                    if (cell.getCellType() != org.apache.poi.ss.usermodel.CellType.STRING) continue;
+                    String valor = cell.getStringCellValue();
+                    if ("50 mL".equals(valor)) achouQuantidade = true;
+                    if ("60 mL → 10 mL".equals(valor)) achouSaldo = true;
+                }
+            }
+            assertTrue(achouQuantidade, "A quantidade deve conter a unidade do produto.");
+            assertTrue(achouSaldo, "O saldo deve conter a unidade do produto.");
         }
     }
 
