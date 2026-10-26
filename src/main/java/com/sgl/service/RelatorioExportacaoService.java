@@ -115,9 +115,9 @@ public class RelatorioExportacaoService {
             List<String> filtros) {
 
         Map<String, String> resumo = resumo(
-                "Movimentações", relatorio.getTotalMovimentacoes(), "Entradas", relatorio.getQuantidadeEntradas(),
-                "Saídas", relatorio.getQuantidadeSaidas(), "Devoluções", relatorio.getQuantidadeDevolucoes(),
-                "Descartes", relatorio.getQuantidadeDescartes(), "Ajustes", relatorio.getQuantidadeAjustes()
+                "Movimentações", relatorio.getTotalMovimentacoes(), "Entradas (medidas diversas)", "Consultar itens por produto",
+                "Saídas (medidas diversas)", "Consultar itens por produto", "Devoluções (medidas diversas)", "Consultar itens por produto",
+                "Descartes (medidas diversas)", "Consultar itens por produto", "Ajustes (medidas diversas)", "Consultar itens por produto"
         );
         Tabela tabela = new Tabela("Movimentações",
                 List.of("Data", "Produto", "Tipo", "Quantidade", "Lote", "Laboratório", "Origem", "Responsável", "Solicitante", "Saldo"),
@@ -136,8 +136,8 @@ public class RelatorioExportacaoService {
             List<String> filtros) {
 
         Map<String, String> resumo = resumo(
-                "Movimentações", relatorio.getTotalMovimentacoes(), "Entradas", relatorio.getQuantidadeEntradas(),
-                "Saídas", relatorio.getQuantidadeSaidas(), "Descartes", relatorio.getQuantidadeDescartes(),
+                "Movimentações", relatorio.getTotalMovimentacoes(), "Entradas (medidas diversas)", "Consultar itens por produto",
+                "Saídas (medidas diversas)", "Consultar itens por produto", "Descartes (medidas diversas)", "Consultar itens por produto",
                 "Produtos", relatorio.getProdutosMovimentados(), "Lotes", relatorio.getLotesMovimentados()
         );
         Tabela entradas = new Tabela("Principais entradas", List.of("Produto", "Quantidade", "Movimentações"),
@@ -160,7 +160,7 @@ public class RelatorioExportacaoService {
 
         Map<String, String> resumo = resumo(
                 "Estoques", relatorio.getTotalEstoques(), "Abaixo do mínimo", relatorio.getEstoquesAbaixoMinimo(),
-                "Saldo total", relatorio.getQuantidadeTotalEstoque(), "Lotes ativos", relatorio.getLotesAtivos(),
+                "Saldo por produto", "Consultar tabela de estoques", "Lotes ativos", relatorio.getLotesAtivos(),
                 "Vencidos", relatorio.getLotesVencidos(), "Próx. vencimento", relatorio.getLotesProximosVencimento()
         );
         Tabela estoques = new Tabela("Posição de estoque",
@@ -185,9 +185,9 @@ public class RelatorioExportacaoService {
             List<String> filtros) {
 
         Map<String, String> resumo = resumo(
-                "Produtos controlados", relatorio.getTotalProdutosFiscalizados(), "Saldo atual", relatorio.getSaldoAtualTotal(),
+                "Produtos controlados", relatorio.getTotalProdutosFiscalizados(), "Saldo por produto", "Consultar produtos controlados",
                 "Lotes ativos", relatorio.getLotesAtivos(), "Vencidos", relatorio.getLotesVencidos(),
-                "Próx. vencimento", relatorio.getLotesProximosVencimento(), "Entradas", relatorio.getQuantidadeEntradas(), "Saídas", relatorio.getQuantidadeSaidas()
+                "Próx. vencimento", relatorio.getLotesProximosVencimento(), "Entradas (medidas diversas)", "Consultar itens por produto", "Saídas (medidas diversas)", "Consultar itens por produto"
         );
         Tabela produtos = new Tabela("Produtos controlados",
                 List.of("Produto", "Código", "Órgãos", "Saldo", "Lotes ativos", "Vencidos", "Próx. vencimento", "Validade mais próxima", "Entradas", "Saídas"),
