@@ -11,6 +11,18 @@
 
 </div>
 
+## Estado atual — 26/10/2026
+
+- **Etapa 8 concluída e integrada** à `main` de backend e frontend, via MRs institucionais `nti/sgl-api!10` e `nti/sgl-web!11`; sincronização GitLab → GitHub confirmada.
+- **Etapa 9 em preparação:** Relatórios consolidados, na branch `collab/etapa-9-relatorios-consolidados` de cada repositório. Ainda não há código funcional novo da Etapa 9.
+- Entregas planejadas: **Relatório de Projetos** com consulta/prévia/exportação e uma única opção **Movimentações** com modos **Resumo** e **Detalhamento**, preservando os endpoints atuais quando possível.
+- Referência canônica da etapa: [Contrato de início e checklist](docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md). Continuidade: [CONTINUIDADE.md](CONTINUIDADE.md); roadmap oficial do backend: `docs/PLANO_PRE_PRODUCAO.md`.
+- A autenticação e o provisionamento institucional permanecem em trilho separado; os testes globais de arquitetura, carga e E2E permanecem na Etapa 12.
+
+> Trechos datados anteriores deste README são históricos e não devem reclassificar a Etapa 8 como pendente.
+
+
+
 ---
 
 ## Estado atual — 16/10/2026
