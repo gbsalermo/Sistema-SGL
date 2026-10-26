@@ -107,7 +107,7 @@ public class RelatorioResumoOperacionalService {
 		}
 
 		ProdutoAcumulado acumulado = destino.computeIfAbsent(produto.getPublicId(),
-				chave -> new ProdutoAcumulado(produto.getPublicId(), produto.getNome()));
+				chave -> new ProdutoAcumulado(produto.getPublicId(), produto.getNome(), produto.getUnidadeMedida().name()));
 		acumulado.adicionar(quantidade);
 	}
 
@@ -141,12 +141,14 @@ public class RelatorioResumoOperacionalService {
 	private static class ProdutoAcumulado {
 		private final UUID id;
 		private final String nome;
+        private final String unidadeMedida;
 		private BigDecimal quantidade = BigDecimal.ZERO;
 		private int movimentacoes;
 
-		ProdutoAcumulado(UUID id, String nome) {
+		ProdutoAcumulado(UUID id, String nome, String unidadeMedida) {
 			this.id = id;
 			this.nome = nome;
+            this.unidadeMedida = unidadeMedida;
 		}
 
 		void adicionar(BigDecimal valor) {
@@ -163,7 +165,7 @@ public class RelatorioResumoOperacionalService {
 		}
 
 		RelatorioResumoOperacionalResponseDTO.ProdutoRanking toDto() {
-			return new RelatorioResumoOperacionalResponseDTO.ProdutoRanking(id, nome, quantidade, movimentacoes);
+			return new RelatorioResumoOperacionalResponseDTO.ProdutoRanking(id, nome, quantidade, movimentacoes, unidadeMedida);
 		}
 	}
 
@@ -201,7 +203,8 @@ public class RelatorioResumoOperacionalService {
 			return new RelatorioResumoOperacionalResponseDTO.LoteRanking(lote.getPublicId(), lote.getCodigoInterno(),
 					lote.getNumeroLote(), produto != null ? produto.getPublicId() : null,
 					produto != null ? produto.getNome() : null, quantidadeMovimentada, movimentacoes, entradas, saidas,
-					lote.getQuantidadeDisponivel(), lote.getDataValidade());
+					lote.getQuantidadeDisponivel(), lote.getDataValidade(),
+                    produto != null && produto.getUnidadeMedida() != null ? produto.getUnidadeMedida().name() : null);
 		}
 	}
 }
