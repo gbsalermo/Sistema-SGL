@@ -1,5 +1,12 @@
 # Relatórios — SGL
 
+## Atualização vigente — Etapa 9 (26/10/2026)
+
+As decisões de “Projetos” e “Movimentações + Resumo operacional” registradas no fim deste documento são **escopo aprovado da Etapa 9**, e não nova implementação da Etapa 7. A implementação da nova etapa ainda não começou.
+
+**Alvo:** `Projetos` como relatório novo da Central com filtros, prévia e exportação PDF/XLSX; `Movimentações` como opção única com modos `Resumo` e `Detalhamento`. Os endpoints atuais de Movimentações e Resumo Operacional devem continuar utilizáveis inicialmente. O relatório novo não substitui o hub operacional de Projetos. Contrato e checklist: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`.
+
+
 **Atualizado em:** 03/09/2026  
 **Estado:** consultas, prévias e exportações dos relatórios do primeiro protótipo estão integradas à `main`.
 
