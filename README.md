@@ -50,7 +50,7 @@ estrutura institucional
 → administração de dados-base
 ```
 
-Regras críticas permanecem no backend; o frontend não deve recriar FIFO/FEFO, transições de domínio, validações oficiais ou cálculos de relatórios.
+As regras de estoque (FEFO/FIFO), as transições operacionais e os cálculos oficiais são executados pelo backend. O frontend apresenta e conduz as operações usando os contratos da API.
 
 ---
 
@@ -88,13 +88,13 @@ UUID publicId
 → público: DTOs, endpoints e frontend
 ```
 
-Novos contratos públicos devem continuar usando UUID.
+Os contratos públicos da API utilizam UUID como identificador das entidades; os IDs numéricos internos permanecem na persistência.
 
 ---
 
 ## Multitenancy por Unidade
 
-A `main` possui isolamento operacional por Unidade.
+O SGL organiza os registros operacionais por Unidade, com delimitação aplicada nas consultas e nos serviços.
 
 Fluxo atual:
 
@@ -106,9 +106,9 @@ frontend lê unidadeId da sessão DEV
 → services/repositories restringem os dados da Unidade
 ```
 
-Esse mecanismo é importante para validar a separação entre Unidades durante o desenvolvimento, mas **ainda não é a fronteira definitiva de segurança**, porque o cabeçalho é informado pelo cliente e o backend ainda não deriva a Unidade de uma identidade autenticada confiável.
+No ambiente de desenvolvimento, o contexto da Unidade é informado pelo cabeçalho `X-SGL-Unidade-Id`, associado à sessão DEV. Esse fluxo viabiliza a validação funcional por Unidade; a identidade e a autorização corporativas não fazem parte dessa sessão.
 
-Na etapa de autenticação corporativa, o tenant deverá vir da sessão/token institucional.
+**Na integração institucional**, a Unidade (tenant) será resolvida a partir da identidade autenticada na sessão/token institucional e aplicada pelo backend.
 
 ---
 
@@ -237,13 +237,13 @@ Resíduos
 Pessoas por laboratório
 ```
 
-Prévia, PDF e XLSX devem representar a mesma consulta e os mesmos filtros.
+Os relatórios utilizam consultas e filtros consistentes entre a prévia e as exportações PDF/XLSX.
 
 Pedidos entregues continuam sendo um recorte de Movimentações, não um relatório separado.
 
 ---
 
-## Segurança — estado correto
+## Identidade e controle de acesso
 
 ```text
 Spring Security como base técnica                   ✅
@@ -256,7 +256,7 @@ auditoria derivada da identidade autenticada        ⏳
 integração corporativa/SSO                          ⏳
 ```
 
-A configuração atual ainda permite requisições sem autenticação definitiva. Não tratar sessão DEV, perfil no frontend ou `X-SGL-Unidade-Id` como segurança final de produção.
+O ambiente DEV utiliza sessão e contexto de Unidade de desenvolvimento para validar fluxos e perfis. A implantação institucional incorporará autenticação, autorização no servidor e auditoria vinculada à identidade autenticada. Esses recursos são uma etapa distinta da homologação funcional do MVP.
 
 ---
 
@@ -270,13 +270,9 @@ Hibernate ddl-auto=validate
 Flyway habilitado
 ```
 
-A evolução do schema é responsabilidade do Flyway. Migrations aplicadas são imutáveis; novas alterações de banco devem usar uma nova versão.
+O Flyway versiona e aplica as alterações de esquema do banco. Cada evolução é registrada em uma nova migration, preservando o histórico das versões já aplicadas.
 
-Sequência atual:
-
-```text
-V1 ... V12
-```
+Migrations existentes nesta revisão: **V1 a V44**, em `src/main/resources/db/migration/`. A aplicação utiliza validação do esquema via Hibernate, enquanto o Flyway mantém o histórico de alterações.
 
 ---
 
@@ -311,34 +307,26 @@ mvn test
 
 ---
 
-## Sequência de trabalho
+## Evolução do projeto
 
-### Agora — pré-produção pós-aprovação
+O desenvolvimento de pré-produção evolui de forma incremental, preservando os fluxos homologados:
 
-```text
-Etapa 1 — padrão visual global                 ✅
-Etapa 2 — Dark Mode definitivo                 ✅
-Etapa 3 — refinamentos do fluxo de Resíduos    ✅
-Etapa 4 — expansão operacional de Resíduos     ✅
-Etapa 5 — Projetos e Atividades                ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos               🔧 6.1–6.4 concluídos; 6.5 frontend próximo
-Etapas 7 a 13                                  ⏳ sequenciais
-```
+| Etapa | Escopo | Situação |
+|---|---|---|
+| 1–4 | Padrão visual, experiência inicial, Resíduos e expansão operacional | Concluídas |
+| 5 | Projetos, SCI e Atividades | Concluída |
+| 6 | Estagiários, vínculos, participações e formação | Concluída |
+| 7 | Estoque físico, apresentações, fracionamento, FEFO/FIFO e Soluções | Concluída |
+| 8 | Contextos operacionais, Pedidos, Soluções, Resíduos e vínculos adicionais | Concluída e integrada |
+| 9 | Relatórios consolidados: Projetos e Movimentações (Resumo/Detalhamento) | Em preparação |
+| 10 | Rótulos e impressão operacional | Planejada |
+| 11 | Manual do usuário e revisão de inativação/delete lógico | Planejada |
+| 12 | Testes transversais de arquitetura, carga, E2E e regressão | Planejada |
+| 13 | Revisão estrutural e auditoria final integral | Planejada |
 
-### Depois — roadmap formal para produção
+**Preparação para produção:** após a estabilização funcional, o plano contempla matriz de permissões, congelamento, homologação integrada, correções, identidade e autorização definitivas, integração institucional e liberação controlada.
 
-```text
-1. matriz/diretrizes de permissões
-2. congelamento funcional
-3. homologação integrada final
-4. correção de falhas de homologação
-5. autenticação + autorização + auditoria definitiva
-6. integração corporativa / SSO / resolução confiável de Unidade
-7. documentos/upload quando o contrato estiver definido
-8. refactors técnicos planejados
-```
-
-O roadmap formal não foi descartado; ele apenas começa **depois** do bloco atual de pré-produção.
+O detalhamento das decisões, entregas e critérios de validação fica em [`CONTINUIDADE.md`](CONTINUIDADE.md) e no [plano de pré-produção](docs/PLANO_PRE_PRODUCAO.md). Este README apresenta a arquitetura e as capacidades do sistema; não substitui os checkpoints técnicos.
 
 ---
 
@@ -355,26 +343,3 @@ O roadmap formal não foi descartado; ele apenas começa **depois** do bloco atu
 | [`docs/PENDENCIAS_POS_PROTOTIPO.md`](docs/PENDENCIAS_POS_PROTOTIPO.md) | pendências/refactors posteriores |
 
 > Exemplos e documentos históricos são auxiliares. Em caso de conflito, prevalecem `main`, Swagger/OpenAPI e os documentos atuais indicados acima.
-
----
-
-<div align="center">
-  <strong>SGL — Sistema de Gestão de Laboratórios</strong><br/>
-  Sistema funcionalmente aprovado em preparação para o ciclo formal de produção.
-</div>
-
-### Estado atual do domínio de Estagiários
-
-A Etapa 6 já consolidou:
-
-- `Usuario → Estagiario → VinculoEstagio 1..N`;
-- múltiplas participações históricas em Atividades;
-- Formação como enum institucional + `OUTRO`;
-- Curso como catálogo administrável por Unidade;
-- treinamento de segurança no vínculo, iniciado em `false` e concluído por ação explícita;
-- Cultura como catálogo por Unidade e associação N:N com `VinculoEstagioAtividade`;
-- respostas de vínculo/Estagiário com Atividade → SCI → Projeto → Laboratório e Culturas;
-- ausência de um único “Laboratório do Estagiário” como fonte operacional definitiva.
-
-Checkpoint atual: `docs/VALIDACAO_ETAPA_6_3.md`.
-
