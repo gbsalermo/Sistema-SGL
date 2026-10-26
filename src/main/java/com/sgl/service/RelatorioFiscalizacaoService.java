@@ -148,6 +148,7 @@ public class RelatorioFiscalizacaoService {
 
 		return ProdutoFiscalizadoItem.builder().produtoId(produto.getPublicId()).produtoNome(produto.getNome())
 				.codigoReferencia(produto.getCodigoReferencia())
+                .unidadeMedida(produto.getUnidadeMedida().name())
 				.orgaosFiscalizadores(Set.copyOf(produto.getOrgaosFiscalizadores()))
 				.observacaoFiscalizacao(produto.getObservacaoFiscalizacao())
 				.saldoAtual(
@@ -174,7 +175,8 @@ public class RelatorioFiscalizacaoService {
 
 		return MovimentacaoFiscalizadaItem.builder().movimentacaoId(mov.getPublicId())
 				.dataMovimentacao(mov.getDataMovimentacao()).produtoId(mov.getProduto().getPublicId())
-				.produtoNome(mov.getProduto().getNome()).tipoMovimentacao(mov.getTipoMovimentacao())
+				.produtoNome(mov.getProduto().getNome())
+                .unidadeMedida(mov.getProduto().getUnidadeMedida().name()).tipoMovimentacao(mov.getTipoMovimentacao())
 				.quantidadeMovimentada(mov.getQuantidadeMovimentada()).loteId(lote != null ? lote.getPublicId() : null)
 				.codigoInternoLote(lote != null ? lote.getCodigoInterno() : null)
 				.numeroLote(lote != null ? lote.getNumeroLote() : null)
