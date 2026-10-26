@@ -1,5 +1,14 @@
 # Plano de Pré-Produção do SGL
 
+## Marco vigente — abertura da Etapa 9 (26/10/2026)
+
+**Etapa 8 foi integrada à main:** backend `818d580` (MR `nti/sgl-api!10`), frontend `12a195a` (MR `nti/sgl-web!11`). Sincronização GitLab → GitHub confirmada em 26/10/2026. Vínculos, Pedidos, Soluções e Resíduos homologados funcionalmente em DEV. Não confundir trechos de planejamento antigos abaixo com o estado integrado.
+
+**Etapa 9 = Relatórios consolidados:** relatório de Projetos (prévia + PDF/XLSX), e Movimentações com modos internos Resumo/Detalhamento, reaproveitando endpoints existentes. Etapas 10–13 permanecem na sequência macro documentada. Branch `collab/etapa-9-relatorios-consolidados`, criada a partir das duas mains pós-merge. **Sem código funcional nem merge da Etapa 9 neste checkpoint.**
+
+Contrato e passos da nova etapa: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`. Histórico antigo de “Etapa 9 Pedidos/Soluções” está supersedido e permanece apenas para rastreabilidade.
+
+
 > **Checkpoint vigente — 23/10/2026 (Etapa 8, MVP em DEV):** blocos funcionais Vínculos, Pedidos, Soluções e Resíduos homologados manualmente; Pedido/Solução/Resíduo permitem Projeto opcional para os perfis elegíveis; vínculo específico por Projeto/SCI/Atividade deriva contexto operacional sem criar vínculos formais automaticamente. Backend PostgreSQL/Flyway validou 44 migrations; o frontend compilou e o ArchUnit passou 5/5 regras. Auditorias completas de carga/E2E e eventual identidade institucional permanecem fora deste aceite. **Auditoria de campos e entradas:** `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` — há dependência de provisionamento externo/seed para Unidade, Usuário e cadastro inicial de Estagiário, embora os cadastros operacionais restantes tenham telas. **Sem merge; não presumir sincronização GitLab confirmada.** Trechos históricos datados abaixo descrevem o estado *àquela época*, não substituem este checkpoint.
 
 
