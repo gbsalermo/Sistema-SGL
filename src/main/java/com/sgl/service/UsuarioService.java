@@ -3,22 +3,32 @@ package com.sgl.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.dto.request.AprovarUsuarioRequestDTO;
 import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
+import com.sgl.dto.response.UsuarioSessaoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.exception.UsuarioRejectedException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.security.AuthenticatedUser;
+import com.sgl.security.CurrentUser;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +36,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
+
+    private static final Logger AUDIT = LoggerFactory.getLogger("sgl.auditoria");
 
     private final UsuarioRepository usuarioRepository;
     private final LaboratorioRepository laboratorioRepository;
@@ -36,6 +48,7 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponseDTO criar(UsuarioRequestDTO dto) {
         validarTenantUnidade(dto.getUnidadeId());
+        exigirPodeConceder(CurrentUser.get(), dto.getPerfil());
 
         if (usuarioRepository.existsByEmail(dto.getEmail())) {
             throw new BusinessRuleException("Email já cadastrado: " + dto.getEmail());
@@ -111,6 +124,10 @@ public class UsuarioService {
             throw new BusinessRuleException("Já existe um usuário com este email.");
         }
 
+        // The general update also carries the profile, so it must not bypass the profile-change rules.
+        if (usuario.getPerfil() != dto.getPerfil()) {
+            validarTrocaDePerfil(usuario, dto.getPerfil());
+        }
         validarAlteracaoPerfil(usuario, dto.getPerfil());
 
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
@@ -143,14 +160,62 @@ public class UsuarioService {
             throw new BusinessRuleException("Perfil é obrigatório.");
         }
 
+        validarTrocaDePerfil(usuario, novoPerfil);
         validarAlteracaoPerfil(usuario, novoPerfil);
+        Perfil anterior = usuario.getPerfil();
         usuario.setPerfil(novoPerfil);
-        return new UsuarioResponseDTO(usuarioRepository.save(usuario));
+        Usuario salvo = usuarioRepository.save(usuario);
+        AUDIT.info("acao=PERFIL_ALTERADO ator={} alvo={} de={} para={}",
+                CurrentUser.get().publicId(), salvo.getPublicId(), anterior, novoPerfil);
+        return new UsuarioResponseDTO(salvo);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioSessaoResponseDTO> listarPendentes() {
+        exigirGestao(CurrentUser.get());
+        return usuarioRepository
+                .findBySituacaoAndUnidadePublicId(SituacaoUsuario.PENDENTE_VINCULACAO, CurrentUser.unidadeEmOperacao())
+                .stream()
+                .map(UsuarioSessaoResponseDTO::new)
+                .toList();
+    }
+
+    @Transactional
+    public UsuarioSessaoResponseDTO aprovar(UUID id, AprovarUsuarioRequestDTO dto) {
+        AuthenticatedUser ator = CurrentUser.get();
+        exigirGestao(ator);
+        Usuario usuario = buscarPendenteDaUnidadeEmOperacao(id);
+        exigirPodeConceder(ator, dto.getPerfil());
+
+        Laboratorio laboratorio = laboratorioRepository
+                .findByPublicIdAndUnidadePublicId(dto.getLaboratorioBaseId(), CurrentUser.unidadeEmOperacao())
+                .orElseThrow(() -> new BusinessRuleException("O laboratório-base deve pertencer à Unidade em operação."));
+        laboratorio.validateActive();
+
+        usuario.setPerfil(dto.getPerfil());
+        // Set directly, as in the import: the base lab applies to every profile (spec 2.1).
+        usuario.setLaboratorio(laboratorio);
+        usuario.setSituacao(SituacaoUsuario.ATIVO);
+        Usuario salvo = usuarioRepository.save(usuario);
+        AUDIT.info("acao=USUARIO_APROVADO ator={} alvo={} perfil={}", ator.publicId(), salvo.getPublicId(), dto.getPerfil());
+        return new UsuarioSessaoResponseDTO(salvo);
+    }
+
+    @Transactional
+    public void recusar(UUID id) {
+        AuthenticatedUser ator = CurrentUser.get();
+        exigirGestao(ator);
+        Usuario usuario = buscarPendenteDaUnidadeEmOperacao(id);
+        // Removed rather than flagged: a new login simply recreates the pending record (spec 2.2).
+        usuarioRepository.delete(usuario);
+        AUDIT.info("acao=PENDENTE_RECUSADO ator={} alvo={}", ator.publicId(), usuario.getPublicId());
     }
 
     @Transactional
     public void Inativar(UUID id) {
         Usuario usuario = buscarUsuarioNoTenant(id);
+        // Deactivating removes access just like a demotion, so it follows the same rules.
+        validarTrocaDePerfil(usuario, null);
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
             throw new BusinessRuleException("O usuário já está inativo.");
@@ -173,6 +238,53 @@ public class UsuarioService {
         UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
         return usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+    }
+
+    /**
+     * Rules shared by every change that can strip or grant access. {@code novoPerfil} is null when the
+     * target is being deactivated instead of re-profiled.
+     */
+    private void validarTrocaDePerfil(Usuario alvo, Perfil novoPerfil) {
+        AuthenticatedUser ator = CurrentUser.get();
+        if (ator.publicId().equals(alvo.getPublicId())) {
+            throw new AccessDeniedException("Ninguém pode alterar o próprio perfil ou acesso.");
+        }
+        exigirPodeConceder(ator, alvo.getPerfil());
+        if (novoPerfil != null) {
+            exigirPodeConceder(ator, novoPerfil);
+        }
+        boolean deixaDeSerAdministradorGeral = alvo.getPerfil() == Perfil.ADMINISTRADOR_GERAL
+                && novoPerfil != Perfil.ADMINISTRADOR_GERAL;
+        if (deixaDeSerAdministradorGeral && Boolean.TRUE.equals(alvo.getAtivo())
+                && usuarioRepository.countByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL) <= 1) {
+            throw UsuarioRejectedException.ultimoAdministradorGeral();
+        }
+    }
+
+    // Looked up across Unidades on purpose: a target from another Unidade is a 403, not a 404 (spec 15).
+    private Usuario buscarPendenteDaUnidadeEmOperacao(UUID id) {
+        Usuario usuario = usuarioRepository.findByPublicId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+        UUID unidadeEmOperacao = CurrentUser.unidadeEmOperacao();
+        if (usuario.getUnidade() == null || !unidadeEmOperacao.equals(usuario.getUnidade().getPublicId())) {
+            throw new AccessDeniedException("O usuário não pertence à Unidade em operação.");
+        }
+        if (usuario.getSituacao() != SituacaoUsuario.PENDENTE_VINCULACAO) {
+            throw UsuarioRejectedException.naoPendente();
+        }
+        return usuario;
+    }
+
+    private static void exigirGestao(AuthenticatedUser ator) {
+        if (!PerfilPolicy.isGestao(ator.perfil())) {
+            throw new AccessDeniedException("Apenas gestão pode aprovar, recusar ou alterar perfis.");
+        }
+    }
+
+    private static void exigirPodeConceder(AuthenticatedUser ator, Perfil perfil) {
+        if (!PerfilPolicy.podeConceder(ator.perfil(), perfil)) {
+            throw new AccessDeniedException("Seu perfil não pode conceder ou alterar o perfil " + perfil + ".");
+        }
     }
 
     private void validarTenantUnidade(UUID unidadeId) {

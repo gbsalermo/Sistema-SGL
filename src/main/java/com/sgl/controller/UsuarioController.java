@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgl.dto.request.AprovarUsuarioRequestDTO;
 import com.sgl.dto.request.UsuarioPerfilRequestDTO;
 import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
+import com.sgl.dto.response.UsuarioSessaoResponseDTO;
 import com.sgl.exception.ApiError;
 import com.sgl.service.UsuarioService;
 
@@ -73,7 +75,9 @@ public class UsuarioController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Perfil alterado com sucesso", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "400", description = "Regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão ou alteração do próprio perfil", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Último Administrador geral ativo (ULTIMO_ADMINISTRADOR_GERAL)", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PutMapping("/{id}/perfil")
@@ -81,6 +85,42 @@ public class UsuarioController {
             @PathVariable UUID id,
             @Valid @RequestBody UsuarioPerfilRequestDTO dto) {
         return ResponseEntity.ok(usuarioService.alterarPerfil(id, dto.getPerfil()));
+    }
+
+    @Operation(summary = "Listar pendentes", description = "Usuários da Unidade em operação aguardando aprovação. Exige perfil de gestão.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pendentes listados", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping("/pendentes")
+    public ResponseEntity<List<UsuarioSessaoResponseDTO>> listarPendentes() {
+        return ResponseEntity.ok(usuarioService.listarPendentes());
+    }
+
+    @Operation(summary = "Aprovar pendente", description = "Ativa um usuário pendente da Unidade em operação, definindo perfil e laboratório-base.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário aprovado", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "400", description = "Laboratório inválido", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão ou pessoa de outra Unidade", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Usuário não está pendente (USUARIO_NAO_PENDENTE)", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/{id}/aprovar")
+    public ResponseEntity<UsuarioSessaoResponseDTO> aprovar(
+            @PathVariable UUID id,
+            @Valid @RequestBody AprovarUsuarioRequestDTO dto) {
+        return ResponseEntity.ok(usuarioService.aprovar(id, dto));
+    }
+
+    @Operation(summary = "Recusar pendente", description = "Remove o cadastro pendente. Um novo login da pessoa volta a criá-lo como pendente.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Pendente removido"),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão ou pessoa de outra Unidade", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Usuário não está pendente (USUARIO_NAO_PENDENTE)", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @DeleteMapping("/{id}/pendente")
+    public ResponseEntity<Void> recusar(@PathVariable UUID id) {
+        usuarioService.recusar(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Inativar usuário", description = "Inativa o usuário identificado pelo UUID informado.")

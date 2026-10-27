@@ -105,6 +105,14 @@ public class RestExceptionHandler {
         return buildResponse(ex.getStatus(), "Importação recusada", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
     }
 
+    @ExceptionHandler(UsuarioRejectedException.class)
+    public ResponseEntity<ApiError> handleUsuarioRejected(
+            UsuarioRejectedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(ex.getStatus(), "Operação recusada", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
+    }
+
     // The corporate exceptions carry technical messages; the user gets a fixed, friendly one instead.
     @ExceptionHandler(InvalidCorporateCredentialsException.class)
     public ResponseEntity<ApiError> handleInvalidCorporateCredentials(
