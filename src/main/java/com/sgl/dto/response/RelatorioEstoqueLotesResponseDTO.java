@@ -69,5 +69,11 @@ public class RelatorioEstoqueLotesResponseDTO {
         private LocalDate dataValidade;
         private Boolean ativo;
         private String situacao;
+        private String tipoEmbalagem;
+        private String apresentacao;
+        private BigDecimal conteudoPorApresentacao;
+        private Integer recipientesFechados;
+        private Integer recipientesAbertos;
+        private Integer recipientesEsgotados;
     }
 }
