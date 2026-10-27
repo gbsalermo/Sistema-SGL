@@ -49,7 +49,8 @@ public class RelatorioMovimentacoesController {
             @RequestParam(required = false) TipoEmbalagem tipoEmbalagem,
             @RequestParam(required = false) UUID projetoId,
             @RequestParam(required = false) UUID sciId,
-            @RequestParam(required = false) UUID atividadeId) {
+            @RequestParam(required = false) UUID atividadeId,
+            @RequestParam(required = false) String formaConsumo) {
 
         return ResponseEntity.ok(
                 relatorioMovimentacoesService.gerar(
