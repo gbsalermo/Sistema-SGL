@@ -164,6 +164,11 @@ class RelatorioResumoOperacionalServiceTest {
                 null, null, null, null);
 
         assertEquals(4, resultado.getTotalMovimentacoes());
+        assertEquals(2, resultado.getTotalEntradas());
+        assertEquals(1, resultado.getTotalSaidas());
+        assertEquals(0, resultado.getTotalDevolucoes());
+        assertEquals(0, resultado.getTotalAjustes());
+        assertEquals(1, resultado.getTotalDescartes());
         assertEquals(BigDecimal.valueOf(16), resultado.getQuantidadeEntradas());
         assertEquals(BigDecimal.valueOf(4), resultado.getQuantidadeSaidas());
         assertEquals(BigDecimal.valueOf(1), resultado.getQuantidadeDescartes());
