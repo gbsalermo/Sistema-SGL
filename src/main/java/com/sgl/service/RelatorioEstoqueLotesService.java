@@ -16,6 +16,10 @@ import com.sgl.dto.response.RelatorioEstoqueLotesResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
+import com.sgl.model.RecipienteEstoque;
+import com.sgl.model.enums.EstadoRecipienteEstoque;
+import com.sgl.repository.RecipienteEstoqueRepository;
+import java.util.Map;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LoteRepository;
 
@@ -29,6 +33,7 @@ public class RelatorioEstoqueLotesService {
 
 	private final EstoqueCentralRepository estoqueCentralRepository;
 	private final LoteRepository loteRepository;
+    private final RecipienteEstoqueRepository recipienteRepository;
 
 	@Transactional(readOnly = true)
     public RelatorioEstoqueLotesResponseDTO gerar(
@@ -72,6 +77,11 @@ public class RelatorioEstoqueLotesService {
                         || classificarLote(lote, hoje, limiteVencimento).equals(validadeNormalizada))
                 .toList();
 
+        Set<Long> idsLotes = lotes.stream().map(Lote::getId).collect(Collectors.toSet());
+        Map<Long, List<RecipienteEstoque>> recipientesPorLote = recipienteRepository.findAll().stream()
+                .filter(r -> idsLotes.contains(r.getLote().getId()))
+                .collect(Collectors.groupingBy(r -> r.getLote().getId()));
+
         List<RelatorioEstoqueLotesResponseDTO.EstoqueItem> itensEstoque = estoques.stream()
                 .map(estoque -> mapearEstoque(estoque, lotes, hoje, limiteVencimento))
                 .toList();
@@ -87,7 +97,8 @@ public class RelatorioEstoqueLotesService {
                     if (validadeB == null) return -1;
                     return validadeA.compareTo(validadeB);
                 })
-                .map(lote -> mapearLote(lote, hoje, limiteVencimento))
+                .map(lote -> mapearLote(lote, hoje, limiteVencimento,
+                        recipientesPorLote.getOrDefault(lote.getId(), List.of())))
                 .toList();
 
         return RelatorioEstoqueLotesResponseDTO.builder()
@@ -142,7 +153,7 @@ public class RelatorioEstoqueLotesService {
 	}
 
 	private RelatorioEstoqueLotesResponseDTO.LoteItem mapearLote(Lote lote, LocalDate hoje,
-			LocalDate limiteVencimento) {
+            LocalDate limiteVencimento, List<RecipienteEstoque> recipientes) {
 
 		EstoqueCentral estoque = lote.getEstoqueCentral();
 		return RelatorioEstoqueLotesResponseDTO.LoteItem.builder().loteId(lote.getPublicId())
@@ -152,7 +163,14 @@ public class RelatorioEstoqueLotesService {
 				.numeroLote(lote.getNumeroLote()).unidadeMedida(estoque.getProduto().getUnidadeMedida().name()).quantidadeInicial(lote.getQuantidadeInicial())
 				.quantidadeDisponivel(lote.getQuantidadeDisponivel()).dataEntrada(lote.getDataEntrada())
 				.dataValidade(lote.getDataValidade()).ativo(Boolean.TRUE.equals(lote.getAtivo()))
-				.situacao(classificarLote(lote, hoje, limiteVencimento)).build();
+				.situacao(classificarLote(lote, hoje, limiteVencimento))
+                .tipoEmbalagem(lote.getTipoEmbalagem() == null ? null : lote.getTipoEmbalagem().name())
+                .apresentacao(lote.getApresentacao())
+                .conteudoPorApresentacao(lote.getConteudoPorApresentacao())
+                .recipientesFechados((int) recipientes.stream().filter(r -> r.getEstado() == EstadoRecipienteEstoque.FECHADO).count())
+                .recipientesAbertos((int) recipientes.stream().filter(r -> r.getEstado() == EstadoRecipienteEstoque.ABERTO).count())
+                .recipientesEsgotados((int) recipientes.stream().filter(r -> r.getEstado() == EstadoRecipienteEstoque.ESGOTADO).count())
+                .build();
 	}
 
 	private boolean estaAbaixoMinimo(EstoqueCentral estoque) {
