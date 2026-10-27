@@ -65,6 +65,16 @@ public interface MovimentacaoRecipienteRepository extends JpaRepository<Moviment
             @Param("unidadeId") UUID unidadeId,
             @Param("produtoId") UUID produtoId);
 
+    @Query("""
+            SELECT d FROM MovimentacaoRecipiente d
+            JOIN FETCH d.recipienteEstoque r
+            WHERE d.movimentacaoEstoque.estoqueCentral.unidade.publicId = :unidadeId
+              AND d.movimentacaoEstoque.publicId IN :ids
+            """)
+    List<MovimentacaoRecipiente> listarDetalhesParaRelatorio(
+            @Param("unidadeId") UUID unidadeId,
+            @Param("ids") List<UUID> ids);
+
     long countByMovimentacaoEstoqueIdAndRecipienteEstoqueTipoEmbalagem(
             Long movimentacaoId, TipoEmbalagem tipoEmbalagem);
 
