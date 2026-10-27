@@ -3,6 +3,7 @@ package com.sgl.repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.sgl.model.enums.TipoEmbalagem;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -41,6 +42,16 @@ public interface MovimentacaoRecipienteRepository extends JpaRepository<Moviment
 			         detalhe.id DESC
 			""")
 	List<MovimentacaoRecipiente> buscarHistoricoDoRecipiente(@Param("recipienteId") Long recipienteId);
+
+    @Query("""
+            SELECT DISTINCT d.movimentacaoEstoque.publicId
+            FROM MovimentacaoRecipiente d
+            WHERE d.movimentacaoEstoque.estoqueCentral.unidade.publicId = :unidadeId
+              AND d.recipienteEstoque.tipoEmbalagem = :tipoEmbalagem
+            """)
+    List<UUID> buscarMovimentacoesPorTipoEmbalagem(
+            @Param("unidadeId") UUID unidadeId,
+            @Param("tipoEmbalagem") TipoEmbalagem tipoEmbalagem);
 
 	boolean existsByMovimentacaoEstoqueIdAndRecipienteEstoqueId(Long movimentacaoEstoqueId, Long recipienteEstoqueId);
 }
