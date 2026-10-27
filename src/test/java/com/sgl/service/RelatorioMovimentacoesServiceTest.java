@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +28,10 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.repository.MovimentacaoRecipienteRepository;
+import com.sgl.tenant.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 
@@ -40,6 +45,9 @@ class RelatorioMovimentacoesServiceTest {
 
     @Mock
     private MovimentacaoEstoqueRepository movimentacaoRepository;
+
+    @Mock
+    private MovimentacaoRecipienteRepository recipienteRepository;
 
     @InjectMocks
     private RelatorioMovimentacoesService relatorioMovimentacoesService;
@@ -237,5 +245,33 @@ class RelatorioMovimentacoesServiceTest {
                         LocalDate.of(2026, 3, 1), LocalDate.of(2026, 1, 1)));
 
         assertEquals("A data inicial não pode ser posterior à data final.", ex.getMessage());
+    }
+
+    @AfterEach
+    void limparContexto() {
+        TenantContext.limpar();
+    }
+
+    @Test
+    void filtroEmbalagemCombinaProdutoEOrigemSemDuplicarMovimentacao() {
+        UUID unidadeId = UUID.randomUUID();
+        TenantContext.definir(unidadeId);
+        when(recipienteRepository.buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA))
+                .thenReturn(List.of(saida.getPublicId(), saida.getPublicId()));
+        when(movimentacaoRepository.findAll()).thenReturn(List.of(entrada, saida, descarte));
+
+        var resultado = relatorioMovimentacoesService.gerar(
+                TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO, PRODUTO_PUBLIC_ID,
+                null, null, null, null, null, TipoEmbalagem.GARRAFA);
+
+        assertEquals(1, resultado.getTotalMovimentacoes());
+        assertEquals(saida.getPublicId(), resultado.getItens().get(0).getId());
+        verify(recipienteRepository).buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA);
+    }
+
+    @Test
+    void filtroEmbalagemExigeTenantAtivo() {
+        assertThrows(BusinessRuleException.class, () -> relatorioMovimentacoesService.gerar(
+                null, null, null, null, null, null, null, null, TipoEmbalagem.FRASCO));
     }
 }
