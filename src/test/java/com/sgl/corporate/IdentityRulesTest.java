@@ -109,8 +109,57 @@ class IdentityRulesTest {
     @Test
     void resolve_naoEncontrado_lancaIndisponivel() {
         CorporateLoginUser login = new CorporateLoginUser("x", "m1", "X", null, null, null, null, 512);
-        assertThrows(CorporateApiUnavailableException.class,
+        assertThrows(CorporatePersonNotFoundException.class,
             () -> CorporateIdentityResolver.resolve(login, new FakeClient(null, null)));
+    }
+
+    @Test
+    void resolve_matriculaNula_usaLogin() {
+        Empregado emp = new Empregado("m344136", "Fulano", "12345678909", null, "Analista", 7, true, null);
+        CorporateLoginUser login = new CorporateLoginUser("m344136", null, "Fulano", "l@x.br", null, null, null, 512);
+        CorporateIdentity id = CorporateIdentityResolver.resolve(login, new FakeClient(emp, null));
+        assertEquals("m344136", id.matricula());
+        assertEquals("l@x.br", id.email());
+    }
+
+    @Test
+    void resolve_matriculaELoginEmBranco_lancaSemConsultar() {
+        CorporateLoginUser login = new CorporateLoginUser(" ", "", "X", null, null, null, null, 512);
+        assertThrows(CorporatePersonNotFoundException.class,
+            () -> CorporateIdentityResolver.resolve(login, new FakeClient(null, null) {
+                @Override
+                public Optional<Empregado> empregadoPorMatricula(String m) {
+                    throw new AssertionError("gateway must not be called");
+                }
+            }));
+    }
+
+    @Test
+    void toString_naoExpoeCpf() {
+        CorporateIdentity id = new CorporateIdentity(TipoPessoaCorporativa.EMPREGADO, "m1", "12345678909",
+            "N", null, null, null, 1, true);
+        assertFalse(id.toString().contains("12345678909"));
+        assertTrue(id.toString().contains("***.***.***-09"));
+    }
+
+    @Test
+    void mask_casosBorda() {
+        assertNull(CpfMasker.mask(null));
+        assertEquals("***.***.***-09", CpfMasker.mask("123.456.789-09"));
+        assertEquals("***", CpfMasker.mask("123"));
+    }
+
+    @Test
+    void normalize_zeroENulo() {
+        assertEquals("m0", LoginNormalizer.normalize("0"));
+        assertNull(LoginNormalizer.normalize(null));
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"NULL", "Motorista", "bolsista", "Analista"}, nullValues = "NULL")
+    void fromCargo_colaboradorSempreEstagiario(String cargo) {
+        assertEquals(Optional.of(Perfil.ESTAGIARIO),
+            ProfileSuggestion.fromCargo(cargo, TipoPessoaCorporativa.COLABORADOR));
     }
 
     @ParameterizedTest

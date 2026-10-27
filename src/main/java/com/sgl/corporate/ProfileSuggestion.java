@@ -13,7 +13,10 @@ public final class ProfileSuggestion {
     }
 
     public static Optional<Perfil> fromCargo(String cargo, TipoPessoaCorporativa tipo) {
-        // Colaboradores are interns/fellows; the Estagiários tab implies the profile even without a title.
+        // Colaboradores are listed under the Estagiários tab, so the type alone implies the profile.
+        if (tipo == TipoPessoaCorporativa.COLABORADOR) {
+            return Optional.of(Perfil.ESTAGIARIO);
+        }
         String text = cargo == null ? "" : Normalizer.normalize(cargo, Normalizer.Form.NFD)
             .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
         if (text.contains("estagiario") || text.contains("bolsista")) {

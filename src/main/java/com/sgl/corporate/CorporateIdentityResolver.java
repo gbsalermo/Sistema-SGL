@@ -19,7 +19,11 @@ public final class CorporateIdentityResolver {
     }
 
     public static CorporateIdentity resolve(CorporateLoginUser login, CorporateApiClient client) {
-        String key = LoginNormalizer.normalize(login.matricula() != null ? login.matricula() : login.login());
+        String raw = isBlank(login.matricula()) ? login.login() : login.matricula();
+        if (isBlank(raw)) {
+            throw new CorporatePersonNotFoundException();
+        }
+        String key = LoginNormalizer.normalize(raw);
         if (!LoginNormalizer.isCpf(key)) {
             return client.empregadoPorMatricula(key)
                 .map(e -> fromEmpregado(e, login))
@@ -54,7 +58,11 @@ public final class CorporateIdentityResolver {
         return a != null && !a.isBlank() ? a : b;
     }
 
-    private static CorporateApiUnavailableException notFound() {
-        return new CorporateApiUnavailableException("Pessoa não encontrada nas bases corporativas");
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private static CorporatePersonNotFoundException notFound() {
+        return new CorporatePersonNotFoundException();
     }
 }
