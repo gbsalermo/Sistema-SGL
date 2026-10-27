@@ -45,6 +45,9 @@ public class MovimentacaoEstoqueResponseDTO {
     private LocalDateTime dataMovimentacao;
     private String observacao;
     private UnidadeMedida unidadeMedida;
+    // Contexto informativo do filtro por embalagem; não representa unidades inteiras entregues.
+    private String tipoEmbalagemConsultada;
+    private Long recipientesUtilizados;
 
 
     // Mantém compatibilidade com os usos anteriores do construtor completo nos testes.
@@ -61,7 +64,24 @@ public class MovimentacaoEstoqueResponseDTO {
                 usuarioNome, estoqueCentralId, pedidoId, pedidoTipo,
                 pedidoSolicitanteNome, loteId, codigoInternoLote, numeroLote,
                 tipoMovimentacao, origem, quantidadeMovimentada,
-                quantidadeAnterior, quantidadeAtual, dataMovimentacao, observacao, null);
+                quantidadeAnterior, quantidadeAtual, dataMovimentacao, observacao, null, null, null);
+    }
+
+    public MovimentacaoEstoqueResponseDTO(
+            UUID id, UUID produtoId, String produtoNome, UUID laboratorioId,
+            String laboratorioNome, UUID usuarioId, String usuarioNome,
+            UUID estoqueCentralId, UUID pedidoId, TipoPedido pedidoTipo,
+            String pedidoSolicitanteNome, UUID loteId, String codigoInternoLote,
+            String numeroLote, TipoMovimentacao tipoMovimentacao,
+            OrigemMovimentacao origem, BigDecimal quantidadeMovimentada,
+            BigDecimal quantidadeAnterior, BigDecimal quantidadeAtual,
+            LocalDateTime dataMovimentacao, String observacao, UnidadeMedida unidadeMedida) {
+        this(id, produtoId, produtoNome, laboratorioId, laboratorioNome, usuarioId,
+                usuarioNome, estoqueCentralId, pedidoId, pedidoTipo,
+                pedidoSolicitanteNome, loteId, codigoInternoLote, numeroLote,
+                tipoMovimentacao, origem, quantidadeMovimentada,
+                quantidadeAnterior, quantidadeAtual, dataMovimentacao, observacao,
+                unidadeMedida, null, null);
     }
 
     public MovimentacaoEstoqueResponseDTO(MovimentacaoEstoque entity) {
