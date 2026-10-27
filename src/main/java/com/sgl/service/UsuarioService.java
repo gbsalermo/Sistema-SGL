@@ -124,10 +124,7 @@ public class UsuarioService {
             throw new BusinessRuleException("Já existe um usuário com este email.");
         }
 
-        // The general update also carries the profile, so it must not bypass the profile-change rules.
-        if (usuario.getPerfil() != dto.getPerfil()) {
-            validarTrocaDePerfil(usuario, dto.getPerfil());
-        }
+        validarEdicao(usuario, dto);
         validarAlteracaoPerfil(usuario, dto.getPerfil());
 
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
@@ -238,6 +235,28 @@ public class UsuarioService {
         UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
         return usuarioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+    }
+
+    /**
+     * The general update carries profile, active flag, Unidade and base lab, so it must not bypass the
+     * rules of the dedicated routes. Plain data (name, e-mail) still needs authority over the target.
+     */
+    private void validarEdicao(Usuario usuario, UsuarioRequestDTO dto) {
+        AuthenticatedUser ator = CurrentUser.get();
+        exigirGestao(ator);
+        boolean mudaAtivo = dto.getAtivo() != null && !dto.getAtivo().equals(usuario.getAtivo());
+        UUID laboratorioAtual = usuario.getLaboratorio() != null ? usuario.getLaboratorio().getPublicId() : null;
+        UUID unidadeAtual = usuario.getUnidade() != null ? usuario.getUnidade().getPublicId() : null;
+        boolean mudaAcesso = usuario.getPerfil() != dto.getPerfil() || mudaAtivo
+                || !java.util.Objects.equals(laboratorioAtual, dto.getLaboratorioId())
+                || !java.util.Objects.equals(unidadeAtual, dto.getUnidadeId());
+
+        if (mudaAcesso) {
+            boolean desativando = mudaAtivo && Boolean.FALSE.equals(dto.getAtivo());
+            validarTrocaDePerfil(usuario, desativando ? null : dto.getPerfil());
+        } else if (!ator.publicId().equals(usuario.getPublicId())) {
+            exigirPodeConceder(ator, usuario.getPerfil());
+        }
     }
 
     /**

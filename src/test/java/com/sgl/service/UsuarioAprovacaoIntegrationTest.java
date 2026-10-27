@@ -282,6 +282,57 @@ class UsuarioAprovacaoIntegrationTest {
     }
 
     @Test
+    void atualizar_tecnicoDesativandoGestor_403() throws Exception {
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(atualizar(gestor, tecnico, "GESTOR", false, null))
+                .andExpect(status().isForbidden());
+        assertThat(usuarioRepository.findByPublicId(gestor.getPublicId()).orElseThrow().getAtivo()).isTrue();
+    }
+
+    @Test
+    void atualizar_gestorDesativandoAdministrador_403() throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(atualizar(admin, gestor, "ADMINISTRADOR", false, null))
+                .andExpect(status().isForbidden());
+        assertThat(usuarioRepository.findByPublicId(admin.getPublicId()).orElseThrow().getAtivo()).isTrue();
+    }
+
+    @Test
+    void atualizar_proprioLaboratorio_403() throws Exception {
+        mockMvc.perform(atualizar(gestor, gestor, "GESTOR", true, laboratorio))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void atualizar_gestorEditandoTecnico_200() throws Exception {
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(atualizar(tecnico, gestor, "TECNICO", false, laboratorio))
+                .andExpect(status().isOk());
+        Usuario salvo = usuarioRepository.findByPublicId(tecnico.getPublicId()).orElseThrow();
+        assertThat(salvo.getAtivo()).isFalse();
+    }
+
+    @Test
+    void atualizar_desativandoUltimoAdministradorGeral_409() {
+        Usuario ultimo = novoAdministradorGeral(true);
+        assertThat(usuarioRepository.countByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL)).isEqualTo(1);
+        sessaoSintetica(Perfil.ADMINISTRADOR_GERAL);
+        com.sgl.dto.request.UsuarioRequestDTO dto = new com.sgl.dto.request.UsuarioRequestDTO();
+        dto.setNome(ultimo.getNome());
+        dto.setEmail("ag-" + UUID.randomUUID() + "@embrapa.br");
+        dto.setPerfil(Perfil.ADMINISTRADOR_GERAL);
+        dto.setUnidadeId(unidade.getPublicId());
+        dto.setAtivo(false);
+
+        assertThatThrownBy(() -> usuarioService.atualizar(ultimo.getPublicId(), dto))
+                .isInstanceOfSatisfying(UsuarioRejectedException.class,
+                        e -> assertThat(e.getCodigo()).isEqualTo("ULTIMO_ADMINISTRADOR_GERAL"));
+    }
+
+    @Test
     void criar_gestorCriandoAdministrador_403() throws Exception {
         mockMvc.perform(post(USUARIOS)
                         .header(HttpHeaders.AUTHORIZATION, bearer(gestor))
@@ -297,6 +348,23 @@ class UsuarioAprovacaoIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, bearer(ator))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"perfil\":\"%s\",\"laboratorioBaseId\":\"%s\"}".formatted(perfil, lab.getPublicId()));
+    }
+
+    private org.springframework.test.web.servlet.RequestBuilder atualizar(Usuario alvo, Usuario ator, String perfil,
+            boolean ativo, Laboratorio lab) {
+        String labJson = lab == null ? "" : ",\"laboratorioId\":\"" + lab.getPublicId() + "\"";
+        return put(USUARIOS + "/" + alvo.getPublicId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(ator))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"nome":"Nome","email":"e-%s@embrapa.br","perfil":"%s","unidadeId":"%s","ativo":%s%s}
+                    """.formatted(UUID.randomUUID(), perfil, unidade.getPublicId(), ativo, labJson));
+    }
+
+    private void sessaoSintetica(Perfil perfil) {
+        AuthenticatedUser ator = new AuthenticatedUser(UUID.randomUUID(), perfil, SituacaoUsuario.ATIVO, unidade.getPublicId());
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(ator, null, List.of()));
+        TenantContext.definir(unidade.getPublicId());
     }
 
     private org.springframework.test.web.servlet.RequestBuilder trocarPerfil(Usuario alvo, Usuario ator, String perfil) {
