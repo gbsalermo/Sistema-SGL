@@ -298,7 +298,12 @@ Primeiro acesso de um ambiente novo: subir com `SGL_PRIMEIRO_LOGIN_ADMIN=true`, 
 
 O Administrador geral habilita novas Unidades em `POST /api/v1/unidades/habilitar` (lista em `GET /api/v1/unidades/corporativas`); login de pessoa de Unidade não habilitada é recusado com `UNIDADE_NAO_HABILITADA`.
 
-**Pendência conhecida:** `POST/PUT/DELETE /api/v1/unidades` (cadastro legado) ainda não exigem perfil; fica para a matriz de permissões.
+Regras de servidor além da autenticação:
+
+- `POST/PUT/DELETE /api/v1/unidades`: só `ADMINISTRADOR_GERAL`.
+- Vínculos operacionais, laboratório-base, estágios e edição de usuários: só gestão, respeitando a regra de concessão de perfis; ninguém altera o próprio perfil, situação ou laboratório.
+- Rotas que ainda recebem o usuário que age (`usuarioId` no corpo ou na query: pedidos, movimentações de estoque, prorrogações, correção de código SEG, observações de estágio) recusam com 403 qualquer valor diferente do usuário da sessão.
+- A matriz completa de permissões por módulo continua sendo o item 1 do roadmap.
 
 ---
 
