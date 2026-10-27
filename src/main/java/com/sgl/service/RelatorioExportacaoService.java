@@ -143,22 +143,25 @@ public class RelatorioExportacaoService {
             FormatoExportacaoRelatorio formato,
             List<String> filtros) {
 
-        Map<String, String> resumo = resumo(
-                "Movimentações", relatorio.getTotalMovimentacoes(), "Entradas (medidas diversas)", "Consultar itens por produto",
-                "Saídas (medidas diversas)", "Consultar itens por produto", "Descartes (medidas diversas)", "Consultar itens por produto",
-                "Produtos", relatorio.getProdutosMovimentados(), "Lotes", relatorio.getLotesMovimentados()
+        Map<String, String> indicadores = resumo(
+                "Movimentações", relatorio.getTotalMovimentacoes(),
+                "Entradas", relatorio.getTotalEntradas(),
+                "Saídas", relatorio.getTotalSaidas(),
+                "Devoluções", relatorio.getTotalDevolucoes(),
+                "Ajustes", relatorio.getTotalAjustes(),
+                "Descartes", relatorio.getTotalDescartes()
         );
-        Tabela entradas = new Tabela("Principais entradas", List.of("Produto", "Quantidade", "Movimentações"),
-                relatorio.getPrincipaisEntradas().stream().map(i -> List.of(texto(i.getProdutoNome()), quantidadeComUnidade(i.getQuantidade(), i.getUnidadeMedida()), texto(i.getMovimentacoes()))).toList());
-        Tabela saidas = new Tabela("Principais saídas", List.of("Produto", "Quantidade", "Movimentações"),
-                relatorio.getPrincipaisSaidas().stream().map(i -> List.of(texto(i.getProdutoNome()), texto(i.getQuantidade()), texto(i.getMovimentacoes()))).toList());
-        Tabela lotes = new Tabela("Lotes mais movimentados",
-                List.of("Lote", "Fornecedor", "Produto", "Movimentado", "Entradas", "Saídas", "Saldo", "Validade"),
-                relatorio.getLotesMaisMovimentados().stream().map(i -> List.of(
-                        texto(i.getCodigoInterno()), texto(i.getNumeroLote()), texto(i.getProdutoNome()), quantidadeComUnidade(i.getQuantidadeMovimentada(), i.getUnidadeMedida()),
-                        quantidadeComUnidade(i.getQuantidadeEntradas(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeSaidas(), i.getUnidadeMedida()), quantidadeComUnidade(i.getSaldoAtual(), i.getUnidadeMedida()), data(i.getDataValidade())
-                )).toList());
-        return gerar("Resumo Operacional", "resumo-operacional", formato, filtros, resumo, List.of(entradas, saidas, lotes), true);
+        Tabela tabela = new Tabela("Ocorrências por tipo",
+                List.of("Tipo de movimentação", "Ocorrências"),
+                List.of(
+                        List.of("Entradas", texto(relatorio.getTotalEntradas())),
+                        List.of("Saídas", texto(relatorio.getTotalSaidas())),
+                        List.of("Devoluções", texto(relatorio.getTotalDevolucoes())),
+                        List.of("Ajustes", texto(relatorio.getTotalAjustes())),
+                        List.of("Descartes", texto(relatorio.getTotalDescartes()))
+                ));
+        return gerar("Resumo de Movimentações", "resumo-operacional", formato,
+                filtros, indicadores, List.of(tabela), false);
     }
 
     public ArquivoRelatorioDTO exportarEstoqueLotes(
