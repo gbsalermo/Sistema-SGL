@@ -98,12 +98,15 @@ public class RelatorioExportacaoController {
             @RequestParam(required = false) UUID loteId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
-            @RequestParam(required = false) TipoEmbalagem tipoEmbalagem) {
+            @RequestParam(required = false) TipoEmbalagem tipoEmbalagem,
+            @RequestParam(required = false) UUID projetoId,
+            @RequestParam(required = false) UUID sciId,
+            @RequestParam(required = false) UUID atividadeId) {
 
-        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim, tipoEmbalagem);
+        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim, tipoEmbalagem, projetoId, sciId, atividadeId);
         var arquivo = exportacaoService.exportarMovimentacoes(relatorio, formato,
                 filtros("Tipo", tipo, "Origem", origem, "Produto", produtoId, "Laboratório", laboratorioId,
-                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim, "Embalagem", tipoEmbalagem));
+                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim, "Embalagem", tipoEmbalagem, "Projeto", projetoId, "SCI", sciId, "Atividade", atividadeId));
         return resposta(arquivo);
     }
 
