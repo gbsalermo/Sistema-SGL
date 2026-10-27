@@ -131,7 +131,7 @@ public class RelatorioExportacaoService {
                 List.of("Data", "Produto", "Tipo", "Quantidade", "Lote", "Laboratório", "Origem", "Responsável", "Solicitante", "Saldo"),
                 relatorio.getItens().stream().map(item -> List.of(
                         dataHora(item.getDataMovimentacao()), texto(item.getProdutoNome()), rotulo(item.getTipoMovimentacao()),
-                        quantidadeComUnidade(item.getQuantidadeMovimentada(), item.getUnidadeMedida()), texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
+                        quantidadeEmMovimentacao(item), texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
                         rotulo(item.getOrigem()), texto(item.getUsuarioNome()), texto(item.getPedidoSolicitanteNome()),
                         quantidadeComUnidade(item.getQuantidadeAnterior(), item.getUnidadeMedida()) + " → " + quantidadeComUnidade(item.getQuantidadeAtual(), item.getUnidadeMedida())
                 )).toList());
@@ -601,6 +601,16 @@ public class RelatorioExportacaoService {
             if (!palavra.isEmpty()) saida.append(Character.toUpperCase(palavra.charAt(0))).append(palavra.substring(1));
         }
         return saida.toString();
+    }
+
+    private String quantidadeEmMovimentacao(MovimentacaoEstoqueResponseDTO item) {
+        String quantidade = quantidadeComUnidade(item.getQuantidadeMovimentada(), item.getUnidadeMedida());
+        if (item.getTipoEmbalagemConsultada() == null || item.getRecipientesUtilizados() == null) {
+            return quantidade;
+        }
+        String embalagem = rotulo(item.getTipoEmbalagemConsultada());
+        return quantidade + " (" + item.getRecipientesUtilizados()
+                + " recipiente(s) do tipo " + embalagem + " utilizado(s))";
     }
 
     private String quantidadeComUnidade(java.math.BigDecimal quantidade, String unidade) {
