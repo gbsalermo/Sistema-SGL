@@ -283,7 +283,7 @@ Spec e plano: `docs/superpowers/specs/2026-10-27-autenticacao-corporativa-design
 Variáveis de ambiente (nenhum valor real em arquivo versionado):
 
 ```text
-SPRING_PROFILES_ACTIVE     obrigatória em homologação/produção (o padrão do application.properties é dev)
+SPRING_PROFILES_ACTIVE     sem padrão: dev/demo só em máquina de desenvolvimento ou apresentação
 SGL_CORPORATE_BASE_URL     gateway das APIs corporativas (padrão dev: https://api-gateway-devhomol.nuvem.ti.embrapa.br)
 SGL_CORPORATE_AMBIENTE     h (homologação) ou p (produção)
 SGL_CORPORATE_USERNAME     usuário de sistema (Basic Auth)
@@ -326,7 +326,7 @@ V1 ... V45   (V45 = identidade corporativa; preenche CNPMF com codigo_corporativ
 
 ```bash
 cd backend/sgl-backend
-mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 Variáveis usuais:

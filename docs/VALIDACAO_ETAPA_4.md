@@ -14,7 +14,7 @@ Backend:
 
 ```bash
 ./mvnw test
-./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 Confirmar:
