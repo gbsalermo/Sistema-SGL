@@ -234,11 +234,11 @@ public class RelatorioExportacaoService {
                         data(i.getProximoVencimento()), quantidadeComUnidade(i.getQuantidadeEntradas(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeSaidas(), i.getUnidadeMedida())
                 )).toList());
         Tabela movimentos = new Tabela("Rastreabilidade",
-                List.of("Data", "Produto", "Tipo", "Qtd", "Lote", "Validade", "Laboratório", "Projeto", "Solicitante", "Pedido", "Responsável", "Saldo"),
+                List.of("Data", "Produto", "Tipo", "Qtd", "Lote", "Validade", "Laboratório", "Projeto", "Solicitante", "Pedido", "Responsável", "Recipientes", "Embalagens", "Saldo"),
                 relatorio.getMovimentacoes().stream().map(i -> List.of(
                         dataHora(i.getDataMovimentacao()), texto(i.getProdutoNome()), rotulo(i.getTipoMovimentacao()), quantidadeComUnidade(i.getQuantidadeMovimentada(), i.getUnidadeMedida()),
                         texto(i.getCodigoInternoLote()), data(i.getDataValidadeLote()), texto(i.getLaboratorioNome()), texto(i.getProjetoNome()),
-                        texto(i.getSolicitanteNome()), texto(i.getPedidoId()), texto(i.getResponsavelNome()), quantidadeComUnidade(i.getSaldoAposMovimentacao(), i.getUnidadeMedida())
+                        texto(i.getSolicitanteNome()), texto(i.getPedidoId()), texto(i.getResponsavelNome()), texto(i.getRecipientesEnvolvidos()), texto(i.getEmbalagensEnvolvidas()), quantidadeComUnidade(i.getSaldoAposMovimentacao(), i.getUnidadeMedida())
                 )).toList());
         return gerar("Relatório de Fiscalização", "fiscalizacao", formato, filtros, resumo, List.of(produtos, movimentos), true);
     }
