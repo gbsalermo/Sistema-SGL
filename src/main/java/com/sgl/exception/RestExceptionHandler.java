@@ -7,6 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -31,6 +32,21 @@ public class RestExceptionHandler {
         return buildResponse(
                 HttpStatus.NOT_FOUND,
                 "Recurso não encontrado",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    // Without this, an AccessDeniedException raised past the filters (e.g. by CurrentUser) would fall
+    // into the generic handler below and surface as a 500.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(
+                HttpStatus.FORBIDDEN,
+                "Acesso negado",
                 ex.getMessage(),
                 request.getRequestURI()
         );

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -17,6 +18,11 @@ import com.sgl.model.enums.SituacaoUsuario;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
 
     Optional<Usuario> findByPublicId(UUID publicId);
+
+    // The security filter runs outside any persistence context, so the Unidade must come loaded.
+    @EntityGraph(attributePaths = "unidade")
+    Optional<Usuario> findWithUnidadeByPublicId(UUID publicId);
+
     Optional<Usuario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
     Optional<Usuario> findByEmail(String email);
