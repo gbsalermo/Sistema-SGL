@@ -31,6 +31,7 @@ import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.UnidadeRequestDTO;
 import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.service.UnidadeHabilitacaoService;
 import com.sgl.service.UnidadeService;
 
 /**
@@ -81,6 +82,10 @@ class UnidadeControllerTest {
 
     @MockitoBean
     private UnidadeService unidadeService;
+
+    // Only satisfies the controller's constructor; enablement is covered by UnidadeHabilitacaoIntegrationTest.
+    @MockitoBean
+    private UnidadeHabilitacaoService unidadeHabilitacaoService;
 
     private UnidadeResponseDTO montarResponseDTO() {
         return new UnidadeResponseDTO(UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ");

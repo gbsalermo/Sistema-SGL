@@ -124,6 +124,15 @@ public class CorporateGatewayStubs {
             .andRespond(withSuccess(itemJson, MediaType.APPLICATION_JSON));
     }
 
+    public void unidadesEmbrapa(String... itemsJson) {
+        server.expect(requestTo(url("unidadeapi", "/unidade/listaUnidadesEmbrapa")))
+            .andRespond(withSuccess("[" + String.join(",", itemsJson) + "]", MediaType.APPLICATION_JSON));
+    }
+
+    public static String unidadeItem(int unidadeId, String sigla, String nome) {
+        return "{\"unidadeId\":%d,\"sigla\":\"%s\",\"nome\":\"%s\"}".formatted(unidadeId, sigla, nome);
+    }
+
     private static String page(String... itemsJson) {
         return "{\"items\":[" + String.join(",", itemsJson) + "],\"pageIndex\":1,\"totalPages\":1,\"hasNextPage\":false}";
     }

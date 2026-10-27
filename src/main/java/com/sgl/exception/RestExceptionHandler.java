@@ -105,6 +105,14 @@ public class RestExceptionHandler {
         return buildResponse(ex.getStatus(), "Importação recusada", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
     }
 
+    @ExceptionHandler(UnidadeRejectedException.class)
+    public ResponseEntity<ApiError> handleUnidadeRejected(
+            UnidadeRejectedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(ex.getStatus(), "Operação recusada", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
+    }
+
     @ExceptionHandler(UsuarioRejectedException.class)
     public ResponseEntity<ApiError> handleUsuarioRejected(
             UsuarioRejectedException ex,
