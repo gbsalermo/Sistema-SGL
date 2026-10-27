@@ -107,6 +107,12 @@ public class CorporateGatewayStubs {
             .andRespond(withSuccess(page(itemsJson), MediaType.APPLICATION_JSON));
     }
 
+    public void empregadosDaUnidadeStatus(int unidadeId, HttpStatus status) {
+        server.expect(requestTo(url("empregadoapi", "/empregado/listaEmpregadosPorUnidade?unidadeId=" + unidadeId
+                + "&numeroPagina=1&itensPorPagina=100")))
+            .andRespond(withStatus(status));
+    }
+
     public void colaboradoresDaUnidade(int unidadeId, String... itemsJson) {
         server.expect(requestTo(url("colaboradorapi", "/colaborador/lista/porUnidadeLotacao/" + unidadeId
                 + "/ativo/true?numeroPagina=1&itensPorPagina=100")))

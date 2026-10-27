@@ -4,6 +4,7 @@ import java.text.Normalizer;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -54,6 +55,7 @@ import com.sgl.security.PerfilPolicy;
 @Service
 public class PessoaCorporativaService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(PessoaCorporativaService.class);
     private static final Logger AUDIT = LoggerFactory.getLogger("sgl.auditoria");
     static final int MIN_TERM_LENGTH = 3;
     static final int MAX_RESULTS = 50;
@@ -142,6 +144,8 @@ public class PessoaCorporativaService {
         usuario.setCargo(person.cargo());
         usuario.setSublotacao(person.sublotacao());
         usuario.setUnidade(unidade);
+        // Set directly, bypassing definirLaboratorioBase's ESTAGIARIO guard on purpose: the import sets the
+        // base lab for every profile (spec 2.1); the estagio flow overrides it for interns later.
         usuario.setLaboratorio(laboratorio);
         usuario.setPerfil(request.getPerfil());
         usuario.setSituacao(SituacaoUsuario.ATIVO);
@@ -152,6 +156,8 @@ public class PessoaCorporativaService {
         try {
             saved = usuarioRepository.saveAndFlush(usuario);
         } catch (DataIntegrityViolationException e) {
+            // Constraint name only: the exception message may carry the CPF value.
+            LOG.warn("Import refused by a uniqueness constraint: constraint={}", constraintName(e));
             // Lost a race against another import or a first login of the same person.
             throw ImportacaoRejectedException.jaCadastrado();
         }
@@ -162,6 +168,11 @@ public class PessoaCorporativaService {
         return usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(saved.getPublicId())
                 .map(UsuarioSessaoResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", saved.getPublicId()));
+    }
+
+    private static String constraintName(DataIntegrityViolationException e) {
+        return e.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve
+                && cve.getConstraintName() != null ? cve.getConstraintName() : "unknown";
     }
 
     private Person fetch(TipoPessoaCorporativa tipo, String referencia, int codigo, Unidade unidade) {
@@ -254,8 +265,8 @@ public class PessoaCorporativaService {
                 cpfs.add(p.cpf());
             }
         }
-        Map<String, Usuario> byMatricula = new ConcurrentHashMap<>();
-        Map<String, Usuario> byCpf = new ConcurrentHashMap<>();
+        Map<String, Usuario> byMatricula = new HashMap<>();
+        Map<String, Usuario> byCpf = new HashMap<>();
         if (!matriculas.isEmpty()) {
             usuarioRepository.findByMatriculaIn(matriculas).forEach(u -> byMatricula.put(u.getMatricula(), u));
         }
@@ -266,7 +277,7 @@ public class PessoaCorporativaService {
             Usuario existing = Optional.ofNullable(p.matricula()).map(byMatricula::get)
                     .or(() -> Optional.ofNullable(p.cpf()).map(byCpf::get)).orElse(null);
             return new PessoaCorporativaResponseDTO(p.referencia(), p.tipo(), p.nome(), p.matricula(), p.cargo(),
-                    p.sublotacao(), p.unidadeNome(), existing != null,
+                    p.sublotacao(), p.unidadeNome(), p.email(), existing != null,
                     existing == null ? null : existing.getSituacao(),
                     ProfileSuggestion.fromCargo(p.cargo(), p.tipo()).orElse(null));
         }).toList();

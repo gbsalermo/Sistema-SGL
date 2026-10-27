@@ -18,6 +18,8 @@ public record PessoaCorporativaResponseDTO(
         String cargo,
         String sublotacao,
         String unidadeNome,
+        @Schema(description = "E-mail corporativo; nulo para colaboradores, que não o têm na base.")
+        String email,
         @Schema(description = "Indica se a pessoa já consta no SGL (por matrícula ou CPF).")
         boolean jaCadastrado,
         @Schema(description = "Situação do cadastro; nulo se não cadastrada.")

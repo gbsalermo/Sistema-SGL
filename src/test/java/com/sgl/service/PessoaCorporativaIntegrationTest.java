@@ -4,6 +4,7 @@ import static com.sgl.corporate.CorporateGatewayStubs.colaboradorItem;
 import static com.sgl.corporate.CorporateGatewayStubs.empregadoItem;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,6 +22,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -36,6 +39,14 @@ import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.security.AuthenticatedUser;
+import com.sgl.tenant.TenantContext;
+import com.sgl.corporate.CorporateApiClient;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import org.springframework.http.HttpStatus;
 import com.sgl.security.JwtService;
 
 /**
@@ -61,6 +72,7 @@ class PessoaCorporativaIntegrationTest {
     @Autowired private JwtService jwtService;
     @Autowired private CorporateGatewayStubs gateway;
     @Autowired private PessoaCorporativaService pessoaService;
+    @Autowired private CorporateApiClient corporateApiClient;
     @Autowired private UnidadeRepository unidadeRepository;
     @Autowired private LaboratorioRepository laboratorioRepository;
     @Autowired private UsuarioRepository usuarioRepository;
@@ -68,7 +80,7 @@ class PessoaCorporativaIntegrationTest {
     private Unidade unidade;
     private Laboratorio laboratorio;
     private Usuario gestor;
-    private final List<Usuario> usuariosCriados = new ArrayList<>();
+    private final List<Unidade> outrasUnidades = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -87,9 +99,15 @@ class PessoaCorporativaIntegrationTest {
     @AfterEach
     void tearDown() {
         pessoaService.clearCache();
-        usuarioRepository.deleteAll(usuarioRepository.findByUnidadePublicId(unidade.getPublicId()));
-        laboratorioRepository.deleteAll(laboratorioRepository.findByUnidadePublicId(unidade.getPublicId()));
-        unidadeRepository.delete(unidade);
+        SecurityContextHolder.clearContext();
+        TenantContext.limpar();
+        List<Unidade> todas = new ArrayList<>(outrasUnidades);
+        todas.add(unidade);
+        for (Unidade u : todas) {
+            usuarioRepository.deleteAll(usuarioRepository.findByUnidadePublicId(u.getPublicId()));
+            laboratorioRepository.deleteAll(laboratorioRepository.findByUnidadePublicId(u.getPublicId()));
+            unidadeRepository.delete(u);
+        }
     }
 
     @Test
@@ -105,6 +123,7 @@ class PessoaCorporativaIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].jaCadastrado").value(true))
+                .andExpect(jsonPath("$[0].email").value("344136@embrapa.br"))
                 .andExpect(jsonPath("$[0].situacao").value("ATIVO"))
                 .andExpect(jsonPath("$[1].jaCadastrado").value(true))
                 .andExpect(jsonPath("$[2].jaCadastrado").value(false))
@@ -152,6 +171,7 @@ class PessoaCorporativaIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].referencia").value("42"))
                 .andExpect(jsonPath("$[0].perfilSugerido").value("ESTAGIARIO"))
+                .andExpect(jsonPath("$[0].email").value(nullValue()))
                 .andReturn();
 
         String raw = result.getResponse().getContentAsString();
@@ -179,7 +199,6 @@ class PessoaCorporativaIntegrationTest {
                 .andExpect(jsonPath("$.laboratorioId").value(laboratorio.getPublicId().toString()));
 
         Usuario criado = comRelacionamentos(usuarioRepository.findByMatricula("344136").orElseThrow());
-        usuariosCriados.add(criado);
         assertThat(criado.getCpf()).isEqualTo(CPF_JOAO);
         assertThat(criado.getOrigem()).isEqualTo(OrigemUsuario.CORPORATIVO);
         assertThat(criado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
@@ -272,6 +291,99 @@ class PessoaCorporativaIntegrationTest {
         gateway.verify();
     }
 
+    @Test
+    void importar_administradorGeralComHeaderDeOutraUnidade_importaNaquelaUnidade() throws Exception {
+        Unidade outra = novaUnidade(98);
+        Laboratorio labOutra = laboratorioRepository.saveAndFlush(
+                Laboratorio.builder().unidade(outra).nome("Lab Outra").ativo(true).build());
+        Usuario geral = novoUsuario(Perfil.ADMINISTRADOR_GERAL, null, null);
+        gateway.empregadoPorMatricula("344136", "Joao Silva", CPF_JOAO, "Analista A", 98, true);
+
+        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(geral))
+                        .header(TenantContext.HEADER_UNIDADE, outra.getPublicId().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpo("EMPREGADO", "344136", "GESTOR", labOutra)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.unidadeId").value(outra.getPublicId().toString()));
+    }
+
+    @Test
+    void importar_gestorConcedendoGestor_retorna403() throws Exception {
+        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpo("EMPREGADO", "344136", "GESTOR", laboratorio)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void cache_naoMisturaListagensDeUnidadesDiferentes() throws Exception {
+        Unidade outra = novaUnidade(98);
+        Usuario geral = novoUsuario(Perfil.ADMINISTRADOR_GERAL, null, null);
+        gateway.empregadosDaUnidade(CODIGO, empregadoItem("1", "Joao da A", CPF_JOAO, "Analista", CODIGO));
+        gateway.empregadosDaUnidade(98, empregadoItem("2", "Joao da B", CPF_MARIA, "Analista", 98));
+
+        mockMvc.perform(get(BUSCA).param("tipo", "EMPREGADO").param("termo", "joao").header(HttpHeaders.AUTHORIZATION, bearer(geral)))
+                .andExpect(jsonPath("$[0].nome").value("Joao da A"));
+        mockMvc.perform(get(BUSCA).param("tipo", "EMPREGADO").param("termo", "joao").header(HttpHeaders.AUTHORIZATION, bearer(geral))
+                        .header(TenantContext.HEADER_UNIDADE, outra.getPublicId().toString()))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].nome").value("Joao da B"));
+        gateway.verify();
+    }
+
+    @Test
+    void cache_falhaDoGateway_naoEhCacheada() throws Exception {
+        gateway.empregadosDaUnidadeStatus(CODIGO, HttpStatus.INTERNAL_SERVER_ERROR);
+        gateway.empregadosDaUnidade(CODIGO, empregadoItem("1", "Joao Silva", CPF_JOAO, "Analista", CODIGO));
+
+        mockMvc.perform(get(BUSCA).param("tipo", "EMPREGADO").param("termo", "joao").header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+                .andExpect(status().isServiceUnavailable());
+        mockMvc.perform(get(BUSCA).param("tipo", "EMPREGADO").param("termo", "joao").header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+        gateway.verify();
+    }
+
+    @Test
+    void cache_expiraAposCincoMinutos() {
+        MutableClock clock = new MutableClock();
+        PessoaCorporativaService service = new PessoaCorporativaService(corporateApiClient, usuarioRepository,
+                unidadeRepository, laboratorioRepository, clock);
+        SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
+                AuthenticatedUser.from(gestor), null, List.of()));
+        TenantContext.definir(unidade.getPublicId());
+        gateway.empregadosDaUnidade(CODIGO, empregadoItem("1", "Joao Silva", CPF_JOAO, "Analista", CODIGO));
+        gateway.empregadosDaUnidade(CODIGO, empregadoItem("1", "Joao Silva", CPF_JOAO, "Analista", CODIGO));
+
+        service.buscar(com.sgl.corporate.TipoPessoaCorporativa.EMPREGADO, "joao");
+        clock.advance(Duration.ofMinutes(4));
+        service.buscar(com.sgl.corporate.TipoPessoaCorporativa.EMPREGADO, "joao"); // still cached
+        clock.advance(Duration.ofMinutes(2));
+        service.buscar(com.sgl.corporate.TipoPessoaCorporativa.EMPREGADO, "joao"); // expired: second listing
+
+        gateway.verify();
+    }
+
+    private static final class MutableClock extends Clock {
+        private Instant now = Instant.parse("2026-10-27T12:00:00Z");
+
+        void advance(Duration duration) {
+            now = now.plus(duration);
+        }
+
+        @Override public java.time.ZoneId getZone() { return ZoneId.of("UTC"); }
+        @Override public Clock withZone(ZoneId zone) { return this; }
+        @Override public Instant instant() { return now; }
+    }
+
+    private Unidade novaUnidade(int codigo) {
+        Unidade nova = unidadeRepository.saveAndFlush(Unidade.builder().nome("Unidade " + codigo)
+                .sigla("U" + codigo + "-" + java.util.UUID.randomUUID().toString().substring(0, 6))
+                .codigoCorporativo(codigo).build());
+        outrasUnidades.add(nova);
+        return nova;
+    }
+
     private Usuario comRelacionamentos(Usuario usuario) {
         return usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(usuario.getPublicId()).orElseThrow();
     }
@@ -292,7 +404,6 @@ class PessoaCorporativaIntegrationTest {
         usuario.setMatricula(matricula);
         usuario.setCpf(cpf);
         Usuario salvo = usuarioRepository.saveAndFlush(usuario);
-        usuariosCriados.add(salvo);
         return salvo;
     }
 
