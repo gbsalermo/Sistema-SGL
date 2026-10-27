@@ -3,6 +3,7 @@ package com.sgl.repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.sgl.model.enums.TipoEmbalagem;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -41,6 +42,41 @@ public interface MovimentacaoRecipienteRepository extends JpaRepository<Moviment
 			         detalhe.id DESC
 			""")
 	List<MovimentacaoRecipiente> buscarHistoricoDoRecipiente(@Param("recipienteId") Long recipienteId);
+
+    @Query("""
+            SELECT DISTINCT d.movimentacaoEstoque.publicId
+            FROM MovimentacaoRecipiente d
+            WHERE d.movimentacaoEstoque.estoqueCentral.unidade.publicId = :unidadeId
+              AND d.recipienteEstoque.tipoEmbalagem = :tipoEmbalagem
+            """)
+    List<UUID> buscarMovimentacoesPorTipoEmbalagem(
+            @Param("unidadeId") UUID unidadeId,
+            @Param("tipoEmbalagem") TipoEmbalagem tipoEmbalagem);
+
+
+    @Query("""
+            SELECT DISTINCT d.recipienteEstoque.tipoEmbalagem
+            FROM MovimentacaoRecipiente d
+            WHERE d.movimentacaoEstoque.estoqueCentral.unidade.publicId = :unidadeId
+              AND d.movimentacaoEstoque.produto.publicId = :produtoId
+            ORDER BY d.recipienteEstoque.tipoEmbalagem
+            """)
+    List<TipoEmbalagem> listarEmbalagensMovimentadasPorProduto(
+            @Param("unidadeId") UUID unidadeId,
+            @Param("produtoId") UUID produtoId);
+
+    @Query("""
+            SELECT d FROM MovimentacaoRecipiente d
+            JOIN FETCH d.recipienteEstoque r
+            WHERE d.movimentacaoEstoque.estoqueCentral.unidade.publicId = :unidadeId
+              AND d.movimentacaoEstoque.publicId IN :ids
+            """)
+    List<MovimentacaoRecipiente> listarDetalhesParaRelatorio(
+            @Param("unidadeId") UUID unidadeId,
+            @Param("ids") List<UUID> ids);
+
+    long countByMovimentacaoEstoqueIdAndRecipienteEstoqueTipoEmbalagem(
+            Long movimentacaoId, TipoEmbalagem tipoEmbalagem);
 
 	boolean existsByMovimentacaoEstoqueIdAndRecipienteEstoqueId(Long movimentacaoEstoqueId, Long recipienteEstoqueId);
 }

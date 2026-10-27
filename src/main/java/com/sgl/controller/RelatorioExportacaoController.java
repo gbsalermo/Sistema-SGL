@@ -17,15 +17,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.response.ArquivoRelatorioDTO;
 import com.sgl.model.enums.FormatoExportacaoRelatorio;
+import com.sgl.model.enums.StatusProjeto;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.service.RelatorioEstoqueLotesService;
 import com.sgl.service.RelatorioExportacaoService;
 import com.sgl.service.RelatorioFiscalizacaoService;
 import com.sgl.service.RelatorioMovimentacoesService;
 import com.sgl.service.RelatorioProdutosService;
+import com.sgl.service.RelatorioProjetosService;
 import com.sgl.service.RelatorioResumoOperacionalService;
 import com.sgl.service.RelatorioService;
 
@@ -46,6 +50,7 @@ public class RelatorioExportacaoController {
     private final RelatorioEstoqueLotesService estoqueLotesService;
     private final RelatorioFiscalizacaoService fiscalizacaoService;
     private final RelatorioExportacaoService exportacaoService;
+    private final RelatorioProjetosService projetosService;
 
     @GetMapping("/estagiarios/exportar")
     @Operation(summary = "Exporta o relatório de estagiários")
@@ -92,12 +97,18 @@ public class RelatorioExportacaoController {
             @RequestParam(required = false) UUID usuarioId,
             @RequestParam(required = false) UUID loteId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) TipoEmbalagem tipoEmbalagem,
+            @RequestParam(required = false) UUID projetoId,
+            @RequestParam(required = false) UUID sciId,
+            @RequestParam(required = false) UUID atividadeId,
+            @RequestParam(required = false) String formaConsumo,
+            @RequestParam(required = false, defaultValue = "false") boolean mostrarQuantidades) {
 
-        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim);
+        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim, tipoEmbalagem, projetoId, sciId, atividadeId, formaConsumo);
         var arquivo = exportacaoService.exportarMovimentacoes(relatorio, formato,
                 filtros("Tipo", tipo, "Origem", origem, "Produto", produtoId, "Laboratório", laboratorioId,
-                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim));
+                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim, "Embalagem", tipoEmbalagem, "Projeto", projetoId, "SCI", sciId, "Atividade", atividadeId, "Forma de consumo", formaConsumo), mostrarQuantidades);
         return resposta(arquivo);
     }
 
@@ -153,6 +164,29 @@ public class RelatorioExportacaoController {
                 filtros("Produto", produtoId, "Órgão", orgaoFiscalizador, "Unidade", unidadeId,
                         "Data inicial", dataInicio, "Data final", dataFim,
                         "Janela de vencimento", diasVencimento == null ? null : diasVencimento + " dias"));
+        return resposta(arquivo);
+    }
+
+
+    @GetMapping("/projetos/exportar")
+    @Operation(summary = "Exporta o relatório consolidado de projetos")
+    public ResponseEntity<byte[]> projetos(
+            @RequestParam FormatoExportacaoRelatorio formato,
+            @RequestParam(required = false) UUID laboratorioId,
+            @RequestParam(required = false) StatusProjeto status,
+            @RequestParam(required = false) SituacaoExecucaoProjeto situacaoExecucao,
+            @RequestParam(required = false) Boolean ativo,
+            @RequestParam(required = false) Boolean recursoExterno,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+
+        var relatorio = projetosService.gerar(laboratorioId, status, situacaoExecucao,
+                ativo, recursoExterno, dataInicio, dataFim);
+        var arquivo = exportacaoService.exportarProjetos(relatorio, formato,
+                filtros("Laboratório", laboratorioId, "Status", status,
+                        "Situação de execução", situacaoExecucao,
+                        "Ativo", simNao(ativo), "Recurso externo", simNao(recursoExterno),
+                        "Data inicial", dataInicio, "Data final", dataFim));
         return resposta(arquivo);
     }
 

@@ -11,36 +11,23 @@
 
 </div>
 
----
+## O que é o SGL?
 
-## Estado atual — 16/10/2026
+O **SGL (Sistema de Gestão de Laboratórios)** é uma plataforma de apoio à organização, execução e acompanhamento das atividades laboratoriais. Seu propósito é reunir em um mesmo ambiente a estrutura dos laboratórios, os projetos e suas atividades, o controle de materiais, as solicitações, os resíduos e as informações necessárias à gestão.
 
-O primeiro protótipo do SGL foi aprovado funcionalmente, e as **Etapas 1–7 da pré-produção foram concluídas e validadas pelo responsável**. A Etapa 7 consolidou unidades e apresentações, recipientes físicos, medidas decimais, Soluções, Pedidos por embalagem ou medida, abertura parcial de embalagens, alertas de estoque mínimo configuráveis e integração backend/frontend. **A Etapa 8 é a próxima**, com contexto de participação dos Estagiários em Pedidos/Soluções e teste operacional completo. A homologação integral e a autenticação/autorização definitiva ainda são trabalhos posteriores.
+O sistema foi concebido para dar **rastreabilidade às operações**, reduzir controles dispersos e oferecer uma visão consistente dos recursos utilizados por diferentes laboratórios de uma instituição. Cada Unidade possui seu contexto operacional, enquanto Projetos, SCI, Atividades e vínculos permitem relacionar pessoas e operações às suas origens.
 
-Estado consolidado do backend:
+No backend, isso se traduz em serviços e regras de negócio para:
 
-```text
-Pedidos / urgência                                ✅
-Estoque / lotes                                   ✅
-FIFO / FEFO                                       ✅
-Embalagem / multiplicador / fracionamento         ✅
-Movimentações / rastreabilidade                   ✅
-Swagger / OpenAPI                                 ✅
-Fiscalização de produtos                          ✅
-Relatórios operacionais                           ✅
-Exportação PDF/XLSX                               ✅
-Resíduos — fluxo completo                         ✅
-Estagiários — vínculo/edição/encerramento         ✅
-Pessoas por laboratório                           ✅
-Administração / Cadastros                         ✅
-Isolamento operacional por Unidade                ✅
-Autenticação/autorização definitiva               ⏳ etapa formal posterior
-Integração corporativa/SSO                        ⏳ etapa formal posterior
-```
+- **Materiais e estoque:** catálogo de produtos, entrada de lotes, recipientes, apresentações, fracionamento, critérios FEFO/FIFO e movimentações auditáveis.
+- **Solicitações e soluções:** pedidos de materiais e de soluções, validação dos contextos operacionais, aprovação, preparo, entrega e tratamento das quantidades utilizadas.
+- **Projetos e pessoas:** organização de Projetos, SCI e Atividades, vínculos de usuários, participações de Estagiários e histórico operacional.
+- **Resíduos e segurança:** registro, classificação, acompanhamento, tratamento e destinação de resíduos, além de informações de riscos e fiscalização.
+- **Gestão e relatórios:** consultas, indicadores, rastreabilidade e exportação de dados em PDF/XLSX.
 
-No frontend também estão integrados dashboards, busca global, alertas, tema claro/escuro, sessão DEV, rotas por perfil e propagação do contexto de Unidade.
+A API concentra validações, transações e regras de consistência; a interface web utiliza esses contratos para permitir a operação cotidiana. O SGL está em **evolução de pré-produção**: a integração de identidade institucional e a autorização definitiva são previstas para fases próprias, não devendo ser confundidas com a sessão de desenvolvimento.
 
-> Para retomar o projeto, começar por [`CONTINUIDADE.md`](CONTINUIDADE.md), [`docs/SINCRONIZACAO_GITLAB_GITHUB.md`](docs/SINCRONIZACAO_GITLAB_GITHUB.md), [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md), [`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md`](docs/CONTINUIDADE_ETAPA_5_2026-09-24.md) e [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md). O GitLab é a fonte canônica de `main`; contratos HTTP continuam pertencendo ao Swagger/OpenAPI em execução.
+> **Acompanhamento da evolução:** o histórico de entregas, o estado de cada etapa e os próximos passos estão em [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md). O histórico da Etapa 9 está documentado em [`docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`](docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md).
 
 ---
 
@@ -63,7 +50,7 @@ estrutura institucional
 → administração de dados-base
 ```
 
-Regras críticas permanecem no backend; o frontend não deve recriar FIFO/FEFO, transições de domínio, validações oficiais ou cálculos de relatórios.
+As regras de estoque (FEFO/FIFO), as transições operacionais e os cálculos oficiais são executados pelo backend. O frontend apresenta e conduz as operações usando os contratos da API.
 
 ---
 
@@ -101,13 +88,13 @@ UUID publicId
 → público: DTOs, endpoints e frontend
 ```
 
-Novos contratos públicos devem continuar usando UUID.
+Os contratos públicos da API utilizam UUID como identificador das entidades; os IDs numéricos internos permanecem na persistência.
 
 ---
 
 ## Multitenancy por Unidade
 
-A `main` possui isolamento operacional por Unidade.
+O SGL organiza os registros operacionais por Unidade, com delimitação aplicada nas consultas e nos serviços.
 
 Fluxo atual:
 
@@ -119,9 +106,9 @@ frontend lê unidadeId da sessão DEV
 → services/repositories restringem os dados da Unidade
 ```
 
-Esse mecanismo é importante para validar a separação entre Unidades durante o desenvolvimento, mas **ainda não é a fronteira definitiva de segurança**, porque o cabeçalho é informado pelo cliente e o backend ainda não deriva a Unidade de uma identidade autenticada confiável.
+No ambiente de desenvolvimento, o contexto da Unidade é informado pelo cabeçalho `X-SGL-Unidade-Id`, associado à sessão DEV. Esse fluxo viabiliza a validação funcional por Unidade; a identidade e a autorização corporativas não fazem parte dessa sessão.
 
-Na etapa de autenticação corporativa, o tenant deverá vir da sessão/token institucional.
+**Na integração institucional**, a Unidade (tenant) será resolvida a partir da identidade autenticada na sessão/token institucional e aplicada pelo backend.
 
 ---
 
@@ -237,26 +224,30 @@ Detalhes: [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md).
 
 ## Relatórios
 
-Relatórios atualmente integrados:
+Relatórios implementados e validados funcionalmente na branch da Etapa 9:
 
 ```text
 Estagiários
 Produtos
-Movimentações
-Resumo operacional
+Projetos — consolidação de SCI, Atividades e participações
+Movimentações — Resumo / Detalhamento
 Estoque e lotes
 Fiscalização
 Resíduos
 Pessoas por laboratório
 ```
 
-Prévia, PDF e XLSX devem representar a mesma consulta e os mesmos filtros.
+A Central apresenta **Movimentações** com modos Resumo (contagens de ocorrências, sem rankings) e Detalhamento (filtros por tipo, origem, contexto Projeto/SCI/Atividade, produto, apresentação/unidade e período). As quantidades físicas têm unidades identificadas e exibição opcional no Detalhamento e na exportação PDF/XLSX. **Estoque e lotes** informam apresentação, conteúdo e recipientes fechados, abertos ou esgotados. **Fiscalização** apresenta a trilha de movimentações com recipientes vinculados.
+
+A classificação histórica de consumo como apresentação completa ou por medida é derivada das parcelas registradas, sem afirmar a intenção original da solicitação. Os endpoints anteriores de Movimentações e Resumo Operacional permanecem disponíveis.
+
+Os relatórios utilizam consultas e filtros consistentes entre a prévia e as exportações PDF/XLSX.
 
 Pedidos entregues continuam sendo um recorte de Movimentações, não um relatório separado.
 
 ---
 
-## Segurança — estado correto
+## Identidade e controle de acesso
 
 ```text
 Spring Security como base técnica                   ✅
@@ -269,7 +260,7 @@ auditoria derivada da identidade autenticada        ⏳
 integração corporativa/SSO                          ⏳
 ```
 
-A configuração atual ainda permite requisições sem autenticação definitiva. Não tratar sessão DEV, perfil no frontend ou `X-SGL-Unidade-Id` como segurança final de produção.
+O ambiente DEV utiliza sessão e contexto de Unidade de desenvolvimento para validar fluxos e perfis. A implantação institucional incorporará autenticação, autorização no servidor e auditoria vinculada à identidade autenticada. Esses recursos são uma etapa distinta da homologação funcional do MVP.
 
 ---
 
@@ -283,13 +274,9 @@ Hibernate ddl-auto=validate
 Flyway habilitado
 ```
 
-A evolução do schema é responsabilidade do Flyway. Migrations aplicadas são imutáveis; novas alterações de banco devem usar uma nova versão.
+O Flyway versiona e aplica as alterações de esquema do banco. Cada evolução é registrada em uma nova migration, preservando o histórico das versões já aplicadas.
 
-Sequência atual:
-
-```text
-V1 ... V12
-```
+Migrations existentes nesta revisão: **V1 a V44**, em `src/main/resources/db/migration/`. A aplicação utiliza validação do esquema via Hibernate, enquanto o Flyway mantém o histórico de alterações.
 
 ---
 
@@ -324,34 +311,26 @@ mvn test
 
 ---
 
-## Sequência de trabalho
+## Evolução do projeto
 
-### Agora — pré-produção pós-aprovação
+O desenvolvimento de pré-produção evolui de forma incremental, preservando os fluxos homologados. A Etapa 9 está validada funcionalmente na branch colaborativa, mas ainda não integrada à `main`:
 
-```text
-Etapa 1 — padrão visual global                 ✅
-Etapa 2 — Dark Mode definitivo                 ✅
-Etapa 3 — refinamentos do fluxo de Resíduos    ✅
-Etapa 4 — expansão operacional de Resíduos     ✅
-Etapa 5 — Projetos e Atividades                ✅ concluída e validada
-Etapa 6 — Estagiários e vínculos               🔧 6.1–6.4 concluídos; 6.5 frontend próximo
-Etapas 7 a 13                                  ⏳ sequenciais
-```
+| Etapa | Escopo | Situação |
+|---|---|---|
+| 1–4 | Padrão visual, experiência inicial, Resíduos e expansão operacional | Concluídas |
+| 5 | Projetos, SCI e Atividades | Concluída |
+| 6 | Estagiários, vínculos, participações e formação | Concluída |
+| 7 | Estoque físico, apresentações, fracionamento, FEFO/FIFO e Soluções | Concluída |
+| 8 | Contextos operacionais, Pedidos, Soluções, Resíduos e vínculos adicionais | Concluída e integrada |
+| 9 | Relatórios consolidados: Projetos, Movimentações (Resumo/Detalhamento), Estoque/Lotes e Fiscalização | Implementada e validada funcionalmente; aguardando merge |
+| 10 | Rótulos e impressão operacional | Planejada |
+| 11 | Manual do usuário e revisão de inativação/delete lógico | Planejada |
+| 12 | Testes transversais de arquitetura, carga, E2E e regressão | Planejada |
+| 13 | Revisão estrutural e auditoria final integral | Planejada |
 
-### Depois — roadmap formal para produção
+**Preparação para produção:** após a estabilização funcional, o plano contempla matriz de permissões, congelamento, homologação integrada, correções, identidade e autorização definitivas, integração institucional e liberação controlada.
 
-```text
-1. matriz/diretrizes de permissões
-2. congelamento funcional
-3. homologação integrada final
-4. correção de falhas de homologação
-5. autenticação + autorização + auditoria definitiva
-6. integração corporativa / SSO / resolução confiável de Unidade
-7. documentos/upload quando o contrato estiver definido
-8. refactors técnicos planejados
-```
-
-O roadmap formal não foi descartado; ele apenas começa **depois** do bloco atual de pré-produção.
+O detalhamento das decisões, entregas e critérios de validação fica em [`CONTINUIDADE.md`](CONTINUIDADE.md) e no [plano de pré-produção](docs/PLANO_PRE_PRODUCAO.md). Este README apresenta a arquitetura e as capacidades do sistema; não substitui os checkpoints técnicos.
 
 ---
 
@@ -368,26 +347,3 @@ O roadmap formal não foi descartado; ele apenas começa **depois** do bloco atu
 | [`docs/PENDENCIAS_POS_PROTOTIPO.md`](docs/PENDENCIAS_POS_PROTOTIPO.md) | pendências/refactors posteriores |
 
 > Exemplos e documentos históricos são auxiliares. Em caso de conflito, prevalecem `main`, Swagger/OpenAPI e os documentos atuais indicados acima.
-
----
-
-<div align="center">
-  <strong>SGL — Sistema de Gestão de Laboratórios</strong><br/>
-  Sistema funcionalmente aprovado em preparação para o ciclo formal de produção.
-</div>
-
-### Estado atual do domínio de Estagiários
-
-A Etapa 6 já consolidou:
-
-- `Usuario → Estagiario → VinculoEstagio 1..N`;
-- múltiplas participações históricas em Atividades;
-- Formação como enum institucional + `OUTRO`;
-- Curso como catálogo administrável por Unidade;
-- treinamento de segurança no vínculo, iniciado em `false` e concluído por ação explícita;
-- Cultura como catálogo por Unidade e associação N:N com `VinculoEstagioAtividade`;
-- respostas de vínculo/Estagiário com Atividade → SCI → Projeto → Laboratório e Culturas;
-- ausência de um único “Laboratório do Estagiário” como fonte operacional definitiva.
-
-Checkpoint atual: `docs/VALIDACAO_ETAPA_6_3.md`.
-

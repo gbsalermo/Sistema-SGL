@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sgl.model.Atividade;
@@ -29,4 +31,24 @@ public interface AtividadeRepository extends JpaRepository<Atividade, Long> {
 	boolean existsByCodigoSeg(String codigoSeg);
 
 	boolean existsByCodigoSegAndPublicIdNot(String codigoSeg, UUID publicId);
+	
+	interface TotalAtividadesPorProjeto {
+	    UUID getProjetoId();
+	    Long getTotalAtividades();
+	}
+	
+	@Query("""
+		    SELECT
+		        a.sci.projeto.publicId AS projetoId,
+		        COUNT(a.id) AS totalAtividades
+		    FROM Atividade a
+		    WHERE a.sci.projeto.laboratorio.unidade.publicId = :unidadeId
+		      AND a.sci.projeto.publicId IN :projetoIds
+		    GROUP BY a.sci.projeto.publicId
+		    """)
+		List<TotalAtividadesPorProjeto> contarAtividadesPorProjetos(
+		        @Param("unidadeId") UUID unidadeId,
+		        @Param("projetoIds") List<UUID> projetoIds
+		);
+	
 }

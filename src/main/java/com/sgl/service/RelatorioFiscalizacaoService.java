@@ -20,6 +20,10 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Lote;
 import com.sgl.model.MovimentacaoEstoque;
+import com.sgl.model.MovimentacaoRecipiente;
+import com.sgl.repository.MovimentacaoRecipienteRepository;
+import java.util.Map;
+import java.util.stream.Collectors;
 import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
 import com.sgl.model.enums.OrgaoFiscalizador;
@@ -41,6 +45,7 @@ public class RelatorioFiscalizacaoService {
 	private final LoteRepository loteRepository;
 	private final MovimentacaoEstoqueRepository movimentacaoRepository;
 	private final UnidadeRepository unidadeRepository;
+    private final MovimentacaoRecipienteRepository detalheRepository;
 
 	@Transactional(readOnly = true)
 	public RelatorioFiscalizacaoResponseDTO gerar(UUID produtoId, OrgaoFiscalizador orgaoFiscalizador, UUID unidadeId,
@@ -106,7 +111,17 @@ public class RelatorioFiscalizacaoService {
 				.map(produto -> montarProduto(produto, estoques, lotes, movimentacoes, hoje, limiteVencimento))
 				.toList();
 
-		List<MovimentacaoFiscalizadaItem> trilha = movimentacoes.stream().map(this::montarMovimentacao).toList();
+		Map<UUID, List<MovimentacaoRecipiente>> detalhesPorMovimentacao = Map.of();
+        if (!movimentacoes.isEmpty()) {
+            var unidadeAtual = com.sgl.tenant.TenantContext.unidadeAtual()
+                    .orElseThrow(() -> new BusinessRuleException("A Unidade é obrigatória para a rastreabilidade."));
+            detalhesPorMovimentacao = detalheRepository.listarDetalhesParaRelatorio(unidadeAtual,
+                    movimentacoes.stream().map(MovimentacaoEstoque::getPublicId).toList())
+                    .stream().collect(Collectors.groupingBy(d -> d.getMovimentacaoEstoque().getPublicId()));
+        }
+        final Map<UUID, List<MovimentacaoRecipiente>> detalhes = detalhesPorMovimentacao;
+        List<MovimentacaoFiscalizadaItem> trilha = movimentacoes.stream()
+                .map(m -> montarMovimentacao(m, detalhes.getOrDefault(m.getPublicId(), List.of()))).toList();
 
 		int lotesAtivos = (int) lotes.stream()
 				.filter(lote -> Boolean.TRUE.equals(lote.getAtivo()) && lote.getQuantidadeDisponivel()
@@ -148,6 +163,7 @@ public class RelatorioFiscalizacaoService {
 
 		return ProdutoFiscalizadoItem.builder().produtoId(produto.getPublicId()).produtoNome(produto.getNome())
 				.codigoReferencia(produto.getCodigoReferencia())
+                .unidadeMedida(produto.getUnidadeMedida().name())
 				.orgaosFiscalizadores(Set.copyOf(produto.getOrgaosFiscalizadores()))
 				.observacaoFiscalizacao(produto.getObservacaoFiscalizacao())
 				.saldoAtual(
@@ -168,13 +184,15 @@ public class RelatorioFiscalizacaoService {
 				.quantidadeSaidas(somarTipo(movimentosProduto, TipoMovimentacao.SAIDA)).build();
 	}
 
-	private MovimentacaoFiscalizadaItem montarMovimentacao(MovimentacaoEstoque mov) {
+	private MovimentacaoFiscalizadaItem montarMovimentacao(MovimentacaoEstoque mov,
+            List<MovimentacaoRecipiente> detalhes) {
 		var pedido = mov.getPedido();
 		var lote = mov.getLote();
 
 		return MovimentacaoFiscalizadaItem.builder().movimentacaoId(mov.getPublicId())
 				.dataMovimentacao(mov.getDataMovimentacao()).produtoId(mov.getProduto().getPublicId())
-				.produtoNome(mov.getProduto().getNome()).tipoMovimentacao(mov.getTipoMovimentacao())
+				.produtoNome(mov.getProduto().getNome())
+                .unidadeMedida(mov.getProduto().getUnidadeMedida().name()).tipoMovimentacao(mov.getTipoMovimentacao())
 				.quantidadeMovimentada(mov.getQuantidadeMovimentada()).loteId(lote != null ? lote.getPublicId() : null)
 				.codigoInternoLote(lote != null ? lote.getCodigoInterno() : null)
 				.numeroLote(lote != null ? lote.getNumeroLote() : null)
@@ -186,7 +204,11 @@ public class RelatorioFiscalizacaoService {
 				.solicitanteId(pedido != null ? pedido.getUsuario().getPublicId() : null)
 				.solicitanteNome(pedido != null ? pedido.getUsuario().getNome() : null)
 				.pedidoId(pedido != null ? pedido.getPublicId() : null).responsavelId(mov.getUsuario().getPublicId())
-				.responsavelNome(mov.getUsuario().getNome()).saldoAposMovimentacao(mov.getQuantidadeAtual()).build();
+				.responsavelNome(mov.getUsuario().getNome()).saldoAposMovimentacao(mov.getQuantidadeAtual())
+                .recipientesEnvolvidos(detalhes.size())
+                .embalagensEnvolvidas(detalhes.stream().map(d -> d.getRecipienteEstoque().getTipoEmbalagem().name())
+                        .distinct().sorted().collect(Collectors.joining(", ")))
+                .build();
 	}
 
 	private BigDecimal somarTipo(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {

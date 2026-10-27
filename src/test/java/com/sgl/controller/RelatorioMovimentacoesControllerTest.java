@@ -26,6 +26,7 @@ import com.sgl.config.SecurityConfig;
 import com.sgl.dto.response.RelatorioMovimentacoesResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.service.RelatorioMovimentacoesService;
+import com.sgl.model.enums.TipoEmbalagem;
 
 /**
  * Teste de fatia web ({@code @WebMvcTest}) de {@link RelatorioMovimentacoesController}.
@@ -72,7 +73,7 @@ class RelatorioMovimentacoesControllerTest {
     @Test
     void deveGerarRelatorioERetornar200() throws Exception {
         when(relatorioMovimentacoesService.gerar(
-                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
                 .thenReturn(montarRelatorio());
 
         mockMvc.perform(get(BASE_URL))
@@ -87,10 +88,22 @@ class RelatorioMovimentacoesControllerTest {
         // quando apenas uma das datas (início/fim) é informada.
         LocalDate dataInicio = LocalDate.of(2026, 9, 1);
         when(relatorioMovimentacoesService.gerar(
-                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(dataInicio), isNull()))
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(dataInicio), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
                 .thenThrow(new BusinessRuleException("Para filtrar por período, informe dataInicio e dataFim."));
 
         mockMvc.perform(get(BASE_URL).param("dataInicio", dataInicio.toString()))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void deveAplicarFiltroGarrafaNaPrevia() throws Exception {
+        when(relatorioMovimentacoesService.gerar(
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                isNull(), isNull(), eq(TipoEmbalagem.GARRAFA), isNull(), isNull(), isNull(), isNull())).thenReturn(montarRelatorio());
+
+        mockMvc.perform(get(BASE_URL).param("tipoEmbalagem", "GARRAFA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalMovimentacoes").value(10));
+    }
+
 }

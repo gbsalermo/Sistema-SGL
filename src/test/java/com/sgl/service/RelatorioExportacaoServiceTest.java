@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
+import java.io.ByteArrayInputStream;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import com.sgl.model.enums.UnidadeMedida;
+import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.OrigemMovimentacao;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,6 +23,7 @@ import com.sgl.dto.response.RelatorioEstoqueLotesResponseDTO;
 import com.sgl.dto.response.RelatorioFiscalizacaoResponseDTO;
 import com.sgl.dto.response.RelatorioMovimentacoesResponseDTO;
 import com.sgl.dto.response.RelatorioProdutosResponseDTO;
+import com.sgl.dto.response.RelatorioProjetosResponseDTO;
 import com.sgl.dto.response.RelatorioResumoOperacionalResponseDTO;
 import com.sgl.model.enums.FormatoExportacaoRelatorio;
 
@@ -305,4 +311,96 @@ class RelatorioExportacaoServiceTest {
 
     // deveLancarExcecaoQuandoFalhaNaGeracaoDoXlsx: não escrito.
     // Ver justificativa detalhada no Javadoc da classe, acima.
+
+    @Test
+    void deveExportarProjetosEmPdfEXlsx() {
+        RelatorioProjetosResponseDTO relatorio = new RelatorioProjetosResponseDTO(
+                LocalDateTime.now(), 1, 2, 3, 4, 1,
+                List.of(new RelatorioProjetosResponseDTO.ProjetoItem(
+                        java.util.UUID.randomUUID(), "10.25.00.085.00.00",
+                        "Projeto de teste", java.util.UUID.randomUUID(), "Laboratório",
+                        "Responsável", java.time.LocalDate.of(2026, 1, 1),
+                        null, com.sgl.model.enums.StatusProjeto.ATIVO,
+                        com.sgl.model.enums.SituacaoExecucaoProjeto.NAO_INFORMADO,
+                        true, false, null, 2, 3, 4, 1)));
+
+        for (FormatoExportacaoRelatorio formato : List.of(
+                FormatoExportacaoRelatorio.PDF, FormatoExportacaoRelatorio.XLSX)) {
+            ArquivoRelatorioDTO arquivo = service.exportarProjetos(
+                    relatorio, formato, List.of("Ativo: Sim"));
+            assertTrue(arquivo.conteudo().length > 100);
+            assertTrue(arquivo.nomeArquivo().contains("sgl-projetos-"));
+            assertTrue(arquivo.nomeArquivo().endsWith(
+                    formato == FormatoExportacaoRelatorio.PDF ? ".pdf" : ".xlsx"));
+            assertEquals(formato == FormatoExportacaoRelatorio.PDF
+                    ? "application/pdf"
+                    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    arquivo.contentType());
+        }
+    }
+
+
+    @Test
+    void exportacaoMovimentacoesDeveExibirUnidadeRealNaPlanilha() throws Exception {
+        MovimentacaoEstoqueResponseDTO movimento = new MovimentacaoEstoqueResponseDTO();
+        movimento.setProdutoNome("Reagente teste");
+        movimento.setUnidadeMedida(UnidadeMedida.ML);
+        movimento.setTipoMovimentacao(TipoMovimentacao.SAIDA);
+        movimento.setOrigem(OrigemMovimentacao.PEDIDO);
+        movimento.setQuantidadeMovimentada(new BigDecimal("50.000000"));
+        movimento.setQuantidadeAnterior(new BigDecimal("60.000000"));
+        movimento.setQuantidadeAtual(new BigDecimal("10.000000"));
+
+        RelatorioMovimentacoesResponseDTO relatorio = new RelatorioMovimentacoesResponseDTO(
+                LocalDateTime.now(), 1, BigDecimal.ZERO, new BigDecimal("50"),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of(movimento));
+        ArquivoRelatorioDTO arquivo = service.exportarMovimentacoes(
+                relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(arquivo.conteudo()))) {
+            var sheet = workbook.getSheet("Movimentações");
+            boolean achouQuantidade = false;
+            boolean achouSaldo = false;
+            for (var row : sheet) {
+                for (var cell : row) {
+                    if (cell.getCellType() != org.apache.poi.ss.usermodel.CellType.STRING) continue;
+                    String valor = cell.getStringCellValue();
+                    if ("50 mL".equals(valor)) achouQuantidade = true;
+                    if ("60 mL → 10 mL".equals(valor)) achouSaldo = true;
+                }
+            }
+            assertTrue(achouQuantidade, "A quantidade deve conter a unidade do produto.");
+            assertTrue(achouSaldo, "O saldo deve conter a unidade do produto.");
+        }
+    }
+
+    @Test
+    void resumoSimplificadoDeveExportarContagensSemRanking() throws Exception {
+        RelatorioResumoOperacionalResponseDTO relatorio = new RelatorioResumoOperacionalResponseDTO(
+                LocalDateTime.now(), 3, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, 2, 1, List.of(), List.of(), List.of());
+        relatorio.setTotalEntradas(1);
+        relatorio.setTotalSaidas(2);
+        relatorio.setTotalDevolucoes(0);
+        relatorio.setTotalAjustes(0);
+        relatorio.setTotalDescartes(0);
+
+        var arquivo = service.exportarResumoOperacional(
+                relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(arquivo.conteudo()))) {
+            assertEquals(1, workbook.getNumberOfSheets());
+            assertEquals("Ocorrências por tipo", workbook.getSheetAt(0).getSheetName());
+            boolean temSaidas = false;
+            for (var row : workbook.getSheetAt(0)) {
+                for (var cell : row) {
+                    if (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                            && "Saídas".equals(cell.getStringCellValue())) {
+                        temSaidas = true;
+                    }
+                }
+            }
+            assertTrue(temSaidas);
+        }
+    }
+
 }
