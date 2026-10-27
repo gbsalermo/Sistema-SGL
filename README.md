@@ -27,7 +27,7 @@ No backend, isso se traduz em serviços e regras de negócio para:
 
 A API concentra validações, transações e regras de consistência; a interface web utiliza esses contratos para permitir a operação cotidiana. O SGL está em **evolução de pré-produção**: a integração de identidade institucional e a autorização definitiva são previstas para fases próprias, não devendo ser confundidas com a sessão de desenvolvimento.
 
-> **Acompanhamento da evolução:** o histórico de entregas, o estado de cada etapa e os próximos passos estão em [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md). A Etapa 9 está documentada em [`docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`](docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md).
+> **Acompanhamento da evolução:** o histórico de entregas, o estado de cada etapa e os próximos passos estão em [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md). O histórico da Etapa 9 está documentado em [`docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`](docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md).
 
 ---
 
@@ -224,18 +224,22 @@ Detalhes: [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md).
 
 ## Relatórios
 
-Relatórios atualmente integrados:
+Relatórios implementados e validados funcionalmente na branch da Etapa 9:
 
 ```text
 Estagiários
 Produtos
-Movimentações
-Resumo operacional
+Projetos — consolidação de SCI, Atividades e participações
+Movimentações — Resumo / Detalhamento
 Estoque e lotes
 Fiscalização
 Resíduos
 Pessoas por laboratório
 ```
+
+A Central apresenta **Movimentações** com modos Resumo (contagens de ocorrências, sem rankings) e Detalhamento (filtros por tipo, origem, contexto Projeto/SCI/Atividade, produto, apresentação/unidade e período). As quantidades físicas têm unidades identificadas e exibição opcional no Detalhamento e na exportação PDF/XLSX. **Estoque e lotes** informam apresentação, conteúdo e recipientes fechados, abertos ou esgotados. **Fiscalização** apresenta a trilha de movimentações com recipientes vinculados.
+
+A classificação histórica de consumo como apresentação completa ou por medida é derivada das parcelas registradas, sem afirmar a intenção original da solicitação. Os endpoints anteriores de Movimentações e Resumo Operacional permanecem disponíveis.
 
 Os relatórios utilizam consultas e filtros consistentes entre a prévia e as exportações PDF/XLSX.
 
@@ -309,7 +313,7 @@ mvn test
 
 ## Evolução do projeto
 
-O desenvolvimento de pré-produção evolui de forma incremental, preservando os fluxos homologados:
+O desenvolvimento de pré-produção evolui de forma incremental, preservando os fluxos homologados. A Etapa 9 está validada funcionalmente na branch colaborativa, mas ainda não integrada à `main`:
 
 | Etapa | Escopo | Situação |
 |---|---|---|
@@ -318,7 +322,7 @@ O desenvolvimento de pré-produção evolui de forma incremental, preservando os
 | 6 | Estagiários, vínculos, participações e formação | Concluída |
 | 7 | Estoque físico, apresentações, fracionamento, FEFO/FIFO e Soluções | Concluída |
 | 8 | Contextos operacionais, Pedidos, Soluções, Resíduos e vínculos adicionais | Concluída e integrada |
-| 9 | Relatórios consolidados: Projetos e Movimentações (Resumo/Detalhamento) | Em preparação |
+| 9 | Relatórios consolidados: Projetos, Movimentações (Resumo/Detalhamento), Estoque/Lotes e Fiscalização | Implementada e validada funcionalmente; aguardando merge |
 | 10 | Rótulos e impressão operacional | Planejada |
 | 11 | Manual do usuário e revisão de inativação/delete lógico | Planejada |
 | 12 | Testes transversais de arquitetura, carga, E2E e regressão | Planejada |
