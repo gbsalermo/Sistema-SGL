@@ -106,9 +106,10 @@ public class DemoDataInitializer implements CommandLineRunner {
         LocalDate hoje = LocalDate.now();
         LocalDateTime agora = LocalDateTime.now();
 
-        Unidade unidade = unidadeRepository.save(
-                new Unidade(null, null, "Embrapa Mandioca e Fruticultura", "CNPMF", null)
-        );
+        Unidade cnpmf = new Unidade(null, null, "Embrapa Mandioca e Fruticultura", "CNPMF", null);
+        // Same mapping as migration V45 (H2 here skips Flyway), so corporate login works in demo.
+        cnpmf.setCodigoCorporativo(7);
+        Unidade unidade = unidadeRepository.save(cnpmf);
 
         Laboratorio labBiomol = criarLaboratorio(
                 unidade,

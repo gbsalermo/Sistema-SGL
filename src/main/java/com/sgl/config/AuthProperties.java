@@ -14,9 +14,10 @@ import lombok.Setter;
 public class AuthProperties {
 
     /**
-     * Bootstrap for a fresh deployment: while no active ADMINISTRADOR_GERAL exists, the next new
-     * corporate user becomes one. Off by default (SGL_PRIMEIRO_LOGIN_ADMIN) and inert once an
-     * ADMINISTRADOR_GERAL exists, so leaving it on afterwards grants nothing.
+     * Single-use bootstrap for a fresh deployment: while no ADMINISTRADOR_GERAL has ever been
+     * registered (active or not), the next new corporate user becomes one. Off by default
+     * (SGL_PRIMEIRO_LOGIN_ADMIN). Once any ADMINISTRADOR_GERAL exists it has no effect, even if
+     * that administrator is later deactivated, so leaving it on afterwards grants nothing.
      */
     private boolean primeiroLoginAdmin = false;
 }

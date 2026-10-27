@@ -69,6 +69,11 @@ public class CorporateGatewayStubs {
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
     }
 
+    public void empregadoPorCpfStatus(String cpf, HttpStatus status) {
+        server.expect(requestTo(url("empregadoapi", "/empregado/porCpf/" + cpf)))
+            .andRespond(withStatus(status));
+    }
+
     public void colaboradorPorCpf(String cpf, String nome, int unidadeId, boolean ativo) {
         server.expect(requestTo(url("colaboradorapi", "/colaborador/porCpf/" + cpf)))
             .andRespond(withSuccess("""

@@ -15,7 +15,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
@@ -38,6 +41,7 @@ import com.sgl.repository.UsuarioRepository;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(CorporateGatewayTestConfig.class)
+@ExtendWith(OutputCaptureExtension.class)
 class AuthControllerIntegrationTest {
 
     private static final int CNPMF = 7;
@@ -159,6 +163,20 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.codigo").value("AUTENTICACAO_INDISPONIVEL"))
                 .andExpect(jsonPath("$.message")
                         .value("Autenticação corporativa indisponível. Tente novamente em instantes."));
+    }
+
+    @Test
+    void gatewayFora_logaCausaEStatusSemUrlNemCpf(CapturedOutput output) throws Exception {
+        gateway.loginOk(CPF, CPF, 512);
+        gateway.empregadoPorCpfStatus(CPF, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        mockMvc.perform(login(CPF, "senha"))
+                .andExpect(status().isServiceUnavailable());
+
+        String log = output.getOut() + output.getErr();
+        assertThat(log).contains("Corporate gateway unavailable").contains("status=500");
+        // The gateway URL carries the CPF as a path segment, so neither may reach the log.
+        assertThat(log).doesNotContain(CPF).doesNotContain("porCpf");
     }
 
     @Test

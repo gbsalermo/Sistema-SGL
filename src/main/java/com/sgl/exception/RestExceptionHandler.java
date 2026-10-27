@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -121,8 +122,14 @@ public class RestExceptionHandler {
             CorporateApiUnavailableException ex,
             HttpServletRequest request) {
 
-        // Logged without the request body: it may hold a password.
-        log.warn("Corporate gateway unavailable on {}: {}", request.getRequestURI(), ex.getMessage());
+        // Only the cause type and HTTP status: the message and URL may carry a CPF path segment,
+        // and the request body may hold a password.
+        Throwable cause = ex.getCause();
+        String status = cause instanceof RestClientResponseException response
+                ? String.valueOf(response.getStatusCode().value())
+                : "n/a";
+        log.warn("Corporate gateway unavailable: cause={} status={}",
+                cause == null ? "none" : cause.getClass().getSimpleName(), status);
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "Serviço indisponível",
                 "Autenticação corporativa indisponível. Tente novamente em instantes.",
                 request.getRequestURI(), AUTENTICACAO_INDISPONIVEL);

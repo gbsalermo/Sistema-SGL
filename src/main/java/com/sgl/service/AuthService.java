@@ -47,6 +47,7 @@ import com.sgl.security.LoginRateLimiter;
 @Service
 public class AuthService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AuthService.class);
     private static final Logger AUDIT = LoggerFactory.getLogger("sgl.auditoria");
     private static final String SYSTEM_ACTOR = "sistema";
     // Serializes the "is there an ADMINISTRADOR_GERAL yet?" check with the save that answers it,
@@ -73,6 +74,10 @@ public class AuthService {
         this.authProperties = authProperties;
         this.clock = clock;
         this.environment = environment;
+        if (authProperties.isPrimeiroLoginAdmin()) {
+            LOG.warn("sgl.auth.primeiro-login-admin is ON: the first corporate login becomes ADMINISTRADOR_GERAL "
+                    + "if none has ever been registered. Turn SGL_PRIMEIRO_LOGIN_ADMIN off after the first deploy.");
+        }
     }
 
     public LoginResponseDTO login(String login, String senha, String clientIp) {
@@ -166,7 +171,9 @@ public class AuthService {
         usuario.setCargo(identity.cargo());
         usuario.setSublotacao(identity.sublotacao());
         usuario.setUnidade(unidade);
-        usuario.setLogin(normalizedLogin);
+        if (!LoginNormalizer.isCpf(normalizedLogin)) {
+            usuario.setLogin(normalizedLogin);
+        }
         // Fill gaps only: a stored matrícula is the stable key and is never replaced.
         if (isBlank(usuario.getMatricula()) && matricula != null) {
             usuario.setMatricula(matricula);
@@ -190,7 +197,7 @@ public class AuthService {
         usuario.setCargo(identity.cargo());
         usuario.setSublotacao(identity.sublotacao());
         usuario.setUnidade(unidade);
-        usuario.setLogin(normalizedLogin);
+        usuario.setLogin(storableLogin(normalizedLogin));
         usuario.setOrigem(OrigemUsuario.CORPORATIVO);
         usuario.setAtivo(true);
         usuario.setUltimoLoginEm(now);
@@ -200,7 +207,8 @@ public class AuthService {
             return savePending(usuario, identity);
         }
         synchronized (FIRST_ADMIN_LOCK) {
-            if (usuarioRepository.existsByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL)) {
+            // Any ADMINISTRADOR_GERAL, even a deactivated one, means the bootstrap was already used.
+            if (usuarioRepository.existsByPerfil(Perfil.ADMINISTRADOR_GERAL)) {
                 return savePending(usuario, identity);
             }
             usuario.setPerfil(Perfil.ADMINISTRADOR_GERAL);
@@ -251,6 +259,11 @@ public class AuthService {
     /** The gateway reports the CPF as "matrícula" for some people; that must never be stored as one. */
     private static String realMatricula(String matricula) {
         return isBlank(matricula) || LoginNormalizer.isCpf(matricula.trim()) ? null : matricula.trim();
+    }
+
+    /** A CPF already lives in the cpf column; keeping a second copy in login would only widen its exposure. */
+    private static String storableLogin(String normalizedLogin) {
+        return LoginNormalizer.isCpf(normalizedLogin) ? null : normalizedLogin;
     }
 
     private static String maskedLogin(String normalizedLogin) {

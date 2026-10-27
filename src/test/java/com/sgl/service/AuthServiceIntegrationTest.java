@@ -135,7 +135,9 @@ class AuthServiceIntegrationTest {
 
     @Test
     void login_naoSubstituiMatriculaPorCpf() {
-        Usuario importado = salvar(usuario("Empregado", "344136", CPF, Perfil.TECNICO, SituacaoUsuario.ATIVO));
+        Usuario empregado = usuario("Empregado", "344136", CPF, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+        empregado.setLogin("m344136");
+        Usuario importado = salvar(empregado);
         // Newer employees log in with the CPF and the gateway reports the CPF itself as "matricula".
         gateway.loginOk(CPF, CPF, 512);
         gateway.empregadoPorCpf(CPF, CPF, "Empregado", "Técnico A", CNPMF);
@@ -143,8 +145,25 @@ class AuthServiceIntegrationTest {
         LoginResponseDTO resposta = authService.login(CPF, "senha", IP);
 
         assertThat(resposta.getUsuario().getId()).isEqualTo(importado.getPublicId());
-        assertThat(usuarioRepository.findByPublicId(importado.getPublicId()).orElseThrow().getMatricula())
-                .isEqualTo("344136");
+        Usuario atualizado = usuarioRepository.findByPublicId(importado.getPublicId()).orElseThrow();
+        assertThat(atualizado.getMatricula()).isEqualTo("344136");
+        // A CPF login must not replace the stored network login (nor ever be stored as one).
+        assertThat(atualizado.getLogin()).isEqualTo("m344136");
+        assertThat(usuarioRepository.findByUnidadePublicId(cnpmf.getPublicId())).hasSize(1);
+    }
+
+    @Test
+    void login_importadoPorCpfDepoisEntraPorMatricula_mesmoUsuarioComMatriculaPreenchida() {
+        Usuario importado = salvar(usuario("Empregado", null, CPF, Perfil.TECNICO, SituacaoUsuario.ATIVO));
+        gateway.loginOk("m344136", "344136", 512);
+        gateway.empregadoPorMatricula("344136", "Empregado", CPF, "Técnico A", CNPMF, true);
+
+        LoginResponseDTO resposta = authService.login("m344136", "senha", IP);
+
+        assertThat(resposta.getUsuario().getId()).isEqualTo(importado.getPublicId());
+        Usuario atualizado = usuarioRepository.findByPublicId(importado.getPublicId()).orElseThrow();
+        assertThat(atualizado.getMatricula()).isEqualTo("344136");
+        assertThat(atualizado.getLogin()).isEqualTo("m344136");
         assertThat(usuarioRepository.findByUnidadePublicId(cnpmf.getPublicId())).hasSize(1);
     }
 
@@ -157,6 +176,8 @@ class AuthServiceIntegrationTest {
 
         Usuario criado = usuarioRepository.findByCpf(CPF).orElseThrow();
         assertThat(criado.getMatricula()).isNull();
+        // The CPF already lives in the cpf column; login must not become a second copy of it.
+        assertThat(criado.getLogin()).isNull();
     }
 
     @Test
@@ -207,7 +228,7 @@ class AuthServiceIntegrationTest {
 
     @Test
     void login_primeiroComFlagLigada_viraAdministradorGeral() {
-        assertThat(usuarioRepository.existsByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL)).isFalse();
+        assertThat(usuarioRepository.existsByPerfil(Perfil.ADMINISTRADOR_GERAL)).isFalse();
         authProperties.setPrimeiroLoginAdmin(true);
         gateway.loginOk("m344136", "344136", 512);
         gateway.empregadoPorMatricula("344136", "Primeiro", CPF, "Analista A", CNPMF, true);
@@ -231,6 +252,23 @@ class AuthServiceIntegrationTest {
 
         assertThat(segundo.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
         assertThat(segundo.getUsuario().getPerfil()).isEqualTo(Perfil.PESQUISADOR);
+    }
+
+    @Test
+    void login_flagLigadaComAdministradorGeralJaDesativado_ficaPendente() {
+        // The bootstrap is single-use: once any ADMINISTRADOR_GERAL ever existed, deactivating it
+        // must not reopen the door for whoever logs in next.
+        Usuario antigo = usuario("Admin Geral Antigo", "100", OUTRO_CPF, Perfil.ADMINISTRADOR_GERAL, SituacaoUsuario.ATIVO);
+        antigo.setAtivo(false);
+        salvar(antigo);
+        authProperties.setPrimeiroLoginAdmin(true);
+        gateway.loginOk("m344136", "344136", 512);
+        gateway.empregadoPorMatricula("344136", "Recém-chegado", CPF, "Analista A", CNPMF, true);
+
+        LoginResponseDTO resposta = authService.login("m344136", "senha", IP);
+
+        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.ANALISTA);
     }
 
     @Test

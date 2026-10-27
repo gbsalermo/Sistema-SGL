@@ -35,6 +35,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     Optional<Usuario> findByLogin(String login);
 
     boolean existsByPerfilAndAtivoTrue(Perfil perfil);
+    boolean existsByPerfil(Perfil perfil);
     long countByPerfilAndAtivoTrue(Perfil perfil);
 
     List<Usuario> findByMatriculaIn(Collection<String> matriculas);
