@@ -65,5 +65,8 @@ public interface MovimentacaoRecipienteRepository extends JpaRepository<Moviment
             @Param("unidadeId") UUID unidadeId,
             @Param("produtoId") UUID produtoId);
 
+    long countByMovimentacaoEstoqueIdAndRecipienteEstoqueTipoEmbalagem(
+            Long movimentacaoId, TipoEmbalagem tipoEmbalagem);
+
 	boolean existsByMovimentacaoEstoqueIdAndRecipienteEstoqueId(Long movimentacaoEstoqueId, Long recipienteEstoqueId);
 }
