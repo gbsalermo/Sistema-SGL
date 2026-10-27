@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sgl.dto.response.RelatorioMovimentacoesResponseDTO;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.service.RelatorioMovimentacoesService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,7 +40,8 @@ public class RelatorioMovimentacoesController {
             @RequestParam(required = false) UUID usuarioId,
             @RequestParam(required = false) UUID loteId,
             @RequestParam(required = false) LocalDate dataInicio,
-            @RequestParam(required = false) LocalDate dataFim) {
+            @RequestParam(required = false) LocalDate dataFim,
+            @RequestParam(required = false) TipoEmbalagem tipoEmbalagem) {
 
         return ResponseEntity.ok(
                 relatorioMovimentacoesService.gerar(
@@ -50,7 +52,8 @@ public class RelatorioMovimentacoesController {
                         usuarioId,
                         loteId,
                         dataInicio,
-                        dataFim
+                        dataFim,
+                        tipoEmbalagem
                 )
         );
     }
