@@ -35,6 +35,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.repository.ClasseResiduoRepository;
 import com.sgl.repository.HistoricoResiduoRepository;
@@ -105,7 +106,7 @@ public class ResiduoService {
 		if (participacao == null) validarGeradorNoLaboratorio(gerador, laboratorio);
 		Projeto projeto = buscarProjeto(projetoId, laboratorio);
 		boolean projetoSemVinculoDireto = projeto != null && participacao == null
-				&& gerador.getPerfil() != Perfil.GESTOR && gerador.getPerfil() != Perfil.ADMINISTRADOR
+				&& !PerfilPolicy.isGestao(gerador.getPerfil())
 				&& !vinculoOperacionalService.vinculadoProjeto(gerador, projeto, LocalDate.now());
 
 		Residuo residuo = Residuo.builder().laboratorio(laboratorio).gerador(gerador).projeto(projeto)
@@ -415,7 +416,7 @@ public class ResiduoService {
 		Usuario usuario = buscarUsuario(id);
 		usuario.validateActive();
 
-		if (usuario.getPerfil() != Perfil.GESTOR && usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+		if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
 			throw new BusinessRuleException("A operação de gestão de resíduos exige perfil GESTOR ou ADMINISTRADOR.");
 		}
 
@@ -454,7 +455,7 @@ public class ResiduoService {
 	}
 
 	private void validarGeradorNoLaboratorio(Usuario gerador, Laboratorio laboratorio) {
-		boolean gestor = gerador.getPerfil() == Perfil.GESTOR || gerador.getPerfil() == Perfil.ADMINISTRADOR;
+		boolean gestor = PerfilPolicy.isGestao(gerador.getPerfil());
 		if (!gestor
                 && (gerador.getLaboratorio() == null || !gerador.getLaboratorio().getId().equals(laboratorio.getId()))
                 && !vinculoOperacionalService.vinculadoLaboratorio(gerador, laboratorio, LocalDate.now())) {

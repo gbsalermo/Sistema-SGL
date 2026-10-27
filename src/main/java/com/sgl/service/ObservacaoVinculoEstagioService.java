@@ -16,6 +16,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.EventoObservacaoVinculoEstagio;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoObservacaoVinculoEstagio;
 import com.sgl.repository.ObservacaoVinculoEstagioRepository;
@@ -130,8 +131,7 @@ public class ObservacaoVinculoEstagioService {
 
         usuario.validateActive();
 
-        if (usuario.getPerfil() != Perfil.GESTOR
-                && usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+        if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
             throw new BusinessRuleException(
                     "A operação exige perfil GESTOR ou ADMINISTRADOR.");
         }

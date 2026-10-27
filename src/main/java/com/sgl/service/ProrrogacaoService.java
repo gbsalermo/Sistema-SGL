@@ -16,6 +16,7 @@ import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.prorrogacao.HistoricoProrrogacaoAtividade;
@@ -239,7 +240,7 @@ public class ProrrogacaoService {
 
 	private void validarPerfilProrrogacao(Usuario usuario) {
 
-		if (usuario.getPerfil() != Perfil.GESTOR && usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+		if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
 
 			throw new BusinessRuleException("A prorrogação exige perfil GESTOR ou ADMINISTRADOR.");
 		}

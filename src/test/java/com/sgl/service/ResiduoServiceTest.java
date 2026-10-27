@@ -654,6 +654,26 @@ class ResiduoServiceTest {
     }
 
     @Test
+    void deveReceberResiduoComoAdministradorGeral() {
+        // O Administrador geral é perfil de gestão e passa onde o Gestor passa.
+        gestor.setPerfil(Perfil.ADMINISTRADOR_GERAL);
+        Residuo residuo = construirResiduoExistente(StatusResiduo.INFORMADO, null);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(residuo));
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(gestor));
+        stubSalvarComIdGerado();
+
+        ReceberResiduoRequestDTO dto = new ReceberResiduoRequestDTO();
+        dto.setUsuarioGestorId(GESTOR_PUBLIC_ID);
+
+        ResiduoResponseDTO resultado = residuoService.receber(RESIDUO_PUBLIC_ID, dto);
+
+        assertEquals(StatusResiduo.EM_ANALISE, resultado.getStatus());
+    }
+
+    @Test
     void deveRejeitarRecebimentoQuandoStatusInvalido() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.EM_ANALISE, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
