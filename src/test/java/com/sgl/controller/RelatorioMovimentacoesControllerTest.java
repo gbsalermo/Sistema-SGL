@@ -73,7 +73,7 @@ class RelatorioMovimentacoesControllerTest {
     @Test
     void deveGerarRelatorioERetornar200() throws Exception {
         when(relatorioMovimentacoesService.gerar(
-                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
                 .thenReturn(montarRelatorio());
 
         mockMvc.perform(get(BASE_URL))
@@ -88,7 +88,7 @@ class RelatorioMovimentacoesControllerTest {
         // quando apenas uma das datas (início/fim) é informada.
         LocalDate dataInicio = LocalDate.of(2026, 9, 1);
         when(relatorioMovimentacoesService.gerar(
-                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(dataInicio), isNull(), isNull(), isNull(), isNull(), isNull()))
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(dataInicio), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
                 .thenThrow(new BusinessRuleException("Para filtrar por período, informe dataInicio e dataFim."));
 
         mockMvc.perform(get(BASE_URL).param("dataInicio", dataInicio.toString()))
@@ -99,7 +99,7 @@ class RelatorioMovimentacoesControllerTest {
     void deveAplicarFiltroGarrafaNaPrevia() throws Exception {
         when(relatorioMovimentacoesService.gerar(
                 isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
-                isNull(), isNull(), eq(TipoEmbalagem.GARRAFA), isNull(), isNull(), isNull())).thenReturn(montarRelatorio());
+                isNull(), isNull(), eq(TipoEmbalagem.GARRAFA), isNull(), isNull(), isNull(), isNull())).thenReturn(montarRelatorio());
 
         mockMvc.perform(get(BASE_URL).param("tipoEmbalagem", "GARRAFA"))
                 .andExpect(status().isOk())
