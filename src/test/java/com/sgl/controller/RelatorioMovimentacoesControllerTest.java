@@ -26,6 +26,7 @@ import com.sgl.config.SecurityConfig;
 import com.sgl.dto.response.RelatorioMovimentacoesResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.service.RelatorioMovimentacoesService;
+import com.sgl.model.enums.TipoEmbalagem;
 
 /**
  * Teste de fatia web ({@code @WebMvcTest}) de {@link RelatorioMovimentacoesController}.
@@ -93,4 +94,16 @@ class RelatorioMovimentacoesControllerTest {
         mockMvc.perform(get(BASE_URL).param("dataInicio", dataInicio.toString()))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void deveAplicarFiltroGarrafaNaPrevia() throws Exception {
+        when(relatorioMovimentacoesService.gerar(
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                isNull(), isNull(), eq(TipoEmbalagem.GARRAFA))).thenReturn(montarRelatorio());
+
+        mockMvc.perform(get(BASE_URL).param("tipoEmbalagem", "GARRAFA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalMovimentacoes").value(10));
+    }
+
 }
