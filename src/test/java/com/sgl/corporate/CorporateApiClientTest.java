@@ -34,7 +34,7 @@ class CorporateApiClientTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        client = new CorporateApiClient(builder, new CorporateApiProperties("http://gw", "h", "sys", "pw"));
+        client = new CorporateApiClient(builder, new CorporateApiProperties("http://gw", "h", "sys", "pw", true));
     }
 
     @Test
@@ -201,10 +201,20 @@ class CorporateApiClientTest {
 
     @Test
     void propriedadesAusentes_falhamComMensagemClara() {
-        assertThatThrownBy(() -> CorporateApiConfig.validate(new CorporateApiProperties("http://gw", "h", "", "pw")))
+        assertThatThrownBy(() -> CorporateApiConfig.validate(new CorporateApiProperties("http://gw", "h", "", "pw", true)))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("SGL_CORPORATE_USERNAME");
-        assertThatThrownBy(() -> CorporateApiConfig.validate(new CorporateApiProperties(null, "h", "u", "pw")))
+        assertThatThrownBy(() -> CorporateApiConfig.validate(new CorporateApiProperties(null, "h", "u", "pw", true)))
             .hasMessageContaining("SGL_CORPORATE_BASE_URL");
+    }
+
+    @Test
+    void semCredenciaisEmModoNaoObrigatorio_validaEChamadasLancamIndisponivel() {
+        CorporateApiProperties props = new CorporateApiProperties("http://gw", "h", "", "", false);
+        CorporateApiConfig.validate(props);
+        CorporateApiClient disabled = new CorporateApiClient(RestClient.builder(), props);
+
+        assertThatThrownBy(() -> disabled.login("m1", "x")).isInstanceOf(CorporateApiUnavailableException.class);
+        assertThatThrownBy(() -> disabled.empregadoPorMatricula("1")).isInstanceOf(CorporateApiUnavailableException.class);
     }
 }

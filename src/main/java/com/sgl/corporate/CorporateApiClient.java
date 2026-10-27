@@ -39,16 +39,21 @@ public class CorporateApiClient {
 
     private final RestClient restClient;
     private final String ambiente;
+    // Without credentials (dev/demo) every call fails as unavailable instead of hitting the gateway.
+    private final boolean disabled;
 
     public CorporateApiClient(RestClient.Builder builder, CorporateApiProperties properties) {
         this.ambiente = properties.ambiente();
-        this.restClient = builder
-            .baseUrl(properties.baseUrl())
-            .defaultHeaders(headers -> headers.setBasicAuth(properties.username(), properties.password()))
-            .build();
+        this.disabled = isBlank(properties.username()) || isBlank(properties.password());
+        builder.baseUrl(properties.baseUrl());
+        if (!disabled) {
+            builder.defaultHeaders(headers -> headers.setBasicAuth(properties.username(), properties.password()));
+        }
+        this.restClient = builder.build();
     }
 
     public CorporateLoginUser login(String username, String password) {
+        ensureEnabled();
         LoginResponse response;
         try {
             response = restClient.post()
@@ -148,6 +153,7 @@ public class CorporateApiClient {
     // 400/404 mean "no such record" for this gateway (e.g. malformed CPF, empty search),
     // so they become null; everything else unexpected is an availability problem.
     private <T> T execute(java.util.function.Supplier<T> call) {
+        ensureEnabled();
         try {
             return call.get();
         } catch (HttpClientErrorException e) {
@@ -159,6 +165,16 @@ public class CorporateApiClient {
         } catch (RestClientException e) {
             throw unavailable(e);
         }
+    }
+
+    private void ensureEnabled() {
+        if (disabled) {
+            throw new CorporateApiUnavailableException("Autenticação corporativa desabilitada: credenciais do sistema ausentes", null);
+        }
+    }
+
+    static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private static CorporateApiUnavailableException unavailable(Throwable cause) {
