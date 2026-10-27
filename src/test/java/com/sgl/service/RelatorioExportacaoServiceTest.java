@@ -374,4 +374,33 @@ class RelatorioExportacaoServiceTest {
         }
     }
 
+    @Test
+    void resumoSimplificadoDeveExportarContagensSemRanking() throws Exception {
+        RelatorioResumoOperacionalResponseDTO relatorio = new RelatorioResumoOperacionalResponseDTO(
+                LocalDateTime.now(), 3, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, 2, 1, List.of(), List.of(), List.of());
+        relatorio.setTotalEntradas(1);
+        relatorio.setTotalSaidas(2);
+        relatorio.setTotalDevolucoes(0);
+        relatorio.setTotalAjustes(0);
+        relatorio.setTotalDescartes(0);
+
+        var arquivo = service.exportarResumoOperacional(
+                relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(arquivo.conteudo()))) {
+            assertEquals(1, workbook.getNumberOfSheets());
+            assertEquals("Ocorrências por tipo", workbook.getSheetAt(0).getSheetName());
+            boolean temSaidas = false;
+            for (var row : workbook.getSheetAt(0)) {
+                for (var cell : row) {
+                    if (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                            && "Saídas".equals(cell.getStringCellValue())) {
+                        temSaidas = true;
+                    }
+                }
+            }
+            assertTrue(temSaidas);
+        }
+    }
+
 }
