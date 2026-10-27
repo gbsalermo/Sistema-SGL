@@ -24,6 +24,8 @@ public interface UnidadeRepository extends JpaRepository<Unidade, Long> {
             """)
     List<Unidade> findAll();
 
+    Optional<Unidade> findByCodigoCorporativo(Integer codigoCorporativo);
+
     boolean existsBySigla(String sigla);
 
     boolean existsBySiglaAndIdNot(String sigla, Long id);
