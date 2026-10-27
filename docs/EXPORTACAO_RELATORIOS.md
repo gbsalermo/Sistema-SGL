@@ -1,6 +1,8 @@
 # Exportação de Relatórios — SGL
 
-**Atualizado em:** 03/09/2026  
+> **Estado vigente (27/10/2026; pré-merge):** Etapa 9 implementada em `collab/etapa-9-relatorios-consolidados` e validada funcionalmente pelo mantenedor, ainda sem integração à `main`. A exportação de Projetos foi adicionada; Movimentações reúne Resumo/Detalhamento no frontend, mantendo endpoints de exportação separados. Quantidades físicas do Detalhamento são opcionais via `mostrarQuantidades`. Estoque/Lotes e Fiscalização incluem recipientes/apresentações e rastreabilidade. Não presumir homologação para produção.
+
+**Atualizado em:** 27/10/2026  
 **Estado:** ✅ implementada e integrada; a homologação final deve revalidar o conjunto completo.
 
 ## Objetivo
@@ -29,6 +31,7 @@ Estoque e lotes         ✅
 Fiscalização            ✅
 Resíduos                ✅
 Pessoas por laboratório ✅
+Projetos                ✅
 ```
 
 ---
@@ -63,7 +66,10 @@ GET /api/v1/relatorios/estoque-lotes/exportar
 GET /api/v1/relatorios/fiscalizacao/exportar
 GET /api/v1/relatorios/residuos/exportar
 GET /api/v1/relatorios/pessoas-laboratorio/exportar
+GET /api/v1/relatorios/projetos/exportar
 ```
+
+Movimentações aceita também filtros opcionais por produto, embalagem física, contexto Projeto/SCI/Atividade e forma de consumo histórico. A apresentação/unidade na UI combina filtros; não representa prova da modalidade originalmente solicitada. A opção `mostrarQuantidades=false` omite quantidades e saldos no arquivo; `true` os inclui. O método antigo de serviço permanece disponível para compatibilidade.
 
 Todos usam `formato=PDF` ou `formato=XLSX` e aceitam os filtros do relatório correspondente. Confirmar nomes e parâmetros atuais no Swagger/OpenAPI.
 

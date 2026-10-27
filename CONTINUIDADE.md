@@ -1,5 +1,30 @@
 # Continuidade do Projeto SGL — Backend
 
+## Checkpoint vigente — 27/10/2026: Etapa 9 validada funcionalmente, aguardando merge
+
+**Branch em ambos os repositórios:** `collab/etapa-9-relatorios-consolidados`. **Etapa 9 — Relatórios consolidados implementada e validada funcionalmente pelo mantenedor**, incluindo consultas e exportações PDF/XLSX de Projetos, Movimentações em Resumo/Detalhamento sem rankings, filtros por contexto/apresentação/unidade e quantidade física opcional; extensão de Estoque/Lotes (apresentação e recipientes) e Fiscalização (recipientes vinculados por movimentação). Endpoints históricos preservados. Nenhuma alteração das regras FEFO/FIFO ou migration necessária nesta etapa.
+
+**Estado de integração:** em branch colaborativa GitHub; merge para `main` institucional GitLab e sincronização ainda **não confirmados**. Não tratar a Etapa 9 como integrada antes da verificação posterior. Etapa 10 (Rótulos) continua como próxima etapa do planejamento; revisões E2E/carga/arquitetura mais abrangentes seguem na Etapa 12.
+
+**Distinção essencial:** apresentação física do recipiente, quantidade na unidade canônica e forma de consumo histórica são conceitos diferentes. A forma de consumo exibida no relatório é inferida do snapshot do consumo por recipiente; não comprova a intenção original do solicitante. A captura explícita dessa intenção requer evolução contratual própria, sem reclassificar o passado.
+
+**Validação:** o mantenedor confirmou as validações locais e funcionais ao longo dos blocos; não houve nesta revisão execução independente de suítes nem homologação de produção. Contratos e riscos: `docs/RELATORIOS.md`, `docs/EXPORTACAO_RELATORIOS.md` e `docs/PLANO_PRE_PRODUCAO.md` (backend), `docs/ETAPA_9_INTEGRACAO_FRONTEND_2026-10-26.md` (frontend).
+
+---
+
+
+## Checkpoint vigente — 26/10/2026: Etapa 8 integrada; Etapa 9 iniciada documentalmente
+
+**Estado verificado:** os merges da Etapa 8 constam na `main` backend (`818d580`, GitLab MR `nti/sgl-api!10`) e frontend (`12a195a`, MR `nti/sgl-web!11`); os sincronizadores GitLab → GitHub reportaram sucesso. Etapa 8 concluída funcionalmente; V44/Flyway, build frontend e ArchUnit 5/5 foram validados nos checkpoints informados. Testes globais de carga/E2E continuam na Etapa 12.
+
+**Etapa 9 vigente = RELATÓRIOS CONSOLIDADOS.** Adicionar relatório de **Projetos** à Central de Relatórios; unificar visualmente **Movimentações** e **Resumo operacional** em uma opção com modos **Resumo / Detalhamento**, inicialmente mantendo endpoints existentes. Não confundir com seções antigas que denominavam "Etapa 9" de Pedidos/Soluções — esse trabalho foi absorvido pela Etapa 8.
+
+**Branches criadas, sem implementação funcional nem merge:** `collab/etapa-9-relatorios-consolidados` nos dois repositórios, derivadas dos HEADs da `main` pós-Etapa 8. Contrato de início, escopo, regras e checklist bilateral: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`. Auditoria prévia de dados institucionais: `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md`. GitLab é canônico; GitHub colaboração/espelho.
+
+**Status documental:** checkpoints históricos abaixo descrevem o estado de suas datas; qualquer menção antiga a "Etapa 8 pendente", "sem merge" ou "Etapa 9 Pedidos" não vale para o HEAD atual.
+
+
+
 > **Checkpoint vigente — 23/10/2026 (Etapa 8, MVP em DEV):** blocos funcionais Vínculos, Pedidos, Soluções e Resíduos homologados manualmente; Pedido/Solução/Resíduo permitem Projeto opcional para os perfis elegíveis; vínculo específico por Projeto/SCI/Atividade deriva contexto operacional sem criar vínculos formais automaticamente. Backend PostgreSQL/Flyway validou 44 migrations; o frontend compilou e o ArchUnit passou 5/5 regras. Auditorias completas de carga/E2E e eventual identidade institucional permanecem fora deste aceite. **Auditoria de campos e entradas:** `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` — há dependência de provisionamento externo/seed para Unidade, Usuário e cadastro inicial de Estagiário, embora os cadastros operacionais restantes tenham telas. **Sem merge; não presumir sincronização GitLab confirmada.** Trechos históricos datados abaixo descrevem o estado *àquela época*, não substituem este checkpoint.
 
 

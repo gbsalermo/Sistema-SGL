@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,11 +23,17 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.MovimentacaoEstoque;
+import com.sgl.model.MovimentacaoRecipiente;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.repository.MovimentacaoRecipienteRepository;
+import com.sgl.tenant.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 
@@ -40,6 +47,9 @@ class RelatorioMovimentacoesServiceTest {
 
     @Mock
     private MovimentacaoEstoqueRepository movimentacaoRepository;
+
+    @Mock
+    private MovimentacaoRecipienteRepository recipienteRepository;
 
     @InjectMocks
     private RelatorioMovimentacoesService relatorioMovimentacoesService;
@@ -205,6 +215,8 @@ class RelatorioMovimentacoesServiceTest {
 
         assertEquals(1, resultado.getTotalMovimentacoes());
         assertEquals(saida.getPublicId(), resultado.getItens().get(0).getId());
+        assertEquals("GARRAFA", resultado.getItens().get(0).getTipoEmbalagemConsultada());
+        assertEquals(2L, resultado.getItens().get(0).getRecipientesUtilizados());
     }
 
     @Test
@@ -238,4 +250,64 @@ class RelatorioMovimentacoesServiceTest {
 
         assertEquals("A data inicial não pode ser posterior à data final.", ex.getMessage());
     }
+
+    @AfterEach
+    void limparContexto() {
+        TenantContext.limpar();
+    }
+
+    @Test
+    void filtroEmbalagemCombinaProdutoEOrigemSemDuplicarMovimentacao() {
+        UUID unidadeId = UUID.randomUUID();
+        TenantContext.definir(unidadeId);
+        when(recipienteRepository.buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA))
+                .thenReturn(List.of(saida.getPublicId(), saida.getPublicId()));
+        when(movimentacaoRepository.findAll()).thenReturn(List.of(entrada, saida, descarte));
+
+
+        var resultado = relatorioMovimentacoesService.gerar(
+                TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO, PRODUTO_PUBLIC_ID,
+                null, null, null, null, null, TipoEmbalagem.GARRAFA);
+
+        assertEquals(1, resultado.getTotalMovimentacoes());
+        assertEquals(saida.getPublicId(), resultado.getItens().get(0).getId());
+        verify(recipienteRepository).buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA);
+    }
+
+    @Test
+    void filtroEmbalagemExigeTenantAtivo() {
+        assertThrows(BusinessRuleException.class, () -> relatorioMovimentacoesService.gerar(
+                null, null, null, null, null, null, null, null, TipoEmbalagem.FRASCO));
+    }
+
+    @Test
+    void distingueFrascoInteiroDeRetiradaPorMedidaNoHistorico() {
+        UUID unidadeId = UUID.randomUUID();
+        TenantContext.definir(unidadeId);
+        RecipienteEstoque recipiente = new RecipienteEstoque();
+        recipiente.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        recipiente.setCapacidadeInicial(BigDecimal.valueOf(500));
+
+        MovimentacaoRecipiente detalhe = MovimentacaoRecipiente.builder()
+                .movimentacaoEstoque(saida).recipienteEstoque(recipiente)
+                .quantidadeAnterior(BigDecimal.valueOf(500))
+                .quantidadeMovimentada(BigDecimal.valueOf(30))
+                .quantidadeAtual(BigDecimal.valueOf(470)).build();
+
+        when(movimentacaoRepository.findAll()).thenReturn(List.of(saida));
+        when(recipienteRepository.listarDetalhesParaRelatorio(
+                unidadeId, List.of(saida.getPublicId()))).thenReturn(List.of(detalhe));
+
+        var parcial = relatorioMovimentacoesService.gerar(
+                TipoMovimentacao.SAIDA, null, null, null, null, null,
+                null, null, null, null, null, null, "POR_MEDIDA");
+        assertEquals(1, parcial.getTotalMovimentacoes());
+        assertEquals("POR_MEDIDA", parcial.getItens().get(0).getFormaConsumoIdentificada());
+
+        var completos = relatorioMovimentacoesService.gerar(
+                TipoMovimentacao.SAIDA, null, null, null, null, null,
+                null, null, null, null, null, null, "COMPLETA");
+        assertEquals(0, completos.getTotalMovimentacoes());
+    }
+
 }

@@ -1,6 +1,20 @@
 # Relatórios — SGL
 
-**Atualizado em:** 03/09/2026  
+## Estado vigente — Etapa 9 (27/10/2026, pré-merge)
+
+**Implementada e validada funcionalmente na branch** `collab/etapa-9-relatorios-consolidados`, segundo os testes e verificações locais confirmados pelo mantenedor. **Ainda não integrada à main; não equivale a homologação de produção.**
+
+- Relatório consolidado de **Projetos**: filtros, indicadores, prévia JSON e exportação PDF/XLSX.
+- **Movimentações** na Central: modos **Resumo** (contagem por tipo, sem rankings) e **Detalhamento** (contexto Laboratório/Projeto/SCI/Atividade, Produto, apresentação/unidade, origem, período). Endpoints legados preservados.
+- Detalhamento diferencia **tipo de recipiente**, **forma de consumo inferida da parcela histórica** e **quantidade física**; a escolha de apresentação/unidade na interface traduz-se em filtros do relatório e não comprova qual apresentação o solicitante escolheu originalmente. A intenção original não é reconstruída com certeza.
+- Quantidades físicas exibidas por unidade, sem somar unidades incompatíveis; coluna quantitativa opcional no detalhamento e no export PDF/XLSX.
+- **Estoque/Lotes**: apresentação, conteúdo por apresentação, contagens de recipientes FECHADO/ABERTO/ESGOTADO por lote, prévia/exportações.
+- **Fiscalização**: rastreabilidade por movimentação, quantidades físicas, tipos e contagem dos recipientes envolvidos, prévia/exportações.
+- Projetos, Estagiários, Produtos, Resíduos e Pessoas por Laboratório preservam os contratos/fluxos próprios.
+
+**Validação:** compilação, suítes e revisões funcionais informadas pelo mantenedor durante a Etapa 9; testes integrais de carga, E2E, PostgreSQL sob concorrência e homologação formal para produção pertencem às etapas de estabilização posteriores. Evidências detalhadas: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md` e documentação de integração frontend.
+
+**Atualizado em:** 27/10/2026  
 **Estado:** consultas, prévias e exportações dos relatórios do primeiro protótipo estão integradas à `main`.
 
 ## Objetivo
@@ -52,7 +66,7 @@ Cobertura:
 - órgão fiscalizador;
 - visão cadastral do catálogo.
 
-### 3. Movimentações ✅
+### 3. Movimentações ✅ (modo Detalhamento)
 
 ```text
 GET /api/v1/relatorios/movimentacoes
@@ -70,14 +84,14 @@ origem = PEDIDO
 tipo = SAIDA
 ```
 
-### 4. Resumo operacional ✅
+### 4. Resumo operacional ✅ (endpoint legado, modo Resumo)
 
 ```text
 GET /api/v1/relatorios/resumo-operacional
 GET /api/v1/relatorios/resumo-operacional/exportar?formato=PDF|XLSX
 ```
 
-Consolida movimentações, entradas, saídas, descartes, produtos/lotes movimentados e rankings operacionais.
+O endpoint legado permanece disponível. Na Central de Relatórios, o modo Resumo apresenta contagens de ocorrências por tipo; a interface e as exportações desta etapa não exibem rankings.
 
 ### 5. Estoque e lotes ✅
 

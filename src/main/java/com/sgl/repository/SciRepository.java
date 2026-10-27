@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sgl.model.Sci;
@@ -26,4 +28,23 @@ public interface SciRepository extends JpaRepository<Sci, Long> {
 	boolean existsByCodigoSeg(String codigoSeg);
 
 	boolean existsByCodigoSegAndPublicIdNot(String codigoSeg, UUID publicId);
+
+	interface TotalScisPorProjeto {
+		UUID getProjetoId();
+		Long getTotalScis();
+	}
+	
+	@Query("""
+		    SELECT
+		        s.projeto.publicId AS projetoId,
+		        COUNT(s.id) AS totalScis
+		    FROM Sci s
+		    WHERE s.projeto.laboratorio.unidade.publicId = :unidadeId
+		      AND s.projeto.publicId IN :projetoIds
+		    GROUP BY s.projeto.publicId
+		    """)
+		List<TotalScisPorProjeto> contarScisPorProjetos(
+		        @Param("unidadeId") UUID unidadeId,
+		        @Param("projetoIds") List<UUID> projetoIds
+		);
 }

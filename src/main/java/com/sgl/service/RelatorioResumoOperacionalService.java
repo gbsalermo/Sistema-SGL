@@ -96,10 +96,21 @@ public class RelatorioResumoOperacionalService {
 		int produtosMovimentados = (int) filtradas.stream().map(MovimentacaoEstoque::getProduto)
 				.filter(java.util.Objects::nonNull).map(Produto::getPublicId).distinct().count();
 
-		return new RelatorioResumoOperacionalResponseDTO(LocalDateTime.now(), filtradas.size(), quantidadeEntradas,
-				quantidadeSaidas, quantidadeDescartes, produtosMovimentados, movimentacaoPorLote.size(),
-				principaisEntradas, principaisSaidas, lotesMaisMovimentados);
+        var relatorio = new RelatorioResumoOperacionalResponseDTO(LocalDateTime.now(), filtradas.size(),
+                quantidadeEntradas, quantidadeSaidas, quantidadeDescartes, produtosMovimentados,
+                movimentacaoPorLote.size(), principaisEntradas, principaisSaidas, lotesMaisMovimentados);
+        relatorio.setTotalEntradas(contar(filtradas, TipoMovimentacao.ENTRADA));
+        relatorio.setTotalSaidas(contar(filtradas, TipoMovimentacao.SAIDA));
+        relatorio.setTotalDevolucoes(contar(filtradas, TipoMovimentacao.DEVOLUCAO));
+        relatorio.setTotalDescartes(contar(filtradas, TipoMovimentacao.DESCARTE_VENCIMENTO));
+        relatorio.setTotalAjustes(contar(filtradas, TipoMovimentacao.AJUSTE_ENTRADA)
+                + contar(filtradas, TipoMovimentacao.AJUSTE_SAIDA));
+        return relatorio;
 	}
+
+    private int contar(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {
+        return (int) movimentacoes.stream().filter(m -> m.getTipoMovimentacao() == tipo).count();
+    }
 
 	private void acumularProduto(Map<UUID, ProdutoAcumulado> destino, Produto produto, BigDecimal quantidade) {
 		if (produto == null || produto.getPublicId() == null) {
@@ -107,7 +118,7 @@ public class RelatorioResumoOperacionalService {
 		}
 
 		ProdutoAcumulado acumulado = destino.computeIfAbsent(produto.getPublicId(),
-				chave -> new ProdutoAcumulado(produto.getPublicId(), produto.getNome()));
+				chave -> new ProdutoAcumulado(produto.getPublicId(), produto.getNome(), produto.getUnidadeMedida().name()));
 		acumulado.adicionar(quantidade);
 	}
 
@@ -141,12 +152,14 @@ public class RelatorioResumoOperacionalService {
 	private static class ProdutoAcumulado {
 		private final UUID id;
 		private final String nome;
+        private final String unidadeMedida;
 		private BigDecimal quantidade = BigDecimal.ZERO;
 		private int movimentacoes;
 
-		ProdutoAcumulado(UUID id, String nome) {
+		ProdutoAcumulado(UUID id, String nome, String unidadeMedida) {
 			this.id = id;
 			this.nome = nome;
+            this.unidadeMedida = unidadeMedida;
 		}
 
 		void adicionar(BigDecimal valor) {
@@ -163,7 +176,7 @@ public class RelatorioResumoOperacionalService {
 		}
 
 		RelatorioResumoOperacionalResponseDTO.ProdutoRanking toDto() {
-			return new RelatorioResumoOperacionalResponseDTO.ProdutoRanking(id, nome, quantidade, movimentacoes);
+			return new RelatorioResumoOperacionalResponseDTO.ProdutoRanking(id, nome, quantidade, movimentacoes, unidadeMedida);
 		}
 	}
 
@@ -201,7 +214,8 @@ public class RelatorioResumoOperacionalService {
 			return new RelatorioResumoOperacionalResponseDTO.LoteRanking(lote.getPublicId(), lote.getCodigoInterno(),
 					lote.getNumeroLote(), produto != null ? produto.getPublicId() : null,
 					produto != null ? produto.getNome() : null, quantidadeMovimentada, movimentacoes, entradas, saidas,
-					lote.getQuantidadeDisponivel(), lote.getDataValidade());
+					lote.getQuantidadeDisponivel(), lote.getDataValidade(),
+                    produto != null && produto.getUnidadeMedida() != null ? produto.getUnidadeMedida().name() : null);
 		}
 	}
 }

@@ -38,6 +38,9 @@ import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.UnidadeRepository;
+import com.sgl.repository.MovimentacaoRecipienteRepository;
+import com.sgl.tenant.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 
 /**
  * Testes unitários de {@link RelatorioFiscalizacaoService}.
@@ -69,6 +72,12 @@ class RelatorioFiscalizacaoServiceTest {
     @Mock
     private UnidadeRepository unidadeRepository;
 
+    @Mock
+    private MovimentacaoRecipienteRepository detalheRepository;
+
+    @AfterEach
+    void limparTenant() { TenantContext.limpar(); }
+
     @InjectMocks
     private RelatorioFiscalizacaoService relatorioFiscalizacaoService;
 
@@ -83,6 +92,7 @@ class RelatorioFiscalizacaoServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
         LocalDate hoje = LocalDate.now();
 
         unidade = new Unidade();

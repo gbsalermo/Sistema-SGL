@@ -26,6 +26,7 @@ import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.EstoqueCentralRepository;
 import com.sgl.repository.LoteRepository;
+import com.sgl.repository.RecipienteEstoqueRepository;
 
 /**
  * Testes unitários de {@link RelatorioEstoqueLotesService}.
@@ -43,6 +44,9 @@ class RelatorioEstoqueLotesServiceTest {
 
     @Mock
     private LoteRepository loteRepository;
+
+    @Mock
+    private RecipienteEstoqueRepository recipienteRepository;
 
     @InjectMocks
     private RelatorioEstoqueLotesService relatorioEstoqueLotesService;
