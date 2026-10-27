@@ -3,7 +3,7 @@
 **Preparado em:** 26/10/2026  
 **Branches:** `collab/etapa-9-relatorios-consolidados` nos repositórios `gbsalermo/Sistema-SGL` e `gbsalermo/SGL-FRONTEND`.  
 **Base:** commits de merge da Etapa 8 na `main`: backend `818d5804f7dddf8eb21fb62c5e5e5a9a841b7adc`; frontend `12a195af7e90ab63cadc949432d5adca0fb54b98`.  
-**Estado:** preparação documental; **nenhuma alteração funcional da Etapa 9 foi realizada**, nenhuma suíte da nova etapa foi executada; sem merge.
+**Estado original (26/10):** preparação documental, anterior à implementação. **Checkpoint de encerramento (27/10):** Etapa 9 implementada e validada funcionalmente na branch colaborativa, sem merge para `main`. As seções “Entregas planejadas” e “Checklist” abaixo documentam o plano de partida e devem ser lidas como histórico; as entregas efetivas e limitações estão em `CONTINUIDADE.md` e nos documentos de Relatórios/Exportação e Integração Frontend.
 
 ## Fonte de verdade e conflitos documentais
 
