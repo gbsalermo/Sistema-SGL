@@ -161,7 +161,7 @@ class RelatorioExportacaoControllerTest {
                 List.<MovimentacaoEstoqueResponseDTO>of());
         ArquivoRelatorioDTO arquivo = montarArquivo("sgl-movimentacoes-20260919.xlsx");
 
-        when(movimentacoesService.gerar(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(relatorio);
+        when(movimentacoesService.gerar(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(relatorio);
         when(exportacaoService.exportarMovimentacoes(any(), eq(FormatoExportacaoRelatorio.XLSX), any()))
                 .thenReturn(arquivo);
 
