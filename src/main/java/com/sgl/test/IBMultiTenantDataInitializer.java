@@ -241,9 +241,9 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
     }
 
     private Usuario usuario(String nome, String email, Perfil perfil, Unidade unidade, Laboratorio lab) {
-        return usuarioRepository.findByEmail(email).orElseGet(() -> usuarioRepository.save(
+        return usuarioRepository.findByEmail(email).orElseGet(() -> usuarioRepository.save(DevUsers.withDevLogin(
                 new Usuario(null, null, nome, email, passwordEncoder.encode(SENHA), perfil, unidade, lab, true)
-        ));
+        )));
     }
 
     private Estagiario estagiario(String nome, String email, Unidade unidade, Laboratorio lab) {
@@ -263,7 +263,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                     e.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
                     e.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
                     e.setObservacao("Usuario ficticio para teste multitenant do IB.");
-                    return estagiarioRepository.save(e);
+                    return estagiarioRepository.save(DevUsers.withDevLogin(e));
                 });
     }
 

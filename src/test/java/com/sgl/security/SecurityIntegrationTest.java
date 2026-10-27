@@ -11,17 +11,20 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
+import com.sgl.corporate.CorporateGatewayStubs;
+import com.sgl.corporate.CorporateGatewayTestConfig;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
@@ -42,6 +45,7 @@ import com.sgl.tenant.TenantContext;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(CorporateGatewayTestConfig.class) // same context as the auth integration tests
 class SecurityIntegrationTest {
 
     private static final String LABORATORIOS = "/api/v1/laboratorios";
@@ -61,9 +65,17 @@ class SecurityIntegrationTest {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private CorporateGatewayStubs gateway;
+
     private final List<Unidade> unidadesCriadas = new ArrayList<>();
     private final List<Laboratorio> laboratoriosCriados = new ArrayList<>();
     private final List<Usuario> usuariosCriados = new ArrayList<>();
+
+    @BeforeEach
+    void resetGateway() {
+        gateway.reset();
+    }
 
     @AfterEach
     void removerDadosCriados() {
@@ -134,12 +146,10 @@ class SecurityIntegrationTest {
         Unidade unidade = novaUnidade();
         Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        // /auth/me only arrives in Task 7; here it is enough that security lets it through.
-        MvcResult result = mockMvc.perform(get("/api/v1/auth/me")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(pendente)))
-                .andReturn();
-
-        assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
+        mockMvc.perform(get("/api/v1/auth/me").header(HttpHeaders.AUTHORIZATION, bearer(pendente)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(pendente.getPublicId().toString()))
+                .andExpect(jsonPath("$.situacao").value("PENDENTE_VINCULACAO"));
     }
 
     @Test
@@ -159,12 +169,12 @@ class SecurityIntegrationTest {
         Unidade unidadeB = novaUnidade();
         Usuario pendente = novoUsuario(unidadeA, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        MvcResult result = mockMvc.perform(get("/api/v1/auth/me")
+        // /me reports the user's own Unidade, never the one named in the header.
+        mockMvc.perform(get("/api/v1/auth/me")
                         .header(HttpHeaders.AUTHORIZATION, bearer(pendente))
                         .header(TenantContext.HEADER_UNIDADE, unidadeB.getPublicId().toString()))
-                .andReturn();
-
-        assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unidadeId").value(unidadeA.getPublicId().toString()));
     }
 
     @Test
@@ -174,14 +184,13 @@ class SecurityIntegrationTest {
         Usuario gestor = novoUsuario(unidadeA, Perfil.GESTOR, SituacaoUsuario.ATIVO);
 
         // E.g. a demoted ADMINISTRADOR_GERAL whose browser still sends the old token and Unidade.
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+        // The empty body reaches bean validation, i.e. neither security nor the tenant filter stopped it.
+        mockMvc.perform(post("/api/v1/auth/login")
                         .header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                         .header(TenantContext.HEADER_UNIDADE, unidadeB.getPublicId().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andReturn();
-
-        assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -264,20 +273,21 @@ class SecurityIntegrationTest {
 
     @Test
     void authLogin_ehPublico() throws Exception {
-        // The login controller only arrives in Task 7; the filter must simply not reject it.
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andReturn();
+        // A gateway outage is the one outcome only the login controller itself can produce
+        // (a security rejection would be 401/403 NAO_AUTENTICADO), so it proves the request got through.
+        gateway.loginStatus(HttpStatus.SERVICE_UNAVAILABLE, 1);
 
-        assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"login\":\"m344136\",\"senha\":\"qualquer\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.codigo").value("AUTENTICACAO_INDISPONIVEL"));
+        gateway.verify();
     }
 
     @Test
     void authConfig_ehPublico() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v1/auth/config")).andReturn();
-
-        assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
+        mockMvc.perform(get("/api/v1/auth/config")).andExpect(status().isOk());
     }
 
     @Test

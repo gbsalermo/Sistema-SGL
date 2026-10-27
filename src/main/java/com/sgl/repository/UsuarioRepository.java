@@ -23,6 +23,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     @EntityGraph(attributePaths = "unidade")
     Optional<Usuario> findWithUnidadeByPublicId(UUID publicId);
 
+    // Session DTOs are built outside a transaction (login is deliberately not transactional).
+    @EntityGraph(attributePaths = {"unidade", "laboratorio"})
+    Optional<Usuario> findWithUnidadeAndLaboratorioByPublicId(UUID publicId);
+
     Optional<Usuario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
     Optional<Usuario> findByEmail(String email);

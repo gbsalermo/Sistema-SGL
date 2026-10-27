@@ -3,6 +3,8 @@ package com.sgl.exception;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +16,12 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.sgl.corporate.CorporateApiUnavailableException;
+import com.sgl.corporate.CorporatePersonNotFoundException;
+import com.sgl.corporate.InvalidCorporateCredentialsException;
 import com.sgl.security.SecurityErrorWriter;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -22,6 +29,11 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
+
+    public static final String PESSOA_NAO_ENCONTRADA = "PESSOA_NAO_ENCONTRADA";
+    public static final String AUTENTICACAO_INDISPONIVEL = "AUTENTICACAO_INDISPONIVEL";
+
+    private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
 
     @ExceptionHandler({
             ResourceNotFoundException.class,
@@ -35,6 +47,21 @@ public class RestExceptionHandler {
                 HttpStatus.NOT_FOUND,
                 "Recurso não encontrado",
                 ex.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    // Unknown routes (e.g. /auth/dev-login outside dev/demo, where its controller does not exist)
+    // would otherwise fall into the generic handler and surface as a 500.
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiError> handleNoRoute(
+            Exception ex,
+            HttpServletRequest request) {
+
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "Recurso não encontrado",
+                "O endereço solicitado não existe.",
                 request.getRequestURI()
         );
     }
@@ -59,6 +86,46 @@ public class RestExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(apiError);
+    }
+
+    @ExceptionHandler(LoginRejectedException.class)
+    public ResponseEntity<ApiError> handleLoginRejected(
+            LoginRejectedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(ex.getStatus(), "Login recusado", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
+    }
+
+    // The corporate exceptions carry technical messages; the user gets a fixed, friendly one instead.
+    @ExceptionHandler(InvalidCorporateCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCorporateCredentials(
+            InvalidCorporateCredentialsException ex,
+            HttpServletRequest request) {
+
+        LoginRejectedException rejected = LoginRejectedException.credenciaisInvalidas();
+        return handleLoginRejected(rejected, request);
+    }
+
+    @ExceptionHandler(CorporatePersonNotFoundException.class)
+    public ResponseEntity<ApiError> handleCorporatePersonNotFound(
+            CorporatePersonNotFoundException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(HttpStatus.FORBIDDEN, "Login recusado",
+                "Seu cadastro não foi encontrado nas bases corporativas da Embrapa.",
+                request.getRequestURI(), PESSOA_NAO_ENCONTRADA);
+    }
+
+    @ExceptionHandler(CorporateApiUnavailableException.class)
+    public ResponseEntity<ApiError> handleCorporateApiUnavailable(
+            CorporateApiUnavailableException ex,
+            HttpServletRequest request) {
+
+        // Logged without the request body: it may hold a password.
+        log.warn("Corporate gateway unavailable on {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "Serviço indisponível",
+                "Autenticação corporativa indisponível. Tente novamente em instantes.",
+                request.getRequestURI(), AUTENTICACAO_INDISPONIVEL);
     }
 
     @ExceptionHandler(StockConflictException.class)
@@ -206,12 +273,24 @@ public class RestExceptionHandler {
             String message,
             String path) {
 
+        return buildResponse(status, error, message, path, null);
+    }
+
+    private ResponseEntity<ApiError> buildResponse(
+            HttpStatus status,
+            String error,
+            String message,
+            String path,
+            String codigo) {
+
         ApiError apiError = new ApiError(
                 LocalDateTime.now(),
                 status.value(),
                 error,
                 message,
-                path
+                path,
+                null,
+                codigo
         );
 
         return ResponseEntity

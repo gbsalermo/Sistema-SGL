@@ -842,7 +842,7 @@ public class DemoDataInitializer implements CommandLineRunner {
             Perfil perfil,
             boolean ativo) {
 
-        return usuarioRepository.save(
+        return usuarioRepository.save(DevUsers.withDevLogin(
                 new Usuario(
                         null,
                         null,
@@ -854,7 +854,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                         laboratorio,
                         ativo
                 )
-        );
+        ));
     }
 
     private Estagiario criarEstagiario(
@@ -885,7 +885,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                         : SituacaoEstagio.EM_ANDAMENTO
         );
         estagiario.setObservacao(observacao);
-        return estagiarioRepository.save(estagiario);
+        return estagiarioRepository.save(DevUsers.withDevLogin(estagiario));
     }
 
     private Projeto criarProjeto(

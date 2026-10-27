@@ -124,10 +124,10 @@ public class DataInitializer implements CommandLineRunner {
         Laboratorio lab4 = laboratorioRepository.save(new Laboratorio(null, null, u3, "Laboratorio de Quimica Organica", "Lab de sintese organica", null, true));
         Laboratorio lab5 = laboratorioRepository.save(new Laboratorio(null, null, u3, "Laboratorio de Analise Instrumental", "Lab de instrumentacao analitica", null, false));
 
-        Usuario admin = usuarioRepository.save(new Usuario(null, null, "Admin Sistema", "admin@sgl.com", passwordEncoder.encode("123456"), Perfil.ADMINISTRADOR, u3, lab5, true));
-        Usuario carlos = usuarioRepository.save(new Usuario(null, null, "Dr. Carlos Silva", "carlos@ib.com", passwordEncoder.encode("654321"), Perfil.GESTOR, u1, lab1, true));
-        Usuario ana = usuarioRepository.save(new Usuario(null, null, "Dra. Ana Santos", "ana@ib.com", passwordEncoder.encode("987654"), Perfil.TECNICO, u1, lab2, true));
-        Usuario joao = usuarioRepository.save(new Usuario(null, null, "Joao Pereira", "joao@if.com", passwordEncoder.encode("456789"), Perfil.PESQUISADOR, u2, lab3, true));
+        Usuario admin = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Admin Sistema", "admin@sgl.com", passwordEncoder.encode("123456"), Perfil.ADMINISTRADOR, u3, lab5, true)));
+        Usuario carlos = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Dr. Carlos Silva", "carlos@ib.com", passwordEncoder.encode("654321"), Perfil.GESTOR, u1, lab1, true)));
+        Usuario ana = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Dra. Ana Santos", "ana@ib.com", passwordEncoder.encode("987654"), Perfil.TECNICO, u1, lab2, true)));
+        Usuario joao = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Joao Pereira", "joao@if.com", passwordEncoder.encode("456789"), Perfil.PESQUISADOR, u2, lab3, true)));
 
         Estagiario maria = new Estagiario();
         maria.setNome("Maria Oliveira");
@@ -142,7 +142,7 @@ public class DataInitializer implements CommandLineRunner {
         maria.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);
         maria.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
         maria.setObservacao("Cadastro inicial de estágio para testes");
-        maria = estagiarioRepository.save(maria);
+        maria = estagiarioRepository.save(DevUsers.withDevLogin(maria));
 
         lab1.setResponsavel(carlos);
         lab2.setResponsavel(ana);
@@ -1147,7 +1147,7 @@ public class DataInitializer implements CommandLineRunner {
             Laboratorio laboratorio) {
 
         return usuarioRepository.findByEmail(email)
-                .orElseGet(() -> usuarioRepository.save(
+                .orElseGet(() -> usuarioRepository.save(DevUsers.withDevLogin(
                         new Usuario(
                                 null,
                                 null,
@@ -1159,7 +1159,7 @@ public class DataInitializer implements CommandLineRunner {
                                 laboratorio,
                                 true
                         )
-                ));
+                )));
     }
 
     private Curso garantirCursoEtapa6(Unidade unidade, String nome) {
@@ -1218,7 +1218,7 @@ public class DataInitializer implements CommandLineRunner {
                     estagiario.setSituacaoEstagio(SituacaoEstagio.EM_ANDAMENTO);
                     estagiario.setOrientador(orientador);
                     estagiario.setObservacao(observacao);
-                    return estagiarioRepository.save(estagiario);
+                    return estagiarioRepository.save(DevUsers.withDevLogin(estagiario));
                 });
     }
 
