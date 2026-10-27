@@ -88,7 +88,7 @@ class RelatorioMovimentacoesControllerTest {
         // quando apenas uma das datas (início/fim) é informada.
         LocalDate dataInicio = LocalDate.of(2026, 9, 1);
         when(relatorioMovimentacoesService.gerar(
-                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(dataInicio), isNull()))
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(dataInicio), isNull(), isNull(), isNull(), isNull(), isNull()))
                 .thenThrow(new BusinessRuleException("Para filtrar por período, informe dataInicio e dataFim."));
 
         mockMvc.perform(get(BASE_URL).param("dataInicio", dataInicio.toString()))
