@@ -8,6 +8,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.sgl.model.MovimentacaoRecipiente;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -60,6 +63,17 @@ public class RelatorioMovimentacoesService {
     public RelatorioMovimentacoesResponseDTO gerar(TipoMovimentacao tipo, OrigemMovimentacao origem, UUID produtoId,
             UUID laboratorioId, UUID usuarioId, UUID loteId, LocalDate dataInicio, LocalDate dataFim,
             TipoEmbalagem tipoEmbalagem, UUID projetoId, UUID sciId, UUID atividadeId) {
+        return gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId,
+                dataInicio, dataFim, tipoEmbalagem, projetoId, sciId, atividadeId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RelatorioMovimentacoesResponseDTO gerar(TipoMovimentacao tipo, OrigemMovimentacao origem, UUID produtoId,
+            UUID laboratorioId, UUID usuarioId, UUID loteId, LocalDate dataInicio, LocalDate dataFim,
+            TipoEmbalagem tipoEmbalagem, UUID projetoId, UUID sciId, UUID atividadeId, String formaConsumo) {
+        if (formaConsumo != null && !Set.of("COMPLETA", "POR_MEDIDA", "MISTA", "NAO_DETERMINADA").contains(formaConsumo)) {
+            throw new BusinessRuleException("Forma de consumo inválida.");
+        }
         Set<UUID> idsEmbalagem = null;
         if (tipoEmbalagem != null) {
             UUID unidadeId = TenantContext.unidadeAtual()
@@ -105,21 +119,56 @@ public class RelatorioMovimentacoesService {
 		BigDecimal devolucoes = somar(filtradas, TipoMovimentacao.DEVOLUCAO);
 		BigDecimal descartes = somar(filtradas, TipoMovimentacao.DESCARTE_VENCIMENTO);
 
+        // Classificação informativa por parcela histórica: somente uma retirada de
+        // toda a capacidade, a partir do recipiente cheio, é considerada completa.
+        // Sem detalhe confiável, não inferir a apresentação entregue.
+        UUID unidade = TenantContext.unidadeAtual().orElse(null);
+        Map<UUID, List<MovimentacaoRecipiente>> detalhes = Map.of();
+        if (unidade != null && !filtradas.isEmpty()) {
+            detalhes = movimentacaoRecipienteRepository
+                    .listarDetalhesParaRelatorio(unidade,
+                            filtradas.stream().map(MovimentacaoEstoque::getPublicId).toList())
+                    .stream().collect(Collectors.groupingBy(
+                            detalhe -> detalhe.getMovimentacaoEstoque().getPublicId()));
+        }
+        final Map<UUID, List<MovimentacaoRecipiente>> detalhesPorMovimentacao = detalhes;
         List<MovimentacaoEstoqueResponseDTO> itens = filtradas.stream().map(movimentacao -> {
             var dto = new MovimentacaoEstoqueResponseDTO(movimentacao);
+            List<MovimentacaoRecipiente> parcelas =
+                    detalhesPorMovimentacao.getOrDefault(movimentacao.getPublicId(), List.of());
             if (tipoEmbalagem != null) {
+                parcelas = parcelas.stream().filter(d -> d.getRecipienteEstoque().getTipoEmbalagem() == tipoEmbalagem).toList();
                 dto.setTipoEmbalagemConsultada(tipoEmbalagem.name());
-                dto.setRecipientesUtilizados(
-                        movimentacaoRecipienteRepository
-                                .countByMovimentacaoEstoqueIdAndRecipienteEstoqueTipoEmbalagem(
-                                        movimentacao.getId(), tipoEmbalagem));
+                dto.setRecipientesUtilizados((long) parcelas.size());
             }
+            dto.setFormaConsumoIdentificada(classificarParcelas(parcelas));
             return dto;
-        }).toList();
+        }).filter(dto -> formaConsumo == null || formaConsumo.equals(dto.getFormaConsumoIdentificada()))
+                .toList();
 
-		return new RelatorioMovimentacoesResponseDTO(LocalDateTime.now(), filtradas.size(), entradas, saidas, ajustes,
+
+		return new RelatorioMovimentacoesResponseDTO(LocalDateTime.now(), itens.size(), entradas, saidas, ajustes,
 				devolucoes, descartes, itens);
 	}
+
+    private String classificarParcelas(List<MovimentacaoRecipiente> parcelas) {
+        if (parcelas.isEmpty()) return "NAO_DETERMINADA";
+        boolean completa = false;
+        boolean medida = false;
+        for (var parcela : parcelas) {
+            var capacidade = parcela.getRecipienteEstoque().getCapacidadeInicial();
+            var anterior = parcela.getQuantidadeAnterior();
+            var retirada = parcela.getQuantidadeMovimentada();
+            if (capacidade == null || anterior == null || retirada == null) return "NAO_DETERMINADA";
+            if (anterior.compareTo(capacidade) == 0 && retirada.compareTo(capacidade) == 0) {
+                completa = true;
+            } else {
+                medida = true;
+            }
+        }
+        if (completa && medida) return "MISTA";
+        return completa ? "COMPLETA" : "POR_MEDIDA";
+    }
 
 	private BigDecimal somar(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {
 
