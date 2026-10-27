@@ -3,6 +3,7 @@ package com.sgl.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ public class UnidadeService {
 
     @Transactional
     public UnidadeResponseDTO criar(UnidadeRequestDTO dto) {
+        exigirAdministradorGeral();
         if (unidadeRepository.existsBySigla(dto.getSigla())) {
             throw new BusinessRuleException("Já existe uma unidade com esta sigla.");
         }
@@ -58,6 +60,7 @@ public class UnidadeService {
 
     @Transactional
     public UnidadeResponseDTO atualizar(UUID id, UnidadeRequestDTO dto) {
+        exigirAdministradorGeral();
         Unidade unidade = unidadeRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", id));
 
@@ -72,8 +75,16 @@ public class UnidadeService {
 
     @Transactional
     public void deletar(UUID id) {
+        exigirAdministradorGeral();
         Unidade unidade = unidadeRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", id));
         unidadeRepository.delete(unidade);
+    }
+
+    // Unidades span every tenant, so only the general administrator may create, rename or remove them.
+    private static void exigirAdministradorGeral() {
+        if (!PerfilPolicy.isAdministradorGeral(CurrentUser.get().perfil())) {
+            throw new AccessDeniedException("Apenas o Administrador geral pode alterar o cadastro de Unidades.");
+        }
     }
 }

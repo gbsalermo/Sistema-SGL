@@ -2,8 +2,10 @@ package com.sgl.service;
 
 import static com.sgl.corporate.CorporateGatewayStubs.unidadeItem;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -119,6 +121,23 @@ class UnidadeHabilitacaoIntegrationTest {
         mockMvc.perform(get("/api/v1/unidades").header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(outra.getPublicId())).doesNotExist());
+    }
+
+    @Test
+    void cadastroDeUnidades_administradorLocal_403() throws Exception {
+        Usuario administrador = novoUsuario(Perfil.ADMINISTRADOR);
+        String corpo = "{\"nome\":\"Renomeada\",\"sigla\":\"REN-" + UUID.randomUUID().toString().substring(0, 6) + "\"}";
+
+        mockMvc.perform(post("/api/v1/unidades").header(HttpHeaders.AUTHORIZATION, bearer(administrador))
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/v1/unidades/" + cnpmf.getPublicId()).header(HttpHeaders.AUTHORIZATION, bearer(administrador))
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/unidades/" + cnpmf.getPublicId()).header(HttpHeaders.AUTHORIZATION, bearer(administrador)))
+                .andExpect(status().isForbidden());
+        assertThat(unidadeRepository.findByPublicId(cnpmf.getPublicId()).orElseThrow().getNome())
+                .isEqualTo("Embrapa Mandioca e Fruticultura");
     }
 
     @Test

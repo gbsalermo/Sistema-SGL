@@ -11,19 +11,25 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.sgl.dto.request.UnidadeRequestDTO;
 import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Unidade;
+import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.UnidadeRepository;
+import com.sgl.security.AuthenticatedUser;
 
 /**
  * Testes unitários de {@link UnidadeService}. O repositório é mockado (Mockito puro,
@@ -43,8 +49,18 @@ class UnidadeServiceTest {
 
     private Unidade unidade;
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
     @BeforeEach
     void setUp() {
+        // Creating, renaming and removing Unidades is reserved to the general administrator.
+        AuthenticatedUser administradorGeral = new AuthenticatedUser(UUID.randomUUID(), Perfil.ADMINISTRADOR_GERAL,
+                SituacaoUsuario.ATIVO, UNIDADE_PUBLIC_ID);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(administradorGeral, null, List.of()));
         unidade = new Unidade();
         unidade.setId(1L);
         unidade.setPublicId(UNIDADE_PUBLIC_ID);
@@ -84,6 +100,8 @@ class UnidadeServiceTest {
 
     @Test
     void deveListarTodasAsUnidades() {
+        // Outside the general administrator's session the listing stays tenant-scoped (findAll).
+        SecurityContextHolder.clearContext();
         when(unidadeRepository.findAll()).thenReturn(List.of(unidade));
 
         List<UnidadeResponseDTO> resultado = unidadeService.listarTodos();
