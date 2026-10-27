@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -42,6 +44,8 @@ import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.service.MovimentacaoEstoqueService;
+import com.sgl.model.enums.Perfil;
+import com.sgl.security.SessaoDeTeste;
 
 /**
  * Teste de fatia web ({@code @WebMvcTest}) de {@link MovimentacaoEstoqueController}.
@@ -165,6 +169,17 @@ class MovimentacaoEstoqueControllerTest {
         dto.setAtivo(true);
         return dto;
     }
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(USUARIO_PUBLIC_ID, Perfil.GESTOR);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @Test
     void deveListarTodasERetornar200() throws Exception {
@@ -273,6 +288,18 @@ class MovimentacaoEstoqueControllerTest {
                         .content(objectMapper.writeValueAsString(montarEntradaLoteRequestDTO())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.numeroLote").value("FAB-2026-8841"));
+    }
+
+    @Test
+    void deveRetornar403AoRegistrarEntradaEmNomeDeOutroUsuario() throws Exception {
+        // The operator comes from the session; naming another user (e.g. a gestor) is refused.
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.TECNICO);
+
+        mockMvc.perform(post(BASE_URL + "/estoques/{estoqueId}/lotes", ESTOQUE_PUBLIC_ID)
+                        .param("usuarioId", USUARIO_PUBLIC_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(montarEntradaLoteRequestDTO())))
+                .andExpect(status().isForbidden());
     }
 
     @Test

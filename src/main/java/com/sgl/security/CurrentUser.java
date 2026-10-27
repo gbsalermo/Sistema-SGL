@@ -27,6 +27,16 @@ public final class CurrentUser {
         return find().orElseThrow(() -> new AccessDeniedException("Sessão não autenticada."));
     }
 
+    /**
+     * Refuses a client-supplied acting user that is not the session user: identity comes from the
+     * session, never from the request body (spec 3). Stops anyone naming a gestor to pass gestor checks.
+     */
+    public static void exigirProprioUsuario(UUID usuarioId) {
+        if (usuarioId == null || !usuarioId.equals(get().publicId())) {
+            throw new AccessDeniedException("O usuário informado não é o usuário da sessão.");
+        }
+    }
+
     /** The Unidade resolved by the tenant filter: the user's own, or the one an ADMINISTRADOR_GERAL selected. */
     public static UUID unidadeEmOperacao() {
         return TenantContext.unidadeAtual()

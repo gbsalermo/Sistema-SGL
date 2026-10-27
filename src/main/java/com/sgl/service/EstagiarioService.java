@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,8 @@ import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.CurrentUser;
+import com.sgl.security.PerfilPolicy;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -59,6 +62,7 @@ public class EstagiarioService {
 
 	@Transactional
 	public EstagiarioResponseDTO criar(EstagiarioRequestDTO dto) {
+		exigirGestao();
 
 		Usuario usuario = buscarUsuario(dto.getUsuarioId());
 		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
@@ -208,6 +212,7 @@ public class EstagiarioService {
 
 	@Transactional
 	public EstagiarioResponseDTO atualizar(UUID id, EstagiarioRequestDTO dto) {
+		exigirGestao();
 
 		buscarEstagiarioNoTenant(id);
 
@@ -217,6 +222,7 @@ public class EstagiarioService {
 
 	@Transactional
 	public void deletar(UUID id) {
+		exigirGestao();
 		buscarEstagiarioNoTenant(id);
 
 		throw new BusinessRuleException(
@@ -295,6 +301,7 @@ public class EstagiarioService {
 
 	@Transactional
 	public EstagiarioResponseDTO encerrarEstagio(UUID id) {
+		exigirGestao();
 
 		buscarEstagiarioNoTenant(id);
 
@@ -411,4 +418,11 @@ public class EstagiarioService {
 		return valor.trim();
 	}
 
+
+	// Creating or ending an internship grants or removes a person's access, so only gestão may do it.
+	private static void exigirGestao() {
+		if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
+			throw new AccessDeniedException("Apenas gestão pode cadastrar, alterar ou encerrar estágios.");
+		}
+	}
 }

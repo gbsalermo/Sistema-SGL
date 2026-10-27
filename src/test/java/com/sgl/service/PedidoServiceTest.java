@@ -20,6 +20,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -51,6 +52,7 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
@@ -103,6 +105,17 @@ class PedidoServiceTest {
     private EstoqueCentral estoque;
     private ItemPedido item;
     private Pedido pedido;
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(SOLICITANTE_PUBLIC_ID, Perfil.TECNICO);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @BeforeEach
     void prepararCenario() {
@@ -193,6 +206,17 @@ class PedidoServiceTest {
     }
 
     @Test
+    void deveRejeitarPedidoEmNomeDeOutroUsuario() {
+        // The requester comes from the session; a body naming someone else is refused.
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.TECNICO);
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(SOLICITANTE_PUBLIC_ID);
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class, () -> pedidoService.criar(dto));
+    }
+
+    @Test
     void deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService() {
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
@@ -267,6 +291,7 @@ class PedidoServiceTest {
         aprovador.setPerfil(Perfil.ADMINISTRADOR_GERAL);
         PedidoRequestDTO dto = new PedidoRequestDTO();
         dto.setUsuarioId(APROVADOR_PUBLIC_ID);
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, aprovador.getPerfil());
         dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(aprovador));
@@ -283,6 +308,7 @@ class PedidoServiceTest {
         aprovador.setPerfil(Perfil.TECNICO);
         PedidoRequestDTO dto = new PedidoRequestDTO();
         dto.setUsuarioId(APROVADOR_PUBLIC_ID);
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, aprovador.getPerfil());
         dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(aprovador));

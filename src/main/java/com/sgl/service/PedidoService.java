@@ -50,6 +50,7 @@ import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.CurrentUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -71,6 +72,7 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO criar(PedidoRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 		Usuario usuario = buscarUsuarioNoTenant(dto.getUsuarioId());
 		usuario.validateActive();
 

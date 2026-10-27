@@ -23,6 +23,7 @@ import com.sgl.repository.ObservacaoVinculoEstagioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.CurrentUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -56,6 +57,7 @@ public class ObservacaoVinculoEstagioService {
     public ObservacaoVinculoEstagioResponseDTO adicionarOperacional(
             UUID vinculoId,
             ObservacaoVinculoEstagioRequestDTO dto) {
+        CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
         exigirTenantAtivo();
 
@@ -78,6 +80,7 @@ public class ObservacaoVinculoEstagioService {
     public ObservacaoVinculoEstagioResponseDTO alterarTreinamento(
             UUID vinculoId,
             TreinamentoSegurancaVinculoRequestDTO dto) {
+        CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
         exigirTenantAtivo();
 

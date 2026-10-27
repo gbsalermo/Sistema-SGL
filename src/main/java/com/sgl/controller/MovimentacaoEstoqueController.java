@@ -23,6 +23,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.enums.TipoMovimentacao;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.service.MovimentacaoEstoqueService;
+import com.sgl.security.CurrentUser;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -78,6 +79,7 @@ public class MovimentacaoEstoqueController {
 	@PostMapping("/estoques/{estoqueId}/lotes")
 	public ResponseEntity<LoteResponseDTO> registrarEntradaLote(@PathVariable UUID estoqueId,
 			@RequestParam UUID usuarioId, @Valid @RequestBody EntradaLoteRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(usuarioId);
 		Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
 				.orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 		LoteResponseDTO lote = movimentacaoService.registrarEntradaLote(estoqueId, dto, usuario);
@@ -87,6 +89,7 @@ public class MovimentacaoEstoqueController {
 	@PostMapping("/estoques/{estoqueId}/descarte-vencimento")
 	public ResponseEntity<List<MovimentacaoEstoqueResponseDTO>> descartarVencidos(@PathVariable UUID estoqueId,
 			@RequestParam UUID usuarioId, @Valid @RequestBody DescarteProdutoRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(usuarioId);
 		Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
 				.orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 		return ResponseEntity.ok(movimentacaoService.registrarDescarteVencimento(estoqueId, dto.getQuantidade(),
@@ -97,6 +100,7 @@ public class MovimentacaoEstoqueController {
 	public ResponseEntity<MovimentacaoEstoqueResponseDTO> ajustarEstoque(@PathVariable UUID estoqueId,
 			@RequestParam UUID usuarioId, @Valid @RequestBody AjusteEstoqueRequestDTO dto) {
 
+		CurrentUser.exigirProprioUsuario(usuarioId);
 		Usuario usuario = usuarioRepository.findByPublicId(usuarioId)
 				.orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
 

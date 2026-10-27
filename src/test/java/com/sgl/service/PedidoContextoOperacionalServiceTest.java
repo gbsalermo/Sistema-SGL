@@ -28,6 +28,7 @@ import com.sgl.model.*;
 import com.sgl.model.enums.*;
 import com.sgl.repository.*;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 /**
  * Etapa 8: exercita PedidoService.criar() pelo contrato de contexto operacional.
@@ -80,6 +81,17 @@ class PedidoContextoOperacionalServiceTest {
     private VinculoEstagioAtividade participacao;
     private Produto produto;
     private EstoqueCentral estoque;
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.TECNICO);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @BeforeEach
     void preparar() {
