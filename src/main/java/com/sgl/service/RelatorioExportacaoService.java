@@ -204,10 +204,13 @@ public class RelatorioExportacaoService {
                         texto(i.getLotesAtivos()), texto(i.getLotesVencidos()), texto(i.getLotesProximosVencimento())
                 )).toList());
         Tabela lotes = new Tabela("Lotes",
-                List.of("Lote", "Fornecedor", "Produto", "Unidade", "Entrada", "Inicial", "Disponível", "Validade", "Situação"),
+                List.of("Lote", "Fornecedor", "Produto", "Unidade", "Entrada", "Inicial", "Disponível", "Validade", "Situação", "Apresentação", "Conteúdo/apresentação", "Fechados", "Abertos", "Esgotados"),
                 relatorio.getLotes().stream().map(i -> List.of(
                         texto(i.getCodigoInterno()), texto(i.getNumeroLote()), texto(i.getProdutoNome()), texto(i.getUnidadeNome()),
-                        data(i.getDataEntrada()), quantidadeComUnidade(i.getQuantidadeInicial(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeDisponivel(), i.getUnidadeMedida()), data(i.getDataValidade()), rotulo(i.getSituacao())
+                        data(i.getDataEntrada()), quantidadeComUnidade(i.getQuantidadeInicial(), i.getUnidadeMedida()), quantidadeComUnidade(i.getQuantidadeDisponivel(), i.getUnidadeMedida()), data(i.getDataValidade()), rotulo(i.getSituacao()),
+                        texto(i.getApresentacao() != null ? i.getApresentacao() : i.getTipoEmbalagem()),
+                        quantidadeComUnidade(i.getConteudoPorApresentacao(), i.getUnidadeMedida()),
+                        texto(i.getRecipientesFechados()), texto(i.getRecipientesAbertos()), texto(i.getRecipientesEsgotados())
                 )).toList());
         return gerar("Relatório de Estoque e Lotes", "estoque-lotes", formato, filtros, resumo, List.of(estoques, lotes), true);
     }
