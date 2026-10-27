@@ -3,6 +3,8 @@ package com.sgl.exception;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Resposta padrão de erro da API.")
@@ -23,8 +25,24 @@ public record ApiError(
         String path,
 
         @Schema(description = "Erros específicos de campos quando houver falha de validação.")
-        List<FieldValidationError> fieldErrors
+        List<FieldValidationError> fieldErrors,
+
+        // Machine-readable code the frontend routes on; omitted for errors that do not need one.
+        @Schema(description = "Código do erro para tratamento pelo cliente, quando houver.", example = "ACESSO_NEGADO")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String codigo
 ) {
+
+    public ApiError(
+            LocalDateTime timestamp,
+            int status,
+            String error,
+            String message,
+            String path,
+            List<FieldValidationError> fieldErrors) {
+
+        this(timestamp, status, error, message, path, fieldErrors, null);
+    }
 
     public ApiError(
             LocalDateTime timestamp,

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.sgl.repository.UnidadeRepository;
@@ -27,10 +29,22 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class TenantRequestFilter extends OncePerRequestFilter {
 
+    /**
+     * Session endpoints (login, config, me) never operate on a Unidade. A stale header there would
+     * otherwise lock a user out of relogin or the waiting screen, so they get no tenant at all.
+     */
+    private static final RequestMatcher AUTH_ROUTES =
+            PathPatternRequestMatcher.withDefaults().matcher("/api/v1/auth/**");
+
     private final UnidadeRepository unidadeRepository;
 
     public TenantRequestFilter(UnidadeRepository unidadeRepository) {
         this.unidadeRepository = unidadeRepository;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return AUTH_ROUTES.matches(request);
     }
 
     @Override

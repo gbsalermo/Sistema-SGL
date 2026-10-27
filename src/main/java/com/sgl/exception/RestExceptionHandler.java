@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.sgl.security.SecurityErrorWriter;
+
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -44,12 +46,19 @@ public class RestExceptionHandler {
             AccessDeniedException ex,
             HttpServletRequest request) {
 
-        return buildResponse(
-                HttpStatus.FORBIDDEN,
+        ApiError apiError = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
                 "Acesso negado",
                 ex.getMessage(),
-                request.getRequestURI()
+                request.getRequestURI(),
+                null,
+                SecurityErrorWriter.ACESSO_NEGADO
         );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(apiError);
     }
 
     @ExceptionHandler(StockConflictException.class)

@@ -6,7 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +35,9 @@ import com.sgl.tenant.TenantContext;
 /**
  * Exercises the real security chain (JWT filter, authorization rules and tenant filter) against
  * H2, with tokens minted by the real {@link JwtService}. Deliberately not @Transactional: the
- * filter must load the user and its Unidade outside any test-managed persistence context.
+ * filter must load the user and its Unidade outside any test-managed persistence context. The
+ * context (and its H2) is shared with other test classes, so everything created here is deleted
+ * afterwards; a leftover active ADMINISTRADOR_GERAL would skew tests that count them.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -54,6 +60,17 @@ class SecurityIntegrationTest {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    private final List<Unidade> unidadesCriadas = new ArrayList<>();
+    private final List<Laboratorio> laboratoriosCriados = new ArrayList<>();
+    private final List<Usuario> usuariosCriados = new ArrayList<>();
+
+    @AfterEach
+    void removerDadosCriados() {
+        usuarioRepository.deleteAll(usuariosCriados);
+        laboratorioRepository.deleteAll(laboratoriosCriados);
+        unidadeRepository.deleteAll(unidadesCriadas);
+    }
 
     @Test
     void semToken_rotaProtegida_retorna401() throws Exception {
@@ -120,6 +137,48 @@ class SecurityIntegrationTest {
         // /auth/me only arrives in Task 7; here it is enough that security lets it through.
         MvcResult result = mockMvc.perform(get("/api/v1/auth/me")
                         .header(HttpHeaders.AUTHORIZATION, bearer(pendente)))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
+    }
+
+    @Test
+    void pendente_authMeComBarraFinal_retorna403UsuarioPendente() throws Exception {
+        Unidade unidade = novaUnidade();
+        Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
+
+        // Only the exact "who am I" path is open to a pendente; path variants must not slip through.
+        mockMvc.perform(get("/api/v1/auth/me/").header(HttpHeaders.AUTHORIZATION, bearer(pendente)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.codigo").value("USUARIO_PENDENTE"));
+    }
+
+    @Test
+    void pendente_authMeComHeaderDeOutraUnidade_naoEhBloqueadoPeloTenant() throws Exception {
+        Unidade unidadeA = novaUnidade();
+        Unidade unidadeB = novaUnidade();
+        Usuario pendente = novoUsuario(unidadeA, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
+
+        MvcResult result = mockMvc.perform(get("/api/v1/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(pendente))
+                        .header(TenantContext.HEADER_UNIDADE, unidadeB.getPublicId().toString()))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
+    }
+
+    @Test
+    void authLogin_comTokenEHeaderDeOutraUnidade_naoEhBloqueadoPeloTenant() throws Exception {
+        Unidade unidadeA = novaUnidade();
+        Unidade unidadeB = novaUnidade();
+        Usuario gestor = novoUsuario(unidadeA, Perfil.GESTOR, SituacaoUsuario.ATIVO);
+
+        // E.g. a demoted ADMINISTRADOR_GERAL whose browser still sends the old token and Unidade.
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(gestor))
+                        .header(TenantContext.HEADER_UNIDADE, unidadeB.getPublicId().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isNotIn(401, 403);
@@ -234,18 +293,22 @@ class SecurityIntegrationTest {
 
     private Unidade novaUnidade() {
         String sufixo = UUID.randomUUID().toString().substring(0, 8);
-        return unidadeRepository.saveAndFlush(Unidade.builder()
+        Unidade unidade = unidadeRepository.saveAndFlush(Unidade.builder()
                 .nome("Unidade " + sufixo)
                 .sigla("U" + sufixo)
                 .build());
+        unidadesCriadas.add(unidade);
+        return unidade;
     }
 
     private Laboratorio novoLaboratorio(Unidade unidade) {
-        return laboratorioRepository.saveAndFlush(Laboratorio.builder()
+        Laboratorio laboratorio = laboratorioRepository.saveAndFlush(Laboratorio.builder()
                 .unidade(unidade)
                 .nome("Laboratório " + unidade.getSigla())
                 .ativo(true)
                 .build());
+        laboratoriosCriados.add(laboratorio);
+        return laboratorio;
     }
 
     private Usuario novoUsuario(Unidade unidade, Perfil perfil, SituacaoUsuario situacao) {
@@ -255,7 +318,22 @@ class SecurityIntegrationTest {
         usuario.setUnidade(unidade);
         usuario.setAtivo(true);
         usuario.setSituacao(situacao);
-        return usuarioRepository.saveAndFlush(usuario);
+        Usuario salvo = usuarioRepository.saveAndFlush(usuario);
+        usuariosCriados.add(salvo);
+        return salvo;
+    }
+
+    @Test
+    void naoDeixaUsuariosOuUnidadesAposOTeste_verificadoPeloAfterEach() {
+        // Guards M4: the cleanup lists must track every helper-created entity.
+        Unidade unidade = novaUnidade();
+        novoUsuario(unidade, Perfil.ADMINISTRADOR_GERAL, SituacaoUsuario.ATIVO);
+        removerDadosCriados();
+
+        assertThat(unidadeRepository.findByPublicId(unidade.getPublicId())).isEmpty();
+        assertThat(usuarioRepository.findByUnidadePublicId(unidade.getPublicId())).isEmpty();
+        unidadesCriadas.clear();
+        usuariosCriados.clear();
     }
 
     private String bearer(Usuario usuario) {
