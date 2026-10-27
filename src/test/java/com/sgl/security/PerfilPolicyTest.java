@@ -55,4 +55,12 @@ class PerfilPolicyTest {
 		assertTrue(PerfilPolicy.isAdministradorGeral(Perfil.ADMINISTRADOR_GERAL));
 		assertFalse(PerfilPolicy.isAdministradorGeral(Perfil.ADMINISTRADOR));
 	}
+
+	@Test
+	void isAdministrador_incluiAdministradorGeral() {
+		assertTrue(PerfilPolicy.isAdministrador(Perfil.ADMINISTRADOR));
+		assertTrue(PerfilPolicy.isAdministrador(Perfil.ADMINISTRADOR_GERAL));
+		assertFalse(PerfilPolicy.isAdministrador(Perfil.GESTOR));
+		assertFalse(PerfilPolicy.isAdministrador(Perfil.TECNICO));
+	}
 }

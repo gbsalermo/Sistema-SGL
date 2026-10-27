@@ -427,7 +427,7 @@ public class ResiduoService {
 		Usuario usuario = buscarUsuario(id);
 		usuario.validateActive();
 
-		if (usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+		if (!PerfilPolicy.isAdministrador(usuario.getPerfil())) {
 			throw new BusinessRuleException(
 					"A correção administrativa do ciclo de resíduos exige perfil ADMINISTRADOR.");
 		}

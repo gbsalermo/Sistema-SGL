@@ -29,6 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sgl.dto.request.AdministrarResiduoRequestDTO;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
 import com.sgl.dto.request.ArmazenarResiduoRequestDTO;
 import com.sgl.dto.request.ComponenteResiduoRequestDTO;
@@ -48,6 +49,7 @@ import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.EstadoFisicoResiduo;
 import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
@@ -671,6 +673,27 @@ class ResiduoServiceTest {
         ResiduoResponseDTO resultado = residuoService.receber(RESIDUO_PUBLIC_ID, dto);
 
         assertEquals(StatusResiduo.EM_ANALISE, resultado.getStatus());
+    }
+
+    @Test
+    void deveCancelarAdministrativamenteComoAdministradorGeral() {
+        gestor.setPerfil(Perfil.ADMINISTRADOR_GERAL);
+        Residuo residuo = construirResiduoExistente(StatusResiduo.INFORMADO, null);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(residuo));
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(gestor));
+        stubSalvarComIdGerado();
+
+        AdministrarResiduoRequestDTO dto = new AdministrarResiduoRequestDTO();
+        dto.setUsuarioAdministradorId(GESTOR_PUBLIC_ID);
+        dto.setAcao(AcaoAdministrativaResiduo.CANCELAR);
+        dto.setJustificativa("Cadastro duplicado.");
+
+        ResiduoResponseDTO resultado = residuoService.administrarCiclo(RESIDUO_PUBLIC_ID, dto);
+
+        assertEquals(StatusResiduo.CANCELADO, resultado.getStatus());
     }
 
     @Test

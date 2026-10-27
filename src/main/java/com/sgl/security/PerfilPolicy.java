@@ -15,6 +15,11 @@ public final class PerfilPolicy {
 		return perfil == Perfil.GESTOR || perfil == Perfil.ADMINISTRADOR || perfil == Perfil.ADMINISTRADOR_GERAL;
 	}
 
+	/** Admin-only operations also accept the general administrator, who operates on every Unidade. */
+	public static boolean isAdministrador(Perfil perfil) {
+		return perfil == Perfil.ADMINISTRADOR || perfil == Perfil.ADMINISTRADOR_GERAL;
+	}
+
 	public static boolean isAdministradorGeral(Perfil perfil) {
 		return perfil == Perfil.ADMINISTRADOR_GERAL;
 	}
