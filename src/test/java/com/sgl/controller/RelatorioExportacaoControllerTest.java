@@ -162,7 +162,7 @@ class RelatorioExportacaoControllerTest {
         ArquivoRelatorioDTO arquivo = montarArquivo("sgl-movimentacoes-20260919.xlsx");
 
         when(movimentacoesService.gerar(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(relatorio);
-        when(exportacaoService.exportarMovimentacoes(any(), eq(FormatoExportacaoRelatorio.XLSX), any()))
+        when(exportacaoService.exportarMovimentacoes(any(), eq(FormatoExportacaoRelatorio.XLSX), any(), eq(false)))
                 .thenReturn(arquivo);
 
         mockMvc.perform(get(BASE_URL + "/movimentacoes/exportar").param("formato", "XLSX"))
