@@ -22,9 +22,26 @@ class CorporateApiConfig {
     // MockRestServiceServer to the builder without it being overridden.
     @Bean
     CorporateApiClient corporateApiClient(ObjectProvider<RestClient.Builder> builderProvider, CorporateApiProperties properties) {
+        validate(properties);
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build();
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(READ_TIMEOUT);
         return new CorporateApiClient(builderProvider.getIfAvailable(RestClient::builder).requestFactory(factory), properties);
+    }
+
+    // Fails fast with an actionable message instead of an obscure error from
+    // setBasicAuth when the environment variables are missing.
+    static void validate(CorporateApiProperties p) {
+        require(p.baseUrl(), "sgl.corporate.base-url", "SGL_CORPORATE_BASE_URL");
+        require(p.ambiente(), "sgl.corporate.ambiente", "SGL_CORPORATE_AMBIENTE");
+        require(p.username(), "sgl.corporate.username", "SGL_CORPORATE_USERNAME");
+        require(p.password(), "sgl.corporate.password", "SGL_CORPORATE_PASSWORD");
+    }
+
+    private static void require(String value, String property, String envVar) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException(
+                "Corporate API configuration missing: set " + envVar + " (property " + property + ")");
+        }
     }
 }

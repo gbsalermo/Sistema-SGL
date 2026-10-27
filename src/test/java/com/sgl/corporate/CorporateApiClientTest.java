@@ -164,4 +164,47 @@ class CorporateApiClientTest {
         assertThat(client.unidadesEmbrapa()).singleElement()
             .satisfies(u -> assertThat(u.sigla()).isEqualTo("CNPMF"));
     }
+
+    @Test
+    void colaboradoresDaUnidade_percorreTodasAsPaginas() {
+        String url = "http://gw/colaboradorapi-h/colaborador/lista/porUnidadeLotacao/3/ativo/true";
+        server.expect(requestTo(org.hamcrest.Matchers.startsWith(url)))
+            .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam("numeroPagina", "1"))
+            .andRespond(withSuccess("""
+                {"items":[{"ColaboradorId":1,"CPF":"1","Nome":"A","Ativo":true}],"pageIndex":1,"totalPages":2,"count":2,"hasPreviousPage":false,"hasNextPage":true}
+                """, MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.startsWith(url)))
+            .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam("numeroPagina", "2"))
+            .andRespond(withSuccess("""
+                {"items":[{"ColaboradorId":2,"CPF":"2","Nome":"B","Ativo":true}],"pageIndex":2,"totalPages":2,"count":2,"hasPreviousPage":true,"hasNextPage":false}
+                """, MediaType.APPLICATION_JSON));
+
+        assertThat(client.colaboradoresDaUnidade(3)).extracting(Colaborador::colaboradorId).containsExactly(1L, 2L);
+        server.verify();
+    }
+
+    @Test
+    void consulta_5xx_lancaIndisponivel() {
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/1"))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+
+        assertThatThrownBy(() -> client.empregadoPorMatricula("1")).isInstanceOf(CorporateApiUnavailableException.class);
+    }
+
+    @Test
+    void consulta_falhaDeConexao_lancaIndisponivel() {
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/1"))
+            .andRespond(request -> { throw new java.net.ConnectException("refused"); });
+
+        assertThatThrownBy(() -> client.empregadoPorMatricula("1")).isInstanceOf(CorporateApiUnavailableException.class);
+    }
+
+    @Test
+    void propriedadesAusentes_falhamComMensagemClara() {
+        assertThatThrownBy(() -> CorporateApiConfig.validate(new CorporateApiProperties("http://gw", "h", "", "pw")))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("SGL_CORPORATE_USERNAME");
+        assertThatThrownBy(() -> CorporateApiConfig.validate(new CorporateApiProperties(null, "h", "u", "pw")))
+            .hasMessageContaining("SGL_CORPORATE_BASE_URL");
+    }
 }
