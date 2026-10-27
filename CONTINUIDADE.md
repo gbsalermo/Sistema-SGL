@@ -1,5 +1,18 @@
 # Continuidade do Projeto SGL — Backend
 
+## Checkpoint vigente — 27/10/2026: Etapa 9 validada funcionalmente, aguardando merge
+
+**Branch em ambos os repositórios:** `collab/etapa-9-relatorios-consolidados`. **Etapa 9 — Relatórios consolidados implementada e validada funcionalmente pelo mantenedor**, incluindo consultas e exportações PDF/XLSX de Projetos, Movimentações em Resumo/Detalhamento sem rankings, filtros por contexto/apresentação/unidade e quantidade física opcional; extensão de Estoque/Lotes (apresentação e recipientes) e Fiscalização (recipientes vinculados por movimentação). Endpoints históricos preservados. Nenhuma alteração das regras FEFO/FIFO ou migration necessária nesta etapa.
+
+**Estado de integração:** em branch colaborativa GitHub; merge para `main` institucional GitLab e sincronização ainda **não confirmados**. Não tratar a Etapa 9 como integrada antes da verificação posterior. Etapa 10 (Rótulos) continua como próxima etapa do planejamento; revisões E2E/carga/arquitetura mais abrangentes seguem na Etapa 12.
+
+**Distinção essencial:** apresentação física do recipiente, quantidade na unidade canônica e forma de consumo histórica são conceitos diferentes. A forma de consumo exibida no relatório é inferida do snapshot do consumo por recipiente; não comprova a intenção original do solicitante. A captura explícita dessa intenção requer evolução contratual própria, sem reclassificar o passado.
+
+**Validação:** o mantenedor confirmou as validações locais e funcionais ao longo dos blocos; não houve nesta revisão execução independente de suítes nem homologação de produção. Contratos e riscos: `docs/RELATORIOS.md`, `docs/EXPORTACAO_RELATORIOS.md` e `docs/PLANO_PRE_PRODUCAO.md` (backend), `docs/ETAPA_9_INTEGRACAO_FRONTEND_2026-10-26.md` (frontend).
+
+---
+
+
 ## Checkpoint vigente — 26/10/2026: Etapa 8 integrada; Etapa 9 iniciada documentalmente
 
 **Estado verificado:** os merges da Etapa 8 constam na `main` backend (`818d580`, GitLab MR `nti/sgl-api!10`) e frontend (`12a195a`, MR `nti/sgl-web!11`); os sincronizadores GitLab → GitHub reportaram sucesso. Etapa 8 concluída funcionalmente; V44/Flyway, build frontend e ArchUnit 5/5 foram validados nos checkpoints informados. Testes globais de carga/E2E continuam na Etapa 12.
