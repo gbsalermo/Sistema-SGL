@@ -101,12 +101,13 @@ public class RelatorioExportacaoController {
             @RequestParam(required = false) TipoEmbalagem tipoEmbalagem,
             @RequestParam(required = false) UUID projetoId,
             @RequestParam(required = false) UUID sciId,
-            @RequestParam(required = false) UUID atividadeId) {
+            @RequestParam(required = false) UUID atividadeId,
+            @RequestParam(required = false) String formaConsumo) {
 
-        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim, tipoEmbalagem, projetoId, sciId, atividadeId);
+        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim, tipoEmbalagem, projetoId, sciId, atividadeId, formaConsumo);
         var arquivo = exportacaoService.exportarMovimentacoes(relatorio, formato,
                 filtros("Tipo", tipo, "Origem", origem, "Produto", produtoId, "Laboratório", laboratorioId,
-                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim, "Embalagem", tipoEmbalagem, "Projeto", projetoId, "SCI", sciId, "Atividade", atividadeId));
+                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim, "Embalagem", tipoEmbalagem, "Projeto", projetoId, "SCI", sciId, "Atividade", atividadeId, "Forma de consumo", formaConsumo));
         return resposta(arquivo);
     }
 
