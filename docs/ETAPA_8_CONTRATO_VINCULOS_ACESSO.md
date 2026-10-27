@@ -34,6 +34,8 @@
 ## Decisão externa necessária
 Definir fornecedor real de autenticação institucional (OIDC/SAML/LDAP/API confiável) ou implementar autenticação local segura com controle de provisionamento. Não inferir essa integração pelo login DEV.
 
+**Resolvida em 27/10/2026:** a identidade vem das APIs corporativas da Embrapa (`autenticacaoapi` + Empregadoapi/Colaboradorapi), com sessão JWT emitida pelo SGL, fila de pendentes e importação pela gestão. Ver `docs/superpowers/specs/2026-10-27-autenticacao-corporativa-design.md` no repositório `sistema_sgl`. O fluxo futuro descrito abaixo foi implementado nessa linha.
+
 ## Atualização de escopo — 21/10/2026: homologação exclusivamente em DEV
 
 **Decisão do responsável:** nesta etapa NÃO implementar login real, senha, cadastro automático no primeiro acesso nem provedor externo. A integração institucional permanece como a solução definitiva de identidade. Utilizar somente usuários de teste e sessão DEV para validar os vínculos e as regras de domínio. Não tratar o login de desenvolvimento como autenticação.
