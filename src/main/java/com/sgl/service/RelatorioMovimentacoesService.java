@@ -42,9 +42,24 @@ public class RelatorioMovimentacoesService {
     }
 
     @Transactional(readOnly = true)
+    public List<TipoEmbalagem> embalagensDoProduto(UUID produtoId) {
+        UUID unidadeId = TenantContext.unidadeAtual()
+                .orElseThrow(() -> new BusinessRuleException("A Unidade é obrigatória."));
+        return movimentacaoRecipienteRepository.listarEmbalagensMovimentadasPorProduto(unidadeId, produtoId);
+    }
+
+    @Transactional(readOnly = true)
     public RelatorioMovimentacoesResponseDTO gerar(TipoMovimentacao tipo, OrigemMovimentacao origem, UUID produtoId,
             UUID laboratorioId, UUID usuarioId, UUID loteId, LocalDate dataInicio, LocalDate dataFim,
             TipoEmbalagem tipoEmbalagem) {
+        return gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId,
+                dataInicio, dataFim, tipoEmbalagem, null, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RelatorioMovimentacoesResponseDTO gerar(TipoMovimentacao tipo, OrigemMovimentacao origem, UUID produtoId,
+            UUID laboratorioId, UUID usuarioId, UUID loteId, LocalDate dataInicio, LocalDate dataFim,
+            TipoEmbalagem tipoEmbalagem, UUID projetoId, UUID sciId, UUID atividadeId) {
         Set<UUID> idsEmbalagem = null;
         if (tipoEmbalagem != null) {
             UUID unidadeId = TenantContext.unidadeAtual()
@@ -60,6 +75,15 @@ public class RelatorioMovimentacoesService {
 
 		List<MovimentacaoEstoque> filtradas = movimentacaoRepository.findAll().stream()
 				.filter(item -> movimentacoesDaEmbalagem == null || movimentacoesDaEmbalagem.contains(item.getPublicId()))
+                .filter(item -> projetoId == null || (item.getPedido() != null
+                        && item.getPedido().getProjeto() != null
+                        && projetoId.equals(item.getPedido().getProjeto().getPublicId())))
+                .filter(item -> sciId == null || (item.getPedido() != null
+                        && item.getPedido().getSciOrigem() != null
+                        && sciId.equals(item.getPedido().getSciOrigem().getPublicId())))
+                .filter(item -> atividadeId == null || (item.getPedido() != null
+                        && item.getPedido().getAtividadeOrigem() != null
+                        && atividadeId.equals(item.getPedido().getAtividadeOrigem().getPublicId())))
                 .filter(item -> tipo == null || item.getTipoMovimentacao() == tipo)
 				.filter(item -> origem == null || item.getOrigem() == origem)
 				.filter(item -> produtoId == null
