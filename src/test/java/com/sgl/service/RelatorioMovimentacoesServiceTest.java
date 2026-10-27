@@ -23,6 +23,8 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.MovimentacaoEstoque;
+import com.sgl.model.MovimentacaoRecipiente;
+import com.sgl.model.RecipienteEstoque;
 import com.sgl.model.Produto;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
@@ -277,4 +279,35 @@ class RelatorioMovimentacoesServiceTest {
         assertThrows(BusinessRuleException.class, () -> relatorioMovimentacoesService.gerar(
                 null, null, null, null, null, null, null, null, TipoEmbalagem.FRASCO));
     }
+
+    @Test
+    void distingueFrascoInteiroDeRetiradaPorMedidaNoHistorico() {
+        UUID unidadeId = UUID.randomUUID();
+        TenantContext.definir(unidadeId);
+        RecipienteEstoque recipiente = new RecipienteEstoque();
+        recipiente.setTipoEmbalagem(TipoEmbalagem.FRASCO);
+        recipiente.setCapacidadeInicial(BigDecimal.valueOf(500));
+
+        MovimentacaoRecipiente detalhe = MovimentacaoRecipiente.builder()
+                .movimentacaoEstoque(saida).recipienteEstoque(recipiente)
+                .quantidadeAnterior(BigDecimal.valueOf(500))
+                .quantidadeMovimentada(BigDecimal.valueOf(30))
+                .quantidadeAtual(BigDecimal.valueOf(470)).build();
+
+        when(movimentacaoRepository.findAll()).thenReturn(List.of(saida));
+        when(recipienteRepository.listarDetalhesParaRelatorio(
+                unidadeId, List.of(saida.getPublicId()))).thenReturn(List.of(detalhe));
+
+        var parcial = relatorioMovimentacoesService.gerar(
+                TipoMovimentacao.SAIDA, null, null, null, null, null,
+                null, null, null, null, null, null, "POR_MEDIDA");
+        assertEquals(1, parcial.getTotalMovimentacoes());
+        assertEquals("POR_MEDIDA", parcial.getItens().get(0).getFormaConsumoIdentificada());
+
+        var completos = relatorioMovimentacoesService.gerar(
+                TipoMovimentacao.SAIDA, null, null, null, null, null,
+                null, null, null, null, null, null, "COMPLETA");
+        assertEquals(0, completos.getTotalMovimentacoes());
+    }
+
 }
