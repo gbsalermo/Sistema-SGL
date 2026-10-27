@@ -129,10 +129,10 @@ public class RelatorioExportacaoService {
                 + contagens.getOrDefault("AJUSTE_SAIDA", 0L)
                 + contagens.getOrDefault("AJUSTE", 0L)));
         Tabela tabela = new Tabela("Movimentações",
-                List.of("Data", "Produto", "Tipo", "Quantidade", "Lote", "Laboratório", "Origem", "Responsável", "Solicitante", "Saldo"),
+                List.of("Data", "Produto", "Tipo", "Forma de consumo", "Quantidade", "Lote", "Laboratório", "Origem", "Responsável", "Solicitante", "Saldo"),
                 relatorio.getItens().stream().map(item -> List.of(
                         dataHora(item.getDataMovimentacao()), texto(item.getProdutoNome()), rotulo(item.getTipoMovimentacao()),
-                        quantidadeEmMovimentacao(item), texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
+                        rotulo(item.getFormaConsumoIdentificada()), quantidadeEmMovimentacao(item), texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
                         rotulo(item.getOrigem()), texto(item.getUsuarioNome()), texto(item.getPedidoSolicitanteNome()),
                         quantidadeComUnidade(item.getQuantidadeAnterior(), item.getUnidadeMedida()) + " → " + quantidadeComUnidade(item.getQuantidadeAtual(), item.getUnidadeMedida())
                 )).toList());
