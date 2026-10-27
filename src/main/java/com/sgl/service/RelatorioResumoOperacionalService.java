@@ -96,10 +96,21 @@ public class RelatorioResumoOperacionalService {
 		int produtosMovimentados = (int) filtradas.stream().map(MovimentacaoEstoque::getProduto)
 				.filter(java.util.Objects::nonNull).map(Produto::getPublicId).distinct().count();
 
-		return new RelatorioResumoOperacionalResponseDTO(LocalDateTime.now(), filtradas.size(), quantidadeEntradas,
-				quantidadeSaidas, quantidadeDescartes, produtosMovimentados, movimentacaoPorLote.size(),
-				principaisEntradas, principaisSaidas, lotesMaisMovimentados);
+        var relatorio = new RelatorioResumoOperacionalResponseDTO(LocalDateTime.now(), filtradas.size(),
+                quantidadeEntradas, quantidadeSaidas, quantidadeDescartes, produtosMovimentados,
+                movimentacaoPorLote.size(), principaisEntradas, principaisSaidas, lotesMaisMovimentados);
+        relatorio.setTotalEntradas(contar(filtradas, TipoMovimentacao.ENTRADA));
+        relatorio.setTotalSaidas(contar(filtradas, TipoMovimentacao.SAIDA));
+        relatorio.setTotalDevolucoes(contar(filtradas, TipoMovimentacao.DEVOLUCAO));
+        relatorio.setTotalDescartes(contar(filtradas, TipoMovimentacao.DESCARTE_VENCIMENTO));
+        relatorio.setTotalAjustes(contar(filtradas, TipoMovimentacao.AJUSTE_ENTRADA)
+                + contar(filtradas, TipoMovimentacao.AJUSTE_SAIDA));
+        return relatorio;
 	}
+
+    private int contar(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {
+        return (int) movimentacoes.stream().filter(m -> m.getTipoMovimentacao() == tipo).count();
+    }
 
 	private void acumularProduto(Map<UUID, ProdutoAcumulado> destino, Produto produto, BigDecimal quantidade) {
 		if (produto == null || produto.getPublicId() == null) {
