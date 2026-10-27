@@ -62,7 +62,7 @@ public class RelatorioMovimentacoesController {
                         loteId,
                         dataInicio,
                         dataFim,
-                        tipoEmbalagem, projetoId, sciId, atividadeId
+                        tipoEmbalagem, projetoId, sciId, atividadeId, formaConsumo
                 )
         );
     }
