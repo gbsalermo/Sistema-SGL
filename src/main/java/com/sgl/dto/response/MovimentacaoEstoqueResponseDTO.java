@@ -48,6 +48,7 @@ public class MovimentacaoEstoqueResponseDTO {
     // Contexto informativo do filtro por embalagem; não representa unidades inteiras entregues.
     private String tipoEmbalagemConsultada;
     private Long recipientesUtilizados;
+    private String formaConsumoIdentificada;
 
 
     // Mantém compatibilidade com os usos anteriores do construtor completo nos testes.
@@ -64,7 +65,7 @@ public class MovimentacaoEstoqueResponseDTO {
                 usuarioNome, estoqueCentralId, pedidoId, pedidoTipo,
                 pedidoSolicitanteNome, loteId, codigoInternoLote, numeroLote,
                 tipoMovimentacao, origem, quantidadeMovimentada,
-                quantidadeAnterior, quantidadeAtual, dataMovimentacao, observacao, null, null, null);
+                quantidadeAnterior, quantidadeAtual, dataMovimentacao, observacao, null, null, null, null);
     }
 
     public MovimentacaoEstoqueResponseDTO(
@@ -81,7 +82,7 @@ public class MovimentacaoEstoqueResponseDTO {
                 pedidoSolicitanteNome, loteId, codigoInternoLote, numeroLote,
                 tipoMovimentacao, origem, quantidadeMovimentada,
                 quantidadeAnterior, quantidadeAtual, dataMovimentacao, observacao,
-                unidadeMedida, null, null);
+                unidadeMedida, null, null, null);
     }
 
     public MovimentacaoEstoqueResponseDTO(MovimentacaoEstoque entity) {
