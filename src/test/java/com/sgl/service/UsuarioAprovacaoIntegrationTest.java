@@ -333,6 +333,24 @@ class UsuarioAprovacaoIntegrationTest {
     }
 
     @Test
+    void vinculos_tecnicoNaoConcedeVinculoNemTrocaLaboratorioBase_403() throws Exception {
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(post("/api/v1/vinculos-operacionais").header(HttpHeaders.AUTHORIZATION, bearer(tecnico))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"usuarioId\":\"%s\",\"laboratorioId\":\"%s\",\"dataInicio\":\"2026-10-01\"}"
+                                .formatted(tecnico.getPublicId(), laboratorio.getPublicId())))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/v1/vinculos-operacionais/usuarios/" + tecnico.getPublicId() + "/laboratorio-base")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(tecnico))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"laboratorioId\":\"%s\"}".formatted(laboratorio.getPublicId())))
+                .andExpect(status().isForbidden());
+        assertThat(usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(tecnico.getPublicId()).orElseThrow().getLaboratorio())
+                .isNull();
+    }
+
+    @Test
     void criar_gestorCriandoAdministrador_403() throws Exception {
         mockMvc.perform(post(USUARIOS)
                         .header(HttpHeaders.AUTHORIZATION, bearer(gestor))
