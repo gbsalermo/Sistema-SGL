@@ -9,6 +9,7 @@ import java.util.UUID;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 @Schema(description = "Resumo gerencial das principais entradas, saídas e lotes movimentados.")
 @Getter
@@ -25,6 +26,22 @@ public class RelatorioResumoOperacionalResponseDTO {
     private List<ProdutoRanking> principaisEntradas;
     private List<ProdutoRanking> principaisSaidas;
     private List<LoteRanking> lotesMaisMovimentados;
+
+    @Setter private Integer totalEntradas;
+    @Setter private Integer totalSaidas;
+    @Setter private Integer totalDevolucoes;
+    @Setter private Integer totalAjustes;
+    @Setter private Integer totalDescartes;
+
+    public RelatorioResumoOperacionalResponseDTO(LocalDateTime geradoEm, Integer totalMovimentacoes,
+            BigDecimal quantidadeEntradas, BigDecimal quantidadeSaidas, BigDecimal quantidadeDescartes,
+            Integer produtosMovimentados, Integer lotesMovimentados,
+            List<ProdutoRanking> principaisEntradas, List<ProdutoRanking> principaisSaidas,
+            List<LoteRanking> lotesMaisMovimentados) {
+        this(geradoEm, totalMovimentacoes, quantidadeEntradas, quantidadeSaidas, quantidadeDescartes,
+                produtosMovimentados, lotesMovimentados, principaisEntradas, principaisSaidas,
+                lotesMaisMovimentados, null, null, null, null, null);
+    }
 
     @Getter
     @AllArgsConstructor
