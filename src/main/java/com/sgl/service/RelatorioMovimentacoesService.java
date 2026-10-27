@@ -105,8 +105,17 @@ public class RelatorioMovimentacoesService {
 		BigDecimal devolucoes = somar(filtradas, TipoMovimentacao.DEVOLUCAO);
 		BigDecimal descartes = somar(filtradas, TipoMovimentacao.DESCARTE_VENCIMENTO);
 
-		List<MovimentacaoEstoqueResponseDTO> itens = filtradas.stream().map(MovimentacaoEstoqueResponseDTO::new)
-				.toList();
+        List<MovimentacaoEstoqueResponseDTO> itens = filtradas.stream().map(movimentacao -> {
+            var dto = new MovimentacaoEstoqueResponseDTO(movimentacao);
+            if (tipoEmbalagem != null) {
+                dto.setTipoEmbalagemConsultada(tipoEmbalagem.name());
+                dto.setRecipientesUtilizados(
+                        movimentacaoRecipienteRepository
+                                .countByMovimentacaoEstoqueIdAndRecipienteEstoqueTipoEmbalagem(
+                                        movimentacao.getId(), tipoEmbalagem));
+            }
+            return dto;
+        }).toList();
 
 		return new RelatorioMovimentacoesResponseDTO(LocalDateTime.now(), filtradas.size(), entradas, saidas, ajustes,
 				devolucoes, descartes, itens);
