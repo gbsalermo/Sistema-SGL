@@ -1,10 +1,10 @@
 # Plano de Pré-Produção do SGL
 
-## Marco vigente — abertura da Etapa 9 (26/10/2026)
+## Marco vigente — fechamento funcional da Etapa 9 (27/10/2026; pré-merge)
 
 **Etapa 8 foi integrada à main:** backend `818d580` (MR `nti/sgl-api!10`), frontend `12a195a` (MR `nti/sgl-web!11`). Sincronização GitLab → GitHub confirmada em 26/10/2026. Vínculos, Pedidos, Soluções e Resíduos homologados funcionalmente em DEV. Não confundir trechos de planejamento antigos abaixo com o estado integrado.
 
-**Etapa 9 = Relatórios consolidados:** relatório de Projetos (prévia + PDF/XLSX), e Movimentações com modos internos Resumo/Detalhamento, reaproveitando endpoints existentes. Etapas 10–13 permanecem na sequência macro documentada. Branch `collab/etapa-9-relatorios-consolidados`, criada a partir das duas mains pós-merge. **Sem código funcional nem merge da Etapa 9 neste checkpoint.**
+**Etapa 9 — Relatórios consolidados, implementada e validada funcionalmente na branch:** Projetos (prévia + PDF/XLSX); Movimentações (Resumo/Detalhamento, filtros de contexto e apresentação/unidade, quantidade física opcional, rastreabilidade por recipiente); Estoque/Lotes (apresentações e estados de recipientes); Fiscalização (recipientes vinculados e suas embalagens). Endpoints anteriores preservados; sem alterações nas regras FEFO/FIFO ou migrations. O responsável confirmou as validações locais; **merge ainda não realizado**. Etapas 10–13 seguem no plano macro. Ver documentação de Relatórios/Exportação e checkpoint de integração do frontend para contratos e limitações. Registro de modalidade de consumo histórica é uma **inferência por parcela**, não prova da intenção original do pedido; não reclassificar histórico arbitrariamente.
 
 Contrato e passos da nova etapa: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`. Histórico antigo de “Etapa 9 Pedidos/Soluções” está supersedido e permanece apenas para rastreabilidade.
 
