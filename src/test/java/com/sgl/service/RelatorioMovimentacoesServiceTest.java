@@ -213,6 +213,8 @@ class RelatorioMovimentacoesServiceTest {
 
         assertEquals(1, resultado.getTotalMovimentacoes());
         assertEquals(saida.getPublicId(), resultado.getItens().get(0).getId());
+        assertEquals("GARRAFA", resultado.getItens().get(0).getTipoEmbalagemConsultada());
+        assertEquals(2L, resultado.getItens().get(0).getRecipientesUtilizados());
     }
 
     @Test
@@ -259,6 +261,8 @@ class RelatorioMovimentacoesServiceTest {
         when(recipienteRepository.buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA))
                 .thenReturn(List.of(saida.getPublicId(), saida.getPublicId()));
         when(movimentacaoRepository.findAll()).thenReturn(List.of(entrada, saida, descarte));
+        when(recipienteRepository.countByMovimentacaoEstoqueIdAndRecipienteEstoqueTipoEmbalagem(
+                saida.getId(), TipoEmbalagem.GARRAFA)).thenReturn(2L);
 
         var resultado = relatorioMovimentacoesService.gerar(
                 TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO, PRODUTO_PUBLIC_ID,
