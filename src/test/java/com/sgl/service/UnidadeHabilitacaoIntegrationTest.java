@@ -46,6 +46,7 @@ class UnidadeHabilitacaoIntegrationTest {
 
     private static final int CNPMF = 7;
     private static final int NOVA = 4321;
+    private static final int OUTRA = 4322;
     private static final String CORPORATIVAS = "/api/v1/unidades/corporativas";
     private static final String HABILITAR = "/api/v1/unidades/habilitar";
 
@@ -75,6 +76,7 @@ class UnidadeHabilitacaoIntegrationTest {
         usuarioRepository.deleteAll(usuarioRepository.findByUnidadePublicId(cnpmf.getPublicId()));
         criadas.forEach(id -> unidadeRepository.findByPublicId(id).ifPresent(unidadeRepository::delete));
         unidadeRepository.findByCodigoCorporativo(NOVA).ifPresent(unidadeRepository::delete);
+        unidadeRepository.findByCodigoCorporativo(OUTRA).ifPresent(unidadeRepository::delete);
         unidadeRepository.delete(cnpmf);
     }
 
@@ -91,6 +93,32 @@ class UnidadeHabilitacaoIntegrationTest {
                 .andExpect(jsonPath("$[1].sigla").value("CNPX"))
                 .andExpect(jsonPath("$[1].nome").value("Embrapa Nova"))
                 .andExpect(jsonPath("$[1].habilitada").value(false));
+    }
+
+    @Test
+    void listarCorporativas_marcaHabilitadaUnidadeForaDaSessao() throws Exception {
+        Unidade outra = outraUnidadeHabilitada();
+        gateway.unidadesEmbrapa(unidadeItem(CNPMF, "CNPMF", "Embrapa Mandioca e Fruticultura"),
+                unidadeItem(OUTRA, outra.getSigla(), outra.getNome()));
+
+        mockMvc.perform(get(CORPORATIVAS).header(HttpHeaders.AUTHORIZATION, bearer(administradorGeral)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[1].codigoCorporativo").value(OUTRA))
+                .andExpect(jsonPath("$[1].habilitada").value(true));
+    }
+
+    @Test
+    void listarUnidades_administradorGeralVeTodas_gestorSoAPropria() throws Exception {
+        Unidade outra = outraUnidadeHabilitada();
+        Usuario gestor = novoUsuario(Perfil.GESTOR);
+
+        mockMvc.perform(get("/api/v1/unidades").header(HttpHeaders.AUTHORIZATION, bearer(administradorGeral)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(outra.getPublicId())).exists())
+                .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(cnpmf.getPublicId())).exists());
+        mockMvc.perform(get("/api/v1/unidades").header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(outra.getPublicId())).doesNotExist());
     }
 
     @Test
@@ -131,6 +159,14 @@ class UnidadeHabilitacaoIntegrationTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(get(CORPORATIVAS).header(HttpHeaders.AUTHORIZATION, bearer(administrador)))
                 .andExpect(status().isForbidden());
+    }
+
+    private Unidade outraUnidadeHabilitada() {
+        return unidadeRepository.saveAndFlush(Unidade.builder()
+                .nome("Embrapa Outra")
+                .sigla("UO-" + UUID.randomUUID().toString().substring(0, 6))
+                .codigoCorporativo(OUTRA)
+                .build());
     }
 
     private RequestBuilder habilitar(int codigo, Usuario ator) {

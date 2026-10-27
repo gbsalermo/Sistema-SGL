@@ -12,6 +12,8 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Unidade;
 import com.sgl.repository.UnidadeRepository;
+import com.sgl.security.CurrentUser;
+import com.sgl.security.PerfilPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +37,14 @@ public class UnidadeService {
 
     @Transactional(readOnly = true)
     public List<UnidadeResponseDTO> listarTodos() {
-        return unidadeRepository.findAll().stream()
+        // The general administrator's Unidade selector needs them all, not just the one in operation.
+        boolean administradorGeral = CurrentUser.find()
+                .map(user -> PerfilPolicy.isAdministradorGeral(user.perfil()))
+                .orElse(false);
+        List<Unidade> unidades = administradorGeral
+                ? unidadeRepository.findAllSemFiltroDeTenant()
+                : unidadeRepository.findAll();
+        return unidades.stream()
                 .map(UnidadeResponseDTO::new)
                 .toList();
     }

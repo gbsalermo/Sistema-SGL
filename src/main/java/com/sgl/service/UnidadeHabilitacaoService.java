@@ -38,7 +38,7 @@ public class UnidadeHabilitacaoService {
     @Transactional(readOnly = true)
     public List<UnidadeCorporativaResponseDTO> listarCorporativas() {
         exigirAdministradorGeral(CurrentUser.get());
-        Set<Integer> habilitadas = unidadeRepository.findAll().stream()
+        Set<Integer> habilitadas = unidadeRepository.findAllSemFiltroDeTenant().stream()
                 .map(Unidade::getCodigoCorporativo)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());

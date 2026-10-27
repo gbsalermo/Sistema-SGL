@@ -24,6 +24,13 @@ public interface UnidadeRepository extends JpaRepository<Unidade, Long> {
             """)
     List<Unidade> findAll();
 
+    /**
+     * Every Unidade, bypassing the tenant filter of {@link #findAll()}. Only for the general
+     * administrator, who operates on all of them (selector and enablement screen).
+     */
+    @Query("SELECT unidade FROM Unidade unidade ORDER BY unidade.sigla")
+    List<Unidade> findAllSemFiltroDeTenant();
+
     Optional<Unidade> findByCodigoCorporativo(Integer codigoCorporativo);
 
     boolean existsBySigla(String sigla);
