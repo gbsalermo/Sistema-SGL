@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -17,6 +19,9 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.MovimentacaoEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
+import com.sgl.repository.MovimentacaoRecipienteRepository;
+import com.sgl.tenant.TenantContext;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -26,18 +31,36 @@ import lombok.RequiredArgsConstructor;
 public class RelatorioMovimentacoesService {
 
 	private final MovimentacaoEstoqueRepository movimentacaoRepository;
+    private final MovimentacaoRecipienteRepository movimentacaoRecipienteRepository;
 
 	@Transactional(readOnly = true)
 	public RelatorioMovimentacoesResponseDTO gerar(TipoMovimentacao tipo, OrigemMovimentacao origem, UUID produtoId,
 			UUID laboratorioId, UUID usuarioId, UUID loteId, LocalDate dataInicio, LocalDate dataFim) {
 
+        return gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId,
+                dataInicio, dataFim, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RelatorioMovimentacoesResponseDTO gerar(TipoMovimentacao tipo, OrigemMovimentacao origem, UUID produtoId,
+            UUID laboratorioId, UUID usuarioId, UUID loteId, LocalDate dataInicio, LocalDate dataFim,
+            TipoEmbalagem tipoEmbalagem) {
+        Set<UUID> idsEmbalagem = null;
+        if (tipoEmbalagem != null) {
+            UUID unidadeId = TenantContext.unidadeAtual()
+                    .orElseThrow(() -> new BusinessRuleException("A Unidade é obrigatória para filtrar por embalagem."));
+            idsEmbalagem = new HashSet<>(movimentacaoRecipienteRepository
+                    .buscarMovimentacoesPorTipoEmbalagem(unidadeId, tipoEmbalagem));
+        }
+        final Set<UUID> movimentacoesDaEmbalagem = idsEmbalagem;
 		validarPeriodoOpcional(dataInicio, dataFim);
 
 		LocalDateTime inicio = dataInicio != null ? dataInicio.atStartOfDay() : null;
 		LocalDateTime fim = dataFim != null ? dataFim.atTime(LocalTime.MAX) : null;
 
 		List<MovimentacaoEstoque> filtradas = movimentacaoRepository.findAll().stream()
-				.filter(item -> tipo == null || item.getTipoMovimentacao() == tipo)
+				.filter(item -> movimentacoesDaEmbalagem == null || movimentacoesDaEmbalagem.contains(item.getPublicId()))
+                .filter(item -> tipo == null || item.getTipoMovimentacao() == tipo)
 				.filter(item -> origem == null || item.getOrigem() == origem)
 				.filter(item -> produtoId == null
 						|| (item.getProduto() != null && produtoId.equals(item.getProduto().getPublicId())))
