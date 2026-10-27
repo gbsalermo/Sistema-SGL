@@ -112,13 +112,6 @@ public class RelatorioMovimentacoesService {
 				.filter(item -> fim == null || !item.getDataMovimentacao().isAfter(fim))
 				.sorted(Comparator.comparing(MovimentacaoEstoque::getDataMovimentacao).reversed()).toList();
 
-		BigDecimal entradas = somar(filtradas, TipoMovimentacao.ENTRADA);
-		BigDecimal saidas = somar(filtradas, TipoMovimentacao.SAIDA);
-		BigDecimal ajustes = somar(filtradas, TipoMovimentacao.AJUSTE_ENTRADA)
-				.add(somar(filtradas, TipoMovimentacao.AJUSTE_SAIDA));
-		BigDecimal devolucoes = somar(filtradas, TipoMovimentacao.DEVOLUCAO);
-		BigDecimal descartes = somar(filtradas, TipoMovimentacao.DESCARTE_VENCIMENTO);
-
         // Classificação informativa por parcela histórica: somente uma retirada de
         // toda a capacidade, a partir do recipiente cheio, é considerada completa.
         // Sem detalhe confiável, não inferir a apresentação entregue.
@@ -147,6 +140,13 @@ public class RelatorioMovimentacoesService {
                 .toList();
 
 
+        BigDecimal entradas = somarItens(itens, TipoMovimentacao.ENTRADA);
+        BigDecimal saidas = somarItens(itens, TipoMovimentacao.SAIDA);
+        BigDecimal ajustes = somarItens(itens, TipoMovimentacao.AJUSTE_ENTRADA)
+                .add(somarItens(itens, TipoMovimentacao.AJUSTE_SAIDA));
+        BigDecimal devolucoes = somarItens(itens, TipoMovimentacao.DEVOLUCAO);
+        BigDecimal descartes = somarItens(itens, TipoMovimentacao.DESCARTE_VENCIMENTO);
+
 		return new RelatorioMovimentacoesResponseDTO(LocalDateTime.now(), itens.size(), entradas, saidas, ajustes,
 				devolucoes, descartes, itens);
 	}
@@ -170,12 +170,12 @@ public class RelatorioMovimentacoesService {
         return completa ? "COMPLETA" : "POR_MEDIDA";
     }
 
-	private BigDecimal somar(List<MovimentacaoEstoque> movimentacoes, TipoMovimentacao tipo) {
-
-		return movimentacoes.stream().filter(item -> item.getTipoMovimentacao() == tipo)
-				.map(MovimentacaoEstoque::getQuantidadeMovimentada).filter(java.util.Objects::nonNull)
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-	}
+    private BigDecimal somarItens(List<MovimentacaoEstoqueResponseDTO> itens, TipoMovimentacao tipo) {
+        return itens.stream().filter(item -> item.getTipoMovimentacao() == tipo)
+                .map(MovimentacaoEstoqueResponseDTO::getQuantidadeMovimentada)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
 	private void validarPeriodoOpcional(LocalDate dataInicio, LocalDate dataFim) {
 		if ((dataInicio == null) != (dataFim == null)) {
