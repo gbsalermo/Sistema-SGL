@@ -114,11 +114,19 @@ public class RelatorioExportacaoService {
             FormatoExportacaoRelatorio formato,
             List<String> filtros) {
 
-        Map<String, String> resumo = resumo(
-                "Movimentações", relatorio.getTotalMovimentacoes(), "Entradas (medidas diversas)", "Consultar itens por produto",
-                "Saídas (medidas diversas)", "Consultar itens por produto", "Devoluções (medidas diversas)", "Consultar itens por produto",
-                "Descartes (medidas diversas)", "Consultar itens por produto", "Ajustes (medidas diversas)", "Consultar itens por produto"
-        );
+        Map<String, String> resumo = new LinkedHashMap<>();
+        resumo.put("Movimentações", texto(relatorio.getTotalMovimentacoes()));
+        Map<String, Long> contagens = relatorio.getItens().stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getTipoMovimentacao() == null ? "OUTRO" : item.getTipoMovimentacao().name(),
+                        Collectors.counting()));
+        resumo.put("Entradas", texto(contagens.getOrDefault("ENTRADA", 0L)));
+        resumo.put("Saídas", texto(contagens.getOrDefault("SAIDA", 0L)));
+        resumo.put("Devoluções", texto(contagens.getOrDefault("DEVOLUCAO", 0L)));
+        resumo.put("Descartes", texto(contagens.getOrDefault("DESCARTE_VENCIMENTO", 0L)));
+        resumo.put("Ajustes", texto(contagens.getOrDefault("AJUSTE_ENTRADA", 0L)
+                + contagens.getOrDefault("AJUSTE_SAIDA", 0L)
+                + contagens.getOrDefault("AJUSTE", 0L)));
         Tabela tabela = new Tabela("Movimentações",
                 List.of("Data", "Produto", "Tipo", "Quantidade", "Lote", "Laboratório", "Origem", "Responsável", "Solicitante", "Saldo"),
                 relatorio.getItens().stream().map(item -> List.of(
@@ -287,7 +295,7 @@ public class RelatorioExportacaoService {
     }
 
     private void adicionarCabecalhoPdf(Document document, String titulo, List<String> filtros) throws DocumentException, IOException {
-        PdfPTable header = new PdfPTable(new float[]{1.2f, 6.8f});
+        PdfPTable header = new PdfPTable(new float[]{1.7f, 6.3f});
         header.setWidthPercentage(100);
         PdfPCell logoCell = new PdfPCell();
         logoCell.setBorder(Rectangle.NO_BORDER);
@@ -295,7 +303,7 @@ public class RelatorioExportacaoService {
         byte[] logo = carregarLogo();
         if (logo.length > 0) {
             Image image = Image.getInstance(logo);
-            image.scaleToFit(74, 46);
+            image.scaleToFit(112, 70);
             logoCell.addElement(image);
         }
         header.addCell(logoCell);
