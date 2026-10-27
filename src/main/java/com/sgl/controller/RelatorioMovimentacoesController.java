@@ -31,6 +31,11 @@ public class RelatorioMovimentacoesController {
             summary = "Gerar relatório de movimentações",
             description = "Consolida movimentações com filtros opcionais por tipo, origem, produto, laboratório, responsável, lote e período."
     )
+    @GetMapping("/embalagens")
+    public ResponseEntity<java.util.List<TipoEmbalagem>> embalagens(@RequestParam UUID produtoId) {
+        return ResponseEntity.ok(relatorioMovimentacoesService.embalagensDoProduto(produtoId));
+    }
+
     @GetMapping
     public ResponseEntity<RelatorioMovimentacoesResponseDTO> gerar(
             @RequestParam(required = false) TipoMovimentacao tipo,
@@ -41,7 +46,10 @@ public class RelatorioMovimentacoesController {
             @RequestParam(required = false) UUID loteId,
             @RequestParam(required = false) LocalDate dataInicio,
             @RequestParam(required = false) LocalDate dataFim,
-            @RequestParam(required = false) TipoEmbalagem tipoEmbalagem) {
+            @RequestParam(required = false) TipoEmbalagem tipoEmbalagem,
+            @RequestParam(required = false) UUID projetoId,
+            @RequestParam(required = false) UUID sciId,
+            @RequestParam(required = false) UUID atividadeId) {
 
         return ResponseEntity.ok(
                 relatorioMovimentacoesService.gerar(
@@ -53,7 +61,7 @@ public class RelatorioMovimentacoesController {
                         loteId,
                         dataInicio,
                         dataFim,
-                        tipoEmbalagem
+                        tipoEmbalagem, projetoId, sciId, atividadeId
                 )
         );
     }
