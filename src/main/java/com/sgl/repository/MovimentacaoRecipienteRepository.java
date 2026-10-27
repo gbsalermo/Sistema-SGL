@@ -53,5 +53,17 @@ public interface MovimentacaoRecipienteRepository extends JpaRepository<Moviment
             @Param("unidadeId") UUID unidadeId,
             @Param("tipoEmbalagem") TipoEmbalagem tipoEmbalagem);
 
+
+    @Query("""
+            SELECT DISTINCT d.recipienteEstoque.tipoEmbalagem
+            FROM MovimentacaoRecipiente d
+            WHERE d.movimentacaoEstoque.estoqueCentral.unidade.publicId = :unidadeId
+              AND d.movimentacaoEstoque.produto.publicId = :produtoId
+            ORDER BY d.recipienteEstoque.tipoEmbalagem
+            """)
+    List<TipoEmbalagem> listarEmbalagensMovimentadasPorProduto(
+            @Param("unidadeId") UUID unidadeId,
+            @Param("produtoId") UUID produtoId);
+
 	boolean existsByMovimentacaoEstoqueIdAndRecipienteEstoqueId(Long movimentacaoEstoqueId, Long recipienteEstoqueId);
 }
