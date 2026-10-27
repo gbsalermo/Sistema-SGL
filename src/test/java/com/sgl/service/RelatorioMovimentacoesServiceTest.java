@@ -261,8 +261,7 @@ class RelatorioMovimentacoesServiceTest {
         when(recipienteRepository.buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA))
                 .thenReturn(List.of(saida.getPublicId(), saida.getPublicId()));
         when(movimentacaoRepository.findAll()).thenReturn(List.of(entrada, saida, descarte));
-        when(recipienteRepository.countByMovimentacaoEstoqueIdAndRecipienteEstoqueTipoEmbalagem(
-                saida.getId(), TipoEmbalagem.GARRAFA)).thenReturn(2L);
+
 
         var resultado = relatorioMovimentacoesService.gerar(
                 TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO, PRODUTO_PUBLIC_ID,
