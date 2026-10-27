@@ -74,5 +74,7 @@ public class RelatorioFiscalizacaoResponseDTO {
         private String responsavelNome;
         private BigDecimal saldoAposMovimentacao;
         private String unidadeMedida;
+        private Integer recipientesEnvolvidos;
+        private String embalagensEnvolvidas;
     }
 }
