@@ -23,6 +23,7 @@ import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.service.RelatorioEstoqueLotesService;
 import com.sgl.service.RelatorioExportacaoService;
 import com.sgl.service.RelatorioFiscalizacaoService;
@@ -96,12 +97,13 @@ public class RelatorioExportacaoController {
             @RequestParam(required = false) UUID usuarioId,
             @RequestParam(required = false) UUID loteId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) TipoEmbalagem tipoEmbalagem) {
 
-        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim);
+        var relatorio = movimentacoesService.gerar(tipo, origem, produtoId, laboratorioId, usuarioId, loteId, dataInicio, dataFim, tipoEmbalagem);
         var arquivo = exportacaoService.exportarMovimentacoes(relatorio, formato,
                 filtros("Tipo", tipo, "Origem", origem, "Produto", produtoId, "Laboratório", laboratorioId,
-                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim));
+                        "Responsável", usuarioId, "Lote", loteId, "Data inicial", dataInicio, "Data final", dataFim, "Embalagem", tipoEmbalagem));
         return resposta(arquivo);
     }
 
