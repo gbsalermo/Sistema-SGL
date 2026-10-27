@@ -1,9 +1,8 @@
 # Exportação de Relatórios — SGL
 
-> **Atualização de referência (26/10/2026):** a Etapa 8 está concluída e integrada às duas `main` por MR institucional; a Etapa 9 vigente é **Relatórios consolidados** (Projetos; Movimentações em Resumo/Detalhamento), preparada em `collab/etapa-9-relatorios-consolidados`. **Sem implementação funcional da Etapa 9 ainda.** Contrato e checklist atuais: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`. Informações datadas posteriores a este aviso dentro do documento são registros históricos, não o status mais recente.
+> **Estado vigente (27/10/2026; pré-merge):** Etapa 9 implementada em `collab/etapa-9-relatorios-consolidados` e validada funcionalmente pelo mantenedor, ainda sem integração à `main`. A exportação de Projetos foi adicionada; Movimentações reúne Resumo/Detalhamento no frontend, mantendo endpoints de exportação separados. Quantidades físicas do Detalhamento são opcionais via `mostrarQuantidades`. Estoque/Lotes e Fiscalização incluem recipientes/apresentações e rastreabilidade. Não presumir homologação para produção.
 
-
-**Atualizado em:** 03/09/2026  
+**Atualizado em:** 27/10/2026  
 **Estado:** ✅ implementada e integrada; a homologação final deve revalidar o conjunto completo.
 
 ## Objetivo
@@ -32,6 +31,7 @@ Estoque e lotes         ✅
 Fiscalização            ✅
 Resíduos                ✅
 Pessoas por laboratório ✅
+Projetos                ✅
 ```
 
 ---
@@ -66,7 +66,10 @@ GET /api/v1/relatorios/estoque-lotes/exportar
 GET /api/v1/relatorios/fiscalizacao/exportar
 GET /api/v1/relatorios/residuos/exportar
 GET /api/v1/relatorios/pessoas-laboratorio/exportar
+GET /api/v1/relatorios/projetos/exportar
 ```
+
+Movimentações aceita também filtros opcionais por produto, embalagem física, contexto Projeto/SCI/Atividade e forma de consumo histórico. A apresentação/unidade na UI combina filtros; não representa prova da modalidade originalmente solicitada. A opção `mostrarQuantidades=false` omite quantidades e saldos no arquivo; `true` os inclui. O método antigo de serviço permanece disponível para compatibilidade.
 
 Todos usam `formato=PDF` ou `formato=XLSX` e aceitam os filtros do relatório correspondente. Confirmar nomes e parâmetros atuais no Swagger/OpenAPI.
 
