@@ -87,6 +87,41 @@ public class CorporateGatewayStubs {
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
     }
 
+
+    /** One Empregado list item as the unit listing returns it. */
+    public static String empregadoItem(String matricula, String nome, String cpf, String cargo, int unidadeId) {
+        return empregadoJson(matricula, nome, cpf, cargo, unidadeId, true);
+    }
+
+    public static String colaboradorItem(long id, String cpf, String nome, int unidadeId) {
+        return """
+            {"ColaboradorId":%d,"CPF":"%s","Nome":"%s","UnidadeLotacaoId":%d,
+            "NomeUnidadeLotacao":"Setor do Colaborador","TipoVinculo":"Estagiário","Ativo":true}
+            """.formatted(id, cpf, nome, unidadeId);
+    }
+
+    /** Expects exactly one single-page listing of the Unidade's Empregados. */
+    public void empregadosDaUnidade(int unidadeId, String... itemsJson) {
+        server.expect(requestTo(url("empregadoapi", "/empregado/listaEmpregadosPorUnidade?unidadeId=" + unidadeId
+                + "&numeroPagina=1&itensPorPagina=100")))
+            .andRespond(withSuccess(page(itemsJson), MediaType.APPLICATION_JSON));
+    }
+
+    public void colaboradoresDaUnidade(int unidadeId, String... itemsJson) {
+        server.expect(requestTo(url("colaboradorapi", "/colaborador/lista/porUnidadeLotacao/" + unidadeId
+                + "/ativo/true?numeroPagina=1&itensPorPagina=100")))
+            .andRespond(withSuccess(page(itemsJson), MediaType.APPLICATION_JSON));
+    }
+
+    public void colaboradorPorId(long id, String itemJson) {
+        server.expect(requestTo(url("colaboradorapi", "/colaborador/porId/" + id)))
+            .andRespond(withSuccess(itemJson, MediaType.APPLICATION_JSON));
+    }
+
+    private static String page(String... itemsJson) {
+        return "{\"items\":[" + String.join(",", itemsJson) + "],\"pageIndex\":1,\"totalPages\":1,\"hasNextPage\":false}";
+    }
+
     private static String empregadoJson(String matricula, String nome, String cpf, String cargo,
                                          int unidadeId, boolean ativo) {
         return """
