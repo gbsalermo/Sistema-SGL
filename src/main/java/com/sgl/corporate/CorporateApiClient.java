@@ -76,7 +76,9 @@ public class CorporateApiClient {
     }
 
     public Optional<Empregado> empregadoPorMatricula(String matricula) {
-        return Optional.ofNullable(get(path("empregadoapi", "/empregado/{m}"), Empregado.class, matricula));
+        // Callers hold the AD login ("m344136") or a bare number; normalized here so no call site can get it wrong.
+        return Optional.ofNullable(get(path("empregadoapi", "/empregado/{m}"), Empregado.class,
+            LoginNormalizer.matriculaCorporativa(matricula)));
     }
 
     public Optional<Empregado> empregadoPorCpf(String cpf) {

@@ -52,8 +52,8 @@ public class CorporateGatewayStubs {
 
     public void empregadoPorMatricula(String matricula, String nome, String cpf, String cargo,
                                       int unidadeId, boolean ativo) {
-        // The resolver queries by the normalized key ("m344136"); the payload carries the plain number.
-        server.expect(requestTo(url("empregadoapi", "/empregado/" + LoginNormalizer.normalize(matricula))))
+        // Empregadoapi is queried by the zero-padded numeric matrícula; the payload carries the plain number.
+        server.expect(requestTo(url("empregadoapi", "/empregado/" + LoginNormalizer.matriculaCorporativa(matricula))))
             .andRespond(withSuccess(empregadoJson(matricula, nome, cpf, cargo, unidadeId, ativo),
                 MediaType.APPLICATION_JSON));
     }

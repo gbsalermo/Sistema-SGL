@@ -31,7 +31,7 @@ public class PessoaCorporativaController {
     private final PessoaCorporativaService service;
 
     @Operation(summary = "Buscar pessoas nas bases corporativas",
-            description = "Matrícula (4 a 7 dígitos, só empregados) ou nome (mínimo 3 caracteres). Máximo de 50 resultados.")
+            description = "Matrícula (4 a 8 dígitos, só empregados) ou nome (mínimo 3 caracteres). Máximo de 50 resultados.")
     @GetMapping
     public List<PessoaCorporativaResponseDTO> buscar(@RequestParam TipoPessoaCorporativa tipo,
             @RequestParam String termo) {

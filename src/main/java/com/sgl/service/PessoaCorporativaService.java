@@ -102,7 +102,7 @@ public class PessoaCorporativaService {
         int codigo = codigoCorporativo(unidade);
 
         List<Person> found;
-        if (tipo == TipoPessoaCorporativa.EMPREGADO && term.matches("\\d{4,7}")) {
+        if (tipo == TipoPessoaCorporativa.EMPREGADO && term.matches("\\d{4,8}")) {
             found = corporateApiClient.empregadoPorMatricula(LoginNormalizer.normalize(term))
                     .filter(e -> isActiveInUnit(e, codigo))
                     .map(e -> toPerson(e, unidade))

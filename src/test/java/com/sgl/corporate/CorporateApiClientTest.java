@@ -82,8 +82,24 @@ class CorporateApiClientTest {
     }
 
     @Test
+    void empregadoPorMatricula_enviaMatriculaNumericaComZerosAEsquerda() {
+        // Empregadoapi takes the numeric matrícula as the login answer returns it ("00344136"), never the AD login.
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/00344136"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/00344136"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/00344136"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        client.empregadoPorMatricula("m344136");
+        client.empregadoPorMatricula("344136");
+        client.empregadoPorMatricula("00344136");
+        server.verify();
+    }
+
+    @Test
     void empregadoPorMatricula_404_retornaVazio() {
-        server.expect(requestTo("http://gw/empregadoapi-h/empregado/999"))
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/00000999"))
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
         assertThat(client.empregadoPorMatricula("999")).isEmpty();
@@ -99,7 +115,7 @@ class CorporateApiClientTest {
 
     @Test
     void empregadoPorMatricula_mapeiaCamposEIgnoraDesconhecidos() {
-        server.expect(requestTo("http://gw/empregadoapi-h/empregado/344136"))
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/00344136"))
             .andRespond(withSuccess("""
                 {"matricula":"344136","nome":"Fulano","cpf":"123","email":"a@b.br","cargoDescricao":"Analista",
                 "unidadeIdLotacao":7,"ativo":true,"cargoComissaoDescricao":"x","subLotacaoNome":"S","isSupervisorCti":false}
@@ -185,7 +201,7 @@ class CorporateApiClientTest {
 
     @Test
     void consulta_5xx_lancaIndisponivel() {
-        server.expect(requestTo("http://gw/empregadoapi-h/empregado/1"))
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/00000001"))
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
         assertThatThrownBy(() -> client.empregadoPorMatricula("1")).isInstanceOf(CorporateApiUnavailableException.class);
@@ -193,7 +209,7 @@ class CorporateApiClientTest {
 
     @Test
     void consulta_falhaDeConexao_lancaIndisponivel() {
-        server.expect(requestTo("http://gw/empregadoapi-h/empregado/1"))
+        server.expect(requestTo("http://gw/empregadoapi-h/empregado/00000001"))
             .andRespond(request -> { throw new java.net.ConnectException("refused"); });
 
         assertThatThrownBy(() -> client.empregadoPorMatricula("1")).isInstanceOf(CorporateApiUnavailableException.class);
