@@ -114,6 +114,13 @@ public class RelatorioExportacaoService {
             RelatorioMovimentacoesResponseDTO relatorio,
             FormatoExportacaoRelatorio formato,
             List<String> filtros) {
+        return exportarMovimentacoes(relatorio, formato, filtros, true);
+    }
+
+    public ArquivoRelatorioDTO exportarMovimentacoes(
+            RelatorioMovimentacoesResponseDTO relatorio,
+            FormatoExportacaoRelatorio formato,
+            List<String> filtros, boolean mostrarQuantidades) {
 
         Map<String, String> resumo = new LinkedHashMap<>();
         resumo.put("Movimentações", texto(relatorio.getTotalMovimentacoes()));
@@ -128,14 +135,28 @@ public class RelatorioExportacaoService {
         resumo.put("Ajustes", texto(contagens.getOrDefault("AJUSTE_ENTRADA", 0L)
                 + contagens.getOrDefault("AJUSTE_SAIDA", 0L)
                 + contagens.getOrDefault("AJUSTE", 0L)));
-        Tabela tabela = new Tabela("Movimentações",
-                List.of("Data", "Produto", "Tipo", "Forma de consumo", "Quantidade", "Lote", "Laboratório", "Origem", "Responsável", "Solicitante", "Saldo"),
-                relatorio.getItens().stream().map(item -> List.of(
-                        dataHora(item.getDataMovimentacao()), texto(item.getProdutoNome()), rotulo(item.getTipoMovimentacao()),
-                        rotulo(item.getFormaConsumoIdentificada()), quantidadeEmMovimentacao(item), texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
-                        rotulo(item.getOrigem()), texto(item.getUsuarioNome()), texto(item.getPedidoSolicitanteNome()),
-                        quantidadeComUnidade(item.getQuantidadeAnterior(), item.getUnidadeMedida()) + " → " + quantidadeComUnidade(item.getQuantidadeAtual(), item.getUnidadeMedida())
-                )).toList());
+        List<String> colunas = new java.util.ArrayList<>(List.of(
+                "Data", "Produto", "Tipo", "Forma de consumo", "Lote",
+                "Laboratório", "Origem", "Responsável", "Solicitante"));
+        if (mostrarQuantidades) {
+            colunas.add(4, "Quantidade");
+            colunas.add("Saldo");
+        }
+        List<List<String>> linhas = relatorio.getItens().stream().map(item -> {
+            List<String> valores = new java.util.ArrayList<>(List.of(
+                    dataHora(item.getDataMovimentacao()), texto(item.getProdutoNome()),
+                    rotulo(item.getTipoMovimentacao()), rotulo(item.getFormaConsumoIdentificada()),
+                    texto(item.getCodigoInternoLote()), texto(item.getLaboratorioNome()),
+                    rotulo(item.getOrigem()), texto(item.getUsuarioNome()),
+                    texto(item.getPedidoSolicitanteNome())));
+            if (mostrarQuantidades) {
+                valores.add(4, quantidadeEmMovimentacao(item));
+                valores.add(quantidadeComUnidade(item.getQuantidadeAnterior(), item.getUnidadeMedida())
+                        + " → " + quantidadeComUnidade(item.getQuantidadeAtual(), item.getUnidadeMedida()));
+            }
+            return valores;
+        }).toList();
+        Tabela tabela = new Tabela("Movimentações", colunas, linhas);
         return gerar("Relatório de Movimentações", "movimentacoes", formato, filtros, resumo, List.of(tabela), true);
     }
 
