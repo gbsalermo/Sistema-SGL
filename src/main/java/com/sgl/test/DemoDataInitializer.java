@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 
 import com.sgl.model.Atividade;
 import com.sgl.model.ComponenteResiduo;
+import com.sgl.model.ComponenteModeloSolucao;
+import com.sgl.model.ModeloSolucao;
 import com.sgl.model.Estagiario;
 import com.sgl.model.EstoqueCentral;
 import com.sgl.model.HistoricoResiduo;
@@ -32,6 +34,8 @@ import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.EstadoRecipienteEstoque;
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.OrgaoFiscalizador;
 import com.sgl.model.enums.OrigemMovimentacao;
@@ -44,6 +48,7 @@ import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
+import com.sgl.model.enums.TipoPedido;
 import com.sgl.model.enums.TipoPerecivel;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
@@ -54,6 +59,7 @@ import com.sgl.repository.HistoricoResiduoRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.LoteRepository;
 import com.sgl.repository.MovimentacaoEstoqueRepository;
+import com.sgl.repository.ModeloSolucaoRepository;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -94,6 +100,7 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final ResiduoRepository residuoRepository;
     private final HistoricoResiduoRepository historicoResiduoRepository;
     private final MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
+    private final ModeloSolucaoRepository modeloSolucaoRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
@@ -640,10 +647,13 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "Reposição urgente de substrato para ELISA.",
                 item(tmb, 2, null)
         );
-        Pedido ped15 = criarPedido(
-                beatriz, labCentral, null, agora.minusHours(8),
+        // Solução entregue com saída física já registrada abaixo.
+        // Fora do catálogo, como permite o fluxo de Soluções da Etapa 7.
+        Pedido ped15 = criarPedidoSolucao(
+                null, beatriz, labCentral, null, agora.minusHours(8),
                 StatusPedido.ENTREGUE, agora.minusHours(2),
-                false, null, "Saída para preparo de solução desinfetante.",
+                "Solução de limpeza laboratorial — preparo sob demanda",
+                "Solução entregue à Central de Soluções.",
                 item(hipoclorito, 3, 3)
         );
         Pedido ped16 = criarPedido(
@@ -651,6 +661,39 @@ public class DemoDataInitializer implements CommandLineRunner {
                 StatusPedido.PENDENTE, null,
                 false, null, "Material para campanha de medições desta semana.",
                 item(etanol, 2, null), item(luvas, 1, null)
+        );
+
+
+        // Pedidos de soluções em fases diferentes; os itens mantêm unidade física,
+        // e os pedidos em aberto não criam movimentações fictícias de estoque.
+        ModeloSolucao modeloTampao = ModeloSolucao.builder()
+                .unidade(unidade)
+                .nome("Tampão analítico demonstrativo")
+                .descricao("Modelo de solução de referência para testar pedidos em andamento.")
+                .instrucoesPreparo("Consultar o protocolo interno aprovado do laboratório.")
+                .ativo(true)
+                .build();
+        modeloTampao.adicionarComponente(ComponenteModeloSolucao.builder()
+                .produto(pbs).ordem(1).quantidade(BigDecimal.valueOf(4))
+                .unidadeMedida(UnidadeMedida.ML).build());
+        modeloTampao.adicionarComponente(ComponenteModeloSolucao.builder()
+                .produto(kcl).ordem(2).quantidade(BigDecimal.valueOf(2))
+                .unidadeMedida(UnidadeMedida.G).build());
+        modeloTampao = modeloSolucaoRepository.save(modeloTampao);
+
+        criarPedidoSolucao(
+                modeloTampao, fernanda, labVirologia, projViro, agora.minusHours(18),
+                StatusPedido.PENDENTE, null,
+                modeloTampao.getNome(),
+                "Solicitação de solução para a agenda de análises do laboratório.",
+                item(pbs, 4, null), item(kcl, 2, null)
+        );
+        criarPedidoSolucao(
+                modeloTampao, camila, labBiomol, projBiomol, agora.minusDays(2),
+                StatusPedido.EM_PREPARACAO, null,
+                modeloTampao.getNome(),
+                "Pedido aprovado e em preparação; nenhuma retirada final foi simulada.",
+                item(pbs, 4, 4), item(kcl, 2, 2)
         );
 
         mov(loteEtanol, admin, null, null, TipoMovimentacao.ENTRADA, OrigemMovimentacao.COMPRA,
@@ -817,6 +860,25 @@ public class DemoDataInitializer implements CommandLineRunner {
                 null,
                 componente(tmb, "Substrato TMB vencido", true, "300 mL")
         );
+
+
+        // Caso adicional de rótulo: sólido, sem pictograma, múltiplos campos
+        // e descrição extensa; ajuda a detectar quebra e corte em 90/135/180 mm.
+        Residuo residuoSolido = criarResiduo(
+                labBiomol, camila, projBiomol, gestor,
+                "Resíduo sólido de materiais de apoio a análises de rotina",
+                "Triagem de materiais não reutilizáveis de ensaios laboratoriais",
+                "Caixa rígida identificada para descarte", new BigDecimal("2.000"), UnidadeMedida.UNIDADE,
+                NivelRisco.NENHUM, Set.of(),
+                StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO, agora.minusDays(2).withHour(9).withMinute(20),
+                "Separação registrada para descarte segundo procedimento interno.",
+                "Área de segregação de materiais - Biologia Molecular",
+                "Coleta conforme classificação de resíduos da unidade",
+                hoje.plusDays(8),
+                componente(ponteiras, "Materiais de apoio não reutilizáveis", true, "2 unidades demonstrativas")
+        );
+        residuoSolido.setEstadoFisico(EstadoFisicoResiduo.SOLIDO);
+        residuoRepository.save(residuoSolido);
 
         System.out.println("============================================================");
         System.out.println(" SGL DEMO - EMBRAPA MANDIOCA E FRUTICULTURA");
@@ -1185,6 +1247,48 @@ public class DemoDataInitializer implements CommandLineRunner {
         return pedidoRepository.save(pedido);
     }
 
+
+    private Pedido criarPedidoSolucao(
+            ModeloSolucao modelo,
+            Usuario usuario,
+            Laboratorio laboratorio,
+            Projeto projeto,
+            LocalDateTime dataSolicitacao,
+            StatusPedido status,
+            LocalDateTime dataEntrega,
+            String nome,
+            String observacao,
+            ItemDemo... itens) {
+
+        Pedido pedido = Pedido.builder()
+                .usuario(usuario)
+                .laboratorio(laboratorio)
+                .projeto(projeto)
+                .tipo(TipoPedido.SOLUCAO)
+                .modeloSolucao(modelo)
+                .nomeSolucao(nome)
+                .instrucoesPreparoSolucao("Seguir procedimento interno autorizado pela Gestão.")
+                .dataSolicitacao(dataSolicitacao)
+                .dataEntrega(dataEntrega)
+                .status(status)
+                .urgente(false)
+                .observacao(observacao)
+                .itens(new ArrayList<>())
+                .build();
+
+        for (ItemDemo item : itens) {
+            pedido.getItens().add(ItemPedido.builder()
+                    .pedido(pedido)
+                    .produto(item.produto())
+                    .quantidadeSolicitada(BigDecimal.valueOf(item.solicitada()))
+                    .quantidadeAprovada(item.aprovada() == null
+                            ? null : BigDecimal.valueOf(item.aprovada()))
+                    .unidadeMedidaSolicitada(item.produto().getUnidadeMedida())
+                    .build());
+        }
+        return pedidoRepository.save(pedido);
+    }
+
     private static ItemDemo item(Produto produto, int solicitada, Integer aprovada) {
         return new ItemDemo(produto, solicitada, aprovada);
     }
@@ -1251,11 +1355,28 @@ public class DemoDataInitializer implements CommandLineRunner {
                 .quantidade(quantidade)
                 .unidadeMedida(unidade)
                 .nivelRiscoInformado(nivelInformado)
+                .estadoFisico(EstadoFisicoResiduo.LIQUIDO)
                 .riscosInformados(new LinkedHashSet<>(riscos))
                 .observacaoGerador(observacao)
                 .status(StatusResiduo.INFORMADO)
                 .dataInformacao(dataInformacao)
                 .build();
+
+        // Medidas vinculadas ao risco do cadastro, sem frases regulatórias
+        // deduzidas automaticamente. O texto livre é propositalmente distinto
+        // da lista estruturada para exercitar as duas áreas do rótulo.
+        Set<MedidaSeguranca> medidas = new LinkedHashSet<>();
+        if (!riscos.isEmpty()) {
+            medidas.add(MedidaSeguranca.LUVAS);
+            medidas.add(MedidaSeguranca.OCULOS_PROTECAO);
+        }
+        if (riscos.contains(TipoRisco.TOXICO) || riscos.contains(TipoRisco.INFLAMAVEL)) {
+            medidas.add(MedidaSeguranca.JALECO_AVENTAL);
+        }
+        String observacaoSeguranca = riscos.size() > 1
+                ? "Consultar a ficha de segurança e o procedimento interno antes de movimentar o recipiente."
+                : null;
+        residuo.definirSegurancaInformada(medidas, observacaoSeguranca);
 
         for (ComponenteDemo componente : componentes) {
             residuo.addComponente(
@@ -1293,7 +1414,8 @@ public class DemoDataInitializer implements CommandLineRunner {
             LocalDateTime liberacao = dataInformacao.plusDays(1).plusHours(2);
             residuo.setNivelRiscoConfirmado(nivelInformado);
             residuo.setRiscosConfirmados(new LinkedHashSet<>(riscos));
-            residuo.setObservacaoGestor(observacao);
+            residuo.definirSegurancaConfirmada(medidas, observacaoSeguranca);
+            residuo.setObservacaoGestor("Classificação e identificação conferidas pela Gestão para armazenamento.");
             residuo.setLocalArmazenamentoTemporario(localArmazenamento);
             residuo.setDestinoFinalPrevisto(destinoPrevisto);
             residuo.setDataPrevistaDespacho(dataPrevistaDespacho);
