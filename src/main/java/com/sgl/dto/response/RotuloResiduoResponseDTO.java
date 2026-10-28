@@ -93,13 +93,16 @@ public class RotuloResiduoResponseDTO {
 
         String observacaoGerador = entity.getObservacaoGerador();
         String observacaoGestor = entity.getObservacaoGestor();
+        // Uma observação isolada não repete o gerador já identificado no cabeçalho.
+        // Quando existem duas observações, identifica-se a origem de cada texto.
         if (observacaoGerador != null && !observacaoGerador.isBlank()
                 && observacaoGestor != null && !observacaoGestor.isBlank()) {
-            this.observacoesRotulo = "Gerador: " + observacaoGerador + " | Gestão: " + observacaoGestor;
+            this.observacoesRotulo = "Informada: " + observacaoGerador.trim()
+                    + " | Gestão: " + observacaoGestor.trim();
         } else if (observacaoGestor != null && !observacaoGestor.isBlank()) {
-            this.observacoesRotulo = "Gestão: " + observacaoGestor;
+            this.observacoesRotulo = observacaoGestor.trim();
         } else if (observacaoGerador != null && !observacaoGerador.isBlank()) {
-            this.observacoesRotulo = "Gerador: " + observacaoGerador;
+            this.observacoesRotulo = observacaoGerador.trim();
         } else {
             this.observacoesRotulo = null;
         }
