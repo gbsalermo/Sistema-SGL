@@ -72,3 +72,11 @@ Contrato acrescido em `RotuloResiduoResponseDTO`: `dataInformacao`, `estadoFisic
 Não implementar frases H/P, palavra de advertência, telefone, QR Code, capacidade de embalagem, nome do gestor liberador ou identidade de quem clicou em “informar” sem dados validados. `geradorNome` é o gerador vinculado ao registro, não necessariamente o operador que submeteu a solicitação. `dataRotulagem` continua sendo a data de liberação existente no contrato; `dataInformacao` é a data original do cadastro. O fluxo de impressão e a restrição `impressaoPermitida` foram preservados.
 
 **Validação pendente pelo mantenedor:** `./mvnw clean verify` (backend) e `npm run build` (frontend), rótulos informados/confirmados sem riscos, quantidade de componentes/pictogramas variável, campos vazios, observações e textos longos, tamanhos 90/135/180/190 mm, impressão A4 e bloqueio de impressão antes da liberação. A altura é dinâmica para evitar cortes; conferir se etiquetas extensas cabem na mídia física escolhida. Sem merge.
+
+## Refinamento da hierarquia do rótulo de Resíduos (28/10/2026)
+
+Após validação do rótulo DEMO de Meio BDA, o cabeçalho foi simplificado para manter **nome do SGL, Unidade e Laboratório**, com **Projeto, SCI e Atividade exibidos condicionalmente** quando presentes no contexto de origem do resíduo. O backend adicionou `projetoOrigemNome`, `sciOrigemNome` e `atividadeOrigemNome` ao `RotuloResiduoResponseDTO`, reutilizando snapshots já persistidos da Etapa 8. Para resíduos antigos com Projeto mas sem snapshot, o nome do Projeto associado serve como fallback; não inferir SCI ou Atividade ausentes.
+
+**Gerador registrado, informado em, situação, indicador de prévia, data e responsável pela liberação** foram movidos do cabeçalho para um painel de rastreabilidade **ao lado do nível de risco e acima da composição/estado físico**, sem eliminar informações. A distinção entre o responsável pela liberação (evento auditado) e o gerador permanece. Foram preservados pictogramas, notas de segurança, descrição, logotipos e bloqueio de impressão.
+
+**Pendência de validação:** executar `./mvnw clean verify` e `npm run build`; comparar rótulos com e sem Projeto/SCI/Atividade, nomes longos e prévias de 90/135/180/190 mm. A altura pode se expandir quando necessária, devendo ser conferida na impressão física. Nenhum merge executado.
