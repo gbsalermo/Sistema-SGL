@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import com.sgl.model.Residuo;
+import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.EstadoFisicoResiduo;
 import com.sgl.model.enums.MedidaSeguranca;
@@ -61,6 +62,9 @@ class RotuloResiduoResponseDTOTest {
 
     private Residuo residuoBasico() {
         Residuo residuo = mock(Residuo.class);
+        Laboratorio laboratorio = mock(Laboratorio.class);
+        when(laboratorio.getNome()).thenReturn("Laboratório de teste");
+        when(residuo.getLaboratorio()).thenReturn(laboratorio);
         Usuario gerador = mock(Usuario.class);
         when(gerador.getNome()).thenReturn("Gerador de teste");
         when(residuo.getGerador()).thenReturn(gerador);
