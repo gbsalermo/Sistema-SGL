@@ -108,7 +108,7 @@ public class RotuloResiduoResponseDTO {
         this.quantidade = entity.getQuantidade();
         this.unidadeMedida = entity.getUnidadeMedida();
         this.nivelRisco = entity.getNivelRiscoConfirmado() != null ? entity.getNivelRiscoConfirmado() : entity.getNivelRiscoInformado();
-        this.riscos = !entity.getRiscosConfirmados().isEmpty()
+        this.riscos = this.classificacaoConfirmada
                 ? new LinkedHashSet<>(entity.getRiscosConfirmados())
                 : new LinkedHashSet<>(entity.getRiscosInformados());
         this.componentes = entity.getComponentes().stream().map(ComponenteResiduoResponseDTO::new).toList();
