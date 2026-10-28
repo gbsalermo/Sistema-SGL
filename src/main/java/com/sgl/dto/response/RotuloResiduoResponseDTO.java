@@ -33,6 +33,8 @@ public class RotuloResiduoResponseDTO {
     private final String unidadeSigla;
     private final String laboratorioNome;
     private final String geradorNome;
+    private final String estadoFisico;
+    private final String observacoesRotulo;
     private final String processoOrigem;
     private final String recipiente;
     private final BigDecimal quantidade;
@@ -72,6 +74,10 @@ public class RotuloResiduoResponseDTO {
                 : entity.getLaboratorio().getUnidade().getSigla();
         this.laboratorioNome = entity.getLaboratorio().getNome();
         this.geradorNome = entity.getGerador().getNome();
+        this.estadoFisico = entity.getEstadoFisico() == null ? null : entity.getEstadoFisico().name();
+        this.observacoesRotulo = entity.getObservacaoGestor() != null && !entity.getObservacaoGestor().isBlank()
+                ? entity.getObservacaoGestor()
+                : entity.getObservacaoGerador();
         this.processoOrigem = entity.getProcessoOrigem();
         this.recipiente = entity.getRecipiente();
         this.quantidade = entity.getQuantidade();
