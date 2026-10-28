@@ -38,8 +38,20 @@ class RotuloResiduoResponseDTOTest {
         assertEquals(LocalDateTime.of(2026, 10, 28, 10, 30), rotulo.getDataInformacao());
         assertEquals(EstadoFisicoResiduo.LIQUIDO, rotulo.getEstadoFisico());
         assertEquals(Set.of(MedidaSeguranca.LUVAS), rotulo.getMedidasSeguranca());
-        assertTrue(rotulo.getObservacoesRotulo().contains("Gerador:"));
+        assertEquals("Observação registrada pelo gerador.", rotulo.getObservacoesRotulo());
         assertEquals(Set.of(TipoRisco.PERIGO_AMBIENTAL), rotulo.getRiscos());
+    }
+
+    @Test
+    void distingueObservacoesQuandoGeradorEGestaoRegistraramInformacoes() {
+        Residuo residuo = residuoBasico();
+        when(residuo.getObservacaoGerador()).thenReturn("Material informado no laboratório.");
+        when(residuo.getObservacaoGestor()).thenReturn("Conferido para armazenamento.");
+
+        RotuloResiduoResponseDTO rotulo = new RotuloResiduoResponseDTO(residuo);
+
+        assertEquals("Informada: Material informado no laboratório. | Gestão: Conferido para armazenamento.",
+                rotulo.getObservacoesRotulo());
     }
 
     @Test
