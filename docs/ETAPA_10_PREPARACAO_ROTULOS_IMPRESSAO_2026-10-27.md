@@ -45,3 +45,9 @@
 ## Pendência de entrada
 
 **Aguardar imagem/arquivo do rótulo de referência do cliente**, para iniciar o comparativo visual e fechar o recorte de alterações. Até esse momento, preservar o layout atual sem mudanças.
+
+## Decisão visual aprovada — capacidade da embalagem (28/10/2026)
+
+**Não exibir “Capacidade da embalagem” nos rótulos de Produtos, Resíduos ou Soluções.** O elemento constava apenas dos esboços de referência, não dos componentes de rótulo atualmente implementados. A inspeção dos componentes `ProdutoRotuloModelo.vue` e `ResiduoRotuloModeloAjustado.vue` confirmou que eles já não apresentam esse campo; portanto, não adicionar campo novo nem modificar o estoque por causa desta decisão.
+
+Preservar, quando aplicável, **quantidade real e unidade**, **estado físico**, **apresentação**, identificação e rastreabilidade, utilizando exclusivamente dados existentes e corretos para cada domínio. `Lote.conteudoPorApresentacao` e `RecipienteEstoque.capacidadeInicial` continuam necessários às regras internas do estoque e não foram alterados. A implementação visual futura dos modelos da Etapa 10 seguirá essa decisão.
