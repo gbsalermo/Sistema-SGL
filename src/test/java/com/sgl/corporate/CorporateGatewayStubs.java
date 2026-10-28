@@ -115,7 +115,7 @@ public class CorporateGatewayStubs {
 
     public void colaboradoresDaUnidade(int unidadeId, String... itemsJson) {
         server.expect(requestTo(url("colaboradorapi", "/colaborador/lista/porUnidadeLotacao/" + unidadeId
-                + "/ativo/true?numeroPagina=1&itensPorPagina=100")))
+                + "/ativo/true?numeroPagina=1&itensPorPagina=50")))
             .andRespond(withSuccess(page(itemsJson), MediaType.APPLICATION_JSON));
     }
 
