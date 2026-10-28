@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.Residuo;
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
@@ -33,6 +35,11 @@ public class RotuloResiduoResponseDTO {
     private final String unidadeSigla;
     private final String laboratorioNome;
     private final String geradorNome;
+    private final LocalDateTime dataInformacao;
+    private final EstadoFisicoResiduo estadoFisico;
+    private final Set<MedidaSeguranca> medidasSeguranca;
+    private final String observacaoSeguranca;
+    private final String observacoesRotulo;
     private final String processoOrigem;
     private final String recipiente;
     private final BigDecimal quantidade;
@@ -72,6 +79,30 @@ public class RotuloResiduoResponseDTO {
                 : entity.getLaboratorio().getUnidade().getSigla();
         this.laboratorioNome = entity.getLaboratorio().getNome();
         this.geradorNome = entity.getGerador().getNome();
+        this.dataInformacao = entity.getDataInformacao();
+        this.estadoFisico = entity.getEstadoFisico();
+
+        // O rótulo distingue as informações preliminares daquelas confirmadas.
+        // Uma confirmação vazia não deve voltar a exibir medidas preliminares.
+        this.medidasSeguranca = this.classificacaoConfirmada
+                ? new LinkedHashSet<>(entity.getMedidasSegurancaConfirmadas())
+                : new LinkedHashSet<>(entity.getMedidasSegurancaInformadas());
+        this.observacaoSeguranca = this.classificacaoConfirmada
+                ? entity.getObservacaoSegurancaConfirmada()
+                : entity.getObservacaoSegurancaInformada();
+
+        String observacaoGerador = entity.getObservacaoGerador();
+        String observacaoGestor = entity.getObservacaoGestor();
+        if (observacaoGerador != null && !observacaoGerador.isBlank()
+                && observacaoGestor != null && !observacaoGestor.isBlank()) {
+            this.observacoesRotulo = "Gerador: " + observacaoGerador + " | Gestão: " + observacaoGestor;
+        } else if (observacaoGestor != null && !observacaoGestor.isBlank()) {
+            this.observacoesRotulo = "Gestão: " + observacaoGestor;
+        } else if (observacaoGerador != null && !observacaoGerador.isBlank()) {
+            this.observacoesRotulo = "Gerador: " + observacaoGerador;
+        } else {
+            this.observacoesRotulo = null;
+        }
         this.processoOrigem = entity.getProcessoOrigem();
         this.recipiente = entity.getRecipiente();
         this.quantidade = entity.getQuantidade();
