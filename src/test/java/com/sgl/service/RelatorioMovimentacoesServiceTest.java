@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -215,8 +216,8 @@ class RelatorioMovimentacoesServiceTest {
 
         assertEquals(1, resultado.getTotalMovimentacoes());
         assertEquals(saida.getPublicId(), resultado.getItens().get(0).getId());
-        assertEquals("GARRAFA", resultado.getItens().get(0).getTipoEmbalagemConsultada());
-        assertEquals(2L, resultado.getItens().get(0).getRecipientesUtilizados());
+        // Without a packaging filter there is no "consulted packaging" to report.
+        assertNull(resultado.getItens().get(0).getTipoEmbalagemConsultada());
     }
 
     @Test
@@ -263,7 +264,9 @@ class RelatorioMovimentacoesServiceTest {
         when(recipienteRepository.buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA))
                 .thenReturn(List.of(saida.getPublicId(), saida.getPublicId()));
         when(movimentacaoRepository.findAll()).thenReturn(List.of(entrada, saida, descarte));
-
+        // Two bottles touched by the same withdrawal: the report counts containers, not the quantity in mL.
+        when(recipienteRepository.listarDetalhesParaRelatorio(unidadeId, List.of(saida.getPublicId())))
+                .thenReturn(List.of(parcelaDeGarrafa(), parcelaDeGarrafa()));
 
         var resultado = relatorioMovimentacoesService.gerar(
                 TipoMovimentacao.SAIDA, OrigemMovimentacao.PEDIDO, PRODUTO_PUBLIC_ID,
@@ -271,7 +274,20 @@ class RelatorioMovimentacoesServiceTest {
 
         assertEquals(1, resultado.getTotalMovimentacoes());
         assertEquals(saida.getPublicId(), resultado.getItens().get(0).getId());
+        assertEquals("GARRAFA", resultado.getItens().get(0).getTipoEmbalagemConsultada());
+        assertEquals(2L, resultado.getItens().get(0).getRecipientesUtilizados());
         verify(recipienteRepository).buscarMovimentacoesPorTipoEmbalagem(unidadeId, TipoEmbalagem.GARRAFA);
+    }
+
+    private MovimentacaoRecipiente parcelaDeGarrafa() {
+        RecipienteEstoque garrafa = new RecipienteEstoque();
+        garrafa.setTipoEmbalagem(TipoEmbalagem.GARRAFA);
+        garrafa.setCapacidadeInicial(BigDecimal.valueOf(2));
+        return MovimentacaoRecipiente.builder()
+                .movimentacaoEstoque(saida).recipienteEstoque(garrafa)
+                .quantidadeAnterior(BigDecimal.valueOf(2))
+                .quantidadeMovimentada(BigDecimal.valueOf(2))
+                .quantidadeAtual(BigDecimal.ZERO).build();
     }
 
     @Test
