@@ -34,6 +34,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoPedido;
@@ -49,6 +50,7 @@ import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.CurrentUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -70,6 +72,7 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO criar(PedidoRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 		Usuario usuario = buscarUsuarioNoTenant(dto.getUsuarioId());
 		usuario.validateActive();
 
@@ -125,8 +128,7 @@ public class PedidoService {
 
 		boolean projetoSemVinculoDireto = projeto != null
                 && usuario.getPerfil() != Perfil.ESTAGIARIO
-                && usuario.getPerfil() != Perfil.GESTOR
-                && usuario.getPerfil() != Perfil.ADMINISTRADOR
+                && !PerfilPolicy.isGestao(usuario.getPerfil())
                 && !vinculoOperacionalService.vinculadoProjeto(usuario, projeto, dataSolicitacao.toLocalDate());
 
         Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
@@ -526,7 +528,7 @@ public class PedidoService {
 
 	private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
 
-		boolean gestor = usuario.getPerfil() == Perfil.GESTOR || usuario.getPerfil() == Perfil.ADMINISTRADOR;
+		boolean gestor = PerfilPolicy.isGestao(usuario.getPerfil());
 
 		boolean estagiario = usuario.getPerfil() == Perfil.ESTAGIARIO;
 
@@ -674,7 +676,7 @@ public class PedidoService {
 			laboratorio = laboratorioDoProjeto;
 
 		} else if (laboratorio == null) {
-			boolean gestor = usuario.getPerfil() == Perfil.GESTOR || usuario.getPerfil() == Perfil.ADMINISTRADOR;
+			boolean gestor = PerfilPolicy.isGestao(usuario.getPerfil());
 
 			if (!gestor) {
 				laboratorio = usuario.getLaboratorio();

@@ -3,22 +3,38 @@ package com.sgl.exception;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import com.sgl.corporate.CorporateApiUnavailableException;
+import com.sgl.corporate.CorporatePersonNotFoundException;
+import com.sgl.corporate.InvalidCorporateCredentialsException;
+import com.sgl.security.SecurityErrorWriter;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
+
+    public static final String PESSOA_NAO_ENCONTRADA = "PESSOA_NAO_ENCONTRADA";
+    public static final String AUTENTICACAO_INDISPONIVEL = "AUTENTICACAO_INDISPONIVEL";
+
+    private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
 
     @ExceptionHandler({
             ResourceNotFoundException.class,
@@ -34,6 +50,113 @@ public class RestExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI()
         );
+    }
+
+    // Unknown routes (e.g. /auth/dev-login outside dev/demo, where its controller does not exist)
+    // would otherwise fall into the generic handler and surface as a 500.
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiError> handleNoRoute(
+            Exception ex,
+            HttpServletRequest request) {
+
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "Recurso não encontrado",
+                "O endereço solicitado não existe.",
+                request.getRequestURI()
+        );
+    }
+
+    // Without this, an AccessDeniedException raised past the filters (e.g. by CurrentUser) would fall
+    // into the generic handler below and surface as a 500.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        ApiError apiError = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Acesso negado",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null,
+                SecurityErrorWriter.ACESSO_NEGADO
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(apiError);
+    }
+
+    @ExceptionHandler(LoginRejectedException.class)
+    public ResponseEntity<ApiError> handleLoginRejected(
+            LoginRejectedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(ex.getStatus(), "Login recusado", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
+    }
+
+    @ExceptionHandler(ImportacaoRejectedException.class)
+    public ResponseEntity<ApiError> handleImportacaoRejected(
+            ImportacaoRejectedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(ex.getStatus(), "Importação recusada", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
+    }
+
+    @ExceptionHandler(UnidadeRejectedException.class)
+    public ResponseEntity<ApiError> handleUnidadeRejected(
+            UnidadeRejectedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(ex.getStatus(), "Operação recusada", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
+    }
+
+    @ExceptionHandler(UsuarioRejectedException.class)
+    public ResponseEntity<ApiError> handleUsuarioRejected(
+            UsuarioRejectedException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(ex.getStatus(), "Operação recusada", ex.getMessage(), request.getRequestURI(), ex.getCodigo());
+    }
+
+    // The corporate exceptions carry technical messages; the user gets a fixed, friendly one instead.
+    @ExceptionHandler(InvalidCorporateCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCorporateCredentials(
+            InvalidCorporateCredentialsException ex,
+            HttpServletRequest request) {
+
+        LoginRejectedException rejected = LoginRejectedException.credenciaisInvalidas();
+        return handleLoginRejected(rejected, request);
+    }
+
+    @ExceptionHandler(CorporatePersonNotFoundException.class)
+    public ResponseEntity<ApiError> handleCorporatePersonNotFound(
+            CorporatePersonNotFoundException ex,
+            HttpServletRequest request) {
+
+        return buildResponse(HttpStatus.FORBIDDEN, "Login recusado",
+                "Seu cadastro não foi encontrado nas bases corporativas da Embrapa.",
+                request.getRequestURI(), PESSOA_NAO_ENCONTRADA);
+    }
+
+    @ExceptionHandler(CorporateApiUnavailableException.class)
+    public ResponseEntity<ApiError> handleCorporateApiUnavailable(
+            CorporateApiUnavailableException ex,
+            HttpServletRequest request) {
+
+        // Only the cause type and HTTP status: the message and URL may carry a CPF path segment,
+        // and the request body may hold a password.
+        Throwable cause = ex.getCause();
+        String status = cause instanceof RestClientResponseException response
+                ? String.valueOf(response.getStatusCode().value())
+                : "n/a";
+        log.warn("Corporate gateway unavailable: cause={} status={}",
+                cause == null ? "none" : cause.getClass().getSimpleName(), status);
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "Serviço indisponível",
+                "Autenticação corporativa indisponível. Tente novamente em instantes.",
+                request.getRequestURI(), AUTENTICACAO_INDISPONIVEL);
     }
 
     @ExceptionHandler(StockConflictException.class)
@@ -181,12 +304,24 @@ public class RestExceptionHandler {
             String message,
             String path) {
 
+        return buildResponse(status, error, message, path, null);
+    }
+
+    private ResponseEntity<ApiError> buildResponse(
+            HttpStatus status,
+            String error,
+            String message,
+            String path,
+            String codigo) {
+
         ApiError apiError = new ApiError(
                 LocalDateTime.now(),
                 status.value(),
                 error,
                 message,
-                path
+                path,
+                null,
+                codigo
         );
 
         return ResponseEntity

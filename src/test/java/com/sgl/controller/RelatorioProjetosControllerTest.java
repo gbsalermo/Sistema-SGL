@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -27,7 +28,9 @@ import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.service.RelatorioProjetosService;
 
+// The JWT chain is covered by SecurityIntegrationTest; this slice tests only routing and binding.
 @WebMvcTest(RelatorioProjetosController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(SecurityConfig.class)
 class RelatorioProjetosControllerTest {
 

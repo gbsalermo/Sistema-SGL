@@ -15,8 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.UnidadeRequestDTO;
+import com.sgl.dto.request.HabilitarUnidadeRequestDTO;
+import com.sgl.dto.response.UnidadeCorporativaResponseDTO;
 import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.exception.ApiError;
+import com.sgl.service.UnidadeHabilitacaoService;
 import com.sgl.service.UnidadeService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +38,30 @@ import lombok.RequiredArgsConstructor;
 public class UnidadeController {
 
     private final UnidadeService unidadeService;
+    private final UnidadeHabilitacaoService unidadeHabilitacaoService;
+
+    @Operation(summary = "Listar Unidades corporativas", description = "Lista as Unidades da Embrapa, indicando quais já estão habilitadas no SGL. Exclusivo do Administrador geral.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Unidades listadas", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "503", description = "APIs corporativas indisponíveis", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping("/corporativas")
+    public ResponseEntity<List<UnidadeCorporativaResponseDTO>> listarCorporativas() {
+        return ResponseEntity.ok(unidadeHabilitacaoService.listarCorporativas());
+    }
+
+    @Operation(summary = "Habilitar Unidade", description = "Cria no SGL a Unidade corporativa informada, com nome e sigla da base corporativa. Exclusivo do Administrador geral.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Unidade habilitada", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Código fora da lista corporativa", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Já habilitada (UNIDADE_JA_HABILITADA) ou sigla em uso (SIGLA_EM_USO)", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/habilitar")
+    public ResponseEntity<UnidadeResponseDTO> habilitar(@Valid @RequestBody HabilitarUnidadeRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(unidadeHabilitacaoService.habilitar(dto.getCodigoCorporativo()));
+    }
 
     @Operation(summary = "Listar unidades", description = "Retorna todas as unidades institucionais cadastradas no sistema.")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "Unidades listadas com sucesso", useReturnTypeSchema = true), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})

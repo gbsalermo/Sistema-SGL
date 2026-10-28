@@ -17,6 +17,7 @@ import com.sgl.model.*;
 import com.sgl.model.enums.*;
 import com.sgl.repository.*;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 @ExtendWith(MockitoExtension.class)
 class PedidoSolucaoServiceTest {
@@ -48,6 +49,17 @@ class PedidoSolucaoServiceTest {
     EstoqueCentral estoque;
     Pedido pedido;
     ItemPedido item;
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.TECNICO);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @BeforeEach
     void preparar() {

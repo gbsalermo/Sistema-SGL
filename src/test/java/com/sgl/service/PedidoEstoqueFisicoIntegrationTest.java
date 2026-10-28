@@ -22,6 +22,7 @@ import com.sgl.model.*;
 import com.sgl.model.enums.*;
 import com.sgl.repository.*;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 /**
  * Etapa 7.6-B: contrato Pedido convencional -> baixa física efetiva.
@@ -40,7 +41,7 @@ class PedidoEstoqueFisicoIntegrationTest {
     @Autowired private RecipienteEstoqueRepository recipientes;
     @Autowired private MovimentacaoEstoqueRepository movimentacoes;
 
-    @AfterEach void limparContexto() { TenantContext.limpar(); }
+    @AfterEach void limparContexto() { TenantContext.limpar(); SessaoDeTeste.sair(); }
 
     private record Cenario(Unidade unidade, Laboratorio lab, Usuario gestor,
                            Produto produto, EstoqueCentral estoque) {}
@@ -119,6 +120,7 @@ class PedidoEstoqueFisicoIntegrationTest {
         item.setUnidadeMedidaSolicitada(unidade);
         PedidoRequestDTO dto = new PedidoRequestDTO();
         dto.setUsuarioId(c.gestor().getPublicId());
+        SessaoDeTeste.entrar(c.gestor().getPublicId(), Perfil.GESTOR);
         dto.setLaboratorioId(c.lab().getPublicId());
         dto.setItens(List.of(item));
         return pedidos.criar(dto);

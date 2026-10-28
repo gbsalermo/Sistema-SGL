@@ -16,6 +16,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -38,6 +39,7 @@ import com.sgl.repository.ObservacaoVinculoEstagioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 @ExtendWith(MockitoExtension.class)
 class ObservacaoVinculoEstagioServiceTest {
@@ -66,6 +68,17 @@ class ObservacaoVinculoEstagioServiceTest {
     private Unidade unidade;
     private VinculoEstagio vinculo;
     private Usuario operador;
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(OPERADOR_ID, Perfil.GESTOR);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @BeforeEach
     void setUp() {
@@ -103,6 +116,17 @@ class ObservacaoVinculoEstagioServiceTest {
     @AfterEach
     void tearDown() {
         TenantContext.limpar();
+    }
+
+    @Test
+    void deveRejeitarOperadorDiferenteDoUsuarioDaSessao() {
+        // The acting user comes from the session; a body naming someone else (e.g. a gestor) is refused.
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+        ObservacaoVinculoEstagioRequestDTO dto = new ObservacaoVinculoEstagioRequestDTO();
+        dto.setUsuarioId(OPERADOR_ID);
+        dto.setTexto("Observação");
+
+        assertThrows(AccessDeniedException.class, () -> service.adicionarOperacional(VINCULO_ID, dto));
     }
 
     private void mockarVinculoEOperador() {

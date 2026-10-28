@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,8 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.*;
 import com.sgl.model.enums.Perfil;
 import com.sgl.repository.*;
+import com.sgl.security.CurrentUser;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.tenant.TenantContext;
 
 /** Contrato de domínio homologado em DEV; autorização de gestor depende do futuro SSO. */
@@ -62,6 +65,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO criar(VinculoOperacionalUsuarioRequestDTO dto) {
+        exigirGestao();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
@@ -130,6 +134,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO editar(UUID id, EditarVinculoOperacionalRequestDTO dto) {
+        exigirGestao();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         if (Boolean.TRUE.equals(v.getEncerrado())) {
@@ -148,6 +153,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO encerrar(UUID id) {
+        exigirGestao();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         if (Boolean.TRUE.equals(v.getEncerrado())) {
@@ -160,6 +166,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public void definirLaboratorioBase(UUID usuarioId, UUID laboratorioId) {
+        exigirGestao();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
@@ -198,5 +205,12 @@ public class VinculoOperacionalUsuarioService {
     public boolean vinculadoProjeto(Usuario usuario, Projeto projeto, LocalDate hoje) {
         return vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), unidade())
             .stream().anyMatch(v -> v.vigente(hoje) && v.pertenceAoProjeto(projeto));
+    }
+
+    // Granting labs and contexts is what authorizes operations, so only gestão may change it.
+    private static void exigirGestao() {
+        if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
+            throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratório-base.");
+        }
     }
 }

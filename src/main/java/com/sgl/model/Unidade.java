@@ -47,6 +47,18 @@ public class Unidade implements Serializable {
     @OneToMany(mappedBy = "unidade", fetch = FetchType.LAZY)
     private List<Laboratorio> laboratorios = new ArrayList<>();
 
+    @Column(name = "codigo_corporativo", unique = true)
+    private Integer codigoCorporativo;
+
+    // Keeps the pre-corporate-auth signature working for seeders and tests.
+    public Unidade(Long id, UUID publicId, String nome, String sigla, List<Laboratorio> laboratorios) {
+        this.id = id;
+        this.publicId = publicId;
+        this.nome = nome;
+        this.sigla = sigla;
+        this.laboratorios = laboratorios;
+    }
+
     @PrePersist
     private void generatePublicId() {
         if (publicId == null) {
