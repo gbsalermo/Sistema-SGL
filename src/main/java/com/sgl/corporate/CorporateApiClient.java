@@ -26,6 +26,8 @@ import com.sgl.corporate.CorporateDtos.UnidadeCorporativa;
 public class CorporateApiClient {
 
     private static final int PAGE_SIZE = 100;
+    // colaboradorapi answers 400 "Parâmetros de paginação inválidos!" above 50 per page.
+    private static final int COLABORADOR_PAGE_SIZE = 50;
     private static final int NAME_SEARCH_PAGE_SIZE = 50;
     // Guards against a misbehaving gateway that always reports hasNextPage.
     private static final int MAX_PAGES = 1000;
@@ -109,7 +111,7 @@ public class CorporateApiClient {
     public List<Colaborador> colaboradoresDaUnidade(int unidadeId) {
         return allPages(page -> get(
             path("colaboradorapi", "/colaborador/lista/porUnidadeLotacao/{u}/ativo/true?numeroPagina={p}&itensPorPagina={s}"),
-            COLABORADOR_PAGE, unidadeId, page, PAGE_SIZE));
+            COLABORADOR_PAGE, unidadeId, page, COLABORADOR_PAGE_SIZE));
     }
 
     public List<Colaborador> colaboradoresPorNome(String nome) {

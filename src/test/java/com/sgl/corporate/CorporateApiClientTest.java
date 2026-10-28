@@ -199,6 +199,20 @@ class CorporateApiClientTest {
         server.verify();
     }
 
+    // A colaboradorapi recusa itensPorPagina acima de 50 com 400 "Parâmetros de paginação inválidos!"
+    // (medido no sandbox -h em 28/10/2026); o 400 virava lista vazia e a busca de estagiários nunca achava ninguém.
+    @Test
+    void colaboradoresDaUnidade_pedePaginasDeNoMaximo50() {
+        server.expect(requestTo(org.hamcrest.Matchers.startsWith("http://gw/colaboradorapi-h/colaborador/lista/porUnidadeLotacao/3/ativo/true")))
+            .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam("itensPorPagina", "50"))
+            .andRespond(withSuccess("""
+                {"items":[],"pageIndex":1,"totalPages":1,"count":0,"hasPreviousPage":false,"hasNextPage":false}
+                """, MediaType.APPLICATION_JSON));
+
+        client.colaboradoresDaUnidade(3);
+        server.verify();
+    }
+
     @Test
     void consulta_5xx_lancaIndisponivel() {
         server.expect(requestTo("http://gw/empregadoapi-h/empregado/00000001"))
