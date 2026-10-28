@@ -33,8 +33,6 @@ public class RotuloResiduoResponseDTO {
     private final String unidadeSigla;
     private final String laboratorioNome;
     private final String geradorNome;
-    private final String estadoFisico;
-    private final String observacoesRotulo;
     private final String processoOrigem;
     private final String recipiente;
     private final BigDecimal quantidade;
@@ -46,7 +44,6 @@ public class RotuloResiduoResponseDTO {
     private final String destinoFinalPrevisto;
     private final LocalDate dataPrevistaDespacho;
     private final LocalDateTime dataRotulagem;
-    private final LocalDateTime dataInformacao;
 
     public RotuloResiduoResponseDTO(Residuo entity) {
         this.residuoId = entity.getPublicId();
@@ -75,10 +72,6 @@ public class RotuloResiduoResponseDTO {
                 : entity.getLaboratorio().getUnidade().getSigla();
         this.laboratorioNome = entity.getLaboratorio().getNome();
         this.geradorNome = entity.getGerador().getNome();
-        this.estadoFisico = entity.getEstadoFisico() == null ? null : entity.getEstadoFisico().name();
-        this.observacoesRotulo = entity.getObservacaoGestor() != null && !entity.getObservacaoGestor().isBlank()
-                ? entity.getObservacaoGestor()
-                : entity.getObservacaoGerador();
         this.processoOrigem = entity.getProcessoOrigem();
         this.recipiente = entity.getRecipiente();
         this.quantidade = entity.getQuantidade();
@@ -92,6 +85,5 @@ public class RotuloResiduoResponseDTO {
         this.destinoFinalPrevisto = entity.getDestinoFinalPrevisto();
         this.dataPrevistaDespacho = entity.getDataPrevistaDespacho();
         this.dataRotulagem = entity.getDataLiberacao();
-        this.dataInformacao = entity.getDataInformacao();
     }
 }
