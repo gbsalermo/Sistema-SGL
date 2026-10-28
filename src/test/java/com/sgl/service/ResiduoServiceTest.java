@@ -1025,6 +1025,17 @@ class ResiduoServiceTest {
     @Test
     void deveGerarDadosDeRotulo() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO, gestor);
+        residuo.setDataLiberacao(LocalDateTime.of(2026, 10, 25, 11, 30));
+        // Prova que o autor da liberação vem do evento e não do receptor.
+        HistoricoResiduo eventoLiberacao = HistoricoResiduo.builder()
+                .residuo(residuo).usuario(gestorOutro)
+                .acao("RISCO_CONFERIDO_E_RESIDUO_LIBERADO")
+                .status(StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO)
+                .dataHora(LocalDateTime.of(2026, 10, 25, 11, 30))
+                .build();
+        when(historicoResiduoRepository.findFirstByResiduoIdAndAcaoOrderByDataHoraDesc(
+                700L, "RISCO_CONFERIDO_E_RESIDUO_LIBERADO"))
+                .thenReturn(Optional.of(eventoLiberacao));
         // Já possui código de rastreio e QR code (fluxo normal, gerado em
         // criar()/analisarELiberar()) — não deve disparar um novo save().
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -1037,6 +1048,7 @@ class ResiduoServiceTest {
         assertEquals(residuo.getQrCodeConteudo(), resultado.getQrCodeConteudo());
         assertTrue(resultado.isImpressaoPermitida());
         assertEquals(UNIDADE_PUBLIC_ID, resultado.getUnidadeId());
+        assertEquals("Gestor Dois", resultado.getResponsavelLiberacaoNome());
         verify(residuoRepository, never()).save(any(Residuo.class));
     }
 
@@ -1059,6 +1071,9 @@ class ResiduoServiceTest {
         assertEquals("SGL-RESIDUO:" + RESIDUO_PUBLIC_ID, resultado.getQrCodeConteudo());
         assertTrue(resultado.getCodigoRastreio().startsWith("SGL-RES-"));
         assertFalse(resultado.isImpressaoPermitida());
+        assertNull(resultado.getResponsavelLiberacaoNome());
+        verify(historicoResiduoRepository, never()).findFirstByResiduoIdAndAcaoOrderByDataHoraDesc(
+                700L, "RISCO_CONFERIDO_E_RESIDUO_LIBERADO");
         verify(residuoRepository, times(1)).save(any(Residuo.class));
     }
 
