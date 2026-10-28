@@ -34,6 +34,9 @@ public class RotuloResiduoResponseDTO {
     private final String unidadeNome;
     private final String unidadeSigla;
     private final String laboratorioNome;
+    private final String projetoOrigemNome;
+    private final String sciOrigemNome;
+    private final String atividadeOrigemNome;
     private final String geradorNome;
     private final String responsavelLiberacaoNome;
     private final LocalDateTime dataInformacao;
@@ -84,7 +87,16 @@ public class RotuloResiduoResponseDTO {
         this.unidadeSigla = entity.getUnidadeSiglaSnapshot() != null
                 ? entity.getUnidadeSiglaSnapshot()
                 : entity.getLaboratorio().getUnidade().getSigla();
-        this.laboratorioNome = entity.getLaboratorio().getNome();
+        this.laboratorioNome = entity.getLaboratorioOrigemNome() != null
+                ? entity.getLaboratorioOrigemNome()
+                : entity.getLaboratorio().getNome();
+        // Usar snapshots da origem para preservar a hierarquia registrada.
+        // Resíduos antigos podem não possuir snapshot, mas ter Projeto associado.
+        this.projetoOrigemNome = entity.getProjetoOrigemNome() != null
+                ? entity.getProjetoOrigemNome()
+                : entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
+        this.sciOrigemNome = entity.getSciOrigemNome();
+        this.atividadeOrigemNome = entity.getAtividadeOrigemNome();
         this.geradorNome = entity.getGerador().getNome();
         this.dataInformacao = entity.getDataInformacao();
         this.estadoFisico = entity.getEstadoFisico();
