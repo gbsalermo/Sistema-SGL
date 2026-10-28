@@ -381,7 +381,19 @@ public class ResiduoService {
 			residuo = residuoRepository.save(residuo);
 		}
 
-		return new RotuloResiduoResponseDTO(residuo);
+		// Busca exclusivamente o autor do último evento de liberação.
+		// O resíduo já foi obtido com filtro de tenant em buscarEntidade().
+		// Resíduos ainda não liberados não possuem responsável de liberação.
+		String responsavelLiberacaoNome = null;
+		if (residuo.getDataLiberacao() != null) {
+			responsavelLiberacaoNome = historicoResiduoRepository
+					.findFirstByResiduoIdAndAcaoOrderByDataHoraDesc(
+							residuo.getId(), "RISCO_CONFERIDO_E_RESIDUO_LIBERADO")
+					.map(historico -> historico.getUsuario().getNome())
+					.orElse(null);
+		}
+
+		return new RotuloResiduoResponseDTO(residuo, responsavelLiberacaoNome);
 	}
 
 	private Residuo buscarEntidade(UUID id) {
