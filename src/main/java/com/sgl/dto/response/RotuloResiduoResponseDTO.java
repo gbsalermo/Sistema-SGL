@@ -46,6 +46,7 @@ public class RotuloResiduoResponseDTO {
     private final String destinoFinalPrevisto;
     private final LocalDate dataPrevistaDespacho;
     private final LocalDateTime dataRotulagem;
+    private final LocalDateTime dataInformacao;
 
     public RotuloResiduoResponseDTO(Residuo entity) {
         this.residuoId = entity.getPublicId();
@@ -91,5 +92,6 @@ public class RotuloResiduoResponseDTO {
         this.destinoFinalPrevisto = entity.getDestinoFinalPrevisto();
         this.dataPrevistaDespacho = entity.getDataPrevistaDespacho();
         this.dataRotulagem = entity.getDataLiberacao();
+        this.dataInformacao = entity.getDataInformacao();
     }
 }
