@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Usuario;
@@ -52,6 +53,36 @@ class RotuloResiduoResponseDTOTest {
 
         assertEquals("Informada: Material informado no laboratório. | Gestão: Conferido para armazenamento.",
                 rotulo.getObservacoesRotulo());
+    }
+
+    @Test
+    void rotuloPriorizaHierarquiaHistoricaComProjetoSciEAtividade() {
+        Residuo residuo = residuoBasico();
+        when(residuo.getLaboratorioOrigemNome()).thenReturn("Laboratório registrado originalmente");
+        when(residuo.getProjetoOrigemNome()).thenReturn("Projeto histórico");
+        when(residuo.getSciOrigemNome()).thenReturn("SCI histórica");
+        when(residuo.getAtividadeOrigemNome()).thenReturn("Atividade histórica");
+
+        RotuloResiduoResponseDTO rotulo = new RotuloResiduoResponseDTO(residuo);
+
+        assertEquals("Laboratório registrado originalmente", rotulo.getLaboratorioNome());
+        assertEquals("Projeto histórico", rotulo.getProjetoOrigemNome());
+        assertEquals("SCI histórica", rotulo.getSciOrigemNome());
+        assertEquals("Atividade histórica", rotulo.getAtividadeOrigemNome());
+    }
+
+    @Test
+    void rotuloUsaProjetoVinculadoComoFallbackDeRegistrosAntigos() {
+        Residuo residuo = residuoBasico();
+        Projeto projeto = mock(Projeto.class);
+        when(residuo.getProjeto()).thenReturn(projeto);
+        when(projeto.getNome()).thenReturn("Projeto vinculado");
+
+        RotuloResiduoResponseDTO rotulo = new RotuloResiduoResponseDTO(residuo);
+
+        assertEquals("Projeto vinculado", rotulo.getProjetoOrigemNome());
+        assertEquals(null, rotulo.getSciOrigemNome());
+        assertEquals(null, rotulo.getAtividadeOrigemNome());
     }
 
     @Test
