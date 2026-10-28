@@ -62,10 +62,12 @@ public class AuthService {
     private final AuthProperties authProperties;
     private final Clock clock;
     private final Environment environment;
+    private final MudancaLotacaoService mudancaLotacaoService;
 
     public AuthService(CorporateApiClient corporateApiClient, UsuarioRepository usuarioRepository,
             UnidadeRepository unidadeRepository, JwtService jwtService, LoginRateLimiter rateLimiter,
-            AuthProperties authProperties, Clock clock, Environment environment) {
+            AuthProperties authProperties, Clock clock, Environment environment,
+            MudancaLotacaoService mudancaLotacaoService) {
         this.corporateApiClient = corporateApiClient;
         this.usuarioRepository = usuarioRepository;
         this.unidadeRepository = unidadeRepository;
@@ -74,6 +76,7 @@ public class AuthService {
         this.authProperties = authProperties;
         this.clock = clock;
         this.environment = environment;
+        this.mudancaLotacaoService = mudancaLotacaoService;
         if (authProperties.isPrimeiroLoginAdmin()) {
             LOG.warn("sgl.auth.primeiro-login-admin is ON: the first corporate login becomes ADMINISTRADOR_GERAL "
                     + "if none has ever been registered. Turn SGL_PRIMEIRO_LOGIN_ADMIN off after the first deploy.");
@@ -170,7 +173,7 @@ public class AuthService {
         }
         usuario.setCargo(identity.cargo());
         usuario.setSublotacao(identity.sublotacao());
-        usuario.setUnidade(unidade);
+        mudancaLotacaoService.aplicar(usuario, unidade, provisionalProfile(identity));
         if (!LoginNormalizer.isCpf(normalizedLogin)) {
             usuario.setLogin(normalizedLogin);
         }
@@ -223,9 +226,13 @@ public class AuthService {
     // The profile is only provisional: the security filter keeps a PENDENTE_VINCULACAO user out of
     // every operational route until a manager approves them and confirms the profile.
     private Usuario savePending(Usuario usuario, CorporateIdentity identity) {
-        usuario.setPerfil(ProfileSuggestion.fromCargo(identity.cargo(), identity.tipo()).orElse(Perfil.TECNICO));
+        usuario.setPerfil(provisionalProfile(identity));
         usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
         return usuarioRepository.save(usuario);
+    }
+
+    private static Perfil provisionalProfile(CorporateIdentity identity) {
+        return ProfileSuggestion.fromCargo(identity.cargo(), identity.tipo()).orElse(Perfil.TECNICO);
     }
 
     private void deactivate(Usuario usuario, String normalizedLogin) {

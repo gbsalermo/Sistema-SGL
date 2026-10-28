@@ -3,6 +3,7 @@ package com.sgl.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -20,13 +21,17 @@ import com.sgl.corporate.CorporateGatewayStubs;
 import com.sgl.corporate.CorporateGatewayTestConfig;
 import com.sgl.dto.response.LoginResponseDTO;
 import com.sgl.exception.LoginRejectedException;
+import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.VinculoOperacionalUsuario;
 import com.sgl.model.enums.OrigemUsuario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoOperacionalUsuarioRepository;
 import com.sgl.security.JwtService;
 
 /**
@@ -51,8 +56,11 @@ class AuthServiceIntegrationTest {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private UnidadeRepository unidadeRepository;
     @Autowired private JwtService jwtService;
+    @Autowired private LaboratorioRepository laboratorioRepository;
+    @Autowired private VinculoOperacionalUsuarioRepository vinculoRepository;
 
     private Unidade cnpmf;
+    private Unidade outra;
 
     @BeforeEach
     void setUp() {
@@ -63,13 +71,23 @@ class AuthServiceIntegrationTest {
                 .sigla("CNPMF-" + UUID.randomUUID().toString().substring(0, 6))
                 .codigoCorporativo(CNPMF)
                 .build());
+        outra = unidadeRepository.saveAndFlush(Unidade.builder()
+                .nome("Outra Unidade")
+                .sigla("OUT-" + UUID.randomUUID().toString().substring(0, 6))
+                .codigoCorporativo(8)
+                .build());
     }
 
     @AfterEach
     void tearDown() {
         authProperties.setPrimeiroLoginAdmin(false);
+        vinculoRepository.deleteAll();
         usuarioRepository.deleteAll(usuarioRepository.findByUnidadePublicId(cnpmf.getPublicId()));
+        usuarioRepository.deleteAll(usuarioRepository.findByUnidadePublicId(outra.getPublicId()));
+        laboratorioRepository.deleteAll(laboratorioRepository.findAll().stream()
+                .filter(l -> l.getUnidade().getId().equals(outra.getId())).toList());
         unidadeRepository.delete(cnpmf);
+        unidadeRepository.delete(outra);
     }
 
     @Test
@@ -114,6 +132,52 @@ class AuthServiceIntegrationTest {
         assertThat(atualizado.getLogin()).isEqualTo("m344136");
         assertThat(resposta.getUsuario().getId()).isEqualTo(importado.getPublicId());
         assertThat(usuarioRepository.findByUnidadePublicId(cnpmf.getPublicId())).hasSize(1);
+    }
+
+    // Mudança de lotação: a Embrapa passou a pessoa para outra Unidade. Perfil, laboratório e vínculos
+    // eram da Unidade antiga; ela volta a aguardar aprovação na nova, como no primeiro login.
+    @Test
+    void login_mudouDeUnidade_voltaAAguardarAprovacaoSemLaboratorioEEncerraVinculos() {
+        Laboratorio laboratorio = laboratorioRepository.saveAndFlush(Laboratorio.builder()
+                .unidade(outra).nome("Lab da outra").ativo(true).build());
+        Usuario gestor = usuario("Gestor Transferido", "344136", CPF, Perfil.GESTOR, SituacaoUsuario.ATIVO);
+        gestor.setUnidade(outra);
+        gestor.setLaboratorio(laboratorio);
+        gestor = salvar(gestor);
+        VinculoOperacionalUsuario vinculo = new VinculoOperacionalUsuario();
+        vinculo.setUsuario(gestor);
+        vinculo.setLaboratorio(laboratorio);
+        vinculo.setDataInicio(LocalDate.of(2026, 1, 1));
+        vinculo = vinculoRepository.saveAndFlush(vinculo);
+        gateway.loginOk("m344136", "344136", 512);
+        gateway.empregadoPorMatricula("344136", "Gestor Transferido", CPF, "Analista A", CNPMF, true);
+
+        authService.login("m344136", "senha", IP);
+
+        Usuario atualizado = usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(gestor.getPublicId()).orElseThrow();
+        assertThat(atualizado.getUnidade().getPublicId()).isEqualTo(cnpmf.getPublicId());
+        assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(atualizado.getLaboratorio()).isNull();
+        assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ANALISTA); // provisional suggestion, as for a new user
+        VinculoOperacionalUsuario encerrado = vinculoRepository.findById(vinculo.getId()).orElseThrow();
+        assertThat(encerrado.getEncerrado()).isTrue();
+        assertThat(encerrado.getDataFim()).isNotNull();
+    }
+
+    @Test
+    void login_administradorGeralMudouDeUnidade_soAcompanhaAUnidade() {
+        Usuario admin = usuario("Admin Geral", "344136", CPF, Perfil.ADMINISTRADOR_GERAL, SituacaoUsuario.ATIVO);
+        admin.setUnidade(outra);
+        admin = salvar(admin);
+        gateway.loginOk("m344136", "344136", 512);
+        gateway.empregadoPorMatricula("344136", "Admin Geral", CPF, "Analista A", CNPMF, true);
+
+        authService.login("m344136", "senha", IP);
+
+        Usuario atualizado = usuarioRepository.findWithUnidadeByPublicId(admin.getPublicId()).orElseThrow();
+        assertThat(atualizado.getUnidade().getPublicId()).isEqualTo(cnpmf.getPublicId());
+        assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
+        assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ADMINISTRADOR_GERAL);
     }
 
     @Test
