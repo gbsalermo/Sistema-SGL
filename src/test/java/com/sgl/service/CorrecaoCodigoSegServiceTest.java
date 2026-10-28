@@ -15,6 +15,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -40,6 +41,7 @@ import com.sgl.repository.SciRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.codigoseg.HistoricoCorrecaoCodigoSegRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 @ExtendWith(MockitoExtension.class)
 class CorrecaoCodigoSegServiceTest {
@@ -80,6 +82,17 @@ class CorrecaoCodigoSegServiceTest {
 	private Sci sci;
 	private Atividade atividade;
 	private Usuario usuario;
+	// Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+	@BeforeEach
+	void sessaoDoOperador() {
+		SessaoDeTeste.entrar(USUARIO_ID, Perfil.GESTOR);
+	}
+
+	@AfterEach
+	void encerrarSessao() {
+		SessaoDeTeste.sair();
+	}
+
 
 	@BeforeEach
 	void setUp() {
@@ -148,6 +161,14 @@ class CorrecaoCodigoSegServiceTest {
 	@AfterEach
 	void tearDown() {
 		TenantContext.limpar();
+	}
+
+	@Test
+	void deveRejeitarOperadorDiferenteDoUsuarioDaSessao() {
+		// The acting user comes from the session; a body naming someone else (e.g. a gestor) is refused.
+		SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+
+		assertThrows(AccessDeniedException.class, () -> service.corrigirProjeto(PROJETO_ID, request("SEG-NOVO")));
 	}
 
 	private CorrecaoCodigoSegRequestDTO request(String novoCodigo) {

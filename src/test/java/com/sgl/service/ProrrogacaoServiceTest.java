@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -43,6 +44,7 @@ import com.sgl.repository.prorrogacao.HistoricoProrrogacaoAtividadeRepository;
 import com.sgl.repository.prorrogacao.HistoricoProrrogacaoProjetoRepository;
 import com.sgl.repository.prorrogacao.HistoricoProrrogacaoSciRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 @ExtendWith(MockitoExtension.class)
 class ProrrogacaoServiceTest {
@@ -86,6 +88,17 @@ class ProrrogacaoServiceTest {
     private Sci sci;
     private Atividade atividade;
     private Usuario usuario;
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(USUARIO_ID, Perfil.GESTOR);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @BeforeEach
     void setUp() {
@@ -158,6 +171,15 @@ class ProrrogacaoServiceTest {
     @AfterEach
     void tearDown() {
         TenantContext.limpar();
+    }
+
+    @Test
+    void deveRejeitarOperadorDiferenteDoUsuarioDaSessao() {
+        // The acting user comes from the session; a body naming someone else (e.g. a gestor) is refused.
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+
+        assertThrows(AccessDeniedException.class,
+                () -> prorrogacaoService.prorrogarProjeto(PROJETO_ID, request(LocalDate.now().plusDays(30))));
     }
 
     private ProrrogacaoRequestDTO request(LocalDate novaDataFim) {

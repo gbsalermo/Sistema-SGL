@@ -16,12 +16,14 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.EventoObservacaoVinculoEstagio;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoObservacaoVinculoEstagio;
 import com.sgl.repository.ObservacaoVinculoEstagioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.CurrentUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -55,6 +57,7 @@ public class ObservacaoVinculoEstagioService {
     public ObservacaoVinculoEstagioResponseDTO adicionarOperacional(
             UUID vinculoId,
             ObservacaoVinculoEstagioRequestDTO dto) {
+        CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
         exigirTenantAtivo();
 
@@ -77,6 +80,7 @@ public class ObservacaoVinculoEstagioService {
     public ObservacaoVinculoEstagioResponseDTO alterarTreinamento(
             UUID vinculoId,
             TreinamentoSegurancaVinculoRequestDTO dto) {
+        CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
         exigirTenantAtivo();
 
@@ -130,8 +134,7 @@ public class ObservacaoVinculoEstagioService {
 
         usuario.validateActive();
 
-        if (usuario.getPerfil() != Perfil.GESTOR
-                && usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+        if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
             throw new BusinessRuleException(
                     "A operação exige perfil GESTOR ou ADMINISTRADOR.");
         }

@@ -19,6 +19,7 @@ import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
 import com.sgl.model.codigoseg.HistoricoCorrecaoCodigoSeg;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.TipoAlvoCodigoSeg;
 import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -26,6 +27,7 @@ import com.sgl.repository.SciRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.codigoseg.HistoricoCorrecaoCodigoSegRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.CurrentUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +46,7 @@ public class CorrecaoCodigoSegService {
 	public List<HistoricoCorrecaoCodigoSegResponseDTO> corrigirProjeto(
 			UUID projetoId,
 			CorrecaoCodigoSegRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
 		Projeto projeto = buscarProjeto(projetoId);
 		Usuario usuario = buscarUsuarioOperador(dto.getUsuarioId());
@@ -187,6 +190,7 @@ public class CorrecaoCodigoSegService {
 	public List<HistoricoCorrecaoCodigoSegResponseDTO> corrigirSci(
 			UUID sciId,
 			CorrecaoCodigoSegRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
 		Sci sci = buscarSci(sciId);
 		Projeto projeto = sci.getProjeto();
@@ -284,6 +288,7 @@ public class CorrecaoCodigoSegService {
 	public List<HistoricoCorrecaoCodigoSegResponseDTO> corrigirAtividade(
 			UUID atividadeId,
 			CorrecaoCodigoSegRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
 		Atividade atividade = buscarAtividade(atividadeId);
 		Usuario usuario = buscarUsuarioOperador(dto.getUsuarioId());
@@ -452,8 +457,7 @@ public class CorrecaoCodigoSegService {
 
 		usuario.validateActive();
 
-		if (usuario.getPerfil() != Perfil.GESTOR
-				&& usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+		if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
 
 			throw new BusinessRuleException(
 					"A correção de Código SEG exige perfil GESTOR ou ADMINISTRADOR."

@@ -1,0 +1,8 @@
+# Arquivos que não entram no contexto do build da imagem (deixam o build menor e
+# evitam levar para a imagem coisas locais, como o target/ já compilado).
+target
+.git
+.github
+.worktrees
+docs
+*.md

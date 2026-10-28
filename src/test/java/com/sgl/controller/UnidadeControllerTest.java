@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -30,6 +31,7 @@ import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.UnidadeRequestDTO;
 import com.sgl.dto.response.UnidadeResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.service.UnidadeHabilitacaoService;
 import com.sgl.service.UnidadeService;
 
 /**
@@ -55,6 +57,7 @@ import com.sgl.service.UnidadeService;
  * replica o comportamento de produção. Replicar também nos próximos ControllerTests.
  */
 @WebMvcTest(UnidadeController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(SecurityConfig.class)
 class UnidadeControllerTest {
 
@@ -79,6 +82,10 @@ class UnidadeControllerTest {
 
     @MockitoBean
     private UnidadeService unidadeService;
+
+    // Only satisfies the controller's constructor; enablement is covered by UnidadeHabilitacaoIntegrationTest.
+    @MockitoBean
+    private UnidadeHabilitacaoService unidadeHabilitacaoService;
 
     private UnidadeResponseDTO montarResponseDTO() {
         return new UnidadeResponseDTO(UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ");

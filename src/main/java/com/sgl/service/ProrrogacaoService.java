@@ -16,6 +16,7 @@ import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.prorrogacao.HistoricoProrrogacaoAtividade;
@@ -29,6 +30,7 @@ import com.sgl.repository.prorrogacao.HistoricoProrrogacaoAtividadeRepository;
 import com.sgl.repository.prorrogacao.HistoricoProrrogacaoProjetoRepository;
 import com.sgl.repository.prorrogacao.HistoricoProrrogacaoSciRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.CurrentUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,6 +49,7 @@ public class ProrrogacaoService {
 
 	@Transactional
 	public HistoricoProrrogacaoResponseDTO prorrogarProjeto(UUID projetoId, ProrrogacaoRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
 		Projeto projeto = buscarProjeto(projetoId);
 		Usuario usuario = buscarUsuarioOperador(dto.getUsuarioId());
@@ -73,6 +76,7 @@ public class ProrrogacaoService {
 
 	@Transactional
 	public HistoricoProrrogacaoResponseDTO prorrogarSci(UUID sciId, ProrrogacaoRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
 		Sci sci = buscarSci(sciId);
 		Projeto projeto = sci.getProjeto();
@@ -106,6 +110,7 @@ public class ProrrogacaoService {
 
 	@Transactional
 	public HistoricoProrrogacaoResponseDTO prorrogarAtividade(UUID atividadeId, ProrrogacaoRequestDTO dto) {
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioId());
 
 		Atividade atividade = buscarAtividade(atividadeId);
 
@@ -239,7 +244,7 @@ public class ProrrogacaoService {
 
 	private void validarPerfilProrrogacao(Usuario usuario) {
 
-		if (usuario.getPerfil() != Perfil.GESTOR && usuario.getPerfil() != Perfil.ADMINISTRADOR) {
+		if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
 
 			throw new BusinessRuleException("A prorrogação exige perfil GESTOR ou ADMINISTRADOR.");
 		}

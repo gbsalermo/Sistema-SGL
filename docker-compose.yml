@@ -1,0 +1,161 @@
+# =============================================================================
+# sgl-api — compose de produção (deploy por tag na branch release)
+#
+# Usado pelo sgl-releaser no servidor (ver infra/producao/ no repositório tip, kit sistemas/sgl).
+# O releaser exporta IO_PROJECT/IO_APP/IO_STAGE/IO_VERSION e passa o arquivo de
+# segredos com --env-file. Rede e volumes são externos: criados pelo bootstrap,
+# nunca apagados por um deploy.
+#
+# Não é usado no desenvolvimento: localmente a API roda com o profile "dev"
+# (./mvnw spring-boot:run) apontando para o PostgreSQL da máquina.
+# No servidor a porta local é PORT=8082 (a 8080 já é do tip-api na morere).
+#
+# Operações (profile cli), no diretório do módulo no servidor:
+#   docker compose --env-file /opt/sgl/env/api.env --profile cli run --rm backup
+#   BACKUP_FILE_TO_RESTORE=<arquivo>.tar.gz docker compose ... --profile cli run --rm restore
+#   docker compose --env-file /opt/sgl/env/api.env --profile cli run --rm sanitize
+# =============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:?defina DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWD:?defina DB_PASSWD}
+      POSTGRES_DB: ${DB_NAME:-sgl_db}
+    volumes:
+      - data_pgdir:/var/lib/postgresql/data
+    networks:
+      - stack
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME:-sgl_db}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    image: ${IO_PROJECT:-sgl}_${IO_APP:-api}:${IO_VERSION:-local}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Acesso público só pelo sgl-web (Nginx → sgl-api pela rede "shared").
+    # A porta local serve para diagnóstico na própria máquina.
+    ports:
+      - "127.0.0.1:${PORT:-8080}:8080"
+    networks:
+      stack:
+      shared:
+        aliases:
+          - sgl-api
+    environment:
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xms256m -Xmx768m}
+      TZ: America/Bahia
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME:-sgl_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      # --- Autenticação corporativa (login pelo AD via gateway) ---
+      # Todos os valores vêm do arquivo de segredos (--env-file), nunca ficam versionados.
+      # SGL_JWT_SECRET é obrigatório (mín. 32 bytes; a API não sobe sem ele ou com um curto).
+      SGL_JWT_SECRET: ${SGL_JWT_SECRET:?defina SGL_JWT_SECRET}
+      # Credencial do gateway de APIs corporativas (produção, sufixo -p). Obrigatória: sem ela a API não sobe.
+      SGL_CORPORATE_USERNAME: ${SGL_CORPORATE_USERNAME:?defina SGL_CORPORATE_USERNAME}
+      SGL_CORPORATE_PASSWORD: ${SGL_CORPORATE_PASSWORD:?defina SGL_CORPORATE_PASSWORD}
+      SGL_CORPORATE_AMBIENTE: ${SGL_CORPORATE_AMBIENTE:-p}
+      # true só no primeiro deploy: o primeiro login corporativo vira ADMINISTRADOR_GERAL enquanto
+      # não existir nenhum (depois disso a variável não tem efeito; o evento fica na auditoria).
+      SGL_PRIMEIRO_LOGIN_ADMIN: ${SGL_PRIMEIRO_LOGIN_ADMIN:-false}
+      # Origens CORS permitidas. Em produção o front usa a mesma origem (/api via Nginx).
+      SGL_CORS_ALLOWED_ORIGINS: ${SGL_CORS_ALLOWED_ORIGINS:-}
+      VERSION: ${IO_VERSION:-local}
+
+  backup:
+    image: postgres:16-alpine
+    restart: "no"
+    depends_on:
+      - db
+    volumes:
+      - data_backup:/backup
+    networks:
+      - stack
+    environment:
+      PGHOST: db
+      TZ: America/Bahia
+      PGUSER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWD}
+    command: >
+      sh -c "set -ex &&
+        cd /backup &&
+        export BACKUP_PGDB=$$(date +'%Y_%m_%d_%H_%M_%S')_${IO_PROJECT:-sgl}_${IO_APP:-api}_${IO_STAGE:-release}_${IO_VERSION:-local}.sql &&
+        pg_dump --file $$BACKUP_PGDB --format=p --encoding=UTF8 --no-owner --no-privileges --clean --if-exists ${DB_NAME:-sgl_db} &&
+        tar -czf $$BACKUP_PGDB.tar.gz $$BACKUP_PGDB &&
+        rm -f $$BACKUP_PGDB &&
+        find /backup -name '*.tar.gz' -mtime +${BACKUP_RETENTION_DAYS:-30} -print -delete &&
+        ls -lh /backup | tail -5"
+    profiles:
+      - cli
+
+  restore:
+    image: postgres:16-alpine
+    restart: "no"
+    depends_on:
+      - db
+    volumes:
+      - data_backup:/backup
+    networks:
+      - stack
+    environment:
+      PGHOST: db
+      PGUSER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWD}
+    command: >
+      sh -c 'set -ex &&
+        cd /backup &&
+        FILE_TO_RESTORE=${BACKUP_FILE_TO_RESTORE:-no_file_to_restore} &&
+        test -f "$$FILE_TO_RESTORE" &&
+        tar -zxf "$$FILE_TO_RESTORE" &&
+        BACKUP_PGDB="$${FILE_TO_RESTORE%.tar.gz}" &&
+        dropdb --if-exists --force ${DB_NAME:-sgl_db} &&
+        createdb --encoding UTF8 ${DB_NAME:-sgl_db} &&
+        psql -v ON_ERROR_STOP=1 -d ${DB_NAME:-sgl_db} < "$$BACKUP_PGDB" &&
+        rm -f "$$BACKUP_PGDB"'
+    profiles:
+      - cli
+
+  sanitize:
+    image: postgres:16-alpine
+    restart: "no"
+    depends_on:
+      - db
+    networks:
+      - stack
+    environment:
+      PGHOST: db
+      PGUSER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWD}
+    command: >
+      sh -c 'set -ex &&
+        vacuumdb --analyze ${DB_NAME:-sgl_db} &&
+        reindexdb ${DB_NAME:-sgl_db}'
+    profiles:
+      - cli
+
+networks:
+  stack:
+    external: true
+    name: ${IO_PROJECT:-sgl}_${IO_APP:-api}_${IO_STAGE:-release}
+  shared:
+    external: true
+    name: ${IO_PROJECT:-sgl}_${IO_STAGE:-release}
+
+volumes:
+  data_pgdir:
+    external: true
+    name: ${IO_PROJECT:-sgl}_${IO_APP:-api}_${IO_STAGE:-release}_pgdata
+  data_backup:
+    external: true
+    name: ${IO_PROJECT:-sgl}_${IO_APP:-api}_${IO_STAGE:-release}_backup

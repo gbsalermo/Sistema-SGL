@@ -17,6 +17,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -48,6 +49,7 @@ import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -118,6 +120,17 @@ class EstagiarioServiceTest {
     private Estagiario estagiario;
     private VinculoEstagio vinculo;
     private VinculoEstagioAtividade participacao;
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @BeforeEach
     void setUp() {
@@ -630,6 +643,13 @@ class EstagiarioServiceTest {
         assertEquals(
                 "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.",
                 ex.getMessage());
+    }
+
+    @Test
+    void deveRejeitarCadastroDeEstagioPorPerfilSemGestao() {
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.TECNICO);
+
+        assertThrows(AccessDeniedException.class, () -> estagiarioService.criar(montarDtoValido()));
     }
 
     private EstagiarioRequestDTO montarDtoValido() {

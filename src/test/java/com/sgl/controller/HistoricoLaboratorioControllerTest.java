@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -51,6 +52,7 @@ import com.sgl.service.HistoricoLaboratorioService;
  * propaga a {@link BusinessRuleException} do Service mockado como 400.
  */
 @WebMvcTest(HistoricoLaboratorioController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(SecurityConfig.class)
 class HistoricoLaboratorioControllerTest {
 

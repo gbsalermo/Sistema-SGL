@@ -7,18 +7,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
 import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.*;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.*;
+import com.sgl.security.AuthenticatedUser;
 import com.sgl.tenant.TenantContext;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,7 +41,12 @@ class VinculoOperacionalUsuarioServiceTest {
     @Mock AtividadeRepository atividades;
     @InjectMocks VinculoOperacionalUsuarioService service;
 
-    @AfterEach void limpar() { TenantContext.limpar(); }
+    // Every mutation requires a gestão session; reads and lookups do not.
+    @BeforeEach void sessaoDeGestor() {
+        AuthenticatedUser gestor = new AuthenticatedUser(UUID.randomUUID(), Perfil.GESTOR, SituacaoUsuario.ATIVO, UNIDADE);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(gestor, null, List.of()));
+    }
+    @AfterEach void limpar() { TenantContext.limpar(); SecurityContextHolder.clearContext(); }
 
     private Unidade unidade() {
         Unidade u = new Unidade();

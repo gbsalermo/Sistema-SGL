@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.sgl.dto.request.UsuarioRequestDTO;
@@ -28,10 +30,12 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.security.AuthenticatedUser;
 import com.sgl.tenant.TenantContext;
 
 /**
@@ -89,10 +93,17 @@ class UsuarioServiceTest {
         usuario.setPerfil(Perfil.TECNICO);
         usuario.setUnidade(unidade);
         usuario.setAtivo(true);
+
+        // Creating, re-profiling and deactivating need a session whose profile may grant the target's.
+        AuthenticatedUser administrador = new AuthenticatedUser(UUID.randomUUID(), Perfil.ADMINISTRADOR,
+                SituacaoUsuario.ATIVO, UNIDADE_PUBLIC_ID);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(administrador, null, List.of()));
     }
 
     @AfterEach
     void tearDown() {
+        SecurityContextHolder.clearContext();
         TenantContext.limpar();
     }
 
@@ -126,6 +137,7 @@ class UsuarioServiceTest {
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setEmail("maria.oliveira@embrapa.br");
         dto.setSenha("SenhaForte123!");
+        dto.setPerfil(Perfil.TECNICO);
 
         // A checagem de tenant acontece antes da checagem de e-mail, então
         // precisa estar satisfeita para o teste realmente exercitar a regra de e-mail duplicado.
@@ -144,6 +156,7 @@ class UsuarioServiceTest {
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setEmail("novo.usuario@embrapa.br");
         dto.setSenha("   ");
+        dto.setPerfil(Perfil.TECNICO);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(usuarioRepository.existsByEmail("novo.usuario@embrapa.br")).thenReturn(false);

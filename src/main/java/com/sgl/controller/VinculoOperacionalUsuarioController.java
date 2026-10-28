@@ -3,7 +3,6 @@ package com.sgl.controller;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,10 +11,8 @@ import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
 import com.sgl.service.VinculoOperacionalUsuarioService;
 
-/** Temporário: somente perfis DEV/DEMO. Retirar deste controller o acesso
- * de escrita sem SSO antes de qualquer deploy real. */
+/** Writes require a gestão session, enforced in VinculoOperacionalUsuarioService. */
 @RestController
-@Profile({"dev", "demo"})
 @RequestMapping("/api/v1/vinculos-operacionais")
 @RequiredArgsConstructor
 public class VinculoOperacionalUsuarioController {

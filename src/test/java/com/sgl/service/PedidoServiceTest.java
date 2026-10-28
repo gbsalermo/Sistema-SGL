@@ -20,12 +20,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.AprovarPedidoRequestDTO;
+import com.sgl.dto.request.PedidoRequestDTO;
 import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.EstoqueCentral;
@@ -37,6 +39,7 @@ import com.sgl.model.Projeto;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemMovimentacao;
+import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.UnidadeMedida;
@@ -49,6 +52,7 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
 
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
@@ -101,6 +105,17 @@ class PedidoServiceTest {
     private EstoqueCentral estoque;
     private ItemPedido item;
     private Pedido pedido;
+    // Client-supplied acting users must match the session user (CurrentUser.exigirProprioUsuario).
+    @BeforeEach
+    void sessaoDoOperador() {
+        SessaoDeTeste.entrar(SOLICITANTE_PUBLIC_ID, Perfil.TECNICO);
+    }
+
+    @AfterEach
+    void encerrarSessao() {
+        SessaoDeTeste.sair();
+    }
+
 
     @BeforeEach
     void prepararCenario() {
@@ -191,6 +206,17 @@ class PedidoServiceTest {
     }
 
     @Test
+    void deveRejeitarPedidoEmNomeDeOutroUsuario() {
+        // The requester comes from the session; a body naming someone else is refused.
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.TECNICO);
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(SOLICITANTE_PUBLIC_ID);
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class, () -> pedidoService.criar(dto));
+    }
+
+    @Test
     void deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService() {
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
@@ -258,6 +284,39 @@ class PedidoServiceTest {
                 6L, new BigDecimal("0.200"), aprovador,
                 OrigemMovimentacao.PEDIDO, pedido, laboratorio, "Aprovação parcial",
                 null, null);
+    }
+
+    @Test
+    void administradorGeral_passaNaChecagemDeLaboratorioComoGestor() {
+        aprovador.setPerfil(Perfil.ADMINISTRADOR_GERAL);
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(APROVADOR_PUBLIC_ID);
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, aprovador.getPerfil());
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(aprovador));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+
+        // Passou da checagem de vínculo com o laboratório; falha só por não haver itens.
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> pedidoService.criar(dto));
+
+        assertEquals("O pedido precisa de pelo menos um Produto.", exception.getMessage());
+    }
+
+    @Test
+    void tecnicoSemVinculo_naoPassaNaChecagemDeLaboratorio() {
+        aprovador.setPerfil(Perfil.TECNICO);
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(APROVADOR_PUBLIC_ID);
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, aprovador.getPerfil());
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(aprovador));
+        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> pedidoService.criar(dto));
+
+        assertEquals("O usuário não pertence ao laboratório informado.", exception.getMessage());
     }
 
     @Test

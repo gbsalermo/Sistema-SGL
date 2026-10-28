@@ -1,9 +1,12 @@
 package com.sgl.model;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.enums.OrigemUsuario;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,10 +46,11 @@ public class Usuario {
     @Column(nullable = false)
     private String nome;
 
-    @Column(nullable = false, unique = true)
+    // Optional: corporate users authenticate against the corporate directory and have no local email/password.
+    @Column(unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String senha;
 
     @Enumerated(EnumType.STRING)
@@ -63,6 +67,50 @@ public class Usuario {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    @Column(unique = true)
+    private String login;
+
+    @Column(unique = true)
+    private String matricula;
+
+    @Column(unique = true)
+    private String cpf;
+
+    @Column
+    private String cargo;
+
+    @Column
+    private String sublotacao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrigemUsuario origem = OrigemUsuario.DEV;
+
+    // Corporate users start as PENDENTE_VINCULACAO until an admin assigns their unit.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SituacaoUsuario situacao = SituacaoUsuario.ATIVO;
+
+    @Column(name = "ultimo_login_em")
+    private OffsetDateTime ultimoLoginEm;
+
+    @Column(name = "sincronizado_em")
+    private OffsetDateTime sincronizadoEm;
+
+    // Keeps the pre-corporate-auth signature working for local (DEV) users created by seeders and tests.
+    public Usuario(Long id, UUID publicId, String nome, String email, String senha, Perfil perfil,
+            Unidade unidade, Laboratorio laboratorio, Boolean ativo) {
+        this.id = id;
+        this.publicId = publicId;
+        this.nome = nome;
+        this.email = email;
+        this.senha = senha;
+        this.perfil = perfil;
+        this.unidade = unidade;
+        this.laboratorio = laboratorio;
+        this.ativo = ativo;
+    }
 
     public void validateInternProfile() {
         if (perfil != Perfil.ESTAGIARIO) {
