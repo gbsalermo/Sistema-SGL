@@ -35,6 +35,7 @@ public class RotuloResiduoResponseDTO {
     private final String unidadeSigla;
     private final String laboratorioNome;
     private final String geradorNome;
+    private final String responsavelLiberacaoNome;
     private final LocalDateTime dataInformacao;
     private final EstadoFisicoResiduo estadoFisico;
     private final Set<MedidaSeguranca> medidasSeguranca;
@@ -53,6 +54,12 @@ public class RotuloResiduoResponseDTO {
     private final LocalDateTime dataRotulagem;
 
     public RotuloResiduoResponseDTO(Residuo entity) {
+        this(entity, null);
+    }
+
+    // A identificação vem do evento de auditoria de liberação, nunca do gerador.
+    public RotuloResiduoResponseDTO(Residuo entity, String responsavelLiberacaoNome) {
+        this.responsavelLiberacaoNome = responsavelLiberacaoNome;
         this.residuoId = entity.getPublicId();
         this.codigoRastreio = entity.getCodigoRastreio();
         this.qrCodeConteudo = entity.getQrCodeConteudo();
