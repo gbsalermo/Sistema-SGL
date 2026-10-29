@@ -19,6 +19,7 @@ import com.sgl.model.*;
 import com.sgl.model.enums.Perfil;
 import com.sgl.repository.*;
 import com.sgl.security.CurrentUser;
+import com.sgl.security.AuthenticatedUser;
 import com.sgl.security.PerfilPolicy;
 import com.sgl.tenant.TenantContext;
 
@@ -69,6 +70,7 @@ public class VinculoOperacionalUsuarioService {
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
+        exigirAutoridadeSobre(usuario);
         if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
             throw new BusinessRuleException("Estagiários usam vínculos de estágio e participações existentes.");
         }
@@ -137,6 +139,7 @@ public class VinculoOperacionalUsuarioService {
         exigirGestao();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
+        exigirAutoridadeSobre(v.getUsuario());
         if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo encerrado não pode ser editado.");
         }
@@ -156,6 +159,7 @@ public class VinculoOperacionalUsuarioService {
         exigirGestao();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
+        exigirAutoridadeSobre(v.getUsuario());
         if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo já encerrado.");
         }
@@ -170,6 +174,7 @@ public class VinculoOperacionalUsuarioService {
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
+        exigirAutoridadeSobre(usuario);
         if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
             throw new BusinessRuleException("Laboratório do estagiário é gerenciado pelo fluxo de estágio.");
         }
@@ -211,6 +216,23 @@ public class VinculoOperacionalUsuarioService {
     private static void exigirGestao() {
         if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
             throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratório-base.");
+        }
+    }
+
+    /**
+     * Vínculos e laboratório-base definem onde a pessoa pode operar, então mexer neles é
+     * mexer no acesso dela. Por isso valem as mesmas regras da troca de perfil em
+     * UsuarioService: ninguém altera o próprio acesso, e só se altera quem tem um perfil
+     * que você poderia conceder (ex.: um GESTOR não mexe nos vínculos de um ADMINISTRADOR
+     * nem de outro GESTOR).
+     */
+    private static void exigirAutoridadeSobre(Usuario alvo) {
+        AuthenticatedUser ator = CurrentUser.get();
+        if (ator.publicId().equals(alvo.getPublicId())) {
+            throw new AccessDeniedException("Ninguém pode alterar os próprios vínculos ou laboratório-base.");
+        }
+        if (!PerfilPolicy.podeConceder(ator.perfil(), alvo.getPerfil())) {
+            throw new AccessDeniedException("Seu perfil não pode alterar os vínculos de um usuário " + alvo.getPerfil() + ".");
         }
     }
 }

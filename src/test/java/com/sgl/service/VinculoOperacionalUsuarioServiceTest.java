@@ -24,6 +24,8 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.*;
 import com.sgl.security.AuthenticatedUser;
+import com.sgl.security.CurrentUser;
+import org.springframework.security.access.AccessDeniedException;
 import com.sgl.tenant.TenantContext;
 
 @ExtendWith(MockitoExtension.class)
@@ -143,6 +145,7 @@ class VinculoOperacionalUsuarioServiceTest {
         TenantContext.definir(UNIDADE);
         VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
         v.setPublicId(UUID.randomUUID());
+        v.setUsuario(analista());
         v.setEncerrado(true);
         when(vinculos.findByPublicIdAndUsuarioUnidadePublicId(v.getPublicId(), UNIDADE))
             .thenReturn(Optional.of(v));
@@ -240,6 +243,44 @@ class VinculoOperacionalUsuarioServiceTest {
         when(laboratorios.findByPublicIdAndUnidadePublicId(LAB, UNIDADE)).thenReturn(Optional.of(lab));
         when(projetos.findByPublicId(PROJETO)).thenReturn(Optional.of(p));
         assertThrows(BusinessRuleException.class, () -> service.criar(dto));
+        verify(vinculos, never()).save(any(VinculoOperacionalUsuario.class));
+    }
+
+    // Vínculos definem onde a pessoa opera: mexer neles segue as regras da troca de perfil.
+    @Test void gestorNaoAlteraLaboratorioBaseDeAdministrador() {
+        TenantContext.definir(UNIDADE);
+        Usuario admin = analista();
+        admin.setPerfil(Perfil.ADMINISTRADOR);
+        when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(admin));
+        assertThrows(AccessDeniedException.class, () -> service.definirLaboratorioBase(USUARIO, LAB));
+        assertNull(admin.getLaboratorio());
+    }
+
+    @Test void gestorNaoEncerraVinculoDeOutroGestor() {
+        TenantContext.definir(UNIDADE);
+        Usuario outroGestor = analista();
+        outroGestor.setPerfil(Perfil.GESTOR);
+        VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
+        v.setPublicId(UUID.randomUUID());
+        v.setUsuario(outroGestor);
+        v.setLaboratorio(laboratorio());
+        v.setDataInicio(LocalDate.now().minusDays(1));
+        when(vinculos.findByPublicIdAndUsuarioUnidadePublicId(v.getPublicId(), UNIDADE)).thenReturn(Optional.of(v));
+        assertThrows(AccessDeniedException.class, () -> service.encerrar(v.getPublicId()));
+        assertNotEquals(Boolean.TRUE, v.getEncerrado());
+    }
+
+    @Test void ninguemCriaVinculoParaSiMesmo() {
+        TenantContext.definir(UNIDADE);
+        Usuario proprio = analista();
+        proprio.setPublicId(CurrentUser.get().publicId());
+        proprio.setPerfil(Perfil.ADMINISTRADOR);
+        AuthenticatedUser admin = new AuthenticatedUser(proprio.getPublicId(), Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO, UNIDADE);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(admin, null, List.of()));
+        VinculoOperacionalUsuarioRequestDTO dto = new VinculoOperacionalUsuarioRequestDTO();
+        dto.setUsuarioId(proprio.getPublicId()); dto.setLaboratorioId(LAB); dto.setDataInicio(LocalDate.now());
+        when(usuarios.findByPublicIdAndUnidadePublicId(proprio.getPublicId(), UNIDADE)).thenReturn(Optional.of(proprio));
+        assertThrows(AccessDeniedException.class, () -> service.criar(dto));
         verify(vinculos, never()).save(any(VinculoOperacionalUsuario.class));
     }
 }
