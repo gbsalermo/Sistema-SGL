@@ -80,3 +80,24 @@ Após validação do rótulo DEMO de Meio BDA, o cabeçalho foi simplificado par
 **Gerador registrado, informado em, situação, indicador de prévia, data e responsável pela liberação** foram movidos do cabeçalho para um painel de rastreabilidade **ao lado do nível de risco e acima da composição/estado físico**, sem eliminar informações. A distinção entre o responsável pela liberação (evento auditado) e o gerador permanece. Foram preservados pictogramas, notas de segurança, descrição, logotipos e bloqueio de impressão.
 
 **Pendência de validação:** executar `./mvnw clean verify` e `npm run build`; comparar rótulos com e sem Projeto/SCI/Atividade, nomes longos e prévias de 90/135/180/190 mm. A altura pode se expandir quando necessária, devendo ser conferida na impressão física. Nenhum merge executado.
+
+## Implementação dos dois últimos documentos — 29/10/2026
+
+### Rótulo de Solução
+- Tela `/solucoes/:id/rotulo`, acessível em **Central de Soluções → Detalhes → Visualizar / imprimir rótulo** exclusivamente para pedidos `EM_PREPARACAO` ou `ENTREGUE`.
+- A consulta usa `GET /v1/solucoes/pedidos/{id}` (já existente) e `GET /v1/movimentacoes/pedido?pedidoId={id}`. O nome exibido como **Preparação aprovada por** é o usuário associado às saídas de estoque `SAIDA` efetuadas na aprovação, não o solicitante nem a pessoa que entregou. O horário indicado é o da **movimentação de aprovação**, não uma data de preparo físico.
+- Se o histórico não possuir saída, o responsável aparece como **Não identificado nas movimentações**. Dados contraditórios de vários aprovadores também são explicitamente identificados; não se inventa aprovação. A massa DEMO pode conter registros de status criados como fixture sem movimentos correspondentes.
+- Rótulo com componentes efetivamente registrados e quantidades aprovadas quando disponíveis; sem presumir volume final, concentração, validade, capacidade, solvente, pictogramas ou frases H/P.
+- Para pedidos pendentes, rejeitados ou cancelados, a prévia identifica o estado e o botão de impressão é bloqueado. O layout usa largura 90/135/180/190 mm, altura variável e marcas SGL/Embrapa.
+
+### Documento de Entrada de Lote
+- Tela `/lotes/:id/documento-entrada`, acessível em **Estoque → Detalhe → Lote → Documento de entrada** e no aviso de **Entrada registrada** logo após uma nova entrada.
+- Dados dos endpoints `GET /v1/lotes/{id}`, `GET /v1/estoque-central/{id}` e `GET /v1/movimentacoes/lote?loteId={id}`, já existentes. Documento informativo **USO INTERNO — SEM VALOR FISCAL**, sem substituição de documento fiscal e sem novas autorizações.
+- Exibe código do lote SGL e referência de fornecedor, apresentação e tipo, quantidade original de embalagens, conteúdo por embalagem, quantidade original na unidade-base, fracionamento, datas, origem/autor do primeiro movimento de entrada quando registrados e observações. **Não somar saldo atual como quantidade recebida**, e não inventar fornecedor nominal ou nota fiscal.
+- O conteúdo refletirá o cadastro atual do lote e as movimentações preservadas; campos de lote que o sistema permite editar não são apresentados como snapshots imutáveis da entrada original.
+
+### Regressão e limites
+- Não foram criadas migrations, endpoints nem aprovações adicionais; todos os ajustes funcionais estão no frontend, na branch `collab/etapa-10-rotulos-impressao`.
+- **Testes pendentes de execução local:** `npm run build`; impressões com diferentes larguras; Solução pendente, aprovada e entregue; Documento após entrada e pela consulta posterior; lotes fracionáveis e não fracionáveis; campos nulos/textos longos; responsividade e isolamento de Unidade.
+- A altura aumenta conforme o conteúdo; antes de imprimir em mídia adesiva pequena, verificar se o conteúdo inteiro cabe na altura física disponível.
+- Não há QR Code operacional nestas versões: a referência visual do cliente não justifica gerar conteúdo de QR sem endereço/código de leitura implementado e validado. Sem merge.
