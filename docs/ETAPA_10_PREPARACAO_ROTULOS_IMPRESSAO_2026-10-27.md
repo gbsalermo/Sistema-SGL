@@ -107,3 +107,11 @@ Após validação do rótulo DEMO de Meio BDA, o cabeçalho foi simplificado par
 O mantenedor **validou visualmente o rótulo de Soluções** durante a revisão da Etapa 10. Preservar o modelo, os dados e a regra de impressão a partir do status `EM_PREPARACAO`; não redesenhar sem nova solicitação. Essa validação de layout não substitui o `npm run build`, testes de fluxo nem conferência da impressão física.
 
 No frontend, corrigido o botão **Cancelar preparação** em **Central de Soluções → Detalhes → Ações da solução**: o seletor `.admin-cancel-action` estava formatado apenas no rodapé do modal, e na área expandida aparecia com altura/padding incoerentes. A nova regra no CSS de Soluções aplica altura, espaçamento, raio, tipografia, borda, contraste vermelho e foco aos botões do conjunto operacional; o rodapé do modal e a lógica de cancelamento permanecem inalterados. Validar em tema claro/escuro e telas estreitas; sem merge.
+
+## 10.5 — Primeira integração Zebra / ZPL (29/10/2026)
+
+Iniciado suporte opcional à Zebra em `SGL-FRONTEND`, sem alterar a impressão A4 aprovada. O novo `zpl.ts` gera arquivo ZPL com medidas da mídia e resolução (203/300 dpi) e interrompe a exportação se os dados ultrapassarem a etiqueta. O `ZebraExportPanel.vue` aparece no Documento de Entrada e no Rótulo de Soluções, respeitando neste último a restrição de impressão para pedidos não aprovados. **O arquivo é baixado localmente; não há conexão direta ou envio automático para impressora.**
+
+**Limitação crítica:** versão piloto textual, sem logotipos gráficos/pictogramas; não disponibilizada em Produto e Resíduo enquanto a representação de riscos e gráficos não estiver correta. Dimensões e desempenho devem ser validados com modelo real de impressora Zebra, resolução, largura de impressão, tipo de mídia e driver. Não declarar a Etapa 10 Zebra homologada somente porque o arquivo foi exportado.
+
+**Arquivo principal de detalhamento:** `SGL-FRONTEND/docs/ETAPA_10_ZEBRA_PILOTO_ZPL_2026-10-29.md`. Teste de motor disponível em `src/modules/rotulos/zebra/zpl.test.mjs` (`node --experimental-strip-types --test src/modules/rotulos/zebra/zpl.test.mjs`). `npm run build` e validação física ainda pendentes. Sem merge.
