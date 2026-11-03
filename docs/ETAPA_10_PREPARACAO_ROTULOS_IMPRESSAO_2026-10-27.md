@@ -115,3 +115,9 @@ Iniciado suporte opcional à Zebra em `SGL-FRONTEND`, sem alterar a impressão A
 **Limitação crítica:** versão piloto textual, sem logotipos gráficos/pictogramas; não disponibilizada em Produto e Resíduo enquanto a representação de riscos e gráficos não estiver correta. Dimensões e desempenho devem ser validados com modelo real de impressora Zebra, resolução, largura de impressão, tipo de mídia e driver. Não declarar a Etapa 10 Zebra homologada somente porque o arquivo foi exportado.
 
 **Arquivo principal de detalhamento:** `SGL-FRONTEND/docs/ETAPA_10_ZEBRA_PILOTO_ZPL_2026-10-29.md`. Teste de motor disponível em `src/modules/rotulos/zebra/zpl.test.mjs` (`node --experimental-strip-types --test src/modules/rotulos/zebra/zpl.test.mjs`). `npm run build` e validação física ainda pendentes. Sem merge.
+
+## 10.5 — Redesenho da prévia Zebra em ZPL (03/11/2026)
+
+A prévia gerada para a Solução foi conferida em um visualizador ZPL e o mantenedor pediu **mais hierarquia e acabamento visual**, mantendo os dados informativos. Aplicado no frontend um layout térmico monocromático com marcas oficiais SGL/Embrapa via rasterização local `^GFA`, cabeçalho, faixa de identificação em negativo, campos estruturados, tabela de componentes, observações e rodapé. O mesmo motor atende o Documento de Entrada, preservando diferença de conteúdo e o aviso sem valor fiscal. A exportação continua opcional, por download, sem envio à impressora e sem alterar os rótulos HTML.
+
+**Aceite pendente:** novo build e testes automatizados (o aceite do piloto anterior não cobre o redesenho), comparação visual em simulador ZPL e impressão física em equipamento real quando disponível. Produtos/Resíduos não recebem ZPL incompleto sem pictogramas GHS válidos. Detalhes: `SGL-FRONTEND/docs/ETAPA_10_ZEBRA_PILOTO_ZPL_2026-10-29.md`. Nenhum merge.
