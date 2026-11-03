@@ -125,3 +125,9 @@ A prévia gerada para a Solução foi conferida em um visualizador ZPL e o mante
 ## 10.5 — Alinhamento das logos Zebra (03/11/2026)
 
 Após prévia visual do ZPL, corrigida no frontend a diferença de alinhamento entre SGL e Embrapa: o rasterizador recorta margens claras/transparentes dos PNGs oficiais antes de ajustar as artes nas caixas simétricas do cabeçalho. Adicionada função pura `recorteMarca.ts` com testes de detecção de conteúdo; não foram alterados os rótulos HTML, os dados nem as regras de impressão. **Revalidar renderização 90×125 mm / 203 dpi, build e testes locais; a impressão física continua pendente.** Detalhes: `SGL-FRONTEND/docs/ETAPA_10_ZEBRA_PILOTO_ZPL_2026-10-29.md`. Sem merge.
+
+## 10.5 — Extensão da impressão Zebra para Produto e Resíduo (03/11/2026)
+
+Após o aceite visual do ZPL de Soluções, o modelo térmico institucional passou a ser oferecido também nas telas de **Rótulo de Produto** e **Rótulo de Resíduo** (`SGL-FRONTEND`). Os dados são derivados dos contratos existentes, sem novas migrations/endpoints e sem alterar os rótulos A4. Os pictogramas cadastrados de risco agora são rasterizados integralmente a partir dos arquivos oficiais em `/assets/residuos/pictogramas/` e incluídos como gráficos ZPL; caso algum não seja carregado, o arquivo não é gerado. Para Resíduos, `impressaoPermitida` continua impedindo exportação antes da liberação. O cabeçalho conserva os ajustes de marcas/legenda aprovados no piloto de Soluções.
+
+**Atenção:** não implica certificação regulatória, inclusão de dados GHS não cadastrados ou homologação física em qualquer modelo Zebra. Validar `npm run build`, os testes em `src/modules/rotulos/zebra/zpl.test.mjs`, prévias com diferentes riscos e comprimentos, resolução 203/300 dpi, bloqueio de Resíduos ainda não liberados e impressão real quando houver acesso ao equipamento. Referência: `SGL-FRONTEND/docs/ETAPA_10_ZEBRA_PILOTO_ZPL_2026-10-29.md`. Nenhum merge realizado.
