@@ -43,7 +43,8 @@ class IdentityRulesTest {
 
         @Override
         public Optional<Colaborador> colaboradorPorCpf(String cpf) {
-            return Optional.ofNullable(colaborador);
+            // Filtra pelo CPF para o teste provar que a busca usou a chave certa.
+            return Optional.ofNullable(colaborador).filter(c -> cpf.equals(c.cpf().replaceAll("\\D", "")));
         }
     }
 
@@ -104,6 +105,58 @@ class IdentityRulesTest {
         assertEquals("12345678909", id.cpf());
         assertEquals("b@x.br", id.email());
         assertEquals(9, id.unidadeCorporativaId());
+    }
+
+    // Caso real (Gabriel, estagiário, 1º acesso): entrou com o CPF, o AD aceitou a senha, mas a resposta
+    // do AD trouxe "matricula"/"login" que não são CPF. O CPF digitado tem de bastar para achar o colaborador.
+    @Test
+    void resolve_colaboradorComMatriculaNaoCpfNoAd_usaCpfDigitado() {
+        Colaborador col = new Colaborador(5L, "123.456.789-09", "Gabriel", 9, "Unidade", "Estagiário", true);
+        CorporateLoginUser login = new CorporateLoginUser("gabriel.salermo", "e12345", "Gabriel",
+            "g@x.br", null, null, null, 512);
+
+        CorporateIdentity id = CorporateIdentityResolver.resolve(login, "12345678909", new FakeClient(null, col));
+
+        assertEquals(TipoPessoaCorporativa.COLABORADOR, id.tipo());
+        assertEquals("12345678909", id.cpf());
+        assertEquals(9, id.unidadeCorporativaId());
+    }
+
+    @Test
+    void resolve_colaboradorSemMatriculaNoAd_usaCpfDigitado() {
+        Colaborador col = new Colaborador(5L, "12345678909", "Gabriel", 9, "Unidade", "Estagiário", true);
+        CorporateLoginUser login = new CorporateLoginUser("gabriel.salermo", null, "Gabriel",
+            null, null, null, null, 512);
+
+        CorporateIdentity id = CorporateIdentityResolver.resolve(login, "123.456.789-09", new FakeClient(null, col));
+
+        assertEquals(TipoPessoaCorporativa.COLABORADOR, id.tipo());
+    }
+
+    @Test
+    void resolve_empregadoQueDigitouCpf_continuaPelaMatriculaDoAd() {
+        Empregado emp = new Empregado("m344136", "Fulano", "123.456.789-09", null, "Analista", 7, true, null);
+        CorporateLoginUser login = new CorporateLoginUser("m344136", "m344136", "Fulano", null,
+            null, null, null, 512);
+
+        CorporateIdentity id = CorporateIdentityResolver.resolve(login, "12345678909", new FakeClient(emp, null));
+
+        assertEquals(TipoPessoaCorporativa.EMPREGADO, id.tipo());
+        assertEquals("m344136", id.matricula());
+    }
+
+    @Test
+    void resolve_cpfDigitadoAusenteDasBases_lancaNaoEncontrado() {
+        CorporateLoginUser login = new CorporateLoginUser("x", "e1", "X", null, null, null, null, 512);
+        assertThrows(CorporatePersonNotFoundException.class,
+            () -> CorporateIdentityResolver.resolve(login, "12345678909", new FakeClient(null, null)));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"'',VAZIO", "123.456.789-09,CPF", "12345678909,CPF", "m344136,MATRICULA", "344136,MATRICULA",
+        "gabriel.salermo,OUTRO"})
+    void formato_classificaSemExporValor(String valor, String esperado) {
+        assertEquals(esperado, CorporateIdentityResolver.formato(valor));
     }
 
     @Test
