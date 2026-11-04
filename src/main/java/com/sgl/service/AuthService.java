@@ -109,7 +109,7 @@ public class AuthService {
             throw LoginRejectedException.contaDesativada();
         }
 
-        CorporateIdentity identity = CorporateIdentityResolver.resolve(corporateUser, corporateApiClient);
+        CorporateIdentity identity = CorporateIdentityResolver.resolve(corporateUser, normalizedLogin, corporateApiClient);
         String matricula = realMatricula(identity.matricula());
         Optional<Usuario> existing = findExisting(matricula, identity.cpf());
 
