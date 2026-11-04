@@ -91,7 +91,7 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
-    void login_empregadoNovo_criaPendenteComDadosCorporativos() {
+    void login_empregadoNovo_entraAtivoComPerfilSugeridoEDadosCorporativos() {
         gateway.loginOk("m344136", "344136", 512);
         gateway.empregadoPorMatricula("344136", "Fulano de Tal", CPF, "Analista A", CNPMF, true);
 
@@ -99,20 +99,61 @@ class AuthServiceIntegrationTest {
 
         Usuario usuario = usuarioRepository.findWithUnidadeByPublicId(resposta.getUsuario().getId()).orElseThrow();
         assertThat(usuario.getMatricula()).isEqualTo("344136");
-        assertThat(usuario.getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        // Empregado não espera aprovação: entra ativo com o perfil sugerido pelo cargo.
+        assertThat(usuario.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         assertThat(usuario.getOrigem()).isEqualTo(OrigemUsuario.CORPORATIVO);
         assertThat(usuario.getUnidade().getPublicId()).isEqualTo(cnpmf.getPublicId());
         assertThat(usuario.getCargo()).isEqualTo("Analista A");
         assertThat(usuario.getSublotacao()).isEqualTo("Sublotação 344136");
         assertThat(usuario.getCpf()).isEqualTo(CPF);
         assertThat(usuario.getLogin()).isEqualTo("m344136");
-        assertThat(usuario.getPerfil()).isEqualTo(Perfil.ANALISTA); // provisional suggestion only
+        assertThat(usuario.getPerfil()).isEqualTo(Perfil.ANALISTA);
         assertThat(usuario.getUltimoLoginEm()).isNotNull();
         assertThat(usuario.getSincronizadoEm()).isNotNull();
         assertThat(jwtService.parse(resposta.getToken())).contains(usuario.getPublicId());
         assertThat(resposta.getExpiraEm()).isNotNull();
-        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         gateway.verify();
+    }
+
+    // Colaborador (estagiário, bolsista) continua passando pela aprovação de um gestor.
+    @Test
+    void login_colaboradorNovo_ficaPendenteComoEstagiario() {
+        gateway.loginOk(CPF, CPF, 512);
+        gateway.empregadoPorCpfNaoEncontrado(CPF);
+        gateway.colaboradorPorCpf(CPF, "Bolsista Nova", CNPMF, true);
+
+        LoginResponseDTO resposta = authService.login(CPF, "senha", IP);
+
+        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.ESTAGIARIO);
+    }
+
+    // Quem ficou pendente pela regra antiga e é empregado é liberado no próximo login, sem perder o perfil.
+    @Test
+    void login_empregadoJaPendente_eLiberadoNoProximoLogin() {
+        Usuario pendente = salvar(usuario("Pendente", "344136", CPF, Perfil.ANALISTA, SituacaoUsuario.PENDENTE_VINCULACAO));
+        gateway.loginOk("m344136", "344136", 512);
+        gateway.empregadoPorMatricula("344136", "Pendente", CPF, "Analista A", CNPMF, true);
+
+        authService.login("m344136", "senha", IP);
+
+        Usuario atualizado = usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow();
+        assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
+        assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ANALISTA);
+    }
+
+    @Test
+    void login_colaboradorJaPendente_continuaPendente() {
+        Usuario pendente = salvar(usuario("Estagiário", null, CPF, Perfil.ESTAGIARIO, SituacaoUsuario.PENDENTE_VINCULACAO));
+        gateway.loginOk(CPF, CPF, 512);
+        gateway.empregadoPorCpfNaoEncontrado(CPF);
+        gateway.colaboradorPorCpf(CPF, "Estagiário", CNPMF, true);
+
+        authService.login(CPF, "senha", IP);
+
+        assertThat(usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow().getSituacao())
+                .isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
     }
 
     @Test
@@ -135,9 +176,10 @@ class AuthServiceIntegrationTest {
     }
 
     // Mudança de lotação: a Embrapa passou a pessoa para outra Unidade. Perfil, laboratório e vínculos
-    // eram da Unidade antiga; ela volta a aguardar aprovação na nova, como no primeiro login.
+    // eram da Unidade antiga; na nova ela recomeça como num primeiro login (empregado: ativo com o
+    // perfil sugerido pelo cargo).
     @Test
-    void login_mudouDeUnidade_voltaAAguardarAprovacaoSemLaboratorioEEncerraVinculos() {
+    void login_empregadoMudouDeUnidade_recomecaSemLaboratorioEEncerraVinculos() {
         Laboratorio laboratorio = laboratorioRepository.saveAndFlush(Laboratorio.builder()
                 .unidade(outra).nome("Lab da outra").ativo(true).build());
         Usuario gestor = usuario("Gestor Transferido", "344136", CPF, Perfil.GESTOR, SituacaoUsuario.ATIVO);
@@ -156,7 +198,7 @@ class AuthServiceIntegrationTest {
 
         Usuario atualizado = usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(gestor.getPublicId()).orElseThrow();
         assertThat(atualizado.getUnidade().getPublicId()).isEqualTo(cnpmf.getPublicId());
-        assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         assertThat(atualizado.getLaboratorio()).isNull();
         assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ANALISTA); // provisional suggestion, as for a new user
         VinculoOperacionalUsuario encerrado = vinculoRepository.findById(vinculo.getId()).orElseThrow();
@@ -304,7 +346,7 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
-    void login_segundoComFlagLigada_ficaPendente() {
+    void login_segundoComFlagLigada_naoViraAdministradorGeral() {
         authProperties.setPrimeiroLoginAdmin(true);
         gateway.loginOk("m344136", "344136", 512);
         gateway.empregadoPorMatricula("344136", "Primeiro", CPF, "Analista A", CNPMF, true);
@@ -314,12 +356,12 @@ class AuthServiceIntegrationTest {
         authService.login("m344136", "senha", IP);
         LoginResponseDTO segundo = authService.login("m500", "senha", IP);
 
-        assertThat(segundo.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(segundo.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         assertThat(segundo.getUsuario().getPerfil()).isEqualTo(Perfil.PESQUISADOR);
     }
 
     @Test
-    void login_flagLigadaComAdministradorGeralJaDesativado_ficaPendente() {
+    void login_flagLigadaComAdministradorGeralJaDesativado_naoViraAdministradorGeral() {
         // The bootstrap is single-use: once any ADMINISTRADOR_GERAL ever existed, deactivating it
         // must not reopen the door for whoever logs in next.
         Usuario antigo = usuario("Admin Geral Antigo", "100", OUTRO_CPF, Perfil.ADMINISTRADOR_GERAL, SituacaoUsuario.ATIVO);
@@ -331,19 +373,19 @@ class AuthServiceIntegrationTest {
 
         LoginResponseDTO resposta = authService.login("m344136", "senha", IP);
 
-        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.ANALISTA);
     }
 
     @Test
-    void login_flagDesligada_ficaPendente() {
+    void login_flagDesligada_empregadoComCargoDesconhecidoEntraComoTecnico() {
         assertThat(usuarioRepository.existsByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL)).isFalse();
         gateway.loginOk("m344136", "344136", 512);
         gateway.empregadoPorMatricula("344136", "Primeiro", CPF, "Cargo Desconhecido", CNPMF, true);
 
         LoginResponseDTO resposta = authService.login("m344136", "senha", IP);
 
-        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+        assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         // An unrecognized cargo falls back to the least privileged operational profile.
         assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.TECNICO);
     }
