@@ -21,6 +21,7 @@ import com.sgl.corporate.CpfMasker;
 import com.sgl.corporate.InvalidCorporateCredentialsException;
 import com.sgl.corporate.LoginNormalizer;
 import com.sgl.corporate.ProfileSuggestion;
+import com.sgl.corporate.TipoPessoaCorporativa;
 import com.sgl.dto.response.AuthConfigResponseDTO;
 import com.sgl.dto.response.LoginResponseDTO;
 import com.sgl.dto.response.UsuarioSessaoResponseDTO;
@@ -174,6 +175,10 @@ public class AuthService {
         usuario.setCargo(identity.cargo());
         usuario.setSublotacao(identity.sublotacao());
         mudancaLotacaoService.aplicar(usuario, unidade, provisionalProfile(identity));
+        // Quem ficou pendente (primeiro login antigo ou mudança de lotação) e é empregado é liberado agora.
+        if (usuario.getSituacao() == SituacaoUsuario.PENDENTE_VINCULACAO && isEmpregado(identity)) {
+            liberarEmpregado(usuario, maskedLogin(normalizedLogin));
+        }
         if (!LoginNormalizer.isCpf(normalizedLogin)) {
             usuario.setLogin(normalizedLogin);
         }
@@ -207,12 +212,12 @@ public class AuthService {
         usuario.setSincronizadoEm(now);
 
         if (!authProperties.isPrimeiroLoginAdmin()) {
-            return savePending(usuario, identity);
+            return saveNewcomer(usuario, identity);
         }
         synchronized (FIRST_ADMIN_LOCK) {
             // Any ADMINISTRADOR_GERAL, even a deactivated one, means the bootstrap was already used.
             if (usuarioRepository.existsByPerfil(Perfil.ADMINISTRADOR_GERAL)) {
-                return savePending(usuario, identity);
+                return saveNewcomer(usuario, identity);
             }
             usuario.setPerfil(Perfil.ADMINISTRADOR_GERAL);
             usuario.setSituacao(SituacaoUsuario.ATIVO);
@@ -223,12 +228,32 @@ public class AuthService {
         }
     }
 
-    // The profile is only provisional: the security filter keeps a PENDENTE_VINCULACAO user out of
-    // every operational route until a manager approves them and confirms the profile.
-    private Usuario savePending(Usuario usuario, CorporateIdentity identity) {
+    // Empregado entra direto (ATIVO) com o perfil sugerido pelo cargo; o gestor pode ajustá-lo depois.
+    // Colaborador (estagiário, bolsista) fica PENDENTE_VINCULACAO: o filtro de segurança o mantém fora
+    // de toda rota operacional até um gestor aprová-lo e confirmar o perfil.
+    private Usuario saveNewcomer(Usuario usuario, CorporateIdentity identity) {
         usuario.setPerfil(provisionalProfile(identity));
-        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
-        return usuarioRepository.save(usuario);
+        usuario.setSituacao(isEmpregado(identity) ? SituacaoUsuario.ATIVO : SituacaoUsuario.PENDENTE_VINCULACAO);
+        Usuario saved = usuarioRepository.save(usuario);
+        if (isEmpregado(identity)) {
+            auditarLiberacao(saved, saved.getLogin());
+        }
+        return saved;
+    }
+
+    private static boolean isEmpregado(CorporateIdentity identity) {
+        return identity.tipo() == TipoPessoaCorporativa.EMPREGADO;
+    }
+
+    // Fica na auditoria para o gestor saber quem entrou sem passar pela aprovação.
+    private static void liberarEmpregado(Usuario usuario, String login) {
+        usuario.setSituacao(SituacaoUsuario.ATIVO);
+        auditarLiberacao(usuario, login);
+    }
+
+    private static void auditarLiberacao(Usuario usuario, String login) {
+        AUDIT.info("acao=EMPREGADO_LIBERADO_NO_LOGIN ator={} alvo={} perfil={} login={}",
+                SYSTEM_ACTOR, usuario.getPublicId(), usuario.getPerfil(), login == null ? "cpf" : login);
     }
 
     private static Perfil provisionalProfile(CorporateIdentity identity) {
