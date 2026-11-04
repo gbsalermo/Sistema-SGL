@@ -161,12 +161,14 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void recusar_removePendente_eNovoLoginRecriaPendente() throws Exception {
-        gateway.loginOk("m344136", "344136", 512);
-        gateway.empregadoPorMatricula("344136", "Fulano de Tal", "12345678909", "Analista A", CODIGO, true);
-        mockMvc.perform(login("m344136"))
+        // Só colaborador fica pendente: empregado entra direto.
+        gateway.loginOk("12345678909", "12345678909", 512);
+        gateway.empregadoPorCpfNaoEncontrado("12345678909");
+        gateway.colaboradorPorCpf("12345678909", "Fulano de Tal", CODIGO, true);
+        mockMvc.perform(login("12345678909"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usuario.situacao").value("PENDENTE_VINCULACAO"));
-        Usuario pendente = usuarioRepository.findByMatricula("344136").orElseThrow();
+        Usuario pendente = usuarioRepository.findByCpf("12345678909").orElseThrow();
 
         mockMvc.perform(delete(USUARIOS + "/" + pendente.getPublicId() + "/pendente")
                         .header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
@@ -174,12 +176,14 @@ class UsuarioAprovacaoIntegrationTest {
         assertThat(usuarioRepository.findByPublicId(pendente.getPublicId())).isEmpty();
 
         gateway.reset();
-        gateway.loginOk("m344136", "344136", 512);
-        gateway.empregadoPorMatricula("344136", "Fulano de Tal", "12345678909", "Analista A", CODIGO, true);
-        mockMvc.perform(login("m344136"))
+        // Só colaborador fica pendente: empregado entra direto.
+        gateway.loginOk("12345678909", "12345678909", 512);
+        gateway.empregadoPorCpfNaoEncontrado("12345678909");
+        gateway.colaboradorPorCpf("12345678909", "Fulano de Tal", CODIGO, true);
+        mockMvc.perform(login("12345678909"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usuario.situacao").value("PENDENTE_VINCULACAO"));
-        assertThat(usuarioRepository.findByMatricula("344136")).isPresent();
+        assertThat(usuarioRepository.findByCpf("12345678909")).isPresent();
     }
 
     @Test

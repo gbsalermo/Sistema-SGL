@@ -80,7 +80,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.expiraEm").isNotEmpty())
-                .andExpect(jsonPath("$.usuario.situacao").value("PENDENTE_VINCULACAO"))
+                .andExpect(jsonPath("$.usuario.situacao").value("ATIVO")) // empregado entra direto
                 .andReturn();
         String token = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
 
@@ -89,7 +89,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.nome").value("Fulano de Tal"))
                 .andExpect(jsonPath("$.unidadeId").value(cnpmf.getPublicId().toString()))
                 .andExpect(jsonPath("$.unidadeSigla").value(cnpmf.getSigla()))
-                .andExpect(jsonPath("$.situacao").value("PENDENTE_VINCULACAO"));
+                .andExpect(jsonPath("$.situacao").value("ATIVO"));
     }
 
     @Test
