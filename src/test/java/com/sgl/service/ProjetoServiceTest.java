@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -41,6 +42,7 @@ import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.SciRepository;
+import com.sgl.repository.VinculoOperacionalUsuarioRepository;
 import com.sgl.tenant.TenantContext;
 
 /**
@@ -71,6 +73,9 @@ class ProjetoServiceTest {
 
     @Mock
     private AtividadeRepository atividadeRepository;
+
+    @Mock
+    private VinculoOperacionalUsuarioRepository vinculoOperacionalRepository;
 
     @Spy
     private CodigoSegValidator codigoSegValidator = new CodigoSegValidator();
@@ -120,10 +125,161 @@ class ProjetoServiceTest {
         TenantContext.limpar();
     }
 
+    private static final UUID LAB_B_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000005");
+
+    private Laboratorio novoLaboratorio(UUID publicId, String nome, boolean ativo) {
+        Laboratorio lab = new Laboratorio();
+        lab.setId(publicId.getLeastSignificantBits());
+        lab.setPublicId(publicId);
+        lab.setNome(nome);
+        lab.setAtivo(ativo);
+        lab.setUnidade(unidade);
+        return lab;
+    }
+
+    private ProjetoRequestDTO requestComLabs(UUID... ids) {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioIds(List.of(ids));
+        dto.setNome("Síntese de Novos Compostos");
+        dto.setDescricao("Desenvolvimento de novos compostos orgânicos");
+        dto.setResponsavel("Maria Oliveira");
+        dto.setCodigoSeg("96.96.96.001.01.00");
+        dto.setStatus(StatusProjeto.ENCERRADO_COM_AVALIACAO_PENDENTE);
+        dto.setSituacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO);
+        dto.setPossuiRecursoExterno(true);
+        dto.setEmpresaRecursoExterno("Empresa Atual");
+        dto.setAtivo(true);
+        return dto;
+    }
+
+    private void tenantComProjeto() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+    }
+
+    private void labExiste(Laboratorio lab) {
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(lab.getPublicId(), UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(lab));
+    }
+
+    @Test
+    void criaProjetoComDoisLaboratoriosDaUnidade() {
+        Laboratorio b = novoLaboratorio(LAB_B_PUBLIC_ID, "Laboratório Z", true);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        labExiste(laboratorio);
+        labExiste(b);
+        when(projetoRepository.save(any(Projeto.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProjetoResponseDTO r = projetoService.criar(requestComLabs(LABORATORIO_PUBLIC_ID, LAB_B_PUBLIC_ID));
+
+        assertEquals(UNIDADE_PUBLIC_ID, r.getUnidadeId());
+        assertEquals(List.of(LABORATORIO_PUBLIC_ID, LAB_B_PUBLIC_ID),
+                r.getLaboratorios().stream().map(l -> l.id()).toList());
+    }
+
+    @Test
+    void recusaLaboratorioRepetido() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        BusinessRuleException ex = assertThrows(BusinessRuleException.class,
+                () -> projetoService.criar(requestComLabs(LABORATORIO_PUBLIC_ID, LABORATORIO_PUBLIC_ID)));
+
+        assertEquals("Laboratório repetido na lista.", ex.getMessage());
+    }
+
+    @Test
+    void laboratorioDeOutraUnidadeRetorna404() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LAB_B_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> projetoService.criar(requestComLabs(LAB_B_PUBLIC_ID)));
+    }
+
+    @Test
+    void recusaIncluirLaboratorioInativo() {
+        Laboratorio b = novoLaboratorio(LAB_B_PUBLIC_ID, "Laboratório Z", false);
+        tenantComProjeto();
+        labExiste(laboratorio);
+        labExiste(b);
+
+        assertThrows(BusinessRuleException.class,
+                () -> projetoService.atualizar(PROJETO_PUBLIC_ID,
+                        requestComLabs(LABORATORIO_PUBLIC_ID, LAB_B_PUBLIC_ID)));
+    }
+
+    @Test
+    void mantemLaboratorioInativoJaVinculado() {
+        laboratorio.setAtivo(false);
+        tenantComProjeto();
+        labExiste(laboratorio);
+        when(projetoRepository.save(any(Projeto.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProjetoResponseDTO r = projetoService.atualizar(PROJETO_PUBLIC_ID, requestComLabs(LABORATORIO_PUBLIC_ID));
+
+        assertEquals(1, r.getLaboratorios().size());
+    }
+
+    @Test
+    void recusaRemoverComVinculoOperacionalAtivo() {
+        Laboratorio b = novoLaboratorio(LAB_B_PUBLIC_ID, "Laboratório Z", true);
+        projeto.getLaboratorios().add(b);
+        tenantComProjeto();
+        labExiste(b);
+        when(vinculoOperacionalRepository.existsByLaboratorioAndProjetoAndEncerradoFalse(laboratorio, projeto))
+                .thenReturn(true);
+
+        BusinessRuleException ex = assertThrows(BusinessRuleException.class,
+                () -> projetoService.atualizar(PROJETO_PUBLIC_ID, requestComLabs(LAB_B_PUBLIC_ID)));
+
+        assertEquals("Há vínculo operacional ativo neste projeto no laboratório Laboratório de Química Orgânica;"
+                + " encerre-o antes de remover.", ex.getMessage());
+        assertTrue(projeto.getLaboratorios().contains(laboratorio));
+    }
+
+    @Test
+    void trocaLaboratorioSemVinculo() {
+        Laboratorio b = novoLaboratorio(LAB_B_PUBLIC_ID, "Laboratório Z", true);
+        tenantComProjeto();
+        labExiste(b);
+        when(vinculoOperacionalRepository.existsByLaboratorioAndProjetoAndEncerradoFalse(laboratorio, projeto))
+                .thenReturn(false);
+        when(projetoRepository.save(any(Projeto.class))).thenAnswer(i -> i.getArgument(0));
+
+        projetoService.atualizar(PROJETO_PUBLIC_ID, requestComLabs(LAB_B_PUBLIC_ID));
+
+        assertEquals(Set.of(b), projeto.getLaboratorios());
+    }
+
+    @Test
+    void mantendoOsMesmosLaboratoriosNaoConsultaVinculos() {
+        tenantComProjeto();
+        labExiste(laboratorio);
+        when(projetoRepository.save(any(Projeto.class))).thenAnswer(i -> i.getArgument(0));
+
+        projetoService.atualizar(PROJETO_PUBLIC_ID, requestComLabs(LABORATORIO_PUBLIC_ID));
+
+        verifyNoInteractions(vinculoOperacionalRepository);
+    }
+
+    @Test
+    void unidadeNaoMudaNaEdicao() {
+        Laboratorio b = novoLaboratorio(LAB_B_PUBLIC_ID, "Laboratório Z", true);
+        tenantComProjeto();
+        labExiste(b);
+        when(projetoRepository.save(any(Projeto.class))).thenAnswer(i -> i.getArgument(0));
+
+        projetoService.atualizar(PROJETO_PUBLIC_ID, requestComLabs(LAB_B_PUBLIC_ID));
+
+        assertSame(unidade, projeto.getUnidade());
+    }
+
     @Test
     void deveCriarProjetoComDadosValidos() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Síntese de Novos Compostos");
         dto.setDescricao("Desenvolvimento de novos compostos orgânicos");
         dto.setResponsavel("Maria Oliveira");
@@ -145,7 +301,7 @@ class ProjetoServiceTest {
     @Test
     void deveAplicarDefaultsAoCriarProjetoComContratoAntigo() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto legado");
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -172,7 +328,7 @@ class ProjetoServiceTest {
     @Test
     void deveCriarProjetoNaUnidadeEComOLaboratorioInformado() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto novo");
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -195,7 +351,7 @@ class ProjetoServiceTest {
     @Test
     void deveCriarProjetoComNovosCampos() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto expandido");
         dto.setCodigoSeg(" 95.95.95.001.01.00 ");
         dto.setStatus(StatusProjeto.CONCLUIDO);
@@ -226,7 +382,7 @@ class ProjetoServiceTest {
     @Test
     void deveRejeitarRecursoExternoSemEmpresa() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto com recurso externo");
         dto.setPossuiRecursoExterno(true);
 
@@ -249,7 +405,7 @@ class ProjetoServiceTest {
     @Test
     void devePreservarNovosCamposAoAtualizarComContratoAntigo() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto atualizado");
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
@@ -274,7 +430,7 @@ class ProjetoServiceTest {
     @Test
     void deveRemoverEmpresaAoDesativarRecursoExterno() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto atualizado");
         dto.setPossuiRecursoExterno(false);
 
@@ -356,7 +512,7 @@ class ProjetoServiceTest {
     @Test
     void deveAtualizarProjeto() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Síntese de Novos Compostos - Atualizado");
         dto.setAtivo(true);
 
@@ -401,7 +557,7 @@ class ProjetoServiceTest {
     @Test
     void deveRejeitarOperacaoQuandoLaboratorioDeOutroTenant() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Novo Projeto");
 
         Unidade outraUnidade = new Unidade();
@@ -437,7 +593,7 @@ class ProjetoServiceTest {
         projeto.setDataFim(LocalDate.of(2026, 12, 31));
 
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto atualizado");
         dto.setDataInicio(LocalDate.of(2026, 1, 2));
         dto.setDataFim(LocalDate.of(2026, 12, 31));
@@ -467,7 +623,7 @@ class ProjetoServiceTest {
         projeto.setDataFim(LocalDate.of(2026, 12, 31));
 
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto atualizado");
         dto.setDataInicio(LocalDate.of(2026, 1, 1));
         dto.setDataFim(LocalDate.of(2027, 1, 31));
@@ -504,7 +660,7 @@ class ProjetoServiceTest {
                 .build();
 
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto atualizado");
         dto.setDataInicio(LocalDate.of(2026, 1, 1));
         dto.setDataFim(LocalDate.of(2026, 6, 30));
@@ -537,7 +693,7 @@ class ProjetoServiceTest {
         projeto.setCodigoSeg(null);
 
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto legado corrigido");
         dto.setCodigoSeg("95.95.95.001.01.00");
 
@@ -563,7 +719,7 @@ class ProjetoServiceTest {
     @Test
     void deveRejeitarAlteracaoDoCodigoSegDoProjetoNoPutComum() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto atualizado");
         dto.setCodigoSeg("95.95.95.001.01.00");
 
@@ -591,7 +747,7 @@ class ProjetoServiceTest {
     @Test
     void deveRejeitarCodigoSegGlobalmenteDuplicadoNaCriacaoDoProjeto() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Projeto duplicado");
         dto.setCodigoSeg("95.95.95.001.01.00");
 

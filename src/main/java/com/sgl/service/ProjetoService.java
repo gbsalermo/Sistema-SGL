@@ -1,11 +1,14 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.SciRepository;
+import com.sgl.repository.VinculoOperacionalUsuarioRepository;
 import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
@@ -36,16 +40,18 @@ public class ProjetoService {
 	private final LaboratorioRepository laboratorioRepository;
 	private final SciRepository sciRepository;
 	private final AtividadeRepository atividadeRepository;
+	private final VinculoOperacionalUsuarioRepository vinculoOperacionalRepository;
 	private final CodigoSegValidator codigoSegValidator;
 
 	@Transactional
 	public ProjetoResponseDTO criar(ProjetoRequestDTO dto) {
-		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
-		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
+		List<Laboratorio> laboratorios = buscarLaboratorios(dto.getLaboratorioIds(), null);
 
+		// Every laboratory was looked up inside the tenant, so they all share the
+		// Unidade that will own the project.
 		Projeto projeto = Projeto.builder()
-				.unidade(laboratorio.getUnidade())
-				.laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
+				.unidade(laboratorios.get(0).getUnidade())
+				.laboratorios(new LinkedHashSet<>(laboratorios))
 				.build();
 		preencherProjeto(projeto, dto);
 
@@ -82,17 +88,17 @@ public class ProjetoService {
 	@Transactional
 	public ProjetoResponseDTO atualizar(UUID id, ProjetoRequestDTO dto) {
 		Projeto projeto = buscarProjetoNoTenant(id);
-		Laboratorio novoLaboratorio = buscarLaboratorio(dto.getLaboratorioId());
-		validarTenantUnidade(novoLaboratorio.getUnidade() != null ? novoLaboratorio.getUnidade().getPublicId() : null);
+		List<Laboratorio> novosLaboratorios = buscarLaboratorios(dto.getLaboratorioIds(), projeto);
+		validarRemocaoDeLaboratorios(projeto, novosLaboratorios);
 
 		validarDataInicioImutavel(projeto.getDataInicio(), dto.getDataInicio());
 		validarAlteracaoDataFim(projeto.getDataFim(), dto.getDataFim());
 		validarPeriodoComDescendentes(projeto, dto.getDataFim());
 
-		// The tenant check above already guarantees the laboratory is in the project's
-		// Unidade, so only the laboratory set is replaced; the Unidade never changes on edit.
+		// The lookup is tenant-scoped, so every laboratory is in the project's Unidade;
+		// only the laboratory set is replaced, the Unidade never changes on edit.
 		projeto.getLaboratorios().clear();
-		projeto.getLaboratorios().add(novoLaboratorio);
+		projeto.getLaboratorios().addAll(novosLaboratorios);
 		preencherProjeto(projeto, dto);
 		return new ProjetoResponseDTO(projetoRepository.save(projeto));
 	}
@@ -207,6 +213,45 @@ public class ProjetoService {
 
 		laboratorio.validateActive();
 		return laboratorio;
+	}
+
+	/**
+	 * Resolves the requested laboratories inside the current tenant (another Unidade's
+	 * laboratory is a 404). An inactive laboratory is only accepted when the project
+	 * already holds it, so editing a project never forces dropping a laboratory that
+	 * was deactivated after the link was made.
+	 */
+	private List<Laboratorio> buscarLaboratorios(List<UUID> ids, Projeto atual) {
+		exigirTenantAtivo();
+		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
+
+		if (new HashSet<>(ids).size() != ids.size()) {
+			throw new BusinessRuleException("Laboratório repetido na lista.");
+		}
+
+		List<Laboratorio> laboratorios = new ArrayList<>();
+		for (UUID id : ids) {
+			Laboratorio laboratorio = laboratorioRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
+					.orElseThrow(() -> new ResourceNotFoundException("Laboratório", id));
+			// Defense in depth: the query is already tenant-scoped.
+			validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
+			if (atual == null || !atual.pertenceAoLaboratorio(laboratorio)) {
+				laboratorio.validateActive();
+			}
+			laboratorios.add(laboratorio);
+		}
+		return laboratorios;
+	}
+
+	private void validarRemocaoDeLaboratorios(Projeto projeto, List<Laboratorio> novos) {
+		Set<UUID> novosIds = novos.stream().map(Laboratorio::getPublicId).collect(Collectors.toSet());
+		for (Laboratorio atual : projeto.getLaboratorios()) {
+			if (!novosIds.contains(atual.getPublicId())
+					&& vinculoOperacionalRepository.existsByLaboratorioAndProjetoAndEncerradoFalse(atual, projeto)) {
+				throw new BusinessRuleException("Há vínculo operacional ativo neste projeto no laboratório "
+						+ atual.getNome() + "; encerre-o antes de remover.");
+			}
+		}
 	}
 
 	private void validarTenantUnidade(UUID unidadeId) {

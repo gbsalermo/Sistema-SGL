@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import com.sgl.model.Laboratorio;
+import com.sgl.model.Projeto;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoOperacionalUsuario;
 
@@ -12,4 +14,5 @@ public interface VinculoOperacionalUsuarioRepository extends JpaRepository<Vincu
     List<VinculoOperacionalUsuario> findByUsuarioAndEncerradoFalse(Usuario usuario);
     List<VinculoOperacionalUsuario> findByUsuarioPublicIdAndUsuarioUnidadePublicId(UUID usuarioId, UUID unidadeId);
     Optional<VinculoOperacionalUsuario> findByPublicIdAndUsuarioUnidadePublicId(UUID id, UUID unidadeId);
+    boolean existsByLaboratorioAndProjetoAndEncerradoFalse(Laboratorio laboratorio, Projeto projeto);
 }
