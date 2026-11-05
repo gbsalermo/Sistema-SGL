@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -39,6 +40,8 @@ public class UsuarioResponseDTO implements Serializable {
     private String laboratorioNome;
     @Schema(description = "Indica se o usuário está ativo.", example = "true")
     private Boolean ativo;
+    @Schema(description = "Situação de acesso. PENDENTE_VINCULACAO = aguarda aprovação na aba Pendentes.", example = "ATIVO")
+    private SituacaoUsuario situacao;
 
     public UsuarioResponseDTO(Usuario entity) {
         this.id = entity.getPublicId();
@@ -51,5 +54,6 @@ public class UsuarioResponseDTO implements Serializable {
         this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
         this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
         this.ativo = entity.getAtivo();
+        this.situacao = entity.getSituacao();
     }
 }
