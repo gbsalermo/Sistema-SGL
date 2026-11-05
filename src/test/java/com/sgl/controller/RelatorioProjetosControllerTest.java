@@ -48,7 +48,7 @@ class RelatorioProjetosControllerTest {
                 1, 2, 3, 4, 2,
                 List.of(new RelatorioProjetosResponseDTO.ProjetoItem(
                         UUID.randomUUID(), "10.25.00.085.00.00",
-                        "Projeto Teste", UUID.randomUUID(), "Laboratório",
+                        "Projeto Teste", List.of(new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Laboratório")),
                         "Responsável", LocalDate.of(2026, 1, 1),
                         LocalDate.of(2026, 12, 31), StatusProjeto.ATIVO,
                         SituacaoExecucaoProjeto.NAO_INFORMADO,

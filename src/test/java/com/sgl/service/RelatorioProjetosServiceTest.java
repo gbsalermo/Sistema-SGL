@@ -115,6 +115,20 @@ class RelatorioProjetosServiceTest {
     }
 
     @Test
+    void expoeTodosOsLaboratoriosDoProjetoOrdenados() {
+        TenantContext.definir(unidadeId);
+        Projeto p = projeto("A");
+        p.getLaboratorios().add(Laboratorio.builder().publicId(UUID.randomUUID()).nome("Alfa").build());
+        when(projetoRepository.buscarParaRelatorio(eq(unidadeId), isNull(), isNull(), isNull(),
+                isNull(), isNull(), isNull(), isNull())).thenReturn(List.of(p));
+
+        RelatorioProjetosResponseDTO r = service.gerar(null, null, null, null, null, null, null);
+
+        assertEquals(List.of("Alfa", "Laboratorio A"),
+                r.projetos().get(0).laboratorios().stream().map(l -> l.nome()).toList());
+    }
+
+    @Test
     void somaContagensPorProjetoMasUsaDistintosGlobaisDoRepository() {
         TenantContext.definir(unidadeId);
         Projeto p1 = projeto("A");

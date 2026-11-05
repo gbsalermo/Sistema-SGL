@@ -45,6 +45,7 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
 import com.sgl.dto.response.ArquivoRelatorioDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.MovimentacaoEstoqueResponseDTO;
 import com.sgl.dto.response.RelatorioEstagiariosResponseDTO;
 import com.sgl.dto.response.RelatorioEstoqueLotesResponseDTO;
@@ -258,14 +259,16 @@ public class RelatorioExportacaoService {
         );
 
         Tabela tabela = new Tabela("Projetos",
-                List.of("Código SEG", "Projeto", "Laboratório", "Responsável",
+                List.of("Código SEG", "Projeto", "Laboratórios", "Responsável",
                         "Início", "Fim", "Status", "Execução", "Ativo",
                         "Recurso externo", "Empresa", "SCI", "Atividades",
                         "Participações", "Estagiários distintos"),
                 relatorio.projetos().stream().map(item -> List.of(
                         texto(item.codigoSeg()),
                         texto(item.nome()),
-                        texto(item.laboratorioNome()),
+                        // Joined with "; " so multi-laboratory projects stay in a single cell.
+                        texto(item.laboratorios().stream().map(LaboratorioResumoDTO::nome)
+                                .collect(Collectors.joining("; "))),
                         texto(item.responsavel()),
                         data(item.dataInicio()),
                         data(item.dataFim()),

@@ -318,7 +318,7 @@ class RelatorioExportacaoServiceTest {
                 LocalDateTime.now(), 1, 2, 3, 4, 1,
                 List.of(new RelatorioProjetosResponseDTO.ProjetoItem(
                         java.util.UUID.randomUUID(), "10.25.00.085.00.00",
-                        "Projeto de teste", java.util.UUID.randomUUID(), "Laboratório",
+                        "Projeto de teste", java.util.List.of(new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Laboratório")),
                         "Responsável", java.time.LocalDate.of(2026, 1, 1),
                         null, com.sgl.model.enums.StatusProjeto.ATIVO,
                         com.sgl.model.enums.SituacaoExecucaoProjeto.NAO_INFORMADO,
@@ -339,6 +339,38 @@ class RelatorioExportacaoServiceTest {
         }
     }
 
+
+    @Test
+    void exportacaoJuntaLaboratoriosOrdenados() throws Exception {
+        RelatorioProjetosResponseDTO relatorio = new RelatorioProjetosResponseDTO(
+                LocalDateTime.now(), 1, 0, 0, 0, 0,
+                List.of(new RelatorioProjetosResponseDTO.ProjetoItem(
+                        java.util.UUID.randomUUID(), "10.25.00.085.00.00", "Projeto multi",
+                        List.of(new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Alfa"),
+                                new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Beta")),
+                        "Responsável", java.time.LocalDate.of(2026, 1, 1),
+                        null, com.sgl.model.enums.StatusProjeto.ATIVO,
+                        com.sgl.model.enums.SituacaoExecucaoProjeto.NAO_INFORMADO,
+                        true, false, null, 0, 0, 0, 0)));
+
+        ArquivoRelatorioDTO arquivo = service.exportarProjetos(
+                relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(arquivo.conteudo()))) {
+            var sheet = workbook.getSheet("Projetos");
+            boolean cabecalho = false;
+            boolean celula = false;
+            for (var row : sheet) {
+                for (var cell : row) {
+                    if (cell.getCellType() != org.apache.poi.ss.usermodel.CellType.STRING) continue;
+                    if ("Laboratórios".equals(cell.getStringCellValue())) cabecalho = true;
+                    if ("Alfa; Beta".equals(cell.getStringCellValue())) celula = true;
+                }
+            }
+            assertTrue(cabecalho);
+            assertTrue(celula);
+        }
+    }
 
     @Test
     void exportacaoMovimentacoesDeveExibirUnidadeRealNaPlanilha() throws Exception {
