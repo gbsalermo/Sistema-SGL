@@ -171,3 +171,9 @@ Após conferência da prévia horizontal de Resíduos, o mantenedor apontou duas
 O painel único Zebra agora fica **recolhido por padrão**: mostra apenas resumo de orientação/tamanho/DPI e ações principais para baixar ou imprimir; o usuário pode expandir **Configurações da etiqueta** quando quiser mudar orientação ou medidas. Mensagens de erro seguem visíveis quando recolhido. Aplicado aos quatro documentos via `ZebraExportPanel.vue` e `zpl.ts`. Sem alterações de backend nem rótulos HTML/A4.
 
 **Pendente:** `npm run build`, `node --experimental-strip-types --test src/modules/rotulos/zebra/zpl.test.mjs`, nova prévia horizontal completa em visualizador com comparação de tamanho sugerido e uso de espaço, e homologação física quando houver uma Zebra. Sem merge.
+
+## 10.5 — Cálculo contínuo de largura e altura Zebra (05/11/2026)
+
+Com a orientação Horizontal visualmente aprovada, o mantenedor pediu que o usuário possa informar uma largura como **150 mm** e receber a menor altura **calculada a partir do conteúdo do rótulo**, em vez de uma tabela de formatos. O gerador `zpl.ts` passou a testar alturas em incrementos de 5 mm, considerando orientação, pictogramas, nome, composição, segurança e margem. Larguras de até 168 mm podem ser usadas para prévia e download, destinadas a equipamentos Zebra de mídia larga; impressoras de 4 polegadas não suportam necessariamente 150 mm. A interface sinaliza essa limitação e exige confirmação do operador sobre a compatibilidade do equipamento para habilitar **impressão direta** de largura maior que 110 mm. Isso não modifica fisicamente a cabeça de impressão nem configura o driver.
+
+**Pendentes:** build, teste automatizado `zpl.test.mjs`, verificação no simulador das dimensões `^PW` e `^LL` e homologação física em modelo que suporte o tamanho indicado. Sem alteração de backend ou rótulos A4. Sem merge.
