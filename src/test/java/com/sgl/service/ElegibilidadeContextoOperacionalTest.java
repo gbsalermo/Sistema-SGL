@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +49,8 @@ class ElegibilidadeContextoOperacionalTest {
                 .unidade(unidade).nome("Laboratorio A").ativo(true).build();
 
         projeto = Projeto.builder()
-                .laboratorio(laboratorio).nome("Projeto A")
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio))).nome("Projeto A")
                 .dataInicio(LocalDate.of(2026, 1, 1))
                 .dataFim(LocalDate.of(2026, 12, 31))
                 .status(StatusProjeto.ATIVO)
@@ -112,7 +115,8 @@ class ElegibilidadeContextoOperacionalTest {
         Laboratorio segundoLaboratorio = Laboratorio.builder()
                 .unidade(unidade).ativo(true).nome("Laboratorio B").build();
         Projeto segundoProjeto = Projeto.builder()
-                .laboratorio(segundoLaboratorio).ativo(true)
+                .unidade(segundoLaboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(segundoLaboratorio))).ativo(true)
                 .status(StatusProjeto.ATIVO)
                 .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_ATRASADO)
                 .dataInicio(LocalDate.of(2026, 1, 1)).build();
@@ -186,7 +190,7 @@ class ElegibilidadeContextoOperacionalTest {
     @Test
     void bloqueiaQuandoProjetoPertenceAOutraUnidade() {
         Unidade outra = Unidade.builder().publicId(OUTRA_UNIDADE).build();
-        laboratorio.setUnidade(outra);
+        projeto.setUnidade(outra);
         bloqueado(UNIDADE_DIVERGENTE);
     }
 

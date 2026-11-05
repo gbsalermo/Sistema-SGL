@@ -3,6 +3,7 @@ package com.sgl.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,8 +11,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -97,7 +100,8 @@ class ProjetoServiceTest {
         projeto = Projeto.builder()
                 .id(20L)
                 .publicId(PROJETO_PUBLIC_ID)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos")
                 .responsavel("Maria Oliveira")
@@ -166,6 +170,29 @@ class ProjetoServiceTest {
     }
 
     @Test
+    void deveCriarProjetoNaUnidadeEComOLaboratorioInformado() {
+        ProjetoRequestDTO dto = new ProjetoRequestDTO();
+        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setNome("Projeto novo");
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
+                LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+        when(projetoRepository.save(any(Projeto.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        projetoService.criar(dto);
+
+        ArgumentCaptor<Projeto> captor = ArgumentCaptor.forClass(Projeto.class);
+        verify(projetoRepository).save(captor.capture());
+
+        Projeto salvo = captor.getValue();
+        assertSame(unidade, salvo.getUnidade());
+        assertEquals(Set.of(laboratorio), salvo.getLaboratorios());
+    }
+
+    @Test
     void deveCriarProjetoComNovosCampos() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
         dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
@@ -226,7 +253,7 @@ class ProjetoServiceTest {
         dto.setNome("Projeto atualizado");
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
@@ -252,7 +279,7 @@ class ProjetoServiceTest {
         dto.setPossuiRecursoExterno(false);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
@@ -270,7 +297,7 @@ class ProjetoServiceTest {
     @Test
     void deveListarTodosOsProjetos() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByLaboratorioUnidadePublicId(UNIDADE_PUBLIC_ID)).thenReturn(List.of(projeto));
+        when(projetoRepository.findByUnidadePublicId(UNIDADE_PUBLIC_ID)).thenReturn(List.of(projeto));
 
         List<ProjetoResponseDTO> resultado = projetoService.listarTodos();
 
@@ -280,7 +307,7 @@ class ProjetoServiceTest {
     @Test
     void deveBuscarProjetoPorId() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
 
         ProjetoResponseDTO resultado = projetoService.buscarPorId(PROJETO_PUBLIC_ID);
@@ -292,7 +319,7 @@ class ProjetoServiceTest {
     void deveLancarExcecaoQuandoProjetoNaoEncontrado() {
         UUID idInexistente = UUID.randomUUID();
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(idInexistente, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(idInexistente, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
@@ -306,7 +333,7 @@ class ProjetoServiceTest {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(laboratorio));
-        when(projetoRepository.findByLaboratorioId(laboratorio.getId())).thenReturn(List.of(projeto));
+        when(projetoRepository.findByLaboratoriosId(laboratorio.getId())).thenReturn(List.of(projeto));
 
         List<ProjetoResponseDTO> resultado = projetoService.listarPorLaboratorio(LABORATORIO_PUBLIC_ID);
 
@@ -334,7 +361,7 @@ class ProjetoServiceTest {
         dto.setAtivo(true);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(laboratorio));
@@ -348,7 +375,7 @@ class ProjetoServiceTest {
     @Test
     void deveDeletarProjeto() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
 
         projetoService.deletar(PROJETO_PUBLIC_ID);
@@ -363,7 +390,7 @@ class ProjetoServiceTest {
     @Test
     void deveListarProjetosAtivos() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByLaboratorioUnidadePublicIdAndAtivoTrue(UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByUnidadePublicIdAndAtivoTrue(UNIDADE_PUBLIC_ID))
                 .thenReturn(List.of(projeto));
 
         List<ProjetoResponseDTO> resultado = projetoService.listarAtivos();
@@ -416,7 +443,7 @@ class ProjetoServiceTest {
         dto.setDataFim(LocalDate.of(2026, 12, 31));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
@@ -446,7 +473,7 @@ class ProjetoServiceTest {
         dto.setDataFim(LocalDate.of(2027, 1, 31));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
@@ -483,13 +510,13 @@ class ProjetoServiceTest {
         dto.setDataFim(LocalDate.of(2026, 6, 30));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(
                 LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(laboratorio));
-        when(sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+        when(sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(List.of(sciFilho));
 
@@ -516,7 +543,7 @@ class ProjetoServiceTest {
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
 
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
 
@@ -542,7 +569,7 @@ class ProjetoServiceTest {
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
 
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
 

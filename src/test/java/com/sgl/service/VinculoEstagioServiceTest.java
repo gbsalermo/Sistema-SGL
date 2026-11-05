@@ -11,8 +11,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -131,7 +133,8 @@ class VinculoEstagioServiceTest {
         Projeto projeto = Projeto.builder()
                 .id(3L)
                 .publicId(UUID.randomUUID())
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto Teste")
                 .codigoSeg("PRJ-TESTE")
                 .ativo(true)
@@ -239,7 +242,7 @@ class VinculoEstagioServiceTest {
                 .thenReturn(Optional.of(orientador));
 
         lenient().when(atividadeRepository
-                .findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                .findByPublicIdAndSciProjetoUnidadePublicId(
                         ATIVIDADE_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(atividade));
     }

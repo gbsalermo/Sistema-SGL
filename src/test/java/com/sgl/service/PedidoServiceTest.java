@@ -13,8 +13,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -443,7 +445,8 @@ class PedidoServiceTest {
         Projeto projeto = Projeto.builder()
                 .id(9L)
                 .publicId(PROJETO_PUBLIC_ID)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto 1")
                 .ativo(true)
                 .build();
@@ -486,7 +489,8 @@ class PedidoServiceTest {
         Projeto projeto = Projeto.builder()
                 .id(9L)
                 .publicId(PROJETO_PUBLIC_ID)
-                .laboratorio(outroLaboratorio)
+                .unidade(outroLaboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(outroLaboratorio)))
                 .nome("Projeto externo")
                 .ativo(true)
                 .build();
@@ -517,7 +521,8 @@ class PedidoServiceTest {
         Projeto projeto = Projeto.builder()
                 .id(9L)
                 .publicId(PROJETO_PUBLIC_ID)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto 1")
                 .ativo(true)
                 .build();

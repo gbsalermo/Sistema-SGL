@@ -19,7 +19,6 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Atividade;
 import com.sgl.model.Cultura;
-import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.VinculoEstagio;
@@ -206,7 +205,7 @@ public class VinculoEstagioAtividadeService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(atividadeId, unidadeId)
+		return atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(atividadeId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Atividade", atividadeId));
 	}
 
@@ -254,20 +253,22 @@ public class VinculoEstagioAtividadeService {
 
 		projeto.validateActive();
 
-		Laboratorio laboratorio = projeto.getLaboratorio();
-
-		if (laboratorio == null) {
+		if (projeto.getLaboratorios().isEmpty()) {
 			throw new BusinessRuleException("A Atividade informada não possui Laboratório válido.");
 		}
 
-		laboratorio.validateActive();
+		// With several laboratories the activity stays operable while any of them is active;
+		// the specific one is validated when the pedido/resíduo picks it.
+		if (projeto.getLaboratorios().stream().noneMatch(laboratorio -> Boolean.TRUE.equals(laboratorio.getAtivo()))) {
+			throw new BusinessRuleException("O laboratório informado está inativo.");
+		}
 	}
 
 	private void validarMesmaUnidade(VinculoEstagio vinculo, Atividade atividade) {
 
 		UUID unidadeEstagiario = vinculo.getEstagiario().getUnidade().getPublicId();
 
-		UUID unidadeAtividade = atividade.getSci().getProjeto().getLaboratorio().getUnidade().getPublicId();
+		UUID unidadeAtividade = atividade.getSci().getProjeto().getUnidade().getPublicId();
 
 		if (!unidadeEstagiario.equals(unidadeAtividade)) {
 

@@ -14,18 +14,18 @@ import com.sgl.model.Atividade;
 @Repository
 public interface AtividadeRepository extends JpaRepository<Atividade, Long> {
 
-	Optional<Atividade> findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
+	Optional<Atividade> findByPublicIdAndSciProjetoUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
-	List<Atividade> findBySciProjetoLaboratorioUnidadePublicId(UUID unidadePublicId);
+	List<Atividade> findBySciProjetoUnidadePublicId(UUID unidadePublicId);
 
-	List<Atividade> findBySciProjetoLaboratorioUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
+	List<Atividade> findBySciProjetoUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
 
-	List<Atividade> findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(UUID sciPublicId, UUID unidadePublicId);
+	List<Atividade> findBySciPublicIdAndSciProjetoUnidadePublicId(UUID sciPublicId, UUID unidadePublicId);
 
-	List<Atividade> findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicIdAndAtivoTrue(UUID sciPublicId,
+	List<Atividade> findBySciPublicIdAndSciProjetoUnidadePublicIdAndAtivoTrue(UUID sciPublicId,
 			UUID unidadePublicId);
 
-	List<Atividade> findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(UUID projetoPublicId,
+	List<Atividade> findBySciProjetoPublicIdAndSciProjetoUnidadePublicId(UUID projetoPublicId,
 			UUID unidadePublicId);
 
 	boolean existsByCodigoSeg(String codigoSeg);
@@ -42,7 +42,7 @@ public interface AtividadeRepository extends JpaRepository<Atividade, Long> {
 		        a.sci.projeto.publicId AS projetoId,
 		        COUNT(a.id) AS totalAtividades
 		    FROM Atividade a
-		    WHERE a.sci.projeto.laboratorio.unidade.publicId = :unidadeId
+		    WHERE a.sci.projeto.unidade.publicId = :unidadeId
 		      AND a.sci.projeto.publicId IN :projetoIds
 		    GROUP BY a.sci.projeto.publicId
 		    """)

@@ -65,9 +65,10 @@ public class VinculoEstagioAtividadeResponseDTO {
 	                    ? sci.getProjeto()
 	                    : null;
 
+	    // TEMPORARY (multi-laboratory projects): exposes the first laboratory until this DTO lists all of them.
 	    Laboratorio laboratorio =
 	            projeto != null
-	                    ? projeto.getLaboratorio()
+	                    ? projeto.laboratoriosOrdenados().stream().findFirst().orElse(null)
 	                    : null;
 
 	    this.id = entity.getPublicId();

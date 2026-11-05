@@ -7,8 +7,10 @@ import static org.mockito.Mockito.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -105,7 +107,9 @@ class PedidoContextoOperacionalServiceTest {
         laboratorioBase = Laboratorio.builder().id(20L).publicId(LAB_BASE)
                 .unidade(unidade).nome("Laboratorio base do usuario").ativo(true).build();
 
-        projeto = Projeto.builder().id(3L).publicId(PROJETO).laboratorio(laboratorio)
+        projeto = Projeto.builder().id(3L).publicId(PROJETO)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto original").ativo(true)
                 .status(StatusProjeto.ATIVO)
                 .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
@@ -276,7 +280,7 @@ class PedidoContextoOperacionalServiceTest {
         prepararSolicitante(estagiario);
         prepararParticipacao(PARTICIPACAO, participacao);
         Unidade outra = Unidade.builder().id(77L).publicId(OUTRA_UNIDADE).nome("Outra").build();
-        laboratorio.setUnidade(outra);
+        projeto.setUnidade(outra);
 
         BusinessRuleException erro = assertThrows(BusinessRuleException.class,
                 () -> service.criar(pedido(PARTICIPACAO)));

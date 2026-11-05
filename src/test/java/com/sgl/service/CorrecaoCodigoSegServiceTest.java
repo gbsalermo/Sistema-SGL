@@ -8,8 +8,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -115,7 +117,8 @@ class CorrecaoCodigoSegServiceTest {
 		projeto = Projeto.builder()
 				.id(20L)
 				.publicId(PROJETO_ID)
-				.laboratorio(laboratorio)
+				.unidade(laboratorio.getUnidade())
+				.laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
 				.nome("Projeto")
 				.codigoSeg("95.95.95.001.01.00")
 				.status(StatusProjeto.ATIVO)
@@ -211,18 +214,18 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+		when(projetoRepository.findByPublicIdAndUnidadePublicId(
 				PROJETO_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(projeto));
 
 		mockUsuario();
 
-		when(sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+		when(sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(
 				PROJETO_ID, UNIDADE_ID))
 				.thenReturn(List.of(sci));
 
 		when(atividadeRepository
-				.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+				.findBySciProjetoPublicIdAndSciProjetoUnidadePublicId(
 						PROJETO_ID, UNIDADE_ID))
 				.thenReturn(List.of(atividade));
 
@@ -251,13 +254,13 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+		when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(
 				SCI_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(sci));
 
 		mockUsuario();
 
-		when(atividadeRepository.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+		when(atividadeRepository.findBySciPublicIdAndSciProjetoUnidadePublicId(
 				SCI_ID, UNIDADE_ID))
 				.thenReturn(List.of(atividade));
 
@@ -282,7 +285,7 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+		when(atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
 				ATIVIDADE_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(atividade));
 
@@ -314,7 +317,7 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+		when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(
 				SCI_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(sci));
 
@@ -349,7 +352,7 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+		when(projetoRepository.findByPublicIdAndUnidadePublicId(
 				PROJETO_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(projeto));
 
@@ -376,7 +379,7 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+		when(atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
 				ATIVIDADE_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(atividade));
 
@@ -404,7 +407,7 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+		when(atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
 				ATIVIDADE_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(atividade));
 
@@ -451,18 +454,18 @@ class CorrecaoCodigoSegServiceTest {
 
 		TenantContext.definir(UNIDADE_ID);
 
-		when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+		when(projetoRepository.findByPublicIdAndUnidadePublicId(
 				PROJETO_ID, UNIDADE_ID))
 				.thenReturn(Optional.of(projeto));
 
 		mockUsuario();
 
-		when(sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+		when(sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(
 				PROJETO_ID, UNIDADE_ID))
 				.thenReturn(List.of(sci));
 
 		when(atividadeRepository
-				.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+				.findBySciProjetoPublicIdAndSciProjetoUnidadePublicId(
 						PROJETO_ID, UNIDADE_ID))
 				.thenReturn(List.of(atividade));
 

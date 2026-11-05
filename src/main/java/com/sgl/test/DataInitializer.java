@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.boot.CommandLineRunner;
@@ -261,7 +263,8 @@ public class DataInitializer implements CommandLineRunner {
         criarLoteInicial(e7, "INI-DNA-IQ", 10, 50, LocalDate.now().plusMonths(3), true);
 
         Projeto proj1 = projetoRepository.save(Projeto.builder()
-                .laboratorio(lab3)
+                .unidade(lab3.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(lab3)))
                 .nome("Projeto de Óptica Avançada")
                 .descricao("Estudo de fenômenos ópticos em materiais nanoestruturados")
                 .dataInicio(LocalDate.now().minusMonths(3))
@@ -274,7 +277,8 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         Projeto proj2 = projetoRepository.save(Projeto.builder()
-                .laboratorio(lab4)
+                .unidade(lab4.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(lab4)))
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise")
                 .dataInicio(LocalDate.now().minusMonths(1))
@@ -586,7 +590,8 @@ public class DataInitializer implements CommandLineRunner {
                 .findFirst()
                 .orElseGet(() -> projetoRepository.save(
                         Projeto.builder()
-                                .laboratorio(laboratorio)
+                                .unidade(laboratorio.getUnidade())
+                                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                                 .nome(nome)
                                 .descricao(descricao)
                                 .responsavel(responsavel)
@@ -612,10 +617,10 @@ public class DataInitializer implements CommandLineRunner {
             StatusProjeto status,
             SituacaoExecucaoProjeto situacaoExecucao) {
 
-        UUID unidadeId = projeto.getLaboratorio().getUnidade().getPublicId();
+        UUID unidadeId = projeto.getUnidade().getPublicId();
 
         return sciRepository
-                .findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                .findByProjetoPublicIdAndProjetoUnidadePublicId(
                         projeto.getPublicId(),
                         unidadeId
                 )
@@ -647,10 +652,10 @@ public class DataInitializer implements CommandLineRunner {
             StatusProjeto status,
             SituacaoExecucaoProjeto situacaoExecucao) {
 
-        UUID unidadeId = sci.getProjeto().getLaboratorio().getUnidade().getPublicId();
+        UUID unidadeId = sci.getProjeto().getUnidade().getPublicId();
 
         return atividadeRepository
-                .findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                .findBySciPublicIdAndSciProjetoUnidadePublicId(
                         sci.getPublicId(),
                         unidadeId
                 )

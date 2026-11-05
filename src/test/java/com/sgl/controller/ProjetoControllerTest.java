@@ -12,7 +12,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -109,7 +111,8 @@ class ProjetoControllerTest {
 
         Projeto projeto = Projeto.builder()
                 .publicId(PROJETO_PUBLIC_ID)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise.")
                 .responsavel("Maria Oliveira")

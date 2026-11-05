@@ -1,8 +1,10 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -41,7 +43,10 @@ public class ProjetoService {
 		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
 		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-		Projeto projeto = Projeto.builder().laboratorio(laboratorio).build();
+		Projeto projeto = Projeto.builder()
+				.unidade(laboratorio.getUnidade())
+				.laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
+				.build();
 		preencherProjeto(projeto, dto);
 
 		Projeto salvo = projetoRepository.save(projeto);
@@ -56,7 +61,7 @@ public class ProjetoService {
 		exigirTenantAtivo();
 
 		List<Projeto> projetos = projetoRepository
-				.findByLaboratorioUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
+				.findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 		return projetos.stream().map(ProjetoResponseDTO::new).toList();
 	}
 
@@ -70,7 +75,7 @@ public class ProjetoService {
 		Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
 		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-		return projetoRepository.findByLaboratorioId(laboratorio.getId()).stream().map(ProjetoResponseDTO::new)
+		return projetoRepository.findByLaboratoriosId(laboratorio.getId()).stream().map(ProjetoResponseDTO::new)
 				.toList();
 	}
 
@@ -84,7 +89,10 @@ public class ProjetoService {
 		validarAlteracaoDataFim(projeto.getDataFim(), dto.getDataFim());
 		validarPeriodoComDescendentes(projeto, dto.getDataFim());
 
-		projeto.setLaboratorio(novoLaboratorio);
+		// The tenant check above already guarantees the laboratory is in the project's
+		// Unidade, so only the laboratory set is replaced; the Unidade never changes on edit.
+		projeto.getLaboratorios().clear();
+		projeto.getLaboratorios().add(novoLaboratorio);
 		preencherProjeto(projeto, dto);
 		return new ProjetoResponseDTO(projetoRepository.save(projeto));
 	}
@@ -100,7 +108,7 @@ public class ProjetoService {
 		exigirTenantAtivo();
 
 		List<Projeto> projetos = projetoRepository
-				.findByLaboratorioUnidadePublicIdAndAtivoTrue(TenantContext.unidadeAtual().orElseThrow());
+				.findByUnidadePublicIdAndAtivoTrue(TenantContext.unidadeAtual().orElseThrow());
 		return projetos.stream().map(ProjetoResponseDTO::new).toList();
 	}
 
@@ -111,7 +119,7 @@ public class ProjetoService {
 		exigirTenantAtivo();
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
-		return projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(id, unidadeId)
+		return projetoRepository.findByPublicIdAndUnidadePublicId(id, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Projeto", id));
 	}
 
@@ -165,7 +173,7 @@ public class ProjetoService {
 		exigirTenantAtivo();
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		List<Sci> scis = sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(projeto.getPublicId(),
+		List<Sci> scis = sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(projeto.getPublicId(),
 				unidadeId);
 
 		for (Sci sci : scis) {
@@ -178,7 +186,7 @@ public class ProjetoService {
 		}
 
 		List<Atividade> atividades = atividadeRepository
-				.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(projeto.getPublicId(), unidadeId);
+				.findBySciProjetoPublicIdAndSciProjetoUnidadePublicId(projeto.getPublicId(), unidadeId);
 
 		for (Atividade atividade : atividades) {
 			if (atividade.getDataInicio().isAfter(novaDataFim)

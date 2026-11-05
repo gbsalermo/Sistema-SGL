@@ -92,11 +92,12 @@ public class ResiduoService {
 		UUID projetoId = dto.getProjetoId();
 		if (participacao != null) {
 			var projetoOrigem = participacao.getAtividade().getSci().getProjeto();
-			laboratorioId = projetoOrigem.getLaboratorio().getPublicId();
 			projetoId = projetoOrigem.getPublicId();
-			if (dto.getLaboratorioId() != null && !dto.getLaboratorioId().equals(laboratorioId)) {
+			if (dto.getLaboratorioId() != null && projetoOrigem.getLaboratorios().stream()
+					.noneMatch(item -> dto.getLaboratorioId().equals(item.getPublicId()))) {
 				throw new BusinessRuleException("Laboratório informado diverge da participação selecionada.");
 			}
+			laboratorioId = projetoOrigem.resolverLaboratorioOperacional(dto.getLaboratorioId()).getPublicId();
 			if (dto.getProjetoId() != null && !dto.getProjetoId().equals(projetoId)) {
 				throw new BusinessRuleException("Projeto informado diverge da participação selecionada.");
 			}
@@ -443,11 +444,11 @@ public class ResiduoService {
 		exigirTenantAtivo();
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
-		Projeto projeto = projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(projetoId, unidadeId)
+		Projeto projeto = projetoRepository.findByPublicIdAndUnidadePublicId(projetoId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 		projeto.validateActive();
 
-		if (!projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
+		if (!projeto.pertenceAoLaboratorio(laboratorio)) {
 			throw new BusinessRuleException("O projeto informado não pertence ao laboratório gerador do resíduo.");
 		}
 

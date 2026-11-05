@@ -5,7 +5,9 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -50,7 +52,8 @@ class RelatorioProjetosServiceTest {
         return Projeto.builder()
                 .publicId(UUID.randomUUID())
                 .nome(nome)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .ativo(true)
                 .build();
     }
@@ -91,7 +94,7 @@ class RelatorioProjetosServiceTest {
     void repassaFiltrosEPreencheZerosQuandoNaoHaVinculos() {
         TenantContext.definir(unidadeId);
         Projeto p = projeto("A");
-        UUID laboratorioId = p.getLaboratorio().getPublicId();
+        UUID laboratorioId = p.laboratoriosOrdenados().get(0).getPublicId();
         LocalDate inicio = LocalDate.of(2026, 1, 1);
         LocalDate fim = LocalDate.of(2026, 12, 31);
         when(projetoRepository.buscarParaRelatorio(unidadeId, laboratorioId, StatusProjeto.ATIVO,

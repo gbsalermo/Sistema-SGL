@@ -23,7 +23,6 @@ import com.sgl.model.Atividade;
 import com.sgl.model.Curso;
 import com.sgl.model.Estagiario;
 import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
-import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
@@ -171,7 +170,7 @@ public class VinculoEstagioService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(atividadeId, unidadeId)
+		return atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(atividadeId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Atividade", atividadeId));
 	}
 
@@ -209,7 +208,7 @@ public class VinculoEstagioService {
 
 		UUID unidadeEstagiario = estagiario.getUnidade().getPublicId();
 
-		UUID unidadeAtividade = atividade.getSci().getProjeto().getLaboratorio().getUnidade().getPublicId();
+		UUID unidadeAtividade = atividade.getSci().getProjeto().getUnidade().getPublicId();
 
 		if (!unidadeEstagiario.equals(unidadeAtividade)) {
 
@@ -239,14 +238,15 @@ public class VinculoEstagioService {
 
 		projeto.validateActive();
 
-		Laboratorio laboratorio = projeto.getLaboratorio();
-
-		if (laboratorio == null) {
-
+		if (projeto.getLaboratorios().isEmpty()) {
 			throw new BusinessRuleException("A Atividade informada não possui Laboratório válido.");
 		}
 
-		laboratorio.validateActive();
+		// With several laboratories the activity stays operable while any of them is active;
+		// the specific one is validated when the pedido/resíduo picks it.
+		if (projeto.getLaboratorios().stream().noneMatch(laboratorio -> Boolean.TRUE.equals(laboratorio.getAtivo()))) {
+			throw new BusinessRuleException("O laboratório informado está inativo.");
+		}
 	}
 
 	private void validarPeriodoVinculo(LocalDate inicio, LocalDate fimPrevista) {

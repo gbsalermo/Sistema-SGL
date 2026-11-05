@@ -6,6 +6,8 @@ import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -74,7 +76,9 @@ class PedidoSolucaoServiceTest {
         usuario.setLaboratorio(lab);
         usuario.setNome("Usuário");
         usuario.setAtivo(true);
-        projeto = Projeto.builder().id(5L).publicId(PROJETO).laboratorio(lab)
+        projeto = Projeto.builder().id(5L).publicId(PROJETO)
+                .unidade(lab.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(lab)))
             .nome("Projeto").ativo(true).build();
         produto = Produto.builder().id(4L).publicId(PRODUTO).nome("Água")
             .unidadeMedida(UnidadeMedida.L).ativo(true).build();

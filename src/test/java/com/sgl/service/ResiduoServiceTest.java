@@ -217,7 +217,8 @@ class ResiduoServiceTest {
         projeto = Projeto.builder()
                 .id(30L)
                 .publicId(PROJETO_PUBLIC_ID)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto de Extração de DNA")
                 .ativo(true)
                 .build();
@@ -345,7 +346,7 @@ class ResiduoServiceTest {
         stubGeradorELaboratorioAtivos();
         stubClasseValida();
         stubSalvarComIdGerado();
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
 
         CriarResiduoRequestDTO dto = dtoValidoCriar();
@@ -364,7 +365,7 @@ class ResiduoServiceTest {
         stubGeradorELaboratorioAtivos();
         stubClasseValida();
         stubSalvarComIdGerado();
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
         when(vinculoOperacionalService.vinculadoProjeto(gerador, projeto, LocalDate.now()))
                 .thenReturn(true);
@@ -443,7 +444,7 @@ class ResiduoServiceTest {
     void deveRejeitarCriacaoQuandoProjetoNaoEncontrado() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         stubGeradorELaboratorioAtivos();
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.empty());
 
         CriarResiduoRequestDTO dto = dtoValidoCriar();
@@ -460,7 +461,7 @@ class ResiduoServiceTest {
         projeto.setAtivo(false);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         stubGeradorELaboratorioAtivos();
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
 
         CriarResiduoRequestDTO dto = dtoValidoCriar();
@@ -474,10 +475,10 @@ class ResiduoServiceTest {
 
     @Test
     void deveRejeitarCriacaoQuandoProjetoNaoPertenceAoLaboratorio() {
-        projeto.setLaboratorio(laboratorioOutro);
+        projeto.setLaboratorios(new LinkedHashSet<>(Set.of(laboratorioOutro)));
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         stubGeradorELaboratorioAtivos();
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(projeto));
 
         CriarResiduoRequestDTO dto = dtoValidoCriar();

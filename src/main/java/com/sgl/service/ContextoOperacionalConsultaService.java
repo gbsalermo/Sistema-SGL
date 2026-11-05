@@ -56,7 +56,7 @@ public class ContextoOperacionalConsultaService {
     @Transactional(readOnly = true)
     public List<ContextoOperacionalResponseDTO> listarDaAtividade(UUID atividadeId) {
         UUID unidadeId = exigirTenant();
-        atividades.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(atividadeId, unidadeId)
+        atividades.findByPublicIdAndSciProjetoUnidadePublicId(atividadeId, unidadeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Atividade", atividadeId));
 
         LocalDate hoje = LocalDate.now();
@@ -67,7 +67,7 @@ public class ContextoOperacionalConsultaService {
     @Transactional(readOnly = true)
     public List<ContextoOperacionalResponseDTO> listarDoProjeto(UUID projetoId) {
         UUID unidadeId = exigirTenant();
-        projetos.findByPublicIdAndLaboratorioUnidadePublicId(projetoId, unidadeId)
+        projetos.findByPublicIdAndUnidadePublicId(projetoId, unidadeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 
         LocalDate hoje = LocalDate.now();

@@ -287,7 +287,7 @@ public class PedidoService {
 		Projeto projeto = projetoRepository.findByPublicId(projetoId)
 				.orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 
-		if (projeto.getLaboratorio() == null || !projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
+		if (!projeto.pertenceAoLaboratorio(laboratorio)) {
 			throw new BusinessRuleException("O projeto informado não pertence ao laboratório informado.");
 		}
 
@@ -550,8 +550,7 @@ public class PedidoService {
 
 		validarTenantUnidade(usuario.getUnidade().getPublicId());
 
-		if (projeto != null && (projeto.getLaboratorio() == null
-				|| !projeto.getLaboratorio().getId().equals(laboratorio.getId()))) {
+		if (projeto != null && !projeto.pertenceAoLaboratorio(laboratorio)) {
 			throw new BusinessRuleException("O Projeto informado não pertence ao laboratório do pedido.");
 		}
 	}
@@ -623,7 +622,6 @@ public class PedidoService {
 			Atividade atividade = participacao.getAtividade();
 			Sci sci = atividade.getSci();
 			Projeto projeto = sci.getProjeto();
-			Laboratorio laboratorio = projeto.getLaboratorio();
 
 			// Identificadores legados podem ser recebidos,
 			// mas nunca devem contradizer a participação.
@@ -631,9 +629,11 @@ public class PedidoService {
 				throw new BusinessRuleException("O Projeto informado diverge da participação selecionada.");
 			}
 
-			if (dto.getLaboratorioId() != null && !dto.getLaboratorioId().equals(laboratorio.getPublicId())) {
+			if (dto.getLaboratorioId() != null && !contemLaboratorio(projeto, dto.getLaboratorioId())) {
 				throw new BusinessRuleException("O Laboratório informado diverge da participação selecionada.");
 			}
+
+			Laboratorio laboratorio = projeto.resolverLaboratorioOperacional(dto.getLaboratorioId());
 
 			validarConsistenciaPedido(usuario, laboratorio, projeto);
 
@@ -650,11 +650,11 @@ public class PedidoService {
 			projeto = projetoRepository.findByPublicId(dto.getProjetoId())
 					.orElseThrow(() -> new ResourceNotFoundException("Projeto", dto.getProjetoId()));
 
-			if (projeto.getLaboratorio() == null || projeto.getLaboratorio().getUnidade() == null) {
+			if (projeto.getUnidade() == null || projeto.getLaboratorios().isEmpty()) {
 				throw new BusinessRuleException("O Projeto informado não possui contexto operacional completo.");
 			}
 
-			validarTenantUnidade(projeto.getLaboratorio().getUnidade().getPublicId());
+			validarTenantUnidade(projeto.getUnidade().getPublicId());
 		}
 
 		Laboratorio laboratorio = null;
@@ -667,13 +667,11 @@ public class PedidoService {
 		}
 
 		if (projeto != null) {
-			Laboratorio laboratorioDoProjeto = projeto.getLaboratorio();
-
-			if (laboratorio != null && !laboratorio.getId().equals(laboratorioDoProjeto.getId())) {
+			if (laboratorio != null && !projeto.pertenceAoLaboratorio(laboratorio)) {
 				throw new BusinessRuleException("O Projeto não pertence ao Laboratório informado.");
 			}
 
-			laboratorio = laboratorioDoProjeto;
+			laboratorio = projeto.resolverLaboratorioOperacional(dto.getLaboratorioId());
 
 		} else if (laboratorio == null) {
 			boolean gestor = PerfilPolicy.isGestao(usuario.getPerfil());
@@ -696,5 +694,10 @@ public class PedidoService {
 		}
 
 		return new ContextoPedido(laboratorio, projeto, null, null, null);
+	}
+
+	private static boolean contemLaboratorio(Projeto projeto, UUID laboratorioPublicId) {
+		return projeto.getLaboratorios().stream()
+				.anyMatch(laboratorio -> laboratorioPublicId.equals(laboratorio.getPublicId()));
 	}
 }

@@ -13,19 +13,19 @@ public interface HistoricoCorrecaoCodigoSegRepository
 		extends JpaRepository<HistoricoCorrecaoCodigoSeg, Long> {
 
 	List<HistoricoCorrecaoCodigoSeg>
-			findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+			findByProjetoPublicIdAndProjetoUnidadePublicIdOrderByDataHoraAsc(
 					UUID projetoPublicId,
 					UUID unidadePublicId
 			);
 
 	List<HistoricoCorrecaoCodigoSeg>
-			findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+			findBySciPublicIdAndSciProjetoUnidadePublicIdOrderByDataHoraAsc(
 					UUID sciPublicId,
 					UUID unidadePublicId
 			);
 
 	List<HistoricoCorrecaoCodigoSeg>
-			findByAtividadePublicIdAndAtividadeSciProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+			findByAtividadePublicIdAndAtividadeSciProjetoUnidadePublicIdOrderByDataHoraAsc(
 					UUID atividadePublicId,
 					UUID unidadePublicId
 			);

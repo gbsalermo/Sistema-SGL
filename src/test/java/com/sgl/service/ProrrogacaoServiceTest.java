@@ -7,8 +7,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -120,7 +122,8 @@ class ProrrogacaoServiceTest {
         projeto = Projeto.builder()
                 .id(20L)
                 .publicId(PROJETO_ID)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto Pai")
                 .dataInicio(LocalDate.of(2026, 1, 1))
                 .dataFim(LocalDate.of(2026, 12, 31))
@@ -199,7 +202,7 @@ class ProrrogacaoServiceTest {
     void deveProrrogarProjetoEGerarHistorico() {
         TenantContext.definir(UNIDADE_ID);
 
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
         mockUsuario();
         when(projetoRepository.save(any(Projeto.class)))
@@ -234,7 +237,7 @@ class ProrrogacaoServiceTest {
     void deveProrrogarSciDentroDoLimiteDoProjeto() {
         TenantContext.definir(UNIDADE_ID);
 
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
         mockUsuario();
         when(sciRepository.save(any(Sci.class)))
@@ -259,7 +262,7 @@ class ProrrogacaoServiceTest {
     void deveRejeitarProrrogacaoDoSciAcimaDoProjeto() {
         TenantContext.definir(UNIDADE_ID);
 
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
         mockUsuario();
 
@@ -281,7 +284,7 @@ class ProrrogacaoServiceTest {
     void deveProrrogarAtividadeDentroDosLimitesHierarquicos() {
         TenantContext.definir(UNIDADE_ID);
 
-        when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+        when(atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
                 ATIVIDADE_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(atividade));
         mockUsuario();
@@ -307,7 +310,7 @@ class ProrrogacaoServiceTest {
     void deveRejeitarProrrogacaoDaAtividadeAcimaDoSci() {
         TenantContext.definir(UNIDADE_ID);
 
-        when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+        when(atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
                 ATIVIDADE_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(atividade));
         mockUsuario();
@@ -331,7 +334,7 @@ class ProrrogacaoServiceTest {
         projeto.setStatus(StatusProjeto.CONCLUIDO);
 
         TenantContext.definir(UNIDADE_ID);
-        when(atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+        when(atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
                 ATIVIDADE_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(atividade));
         mockUsuario();
@@ -355,7 +358,7 @@ class ProrrogacaoServiceTest {
         usuario.setPerfil(Perfil.PESQUISADOR);
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
         mockUsuario();
 
@@ -394,7 +397,7 @@ class ProrrogacaoServiceTest {
         projeto.setDataFim(null);
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
         mockUsuario();
 
@@ -424,10 +427,10 @@ class ProrrogacaoServiceTest {
                 .build();
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
         when(historicoProjetoRepository
-                .findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+                .findByProjetoPublicIdAndProjetoUnidadePublicIdOrderByDataHoraAsc(
                         PROJETO_ID, UNIDADE_ID))
                 .thenReturn(List.of(historico));
 

@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +54,8 @@ class SciRepositoryTest {
     private Projeto criarProjeto(Laboratorio laboratorio, String nome, LocalDate inicio, LocalDate fim) {
         return entityManager.persistAndFlush(
                 Projeto.builder()
-                        .laboratorio(laboratorio)
+                        .unidade(laboratorio.getUnidade())
+                        .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                         .nome(nome)
                         .dataInicio(inicio)
                         .dataFim(fim)
@@ -103,7 +106,7 @@ class SciRepositoryTest {
         entityManager.clear();
 
         Optional<Sci> resultado =
-                sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+                sciRepository.findByPublicIdAndProjetoUnidadePublicId(
                         sci.getPublicId(),
                         unidade.getPublicId()
                 );
@@ -124,7 +127,7 @@ class SciRepositoryTest {
         Sci sciA = criarSci(projetoA, "94.94.94.002.01.01", "SCI A", true);
 
         Optional<Sci> resultado =
-                sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+                sciRepository.findByPublicIdAndProjetoUnidadePublicId(
                         sciA.getPublicId(),
                         unidadeB.getPublicId()
                 );
@@ -143,7 +146,7 @@ class SciRepositoryTest {
         criarSci(projetoB, "94.94.94.004.01.01", "SCI B2", true);
 
         List<Sci> resultado =
-                sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(
                         projetoA.getPublicId(),
                         unidade.getPublicId()
                 );
@@ -162,7 +165,7 @@ class SciRepositoryTest {
         criarSci(projeto, "94.94.94.005.01.02", "SCI Inativo", false);
 
         List<Sci> resultado =
-                sciRepository.findByProjetoLaboratorioUnidadePublicIdAndAtivoTrue(
+                sciRepository.findByProjetoUnidadePublicIdAndAtivoTrue(
                         unidade.getPublicId()
                 );
 

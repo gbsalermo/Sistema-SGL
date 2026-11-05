@@ -3,7 +3,9 @@ package com.sgl.repository;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -40,7 +42,10 @@ class RelatorioProjetosRepositoryTest {
     }
 
     private Projeto projeto(Laboratorio laboratorio, String nome, LocalDate inicio, LocalDate fim) {
-        return em.persistAndFlush(Projeto.builder().laboratorio(laboratorio).nome(nome)
+        return em.persistAndFlush(Projeto.builder()
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
+                .nome(nome)
                 .dataInicio(inicio).dataFim(fim).ativo(true).build());
     }
 

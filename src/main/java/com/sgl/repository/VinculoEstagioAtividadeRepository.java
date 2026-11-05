@@ -30,26 +30,26 @@ public interface VinculoEstagioAtividadeRepository extends JpaRepository<Vinculo
 	 * EntityGraph evita N+1 ao percorrer a hierarquia de participacoes.
 	 */
 	@EntityGraph(attributePaths = { "vinculoEstagio", "vinculoEstagio.estagiario", "vinculoEstagio.estagiario.unidade",
-			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.laboratorio",
-			"atividade.sci.projeto.laboratorio.unidade" })
+			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.unidade",
+			"atividade.sci.projeto.laboratorios" })
 	@Query("""
 			SELECT p FROM VinculoEstagioAtividade p
 			WHERE p.vinculoEstagio.estagiario.publicId = :usuarioId
 			  AND p.vinculoEstagio.estagiario.unidade.publicId = :unidadeId
-			  AND p.atividade.sci.projeto.laboratorio.unidade.publicId = :unidadeId
+			  AND p.atividade.sci.projeto.unidade.publicId = :unidadeId
 			ORDER BY p.dataInicioParticipacao DESC, p.id DESC
 			""")
 	List<VinculoEstagioAtividade> listarContextosDoUsuario(@Param("usuarioId") UUID usuarioId,
 			@Param("unidadeId") UUID unidadeId);
 
 	@EntityGraph(attributePaths = { "vinculoEstagio", "vinculoEstagio.estagiario", "vinculoEstagio.estagiario.unidade",
-			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.laboratorio",
-			"atividade.sci.projeto.laboratorio.unidade" })
+			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.unidade",
+			"atividade.sci.projeto.laboratorios" })
 	@Query("""
 			SELECT p FROM VinculoEstagioAtividade p
 			WHERE p.atividade.publicId = :atividadeId
 			  AND p.vinculoEstagio.estagiario.unidade.publicId = :unidadeId
-			  AND p.atividade.sci.projeto.laboratorio.unidade.publicId = :unidadeId
+			  AND p.atividade.sci.projeto.unidade.publicId = :unidadeId
 			ORDER BY p.dataInicioParticipacao DESC, p.id DESC
 			""")
 	List<VinculoEstagioAtividade> listarParticipacoesDaAtividade(@Param("atividadeId") UUID atividadeId,
@@ -59,13 +59,13 @@ public interface VinculoEstagioAtividadeRepository extends JpaRepository<Vinculo
 	 * Consulta em lote para o hub de Projeto (nao consultar uma Atividade por vez).
 	 */
 	@EntityGraph(attributePaths = { "vinculoEstagio", "vinculoEstagio.estagiario", "vinculoEstagio.estagiario.unidade",
-			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.laboratorio",
-			"atividade.sci.projeto.laboratorio.unidade" })
+			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.unidade",
+			"atividade.sci.projeto.laboratorios" })
 	@Query("""
 			SELECT p FROM VinculoEstagioAtividade p
 			WHERE p.atividade.sci.projeto.publicId = :projetoId
 			  AND p.vinculoEstagio.estagiario.unidade.publicId = :unidadeId
-			  AND p.atividade.sci.projeto.laboratorio.unidade.publicId = :unidadeId
+			  AND p.atividade.sci.projeto.unidade.publicId = :unidadeId
 			ORDER BY p.atividade.id ASC, p.dataInicioParticipacao DESC, p.id DESC
 			""")
 	List<VinculoEstagioAtividade> listarParticipacoesDoProjeto(@Param("projetoId") UUID projetoId,
@@ -76,15 +76,15 @@ public interface VinculoEstagioAtividadeRepository extends JpaRepository<Vinculo
 	long countByVinculoEstagioIdAndDataFimParticipacaoIsNull(Long vinculoEstagioId);
 
 	@EntityGraph(attributePaths = { "vinculoEstagio", "vinculoEstagio.estagiario", "vinculoEstagio.estagiario.unidade",
-			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.laboratorio",
-			"atividade.sci.projeto.laboratorio.unidade" })
+			"atividade", "atividade.sci", "atividade.sci.projeto", "atividade.sci.projeto.unidade",
+			"atividade.sci.projeto.laboratorios" })
 	@Query("""
 			SELECT p
 			FROM VinculoEstagioAtividade p
 			WHERE p.publicId = :participacaoId
 			  AND p.vinculoEstagio.estagiario.publicId = :usuarioId
 			  AND p.vinculoEstagio.estagiario.unidade.publicId = :unidadeId
-			  AND p.atividade.sci.projeto.laboratorio.unidade.publicId = :unidadeId
+			  AND p.atividade.sci.projeto.unidade.publicId = :unidadeId
 			""")
 	Optional<VinculoEstagioAtividade> buscarParticipacaoParaPedido(@Param("participacaoId") UUID participacaoId,
 			@Param("usuarioId") UUID usuarioId, @Param("unidadeId") UUID unidadeId);
@@ -105,7 +105,7 @@ public interface VinculoEstagioAtividadeRepository extends JpaRepository<Vinculo
 			    COUNT(DISTINCT p.vinculoEstagio.estagiario.id)
 			        AS totalEstagiarios
 			FROM VinculoEstagioAtividade p
-			WHERE p.atividade.sci.projeto.laboratorio.unidade.publicId =
+			WHERE p.atividade.sci.projeto.unidade.publicId =
 			        :unidadeId
 			  AND p.vinculoEstagio.estagiario.unidade.publicId =
 			        :unidadeId
@@ -118,7 +118,7 @@ public interface VinculoEstagioAtividadeRepository extends JpaRepository<Vinculo
 	@Query("""
 			SELECT COUNT(DISTINCT p.vinculoEstagio.estagiario.id)
 			FROM VinculoEstagioAtividade p
-			WHERE p.atividade.sci.projeto.laboratorio.unidade.publicId =
+			WHERE p.atividade.sci.projeto.unidade.publicId =
 			        :unidadeId
 			  AND p.vinculoEstagio.estagiario.unidade.publicId =
 			        :unidadeId

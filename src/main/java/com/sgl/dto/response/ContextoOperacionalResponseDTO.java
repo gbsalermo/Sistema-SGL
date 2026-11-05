@@ -45,7 +45,10 @@ public record ContextoOperacionalResponseDTO(
         Atividade atividade = p.getAtividade();
         Sci sci = atividade == null ? null : atividade.getSci();
         Projeto projeto = sci == null ? null : sci.getProjeto();
-        Laboratorio laboratorio = projeto == null ? null : projeto.getLaboratorio();
+        // TEMPORARY (multi-laboratory projects): exposes the first laboratory until this DTO lists all of them.
+        Laboratorio laboratorio = projeto == null
+                ? null
+                : projeto.laboratoriosOrdenados().stream().findFirst().orElse(null);
 
         return new ContextoOperacionalResponseDTO(
                 "PARTICIPACAO_ESTAGIO",

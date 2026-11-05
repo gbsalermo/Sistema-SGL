@@ -3,6 +3,7 @@ package com.sgl.dto.response;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
@@ -45,8 +46,10 @@ public class ProjetoResponseDTO {
 
 	public ProjetoResponseDTO(Projeto entity) {
 		this.id = entity.getPublicId();
-		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
-		this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
+		// TEMPORARY (multi-laboratory projects): exposes the first laboratory until this DTO lists all of them.
+		Laboratorio laboratorio = entity.laboratoriosOrdenados().stream().findFirst().orElse(null);
+		this.laboratorioId = laboratorio != null ? laboratorio.getPublicId() : null;
+		this.laboratorioNome = laboratorio != null ? laboratorio.getNome() : null;
 		this.nome = entity.getNome();
 		this.descricao = entity.getDescricao();
 		this.dataInicio = entity.getDataInicio();
