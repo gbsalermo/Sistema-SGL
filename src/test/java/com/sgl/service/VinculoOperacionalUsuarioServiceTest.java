@@ -77,6 +77,19 @@ class VinculoOperacionalUsuarioServiceTest {
         assertEquals(LAB, usuario.getLaboratorio().getPublicId());
     }
 
+    // "Salvar base" num usuário pendente não o libera (só Aprovar faz isso); recusar evita a falsa impressão.
+    @Test void laboratorioBaseDeUsuarioPendenteExigeAprovacao() {
+        TenantContext.definir(UNIDADE);
+        Usuario usuario = analista();
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(usuario));
+
+        com.sgl.exception.UsuarioRejectedException e = assertThrows(com.sgl.exception.UsuarioRejectedException.class,
+            () -> service.definirLaboratorioBase(USUARIO, LAB));
+        assertEquals("USUARIO_PENDENTE", e.getCodigo());
+        assertEquals(null, usuario.getLaboratorio());
+    }
+
     @Test void deveBloquearAtribuicaoDeLaboratorioDeOutraUnidade() {
         TenantContext.definir(UNIDADE);
         Usuario usuario = analista();

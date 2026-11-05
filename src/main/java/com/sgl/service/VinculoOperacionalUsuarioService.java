@@ -15,8 +15,10 @@ import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.exception.UsuarioRejectedException;
 import com.sgl.model.*;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.*;
 import com.sgl.security.CurrentUser;
 import com.sgl.security.AuthenticatedUser;
@@ -175,6 +177,11 @@ public class VinculoOperacionalUsuarioService {
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
         exigirAutoridadeSobre(usuario);
+        // Quem está pendente recebe o laboratório-base na aprovação (aba Pendentes), não aqui:
+        // salvar a base sem aprovar deixaria a pessoa bloqueada e a gestão achando que liberou.
+        if (usuario.getSituacao() == SituacaoUsuario.PENDENTE_VINCULACAO) {
+            throw UsuarioRejectedException.pendenteExigeAprovacao();
+        }
         if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
             throw new BusinessRuleException("Laboratório do estagiário é gerenciado pelo fluxo de estágio.");
         }
