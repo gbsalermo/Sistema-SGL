@@ -33,6 +33,7 @@ import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.service.UsuarioService;
 
 /**
@@ -88,7 +89,8 @@ class UsuarioControllerTest {
                 "IQ",
                 LABORATORIO_PUBLIC_ID,
                 "Laboratório de Química Orgânica",
-                true);
+                true,
+                SituacaoUsuario.ATIVO);
     }
 
     @Test
@@ -166,7 +168,7 @@ class UsuarioControllerTest {
                 .thenReturn(new UsuarioResponseDTO(
                         USUARIO_PUBLIC_ID, "Maria Oliveira Atualizada", "maria.oliveira@ufrb.edu.br",
                         Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
-                        LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true));
+                        LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true, SituacaoUsuario.ATIVO));
 
         mockMvc.perform(put(BASE_URL + "/{id}", USUARIO_PUBLIC_ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -182,7 +184,7 @@ class UsuarioControllerTest {
                 .thenReturn(new UsuarioResponseDTO(
                         USUARIO_PUBLIC_ID, "Maria Oliveira", "maria.oliveira@ufrb.edu.br",
                         Perfil.GESTOR, UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
-                        LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true));
+                        LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true, SituacaoUsuario.ATIVO));
 
         mockMvc.perform(put(BASE_URL + "/{id}/perfil", USUARIO_PUBLIC_ID)
                         .contentType(MediaType.APPLICATION_JSON)

@@ -207,6 +207,54 @@ class UsuarioAprovacaoIntegrationTest {
         assertThat(usuarioRepository.findByPublicId(pendente.getPublicId())).isPresent();
     }
 
+    // Caso real (homologação, 05/11/2026): o gestor trocou o perfil de um estagiário pendente achando que
+    // isso liberava o acesso, e ele seguiu bloqueado. Só "Aprovar" tira alguém de PENDENTE_VINCULACAO,
+    // então trocar perfil ou laboratório de um pendente é recusado com um código que a tela entende.
+    // A tela de Cadastros precisa saber quem está pendente para não oferecer a troca de perfil.
+    @Test
+    void listar_informaSituacao() throws Exception {
+        Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
+
+        mockMvc.perform(get(USUARIOS).header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '%s')].situacao".formatted(pendente.getPublicId()))
+                        .value("PENDENTE_VINCULACAO"))
+                .andExpect(jsonPath("$[?(@.id == '%s')].situacao".formatted(gestor.getPublicId()))
+                        .value("ATIVO"));
+    }
+
+    @Test
+    void trocarPerfil_usuarioPendente_409() throws Exception {
+        Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
+
+        mockMvc.perform(trocarPerfil(pendente, gestor, "ESTAGIARIO"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("USUARIO_PENDENTE"));
+        Usuario salvo = usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow();
+        assertThat(salvo.getPerfil()).isEqualTo(Perfil.TECNICO);
+        assertThat(salvo.getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
+    }
+
+    @Test
+    void atualizar_usuarioPendenteMudandoPerfil_409() throws Exception {
+        Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
+
+        mockMvc.perform(atualizar(pendente, gestor, "ESTAGIARIO", true, null))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("USUARIO_PENDENTE"));
+        assertThat(usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow().getPerfil())
+                .isEqualTo(Perfil.TECNICO);
+    }
+
+    @Test
+    void atualizar_usuarioPendenteRecebendoLaboratorio_409() throws Exception {
+        Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
+
+        mockMvc.perform(atualizar(pendente, gestor, "TECNICO", true, laboratorio))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("USUARIO_PENDENTE"));
+    }
+
     @Test
     void trocarPerfil_proprioPerfil_403() throws Exception {
         Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);

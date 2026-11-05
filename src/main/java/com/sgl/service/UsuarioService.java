@@ -157,6 +157,7 @@ public class UsuarioService {
             throw new BusinessRuleException("Perfil é obrigatório.");
         }
 
+        exigirNaoPendente(usuario);
         validarTrocaDePerfil(usuario, novoPerfil);
         validarAlteracaoPerfil(usuario, novoPerfil);
         Perfil anterior = usuario.getPerfil();
@@ -251,6 +252,13 @@ public class UsuarioService {
                 || !java.util.Objects.equals(laboratorioAtual, dto.getLaboratorioId())
                 || !java.util.Objects.equals(unidadeAtual, dto.getUnidadeId());
 
+        // Pendente só muda de perfil/laboratório pela aprovação; inativar continua permitido.
+        boolean mudaPerfilOuLaboratorio = usuario.getPerfil() != dto.getPerfil()
+                || !java.util.Objects.equals(laboratorioAtual, dto.getLaboratorioId());
+        if (mudaPerfilOuLaboratorio) {
+            exigirNaoPendente(usuario);
+        }
+
         if (mudaAcesso) {
             boolean desativando = mudaAtivo && Boolean.FALSE.equals(dto.getAtivo());
             validarTrocaDePerfil(usuario, desativando ? null : dto.getPerfil());
@@ -263,6 +271,12 @@ public class UsuarioService {
      * Rules shared by every change that can strip or grant access. {@code novoPerfil} is null when the
      * target is being deactivated instead of re-profiled.
      */
+    private static void exigirNaoPendente(Usuario alvo) {
+        if (alvo.getSituacao() == SituacaoUsuario.PENDENTE_VINCULACAO) {
+            throw UsuarioRejectedException.pendenteExigeAprovacao();
+        }
+    }
+
     private void validarTrocaDePerfil(Usuario alvo, Perfil novoPerfil) {
         AuthenticatedUser ator = CurrentUser.get();
         if (ator.publicId().equals(alvo.getPublicId())) {
