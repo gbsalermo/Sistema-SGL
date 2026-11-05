@@ -97,6 +97,13 @@ class ProjetoTest {
         assertEquals(List.of("Alfa", "Zeta"), nomes);
     }
 
+    @Test
+    void possuiLaboratorioAtivoBastaUm() {
+        assertTrue(projeto(laboratorio(1L, "A", false), laboratorio(2L, "B", true)).possuiLaboratorioAtivo());
+        assertFalse(projeto(laboratorio(1L, "A", false), laboratorio(2L, "B", false)).possuiLaboratorioAtivo());
+        assertFalse(projeto().possuiLaboratorioAtivo());
+    }
+
     private static Laboratorio laboratorio(Long id, String nome, boolean ativo) {
         return Laboratorio.builder()
                 .id(id)

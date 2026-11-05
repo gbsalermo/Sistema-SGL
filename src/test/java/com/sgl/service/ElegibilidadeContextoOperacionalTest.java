@@ -195,6 +195,32 @@ class ElegibilidadeContextoOperacionalTest {
     }
 
     @Test
+    void unidadeDeOrigemVemDoProjeto() {
+        // The laboratory stays in the estagiário's unit; only the project's own unit changes,
+        // proving the origin unit is read from the project and not from its laboratories.
+        projeto.setUnidade(Unidade.builder().publicId(OUTRA_UNIDADE).build());
+        bloqueado(UNIDADE_DIVERGENTE);
+    }
+
+    @Test
+    void todosLaboratoriosInativosBloqueia() {
+        Laboratorio segundo = Laboratorio.builder()
+                .unidade(laboratorio.getUnidade()).nome("Laboratorio B").ativo(false).build();
+        laboratorio.setAtivo(false);
+        projeto.setLaboratorios(new LinkedHashSet<>(Set.of(laboratorio, segundo)));
+        bloqueado(HIERARQUIA_INATIVA);
+    }
+
+    @Test
+    void umLaboratorioAtivoBasta() {
+        Laboratorio segundo = Laboratorio.builder()
+                .unidade(laboratorio.getUnidade()).nome("Laboratorio B").ativo(true).build();
+        laboratorio.setAtivo(false);
+        projeto.setLaboratorios(new LinkedHashSet<>(Set.of(laboratorio, segundo)));
+        assertTrue(ElegibilidadeContextoOperacional.avaliar(participacao, HOJE, UNIDADE).elegivel());
+    }
+
+    @Test
     void bloqueiaQualquerNivelInativo() {
         atividade.setAtivo(false);
         bloqueado(HIERARQUIA_INATIVA);

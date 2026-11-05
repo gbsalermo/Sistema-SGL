@@ -41,19 +41,27 @@ import com.sgl.dto.response.ResiduoResponseDTO;
 import com.sgl.dto.response.RotuloResiduoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.Atividade;
 import com.sgl.model.ClasseResiduo;
+import com.sgl.model.Estagiario;
 import com.sgl.model.HistoricoResiduo;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Produto;
 import com.sgl.model.Projeto;
 import com.sgl.model.Residuo;
+import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.VinculoEstagio;
+import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.EstadoFisicoResiduo;
 import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.model.enums.SituacaoExecucaoProjeto;
+import com.sgl.model.enums.StatusProjeto;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
@@ -293,6 +301,104 @@ class ResiduoServiceTest {
                 () -> residuoService.criar(dto));
         assertTrue(erro.getMessage().contains("somente pode ser usada por estagiários"));
         verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void estagiarioSemLaboratorioEmProjetoComDoisRecebe400() {
+        UUID participacaoId = prepararParticipacaoEmProjetoComDoisLaboratorios();
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setParticipacaoId(participacaoId);
+        dto.setLaboratorioId(null);
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> residuoService.criar(dto));
+
+        assertEquals("Informe o laboratório: o projeto está em mais de um laboratório.", erro.getMessage());
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void estagiarioComLaboratorioForaDoProjetoRecebe400() {
+        UUID participacaoId = prepararParticipacaoEmProjetoComDoisLaboratorios();
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setParticipacaoId(participacaoId);
+        dto.setLaboratorioId(UUID.randomUUID());
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> residuoService.criar(dto));
+
+        assertEquals("O laboratório informado não pertence ao projeto.", erro.getMessage());
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void estagiarioEscolheQualquerLaboratorioDoProjeto() {
+        UUID participacaoId = prepararParticipacaoEmProjetoComDoisLaboratorios();
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_OUTRO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorioOutro));
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(projeto));
+        stubClasseValida();
+        stubSalvarComIdGerado();
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setParticipacaoId(participacaoId);
+        dto.setLaboratorioId(LABORATORIO_OUTRO_PUBLIC_ID);
+
+        ResiduoResponseDTO resultado = residuoService.criar(dto);
+
+        assertEquals(LABORATORIO_OUTRO_PUBLIC_ID, resultado.getLaboratorioId());
+        assertEquals(PROJETO_PUBLIC_ID, resultado.getProjetoId());
+    }
+
+    /*
+     * Builds an eligible participation whose project spans both laboratories of the
+     * fixture, so the estagiário has to pick one of them when informing the resíduo.
+     */
+    private UUID prepararParticipacaoEmProjetoComDoisLaboratorios() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        LocalDate hoje = LocalDate.now();
+        projeto.getLaboratorios().add(laboratorioOutro);
+        projeto.setStatus(StatusProjeto.ATIVO);
+        projeto.setSituacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO);
+        projeto.setDataInicio(hoje.minusMonths(4));
+        projeto.setDataFim(hoje.plusMonths(4));
+        Sci sci = Sci.builder().id(31L).publicId(UUID.randomUUID()).projeto(projeto).nome("SCI")
+                .ativo(true).status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .dataInicio(hoje.minusMonths(3)).dataFim(hoje.plusMonths(3)).build();
+        Atividade atividade = Atividade.builder().id(32L).publicId(UUID.randomUUID()).sci(sci)
+                .nome("Atividade").ativo(true).status(StatusProjeto.ATIVO)
+                .situacaoExecucao(SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO)
+                .dataInicio(hoje.minusMonths(2)).dataFim(hoje.plusMonths(2)).build();
+
+        Estagiario estagiario = new Estagiario();
+        estagiario.setId(24L);
+        estagiario.setPublicId(GERADOR_PUBLIC_ID);
+        estagiario.setNome("Estagiário");
+        estagiario.setPerfil(Perfil.ESTAGIARIO);
+        estagiario.setUnidade(unidade);
+        estagiario.setAtivo(true);
+
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setId(25L);
+        vinculo.setEstagiario(estagiario);
+        vinculo.setDataInicio(hoje.minusMonths(4));
+        vinculo.setDataFimPrevista(hoje.plusMonths(4));
+        vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+
+        UUID participacaoId = UUID.randomUUID();
+        VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+        participacao.setId(26L);
+        participacao.setPublicId(participacaoId);
+        participacao.setVinculoEstagio(vinculo);
+        participacao.setAtividade(atividade);
+        participacao.setDataInicioParticipacao(hoje.minusMonths(1));
+
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(GERADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(estagiario));
+        when(participacaoRepository.buscarParticipacaoParaPedido(participacaoId, GERADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(participacao));
+        return participacaoId;
     }
 
     @Test

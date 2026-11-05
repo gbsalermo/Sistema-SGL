@@ -29,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sgl.dto.request.AprovarPedidoRequestDTO;
+import com.sgl.dto.request.ItemPedidoRequestDTO;
 import com.sgl.dto.request.PedidoRequestDTO;
 import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
@@ -68,6 +69,7 @@ class PedidoServiceTest {
     private static final UUID PEDIDO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000007");
     private static final UUID ITEM_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000008");
     private static final UUID PROJETO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000009");
+    private static final UUID SEGUNDO_LABORATORIO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000010");
 
     @Mock
     private PedidoRepository pedidoRepository;
@@ -546,6 +548,96 @@ class PedidoServiceTest {
         );
         verify(pedidoRepository, never())
                 .findByLaboratorioProjetoEPeriodo(any(), any(), any(), any());
+    }
+
+    @Test
+    void pedidoComProjetoDeDoisLaboratoriosExigeLaboratorio() {
+        Projeto projeto = projetoNosLaboratorios(laboratorio, segundoLaboratorio(true));
+        solicitante.setPerfil(Perfil.TECNICO);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(SOLICITANTE_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(solicitante));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class,
+                () -> pedidoService.criar(pedidoDoProjeto(null)));
+
+        assertEquals("Informe o laboratório: o projeto está em mais de um laboratório.", exception.getMessage());
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    void pedidoComLaboratorioDoProjetoEhAceito() {
+        Laboratorio segundo = segundoLaboratorio(true);
+        Projeto projeto = projetoNosLaboratorios(laboratorio, segundo);
+        solicitante.setPerfil(Perfil.TECNICO);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(SOLICITANTE_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(solicitante));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(SEGUNDO_LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(segundo));
+        // The requester's base laboratory is the first one; an operational link authorizes the second.
+        when(vinculoOperacionalService.vinculadoLaboratorio(solicitante, segundo, LocalDate.now())).thenReturn(true);
+        when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID)).thenReturn(Optional.of(produto));
+        when(produtoRepository.pertenceAUnidade(PRODUTO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(true);
+        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L)).thenReturn(Optional.of(estoque));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PedidoResponseDTO resultado = pedidoService.criar(pedidoDoProjeto(SEGUNDO_LABORATORIO_PUBLIC_ID));
+
+        assertEquals(SEGUNDO_LABORATORIO_PUBLIC_ID, resultado.getLaboratorioId());
+        assertEquals(PROJETO_PUBLIC_ID, resultado.getProjetoId());
+    }
+
+    @Test
+    void pedidoComProjetoSemLaboratorioAtivoRecebe400() {
+        laboratorio.setAtivo(false);
+        Projeto projeto = projetoNosLaboratorios(laboratorio);
+        solicitante.setPerfil(Perfil.TECNICO);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(SOLICITANTE_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(solicitante));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class,
+                () -> pedidoService.criar(pedidoDoProjeto(null)));
+
+        assertEquals("O projeto não possui laboratório ativo.", exception.getMessage());
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    private Laboratorio segundoLaboratorio(boolean ativo) {
+        return Laboratorio.builder()
+                .id(12L)
+                .publicId(SEGUNDO_LABORATORIO_PUBLIC_ID)
+                .nome("Laboratório de Biologia")
+                .unidade(unidade)
+                .ativo(ativo)
+                .build();
+    }
+
+    private Projeto projetoNosLaboratorios(Laboratorio... laboratorios) {
+        return Projeto.builder()
+                .id(10L)
+                .publicId(PROJETO_PUBLIC_ID)
+                .nome("Projeto multi-laboratório")
+                .unidade(unidade)
+                .laboratorios(new LinkedHashSet<>(List.of(laboratorios)))
+                .ativo(true)
+                .build();
+    }
+
+    private PedidoRequestDTO pedidoDoProjeto(UUID laboratorioId) {
+        ItemPedidoRequestDTO itemDTO = new ItemPedidoRequestDTO();
+        itemDTO.setProdutoId(PRODUTO_PUBLIC_ID);
+        itemDTO.setQuantidadeSolicitada(BigDecimal.valueOf(2));
+        itemDTO.setTipoEmbalagemSolicitada(TipoEmbalagem.UNITARIO);
+        itemDTO.setQuantidadeEmbalagensSolicitada(2);
+        itemDTO.setMultiplicadorSolicitado(BigDecimal.ONE);
+
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(SOLICITANTE_PUBLIC_ID);
+        dto.setProjetoId(PROJETO_PUBLIC_ID);
+        dto.setLaboratorioId(laboratorioId);
+        dto.setItens(List.of(itemDTO));
+        return dto;
     }
 
     private void prepararBuscaPedidoComBloqueio() {

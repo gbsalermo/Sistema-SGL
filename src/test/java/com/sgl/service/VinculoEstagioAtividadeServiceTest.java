@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.sgl.dto.request.EncerrarVinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeCulturasRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.VinculoEstagioAtividadeResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.Atividade;
@@ -181,6 +182,24 @@ class VinculoEstagioAtividadeServiceTest {
     }
 
     @Test
+    void deveBloquearParticipacaoEmProjetoSemLaboratorioAtivo() {
+        mockarVinculo();
+        mockarAtividade();
+        laboratorio.setAtivo(false);
+
+        VinculoEstagioAtividadeRequestDTO dto =
+                new VinculoEstagioAtividadeRequestDTO();
+        dto.setAtividadeId(ATIVIDADE_ID);
+        dto.setDataInicioParticipacao(LocalDate.of(2026, 3, 1));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.adicionar(VINCULO_ID, dto));
+
+        assertEquals("O projeto não possui laboratório ativo.", ex.getMessage());
+    }
+
+    @Test
     void deveAdicionarParticipacaoValida() {
         mockarVinculo();
         mockarAtividade();
@@ -210,6 +229,10 @@ class VinculoEstagioAtividadeServiceTest {
         assertEquals(ATIVIDADE_ID, resultado.getAtividadeId());
         assertEquals("participação inicial", resultado.getObservacao());
         assertTrue(resultado.getAtiva());
+        assertEquals(
+                List.of(new LaboratorioResumoDTO(laboratorio.getPublicId(), laboratorio.getNome())),
+                resultado.getLaboratorios());
+        assertEquals(UNIDADE_ID, resultado.getUnidadeId());
         verify(participacaoRepository)
                 .save(any(VinculoEstagioAtividade.class));
     }

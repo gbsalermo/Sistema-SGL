@@ -360,6 +360,27 @@ class VinculoEstagioServiceTest {
     }
 
     @Test
+    void deveBloquearAtividadeDeProjetoSemLaboratorioAtivo() {
+        mockarBuscasBase();
+        atividade.getSci().getProjeto().getLaboratorios()
+                .forEach(laboratorio -> laboratorio.setAtivo(false));
+
+        when(vinculoEstagioRepository
+                .existsByEstagiarioIdAndSituacaoNot(
+                        estagiario.getId(),
+                        SituacaoEstagio.FINALIZADO))
+                .thenReturn(false);
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.criar(ESTAGIARIO_ID, montarDto()));
+
+        assertEquals(
+                "O projeto não possui laboratório ativo.",
+                ex.getMessage());
+    }
+
+    @Test
     void deveBloquearPeriodoDoVinculoInvalido() {
         mockarBuscasBase();
 

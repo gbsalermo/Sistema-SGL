@@ -93,10 +93,8 @@ public class ResiduoService {
 		if (participacao != null) {
 			var projetoOrigem = participacao.getAtividade().getSci().getProjeto();
 			projetoId = projetoOrigem.getPublicId();
-			if (dto.getLaboratorioId() != null && projetoOrigem.getLaboratorios().stream()
-					.noneMatch(item -> dto.getLaboratorioId().equals(item.getPublicId()))) {
-				throw new BusinessRuleException("Laboratório informado diverge da participação selecionada.");
-			}
+			// The estagiário may pick any active laboratory of the participation's project;
+			// the resolver rejects one outside the project or inactive.
 			laboratorioId = projetoOrigem.resolverLaboratorioOperacional(dto.getLaboratorioId()).getPublicId();
 			if (dto.getProjetoId() != null && !dto.getProjetoId().equals(projetoId)) {
 				throw new BusinessRuleException("Projeto informado diverge da participação selecionada.");

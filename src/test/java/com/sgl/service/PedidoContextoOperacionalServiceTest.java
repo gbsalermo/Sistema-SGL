@@ -57,6 +57,7 @@ class PedidoContextoOperacionalServiceTest {
     private static final UUID SEGUNDA_PARTICIPACAO = UUID.fromString("80000000-0000-0000-0000-000000000010");
     private static final UUID SEGUNDA_ATIVIDADE = UUID.fromString("80000000-0000-0000-0000-000000000011");
     private static final UUID PRODUTO = UUID.fromString("80000000-0000-0000-0000-000000000012");
+    private static final UUID LAB_SEGUNDO = UUID.fromString("80000000-0000-0000-0000-000000000013");
 
     @Mock PedidoRepository pedidoRepository;
     @Mock EstoqueCentralRepository estoqueCentralRepository;
@@ -356,7 +357,8 @@ class PedidoContextoOperacionalServiceTest {
     }
 
     @Test
-    void laboratorioDivergenteDaParticipacaoEhRejeitado() {
+    void estagiarioComLaboratorioForaDoProjetoRecebe400() {
+        // The estagiário's own base laboratory is not a valid choice when the project is not there.
         prepararSolicitante(estagiario);
         prepararParticipacao(PARTICIPACAO, participacao);
         PedidoRequestDTO dto = pedido(PARTICIPACAO);
@@ -365,8 +367,56 @@ class PedidoContextoOperacionalServiceTest {
         BusinessRuleException erro = assertThrows(BusinessRuleException.class,
                 () -> service.criar(dto));
 
-        assertTrue(erro.getMessage().contains("Laboratório informado diverge"));
+        assertEquals("O laboratório informado não pertence ao projeto.", erro.getMessage());
         confirmarSemGravacao();
+    }
+
+    @Test
+    void estagiarioSemLaboratorioEmProjetoComDoisRecebe400() {
+        adicionarSegundoLaboratorioAoProjeto();
+        prepararSolicitante(estagiario);
+        prepararParticipacao(PARTICIPACAO, participacao);
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> service.criar(pedido(PARTICIPACAO)));
+
+        assertEquals("Informe o laboratório: o projeto está em mais de um laboratório.", erro.getMessage());
+        confirmarSemGravacao();
+    }
+
+    @Test
+    void estagiarioEscolheQualquerLaboratorioDoProjeto() {
+        Laboratorio segundo = adicionarSegundoLaboratorioAoProjeto();
+        prepararSolicitante(estagiario);
+        prepararParticipacao(PARTICIPACAO, participacao);
+        prepararProdutoESalvamento();
+        PedidoRequestDTO dto = pedido(PARTICIPACAO);
+        dto.setLaboratorioId(LAB_SEGUNDO);
+
+        PedidoResponseDTO resultado = service.criar(dto);
+
+        assertEquals(LAB_SEGUNDO, resultado.getLaboratorioId());
+        assertEquals(segundo.getNome(), resultado.getLaboratorioOrigemNome());
+        assertEquals(PROJETO, resultado.getProjetoId());
+        assertEquals(PARTICIPACAO, resultado.getParticipacaoId());
+    }
+
+    @Test
+    void estagiarioComProjetoDeUmLaboratorioNaoPrecisaInformar() {
+        prepararSolicitante(estagiario);
+        prepararParticipacao(PARTICIPACAO, participacao);
+        prepararProdutoESalvamento();
+
+        PedidoResponseDTO resultado = service.criar(pedido(PARTICIPACAO));
+
+        assertEquals(LAB, resultado.getLaboratorioId());
+    }
+
+    private Laboratorio adicionarSegundoLaboratorioAoProjeto() {
+        Laboratorio segundo = Laboratorio.builder().id(21L).publicId(LAB_SEGUNDO)
+                .unidade(unidade).nome("Segundo laboratorio do projeto").ativo(true).build();
+        projeto.getLaboratorios().add(segundo);
+        return segundo;
     }
 
     @Test

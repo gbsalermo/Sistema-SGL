@@ -116,9 +116,7 @@ public final class ElegibilidadeContextoOperacional {
 
         // The specific laboratory is checked when the pedido/resíduo is created; here it is
         // enough that the project still has at least one active laboratory to operate in.
-        boolean algumLaboratorioAtivo = projeto.getLaboratorios().stream()
-                .anyMatch(laboratorio -> Boolean.TRUE.equals(laboratorio.getAtivo()));
-        if (!algumLaboratorioAtivo
+        if (!projeto.possuiLaboratorioAtivo()
                 || !Boolean.TRUE.equals(projeto.getAtivo())
                 || !Boolean.TRUE.equals(sci.getAtivo())
                 || !Boolean.TRUE.equals(atividade.getAtivo())) {

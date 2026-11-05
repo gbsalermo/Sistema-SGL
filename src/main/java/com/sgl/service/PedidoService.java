@@ -623,16 +623,13 @@ public class PedidoService {
 			Sci sci = atividade.getSci();
 			Projeto projeto = sci.getProjeto();
 
-			// Identificadores legados podem ser recebidos,
-			// mas nunca devem contradizer a participação.
+			// The project is fixed by the participation and can never be contradicted.
 			if (dto.getProjetoId() != null && !dto.getProjetoId().equals(projeto.getPublicId())) {
 				throw new BusinessRuleException("O Projeto informado diverge da participação selecionada.");
 			}
 
-			if (dto.getLaboratorioId() != null && !contemLaboratorio(projeto, dto.getLaboratorioId())) {
-				throw new BusinessRuleException("O Laboratório informado diverge da participação selecionada.");
-			}
-
+			// The laboratory, instead, is the estagiário's choice among the project's active
+			// laboratories (no restriction to the supervisor's); the resolver validates it.
 			Laboratorio laboratorio = projeto.resolverLaboratorioOperacional(dto.getLaboratorioId());
 
 			validarConsistenciaPedido(usuario, laboratorio, projeto);
@@ -694,10 +691,5 @@ public class PedidoService {
 		}
 
 		return new ContextoPedido(laboratorio, projeto, null, null, null);
-	}
-
-	private static boolean contemLaboratorio(Projeto projeto, UUID laboratorioPublicId) {
-		return projeto.getLaboratorios().stream()
-				.anyMatch(laboratorio -> laboratorioPublicId.equals(laboratorio.getPublicId()));
 	}
 }

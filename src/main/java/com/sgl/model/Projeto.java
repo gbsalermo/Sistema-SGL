@@ -175,6 +175,14 @@ public class Projeto implements Serializable {
         return ativos.get(0);
     }
 
+    /*
+     * A project stays operable while at least one of its laboratories is active;
+     * which one is used is decided per pedido/resíduo by resolverLaboratorioOperacional.
+     */
+    public boolean possuiLaboratorioAtivo() {
+        return laboratorios.stream().anyMatch(item -> Boolean.TRUE.equals(item.getAtivo()));
+    }
+
     public List<Laboratorio> laboratoriosOrdenados() {
         return laboratorios.stream()
                 .sorted(Comparator.comparing(Laboratorio::getNome, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))

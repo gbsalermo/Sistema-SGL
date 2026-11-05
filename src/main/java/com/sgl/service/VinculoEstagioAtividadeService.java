@@ -259,8 +259,8 @@ public class VinculoEstagioAtividadeService {
 
 		// With several laboratories the activity stays operable while any of them is active;
 		// the specific one is validated when the pedido/resíduo picks it.
-		if (projeto.getLaboratorios().stream().noneMatch(laboratorio -> Boolean.TRUE.equals(laboratorio.getAtivo()))) {
-			throw new BusinessRuleException("O laboratório informado está inativo.");
+		if (!projeto.possuiLaboratorioAtivo()) {
+			throw new BusinessRuleException("O projeto não possui laboratório ativo.");
 		}
 	}
 

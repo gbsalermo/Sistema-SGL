@@ -24,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Atividade;
@@ -136,6 +137,28 @@ class ContextoOperacionalConsultaServiceTest {
         assertTrue(contexto.aberta());
         assertTrue(contexto.elegivel());
         assertNull(contexto.motivoInelegibilidade());
+    }
+
+    @Test
+    void contextoExpoeLaboratoriosDoProjetoOrdenados() {
+        Unidade unidade = projeto.getUnidade();
+        Laboratorio beta = Laboratorio.builder().publicId(UUID.randomUUID())
+                .unidade(unidade).nome("Beta").ativo(true).build();
+        Laboratorio alfa = Laboratorio.builder().publicId(UUID.randomUUID())
+                .unidade(unidade).nome("Alfa").ativo(true).build();
+        projeto.setLaboratorios(new LinkedHashSet<>(List.of(beta, alfa)));
+        when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO_ID, UNIDADE))
+                .thenReturn(Optional.of(estagiario));
+        when(participacoes.listarContextosDoUsuario(USUARIO_ID, UNIDADE))
+                .thenReturn(List.of(participacao));
+
+        var contexto = service.listarDoEstagiario(USUARIO_ID).get(0);
+
+        assertEquals(List.of("Alfa", "Beta"),
+                contexto.laboratorios().stream().map(LaboratorioResumoDTO::nome).toList());
+        assertEquals(List.of(alfa.getPublicId(), beta.getPublicId()),
+                contexto.laboratorios().stream().map(LaboratorioResumoDTO::id).toList());
+        assertEquals(UNIDADE, contexto.unidadeId());
     }
 
     @Test
