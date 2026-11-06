@@ -1,6 +1,7 @@
 package com.sgl.service;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sgl.dto.request.EstagiarioRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
+import com.sgl.dto.response.EstagiarioSemVinculoResponseDTO;
+import com.sgl.dto.response.OrientadorElegivelResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -26,6 +29,7 @@ import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
@@ -182,6 +186,33 @@ public class EstagiarioService {
 				.findByUnidadePublicId(TenantContext.unidadeAtual().orElseThrow());
 
 		return estagiarios.stream().map(this::montarResponse).toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<EstagiarioSemVinculoResponseDTO> listarSemVinculo() {
+		exigirGestao();
+		exigirTenantAtivo();
+
+		return usuarioRepository.findEstagiariosSemVinculo(TenantContext.unidadeAtual().orElseThrow()).stream()
+				.map(u -> new EstagiarioSemVinculoResponseDTO(u.getPublicId(), u.getNome(),
+						u.getLaboratorio() != null ? u.getLaboratorio().getPublicId() : null,
+						u.getLaboratorio() != null ? u.getLaboratorio().getNome() : null))
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<OrientadorElegivelResponseDTO> listarOrientadoresElegiveis() {
+		exigirGestao();
+		exigirTenantAtivo();
+
+		// Same unit and active status that criar() enforces, so the list never offers someone the POST would refuse.
+		return usuarioRepository
+				.findByUnidadePublicIdAndAtivoTrueAndSituacao(TenantContext.unidadeAtual().orElseThrow(),
+						SituacaoUsuario.ATIVO)
+				.stream().filter(OrientadorPolicy::podeOrientar)
+				.sorted(Comparator.comparing(Usuario::getNome, String.CASE_INSENSITIVE_ORDER))
+				.map(u -> new OrientadorElegivelResponseDTO(u.getPublicId(), u.getNome(), u.getPerfil(), u.getCargo()))
+				.toList();
 	}
 
 	@Transactional(readOnly = true)

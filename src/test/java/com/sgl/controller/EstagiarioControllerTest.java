@@ -32,6 +32,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.EstagiarioRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
+import com.sgl.dto.response.EstagiarioSemVinculoResponseDTO;
+import com.sgl.dto.response.OrientadorElegivelResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Estagiario;
@@ -39,6 +41,7 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.FormacaoEstagiario;
+import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.service.EstagiarioService;
@@ -268,5 +271,33 @@ class EstagiarioControllerTest {
                         BASE_URL + "/{id}/encerrar",
                         ESTAGIARIO_PUBLIC_ID))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveListarEstagiariosSemVinculo() throws Exception {
+        when(estagiarioService.listarSemVinculo()).thenReturn(List.of(
+                new EstagiarioSemVinculoResponseDTO(
+                        ESTAGIARIO_PUBLIC_ID, "Amanda", LABORATORIO_PUBLIC_ID, "Lab Solos")));
+
+        mockMvc.perform(get(BASE_URL + "/sem-vinculo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].usuarioId").value(ESTAGIARIO_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].nome").value("Amanda"))
+                .andExpect(jsonPath("$[0].laboratorioId").value(LABORATORIO_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].laboratorioNome").value("Lab Solos"));
+    }
+
+    @Test
+    void deveListarOrientadoresElegiveis() throws Exception {
+        when(estagiarioService.listarOrientadoresElegiveis()).thenReturn(List.of(
+                new OrientadorElegivelResponseDTO(
+                        ORIENTADOR_PUBLIC_ID, "Ana", Perfil.PESQUISADOR, "PESQUISADOR A")));
+
+        mockMvc.perform(get(BASE_URL + "/orientadores-elegiveis"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].usuarioId").value(ORIENTADOR_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].nome").value("Ana"))
+                .andExpect(jsonPath("$[0].perfil").value("PESQUISADOR"))
+                .andExpect(jsonPath("$[0].cargo").value("PESQUISADOR A"));
     }
 }

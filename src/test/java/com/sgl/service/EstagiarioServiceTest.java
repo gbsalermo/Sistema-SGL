@@ -39,6 +39,7 @@ import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
@@ -676,5 +677,70 @@ class EstagiarioServiceTest {
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(
                 ORIENTADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(orientador));
+    }
+
+    @Test
+    void listarSemVinculoExigeGestao() {
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.ESTAGIARIO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class, () -> estagiarioService.listarSemVinculo());
+    }
+
+    @Test
+    void listarSemVinculoMontaRespostaComLaboratorioBase() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        usuario.setLaboratorio(laboratorio);
+        Usuario semLab = new Usuario();
+        semLab.setPublicId(UUID.randomUUID());
+        semLab.setNome("Amanda");
+        when(usuarioRepository.findEstagiariosSemVinculo(UNIDADE_PUBLIC_ID)).thenReturn(List.of(semLab, usuario));
+
+        var resposta = estagiarioService.listarSemVinculo();
+
+        assertEquals(2, resposta.size());
+        assertEquals(null, resposta.get(0).laboratorioId());
+        assertEquals(LABORATORIO_PUBLIC_ID, resposta.get(1).laboratorioId());
+        assertEquals("Laboratório de Química Orgânica", resposta.get(1).laboratorioNome());
+    }
+
+    @Test
+    void orientadoresElegiveisExigeGestao() {
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.TECNICO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class, () -> estagiarioService.listarOrientadoresElegiveis());
+    }
+
+    @Test
+    void orientadoresElegiveisIgnoraOutraUnidadeEInativos() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        Usuario analista = usuarioComPerfil("Zilda Analista", Perfil.ANALISTA, null, null);
+        Usuario tecnico = usuarioComPerfil("Bruno Tecnico", Perfil.TECNICO, null, null);
+        Usuario administrador = usuarioComPerfil("Carla Admin", Perfil.ADMINISTRADOR, "123", "ANALISTA A");
+        Usuario inativo = usuarioComPerfil("Dario Inativo", Perfil.PESQUISADOR, null, null);
+        inativo.setAtivo(false);
+        when(usuarioRepository.findByUnidadePublicIdAndAtivoTrueAndSituacao(
+                UNIDADE_PUBLIC_ID, SituacaoUsuario.ATIVO))
+                .thenReturn(List.of(analista, tecnico, administrador, inativo));
+
+        var resposta = estagiarioService.listarOrientadoresElegiveis();
+
+        assertEquals(List.of("Carla Admin", "Zilda Analista"),
+                resposta.stream().map(r -> r.nome()).toList());
+        assertEquals(Perfil.ADMINISTRADOR, resposta.get(0).perfil());
+        assertEquals("ANALISTA A", resposta.get(0).cargo());
+    }
+
+    private Usuario usuarioComPerfil(String nome, Perfil perfil, String matricula, String cargo) {
+        Usuario u = new Usuario();
+        u.setPublicId(UUID.randomUUID());
+        u.setNome(nome);
+        u.setPerfil(perfil);
+        u.setUnidade(unidade);
+        u.setAtivo(true);
+        u.setMatricula(matricula);
+        u.setCargo(cargo);
+        return u;
     }
 }
