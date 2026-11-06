@@ -74,6 +74,8 @@ import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.tenant.TenantContext;
+import com.sgl.security.SessaoDeTeste;
+import org.springframework.security.access.AccessDeniedException;
 import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 
 /**
@@ -159,6 +161,9 @@ class ResiduoServiceTest {
 
     @BeforeEach
     void setUp() {
+        // The gerador is always the session user; tests that impersonate someone else re-enter.
+        SessaoDeTeste.entrar(GERADOR_PUBLIC_ID, Perfil.PESQUISADOR);
+
         unidade = new Unidade();
         unidade.setId(1L);
         unidade.setPublicId(UNIDADE_PUBLIC_ID);
@@ -252,11 +257,23 @@ class ResiduoServiceTest {
     @AfterEach
     void tearDown() {
         TenantContext.limpar();
+        SessaoDeTeste.sair();
     }
 
     // ---------------------------------------------------------------
     // criar()
     // ---------------------------------------------------------------
+
+    @Test
+    void criar_geradorDiferenteDoUsuarioDaSessao_recusaAntesDeTocarNoRepositorio() {
+        // A solicitante may only inform a resíduo as themself, never on behalf of a colleague.
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.ESTAGIARIO);
+
+        assertThrows(AccessDeniedException.class, () -> residuoService.criar(dtoValidoCriar()));
+
+        verify(usuarioRepository, never()).findByPublicIdAndUnidadePublicId(any(), any());
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
 
     @Test
     void deveExigirParticipacaoParaEstagiarioAoInformarResiduo() {

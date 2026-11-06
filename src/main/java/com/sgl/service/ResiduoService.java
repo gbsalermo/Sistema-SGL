@@ -35,6 +35,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.CurrentUser;
 import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.repository.ClasseResiduoRepository;
@@ -67,6 +68,8 @@ public class ResiduoService {
 
 	@Transactional
 	public ResiduoResponseDTO criar(CriarResiduoRequestDTO dto) {
+		// Informing a resíduo is open to every active profile, so the gerador must be the session user.
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioGeradorId());
 		Usuario gerador = buscarUsuario(dto.getUsuarioGeradorId());
 		gerador.validateActive();
 
