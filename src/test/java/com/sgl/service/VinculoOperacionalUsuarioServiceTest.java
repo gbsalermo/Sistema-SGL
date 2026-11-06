@@ -76,7 +76,7 @@ class VinculoOperacionalUsuarioServiceTest {
         when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(usuario));
         when(laboratorios.findByPublicIdAndUnidadePublicId(LAB, UNIDADE)).thenReturn(Optional.of(lab));
         service.definirLaboratorioBase(USUARIO, LAB);
-        assertEquals(LAB, usuario.getLaboratorio().getPublicId());
+        assertEquals(List.of(LAB), usuario.laboratoriosOrdenados().stream().map(Laboratorio::getPublicId).toList());
     }
 
     // "Salvar base" num usuário pendente não o libera (só Aprovar faz isso); recusar evita a falsa impressão.
@@ -89,7 +89,7 @@ class VinculoOperacionalUsuarioServiceTest {
         com.sgl.exception.UsuarioRejectedException e = assertThrows(com.sgl.exception.UsuarioRejectedException.class,
             () -> service.definirLaboratorioBase(USUARIO, LAB));
         assertEquals("USUARIO_PENDENTE", e.getCodigo());
-        assertEquals(null, usuario.getLaboratorio());
+        assertTrue(usuario.getLaboratorios().isEmpty());
     }
 
     @Test void deveBloquearAtribuicaoDeLaboratorioDeOutraUnidade() {
@@ -98,7 +98,7 @@ class VinculoOperacionalUsuarioServiceTest {
         when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(usuario));
         when(laboratorios.findByPublicIdAndUnidadePublicId(LAB, UNIDADE)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.definirLaboratorioBase(USUARIO, LAB));
-        assertNull(usuario.getLaboratorio());
+        assertTrue(usuario.getLaboratorios().isEmpty());
     }
 
     @Test void devePermitirLaboratorioAdicionalVigente() {
@@ -124,6 +124,29 @@ class VinculoOperacionalUsuarioServiceTest {
         when(vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(USUARIO, UNIDADE))
             .thenReturn(List.of(v));
         assertFalse(service.vinculadoLaboratorio(usuario, lab, LocalDate.now()));
+    }
+
+    @Test void vinculadoQuandoLaboratorioEstaNaLista() {
+        TenantContext.definir(UNIDADE);
+        Usuario usuario = analista();
+        Laboratorio a = laboratorio();
+        Laboratorio b = laboratorio();
+        b.setId(30L); b.setPublicId(UUID.randomUUID());
+        usuario.substituirLaboratorios(List.of(a, b));
+        assertTrue(service.vinculadoLaboratorio(usuario, b, LocalDate.now()));
+        // The list alone grants access: no vínculo lookup is needed.
+        verifyNoInteractions(vinculos);
+    }
+
+    @Test void naoVinculadoForaDaListaSemVinculo() {
+        TenantContext.definir(UNIDADE);
+        Usuario usuario = analista();
+        Laboratorio a = laboratorio();
+        Laboratorio fora = laboratorio();
+        fora.setId(31L); fora.setPublicId(UUID.randomUUID());
+        usuario.substituirLaboratorios(List.of(a));
+        when(vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(USUARIO, UNIDADE)).thenReturn(List.of());
+        assertFalse(service.vinculadoLaboratorio(usuario, fora, LocalDate.now()));
     }
 
     @Test void deveRejeitarCriacaoDeVinculoParaEstagiario() {
@@ -189,7 +212,7 @@ class VinculoOperacionalUsuarioServiceTest {
         TenantContext.definir(UNIDADE);
         Usuario usuario = analista();
         Laboratorio lab = laboratorio();
-        usuario.setLaboratorio(lab);
+        usuario.substituirLaboratorios(List.of(lab));
         VinculoOperacionalUsuarioRequestDTO dto = new VinculoOperacionalUsuarioRequestDTO();
         dto.setUsuarioId(USUARIO);
         dto.setLaboratorioId(LAB);
@@ -205,7 +228,7 @@ class VinculoOperacionalUsuarioServiceTest {
         TenantContext.definir(UNIDADE);
         Usuario usuario = analista();
         Laboratorio lab = laboratorio();
-        usuario.setLaboratorio(lab);
+        usuario.substituirLaboratorios(List.of(lab));
         Projeto p = new Projeto();
         p.setId(5L);
         p.setPublicId(PROJETO);
@@ -240,7 +263,7 @@ class VinculoOperacionalUsuarioServiceTest {
         when(vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(USUARIO, UNIDADE))
             .thenReturn(List.of(vinculo));
         assertThrows(BusinessRuleException.class, () -> service.definirLaboratorioBase(USUARIO, LAB));
-        assertNull(usuario.getLaboratorio());
+        assertTrue(usuario.getLaboratorios().isEmpty());
     }
 
     @Test void deveBloquearProjetoDeOutroLaboratorio() {
@@ -268,7 +291,7 @@ class VinculoOperacionalUsuarioServiceTest {
         admin.setPerfil(Perfil.ADMINISTRADOR);
         when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(admin));
         assertThrows(AccessDeniedException.class, () -> service.definirLaboratorioBase(USUARIO, LAB));
-        assertNull(admin.getLaboratorio());
+        assertTrue(admin.getLaboratorios().isEmpty());
     }
 
     @Test void gestorNaoEncerraVinculoDeOutroGestor() {

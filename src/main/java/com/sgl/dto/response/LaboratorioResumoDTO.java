@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
+import com.sgl.model.Usuario;
 
 public record LaboratorioResumoDTO(UUID id, String nome, boolean ativo) {
 
@@ -16,6 +17,12 @@ public record LaboratorioResumoDTO(UUID id, String nome, boolean ativo) {
 
     public static List<LaboratorioResumoDTO> de(Projeto projeto) {
         return projeto.laboratoriosOrdenados().stream()
+                .map(LaboratorioResumoDTO::de)
+                .toList();
+    }
+
+    public static List<LaboratorioResumoDTO> de(Usuario usuario) {
+        return usuario.laboratoriosOrdenados().stream()
                 .map(LaboratorioResumoDTO::de)
                 .toList();
     }

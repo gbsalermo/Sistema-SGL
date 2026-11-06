@@ -1,6 +1,7 @@
 package com.sgl.dto.response;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.Usuario;
@@ -34,10 +35,8 @@ public class UsuarioResponseDTO implements Serializable {
     private String unidadeNome;
     @Schema(description = "Sigla da unidade vinculada.", example = "IB")
     private String unidadeSigla;
-    @Schema(description = "Identificador público UUID do laboratório vinculado, quando aplicável.", example = "550e8400-e29b-41d4-a716-446655440003")
-    private UUID laboratorioId;
-    @Schema(description = "Nome do laboratório vinculado, quando aplicável.", example = "Laboratório de Química Orgânica")
-    private String laboratorioNome;
+    @Schema(description = "Laboratórios em que a pessoa atua, ordenados por nome. Pode ser vazia para gestão e pendentes.")
+    private List<LaboratorioResumoDTO> laboratorios;
     @Schema(description = "Indica se o usuário está ativo.", example = "true")
     private Boolean ativo;
     @Schema(description = "Situação de acesso. PENDENTE_VINCULACAO = aguarda aprovação na aba Pendentes.", example = "ATIVO")
@@ -51,8 +50,7 @@ public class UsuarioResponseDTO implements Serializable {
         this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
         this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
         this.unidadeSigla = entity.getUnidade() != null ? entity.getUnidade().getSigla() : null;
-        this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
-        this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
+        this.laboratorios = LaboratorioResumoDTO.de(entity);
         this.ativo = entity.getAtivo();
         this.situacao = entity.getSituacao();
     }

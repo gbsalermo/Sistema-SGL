@@ -109,7 +109,7 @@ class RelatorioPessoasLaboratorioServiceTest {
         estagiarioInativo.setEmail("bruno@embrapa.br");
         estagiarioInativo.setPerfil(Perfil.ESTAGIARIO);
         estagiarioInativo.setAtivo(false);
-        estagiarioInativo.setLaboratorio(laboratorio);
+        estagiarioInativo.substituirLaboratorios(List.of(laboratorio));
         estagiarioInativo.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
         estagiarioInativo.setDataInicioEstagio(LocalDate.of(2025, 3, 1));
         estagiarioInativo.setDataFimEstagio(LocalDate.of(2025, 9, 1));
@@ -125,9 +125,9 @@ class RelatorioPessoasLaboratorioServiceTest {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(laboratorio));
-        when(usuarioRepository.findByLaboratorioId(laboratorio.getId()))
+        when(usuarioRepository.findByLaboratoriosId(laboratorio.getId()))
                 .thenReturn(List.of(tecnicoAtivo, estagiarioInativo));
-        when(estagiarioRepository.findByLaboratorioId(laboratorio.getId()))
+        when(estagiarioRepository.findByLaboratoriosId(laboratorio.getId()))
                 .thenReturn(List.of(estagiarioInativo));
 
         RelatorioPessoasLaboratorioResponseDTO resultado = relatorioPessoasLaboratorioService.gerar(
@@ -160,9 +160,9 @@ class RelatorioPessoasLaboratorioServiceTest {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(laboratorio));
-        when(usuarioRepository.findByLaboratorioId(laboratorio.getId()))
+        when(usuarioRepository.findByLaboratoriosId(laboratorio.getId()))
                 .thenReturn(List.of(tecnicoAtivo, estagiarioInativo));
-        when(estagiarioRepository.findByLaboratorioId(laboratorio.getId()))
+        when(estagiarioRepository.findByLaboratoriosId(laboratorio.getId()))
                 .thenReturn(List.of(estagiarioInativo));
 
         RelatorioPessoasLaboratorioResponseDTO resultado = relatorioPessoasLaboratorioService.gerar(

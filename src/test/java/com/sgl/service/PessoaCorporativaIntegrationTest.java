@@ -196,7 +196,7 @@ class PessoaCorporativaIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.perfil").value("TECNICO"))
                 .andExpect(jsonPath("$.situacao").value("ATIVO"))
-                .andExpect(jsonPath("$.laboratorioId").value(laboratorio.getPublicId().toString()));
+                .andExpect(jsonPath("$.laboratorios[0].id").value(laboratorio.getPublicId().toString()));
 
         Usuario criado = comRelacionamentos(usuarioRepository.findByMatricula("344136").orElseThrow());
         assertThat(criado.getCpf()).isEqualTo(CPF_JOAO);
@@ -275,7 +275,7 @@ class PessoaCorporativaIntegrationTest {
         Usuario criado = comRelacionamentos(usuarioRepository.findByCpf(CPF_ESTAGIARIA).orElseThrow());
         assertThat(criado.getMatricula()).isNull();
         assertThat(criado.getEmail()).isNull();
-        assertThat(criado.getLaboratorio().getPublicId()).isEqualTo(laboratorio.getPublicId());
+        assertThat(criado.getLaboratorios()).extracting(Laboratorio::getPublicId).containsExactly(laboratorio.getPublicId());
     }
 
     @Test
@@ -385,7 +385,7 @@ class PessoaCorporativaIntegrationTest {
     }
 
     private Usuario comRelacionamentos(Usuario usuario) {
-        return usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(usuario.getPublicId()).orElseThrow();
+        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(usuario.getPublicId()).orElseThrow();
     }
 
     private String corpo(String tipo, String referencia, String perfil, Laboratorio lab) {

@@ -122,12 +122,12 @@ class UsuarioAprovacaoIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.situacao").value("ATIVO"))
                 .andExpect(jsonPath("$.perfil").value("ANALISTA"))
-                .andExpect(jsonPath("$.laboratorioId").value(laboratorio.getPublicId().toString()));
+                .andExpect(jsonPath("$.laboratorios[0].id").value(laboratorio.getPublicId().toString()));
 
-        Usuario salvo = usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(pendente.getPublicId()).orElseThrow();
+        Usuario salvo = usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(pendente.getPublicId()).orElseThrow();
         assertThat(salvo.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         assertThat(salvo.getPerfil()).isEqualTo(Perfil.ANALISTA);
-        assertThat(salvo.getLaboratorio().getPublicId()).isEqualTo(laboratorio.getPublicId());
+        assertThat(salvo.getLaboratorios()).extracting(Laboratorio::getPublicId).containsExactly(laboratorio.getPublicId());
     }
 
     @Test
@@ -398,8 +398,8 @@ class UsuarioAprovacaoIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"laboratorioId\":\"%s\"}".formatted(laboratorio.getPublicId())))
                 .andExpect(status().isForbidden());
-        assertThat(usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(tecnico.getPublicId()).orElseThrow().getLaboratorio())
-                .isNull();
+        assertThat(usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(tecnico.getPublicId()).orElseThrow().getLaboratorios())
+                .isEmpty();
     }
 
     @Test

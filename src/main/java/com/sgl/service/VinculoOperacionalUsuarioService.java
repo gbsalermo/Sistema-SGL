@@ -112,8 +112,7 @@ public class VinculoOperacionalUsuarioService {
         // O laboratório-base já é um vínculo operacional completo com esse laboratório.
         // Permitir somente associações mais específicas (Projeto, SCI ou Atividade).
         if (projeto == null && sci == null && atividade == null
-                && usuario.getLaboratorio() != null
-                && usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
+                && usuario.atuaNoLaboratorio(laboratorio)) {
             throw new BusinessRuleException("Este já é o laboratório-base do usuário. Para esse laboratório, associe apenas Projeto, SCI ou Atividade.");
         }
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(dto.getDataInicio())) {
@@ -196,18 +195,22 @@ public class VinculoOperacionalUsuarioService {
                 .stream().anyMatch(v -> v.vigente(LocalDate.now())
                     && v.getLaboratorio().getId().equals(lab.getId())
                     && v.getProjeto() == null && v.getSci() == null && v.getAtividade() == null);
-            if (possuiVinculoGenerico && (usuario.getLaboratorio() == null
-                    || !usuario.getLaboratorio().getId().equals(lab.getId()))) {
+            if (possuiVinculoGenerico && !usuario.atuaNoLaboratorio(lab)) {
                 throw new BusinessRuleException("Este laboratório já possui vínculo adicional vigente. Encerre o vínculo genérico antes de defini-lo como laboratório-base.");
             }
         }
-        usuario.setLaboratorio(lab);
+        // The request still carries a single laboratory; it becomes the whole list.
+        if (lab == null) {
+            usuario.limparLaboratorios();
+        } else {
+            usuario.substituirLaboratorios(List.of(lab));
+        }
     }
 
     @Transactional(readOnly = true)
     public boolean vinculadoLaboratorio(Usuario usuario, Laboratorio laboratorio, LocalDate hoje) {
-        if (usuario.getLaboratorio() != null && usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
-            return true; // laboratório-base, atribuído pela Gestão em ambiente controlado
+        if (usuario.atuaNoLaboratorio(laboratorio)) {
+            return true; // one of the person's laboratories, assigned by Gestão
         }
         return vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), unidade())
             .stream().anyMatch(v -> v.vigente(hoje) && v.getLaboratorio().getId().equals(laboratorio.getId()));

@@ -559,9 +559,9 @@ public class PedidoService {
 		boolean estagiario = usuario.getPerfil() == Perfil.ESTAGIARIO;
 
 		// O Estagiário tem o Laboratório derivado de sua participação,
-		// não necessariamente o mesmo Laboratório-base do cadastro.
+		// não necessariamente um dos laboratórios do cadastro.
 		if (!gestor && !estagiario
-                && (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId()))
+                && !usuario.atuaNoLaboratorio(laboratorio)
                 && !vinculoOperacionalService.vinculadoLaboratorio(usuario, laboratorio, LocalDate.now())) {
 			throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
 		}
@@ -699,8 +699,10 @@ public class PedidoService {
 		} else if (laboratorio == null) {
 			boolean gestor = PerfilPolicy.isGestao(usuario.getPerfil());
 
-			if (!gestor) {
-				laboratorio = usuario.getLaboratorio();
+			// Only an unambiguous list can stand in for the missing laboratory; with
+			// several, the request must say which one (falls through to the error below).
+			if (!gestor && usuario.getLaboratorios().size() == 1) {
+				laboratorio = usuario.getLaboratorios().iterator().next();
 			}
 		}
 

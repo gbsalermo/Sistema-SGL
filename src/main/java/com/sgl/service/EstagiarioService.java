@@ -15,6 +15,7 @@ import com.sgl.dto.request.EstagiarioRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.dto.response.EstagiarioSemVinculoResponseDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.OrientadorElegivelResponseDTO;
 import com.sgl.dto.response.VinculoEstagioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
@@ -93,7 +94,8 @@ public class EstagiarioService {
 		// Before any write: someone who left Embrapa must not get a new internship link.
 		verificacaoAtivoCorporativo.exigirAtivos(usuario, orientador);
 
-		usuario.setLaboratorio(laboratorio);
+		// Single laboratory until the request carries the full list.
+		usuario.substituirLaboratorios(List.of(laboratorio));
 		usuarioRepository.save(usuario);
 
 		/*
@@ -199,8 +201,7 @@ public class EstagiarioService {
 
 		return usuarioRepository.findEstagiariosSemVinculo(TenantContext.unidadeAtual().orElseThrow()).stream()
 				.map(u -> new EstagiarioSemVinculoResponseDTO(u.getPublicId(), u.getNome(),
-						u.getLaboratorio() != null ? u.getLaboratorio().getPublicId() : null,
-						u.getLaboratorio() != null ? u.getLaboratorio().getNome() : null))
+						LaboratorioResumoDTO.de(u)))
 				.toList();
 	}
 
@@ -229,7 +230,7 @@ public class EstagiarioService {
 		Laboratorio laboratorio = buscarLaboratorio(id);
 		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-		return estagiarioRepository.findByLaboratorioId(laboratorio.getId()).stream().map(this::montarResponse)
+		return estagiarioRepository.findByLaboratoriosId(laboratorio.getId()).stream().map(this::montarResponse)
 				.toList();
 	}
 

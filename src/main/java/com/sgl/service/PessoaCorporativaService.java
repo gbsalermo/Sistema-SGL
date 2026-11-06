@@ -145,8 +145,8 @@ public class PessoaCorporativaService {
         usuario.setSublotacao(person.sublotacao());
         usuario.setUnidade(unidade);
         // Set directly, bypassing definirLaboratorioBase's ESTAGIARIO guard on purpose: the import sets the
-        // base lab for every profile (spec 2.1); the estagio flow overrides it for interns later.
-        usuario.setLaboratorio(laboratorio);
+        // laboratory list for every profile (spec 2.1); the estagio flow overrides it for interns later.
+        usuario.substituirLaboratorios(List.of(laboratorio));
         usuario.setPerfil(request.getPerfil());
         usuario.setSituacao(SituacaoUsuario.ATIVO);
         usuario.setOrigem(OrigemUsuario.CORPORATIVO);
@@ -165,7 +165,7 @@ public class PessoaCorporativaService {
                 actor.publicId(), saved.getPublicId(), saved.getPerfil(), unidade.getPublicId(),
                 CpfMasker.mask(person.cpf()));
 
-        return usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(saved.getPublicId())
+        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(saved.getPublicId())
                 .map(UsuarioSessaoResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", saved.getPublicId()));
     }

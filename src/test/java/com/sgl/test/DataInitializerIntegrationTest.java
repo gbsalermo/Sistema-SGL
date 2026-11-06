@@ -3,6 +3,8 @@ package com.sgl.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -11,7 +13,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.model.Estagiario;
 import com.sgl.model.Unidade;
+import com.sgl.model.Usuario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.repository.ProjetoRepository;
@@ -60,6 +64,34 @@ class DataInitializerIntegrationTest {
                 .count();
         assertTrue(participacoes >= 1, "Deve haver participação de estagiário em atividade do projeto com 2 laboratórios");
         assertEquals(2, multiLab.getLaboratorios().size());
+    }
+
+    @Test
+    @Transactional
+    void semeiaPessoaEEstagiarioComDoisLaboratorios() throws Exception {
+        // Another test in this class commits the seed; reuse it instead of recreating the unit.
+        if (!unidadeRepository.existsBySigla("CNPMF")) {
+            unidadeRepository.save(new Unidade(null, null, "Embrapa Mandioca e Fruticultura", "CNPMF", null));
+        }
+
+        beanFactory.createBean(DataInitializer.class).run();
+
+        var comDoisLaboratorios = usuarioRepository.findAll().stream()
+                .filter(usuario -> usuario.getLaboratorios().size() == 2)
+                .toList();
+        Usuario pessoa = comDoisLaboratorios.stream()
+                .filter(usuario -> !(usuario instanceof Estagiario))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("A massa DEV deve ter uma pessoa (não estagiária) com 2 laboratórios"));
+        Usuario estagiario = comDoisLaboratorios.stream()
+                .filter(Estagiario.class::isInstance)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("A massa DEV deve ter um estagiário com 2 laboratórios"));
+        for (Usuario usuario : List.of(pessoa, estagiario)) {
+            assertTrue(usuario.getLaboratorios().stream()
+                    .allMatch(lab -> lab.getUnidade().getId().equals(usuario.getUnidade().getId())),
+                    "Os laboratórios de " + usuario.getNome() + " devem ser da Unidade da pessoa");
+        }
     }
 
     @Test

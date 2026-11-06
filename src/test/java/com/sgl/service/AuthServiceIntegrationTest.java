@@ -1,5 +1,7 @@
 package com.sgl.service;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -184,7 +186,7 @@ class AuthServiceIntegrationTest {
                 .unidade(outra).nome("Lab da outra").ativo(true).build());
         Usuario gestor = usuario("Gestor Transferido", "344136", CPF, Perfil.GESTOR, SituacaoUsuario.ATIVO);
         gestor.setUnidade(outra);
-        gestor.setLaboratorio(laboratorio);
+        gestor.substituirLaboratorios(List.of(laboratorio));
         gestor = salvar(gestor);
         VinculoOperacionalUsuario vinculo = new VinculoOperacionalUsuario();
         vinculo.setUsuario(gestor);
@@ -196,10 +198,10 @@ class AuthServiceIntegrationTest {
 
         authService.login("m344136", "senha", IP);
 
-        Usuario atualizado = usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(gestor.getPublicId()).orElseThrow();
+        Usuario atualizado = usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(gestor.getPublicId()).orElseThrow();
         assertThat(atualizado.getUnidade().getPublicId()).isEqualTo(cnpmf.getPublicId());
         assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
-        assertThat(atualizado.getLaboratorio()).isNull();
+        assertThat(atualizado.getLaboratorios()).isEmpty();
         assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ANALISTA); // provisional suggestion, as for a new user
         VinculoOperacionalUsuario encerrado = vinculoRepository.findById(vinculo.getId()).orElseThrow();
         assertThat(encerrado.getEncerrado()).isTrue();

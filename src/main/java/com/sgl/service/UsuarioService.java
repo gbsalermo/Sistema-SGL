@@ -1,7 +1,9 @@
 package com.sgl.service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +71,7 @@ public class UsuarioService {
         usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         usuario.setPerfil(dto.getPerfil());
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(laboratorio);
+        aplicarLaboratorio(usuario, laboratorio);
         usuario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 
         return new UsuarioResponseDTO(usuarioRepository.save(usuario));
@@ -105,7 +107,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
         validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-        return usuarioRepository.findByLaboratorioId(laboratorio.getId()).stream()
+        return usuarioRepository.findByLaboratoriosId(laboratorio.getId()).stream()
                 .map(UsuarioResponseDTO::new)
                 .toList();
     }
@@ -136,7 +138,7 @@ public class UsuarioService {
         usuario.setEmail(dto.getEmail());
         usuario.setPerfil(dto.getPerfil());
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(laboratorio);
+        aplicarLaboratorio(usuario, laboratorio);
 
         if (dto.getAtivo() != null) {
             usuario.setAtivo(dto.getAtivo());
@@ -191,8 +193,8 @@ public class UsuarioService {
         laboratorio.validateActive();
 
         usuario.setPerfil(dto.getPerfil());
-        // Set directly, as in the import: the base lab applies to every profile (spec 2.1).
-        usuario.setLaboratorio(laboratorio);
+        // Set directly, as in the import: the laboratory list applies to every profile (spec 2.1).
+        usuario.substituirLaboratorios(List.of(laboratorio));
         usuario.setSituacao(SituacaoUsuario.ATIVO);
         Usuario salvo = usuarioRepository.save(usuario);
         AUDIT.info("acao=USUARIO_APROVADO ator={} alvo={} perfil={}", ator.publicId(), salvo.getPublicId(), dto.getPerfil());
@@ -246,15 +248,19 @@ public class UsuarioService {
         AuthenticatedUser ator = CurrentUser.get();
         exigirGestao(ator);
         boolean mudaAtivo = dto.getAtivo() != null && !dto.getAtivo().equals(usuario.getAtivo());
-        UUID laboratorioAtual = usuario.getLaboratorio() != null ? usuario.getLaboratorio().getPublicId() : null;
+        // The request still carries at most one laboratory, so it stands for a list of zero or one.
+        Set<UUID> laboratoriosAtuais = usuario.getLaboratorios().stream()
+                .map(Laboratorio::getPublicId)
+                .collect(Collectors.toSet());
+        Set<UUID> laboratoriosPedidos = dto.getLaboratorioId() == null ? Set.of() : Set.of(dto.getLaboratorioId());
+        boolean mudaLaboratorios = !laboratoriosAtuais.equals(laboratoriosPedidos);
         UUID unidadeAtual = usuario.getUnidade() != null ? usuario.getUnidade().getPublicId() : null;
         boolean mudaAcesso = usuario.getPerfil() != dto.getPerfil() || mudaAtivo
-                || !java.util.Objects.equals(laboratorioAtual, dto.getLaboratorioId())
+                || mudaLaboratorios
                 || !java.util.Objects.equals(unidadeAtual, dto.getUnidadeId());
 
         // Pendente só muda de perfil/laboratório pela aprovação; inativar continua permitido.
-        boolean mudaPerfilOuLaboratorio = usuario.getPerfil() != dto.getPerfil()
-                || !java.util.Objects.equals(laboratorioAtual, dto.getLaboratorioId());
+        boolean mudaPerfilOuLaboratorio = usuario.getPerfil() != dto.getPerfil() || mudaLaboratorios;
         if (mudaPerfilOuLaboratorio) {
             exigirNaoPendente(usuario);
         }
@@ -333,6 +339,15 @@ public class UsuarioService {
             throw new BusinessRuleException(
                     "Finalize o estágio antes de alterar o perfil do usuário."
             );
+        }
+    }
+
+    // Single laboratory until the request carries the full list; null keeps today's "no laboratory".
+    private void aplicarLaboratorio(Usuario usuario, Laboratorio laboratorio) {
+        if (laboratorio == null) {
+            usuario.limparLaboratorios();
+        } else {
+            usuario.substituirLaboratorios(List.of(laboratorio));
         }
     }
 

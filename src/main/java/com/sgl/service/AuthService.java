@@ -158,7 +158,7 @@ public class AuthService {
     }
 
     private UsuarioSessaoResponseDTO sessionUser(UUID publicId) {
-        return usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(publicId)
+        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(publicId)
                 .map(UsuarioSessaoResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário da sessão não encontrado."));
     }
@@ -272,11 +272,11 @@ public class AuthService {
 
     /** Matrícula first, then CPF; never by name or e-mail. */
     private Optional<Usuario> findExisting(String matricula, String cpf) {
-        Optional<Usuario> byMatricula = matricula == null ? Optional.empty() : usuarioRepository.findByMatricula(matricula);
+        Optional<Usuario> byMatricula = matricula == null ? Optional.empty() : usuarioRepository.findWithLaboratoriosByMatricula(matricula);
         if (byMatricula.isPresent() || isBlank(cpf)) {
             return byMatricula;
         }
-        return usuarioRepository.findByCpf(cpf);
+        return usuarioRepository.findWithLaboratoriosByCpf(cpf);
     }
 
     // A disabled account is refused before the corporate bases are queried, so the only keys at

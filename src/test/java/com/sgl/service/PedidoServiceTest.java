@@ -143,7 +143,7 @@ class PedidoServiceTest {
         solicitante.setPublicId(SOLICITANTE_PUBLIC_ID);
         solicitante.setNome("Solicitante");
         solicitante.setUnidade(unidade);
-        solicitante.setLaboratorio(laboratorio);
+        solicitante.substituirLaboratorios(List.of(laboratorio));
         solicitante.setAtivo(true);
 
         aprovador = new Usuario();

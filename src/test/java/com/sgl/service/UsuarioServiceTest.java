@@ -190,7 +190,7 @@ class UsuarioServiceTest {
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
-        when(usuarioRepository.findByLaboratorioId(20L)).thenReturn(List.of(usuario));
+        when(usuarioRepository.findByLaboratoriosId(20L)).thenReturn(List.of(usuario));
 
         List<UsuarioResponseDTO> resultado = usuarioService.listarPorLaboratorio(LABORATORIO_PUBLIC_ID);
 

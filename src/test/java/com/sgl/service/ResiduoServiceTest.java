@@ -194,7 +194,7 @@ class ResiduoServiceTest {
         gerador.setSenha("senha");
         gerador.setPerfil(Perfil.PESQUISADOR);
         gerador.setUnidade(unidade);
-        gerador.setLaboratorio(laboratorio);
+        gerador.substituirLaboratorios(List.of(laboratorio));
         gerador.setAtivo(true);
 
         gestor = new Usuario();
@@ -553,7 +553,7 @@ class ResiduoServiceTest {
 
     @Test
     void deveRejeitarCriacaoQuandoGeradorNaoPertenceAoLaboratorio() {
-        gerador.setLaboratorio(laboratorioOutro);
+        gerador.substituirLaboratorios(List.of(laboratorioOutro));
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         stubGeradorELaboratorioAtivos();
 

@@ -91,7 +91,7 @@ class EstagiarioRepositoryTest {
         estagiario.setSenha("senha-123");
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(laboratorio);
+        estagiario.substituirLaboratorios(List.of(laboratorio));
         estagiario.setAtivo(ativo);
         estagiario.setDataInicioEstagio(LocalDate.of(2026, 1, 1));
         estagiario.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
@@ -272,7 +272,7 @@ class EstagiarioRepositoryTest {
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório Base");
         criarEstagiario(unidade, laboratorio, "lab1@exemplo.com", true);
 
-        List<Estagiario> resultado = estagiarioRepository.findByLaboratorioId(laboratorio.getId());
+        List<Estagiario> resultado = estagiarioRepository.findByLaboratoriosId(laboratorio.getId());
 
         assertEquals(1, resultado.size());
     }
@@ -282,7 +282,7 @@ class EstagiarioRepositoryTest {
         Unidade unidade = criarUnidade("ES11");
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório sem estagiários");
 
-        List<Estagiario> resultado = estagiarioRepository.findByLaboratorioId(laboratorio.getId());
+        List<Estagiario> resultado = estagiarioRepository.findByLaboratoriosId(laboratorio.getId());
 
         assertTrue(resultado.isEmpty());
     }

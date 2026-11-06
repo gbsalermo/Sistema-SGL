@@ -131,7 +131,7 @@ class PedidoContextoOperacionalServiceTest {
         estagiario.setPublicId(USUARIO);
         estagiario.setNome("Estagiario A");
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(laboratorioBase); // diferente da atividade
+        estagiario.substituirLaboratorios(List.of(laboratorioBase)); // diferente da atividade
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setAtivo(true);
 
@@ -573,7 +573,9 @@ class PedidoContextoOperacionalServiceTest {
         usuario.setPublicId(USUARIO);
         usuario.setNome("Usuario nao estagiario");
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(labBase);
+        if (labBase != null) {
+            usuario.substituirLaboratorios(List.of(labBase));
+        }
         usuario.setPerfil(perfil);
         usuario.setAtivo(true);
         return usuario;

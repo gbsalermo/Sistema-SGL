@@ -73,7 +73,7 @@ class RelatorioServiceTest {
         inativoAntigo.setPublicId(UUID.randomUUID());
         inativoAntigo.setNome("Bruno Silva");
         inativoAntigo.setAtivo(false);
-        inativoAntigo.setLaboratorio(null);
+        inativoAntigo.limparLaboratorios();
         inativoAntigo.setDataInicioEstagio(LocalDate.of(2024, 1, 1));
         inativoAntigo.setDataFimEstagio(LocalDate.of(2024, 6, 30));
 
@@ -82,7 +82,7 @@ class RelatorioServiceTest {
         ativoRecente.setPublicId(UUID.randomUUID());
         ativoRecente.setNome("Ana Costa");
         ativoRecente.setAtivo(true);
-        ativoRecente.setLaboratorio(laboratorio);
+        ativoRecente.substituirLaboratorios(List.of(laboratorio));
         ativoRecente.setDataInicioEstagio(LocalDate.of(2026, 1, 1));
         ativoRecente.setDataFimEstagio(null);
     }

@@ -259,7 +259,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                     e.setSenha(passwordEncoder.encode(SENHA));
                     e.setPerfil(Perfil.ESTAGIARIO);
                     e.setUnidade(unidade);
-                    e.setLaboratorio(lab);
+                    e.substituirLaboratorios(List.of(lab));
                     e.setAtivo(true);
                     e.setDataInicioEstagio(LocalDate.now().minusMonths(2));
                     e.setTipoBolsa(TipoBolsa.BOLSA_INSTITUCIONAL);

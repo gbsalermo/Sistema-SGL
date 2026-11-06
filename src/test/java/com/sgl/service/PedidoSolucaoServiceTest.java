@@ -75,7 +75,7 @@ class PedidoSolucaoServiceTest {
         usuario.setId(3L);
         usuario.setPublicId(USUARIO);
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(lab);
+        usuario.substituirLaboratorios(List.of(lab));
         usuario.setNome("Usuário");
         usuario.setAtivo(true);
         projeto = Projeto.builder().id(5L).publicId(PROJETO)

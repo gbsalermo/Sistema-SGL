@@ -182,7 +182,7 @@ class EstagiarioServiceTest {
         estagiario.setSenha("hash");
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(laboratorio);
+        estagiario.substituirLaboratorios(List.of(laboratorio));
         estagiario.setAtivo(true);
         estagiario.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
         estagiario.setDataFimEstagio(LocalDate.of(2027, 1, 31));
@@ -711,9 +711,9 @@ class EstagiarioServiceTest {
     }
 
     @Test
-    void listarSemVinculoMontaRespostaComLaboratorioBase() {
+    void listarSemVinculoMontaRespostaComLaboratorios() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
-        usuario.setLaboratorio(laboratorio);
+        usuario.substituirLaboratorios(List.of(laboratorio));
         Usuario semLab = new Usuario();
         semLab.setPublicId(UUID.randomUUID());
         semLab.setNome("Amanda");
@@ -722,9 +722,9 @@ class EstagiarioServiceTest {
         var resposta = estagiarioService.listarSemVinculo();
 
         assertEquals(2, resposta.size());
-        assertEquals(null, resposta.get(0).laboratorioId());
-        assertEquals(LABORATORIO_PUBLIC_ID, resposta.get(1).laboratorioId());
-        assertEquals("Laboratório de Química Orgânica", resposta.get(1).laboratorioNome());
+        assertEquals(List.of(), resposta.get(0).laboratorios());
+        assertEquals(List.of(LABORATORIO_PUBLIC_ID), resposta.get(1).laboratorios().stream().map(l -> l.id()).toList());
+        assertEquals("Laboratório de Química Orgânica", resposta.get(1).laboratorios().get(0).nome());
     }
 
     @Test

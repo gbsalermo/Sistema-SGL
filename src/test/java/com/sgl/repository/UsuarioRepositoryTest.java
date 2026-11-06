@@ -71,7 +71,9 @@ class UsuarioRepositoryTest {
         usuario.setSenha("senha-123");
         usuario.setPerfil(Perfil.TECNICO);
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(laboratorio);
+        if (laboratorio != null) {
+            usuario.substituirLaboratorios(List.of(laboratorio));
+        }
         usuario.setAtivo(true);
         return entityManager.persistAndFlush(usuario);
     }
@@ -138,7 +140,7 @@ class UsuarioRepositoryTest {
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório de Solos");
         criarUsuario("eduardo@exemplo.com", unidade, laboratorio);
 
-        List<Usuario> resultado = usuarioRepository.findByLaboratorioId(laboratorio.getId());
+        List<Usuario> resultado = usuarioRepository.findByLaboratoriosId(laboratorio.getId());
 
         assertEquals(1, resultado.size());
     }
@@ -148,7 +150,7 @@ class UsuarioRepositoryTest {
         Unidade unidade = criarUnidade("EL2");
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório vazio");
 
-        List<Usuario> resultado = usuarioRepository.findByLaboratorioId(laboratorio.getId());
+        List<Usuario> resultado = usuarioRepository.findByLaboratoriosId(laboratorio.getId());
 
         assertTrue(resultado.isEmpty());
     }
