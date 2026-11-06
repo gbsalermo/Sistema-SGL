@@ -658,6 +658,12 @@ public class PedidoService {
 			// laboratories (no restriction to the supervisor's); the resolver validates it.
 			Laboratorio laboratorio = projeto.resolverLaboratorioOperacional(dto.getLaboratorioId());
 
+			// Choosing among the project's laboratories is not enough: the estagiário must also work there.
+			if (!usuario.atuaNoLaboratorio(laboratorio)) {
+				throw new BusinessRuleException("O laboratório " + laboratorio.getNome()
+						+ " não está entre os laboratórios do estagiário.");
+			}
+
 			validarConsistenciaPedido(usuario, laboratorio, projeto);
 
 			return new ContextoPedido(laboratorio, projeto, participacao, atividade, sci);

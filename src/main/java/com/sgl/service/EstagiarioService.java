@@ -62,6 +62,7 @@ public class EstagiarioService {
 	private final CursoRepository cursoRepository;
 	private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
 	private final VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
+	private final LaboratoriosDaPessoa laboratoriosDaPessoa;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -71,12 +72,9 @@ public class EstagiarioService {
 		exigirGestao();
 
 		Usuario usuario = buscarUsuario(dto.getUsuarioId());
-		Laboratorio laboratorio = buscarLaboratorio(dto.getLaboratorioId());
 		Usuario orientador = buscarEValidarOrientador(dto.getOrientadorId());
 
 		validarTenantUnidade(usuario.getUnidade() != null ? usuario.getUnidade().getPublicId() : null);
-
-		validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
 		if (estagiarioRepository.existsById(usuario.getId())) {
 			throw new BusinessRuleException("Usuário já possui cadastro de estagiário. "
@@ -88,14 +86,14 @@ public class EstagiarioService {
 
 		validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
 
-		validarUnidadeCompativel(usuario, laboratorio);
 		validarMesmaUnidade(usuario, orientador);
 
 		// Before any write: someone who left Embrapa must not get a new internship link.
 		verificacaoAtivoCorporativo.exigirAtivos(usuario, orientador);
 
-		// Single laboratory until the request carries the full list.
-		usuario.substituirLaboratorios(List.of(laboratorio));
+		// The resolver looks laboratories up inside the person's Unidade, so another Unidade's is a 404.
+		usuario.substituirLaboratorios(laboratoriosDaPessoa.resolver(dto.getLaboratorioIds(),
+				usuario.getUnidade(), usuario.getPerfil(), usuario.getLaboratorios()));
 		usuarioRepository.save(usuario);
 
 		/*
@@ -302,13 +300,6 @@ public class EstagiarioService {
 	private void exigirTenantAtivo() {
 		if (!TenantContext.ativo()) {
 			throw new BusinessRuleException("Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
-		}
-	}
-
-	private void validarUnidadeCompativel(Usuario usuario, Laboratorio laboratorio) {
-		if (usuario.getUnidade() == null || laboratorio.getUnidade() == null
-				|| !usuario.getUnidade().getId().equals(laboratorio.getUnidade().getId())) {
-			throw new BusinessRuleException("O estagiário e o laboratório devem pertencer à mesma unidade.");
 		}
 	}
 

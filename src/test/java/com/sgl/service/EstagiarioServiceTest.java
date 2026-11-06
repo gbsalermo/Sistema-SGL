@@ -111,6 +111,8 @@ class EstagiarioServiceTest {
     @Mock
     private VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
 
+    private LaboratoriosDaPessoa laboratoriosDaPessoa;
+
     @Mock
     private EntityManager entityManager;
 
@@ -209,6 +211,9 @@ class EstagiarioServiceTest {
         participacao.setDataInicioParticipacao(LocalDate.of(2026, 8, 1));
 
         ReflectionTestUtils.setField(estagiarioService, "entityManager", entityManager);
+        // Real resolver over the mocked repository: the list rules are the behaviour under test.
+        laboratoriosDaPessoa = new LaboratoriosDaPessoa(laboratorioRepository);
+        ReflectionTestUtils.setField(estagiarioService, "laboratoriosDaPessoa", laboratoriosDaPessoa);
 
         lenient().when(entityManager.createNativeQuery(anyString())).thenReturn(nativeQuery);
         lenient().when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
@@ -270,6 +275,53 @@ class EstagiarioServiceTest {
         assertEquals(ATIVIDADE_PUBLIC_ID, participacaoCaptor.getValue().getAtividadeId());
         assertEquals(LocalDate.of(2026, 8, 1),
                 participacaoCaptor.getValue().getDataInicioParticipacao());
+    }
+
+
+    @Test
+    void criarGravaListaDeLaboratoriosDaPessoa() {
+        UUID segundoId = UUID.fromString("00000000-0000-0000-0000-000000000009");
+        Laboratorio segundo = new Laboratorio();
+        segundo.setId(11L);
+        segundo.setPublicId(segundoId);
+        segundo.setNome("Laboratório de Fitopatologia");
+        segundo.setAtivo(true);
+        segundo.setUnidade(unidade);
+        EstagiarioRequestDTO dto = montarDtoValido();
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID, segundoId));
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        mockarBuscaBaseCriacao();
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(segundoId, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(segundo));
+        when(estagiarioRepository.existsById(usuario.getId())).thenReturn(false);
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        when(estagiarioRepository.findById(usuario.getId())).thenReturn(Optional.of(estagiario));
+        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        estagiarioService.criar(dto);
+
+        assertTrue(usuario.atuaNoLaboratorio(laboratorio));
+        assertTrue(usuario.atuaNoLaboratorio(segundo));
+        assertEquals(2, usuario.getLaboratorios().size());
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    void criarComListaVaziaDa400() {
+        EstagiarioRequestDTO dto = montarDtoValido();
+        dto.setLaboratorioIds(List.of());
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        mockarBuscaBaseCriacao();
+        when(estagiarioRepository.existsById(usuario.getId())).thenReturn(false);
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class, () -> estagiarioService.criar(dto));
+
+        assertEquals("Informe ao menos um laboratório.", erro.getMessage());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(entityManager, never()).createNativeQuery(anyString());
     }
 
     // The corporate check runs before any write, so a refusal leaves nothing half-created.
@@ -418,36 +470,23 @@ class EstagiarioServiceTest {
                 ex.getMessage());
     }
 
+    // The resolver only looks inside the person's Unidade, so another Unidade's laboratory is a 404.
     @Test
-    void deveRejeitarLaboratorioDeOutroTenant() {
+    void deveRejeitarLaboratorioDeOutraUnidade() {
         EstagiarioRequestDTO dto = montarDtoValido();
-
-        Unidade outraUnidade = new Unidade();
-        outraUnidade.setId(99L);
-        outraUnidade.setPublicId(OUTRA_UNIDADE_PUBLIC_ID);
-
-        Laboratorio outroLaboratorio = new Laboratorio();
-        outroLaboratorio.setId(40L);
-        outroLaboratorio.setPublicId(LABORATORIO_PUBLIC_ID);
-        outroLaboratorio.setUnidade(outraUnidade);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(
                 USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(usuario));
-        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID))
-                .thenReturn(Optional.of(outroLaboratorio));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.empty());
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(
                 ORIENTADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(orientador));
 
-        BusinessRuleException ex = assertThrows(
-                BusinessRuleException.class,
-                () -> estagiarioService.criar(dto));
-
-        assertEquals(
-                "A operação não pode acessar dados de outra unidade.",
-                ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> estagiarioService.criar(dto));
+        verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
     @Test
@@ -680,7 +719,7 @@ class EstagiarioServiceTest {
     private EstagiarioRequestDTO montarDtoValido() {
         EstagiarioRequestDTO dto = new EstagiarioRequestDTO();
         dto.setUsuarioId(USUARIO_PUBLIC_ID);
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
         dto.setDataFimEstagio(LocalDate.of(2027, 1, 31));
         dto.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);
@@ -695,7 +734,7 @@ class EstagiarioServiceTest {
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(
                 USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(usuario));
-        when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID))
+        lenient().when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(laboratorio));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(
                 ORIENTADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))

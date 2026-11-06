@@ -93,7 +93,7 @@ class EstagiarioControllerTest {
     private EstagiarioRequestDTO montarRequestDTO() {
         EstagiarioRequestDTO dto = new EstagiarioRequestDTO();
         dto.setUsuarioId(ESTAGIARIO_PUBLIC_ID);
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
         dto.setDataFimEstagio(LocalDate.of(2027, 1, 31));
         dto.setTipoBolsa(TipoBolsa.CONTRATUAL);

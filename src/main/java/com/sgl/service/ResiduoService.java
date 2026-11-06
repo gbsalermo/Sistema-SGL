@@ -98,7 +98,12 @@ public class ResiduoService {
 			projetoId = projetoOrigem.getPublicId();
 			// The estagiário may pick any active laboratory of the participation's project;
 			// the resolver rejects one outside the project or inactive.
-			laboratorioId = projetoOrigem.resolverLaboratorioOperacional(dto.getLaboratorioId()).getPublicId();
+			Laboratorio escolhido = projetoOrigem.resolverLaboratorioOperacional(dto.getLaboratorioId());
+			if (!gerador.atuaNoLaboratorio(escolhido)) {
+				throw new BusinessRuleException("O laboratório " + escolhido.getNome()
+						+ " não está entre os laboratórios do estagiário.");
+			}
+			laboratorioId = escolhido.getPublicId();
 			if (dto.getProjetoId() != null && !dto.getProjetoId().equals(projetoId)) {
 				throw new BusinessRuleException("Projeto informado diverge da participação selecionada.");
 			}

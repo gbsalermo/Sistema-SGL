@@ -439,4 +439,36 @@ class UsuarioServiceTest {
         assertEquals(2, usuario.getLaboratorios().size());
         assertEquals(2, resposta.getLaboratorios().size());
     }
+
+    @Test
+    void aprovaPerfilDeGestaoSemLaboratorio() {
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicId(USUARIO_PUBLIC_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        AprovarUsuarioRequestDTO dto = new AprovarUsuarioRequestDTO();
+        dto.setPerfil(Perfil.GESTOR);
+        dto.setLaboratorioIds(List.of());
+
+        UsuarioSessaoResponseDTO resposta = usuarioService.aprovar(USUARIO_PUBLIC_ID, dto);
+
+        assertEquals(SituacaoUsuario.ATIVO, usuario.getSituacao());
+        assertTrue(usuario.getLaboratorios().isEmpty());
+        assertTrue(resposta.getLaboratorios().isEmpty());
+    }
+
+    @Test
+    void aprovaPerfilOperacionalSemLaboratorioDa400() {
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicId(USUARIO_PUBLIC_ID)).thenReturn(Optional.of(usuario));
+        AprovarUsuarioRequestDTO dto = new AprovarUsuarioRequestDTO();
+        dto.setPerfil(Perfil.TECNICO);
+        dto.setLaboratorioIds(List.of());
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> usuarioService.aprovar(USUARIO_PUBLIC_ID, dto));
+
+        assertEquals("Informe ao menos um laboratório.", erro.getMessage());
+    }
 }

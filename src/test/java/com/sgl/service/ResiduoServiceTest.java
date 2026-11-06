@@ -349,6 +349,21 @@ class ResiduoServiceTest {
     }
 
     @Test
+    void estagiarioForaDaListaDa400() {
+        UUID participacaoId = prepararParticipacaoEmProjetoComDoisLaboratorios(List.of(laboratorio));
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setParticipacaoId(participacaoId);
+        dto.setLaboratorioId(LABORATORIO_OUTRO_PUBLIC_ID);
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> residuoService.criar(dto));
+
+        assertEquals("O laboratório " + laboratorioOutro.getNome()
+                + " não está entre os laboratórios do estagiário.", erro.getMessage());
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
     void estagiarioEscolheQualquerLaboratorioDoProjeto() {
         UUID participacaoId = prepararParticipacaoEmProjetoComDoisLaboratorios();
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_OUTRO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -372,6 +387,10 @@ class ResiduoServiceTest {
      * fixture, so the estagiário has to pick one of them when informing the resíduo.
      */
     private UUID prepararParticipacaoEmProjetoComDoisLaboratorios() {
+        return prepararParticipacaoEmProjetoComDoisLaboratorios(List.of(laboratorio, laboratorioOutro));
+    }
+
+    private UUID prepararParticipacaoEmProjetoComDoisLaboratorios(List<Laboratorio> listaDoEstagiario) {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         LocalDate hoje = LocalDate.now();
         projeto.getLaboratorios().add(laboratorioOutro);
@@ -394,6 +413,7 @@ class ResiduoServiceTest {
         estagiario.setNome("Estagiário");
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setUnidade(unidade);
+        estagiario.substituirLaboratorios(listaDoEstagiario);
         estagiario.setAtivo(true);
 
         VinculoEstagio vinculo = new VinculoEstagio();
