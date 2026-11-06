@@ -56,7 +56,7 @@ public class SciService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return sciRepository.findByProjetoLaboratorioUnidadePublicId(unidadeId).stream().map(SciResponseDTO::new)
+		return sciRepository.findByProjetoUnidadePublicId(unidadeId).stream().map(SciResponseDTO::new)
 				.toList();
 	}
 
@@ -67,7 +67,7 @@ public class SciService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return sciRepository.findByProjetoLaboratorioUnidadePublicIdAndAtivoTrue(unidadeId).stream()
+		return sciRepository.findByProjetoUnidadePublicIdAndAtivoTrue(unidadeId).stream()
 				.map(SciResponseDTO::new).toList();
 	}
 
@@ -84,7 +84,7 @@ public class SciService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(projeto.getPublicId(), unidadeId)
+		return sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(projeto.getPublicId(), unidadeId)
 				.stream().map(SciResponseDTO::new).toList();
 	}
 
@@ -96,7 +96,7 @@ public class SciService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return sciRepository
-				.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdAndAtivoTrue(projeto.getPublicId(), unidadeId)
+				.findByProjetoPublicIdAndProjetoUnidadePublicIdAndAtivoTrue(projeto.getPublicId(), unidadeId)
 				.stream().map(SciResponseDTO::new).toList();
 	}
 
@@ -187,7 +187,7 @@ public class SciService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(projetoId, unidadeId)
+		return projetoRepository.findByPublicIdAndUnidadePublicId(projetoId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 	}
 
@@ -197,7 +197,7 @@ public class SciService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(id, unidadeId)
+		return sciRepository.findByPublicIdAndProjetoUnidadePublicId(id, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("SCI", id));
 	}
 
@@ -242,7 +242,7 @@ public class SciService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		List<Atividade> atividades = atividadeRepository
-				.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(sci.getPublicId(), unidadeId);
+				.findBySciPublicIdAndSciProjetoUnidadePublicId(sci.getPublicId(), unidadeId);
 
 		for (Atividade atividade : atividades) {
 			if (atividade.getDataInicio().isAfter(novaDataFim)

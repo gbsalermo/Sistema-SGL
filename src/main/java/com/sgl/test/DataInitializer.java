@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.boot.CommandLineRunner;
@@ -105,7 +107,9 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        if (unidadeRepository.count() > 0) {
+        // A guarda olha usuários, não unidades: desde a V45 a migration já cria a unidade CNPMF, e
+        // "existe unidade" passou a ser verdade num banco vazio, pulando toda a massa de desenvolvimento.
+        if (usuarioRepository.count() > 0) {
             validarMassaEstoqueEtapa7Existente();
             garantirCadastrosResiduos();
             garantirDadosEtapa5();
@@ -259,7 +263,8 @@ public class DataInitializer implements CommandLineRunner {
         criarLoteInicial(e7, "INI-DNA-IQ", 10, 50, LocalDate.now().plusMonths(3), true);
 
         Projeto proj1 = projetoRepository.save(Projeto.builder()
-                .laboratorio(lab3)
+                .unidade(lab3.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(lab3)))
                 .nome("Projeto de Óptica Avançada")
                 .descricao("Estudo de fenômenos ópticos em materiais nanoestruturados")
                 .dataInicio(LocalDate.now().minusMonths(3))
@@ -272,7 +277,8 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         Projeto proj2 = projetoRepository.save(Projeto.builder()
-                .laboratorio(lab4)
+                .unidade(lab4.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(lab4)))
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise")
                 .dataInicio(LocalDate.now().minusMonths(1))
@@ -578,13 +584,30 @@ public class DataInitializer implements CommandLineRunner {
             SituacaoExecucaoProjeto situacaoExecucao,
             boolean possuiRecursoExterno,
             String empresaRecursoExterno) {
+        return garantirProjetoEtapa5(Set.of(laboratorio), codigoSeg, nome, descricao, responsavel, dataInicio,
+                dataFim, status, situacaoExecucao, possuiRecursoExterno, empresaRecursoExterno);
+    }
+
+    private Projeto garantirProjetoEtapa5(
+            Set<Laboratorio> laboratorios,
+            String codigoSeg,
+            String nome,
+            String descricao,
+            String responsavel,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao,
+            boolean possuiRecursoExterno,
+            String empresaRecursoExterno) {
 
         return projetoRepository.findAll().stream()
                 .filter(item -> codigoSeg.equals(item.getCodigoSeg()))
                 .findFirst()
                 .orElseGet(() -> projetoRepository.save(
                         Projeto.builder()
-                                .laboratorio(laboratorio)
+                                .unidade(laboratorios.iterator().next().getUnidade())
+                                .laboratorios(new LinkedHashSet<>(laboratorios))
                                 .nome(nome)
                                 .descricao(descricao)
                                 .responsavel(responsavel)
@@ -610,10 +633,10 @@ public class DataInitializer implements CommandLineRunner {
             StatusProjeto status,
             SituacaoExecucaoProjeto situacaoExecucao) {
 
-        UUID unidadeId = projeto.getLaboratorio().getUnidade().getPublicId();
+        UUID unidadeId = projeto.getUnidade().getPublicId();
 
         return sciRepository
-                .findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                .findByProjetoPublicIdAndProjetoUnidadePublicId(
                         projeto.getPublicId(),
                         unidadeId
                 )
@@ -645,10 +668,10 @@ public class DataInitializer implements CommandLineRunner {
             StatusProjeto status,
             SituacaoExecucaoProjeto situacaoExecucao) {
 
-        UUID unidadeId = sci.getProjeto().getLaboratorio().getUnidade().getPublicId();
+        UUID unidadeId = sci.getProjeto().getUnidade().getPublicId();
 
         return atividadeRepository
-                .findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                .findBySciPublicIdAndSciProjetoUnidadePublicId(
                         sci.getPublicId(),
                         unidadeId
                 )
@@ -796,8 +819,10 @@ public class DataInitializer implements CommandLineRunner {
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
 
+        // Two laboratórios of the same Unidade, so the "choose the laboratório" flow is visible in DEV
+        // (João has an active participação in this project's atividade).
         Projeto projetoEspectroscopia = garantirProjetoEtapa5(
-                laboratorioEspectroscopia,
+                new LinkedHashSet<>(List.of(laboratorioEspectroscopia, laboratorioOrganica)),
                 "96.96.96.004.01.00",
                 "Espectroscopia Aplicada a Materiais",
                 "Projeto DEV para demonstrar Estagiário atuando em mais de um laboratório dentro da mesma Unidade.",

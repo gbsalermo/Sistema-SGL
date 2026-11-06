@@ -12,7 +12,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,7 @@ import com.sgl.dto.response.ProjetoResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
+import com.sgl.model.Unidade;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
 import com.sgl.service.CorrecaoCodigoSegService;
@@ -67,6 +70,8 @@ class ProjetoControllerTest {
 
     private static final String BASE_URL = "/api/v1/projetos";
 
+    private static final UUID UNIDADE_PUBLIC_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID PROJETO_PUBLIC_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID LABORATORIO_PUBLIC_ID =
@@ -89,7 +94,7 @@ class ProjetoControllerTest {
 
     private ProjetoRequestDTO montarRequestDTO() {
         ProjetoRequestDTO dto = new ProjetoRequestDTO();
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setNome("Síntese de Novos Compostos");
         dto.setDescricao("Desenvolvimento de novos compostos orgânicos para catálise.");
         dto.setResponsavel("Maria Oliveira");
@@ -107,9 +112,13 @@ class ProjetoControllerTest {
                 .ativo(true)
                 .build();
 
+        Unidade unidade = new Unidade();
+        unidade.setPublicId(UNIDADE_PUBLIC_ID);
+
         Projeto projeto = Projeto.builder()
                 .publicId(PROJETO_PUBLIC_ID)
-                .laboratorio(laboratorio)
+                .unidade(unidade)
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Síntese de Novos Compostos")
                 .descricao("Desenvolvimento de novos compostos orgânicos para catálise.")
                 .responsavel("Maria Oliveira")
@@ -166,7 +175,7 @@ class ProjetoControllerTest {
                         .param("laboratorioId", LABORATORIO_PUBLIC_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].laboratorioId").value(LABORATORIO_PUBLIC_ID.toString()));
+                .andExpect(jsonPath("$[0].laboratorios[0].id").value(LABORATORIO_PUBLIC_ID.toString()));
     }
 
     @Test
@@ -185,12 +194,33 @@ class ProjetoControllerTest {
 
     @Test
     void deveRetornar400AoCriarComCorpoInvalido() throws Exception {
-        // ProjetoRequestDTO exige laboratorioId (@NotNull) e nome (@NotBlank) - corpo
+        // ProjetoRequestDTO exige laboratorioIds (@NotEmpty) e nome (@NotBlank) - corpo
         // vazio viola ambos.
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveRetornar400AoCriarSemNenhumLaboratorio() throws Exception {
+        ProjetoRequestDTO dto = montarRequestDTO();
+        dto.setLaboratorioIds(List.of());
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveExporUnidadeELaboratoriosNaResposta() throws Exception {
+        when(projetoService.buscarPorId(PROJETO_PUBLIC_ID)).thenReturn(montarResponseDTO());
+
+        mockMvc.perform(get(BASE_URL + "/{id}", PROJETO_PUBLIC_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unidadeId").value(UNIDADE_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$.laboratorios[0].nome").value("Laboratório de Química Orgânica"));
     }
 
     @Test

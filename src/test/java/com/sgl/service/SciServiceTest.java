@@ -9,8 +9,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -87,7 +89,8 @@ class SciServiceTest {
         projeto = Projeto.builder()
                 .id(20L)
                 .publicId(PROJETO_ID)
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto Pai")
                 .codigoSeg("95.95.95.001.01.00")
                 .dataInicio(LocalDate.of(2026, 1, 1))
@@ -133,7 +136,7 @@ class SciServiceTest {
         SciRequestDTO dto = requestValido();
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
         when(sciRepository.save(any(Sci.class)))
                 .thenAnswer(invocation -> {
@@ -178,7 +181,7 @@ class SciServiceTest {
         SciRequestDTO dto = requestValido();
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
 
         BusinessRuleException ex = assertThrows(
@@ -198,7 +201,7 @@ class SciServiceTest {
         dto.setDataInicio(LocalDate.of(2025, 12, 31));
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
 
         BusinessRuleException ex = assertThrows(
@@ -219,7 +222,7 @@ class SciServiceTest {
         dto.setDataFim(null);
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
 
         BusinessRuleException ex = assertThrows(
@@ -239,7 +242,7 @@ class SciServiceTest {
         dto.setDataFim(LocalDate.of(2027, 1, 1));
 
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
 
         BusinessRuleException ex = assertThrows(
@@ -259,7 +262,7 @@ class SciServiceTest {
         dto.setProjetoId(OUTRO_PROJETO_ID);
 
         TenantContext.definir(UNIDADE_ID);
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
 
         BusinessRuleException ex = assertThrows(
@@ -282,7 +285,7 @@ class SciServiceTest {
         dto.setAtivo(null);
 
         TenantContext.definir(UNIDADE_ID);
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
         when(sciRepository.save(any(Sci.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -298,7 +301,7 @@ class SciServiceTest {
     @Test
     void deveListarSciDoTenantAtual() {
         TenantContext.definir(UNIDADE_ID);
-        when(sciRepository.findByProjetoLaboratorioUnidadePublicId(UNIDADE_ID))
+        when(sciRepository.findByProjetoUnidadePublicId(UNIDADE_ID))
                 .thenReturn(List.of(sci));
 
         List<SciResponseDTO> resultado = sciService.listarTodos();
@@ -310,9 +313,9 @@ class SciServiceTest {
     @Test
     void deveListarSciPorProjetoDoTenantAtual() {
         TenantContext.definir(UNIDADE_ID);
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
-        when(sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE_ID))
+        when(sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(PROJETO_ID, UNIDADE_ID))
                 .thenReturn(List.of(sci));
 
         List<SciResponseDTO> resultado = sciService.listarPorProjeto(PROJETO_ID);
@@ -324,7 +327,7 @@ class SciServiceTest {
     @Test
     void deveDesativarSciLogicamente() {
         TenantContext.definir(UNIDADE_ID);
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
 
         sciService.deletar(SCI_ID);
@@ -338,7 +341,7 @@ class SciServiceTest {
         dto.setDataInicio(LocalDate.of(2026, 2, 2));
 
         TenantContext.definir(UNIDADE_ID);
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
 
         BusinessRuleException ex = assertThrows(
@@ -358,7 +361,7 @@ class SciServiceTest {
         dto.setDataFim(LocalDate.of(2026, 7, 31));
 
         TenantContext.definir(UNIDADE_ID);
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
 
         BusinessRuleException ex = assertThrows(
@@ -385,9 +388,9 @@ class SciServiceTest {
         dto.setDataFim(LocalDate.of(2026, 5, 31));
 
         TenantContext.definir(UNIDADE_ID);
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(SCI_ID, UNIDADE_ID))
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
-        when(atividadeRepository.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+        when(atividadeRepository.findBySciPublicIdAndSciProjetoUnidadePublicId(
                 SCI_ID, UNIDADE_ID))
                 .thenReturn(List.of(atividade));
 
@@ -410,7 +413,7 @@ class SciServiceTest {
 
         TenantContext.definir(UNIDADE_ID);
 
-        when(sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+        when(sciRepository.findByPublicIdAndProjetoUnidadePublicId(
                 SCI_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(sci));
 
@@ -431,7 +434,7 @@ class SciServiceTest {
 
         TenantContext.definir(UNIDADE_ID);
 
-        when(projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(
+        when(projetoRepository.findByPublicIdAndUnidadePublicId(
                 PROJETO_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(projeto));
 

@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
@@ -132,13 +134,13 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
                 "frasco de 500 g", 900, null);
 
         Projeto projeto = projetoRepository.findAll().stream()
-                .filter(p -> p.getLaboratorio() != null
-                        && p.getLaboratorio().getUnidade() != null
-                        && p.getLaboratorio().getUnidade().getId().equals(ib.getId())
+                .filter(p -> p.getUnidade() != null
+                        && p.getUnidade().getId().equals(ib.getId())
                         && "Projeto Multitenant IB".equals(p.getNome()))
                 .findFirst()
                 .orElseGet(() -> projetoRepository.save(Projeto.builder()
-                        .laboratorio(labSecundario)
+                        .unidade(labSecundario.getUnidade())
+                        .laboratorios(new LinkedHashSet<>(Set.of(labSecundario)))
                         .nome("Projeto Multitenant IB")
                         .descricao("Projeto ficticio para validar isolamento de dados entre unidades.")
                         .dataInicio(LocalDate.now().minusDays(20))
@@ -189,7 +191,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
             LocalDate dataInicio) {
 
         return sciRepository
-                .findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+                .findByProjetoPublicIdAndProjetoUnidadePublicId(
                         projeto.getPublicId(),
                         unidade.getPublicId()
                 )
@@ -219,7 +221,7 @@ public class IBMultiTenantDataInitializer implements CommandLineRunner {
             LocalDate dataInicio) {
 
         return atividadeRepository
-                .findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                .findBySciPublicIdAndSciProjetoUnidadePublicId(
                         sci.getPublicId(),
                         unidade.getPublicId()
                 )

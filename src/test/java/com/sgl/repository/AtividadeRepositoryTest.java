@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +59,8 @@ class AtividadeRepositoryTest {
 
         return entityManager.persistAndFlush(
                 Projeto.builder()
-                        .laboratorio(laboratorio)
+                        .unidade(laboratorio.getUnidade())
+                        .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                         .nome(nome)
                         .dataInicio(inicio)
                         .ativo(true)
@@ -134,7 +137,7 @@ class AtividadeRepositoryTest {
         entityManager.clear();
 
         Optional<Atividade> resultado =
-                atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
                         atividade.getPublicId(),
                         unidade.getPublicId()
                 );
@@ -171,7 +174,7 @@ class AtividadeRepositoryTest {
         );
 
         Optional<Atividade> resultado =
-                atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(
                         atividadeA.getPublicId(),
                         unidadeB.getPublicId()
                 );
@@ -214,7 +217,7 @@ class AtividadeRepositoryTest {
         );
 
         List<Atividade> resultado =
-                atividadeRepository.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                atividadeRepository.findBySciPublicIdAndSciProjetoUnidadePublicId(
                         sciA.getPublicId(),
                         unidade.getPublicId()
                 );
@@ -246,7 +249,7 @@ class AtividadeRepositoryTest {
         criarAtividade(sciB, "93.93.93.005.01.01.001", "Atividade C2", true);
 
         List<Atividade> resultado =
-                atividadeRepository.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                atividadeRepository.findBySciProjetoPublicIdAndSciProjetoUnidadePublicId(
                         projetoA.getPublicId(),
                         unidade.getPublicId()
                 );
@@ -284,7 +287,7 @@ class AtividadeRepositoryTest {
         );
 
         List<Atividade> resultado =
-                atividadeRepository.findBySciProjetoLaboratorioUnidadePublicIdAndAtivoTrue(
+                atividadeRepository.findBySciProjetoUnidadePublicIdAndAtivoTrue(
                         unidade.getPublicId()
                 );
 

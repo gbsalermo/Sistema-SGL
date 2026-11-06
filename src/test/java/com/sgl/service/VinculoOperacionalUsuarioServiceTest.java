@@ -3,8 +3,10 @@ package com.sgl.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -207,7 +209,7 @@ class VinculoOperacionalUsuarioServiceTest {
         Projeto p = new Projeto();
         p.setId(5L);
         p.setPublicId(PROJETO);
-        p.setLaboratorio(lab);
+        p.setLaboratorios(new LinkedHashSet<>(Set.of(lab)));
         p.setAtivo(true);
         VinculoOperacionalUsuarioRequestDTO dto = new VinculoOperacionalUsuarioRequestDTO();
         dto.setUsuarioId(USUARIO);
@@ -248,7 +250,7 @@ class VinculoOperacionalUsuarioServiceTest {
         Laboratorio outro = laboratorio();
         outro.setId(44L);
         Projeto p = new Projeto();
-        p.setPublicId(PROJETO); p.setLaboratorio(outro); p.setAtivo(true);
+        p.setPublicId(PROJETO); p.setLaboratorios(new LinkedHashSet<>(Set.of(outro))); p.setAtivo(true);
         VinculoOperacionalUsuarioRequestDTO dto = new VinculoOperacionalUsuarioRequestDTO();
         dto.setUsuarioId(USUARIO); dto.setLaboratorioId(LAB); dto.setProjetoId(PROJETO);
         dto.setDataInicio(LocalDate.now());

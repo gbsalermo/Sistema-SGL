@@ -3,7 +3,9 @@ package com.sgl.repository;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -40,7 +42,10 @@ class RelatorioProjetosRepositoryTest {
     }
 
     private Projeto projeto(Laboratorio laboratorio, String nome, LocalDate inicio, LocalDate fim) {
-        return em.persistAndFlush(Projeto.builder().laboratorio(laboratorio).nome(nome)
+        return em.persistAndFlush(Projeto.builder()
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
+                .nome(nome)
                 .dataInicio(inicio).dataFim(fim).ativo(true).build());
     }
 
@@ -73,6 +78,41 @@ class RelatorioProjetosRepositoryTest {
         assertEquals(esperado.getPublicId(), encontrados.get(0).getPublicId());
         assertTrue(projetos.buscarParaRelatorio(b.getPublicId(), la.getPublicId(), null, null,
                 null, null, null, null).isEmpty());
+    }
+
+    private Projeto projetoComLaboratorios(Unidade unidade, String nome, Laboratorio... labs) {
+        return em.persistAndFlush(Projeto.builder()
+                .unidade(unidade)
+                .laboratorios(new LinkedHashSet<>(List.of(labs)))
+                .nome(nome)
+                .dataInicio(LocalDate.of(2026, 1, 1)).ativo(true).build());
+    }
+
+    @Test
+    void projetoComDoisLaboratoriosApareceUmaVez() {
+        Unidade u = unidade("RML");
+        Projeto p = projetoComLaboratorios(u, "Multi", laboratorio(u), em.persistAndFlush(
+                Laboratorio.builder().nome("Outro lab").unidade(u).ativo(true).build()));
+        em.clear();
+
+        var encontrados = projetos.buscarParaRelatorio(u.getPublicId(), null, null, null,
+                null, null, null, null);
+        assertEquals(1, encontrados.size());
+        assertEquals(p.getPublicId(), encontrados.get(0).getPublicId());
+    }
+
+    @Test
+    void filtroPorCadaLaboratorioEncontraOProjeto() {
+        Unidade u = unidade("RMF");
+        Laboratorio a = laboratorio(u);
+        Laboratorio b = em.persistAndFlush(Laboratorio.builder().nome("Lab B").unidade(u).ativo(true).build());
+        projetoComLaboratorios(u, "Multi", a, b);
+        em.clear();
+
+        assertEquals(1, projetos.buscarParaRelatorio(u.getPublicId(), a.getPublicId(), null, null,
+                null, null, null, null).size());
+        assertEquals(1, projetos.buscarParaRelatorio(u.getPublicId(), b.getPublicId(), null, null,
+                null, null, null, null).size());
     }
 
     @Test

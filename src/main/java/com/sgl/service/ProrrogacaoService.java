@@ -165,7 +165,7 @@ public class ProrrogacaoService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return historicoProjetoRepository
-				.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(projeto.getPublicId(),
+				.findByProjetoPublicIdAndProjetoUnidadePublicIdOrderByDataHoraAsc(projeto.getPublicId(),
 						unidadeId)
 				.stream().map(HistoricoProrrogacaoResponseDTO::new).toList();
 	}
@@ -178,7 +178,7 @@ public class ProrrogacaoService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return historicoSciRepository
-				.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(sci.getPublicId(),
+				.findBySciPublicIdAndSciProjetoUnidadePublicIdOrderByDataHoraAsc(sci.getPublicId(),
 						unidadeId)
 				.stream().map(HistoricoProrrogacaoResponseDTO::new).toList();
 	}
@@ -191,7 +191,7 @@ public class ProrrogacaoService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return historicoAtividadeRepository
-				.findByAtividadePublicIdAndAtividadeSciProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+				.findByAtividadePublicIdAndAtividadeSciProjetoUnidadePublicIdOrderByDataHoraAsc(
 						atividade.getPublicId(), unidadeId)
 				.stream().map(HistoricoProrrogacaoResponseDTO::new).toList();
 	}
@@ -202,7 +202,7 @@ public class ProrrogacaoService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return projetoRepository.findByPublicIdAndLaboratorioUnidadePublicId(projetoId, unidadeId)
+		return projetoRepository.findByPublicIdAndUnidadePublicId(projetoId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 	}
 
@@ -212,7 +212,7 @@ public class ProrrogacaoService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return sciRepository.findByPublicIdAndProjetoLaboratorioUnidadePublicId(sciId, unidadeId)
+		return sciRepository.findByPublicIdAndProjetoUnidadePublicId(sciId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("SCI", sciId));
 	}
 
@@ -222,7 +222,7 @@ public class ProrrogacaoService {
 
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
-		return atividadeRepository.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(atividadeId, unidadeId)
+		return atividadeRepository.findByPublicIdAndSciProjetoUnidadePublicId(atividadeId, unidadeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Atividade", atividadeId));
 	}
 
