@@ -11,9 +11,9 @@ import com.sgl.dto.response.PedidoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Usuario;
-import com.sgl.model.enums.Perfil;
 import com.sgl.repository.PedidoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.security.OrientadorPolicy;
 import com.sgl.service.VinculoOperacionalUsuarioService;
 import com.sgl.tenant.TenantContext;
 
@@ -35,8 +35,7 @@ public class PedidosOrientadosDevController {
             () -> new BusinessRuleException("Unidade obrigatória."));
         Usuario orientador = usuarios.findByPublicIdAndUnidadePublicId(orientadorId, unidadeId)
             .orElseThrow(() -> new ResourceNotFoundException("Orientador", orientadorId));
-        if ((orientador.getPerfil() != Perfil.ANALISTA && orientador.getPerfil() != Perfil.PESQUISADOR)
-            || !Boolean.TRUE.equals(orientador.getAtivo())) {
+        if (!OrientadorPolicy.podeOrientar(orientador)) {
             throw new BusinessRuleException("Consulta reservada aos orientadores analistas/pesquisadores ativos.");
         }
         return pedidos.listarPedidosDeOrientandos(orientadorId, unidadeId).stream()

@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.EstagiarioRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
+import com.sgl.dto.response.EstagiarioSemVinculoResponseDTO;
+import com.sgl.dto.response.OrientadorElegivelResponseDTO;
 import com.sgl.exception.ApiError;
 import com.sgl.service.EstagiarioService;
 
@@ -77,6 +79,30 @@ public class EstagiarioController {
     @GetMapping("/ativos")
     public ResponseEntity<List<EstagiarioResponseDTO>> listarAtivos() {
         return ResponseEntity.ok(estagiarioService.listarAtivos());
+    }
+
+    @Operation(summary = "Listar estagiários sem vínculo", description = "Retorna os estagiários aprovados na unidade que ainda não possuem cadastro de estágio. Exige perfil de gestão.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estagiários sem vínculo listados com sucesso", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "400", description = "Unidade não informada", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Acesso restrito à gestão", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping("/sem-vinculo")
+    public ResponseEntity<List<EstagiarioSemVinculoResponseDTO>> listarSemVinculo() {
+        return ResponseEntity.ok(estagiarioService.listarSemVinculo());
+    }
+
+    @Operation(summary = "Listar orientadores elegíveis", description = "Retorna os usuários ativos da unidade que podem orientar estagiários (analista ou pesquisador, pelo perfil ou pelo cargo). Exige perfil de gestão.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Orientadores elegíveis listados com sucesso", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "400", description = "Unidade não informada", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Acesso restrito à gestão", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping("/orientadores-elegiveis")
+    public ResponseEntity<List<OrientadorElegivelResponseDTO>> listarOrientadoresElegiveis() {
+        return ResponseEntity.ok(estagiarioService.listarOrientadoresElegiveis());
     }
 
     @Operation(summary = "Criar estagiário", description = "Cadastra um novo estagiário no sistema.")

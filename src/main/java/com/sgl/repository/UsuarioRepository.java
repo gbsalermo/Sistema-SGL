@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sgl.model.Usuario;
@@ -41,6 +42,22 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     List<Usuario> findByMatriculaIn(Collection<String> matriculas);
     List<Usuario> findByCpfIn(Collection<String> cpfs);
     List<Usuario> findBySituacaoAndUnidadePublicId(SituacaoUsuario situacao, UUID unidadePublicId);
+
+    List<Usuario> findByUnidadePublicIdAndAtivoTrueAndSituacao(UUID unidadePublicId, SituacaoUsuario situacao);
+
+    // Approved interns have no row in estagiarios until management creates the internship link.
+    @Query("""
+            SELECT u
+            FROM Usuario u
+            LEFT JOIN FETCH u.laboratorio
+            WHERE u.unidade.publicId = :unidadePublicId
+              AND u.perfil = com.sgl.model.enums.Perfil.ESTAGIARIO
+              AND u.situacao = com.sgl.model.enums.SituacaoUsuario.ATIVO
+              AND u.ativo = true
+              AND NOT EXISTS (SELECT e FROM Estagiario e WHERE e.id = u.id)
+            ORDER BY u.nome
+            """)
+    List<Usuario> findEstagiariosSemVinculo(@Param("unidadePublicId") UUID unidadePublicId);
 
     @Override
     @Query("""

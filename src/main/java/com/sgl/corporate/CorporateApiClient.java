@@ -54,6 +54,11 @@ public class CorporateApiClient {
         this.restClient = builder.build();
     }
 
+    /** False in dev/demo without system credentials, where every call would fail as unavailable. */
+    public boolean isEnabled() {
+        return !disabled;
+    }
+
     public CorporateLoginUser login(String username, String password) {
         ensureEnabled();
         LoginResponse response;
@@ -83,6 +88,15 @@ public class CorporateApiClient {
             LoginNormalizer.matriculaCorporativa(matricula)));
     }
 
+    /**
+     * Same lookup, but only 404 means "absent": any other error status is an availability problem. For
+     * callers that act destructively on absence, where a 400 must not be read as "no such person".
+     */
+    public Optional<Empregado> empregadoPorMatriculaEstrito(String matricula) {
+        return Optional.ofNullable(fetch(true, path("empregadoapi", "/empregado/{m}"), Empregado.class,
+            LoginNormalizer.matriculaCorporativa(matricula)));
+    }
+
     public Optional<Empregado> empregadoPorCpf(String cpf) {
         return Optional.ofNullable(get(path("empregadoapi", "/empregado/porCpf/{c}"), Empregado.class, cpf));
     }
@@ -102,6 +116,11 @@ public class CorporateApiClient {
 
     public Optional<Colaborador> colaboradorPorCpf(String cpf) {
         return Optional.ofNullable(get(path("colaboradorapi", "/colaborador/porCpf/{c}"), Colaborador.class, cpf));
+    }
+
+    /** Strict variant of {@link #colaboradorPorCpf}; see {@link #empregadoPorMatriculaEstrito}. */
+    public Optional<Colaborador> colaboradorPorCpfEstrito(String cpf) {
+        return Optional.ofNullable(fetch(true, path("colaboradorapi", "/colaborador/porCpf/{c}"), Colaborador.class, cpf));
     }
 
     public Optional<Colaborador> colaboradorPorId(long id) {
@@ -147,22 +166,27 @@ public class CorporateApiClient {
     }
 
     private <T> T get(String uriTemplate, Class<T> type, Object... vars) {
-        return execute(() -> restClient.get().uri(uriTemplate, vars).retrieve().body(type));
+        return fetch(false, uriTemplate, type, vars);
+    }
+
+    private <T> T fetch(boolean strict, String uriTemplate, Class<T> type, Object... vars) {
+        return execute(strict, () -> restClient.get().uri(uriTemplate, vars).retrieve().body(type));
     }
 
     private <T> T get(String uriTemplate, ParameterizedTypeReference<T> type, Object... vars) {
-        return execute(() -> restClient.get().uri(uriTemplate, vars).retrieve().body(type));
+        return execute(false, () -> restClient.get().uri(uriTemplate, vars).retrieve().body(type));
     }
 
-    // 400/404 mean "no such record" for this gateway (e.g. malformed CPF, empty search),
-    // so they become null; everything else unexpected is an availability problem.
-    private <T> T execute(java.util.function.Supplier<T> call) {
+    // Tolerant mode: 400/404 mean "no such record" for this gateway (e.g. malformed CPF, empty search),
+    // so they become null. Strict mode: only 404 does, because a 400 can also be an unrelated rejection.
+    // Everything else unexpected is an availability problem.
+    private <T> T execute(boolean strict, java.util.function.Supplier<T> call) {
         ensureEnabled();
         try {
             return call.get();
         } catch (HttpClientErrorException e) {
             int status = e.getStatusCode().value();
-            if (status == HttpStatus.NOT_FOUND.value() || status == HttpStatus.BAD_REQUEST.value()) {
+            if (status == HttpStatus.NOT_FOUND.value() || (!strict && status == HttpStatus.BAD_REQUEST.value())) {
                 return null;
             }
             throw unavailable(e);
