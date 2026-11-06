@@ -325,6 +325,25 @@ class PedidoServiceTest {
         assertEquals("O usuário não pertence ao laboratório informado.", exception.getMessage());
     }
 
+    // Pins the current rule: with several laboratories the request must say which one is meant.
+    @Test
+    void pedidoSemLaboratorioNemProjetoDePessoaComDoisLaboratoriosNaoDeterminaOLaboratorio() {
+        Laboratorio segundo = new Laboratorio();
+        segundo.setId(30L);
+        segundo.setPublicId(SEGUNDO_LABORATORIO_PUBLIC_ID);
+        segundo.setUnidade(unidade);
+        segundo.setAtivo(true);
+        solicitante.substituirLaboratorios(List.of(laboratorio, segundo));
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setUsuarioId(SOLICITANTE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(SOLICITANTE_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(solicitante));
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> pedidoService.criar(dto));
+
+        assertEquals("Não foi possível determinar o Laboratório do pedido.", exception.getMessage());
+    }
+
     @Test
     void deveImpedirAprovacaoQuandoPedidoNaoEstiverPendente() {
         SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);

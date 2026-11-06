@@ -34,6 +34,7 @@ public class VinculoOperacionalUsuarioService {
     private final ProjetoRepository projetos;
     private final SciRepository scis;
     private final AtividadeRepository atividades;
+    private final LaboratoriosDaPessoa laboratoriosDaPessoa;
 
     private UUID unidade() {
         return TenantContext.unidadeAtual().orElseThrow(
@@ -109,11 +110,10 @@ public class VinculoOperacionalUsuarioService {
             || dto.getSciId() != null && (sci == null || !dto.getSciId().equals(sci.getPublicId()))) {
             throw new BusinessRuleException("Contexto hierárquico divergente.");
         }
-        // O laboratório-base já é um vínculo operacional completo com esse laboratório.
-        // Permitir somente associações mais específicas (Projeto, SCI ou Atividade).
-        if (projeto == null && sci == null && atividade == null
-                && usuario.atuaNoLaboratorio(laboratorio)) {
-            throw new BusinessRuleException("Este já é o laboratório-base do usuário. Para esse laboratório, associe apenas Projeto, SCI ou Atividade.");
+        // Access without a deadline belongs in the person's laboratory list; this link is only for
+        // temporary access or access restricted to a projeto, SCI or atividade.
+        if (projeto == null && sci == null && atividade == null && dto.getDataFim() == null) {
+            throw new BusinessRuleException("Use a lista de laboratórios da pessoa para acesso sem prazo; o vínculo adicional é para acesso temporário ou restrito a projeto, SCI ou atividade.");
         }
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(dto.getDataInicio())) {
             throw new BusinessRuleException("Data final anterior ao início.");
@@ -170,41 +170,19 @@ public class VinculoOperacionalUsuarioService {
     }
 
     @Transactional
-    public void definirLaboratorioBase(UUID usuarioId, UUID laboratorioId) {
+    public void definirLaboratorios(UUID usuarioId, List<UUID> laboratorioIds) {
         exigirGestao();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
         exigirAutoridadeSobre(usuario);
-        // Quem está pendente recebe o laboratório-base na aprovação (aba Pendentes), não aqui:
-        // salvar a base sem aprovar deixaria a pessoa bloqueada e a gestão achando que liberou.
+        // Quem está pendente recebe os laboratórios na aprovação (aba Pendentes), não aqui:
+        // salvar a lista sem aprovar deixaria a pessoa bloqueada e a gestão achando que liberou.
         if (usuario.getSituacao() == SituacaoUsuario.PENDENTE_VINCULACAO) {
             throw UsuarioRejectedException.pendenteExigeAprovacao();
         }
-        if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
-            throw new BusinessRuleException("Laboratório do estagiário é gerenciado pelo fluxo de estágio.");
-        }
-        Laboratorio lab = laboratorioId == null ? null :
-            laboratorios.findByPublicIdAndUnidadePublicId(laboratorioId, tenant)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
-        if (lab != null) {
-            lab.validateActive();
-            // Evita introduzir duplicidade ao promover um laboratório adicional a base.
-            boolean possuiVinculoGenerico = vinculos
-                .findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), tenant)
-                .stream().anyMatch(v -> v.vigente(LocalDate.now())
-                    && v.getLaboratorio().getId().equals(lab.getId())
-                    && v.getProjeto() == null && v.getSci() == null && v.getAtividade() == null);
-            if (possuiVinculoGenerico && !usuario.atuaNoLaboratorio(lab)) {
-                throw new BusinessRuleException("Este laboratório já possui vínculo adicional vigente. Encerre o vínculo genérico antes de defini-lo como laboratório-base.");
-            }
-        }
-        // The request still carries a single laboratory; it becomes the whole list.
-        if (lab == null) {
-            usuario.limparLaboratorios();
-        } else {
-            usuario.substituirLaboratorios(List.of(lab));
-        }
+        usuario.substituirLaboratorios(laboratoriosDaPessoa.resolver(
+            laboratorioIds, usuario.getUnidade(), usuario.getPerfil(), usuario.getLaboratorios()));
     }
 
     @Transactional(readOnly = true)
@@ -225,12 +203,12 @@ public class VinculoOperacionalUsuarioService {
     // Granting labs and contexts is what authorizes operations, so only gestão may change it.
     private static void exigirGestao() {
         if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
-            throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratório-base.");
+            throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratórios.");
         }
     }
 
     /**
-     * Vínculos e laboratório-base definem onde a pessoa pode operar, então mexer neles é
+     * Vínculos e laboratórios definem onde a pessoa pode operar, então mexer neles é
      * mexer no acesso dela. Por isso valem as mesmas regras da troca de perfil em
      * UsuarioService: ninguém altera o próprio acesso, e só se altera quem tem um perfil
      * que você poderia conceder (ex.: um GESTOR não mexe nos vínculos de um ADMINISTRADOR
@@ -239,7 +217,7 @@ public class VinculoOperacionalUsuarioService {
     private static void exigirAutoridadeSobre(Usuario alvo) {
         AuthenticatedUser ator = CurrentUser.get();
         if (ator.publicId().equals(alvo.getPublicId())) {
-            throw new AccessDeniedException("Ninguém pode alterar os próprios vínculos ou laboratório-base.");
+            throw new AccessDeniedException("Ninguém pode alterar os próprios vínculos ou laboratórios.");
         }
         if (!PerfilPolicy.podeConceder(ator.perfil(), alvo.getPerfil())) {
             throw new AccessDeniedException("Seu perfil não pode alterar os vínculos de um usuário " + alvo.getPerfil() + ".");

@@ -137,7 +137,7 @@ class UsuarioControllerTest {
     void deveCriarUsuarioERetornar201() throws Exception {
         UsuarioRequestDTO dto = new UsuarioRequestDTO(
                 "Maria Oliveira", "maria.oliveira@ufrb.edu.br", "SenhaForte123!",
-                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, LABORATORIO_PUBLIC_ID, true);
+                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
         when(usuarioService.criar(any(UsuarioRequestDTO.class))).thenReturn(montarResponseDTO());
 
         // UsuarioController.criar usa ResponseEntity.status(HttpStatus.CREATED) explicitamente
@@ -163,7 +163,7 @@ class UsuarioControllerTest {
     void deveAtualizarUsuarioERetornar200() throws Exception {
         UsuarioRequestDTO dto = new UsuarioRequestDTO(
                 "Maria Oliveira Atualizada", "maria.oliveira@ufrb.edu.br", null,
-                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, LABORATORIO_PUBLIC_ID, true);
+                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
         when(usuarioService.atualizar(eq(USUARIO_PUBLIC_ID), any(UsuarioRequestDTO.class)))
                 .thenReturn(new UsuarioResponseDTO(
                         USUARIO_PUBLIC_ID, "Maria Oliveira Atualizada", "maria.oliveira@ufrb.edu.br",

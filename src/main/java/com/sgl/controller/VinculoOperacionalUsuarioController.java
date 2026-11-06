@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.sgl.dto.request.DefinirLaboratoriosRequestDTO;
 import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
 import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
@@ -38,8 +39,8 @@ public class VinculoOperacionalUsuarioController {
     public VinculoOperacionalUsuarioResponseDTO encerrar(@PathVariable UUID id) {
         return service.encerrar(id);
     }
-    @PutMapping("/usuarios/{usuarioId}/laboratorio-base")
-    public void laboratorioBase(@PathVariable UUID usuarioId, @RequestBody Map<String, UUID> dados) {
-        service.definirLaboratorioBase(usuarioId, dados.get("laboratorioId"));
+    @PutMapping("/usuarios/{usuarioId}/laboratorios")
+    public void laboratorios(@PathVariable UUID usuarioId, @Valid @RequestBody DefinirLaboratoriosRequestDTO dados) {
+        service.definirLaboratorios(usuarioId, dados.getLaboratorioIds());
     }
 }

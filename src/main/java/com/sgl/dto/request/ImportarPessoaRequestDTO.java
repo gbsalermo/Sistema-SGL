@@ -1,5 +1,6 @@
 package com.sgl.dto.request;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.corporate.TipoPessoaCorporativa;
@@ -33,8 +34,7 @@ public class ImportarPessoaRequestDTO {
     @NotNull(message = "Perfil é obrigatório")
     private Perfil perfil;
 
-    @Schema(description = "UUID do laboratório-base, que deve pertencer à Unidade em operação.",
-            requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "Laboratório-base é obrigatório")
-    private UUID laboratorioBaseId;
+    @Schema(description = "UUIDs dos laboratórios da pessoa, que devem pertencer à Unidade em operação. "
+            + "Obrigatório para perfis operacionais; a gestão pode ficar sem laboratório.")
+    private List<@NotNull(message = "Laboratório inválido na lista") UUID> laboratorioIds;
 }
