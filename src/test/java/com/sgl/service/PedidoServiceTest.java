@@ -222,6 +222,7 @@ class PedidoServiceTest {
 
     @Test
     void deveAprovarPedidoDelegandoSaidaAoMovimentacaoEstoqueService() {
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
@@ -261,6 +262,7 @@ class PedidoServiceTest {
 
     @Test
     void deveAprovarQuantidadeFisicaDecimalSemExigirMultiploDeEmbalagem() {
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);
         produto.setUnidadeMedida(UnidadeMedida.ML);
         pedido.setTipo(TipoPedido.PRODUTOS);
         item.setUnidadeMedidaSolicitada(UnidadeMedida.ML);
@@ -325,6 +327,7 @@ class PedidoServiceTest {
 
     @Test
     void deveImpedirAprovacaoQuandoPedidoNaoEstiverPendente() {
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);
         pedido.setStatus(StatusPedido.APROVADO);
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
@@ -346,6 +349,7 @@ class PedidoServiceTest {
 
     @Test
     void deveImpedirQuantidadeAprovadaMaiorQueSolicitada() {
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(6);
 
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
@@ -367,6 +371,7 @@ class PedidoServiceTest {
 
     @Test
     void devePropagarFalhaQuandoNaoHaLotesValidosSuficientes() {
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
 
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(aprovador));
@@ -406,6 +411,7 @@ class PedidoServiceTest {
 
     @Test
     void deveExigirUsuarioAprovador() {
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);
         AprovarPedidoRequestDTO dto = criarAprovacaoDTO(3);
         dto.setUsuarioAprovadorId(null);
 
@@ -425,6 +431,7 @@ class PedidoServiceTest {
 
     @Test
     void deveRestaurarLotesAoCancelarPedidoAprovado() {
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.GESTOR);
         pedido.setStatus(StatusPedido.APROVADO);
 
         prepararBuscaPedidoComBloqueio();

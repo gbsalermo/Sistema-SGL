@@ -48,6 +48,7 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.RecipienteEstoqueRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.security.SessaoDeTeste;
 import com.sgl.tenant.TenantContext;
 
 @SpringBootTest
@@ -343,6 +344,8 @@ class PedidoConcorrenciaIntegrationTest {
         iniciar.await();
 
         TenantContext.definir(unidadePublicId);
+        // Approval requires a management session that is the approver itself.
+        SessaoDeTeste.entrar(usuarioAprovadorId, Perfil.GESTOR);
 
         try {
             AprovarPedidoRequestDTO dto = new AprovarPedidoRequestDTO();
@@ -367,6 +370,7 @@ class PedidoConcorrenciaIntegrationTest {
             }
         } finally {
             TenantContext.limpar();
+            SessaoDeTeste.sair();
         }
     }
 }
