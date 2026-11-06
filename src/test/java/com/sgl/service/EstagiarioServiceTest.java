@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +41,7 @@ import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
@@ -48,6 +51,7 @@ import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
+import com.sgl.security.OrientadorPolicy;
 import com.sgl.tenant.TenantContext;
 import com.sgl.security.SessaoDeTeste;
 
@@ -103,6 +107,9 @@ class EstagiarioServiceTest {
 
     @Mock
     private HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
+
+    @Mock
+    private VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
 
     @Mock
     private EntityManager entityManager;
@@ -265,6 +272,24 @@ class EstagiarioServiceTest {
                 participacaoCaptor.getValue().getDataInicioParticipacao());
     }
 
+    // The corporate check runs before any write, so a refusal leaves nothing half-created.
+    @Test
+    void criarConfereBaseCorporativaAntesDeGravar() {
+        EstagiarioRequestDTO dto = montarDtoValido();
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        mockarBuscaBaseCriacao();
+        when(estagiarioRepository.existsById(usuario.getId())).thenReturn(false);
+        doThrow(new BusinessRuleException("x")).when(verificacaoAtivoCorporativo).exigirAtivos(any(), any());
+
+        assertThrows(BusinessRuleException.class, () -> estagiarioService.criar(dto));
+
+        verify(verificacaoAtivoCorporativo).exigirAtivos(usuario, orientador);
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(vinculoEstagioRepository, never()).save(any(VinculoEstagio.class));
+        verify(entityManager, never()).createNativeQuery(anyString());
+    }
+
     @Test
     void deveRejeitarCriacaoQuandoUsuarioJaPossuiCadastroDeEstagiario() {
         EstagiarioRequestDTO dto = montarDtoValido();
@@ -327,7 +352,7 @@ class EstagiarioServiceTest {
                 () -> estagiarioService.criar(dto));
 
         assertEquals(
-                "Orientador deve possuir perfil ANALISTA ou PESQUISADOR.",
+                OrientadorPolicy.MENSAGEM_INELEGIVEL,
                 ex.getMessage());
     }
 
@@ -675,5 +700,70 @@ class EstagiarioServiceTest {
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(
                 ORIENTADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(orientador));
+    }
+
+    @Test
+    void listarSemVinculoExigeGestao() {
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.ESTAGIARIO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class, () -> estagiarioService.listarSemVinculo());
+    }
+
+    @Test
+    void listarSemVinculoMontaRespostaComLaboratorioBase() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        usuario.setLaboratorio(laboratorio);
+        Usuario semLab = new Usuario();
+        semLab.setPublicId(UUID.randomUUID());
+        semLab.setNome("Amanda");
+        when(usuarioRepository.findEstagiariosSemVinculo(UNIDADE_PUBLIC_ID)).thenReturn(List.of(semLab, usuario));
+
+        var resposta = estagiarioService.listarSemVinculo();
+
+        assertEquals(2, resposta.size());
+        assertEquals(null, resposta.get(0).laboratorioId());
+        assertEquals(LABORATORIO_PUBLIC_ID, resposta.get(1).laboratorioId());
+        assertEquals("Laboratório de Química Orgânica", resposta.get(1).laboratorioNome());
+    }
+
+    @Test
+    void orientadoresElegiveisExigeGestao() {
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.TECNICO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class, () -> estagiarioService.listarOrientadoresElegiveis());
+    }
+
+    @Test
+    void orientadoresElegiveisIgnoraOutraUnidadeEInativos() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        Usuario analista = usuarioComPerfil("Zilda Analista", Perfil.ANALISTA, null, null);
+        Usuario tecnico = usuarioComPerfil("Bruno Tecnico", Perfil.TECNICO, null, null);
+        Usuario administrador = usuarioComPerfil("Carla Admin", Perfil.ADMINISTRADOR, "123", "ANALISTA A");
+        Usuario inativo = usuarioComPerfil("Dario Inativo", Perfil.PESQUISADOR, null, null);
+        inativo.setAtivo(false);
+        when(usuarioRepository.findByUnidadePublicIdAndAtivoTrueAndSituacao(
+                UNIDADE_PUBLIC_ID, SituacaoUsuario.ATIVO))
+                .thenReturn(List.of(analista, tecnico, administrador, inativo));
+
+        var resposta = estagiarioService.listarOrientadoresElegiveis();
+
+        assertEquals(List.of("Carla Admin", "Zilda Analista"),
+                resposta.stream().map(r -> r.nome()).toList());
+        assertEquals(Perfil.ADMINISTRADOR, resposta.get(0).perfil());
+        assertEquals("ANALISTA A", resposta.get(0).cargo());
+    }
+
+    private Usuario usuarioComPerfil(String nome, Perfil perfil, String matricula, String cargo) {
+        Usuario u = new Usuario();
+        u.setPublicId(UUID.randomUUID());
+        u.setNome(nome);
+        u.setPerfil(perfil);
+        u.setUnidade(unidade);
+        u.setAtivo(true);
+        u.setMatricula(matricula);
+        u.setCargo(cargo);
+        return u;
     }
 }

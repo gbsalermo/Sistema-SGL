@@ -19,7 +19,6 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.FormacaoEstagiario;
-import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoEventoSincronizacaoVinculoEstagio;
 import com.sgl.repository.CursoRepository;
@@ -27,6 +26,7 @@ import com.sgl.repository.HistoricoSincronizacaoVinculoEstagioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
+import com.sgl.security.OrientadorPolicy;
 import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
@@ -414,10 +414,8 @@ public class SincronizacaoVinculoEstagioService {
 
 			orientador.validateActive();
 
-			if (orientador.getPerfil() != Perfil.ANALISTA
-					&& orientador.getPerfil() != Perfil.PESQUISADOR) {
-				throw new BusinessRuleException(
-						"Orientador deve possuir perfil ANALISTA ou PESQUISADOR.");
+			if (!OrientadorPolicy.podeOrientar(orientador)) {
+				throw new BusinessRuleException(OrientadorPolicy.MENSAGEM_INELEGIVEL);
 			}
 
 			if (vinculo.getEstagiario().getUnidade() == null
