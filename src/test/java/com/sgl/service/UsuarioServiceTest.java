@@ -420,6 +420,29 @@ class UsuarioServiceTest {
     }
 
     @Test
+    void pessoaPendenteOuInativaPodeSerSalvaComListaVazia() {
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        prepararEdicao();
+
+        usuarioService.atualizar(USUARIO_PUBLIC_ID, dtoDeEdicao(Perfil.TECNICO, List.of()));
+
+        assertTrue(usuario.getLaboratorios().isEmpty());
+    }
+
+    @Test
+    void pessoaAtivaOperacionalNaoPodeFicarSemLaboratorio() {
+        usuario.substituirLaboratorios(List.of(laboratorioDaUnidade(UUID.randomUUID(), "A", true)));
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(usuario));
+        when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
+
+        BusinessRuleException e = assertThrows(BusinessRuleException.class,
+                () -> usuarioService.atualizar(USUARIO_PUBLIC_ID, dtoDeEdicao(Perfil.TECNICO, List.of())));
+        assertEquals("Informe ao menos um laboratório.", e.getMessage());
+    }
+
+    @Test
     void aprovaComDoisLaboratorios() {
         UUID idA = UUID.randomUUID();
         UUID idB = UUID.randomUUID();

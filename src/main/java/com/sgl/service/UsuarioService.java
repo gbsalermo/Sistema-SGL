@@ -134,8 +134,11 @@ public class UsuarioService {
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
+        // A pending or inactive person is not operating, so an empty list is only refused for active ones.
+        boolean ficaraAtivo = Boolean.TRUE.equals(dto.getAtivo() != null ? dto.getAtivo() : usuario.getAtivo());
+        boolean exigirLista = ficaraAtivo && usuario.getSituacao() != SituacaoUsuario.PENDENTE_VINCULACAO;
         Set<Laboratorio> laboratorios = laboratoriosDaPessoa.resolver(
-                dto.getLaboratorioIds(), unidade, dto.getPerfil(), usuario.getLaboratorios());
+                dto.getLaboratorioIds(), unidade, dto.getPerfil(), usuario.getLaboratorios(), exigirLista);
 
         usuario.setNome(dto.getNome());
         usuario.setEmail(dto.getEmail());
@@ -242,7 +245,7 @@ public class UsuarioService {
     }
 
     /**
-     * The general update carries profile, active flag, Unidade and base lab, so it must not bypass the
+     * The general update carries profile, active flag, Unidade and laboratory list, so it must not bypass the
      * rules of the dedicated routes. Plain data (name, e-mail) still needs authority over the target.
      */
     private void validarEdicao(Usuario usuario, UsuarioRequestDTO dto) {

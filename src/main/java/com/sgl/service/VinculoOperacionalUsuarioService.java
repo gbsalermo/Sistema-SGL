@@ -28,6 +28,7 @@ import com.sgl.tenant.TenantContext;
 /** Contrato de domínio homologado em DEV; autorização de gestor depende do futuro SSO. */
 @Service @RequiredArgsConstructor
 public class VinculoOperacionalUsuarioService {
+    private static final String VINCULO_GENERICO = "Use a lista de laboratórios da pessoa para acesso sem prazo; o vínculo adicional é para acesso temporário ou restrito a projeto, SCI ou atividade.";
     private final VinculoOperacionalUsuarioRepository vinculos;
     private final UsuarioRepository usuarios;
     private final LaboratorioRepository laboratorios;
@@ -113,7 +114,7 @@ public class VinculoOperacionalUsuarioService {
         // Access without a deadline belongs in the person's laboratory list; this link is only for
         // temporary access or access restricted to a projeto, SCI or atividade.
         if (projeto == null && sci == null && atividade == null && dto.getDataFim() == null) {
-            throw new BusinessRuleException("Use a lista de laboratórios da pessoa para acesso sem prazo; o vínculo adicional é para acesso temporário ou restrito a projeto, SCI ou atividade.");
+            throw new BusinessRuleException(VINCULO_GENERICO);
         }
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(dto.getDataInicio())) {
             throw new BusinessRuleException("Data final anterior ao início.");
@@ -149,6 +150,11 @@ public class VinculoOperacionalUsuarioService {
         }
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(LocalDate.now())) {
             throw new BusinessRuleException("Para encerrar vínculo imediatamente, utilize Encerrar vínculo.");
+        }
+        // Clearing the deadline of a laboratory-wide link would recreate the generic link that
+        // belongs in the person's laboratory list (same rule as criar).
+        if (v.getProjeto() == null && v.getSci() == null && v.getAtividade() == null && dto.getDataFim() == null) {
+            throw new BusinessRuleException(VINCULO_GENERICO);
         }
         v.setDataFim(dto.getDataFim());
         v.setObservacao(dto.getObservacao());

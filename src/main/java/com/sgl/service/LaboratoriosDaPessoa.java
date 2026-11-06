@@ -34,9 +34,18 @@ public class LaboratoriosDaPessoa {
      */
     public Set<Laboratorio> resolver(List<UUID> laboratorioIds, Unidade unidade, Perfil perfil,
             Set<Laboratorio> atuais) {
+        return resolver(laboratorioIds, unidade, perfil, atuais, true);
+    }
+
+    /**
+     * @param exigirLista false for a pending or inactive person, who is not operating yet (or anymore)
+     *                    and may be saved with an empty list until Gestão approves or reactivates them
+     */
+    public Set<Laboratorio> resolver(List<UUID> laboratorioIds, Unidade unidade, Perfil perfil,
+            Set<Laboratorio> atuais, boolean exigirLista) {
         List<UUID> ids = laboratorioIds == null ? List.of() : laboratorioIds;
         // Gestão oversees the Unidade and may have no laboratory; operational profiles need one.
-        if (ids.isEmpty() && !PerfilPolicy.isGestao(perfil)) {
+        if (exigirLista && ids.isEmpty() && !PerfilPolicy.isGestao(perfil)) {
             throw new BusinessRuleException("Informe ao menos um laboratório.");
         }
         Set<UUID> vistos = new LinkedHashSet<>();

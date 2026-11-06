@@ -246,6 +246,22 @@ class VinculoOperacionalUsuarioServiceTest {
         assertEquals(LAB, v.getLaboratorio().getPublicId());
     }
 
+    @Test void editarVinculoDeLaboratorioSemDataFimDa400() {
+        TenantContext.definir(UNIDADE);
+        VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
+        v.setPublicId(UUID.randomUUID());
+        v.setUsuario(analista());
+        v.setLaboratorio(laboratorio());
+        v.setDataInicio(LocalDate.now().minusDays(3));
+        v.setDataFim(LocalDate.now().plusDays(10));
+        when(vinculos.findByPublicIdAndUsuarioUnidadePublicId(v.getPublicId(), UNIDADE))
+            .thenReturn(Optional.of(v));
+        BusinessRuleException e = assertThrows(BusinessRuleException.class, () ->
+            service.editar(v.getPublicId(), new EditarVinculoOperacionalRequestDTO()));
+        assertEquals("Use a lista de laboratórios da pessoa para acesso sem prazo; o vínculo adicional é para acesso temporário ou restrito a projeto, SCI ou atividade.", e.getMessage());
+        assertEquals(LocalDate.now().plusDays(10), v.getDataFim());
+    }
+
     @Test void editarVinculoEncerradoEProibido() {
         TenantContext.definir(UNIDADE);
         VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
