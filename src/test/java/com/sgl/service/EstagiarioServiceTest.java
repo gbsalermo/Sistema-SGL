@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -105,6 +107,9 @@ class EstagiarioServiceTest {
 
     @Mock
     private HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
+
+    @Mock
+    private VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
 
     @Mock
     private EntityManager entityManager;
@@ -265,6 +270,24 @@ class EstagiarioServiceTest {
         assertEquals(ATIVIDADE_PUBLIC_ID, participacaoCaptor.getValue().getAtividadeId());
         assertEquals(LocalDate.of(2026, 8, 1),
                 participacaoCaptor.getValue().getDataInicioParticipacao());
+    }
+
+    // The corporate check runs before any write, so a refusal leaves nothing half-created.
+    @Test
+    void criarConfereBaseCorporativaAntesDeGravar() {
+        EstagiarioRequestDTO dto = montarDtoValido();
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        mockarBuscaBaseCriacao();
+        when(estagiarioRepository.existsById(usuario.getId())).thenReturn(false);
+        doThrow(new BusinessRuleException("x")).when(verificacaoAtivoCorporativo).exigirAtivos(any(), any());
+
+        assertThrows(BusinessRuleException.class, () -> estagiarioService.criar(dto));
+
+        verify(verificacaoAtivoCorporativo).exigirAtivos(usuario, orientador);
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(vinculoEstagioRepository, never()).save(any(VinculoEstagio.class));
+        verify(entityManager, never()).createNativeQuery(anyString());
     }
 
     @Test

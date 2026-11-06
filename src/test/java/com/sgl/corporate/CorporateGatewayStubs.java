@@ -58,6 +58,11 @@ public class CorporateGatewayStubs {
                 MediaType.APPLICATION_JSON));
     }
 
+    public void empregadoPorMatriculaStatus(String matricula, HttpStatus status) {
+        server.expect(requestTo(url("empregadoapi", "/empregado/" + LoginNormalizer.matriculaCorporativa(matricula))))
+            .andRespond(withStatus(status));
+    }
+
     public void empregadoPorCpf(String cpf, String matricula, String nome, String cargo, int unidadeId) {
         server.expect(requestTo(url("empregadoapi", "/empregado/porCpf/" + cpf)))
             .andRespond(withSuccess(empregadoJson(matricula, nome, cpf, cargo, unidadeId, true),

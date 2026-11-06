@@ -54,6 +54,11 @@ public class CorporateApiClient {
         this.restClient = builder.build();
     }
 
+    /** False in dev/demo without system credentials, where every call would fail as unavailable. */
+    public boolean isEnabled() {
+        return !disabled;
+    }
+
     public CorporateLoginUser login(String username, String password) {
         ensureEnabled();
         LoginResponse response;

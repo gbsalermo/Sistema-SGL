@@ -60,6 +60,7 @@ public class EstagiarioService {
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 	private final CursoRepository cursoRepository;
 	private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
+	private final VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -88,6 +89,9 @@ public class EstagiarioService {
 
 		validarUnidadeCompativel(usuario, laboratorio);
 		validarMesmaUnidade(usuario, orientador);
+
+		// Before any write: someone who left Embrapa must not get a new internship link.
+		verificacaoAtivoCorporativo.exigirAtivos(usuario, orientador);
 
 		usuario.setLaboratorio(laboratorio);
 		usuarioRepository.save(usuario);
