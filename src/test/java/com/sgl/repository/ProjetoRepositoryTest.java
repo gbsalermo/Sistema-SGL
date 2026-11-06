@@ -3,8 +3,10 @@ package com.sgl.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -31,11 +33,11 @@ import com.sgl.tenant.TenantProvider;
  * - @Import(TenantProvider.class) disponibiliza o bean "tenantProvider" usado
  *   pela expressão SpEL do findAll() sobrescrito.
  *
- * Diferente de UsuarioRepository, aqui Projeto.laboratorio é @JoinColumn(nullable
- * = false) e Laboratorio.unidade também é nullable = false — ou seja, o INNER
- * JOIN implícito gerado pelo JPQL (projeto.laboratorio.unidade.publicId) nunca
- * exclui projetos "órfãos" sem laboratório/unidade, porque essa combinação não é
- * permitida pelo modelo.
+ * Diferente de UsuarioRepository, aqui Projeto.unidade é obrigatória
+ * (optional = false) — ou seja, o INNER JOIN implícito gerado pelo JPQL
+ * (projeto.unidade.publicId) nunca exclui projetos "órfãos" sem unidade, porque
+ * essa combinação não é permitida pelo modelo. Os laboratórios do projeto ficam
+ * na tabela de associação projeto_laboratorios.
  */
 @DataJpaTest
 @ActiveProfiles("test")
@@ -72,7 +74,8 @@ class ProjetoRepositoryTest {
 
     private Projeto criarProjeto(Laboratorio laboratorio, String nome, boolean ativo) {
         Projeto projeto = Projeto.builder()
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome(nome)
                 .ativo(ativo)
                 .build();
@@ -85,7 +88,8 @@ class ProjetoRepositoryTest {
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório Expandido");
 
         Projeto projeto = Projeto.builder()
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto Expandido")
                 .codigoSeg("94.94.94.001.01.00")
                 .status(StatusProjeto.ENCERRADO_COM_AVALIACAO_PENDENTE)
@@ -135,7 +139,7 @@ class ProjetoRepositoryTest {
         Projeto projeto = criarProjeto(laboratorio, "Projeto B", true);
 
         Optional<Projeto> resultado = projetoRepository
-                .findByPublicIdAndLaboratorioUnidadePublicId(projeto.getPublicId(), unidade.getPublicId());
+                .findByPublicIdAndUnidadePublicId(projeto.getPublicId(), unidade.getPublicId());
 
         assertTrue(resultado.isPresent());
     }
@@ -148,7 +152,7 @@ class ProjetoRepositoryTest {
         Projeto projeto = criarProjeto(laboratorio, "Projeto C", true);
 
         Optional<Projeto> resultado = projetoRepository
-                .findByPublicIdAndLaboratorioUnidadePublicId(projeto.getPublicId(), outraUnidade.getPublicId());
+                .findByPublicIdAndUnidadePublicId(projeto.getPublicId(), outraUnidade.getPublicId());
 
         assertTrue(resultado.isEmpty());
     }
@@ -159,7 +163,7 @@ class ProjetoRepositoryTest {
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório D");
         criarProjeto(laboratorio, "Projeto D", true);
 
-        List<Projeto> resultado = projetoRepository.findByLaboratorioId(laboratorio.getId());
+        List<Projeto> resultado = projetoRepository.findByLaboratoriosId(laboratorio.getId());
 
         assertEquals(1, resultado.size());
     }
@@ -169,7 +173,7 @@ class ProjetoRepositoryTest {
         Unidade unidade = criarUnidade("PL2");
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório vazio");
 
-        List<Projeto> resultado = projetoRepository.findByLaboratorioId(laboratorio.getId());
+        List<Projeto> resultado = projetoRepository.findByLaboratoriosId(laboratorio.getId());
 
         assertTrue(resultado.isEmpty());
     }
@@ -180,14 +184,14 @@ class ProjetoRepositoryTest {
         Laboratorio laboratorio = criarLaboratorio(unidade, "Laboratório E");
         criarProjeto(laboratorio, "Projeto E", true);
 
-        List<Projeto> resultado = projetoRepository.findByLaboratorioUnidadePublicId(unidade.getPublicId());
+        List<Projeto> resultado = projetoRepository.findByUnidadePublicId(unidade.getPublicId());
 
         assertEquals(1, resultado.size());
     }
 
     @Test
     void deveRetornarListaVaziaQuandoUnidadePublicIdNaoCasaComLaboratorio() {
-        List<Projeto> resultado = projetoRepository.findByLaboratorioUnidadePublicId(UUID.randomUUID());
+        List<Projeto> resultado = projetoRepository.findByUnidadePublicId(UUID.randomUUID());
 
         assertTrue(resultado.isEmpty());
     }
@@ -224,7 +228,7 @@ class ProjetoRepositoryTest {
         criarProjeto(laboratorio, "Projeto Inativo H", false);
 
         List<Projeto> resultado = projetoRepository
-                .findByLaboratorioUnidadePublicIdAndAtivoTrue(unidade.getPublicId());
+                .findByUnidadePublicIdAndAtivoTrue(unidade.getPublicId());
 
         assertEquals(1, resultado.size());
         assertEquals("Projeto Ativo H", resultado.get(0).getNome());
@@ -237,7 +241,7 @@ class ProjetoRepositoryTest {
         criarProjeto(laboratorio, "Projeto Inativo I", false);
 
         List<Projeto> resultado = projetoRepository
-                .findByLaboratorioUnidadePublicIdAndAtivoTrue(unidade.getPublicId());
+                .findByUnidadePublicIdAndAtivoTrue(unidade.getPublicId());
 
         assertTrue(resultado.isEmpty());
     }
@@ -269,5 +273,59 @@ class ProjetoRepositoryTest {
 
         assertEquals(1, resultado.size());
         assertEquals("Projeto K", resultado.get(0).getNome());
+    }
+
+    private Projeto criarProjetoEmLaboratorios(Unidade unidade, String nome, Laboratorio... laboratorios) {
+        Projeto projeto = Projeto.builder()
+                .unidade(unidade)
+                .laboratorios(new LinkedHashSet<>(List.of(laboratorios)))
+                .nome(nome)
+                .ativo(true)
+                .build();
+        return entityManager.persistAndFlush(projeto);
+    }
+
+    @Test
+    void projetoComDoisLaboratoriosNaoApareceParaOutraUnidade() {
+        Unidade unidade1 = criarUnidade("PM1");
+        Unidade unidade2 = criarUnidade("PM2");
+        Laboratorio laboratorioA = criarLaboratorio(unidade1, "Laboratório MA");
+        Laboratorio laboratorioB = criarLaboratorio(unidade1, "Laboratório MB");
+        criarProjetoEmLaboratorios(unidade1, "Projeto Compartilhado", laboratorioA, laboratorioB);
+        entityManager.clear();
+
+        assertTrue(projetoRepository.findByUnidadePublicId(unidade2.getPublicId()).isEmpty());
+        assertEquals(1, projetoRepository.findByUnidadePublicId(unidade1.getPublicId()).size());
+    }
+
+    @Test
+    void projetosDoLaboratorioIncluemProjetoCompartilhado() {
+        Unidade unidade = criarUnidade("PM3");
+        Laboratorio laboratorioA = criarLaboratorio(unidade, "Laboratório MC");
+        Laboratorio laboratorioB = criarLaboratorio(unidade, "Laboratório MD");
+        Projeto projeto = criarProjetoEmLaboratorios(unidade, "Projeto Compartilhado", laboratorioA, laboratorioB);
+        entityManager.clear();
+
+        List<Projeto> doLaboratorioA = projetoRepository.findByLaboratoriosId(laboratorioA.getId());
+        List<Projeto> doLaboratorioB = projetoRepository.findByLaboratoriosId(laboratorioB.getId());
+
+        assertEquals(List.of(projeto.getPublicId()), doLaboratorioA.stream().map(Projeto::getPublicId).toList());
+        assertEquals(List.of(projeto.getPublicId()), doLaboratorioB.stream().map(Projeto::getPublicId).toList());
+    }
+
+    @Test
+    void findAllSemTenantRetornaTodasAsUnidades() {
+        Unidade unidade1 = criarUnidade("PM4");
+        Unidade unidade2 = criarUnidade("PM5");
+        Laboratorio laboratorioA = criarLaboratorio(unidade1, "Laboratório ME");
+        Laboratorio laboratorioB = criarLaboratorio(unidade1, "Laboratório MF");
+        Laboratorio laboratorioC = criarLaboratorio(unidade2, "Laboratório MG");
+        criarProjetoEmLaboratorios(unidade1, "Projeto U1", laboratorioA, laboratorioB);
+        criarProjetoEmLaboratorios(unidade2, "Projeto U2", laboratorioC);
+        entityManager.clear();
+
+        List<String> nomes = projetoRepository.findAll().stream().map(Projeto::getNome).sorted().toList();
+
+        assertEquals(List.of("Projeto U1", "Projeto U2"), nomes);
     }
 }

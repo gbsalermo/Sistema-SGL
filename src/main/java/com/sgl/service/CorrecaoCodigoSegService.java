@@ -66,13 +66,13 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		List<Sci> scis =
-				sciRepository.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(
+				sciRepository.findByProjetoPublicIdAndProjetoUnidadePublicId(
 						projeto.getPublicId(),
 						unidadeId
 				);
 
 		List<Atividade> atividades =
-				atividadeRepository.findBySciProjetoPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+				atividadeRepository.findBySciProjetoPublicIdAndSciProjetoUnidadePublicId(
 						projeto.getPublicId(),
 						unidadeId
 				);
@@ -214,7 +214,7 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		List<Atividade> atividades =
-				atividadeRepository.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+				atividadeRepository.findBySciPublicIdAndSciProjetoUnidadePublicId(
 						sci.getPublicId(),
 						unidadeId
 				);
@@ -337,7 +337,7 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return historicoRepository
-				.findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+				.findByProjetoPublicIdAndProjetoUnidadePublicIdOrderByDataHoraAsc(
 						projeto.getPublicId(),
 						unidadeId
 				)
@@ -354,7 +354,7 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return historicoRepository
-				.findBySciPublicIdAndSciProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+				.findBySciPublicIdAndSciProjetoUnidadePublicIdOrderByDataHoraAsc(
 						sci.getPublicId(),
 						unidadeId
 				)
@@ -371,7 +371,7 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return historicoRepository
-				.findByAtividadePublicIdAndAtividadeSciProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+				.findByAtividadePublicIdAndAtividadeSciProjetoUnidadePublicIdOrderByDataHoraAsc(
 						atividade.getPublicId(),
 						unidadeId
 				)
@@ -387,7 +387,7 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return projetoRepository
-				.findByPublicIdAndLaboratorioUnidadePublicId(
+				.findByPublicIdAndUnidadePublicId(
 						projetoId,
 						unidadeId
 				)
@@ -406,7 +406,7 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return sciRepository
-				.findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+				.findByPublicIdAndProjetoUnidadePublicId(
 						sciId,
 						unidadeId
 				)
@@ -425,7 +425,7 @@ public class CorrecaoCodigoSegService {
 		UUID unidadeId = TenantContext.unidadeAtual().orElseThrow();
 
 		return atividadeRepository
-				.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+				.findByPublicIdAndSciProjetoUnidadePublicId(
 						atividadeId,
 						unidadeId
 				)

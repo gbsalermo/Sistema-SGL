@@ -9,8 +9,10 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -92,7 +94,8 @@ class HistoricoLaboratorioServiceTest {
                 .id(3L)
                 .publicId(PROJETO_PUBLIC_ID)
                 .nome("Projeto 1")
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .ativo(true)
                 .build();
 
@@ -266,7 +269,7 @@ class HistoricoLaboratorioServiceTest {
                 .ativo(true)
                 .build();
 
-        projeto.setLaboratorio(outroLaboratorio);
+        projeto.setLaboratorios(new LinkedHashSet<>(Set.of(outroLaboratorio)));
 
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
         when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));

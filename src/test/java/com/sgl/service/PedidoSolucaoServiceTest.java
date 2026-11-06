@@ -6,6 +6,8 @@ import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -28,6 +30,8 @@ class PedidoSolucaoServiceTest {
     static final UUID PROJETO = UUID.fromString("00000000-0000-0000-0000-000000000005");
     static final UUID PEDIDO = UUID.fromString("00000000-0000-0000-0000-000000000006");
     static final UUID ITEM = UUID.fromString("00000000-0000-0000-0000-000000000007");
+    static final UUID LAB_SEGUNDO = UUID.fromString("00000000-0000-0000-0000-000000000008");
+    static final UUID LAB_FORA = UUID.fromString("00000000-0000-0000-0000-000000000009");
 
     @Mock PedidoRepository pedidoRepository;
     @Mock EstoqueCentralRepository estoqueCentralRepository;
@@ -74,7 +78,9 @@ class PedidoSolucaoServiceTest {
         usuario.setLaboratorio(lab);
         usuario.setNome("Usuário");
         usuario.setAtivo(true);
-        projeto = Projeto.builder().id(5L).publicId(PROJETO).laboratorio(lab)
+        projeto = Projeto.builder().id(5L).publicId(PROJETO)
+                .unidade(lab.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(lab)))
             .nome("Projeto").ativo(true).build();
         produto = Produto.builder().id(4L).publicId(PRODUTO).nome("Água")
             .unidadeMedida(UnidadeMedida.L).ativo(true).build();
@@ -132,6 +138,81 @@ class PedidoSolucaoServiceTest {
         assertEquals(0, resultado.getItens().get(0).getQuantidadeSolicitada()
             .compareTo(new BigDecimal("0.010")));
         assertEquals(UnidadeMedida.ML, resultado.getItens().get(0).getUnidadeMedidaSolicitada());
+    }
+
+    @Test
+    void solucaoComProjetoDeDoisLaboratoriosExigeLaboratorio() {
+        adicionarSegundoLaboratorioAoProjeto();
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
+            .thenReturn(Optional.of(usuario));
+        when(projetoRepository.findByPublicId(PROJETO)).thenReturn(Optional.of(projeto));
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+            () -> service.criar(solucaoDoProjeto(null)));
+
+        assertEquals("Informe o laboratório: o projeto está em mais de um laboratório.", erro.getMessage());
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    void solucaoComLaboratorioForaDoProjetoEhRecusada() {
+        adicionarSegundoLaboratorioAoProjeto();
+        Laboratorio foraDoProjeto = Laboratorio.builder().id(13L).publicId(LAB_FORA).unidade(unidade)
+            .nome("Laboratório fora do projeto").ativo(true).build();
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
+            .thenReturn(Optional.of(usuario));
+        when(projetoRepository.findByPublicId(PROJETO)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LAB_FORA)).thenReturn(Optional.of(foraDoProjeto));
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+            () -> service.criar(solucaoDoProjeto(LAB_FORA)));
+
+        assertEquals("O Projeto não pertence ao Laboratório informado.", erro.getMessage());
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    void solucaoComLaboratorioDoProjetoEhAceita() {
+        Laboratorio segundo = adicionarSegundoLaboratorioAoProjeto();
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
+            .thenReturn(Optional.of(usuario));
+        when(projetoRepository.findByPublicId(PROJETO)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(LAB_SEGUNDO)).thenReturn(Optional.of(segundo));
+        // The requester's base laboratory is the first one; an operational link authorizes the second.
+        when(vinculoOperacionalService.vinculadoLaboratorio(eq(usuario), eq(segundo), any())).thenReturn(true);
+        when(produtoRepository.findByPublicId(PRODUTO)).thenReturn(Optional.of(produto));
+        when(produtoRepository.pertenceAUnidade(PRODUTO, UNIDADE)).thenReturn(true);
+        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 4L))
+            .thenReturn(Optional.of(estoque));
+        stubSalvar();
+
+        var resultado = service.criar(solucaoDoProjeto(LAB_SEGUNDO));
+
+        assertEquals(LAB_SEGUNDO, resultado.getLaboratorioId());
+        assertEquals(PROJETO, resultado.getProjetoId());
+        assertEquals(TipoPedido.SOLUCAO, resultado.getTipo());
+    }
+
+    private Laboratorio adicionarSegundoLaboratorioAoProjeto() {
+        Laboratorio segundo = Laboratorio.builder().id(12L).publicId(LAB_SEGUNDO).unidade(unidade)
+            .nome("Segundo laboratório").ativo(true).build();
+        projeto.getLaboratorios().add(segundo);
+        return segundo;
+    }
+
+    private PedidoRequestDTO solucaoDoProjeto(UUID laboratorioId) {
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setTipo(TipoPedido.SOLUCAO);
+        dto.setUsuarioId(USUARIO);
+        dto.setProjetoId(PROJETO);
+        dto.setLaboratorioId(laboratorioId);
+        dto.setNomeSolucao("Solução do projeto");
+        ItemPedidoRequestDTO componente = new ItemPedidoRequestDTO();
+        componente.setProdutoId(PRODUTO);
+        componente.setQuantidadeSolicitada(new BigDecimal("10"));
+        componente.setUnidadeMedidaSolicitada(UnidadeMedida.ML);
+        dto.setItens(List.of(componente));
+        return dto;
     }
 
     @Test

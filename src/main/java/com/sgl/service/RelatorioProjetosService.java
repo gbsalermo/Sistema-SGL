@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.dto.response.RelatorioProjetosResponseDTO;
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.model.Projeto;
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
 import com.sgl.model.enums.StatusProjeto;
@@ -81,7 +82,7 @@ public class RelatorioProjetosService {
 			long totalEstagiarios = participacao == null ? 0L : participacao.getTotalEstagiarios();
 
 			return new RelatorioProjetosResponseDTO.ProjetoItem(id, projeto.getCodigoSeg(), projeto.getNome(),
-					projeto.getLaboratorio().getPublicId(), projeto.getLaboratorio().getNome(),
+					LaboratorioResumoDTO.de(projeto),
 					projeto.getResponsavel(), projeto.getDataInicio(), projeto.getDataFim(), projeto.getStatus(),
 					projeto.getSituacaoExecucao(), projeto.getAtivo(), projeto.getPossuiRecursoExterno(),
 					projeto.getEmpresaRecursoExterno(), scisPorProjeto.getOrDefault(id, 0L),

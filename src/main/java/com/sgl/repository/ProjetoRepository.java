@@ -19,24 +19,24 @@ public interface ProjetoRepository extends JpaRepository<Projeto, Long> {
 
 	Optional<Projeto> findByPublicId(UUID publicId);
 
-	Optional<Projeto> findByPublicIdAndLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
+	Optional<Projeto> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
 	@Override
 	@Query("""
 			SELECT projeto
 			FROM Projeto projeto
 			WHERE (:#{@tenantProvider.unidadeId} IS NULL
-			   OR projeto.laboratorio.unidade.publicId = :#{@tenantProvider.unidadeId})
+			   OR projeto.unidade.publicId = :#{@tenantProvider.unidadeId})
 			""")
 	List<Projeto> findAll();
 
-	List<Projeto> findByLaboratorioId(Long laboratorioId);
+	List<Projeto> findByLaboratoriosId(Long laboratorioId);
 
-	List<Projeto> findByLaboratorioUnidadePublicId(UUID unidadePublicId);
+	List<Projeto> findByUnidadePublicId(UUID unidadePublicId);
 
 	List<Projeto> findByAtivoTrue();
 
-	List<Projeto> findByLaboratorioUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
+	List<Projeto> findByUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
 
 	boolean existsByCodigoSeg(String codigoSeg);
 
@@ -46,9 +46,9 @@ public interface ProjetoRepository extends JpaRepository<Projeto, Long> {
 	@Query("""
 			SELECT p
 			FROM Projeto p
-			WHERE p.laboratorio.unidade.publicId = :unidadeId
+			WHERE p.unidade.publicId = :unidadeId
 			  AND (:laboratorioId IS NULL
-			       OR p.laboratorio.publicId = :laboratorioId)
+			       OR EXISTS (SELECT 1 FROM p.laboratorios l WHERE l.publicId = :laboratorioId))
 			  AND (:status IS NULL
 			       OR p.status = :status)
 			  AND (:situacaoExecucao IS NULL

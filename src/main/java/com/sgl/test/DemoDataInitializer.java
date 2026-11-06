@@ -899,7 +899,8 @@ public class DemoDataInitializer implements CommandLineRunner {
 
         return projetoRepository.save(
                 Projeto.builder()
-                        .laboratorio(laboratorio)
+                        .unidade(laboratorio.getUnidade())
+                        .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                         .nome(nome)
                         .descricao(descricao)
                         .dataInicio(inicio)

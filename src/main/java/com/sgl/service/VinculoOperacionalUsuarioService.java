@@ -84,13 +84,13 @@ public class VinculoOperacionalUsuarioService {
         Sci sci = null;
         Atividade atividade = null;
         if (dto.getAtividadeId() != null) {
-            atividade = atividades.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(dto.getAtividadeId(), tenant)
+            atividade = atividades.findByPublicIdAndSciProjetoUnidadePublicId(dto.getAtividadeId(), tenant)
                 .orElseThrow(() -> new ResourceNotFoundException("Atividade", dto.getAtividadeId()));
             atividade.validateActive();
             sci = atividade.getSci();
             projeto = sci.getProjeto();
         } else if (dto.getSciId() != null) {
-            sci = scis.findByPublicIdAndProjetoLaboratorioUnidadePublicId(dto.getSciId(), tenant)
+            sci = scis.findByPublicIdAndProjetoUnidadePublicId(dto.getSciId(), tenant)
                 .orElseThrow(() -> new ResourceNotFoundException("SCI", dto.getSciId()));
             sci.validateActive();
             projeto = sci.getProjeto();
@@ -101,7 +101,7 @@ public class VinculoOperacionalUsuarioService {
         if (sci != null) sci.validateActive();
         if (projeto != null) {
             projeto.validateActive();
-            if (!projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
+            if (!projeto.pertenceAoLaboratorio(laboratorio)) {
                 throw new BusinessRuleException("Projeto/SCI/Atividade não pertence ao laboratório informado.");
             }
         }

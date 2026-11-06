@@ -1,6 +1,7 @@
 package com.sgl.dto.response;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.Projeto;
@@ -16,10 +17,10 @@ public class ProjetoResponseDTO {
 
 	@Schema(description = "Identificador público UUID do projeto.", example = "550e8400-e29b-41d4-a716-446655440003")
 	private final UUID id;
-	@Schema(description = "Identificador público UUID do laboratório vinculado.", example = "550e8400-e29b-41d4-a716-446655440002")
-	private final UUID laboratorioId;
-	@Schema(description = "Nome do laboratório vinculado.", example = "Laboratório de Química Orgânica")
-	private final String laboratorioNome;
+	@Schema(description = "Identificador público UUID da unidade dona do projeto.", example = "550e8400-e29b-41d4-a716-446655440001")
+	private final UUID unidadeId;
+	@Schema(description = "Laboratórios em que o projeto atua, em ordem alfabética.")
+	private final List<LaboratorioResumoDTO> laboratorios;
 	@Schema(description = "Nome do projeto.", example = "Síntese de Novos Compostos")
 	private final String nome;
 	@Schema(description = "Descrição do projeto.", example = "Desenvolvimento de novos compostos orgânicos para catálise.")
@@ -45,8 +46,8 @@ public class ProjetoResponseDTO {
 
 	public ProjetoResponseDTO(Projeto entity) {
 		this.id = entity.getPublicId();
-		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
-		this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
+		this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
+		this.laboratorios = LaboratorioResumoDTO.de(entity);
 		this.nome = entity.getNome();
 		this.descricao = entity.getDescricao();
 		this.dataInicio = entity.getDataInicio();

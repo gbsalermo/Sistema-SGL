@@ -190,7 +190,7 @@ public class HistoricoLaboratorioService {
 		Projeto projeto = projetoRepository.findByPublicId(projetoId)
 				.orElseThrow(() -> new ResourceNotFoundException("Projeto", projetoId));
 
-		if (projeto.getLaboratorio() == null || !projeto.getLaboratorio().getId().equals(laboratorio.getId())) {
+		if (!projeto.pertenceAoLaboratorio(laboratorio)) {
 			throw new BusinessRuleException("O projeto informado não pertence ao laboratório informado.");
 		}
 

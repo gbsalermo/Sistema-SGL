@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.Atividade;
-import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.VinculoEstagioAtividade;
@@ -32,8 +31,8 @@ public class VinculoEstagioAtividadeResponseDTO {
 	private final String projetoNome;
 	private final LocalDate projetoDataFim;
 
-	private final UUID laboratorioId;
-	private final String laboratorioNome;
+	private final UUID unidadeId;
+	private final List<LaboratorioResumoDTO> laboratorios;
 
 	private final LocalDate dataInicioParticipacao;
 	private final LocalDate dataFimParticipacao;
@@ -63,11 +62,6 @@ public class VinculoEstagioAtividadeResponseDTO {
 	    Projeto projeto =
 	            sci != null
 	                    ? sci.getProjeto()
-	                    : null;
-
-	    Laboratorio laboratorio =
-	            projeto != null
-	                    ? projeto.getLaboratorio()
 	                    : null;
 
 	    this.id = entity.getPublicId();
@@ -128,15 +122,15 @@ public class VinculoEstagioAtividadeResponseDTO {
 	                    ? projeto.getDataFim()
 	                    : null;
 
-	    this.laboratorioId =
-	            laboratorio != null
-	                    ? laboratorio.getPublicId()
+	    this.unidadeId =
+	            projeto != null && projeto.getUnidade() != null
+	                    ? projeto.getUnidade().getPublicId()
 	                    : null;
 
-	    this.laboratorioNome =
-	            laboratorio != null
-	                    ? laboratorio.getNome()
-	                    : null;
+	    this.laboratorios =
+	            projeto != null
+	                    ? LaboratorioResumoDTO.de(projeto)
+	                    : List.of();
 
 	    this.dataInicioParticipacao =
 	            entity.getDataInicioParticipacao();

@@ -1,11 +1,11 @@
 package com.sgl.dto.response;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
-import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.VinculoEstagio;
@@ -28,8 +28,7 @@ public record ContextoOperacionalResponseDTO(
         String sciNome,
         UUID projetoId,
         String projetoNome,
-        UUID laboratorioId,
-        String laboratorioNome,
+        List<LaboratorioResumoDTO> laboratorios,
         UUID unidadeId,
         LocalDate dataInicioParticipacao,
         LocalDate dataFimParticipacao,
@@ -45,7 +44,6 @@ public record ContextoOperacionalResponseDTO(
         Atividade atividade = p.getAtividade();
         Sci sci = atividade == null ? null : atividade.getSci();
         Projeto projeto = sci == null ? null : sci.getProjeto();
-        Laboratorio laboratorio = projeto == null ? null : projeto.getLaboratorio();
 
         return new ContextoOperacionalResponseDTO(
                 "PARTICIPACAO_ESTAGIO",
@@ -60,10 +58,10 @@ public record ContextoOperacionalResponseDTO(
                 sci == null ? null : sci.getNome(),
                 projeto == null ? null : projeto.getPublicId(),
                 projeto == null ? null : projeto.getNome(),
-                laboratorio == null ? null : laboratorio.getPublicId(),
-                laboratorio == null ? null : laboratorio.getNome(),
-                laboratorio == null || laboratorio.getUnidade() == null
-                        ? null : laboratorio.getUnidade().getPublicId(),
+                // All of the project's laboratories feed the estagiário's laboratory selector.
+                projeto == null ? List.of() : LaboratorioResumoDTO.de(projeto),
+                projeto == null || projeto.getUnidade() == null
+                        ? null : projeto.getUnidade().getPublicId(),
                 p.getDataInicioParticipacao(),
                 p.getDataFimParticipacao(),
                 p.getDataFimParticipacao() == null,

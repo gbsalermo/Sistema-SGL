@@ -10,8 +10,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -22,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Atividade;
@@ -75,7 +78,9 @@ class ContextoOperacionalConsultaServiceTest {
         Unidade unidade = Unidade.builder().publicId(UNIDADE).nome("IB").build();
         Laboratorio laboratorio = Laboratorio.builder().publicId(UUID.randomUUID())
                 .unidade(unidade).nome("Laboratorio A").ativo(true).build();
-        projeto = Projeto.builder().publicId(PROJETO_ID).laboratorio(laboratorio)
+        projeto = Projeto.builder().publicId(PROJETO_ID)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto A").ativo(true).status(StatusProjeto.ATIVO)
                 .dataInicio(hoje.minusDays(90)).dataFim(hoje.plusDays(90)).build();
         Sci sci = Sci.builder().publicId(UUID.randomUUID()).projeto(projeto)
@@ -135,9 +140,31 @@ class ContextoOperacionalConsultaServiceTest {
     }
 
     @Test
+    void contextoExpoeLaboratoriosDoProjetoOrdenados() {
+        Unidade unidade = projeto.getUnidade();
+        Laboratorio beta = Laboratorio.builder().publicId(UUID.randomUUID())
+                .unidade(unidade).nome("Beta").ativo(true).build();
+        Laboratorio alfa = Laboratorio.builder().publicId(UUID.randomUUID())
+                .unidade(unidade).nome("Alfa").ativo(true).build();
+        projeto.setLaboratorios(new LinkedHashSet<>(List.of(beta, alfa)));
+        when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO_ID, UNIDADE))
+                .thenReturn(Optional.of(estagiario));
+        when(participacoes.listarContextosDoUsuario(USUARIO_ID, UNIDADE))
+                .thenReturn(List.of(participacao));
+
+        var contexto = service.listarDoEstagiario(USUARIO_ID).get(0);
+
+        assertEquals(List.of("Alfa", "Beta"),
+                contexto.laboratorios().stream().map(LaboratorioResumoDTO::nome).toList());
+        assertEquals(List.of(alfa.getPublicId(), beta.getPublicId()),
+                contexto.laboratorios().stream().map(LaboratorioResumoDTO::id).toList());
+        assertEquals(UNIDADE, contexto.unidadeId());
+    }
+
+    @Test
     void devolveMotivoParaParticipacaoEncerradaNoHistorico() {
         participacao.setDataFimParticipacao(LocalDate.now().minusDays(1));
-        when(atividades.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(ATIVIDADE_ID, UNIDADE))
+        when(atividades.findByPublicIdAndSciProjetoUnidadePublicId(ATIVIDADE_ID, UNIDADE))
                 .thenReturn(Optional.of(atividade));
         when(participacoes.listarParticipacoesDaAtividade(ATIVIDADE_ID, UNIDADE))
                 .thenReturn(List.of(participacao));
@@ -151,7 +178,7 @@ class ContextoOperacionalConsultaServiceTest {
 
     @Test
     void consultaParticipantesPorProjetoEmUmaBuscaLote() {
-        when(projetos.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE))
+        when(projetos.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE))
                 .thenReturn(Optional.of(projeto));
         when(participacoes.listarParticipacoesDoProjeto(PROJETO_ID, UNIDADE))
                 .thenReturn(List.of(participacao));
@@ -197,7 +224,7 @@ class ContextoOperacionalConsultaServiceTest {
 
     @Test
     void naoPermiteBuscarProjetoDeOutraUnidade() {
-        when(projetos.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, UNIDADE))
+        when(projetos.findByPublicIdAndUnidadePublicId(PROJETO_ID, UNIDADE))
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
@@ -207,7 +234,7 @@ class ContextoOperacionalConsultaServiceTest {
 
     @Test
     void naoPermiteBuscarAtividadeDeOutraUnidade() {
-        when(atividades.findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(ATIVIDADE_ID, UNIDADE))
+        when(atividades.findByPublicIdAndSciProjetoUnidadePublicId(ATIVIDADE_ID, UNIDADE))
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
@@ -230,7 +257,7 @@ class ContextoOperacionalConsultaServiceTest {
     @Test
     void tenantAlteradoNaoReaproveitaContextoDeUnidadeAnterior() {
         TenantContext.definir(OUTRA_UNIDADE);
-        when(projetos.findByPublicIdAndLaboratorioUnidadePublicId(PROJETO_ID, OUTRA_UNIDADE))
+        when(projetos.findByPublicIdAndUnidadePublicId(PROJETO_ID, OUTRA_UNIDADE))
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,

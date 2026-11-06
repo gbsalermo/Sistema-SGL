@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.sgl.dto.request.EncerrarVinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeCulturasRequestDTO;
 import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.VinculoEstagioAtividadeResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.model.Atividade;
@@ -107,7 +109,8 @@ class VinculoEstagioAtividadeServiceTest {
         projeto = Projeto.builder()
                 .id(3L)
                 .publicId(UUID.randomUUID())
-                .laboratorio(laboratorio)
+                .unidade(laboratorio.getUnidade())
+                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
                 .nome("Projeto Teste")
                 .codigoSeg("PRJ-TESTE")
                 .ativo(true)
@@ -173,9 +176,27 @@ class VinculoEstagioAtividadeServiceTest {
 
     private void mockarAtividade() {
         when(atividadeRepository
-                .findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                .findByPublicIdAndSciProjetoUnidadePublicId(
                         ATIVIDADE_ID, UNIDADE_ID))
                 .thenReturn(Optional.of(atividade));
+    }
+
+    @Test
+    void deveBloquearParticipacaoEmProjetoSemLaboratorioAtivo() {
+        mockarVinculo();
+        mockarAtividade();
+        laboratorio.setAtivo(false);
+
+        VinculoEstagioAtividadeRequestDTO dto =
+                new VinculoEstagioAtividadeRequestDTO();
+        dto.setAtividadeId(ATIVIDADE_ID);
+        dto.setDataInicioParticipacao(LocalDate.of(2026, 3, 1));
+
+        BusinessRuleException ex = assertThrows(
+                BusinessRuleException.class,
+                () -> service.adicionar(VINCULO_ID, dto));
+
+        assertEquals("O projeto não possui laboratório ativo.", ex.getMessage());
     }
 
     @Test
@@ -208,6 +229,10 @@ class VinculoEstagioAtividadeServiceTest {
         assertEquals(ATIVIDADE_ID, resultado.getAtividadeId());
         assertEquals("participação inicial", resultado.getObservacao());
         assertTrue(resultado.getAtiva());
+        assertEquals(
+                List.of(new LaboratorioResumoDTO(laboratorio.getPublicId(), laboratorio.getNome(), true)),
+                resultado.getLaboratorios());
+        assertEquals(UNIDADE_ID, resultado.getUnidadeId());
         verify(participacaoRepository)
                 .save(any(VinculoEstagioAtividade.class));
     }
@@ -416,7 +441,7 @@ class VinculoEstagioAtividadeServiceTest {
                 .thenReturn(Optional.of(participacao));
 
         when(atividadeRepository
-                .findByPublicIdAndSciProjetoLaboratorioUnidadePublicId(
+                .findByPublicIdAndSciProjetoUnidadePublicId(
                         novaAtividadeId, UNIDADE_ID))
                 .thenReturn(Optional.of(novaAtividade));
 

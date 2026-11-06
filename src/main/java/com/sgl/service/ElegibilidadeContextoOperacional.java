@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.sgl.model.Atividade;
 import com.sgl.model.Estagiario;
-import com.sgl.model.Laboratorio;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.VinculoEstagio;
@@ -98,8 +97,7 @@ public final class ElegibilidadeContextoOperacional {
 
         Sci sci = atividade.getSci();
         Projeto projeto = sci == null ? null : sci.getProjeto();
-        Laboratorio laboratorio = projeto == null ? null : projeto.getLaboratorio();
-        if (sci == null || projeto == null || laboratorio == null || laboratorio.getUnidade() == null
+        if (sci == null || projeto == null || projeto.getUnidade() == null
                 || estagiario.getUnidade() == null) {
             return Resultado.bloqueado(Motivo.CONTEXTO_INCOMPLETO);
         }
@@ -108,7 +106,7 @@ public final class ElegibilidadeContextoOperacional {
             return Resultado.bloqueado(Motivo.CONTEXTO_INCOMPLETO);
         }
 
-        UUID unidadeOrigem = laboratorio.getUnidade().getPublicId();
+        UUID unidadeOrigem = projeto.getUnidade().getPublicId();
         UUID unidadeEstagiario = estagiario.getUnidade().getPublicId();
         if (unidadeOrigem == null || unidadeEstagiario == null
                 || !unidadeOrigem.equals(unidadeSolicitante)
@@ -116,7 +114,9 @@ public final class ElegibilidadeContextoOperacional {
             return Resultado.bloqueado(Motivo.UNIDADE_DIVERGENTE);
         }
 
-        if (!Boolean.TRUE.equals(laboratorio.getAtivo())
+        // The specific laboratory is checked when the pedido/resíduo is created; here it is
+        // enough that the project still has at least one active laboratory to operate in.
+        if (!projeto.possuiLaboratorioAtivo()
                 || !Boolean.TRUE.equals(projeto.getAtivo())
                 || !Boolean.TRUE.equals(sci.getAtivo())
                 || !Boolean.TRUE.equals(atividade.getAtivo())) {

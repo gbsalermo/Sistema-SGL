@@ -1,6 +1,7 @@
 package com.sgl.dto.request;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.enums.SituacaoExecucaoProjeto;
@@ -8,6 +9,7 @@ import com.sgl.model.enums.StatusProjeto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,9 +23,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ProjetoRequestDTO {
 
-    @Schema(description = "Identificador público UUID do laboratório ao qual o projeto pertence.", example = "550e8400-e29b-41d4-a716-446655440002", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "Id do laboratório é obrigatorio")
-    private UUID laboratorioId;
+    @Schema(description = "Identificadores públicos UUID dos laboratórios (da unidade atual) em que o projeto atua. Ao menos um.", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotEmpty(message = "Informe ao menos um laboratório")
+    private List<UUID> laboratorioIds;
 
     @Schema(description = "Nome do projeto.", example = "Síntese de Novos Compostos", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Nome é obrigatório")

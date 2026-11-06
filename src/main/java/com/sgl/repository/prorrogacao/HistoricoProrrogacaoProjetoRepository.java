@@ -14,13 +14,13 @@ public interface HistoricoProrrogacaoProjetoRepository
         extends JpaRepository<HistoricoProrrogacaoProjeto, Long> {
 
     Optional<HistoricoProrrogacaoProjeto>
-            findByPublicIdAndProjetoLaboratorioUnidadePublicId(
+            findByPublicIdAndProjetoUnidadePublicId(
                     UUID publicId,
                     UUID unidadePublicId
             );
 
     List<HistoricoProrrogacaoProjeto>
-            findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdOrderByDataHoraAsc(
+            findByProjetoPublicIdAndProjetoUnidadePublicIdOrderByDataHoraAsc(
                     UUID projetoPublicId,
                     UUID unidadePublicId
             );

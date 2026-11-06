@@ -14,15 +14,15 @@ import com.sgl.model.Sci;
 @Repository
 public interface SciRepository extends JpaRepository<Sci, Long> {
 
-	Optional<Sci> findByPublicIdAndProjetoLaboratorioUnidadePublicId(UUID publicId, UUID unidadePublicId);
+	Optional<Sci> findByPublicIdAndProjetoUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
-	List<Sci> findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicId(UUID projetoPublicId, UUID unidadePublicId);
+	List<Sci> findByProjetoPublicIdAndProjetoUnidadePublicId(UUID projetoPublicId, UUID unidadePublicId);
 
-	List<Sci> findByProjetoLaboratorioUnidadePublicId(UUID unidadePublicId);
+	List<Sci> findByProjetoUnidadePublicId(UUID unidadePublicId);
 
-	List<Sci> findByProjetoLaboratorioUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
+	List<Sci> findByProjetoUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
 
-	List<Sci> findByProjetoPublicIdAndProjetoLaboratorioUnidadePublicIdAndAtivoTrue(UUID projetoPublicId,
+	List<Sci> findByProjetoPublicIdAndProjetoUnidadePublicIdAndAtivoTrue(UUID projetoPublicId,
 			UUID unidadePublicId);
 
 	boolean existsByCodigoSeg(String codigoSeg);
@@ -39,7 +39,7 @@ public interface SciRepository extends JpaRepository<Sci, Long> {
 		        s.projeto.publicId AS projetoId,
 		        COUNT(s.id) AS totalScis
 		    FROM Sci s
-		    WHERE s.projeto.laboratorio.unidade.publicId = :unidadeId
+		    WHERE s.projeto.unidade.publicId = :unidadeId
 		      AND s.projeto.publicId IN :projetoIds
 		    GROUP BY s.projeto.publicId
 		    """)
