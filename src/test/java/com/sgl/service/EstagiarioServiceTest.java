@@ -48,6 +48,7 @@ import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
+import com.sgl.security.OrientadorPolicy;
 import com.sgl.tenant.TenantContext;
 import com.sgl.security.SessaoDeTeste;
 
@@ -327,7 +328,7 @@ class EstagiarioServiceTest {
                 () -> estagiarioService.criar(dto));
 
         assertEquals(
-                "Orientador deve possuir perfil ANALISTA ou PESQUISADOR.",
+                OrientadorPolicy.MENSAGEM_INELEGIVEL,
                 ex.getMessage());
     }
 

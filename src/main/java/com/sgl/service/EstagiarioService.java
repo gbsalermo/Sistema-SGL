@@ -25,7 +25,6 @@ import com.sgl.model.VinculoEstagio;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.VinculoEstagioAtividadeCultura;
 import com.sgl.model.enums.FormacaoEstagiario;
-import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.repository.CursoRepository;
 import com.sgl.repository.EstagiarioRepository;
@@ -35,6 +34,7 @@ import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeCulturaRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
 import com.sgl.repository.VinculoEstagioRepository;
+import com.sgl.security.OrientadorPolicy;
 import com.sgl.tenant.TenantContext;
 import com.sgl.security.CurrentUser;
 import com.sgl.security.PerfilPolicy;
@@ -315,9 +315,9 @@ public class EstagiarioService {
 
 		orientador.validateActive();
 
-		if (orientador.getPerfil() != Perfil.ANALISTA && orientador.getPerfil() != Perfil.PESQUISADOR) {
+		if (!OrientadorPolicy.podeOrientar(orientador)) {
 
-			throw new BusinessRuleException("Orientador deve possuir perfil ANALISTA ou PESQUISADOR.");
+			throw new BusinessRuleException(OrientadorPolicy.MENSAGEM_INELEGIVEL);
 		}
 
 		return orientador;
