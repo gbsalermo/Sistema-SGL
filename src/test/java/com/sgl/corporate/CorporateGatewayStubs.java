@@ -92,6 +92,10 @@ public class CorporateGatewayStubs {
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
     }
 
+    public void colaboradorPorCpfStatus(String cpf, HttpStatus status) {
+        server.expect(requestTo(url("colaboradorapi", "/colaborador/porCpf/" + cpf)))
+            .andRespond(withStatus(status));
+    }
 
     /** One Empregado list item as the unit listing returns it. */
     public static String empregadoItem(String matricula, String nome, String cpf, String cargo, int unidadeId) {

@@ -1,6 +1,9 @@
 package com.sgl.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientResponseException;
 
 import com.sgl.corporate.CorporateApiClient;
 import com.sgl.corporate.CorporateApiUnavailableException;
@@ -19,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class VerificacaoAtivoCorporativoService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(VerificacaoAtivoCorporativoService.class);
 
     private static final String MENSAGEM_INDISPONIVEL = "Não foi possível confirmar na base corporativa se o "
             + "estagiário e o orientador estão ativos. Tente novamente.";
@@ -47,20 +52,30 @@ public class VerificacaoAtivoCorporativoService {
     private boolean ativoNaBaseCorporativa(Usuario pessoa, String papel) {
         try {
             if (!isBlank(pessoa.getMatricula())) {
-                return client.empregadoPorMatricula(pessoa.getMatricula())
+                return client.empregadoPorMatriculaEstrito(pessoa.getMatricula())
                         .map(empregado -> Boolean.TRUE.equals(empregado.ativo()))
                         .orElse(false);
             }
             if (!isBlank(pessoa.getCpf())) {
-                return client.colaboradorPorCpf(pessoa.getCpf())
+                return client.colaboradorPorCpfEstrito(pessoa.getCpf())
                         .map(colaborador -> Boolean.TRUE.equals(colaborador.ativo()))
                         .orElse(false);
             }
         } catch (CorporateApiUnavailableException e) {
+            // Only the status or exception class: the message and URL carry the CPF or matrícula.
+            LOG.warn("Base corporativa indisponível ao conferir o {}: {}", papel, causaResumida(e));
             throw new BusinessRuleException(MENSAGEM_INDISPONIVEL);
         }
         throw new BusinessRuleException("Não é possível conferir na base corporativa o %s %s: cadastro sem matrícula e sem CPF."
                 .formatted(papel, pessoa.getNome()));
+    }
+
+    private static String causaResumida(CorporateApiUnavailableException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof RestClientResponseException response) {
+            return "HTTP " + response.getStatusCode().value();
+        }
+        return cause == null ? "sem causa" : cause.getClass().getSimpleName();
     }
 
     private static boolean isBlank(String value) {

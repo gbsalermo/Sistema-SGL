@@ -156,6 +156,22 @@ class VerificacaoAtivoCorporativoIntegrationTest {
         assertThat(ativo(orientador)).isTrue();
     }
 
+    // A 400 from the gateway does not prove the person is absent (e.g. invalid pagination), so it must
+    // not be read as "not found" and deactivate anyone.
+    @Test
+    void respostaInesperadaRecusaSemDesativar() {
+        gateway.colaboradorPorCpfStatus(CPF_ESTAGIARIO, HttpStatus.BAD_REQUEST);
+
+        assertThatThrownBy(() -> verificacao.exigirAtivos(estagiario, orientador))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Não foi possível confirmar na base corporativa se o estagiário e o orientador "
+                        + "estão ativos. Tente novamente.");
+
+        gateway.verify();
+        assertThat(ativo(estagiario)).isTrue();
+        assertThat(ativo(orientador)).isTrue();
+    }
+
     @Test
     void semMatriculaESemCpfRecusa() {
         estagiario.setCpf(null);
