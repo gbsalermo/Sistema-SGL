@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.Residuo;
+import com.sgl.model.enums.EstadoFisicoResiduo;
+import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.model.enums.TipoRisco;
@@ -32,7 +34,16 @@ public class RotuloResiduoResponseDTO {
     private final String unidadeNome;
     private final String unidadeSigla;
     private final String laboratorioNome;
+    private final String projetoOrigemNome;
+    private final String sciOrigemNome;
+    private final String atividadeOrigemNome;
     private final String geradorNome;
+    private final String responsavelLiberacaoNome;
+    private final LocalDateTime dataInformacao;
+    private final EstadoFisicoResiduo estadoFisico;
+    private final Set<MedidaSeguranca> medidasSeguranca;
+    private final String observacaoSeguranca;
+    private final String observacoesRotulo;
     private final String processoOrigem;
     private final String recipiente;
     private final BigDecimal quantidade;
@@ -46,6 +57,12 @@ public class RotuloResiduoResponseDTO {
     private final LocalDateTime dataRotulagem;
 
     public RotuloResiduoResponseDTO(Residuo entity) {
+        this(entity, null);
+    }
+
+    // A identificação vem do evento de auditoria de liberação, nunca do gerador.
+    public RotuloResiduoResponseDTO(Residuo entity, String responsavelLiberacaoNome) {
+        this.responsavelLiberacaoNome = responsavelLiberacaoNome;
         this.residuoId = entity.getPublicId();
         this.codigoRastreio = entity.getCodigoRastreio();
         this.qrCodeConteudo = entity.getQrCodeConteudo();
@@ -70,14 +87,50 @@ public class RotuloResiduoResponseDTO {
         this.unidadeSigla = entity.getUnidadeSiglaSnapshot() != null
                 ? entity.getUnidadeSiglaSnapshot()
                 : entity.getLaboratorio().getUnidade().getSigla();
-        this.laboratorioNome = entity.getLaboratorio().getNome();
+        this.laboratorioNome = entity.getLaboratorioOrigemNome() != null
+                ? entity.getLaboratorioOrigemNome()
+                : entity.getLaboratorio().getNome();
+        // Usar snapshots da origem para preservar a hierarquia registrada.
+        // Resíduos antigos podem não possuir snapshot, mas ter Projeto associado.
+        this.projetoOrigemNome = entity.getProjetoOrigemNome() != null
+                ? entity.getProjetoOrigemNome()
+                : entity.getProjeto() != null ? entity.getProjeto().getNome() : null;
+        this.sciOrigemNome = entity.getSciOrigemNome();
+        this.atividadeOrigemNome = entity.getAtividadeOrigemNome();
         this.geradorNome = entity.getGerador().getNome();
+        this.dataInformacao = entity.getDataInformacao();
+        this.estadoFisico = entity.getEstadoFisico();
+
+        // O rótulo distingue as informações preliminares daquelas confirmadas.
+        // Uma confirmação vazia não deve voltar a exibir medidas preliminares.
+        this.medidasSeguranca = this.classificacaoConfirmada
+                ? new LinkedHashSet<>(entity.getMedidasSegurancaConfirmadas())
+                : new LinkedHashSet<>(entity.getMedidasSegurancaInformadas());
+        this.observacaoSeguranca = this.classificacaoConfirmada
+                ? entity.getObservacaoSegurancaConfirmada()
+                : entity.getObservacaoSegurancaInformada();
+
+        String observacaoGerador = entity.getObservacaoGerador();
+        String observacaoGestor = entity.getObservacaoGestor();
+        // Uma observação isolada não repete o gerador já identificado no cabeçalho.
+        // Quando existem duas observações, identifica-se a origem de cada texto.
+        if (observacaoGerador != null && !observacaoGerador.isBlank()
+                && observacaoGestor != null && !observacaoGestor.isBlank()) {
+            this.observacoesRotulo = "Informada: " + observacaoGerador.trim()
+                    + " | Gestão: " + observacaoGestor.trim();
+        } else if (observacaoGestor != null && !observacaoGestor.isBlank()) {
+            this.observacoesRotulo = observacaoGestor.trim();
+        } else if (observacaoGerador != null && !observacaoGerador.isBlank()) {
+            this.observacoesRotulo = observacaoGerador.trim();
+        } else {
+            this.observacoesRotulo = null;
+        }
         this.processoOrigem = entity.getProcessoOrigem();
         this.recipiente = entity.getRecipiente();
         this.quantidade = entity.getQuantidade();
         this.unidadeMedida = entity.getUnidadeMedida();
         this.nivelRisco = entity.getNivelRiscoConfirmado() != null ? entity.getNivelRiscoConfirmado() : entity.getNivelRiscoInformado();
-        this.riscos = !entity.getRiscosConfirmados().isEmpty()
+        this.riscos = this.classificacaoConfirmada
                 ? new LinkedHashSet<>(entity.getRiscosConfirmados())
                 : new LinkedHashSet<>(entity.getRiscosInformados());
         this.componentes = entity.getComponentes().stream().map(ComponenteResiduoResponseDTO::new).toList();
