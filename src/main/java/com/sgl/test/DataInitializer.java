@@ -105,7 +105,9 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        if (unidadeRepository.count() > 0) {
+        // A guarda olha usuários, não unidades: desde a V45 a migration já cria a unidade CNPMF, e
+        // "existe unidade" passou a ser verdade num banco vazio, pulando toda a massa de desenvolvimento.
+        if (usuarioRepository.count() > 0) {
             validarMassaEstoqueEtapa7Existente();
             garantirCadastrosResiduos();
             garantirDadosEtapa5();
