@@ -195,4 +195,43 @@ class RelatorioPessoasLaboratorioServiceTest {
 
         assertEquals("Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.", ex.getMessage());
     }
+
+    @Test
+    void pessoaComDoisLaboratoriosApareceNosDoisEContaUmaVez() {
+        Unidade unidade = laboratorio.getUnidade();
+        Laboratorio outro = Laboratorio.builder()
+                .id(11L)
+                .publicId(UUID.randomUUID())
+                .unidade(unidade)
+                .nome("Laboratório de Solos")
+                .ativo(true)
+                .responsavel(gestorResponsavel)
+                .build();
+        tecnicoAtivo.substituirLaboratorios(List.of(laboratorio, outro));
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(laboratorio));
+        when(laboratorioRepository.findByPublicIdAndUnidadePublicId(outro.getPublicId(), UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(outro));
+        // Listed by the repository query and also as responsável of the second lab:
+        // must still count once within each report.
+        when(usuarioRepository.findByLaboratoriosId(laboratorio.getId())).thenReturn(List.of(tecnicoAtivo));
+        when(usuarioRepository.findByLaboratoriosId(outro.getId())).thenReturn(List.of(tecnicoAtivo));
+        when(estagiarioRepository.findByLaboratoriosId(laboratorio.getId())).thenReturn(List.of());
+        when(estagiarioRepository.findByLaboratoriosId(outro.getId())).thenReturn(List.of());
+
+        RelatorioPessoasLaboratorioResponseDTO primeiro = relatorioPessoasLaboratorioService.gerar(
+                LABORATORIO_PUBLIC_ID, null, null);
+        RelatorioPessoasLaboratorioResponseDTO segundo = relatorioPessoasLaboratorioService.gerar(
+                outro.getPublicId(), null, null);
+
+        assertTrue(primeiro.getPessoas().stream().anyMatch(p -> p.getNome().equals("Técnico Ana")));
+        assertTrue(segundo.getPessoas().stream().anyMatch(p -> p.getNome().equals("Técnico Ana")));
+        // Gestor (responsável) + técnico: the técnico is counted exactly once per report.
+        assertEquals(2, primeiro.getTotalPessoas());
+        assertEquals(2, segundo.getTotalPessoas());
+        assertEquals(1L, primeiro.getPorPerfil().get(Perfil.TECNICO));
+        assertEquals(1L, segundo.getPorPerfil().get(Perfil.TECNICO));
+    }
 }

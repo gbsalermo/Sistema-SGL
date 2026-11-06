@@ -341,6 +341,47 @@ class RelatorioExportacaoServiceTest {
 
 
     @Test
+    void exportacaoMostraLaboratoriosSeparadosPorPontoEVirgula() throws Exception {
+        com.sgl.model.Laboratorio beta = new com.sgl.model.Laboratorio();
+        beta.setPublicId(java.util.UUID.randomUUID());
+        beta.setNome("Beta");
+        beta.setAtivo(true);
+        com.sgl.model.Laboratorio alfa = new com.sgl.model.Laboratorio();
+        alfa.setPublicId(java.util.UUID.randomUUID());
+        alfa.setNome("Alfa");
+        alfa.setAtivo(true);
+        com.sgl.model.Estagiario estagiario = new com.sgl.model.Estagiario();
+        estagiario.setPublicId(java.util.UUID.randomUUID());
+        estagiario.setNome("Ana");
+        estagiario.setAtivo(true);
+        // Added out of order to prove the export sorts alphabetically.
+        estagiario.substituirLaboratorios(List.of(beta, alfa));
+
+        RelatorioEstagiariosResponseDTO relatorio = new RelatorioEstagiariosResponseDTO(
+                LocalDateTime.now(), 1, 1, 0,
+                List.of(new RelatorioEstagiariosResponseDTO.Item(estagiario)));
+
+        ArquivoRelatorioDTO arquivo = service.exportarEstagiarios(
+                relatorio, FormatoExportacaoRelatorio.XLSX, List.of());
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(arquivo.conteudo()))) {
+            boolean cabecalho = false;
+            boolean celula = false;
+            for (var sheet : workbook) {
+                for (var row : sheet) {
+                    for (var cell : row) {
+                        if (cell.getCellType() != org.apache.poi.ss.usermodel.CellType.STRING) continue;
+                        if ("Laboratórios".equals(cell.getStringCellValue())) cabecalho = true;
+                        if ("Alfa; Beta".equals(cell.getStringCellValue())) celula = true;
+                    }
+                }
+            }
+            assertTrue(cabecalho);
+            assertTrue(celula);
+        }
+    }
+
+    @Test
     void exportacaoJuntaLaboratoriosOrdenados() throws Exception {
         RelatorioProjetosResponseDTO relatorio = new RelatorioProjetosResponseDTO(
                 LocalDateTime.now(), 1, 0, 0, 0, 0,

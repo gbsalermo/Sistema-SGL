@@ -116,6 +116,27 @@ class RelatorioServiceTest {
     }
 
     @Test
+    void filtroDeEstagiariosPorLaboratorioUsaALista() {
+        Laboratorio outro = new Laboratorio();
+        outro.setId(11L);
+        outro.setPublicId(UUID.randomUUID());
+        outro.setNome("Laboratório de Solos");
+        outro.setAtivo(true);
+        outro.setUnidade(laboratorio.getUnidade());
+        // The filtered lab is the second one in the list, not a single "main" lab.
+        ativoRecente.substituirLaboratorios(List.of(laboratorio, outro));
+        when(laboratorioRepository.findByPublicId(outro.getPublicId())).thenReturn(Optional.of(outro));
+        when(estagiarioRepository.findAll()).thenReturn(List.of(inativoAntigo, ativoRecente));
+
+        RelatorioEstagiariosResponseDTO resultado = relatorioService.gerarRelatorioEstagiarios(
+                null, outro.getPublicId(), null, null);
+
+        assertEquals(1, resultado.getTotal());
+        assertEquals("Ana Costa", resultado.getItens().get(0).getNome());
+        assertEquals(2, resultado.getItens().get(0).getLaboratorios().size());
+    }
+
+    @Test
     void deveLancarExcecaoQuandoLaboratorioDoFiltroNaoEncontrado() {
         UUID idInexistente = UUID.randomUUID();
         when(laboratorioRepository.findByPublicId(idInexistente)).thenReturn(Optional.empty());
