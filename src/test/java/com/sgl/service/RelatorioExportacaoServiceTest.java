@@ -318,7 +318,7 @@ class RelatorioExportacaoServiceTest {
                 LocalDateTime.now(), 1, 2, 3, 4, 1,
                 List.of(new RelatorioProjetosResponseDTO.ProjetoItem(
                         java.util.UUID.randomUUID(), "10.25.00.085.00.00",
-                        "Projeto de teste", java.util.List.of(new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Laboratório")),
+                        "Projeto de teste", java.util.List.of(new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Laboratório", true)),
                         "Responsável", java.time.LocalDate.of(2026, 1, 1),
                         null, com.sgl.model.enums.StatusProjeto.ATIVO,
                         com.sgl.model.enums.SituacaoExecucaoProjeto.NAO_INFORMADO,
@@ -346,8 +346,8 @@ class RelatorioExportacaoServiceTest {
                 LocalDateTime.now(), 1, 0, 0, 0, 0,
                 List.of(new RelatorioProjetosResponseDTO.ProjetoItem(
                         java.util.UUID.randomUUID(), "10.25.00.085.00.00", "Projeto multi",
-                        List.of(new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Alfa"),
-                                new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Beta")),
+                        List.of(new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Alfa", true),
+                                new com.sgl.dto.response.LaboratorioResumoDTO(java.util.UUID.randomUUID(), "Beta", true)),
                         "Responsável", java.time.LocalDate.of(2026, 1, 1),
                         null, com.sgl.model.enums.StatusProjeto.ATIVO,
                         com.sgl.model.enums.SituacaoExecucaoProjeto.NAO_INFORMADO,

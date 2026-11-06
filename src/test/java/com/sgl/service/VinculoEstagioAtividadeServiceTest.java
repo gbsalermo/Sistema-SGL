@@ -230,7 +230,7 @@ class VinculoEstagioAtividadeServiceTest {
         assertEquals("participação inicial", resultado.getObservacao());
         assertTrue(resultado.getAtiva());
         assertEquals(
-                List.of(new LaboratorioResumoDTO(laboratorio.getPublicId(), laboratorio.getNome())),
+                List.of(new LaboratorioResumoDTO(laboratorio.getPublicId(), laboratorio.getNome(), true)),
                 resultado.getLaboratorios());
         assertEquals(UNIDADE_ID, resultado.getUnidadeId());
         verify(participacaoRepository)

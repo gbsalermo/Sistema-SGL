@@ -584,14 +584,30 @@ public class DataInitializer implements CommandLineRunner {
             SituacaoExecucaoProjeto situacaoExecucao,
             boolean possuiRecursoExterno,
             String empresaRecursoExterno) {
+        return garantirProjetoEtapa5(Set.of(laboratorio), codigoSeg, nome, descricao, responsavel, dataInicio,
+                dataFim, status, situacaoExecucao, possuiRecursoExterno, empresaRecursoExterno);
+    }
+
+    private Projeto garantirProjetoEtapa5(
+            Set<Laboratorio> laboratorios,
+            String codigoSeg,
+            String nome,
+            String descricao,
+            String responsavel,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            StatusProjeto status,
+            SituacaoExecucaoProjeto situacaoExecucao,
+            boolean possuiRecursoExterno,
+            String empresaRecursoExterno) {
 
         return projetoRepository.findAll().stream()
                 .filter(item -> codigoSeg.equals(item.getCodigoSeg()))
                 .findFirst()
                 .orElseGet(() -> projetoRepository.save(
                         Projeto.builder()
-                                .unidade(laboratorio.getUnidade())
-                                .laboratorios(new LinkedHashSet<>(Set.of(laboratorio)))
+                                .unidade(laboratorios.iterator().next().getUnidade())
+                                .laboratorios(new LinkedHashSet<>(laboratorios))
                                 .nome(nome)
                                 .descricao(descricao)
                                 .responsavel(responsavel)
@@ -803,8 +819,10 @@ public class DataInitializer implements CommandLineRunner {
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
 
+        // Two laboratórios of the same Unidade, so the "choose the laboratório" flow is visible in DEV
+        // (João has an active participação in this project's atividade).
         Projeto projetoEspectroscopia = garantirProjetoEtapa5(
-                laboratorioEspectroscopia,
+                new LinkedHashSet<>(List.of(laboratorioEspectroscopia, laboratorioOrganica)),
                 "96.96.96.004.01.00",
                 "Espectroscopia Aplicada a Materiais",
                 "Projeto DEV para demonstrar Estagiário atuando em mais de um laboratório dentro da mesma Unidade.",
