@@ -246,6 +246,7 @@ class PedidoSolucaoServiceTest {
 
     @Test
     void aprovaSolucaoComBaixaUnicaSemExigirEmbalagem() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         stubPedido();
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
             .thenReturn(Optional.of(usuario));
@@ -265,6 +266,7 @@ class PedidoSolucaoServiceTest {
 
     @Test
     void proibeAlterarQuantidadeDaReceitaNaAprovacao() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         stubPedido();
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
             .thenReturn(Optional.of(usuario));
@@ -278,6 +280,7 @@ class PedidoSolucaoServiceTest {
 
     @Test
     void cancelarSolucaoNaoPreparadaReverteEstoque() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         pedido.setStatus(StatusPedido.EM_PREPARACAO);
         stubPedido();
         stubSalvar();
@@ -290,6 +293,7 @@ class PedidoSolucaoServiceTest {
 
     @Test
     void cancelarSolucaoPreparadaMantemBaixa() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         pedido.setStatus(StatusPedido.EM_PREPARACAO);
         stubPedido();
         stubSalvar();
@@ -302,6 +306,7 @@ class PedidoSolucaoServiceTest {
 
     @Test
     void exigeConfirmacaoParaCancelarSolucaoEmPreparo() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         pedido.setStatus(StatusPedido.EM_PREPARACAO);
         stubPedido();
         assertThrows(BusinessRuleException.class, () -> service.cancelarSolucao(PEDIDO, null, "Cancelamento"));
@@ -310,6 +315,7 @@ class PedidoSolucaoServiceTest {
 
     @Test
     void entregaNaoEfetuaSegundaBaixa() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         pedido.setStatus(StatusPedido.EM_PREPARACAO);
         item.setQuantidadeAprovada(new BigDecimal("0.010"));
         stubPedido();
@@ -322,6 +328,7 @@ class PedidoSolucaoServiceTest {
 
     @Test
     void bloqueiaCancelamentoAntigoSemConfirmacaoDePreparo() {
+        SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         stubPedido();
         assertThrows(BusinessRuleException.class, () -> service.cancelar(PEDIDO, "Antigo endpoint"));
         verifyNoInteractions(movimentacaoEstoqueService);

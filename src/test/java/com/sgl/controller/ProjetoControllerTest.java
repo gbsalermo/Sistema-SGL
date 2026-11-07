@@ -3,6 +3,7 @@ package com.sgl.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -211,6 +212,22 @@ class ProjetoControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveRetornar400QuandoListaDeLaboratoriosTemItemNulo() throws Exception {
+        // A null id used to reach the service and surface as 404 "laboratório não encontrado";
+        // it is a malformed request, so it must be rejected by validation before any lookup.
+        ProjetoRequestDTO dto = montarRequestDTO();
+        dto.setLaboratorioIds(java.util.Arrays.asList(LABORATORIO_PUBLIC_ID, null));
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].message").value("Laboratório inválido na lista"));
+
+        verify(projetoService, never()).criar(any(ProjetoRequestDTO.class));
     }
 
     @Test

@@ -43,6 +43,7 @@ import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.security.SessaoDeTeste;
 import com.sgl.tenant.TenantContext;
 
 @ExtendWith(MockitoExtension.class)
@@ -90,6 +91,7 @@ class ResiduoAdministracaoServiceTest {
     @BeforeEach
     void preparar() {
         TenantContext.definir(UNIDADE_ID);
+        SessaoDeTeste.entrar(ADMIN_ID, Perfil.ADMINISTRADOR);
 
         unidade = new Unidade();
         unidade.setId(1L);
@@ -113,6 +115,7 @@ class ResiduoAdministracaoServiceTest {
     @AfterEach
     void limparTenant() {
         TenantContext.limpar();
+        SessaoDeTeste.sair();
     }
 
     @Test
@@ -262,6 +265,7 @@ class ResiduoAdministracaoServiceTest {
 
     @Test
     void deveRejeitarGestorSemPerfilAdministrador() {
+        SessaoDeTeste.entrar(GESTOR_ID, Perfil.GESTOR);
         Residuo residuo = residuo(StatusResiduo.EM_ANALISE);
 
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(

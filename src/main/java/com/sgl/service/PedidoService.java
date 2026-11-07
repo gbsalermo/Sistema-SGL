@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -300,9 +301,8 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO aprovar(UUID id, AprovarPedidoRequestDTO dto) {
-		UUID aprovadorId = dto.getUsuarioAprovadorId();
-		if (aprovadorId == null)
-			throw new BusinessRuleException("O usuário aprovador é obrigatório.");
+		exigirGestao();
+		UUID aprovadorId = exigirAprovadorDaSessao(dto.getUsuarioAprovadorId());
 
 		Usuario usuarioAprovador = buscarUsuarioNoTenant(aprovadorId);
 		usuarioAprovador.validateActive();
@@ -386,6 +386,7 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO rejeitar(UUID id, String observacao) {
+		exigirGestao();
 		Pedido pedido = buscarPedidoComBloqueio(id);
 		if (pedido.getStatus() != StatusPedido.PENDENTE) {
 			throw new BusinessRuleException(
@@ -398,6 +399,7 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO entregar(UUID id) {
+		exigirGestao();
 		Pedido pedido = buscarPedidoComBloqueio(id);
 		boolean solucaoEmPreparo = pedido.getTipo() == TipoPedido.SOLUCAO
 				&& pedido.getStatus() == StatusPedido.EM_PREPARACAO;
@@ -422,6 +424,7 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO cancelar(UUID id, String observacao) {
+		exigirGestao();
 		Pedido pedido = buscarPedidoComBloqueio(id);
 		if (pedido.getTipo() == TipoPedido.SOLUCAO)
 			throw new BusinessRuleException("Use o cancelamento específico de Soluções com confirmação de preparo.");
@@ -442,6 +445,7 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO cancelarSolucao(UUID id, Boolean preparada, String justificativa) {
+		exigirGestao();
 		Pedido pedido = buscarPedidoComBloqueio(id);
 		exigirTipoSolucao(pedido);
 		if (justificativa == null || justificativa.isBlank())
@@ -469,14 +473,36 @@ public class PedidoService {
 
 	@Transactional
 	public PedidoResponseDTO aprovarSolucao(UUID id, AprovarPedidoRequestDTO dto) {
+		exigirGestao();
+		exigirAprovadorDaSessao(dto.getUsuarioAprovadorId());
 		exigirTipoSolucao(buscarPedidoNoTenant(id));
 		return aprovar(id, dto);
 	}
 
 	@Transactional
 	public PedidoResponseDTO entregarSolucao(UUID id) {
+		exigirGestao();
 		exigirTipoSolucao(buscarPedidoNoTenant(id));
 		return entregar(id);
+	}
+
+	/**
+	 * Approving, rejecting, delivering and cancelling move stock or close the request, so only
+	 * management may do them. Checked first, before any lookup, because the web merely hides these
+	 * buttons and any active user can call the endpoints directly.
+	 */
+	private static void exigirGestao() {
+		if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
+			throw new AccessDeniedException("Apenas a Gestão pode aprovar, rejeitar, entregar ou cancelar pedidos.");
+		}
+	}
+
+	/** The approver is whoever is logged in; a client-supplied id for someone else is refused. */
+	private static UUID exigirAprovadorDaSessao(UUID aprovadorId) {
+		if (aprovadorId == null)
+			throw new BusinessRuleException("O usuário aprovador é obrigatório.");
+		CurrentUser.exigirProprioUsuario(aprovadorId);
+		return aprovadorId;
 	}
 
 	private void exigirTipoSolucao(Pedido pedido) {
