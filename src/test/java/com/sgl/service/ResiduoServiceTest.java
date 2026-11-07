@@ -28,6 +28,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.sgl.dto.request.AdministrarResiduoRequestDTO;
 import com.sgl.dto.request.AnalisarResiduoRequestDTO;
@@ -68,13 +69,14 @@ import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.ClasseResiduoRepository;
 import com.sgl.repository.HistoricoResiduoRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 import com.sgl.repository.ProdutoRepository;
 import com.sgl.repository.ProjetoRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.repository.VinculoEstagioAtividadeRepository;
+import com.sgl.security.SessaoDeTeste;
 import com.sgl.tenant.TenantContext;
-import com.sgl.repository.LocalArmazenamentoResiduoRepository;
 
 /**
  * Testes unitários de {@link ResiduoService}.
@@ -159,6 +161,9 @@ class ResiduoServiceTest {
 
     @BeforeEach
     void setUp() {
+        // The gerador is always the session user; tests that impersonate someone else re-enter.
+        SessaoDeTeste.entrar(GERADOR_PUBLIC_ID, Perfil.PESQUISADOR);
+
         unidade = new Unidade();
         unidade.setId(1L);
         unidade.setPublicId(UNIDADE_PUBLIC_ID);
@@ -252,11 +257,23 @@ class ResiduoServiceTest {
     @AfterEach
     void tearDown() {
         TenantContext.limpar();
+        SessaoDeTeste.sair();
     }
 
     // ---------------------------------------------------------------
     // criar()
     // ---------------------------------------------------------------
+
+    @Test
+    void criar_geradorDiferenteDoUsuarioDaSessao_recusaAntesDeTocarNoRepositorio() {
+        // A solicitante may only inform a resíduo as themself, never on behalf of a colleague.
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.ESTAGIARIO);
+
+        assertThrows(AccessDeniedException.class, () -> residuoService.criar(dtoValidoCriar()));
+
+        verify(usuarioRepository, never()).findByPublicIdAndUnidadePublicId(any(), any());
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
 
     @Test
     void deveExigirParticipacaoParaEstagiarioAoInformarResiduo() {
@@ -745,6 +762,7 @@ class ResiduoServiceTest {
     void deveReceberResiduoComSucesso() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.INFORMADO, null);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -768,6 +786,7 @@ class ResiduoServiceTest {
         gestor.setPerfil(Perfil.ADMINISTRADOR_GERAL);
         Residuo residuo = construirResiduoExistente(StatusResiduo.INFORMADO, null);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -787,6 +806,7 @@ class ResiduoServiceTest {
         gestor.setPerfil(Perfil.ADMINISTRADOR_GERAL);
         Residuo residuo = construirResiduoExistente(StatusResiduo.INFORMADO, null);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -807,6 +827,7 @@ class ResiduoServiceTest {
     void deveRejeitarRecebimentoQuandoStatusInvalido() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.EM_ANALISE, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -827,6 +848,7 @@ class ResiduoServiceTest {
     void deveRejeitarRecebimentoQuandoUsuarioGestorNaoTemPerfilAdequado() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.INFORMADO, null);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PERFIL_INVALIDO_PUBLIC_ID, Perfil.TECNICO);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PERFIL_INVALIDO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -849,6 +871,7 @@ class ResiduoServiceTest {
     void deveAnalisarELiberarResiduoComSucesso() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.EM_ANALISE, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -871,6 +894,7 @@ class ResiduoServiceTest {
     void deveRejeitarAnaliseQuandoStatusInvalido() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.INFORMADO, null);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -891,6 +915,7 @@ class ResiduoServiceTest {
         // inicialmente pode fazer a análise/liberação.
         Residuo residuo = construirResiduoExistente(StatusResiduo.EM_ANALISE, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_OUTRO_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_OUTRO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -910,6 +935,7 @@ class ResiduoServiceTest {
     void deveRejeitarAnaliseQuandoResiduoNaoTemGestorRecebedorInicial() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.EM_ANALISE, null);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -930,6 +956,7 @@ class ResiduoServiceTest {
     void deveConfirmarArmazenamentoComSucesso() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -951,6 +978,7 @@ class ResiduoServiceTest {
     void deveRejeitarArmazenamentoQuandoStatusInvalido() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.EM_ANALISE, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -975,6 +1003,7 @@ class ResiduoServiceTest {
     void deveDespacharResiduoComSucesso() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.ARMAZENADO_TEMPORARIAMENTE, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -997,6 +1026,7 @@ class ResiduoServiceTest {
     void deveRejeitarDespachoQuandoStatusInvalido() {
         Residuo residuo = construirResiduoExistente(StatusResiduo.LIBERADO_PARA_ARMAZENAMENTO, gestor);
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        SessaoDeTeste.entrar(GESTOR_PUBLIC_ID, Perfil.GESTOR);
         when(residuoRepository.findByPublicIdAndLaboratorioUnidadePublicId(RESIDUO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(residuo));
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(GESTOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -1012,6 +1042,65 @@ class ResiduoServiceTest {
         assertEquals(
                 "O resíduo só pode ser despachado quando estiver em ARMAZENADO_TEMPORARIAMENTE. Status atual: LIBERADO_PARA_ARMAZENAMENTO",
                 ex.getMessage());
+    }
+
+    // ---------------------------------------------------------------
+    // ator das ações de gestão = usuário da sessão
+    // ---------------------------------------------------------------
+
+    @Test
+    void receber_gestorInformandoOutroGestor_recusa() {
+        SessaoDeTeste.entrar(GESTOR_OUTRO_PUBLIC_ID, Perfil.GESTOR);
+        ReceberResiduoRequestDTO dto = new ReceberResiduoRequestDTO();
+        dto.setUsuarioGestorId(GESTOR_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class, () -> residuoService.receber(RESIDUO_PUBLIC_ID, dto));
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void analisarELiberar_gestorInformandoOutroGestor_recusa() {
+        SessaoDeTeste.entrar(GESTOR_OUTRO_PUBLIC_ID, Perfil.GESTOR);
+
+        assertThrows(AccessDeniedException.class,
+                () -> residuoService.analisarELiberar(RESIDUO_PUBLIC_ID, dtoValidoAnalisar()));
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void confirmarArmazenamento_gestorInformandoOutroGestor_recusa() {
+        SessaoDeTeste.entrar(GESTOR_OUTRO_PUBLIC_ID, Perfil.GESTOR);
+        ArmazenarResiduoRequestDTO dto = new ArmazenarResiduoRequestDTO();
+        dto.setUsuarioGestorId(GESTOR_PUBLIC_ID);
+
+        assertThrows(AccessDeniedException.class,
+                () -> residuoService.confirmarArmazenamento(RESIDUO_PUBLIC_ID, dto));
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void despachar_gestorInformandoOutroGestor_recusa() {
+        SessaoDeTeste.entrar(GESTOR_OUTRO_PUBLIC_ID, Perfil.GESTOR);
+        DespacharResiduoRequestDTO dto = new DespacharResiduoRequestDTO();
+        dto.setUsuarioGestorId(GESTOR_PUBLIC_ID);
+        dto.setDestinoFinalConfirmado("Empresa Licenciada XYZ");
+
+        assertThrows(AccessDeniedException.class, () -> residuoService.despachar(RESIDUO_PUBLIC_ID, dto));
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
+    void administrarCiclo_gestorInformandoIdDeOutroUsuario_recusa() {
+        // Naming an administrator's id must not lend their profile to a gestor.
+        SessaoDeTeste.entrar(GESTOR_OUTRO_PUBLIC_ID, Perfil.GESTOR);
+        AdministrarResiduoRequestDTO dto = new AdministrarResiduoRequestDTO();
+        dto.setUsuarioAdministradorId(GESTOR_PUBLIC_ID);
+        dto.setAcao(AcaoAdministrativaResiduo.CANCELAR);
+        dto.setJustificativa("Tentativa de agir por outro.");
+
+        assertThrows(AccessDeniedException.class,
+                () -> residuoService.administrarCiclo(RESIDUO_PUBLIC_ID, dto));
+        verify(residuoRepository, never()).save(any(Residuo.class));
     }
 
     // ---------------------------------------------------------------

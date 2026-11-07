@@ -35,6 +35,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.Perfil;
+import com.sgl.security.CurrentUser;
 import com.sgl.security.PerfilPolicy;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.repository.ClasseResiduoRepository;
@@ -67,6 +68,8 @@ public class ResiduoService {
 
 	@Transactional
 	public ResiduoResponseDTO criar(CriarResiduoRequestDTO dto) {
+		// Informing a resíduo is open to every active profile, so the gerador must be the session user.
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioGeradorId());
 		Usuario gerador = buscarUsuario(dto.getUsuarioGeradorId());
 		gerador.validateActive();
 
@@ -145,6 +148,8 @@ public class ResiduoService {
 
 	@Transactional
 	public ResiduoResponseDTO receber(UUID id, ReceberResiduoRequestDTO dto) {
+		// The acting gestor is the session user, never one named in the body.
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioGestorId());
 		Residuo residuo = buscarEntidade(id);
 		Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
 
@@ -157,6 +162,8 @@ public class ResiduoService {
 
 	@Transactional
 	public ResiduoResponseDTO analisarELiberar(UUID id, AnalisarResiduoRequestDTO dto) {
+		// The acting gestor is the session user, never one named in the body.
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioGestorId());
 		Residuo residuo = buscarEntidade(id);
 		Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
 
@@ -189,6 +196,8 @@ public class ResiduoService {
 
 	@Transactional
 	public ResiduoResponseDTO confirmarArmazenamento(UUID id, ArmazenarResiduoRequestDTO dto) {
+		// The acting gestor is the session user, never one named in the body.
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioGestorId());
 
 		Residuo residuo = buscarEntidade(id);
 
@@ -228,6 +237,8 @@ public class ResiduoService {
 
 	@Transactional
 	public ResiduoResponseDTO despachar(UUID id, DespacharResiduoRequestDTO dto) {
+		// The acting gestor is the session user, never one named in the body.
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioGestorId());
 		Residuo residuo = buscarEntidade(id);
 		Usuario gestor = buscarUsuarioGestao(dto.getUsuarioGestorId());
 
@@ -250,6 +261,8 @@ public class ResiduoService {
 			throw new BusinessRuleException("A justificativa da ação administrativa é obrigatória.");
 		}
 
+		// Naming an administrator's id must not lend their profile to the caller.
+		CurrentUser.exigirProprioUsuario(dto.getUsuarioAdministradorId());
 		Residuo residuo = buscarEntidade(id);
 		Usuario administrador = buscarUsuarioAdministrador(dto.getUsuarioAdministradorId());
 		String justificativa = dto.getJustificativa().trim();
