@@ -55,14 +55,14 @@ public class RelatorioPessoasLaboratorioService {
                 .findByPublicIdAndUnidadePublicId(laboratorioId, TenantContext.unidadeAtual().orElseThrow())
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
 
-        List<Usuario> vinculados = new ArrayList<>(usuarioRepository.findByLaboratorioId(laboratorio.getId()));
+        List<Usuario> vinculados = new ArrayList<>(usuarioRepository.findByLaboratoriosId(laboratorio.getId()));
         Usuario responsavel = laboratorio.getResponsavel();
 
         if (responsavel != null && vinculados.stream().noneMatch(usuario -> usuario.getId().equals(responsavel.getId()))) {
             vinculados.add(responsavel);
         }
 
-        Map<Long, Estagiario> estagiariosPorUsuario = estagiarioRepository.findByLaboratorioId(laboratorio.getId())
+        Map<Long, Estagiario> estagiariosPorUsuario = estagiarioRepository.findByLaboratoriosId(laboratorio.getId())
                 .stream()
                 .collect(Collectors.toMap(Estagiario::getId, Function.identity(), (a, b) -> a));
 

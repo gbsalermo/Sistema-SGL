@@ -64,7 +64,7 @@ public class PessoaCorporativaService {
     private final CorporateApiClient corporateApiClient;
     private final UsuarioRepository usuarioRepository;
     private final UnidadeRepository unidadeRepository;
-    private final LaboratorioRepository laboratorioRepository;
+    private final LaboratoriosDaPessoa laboratoriosDaPessoa;
     private final Clock clock;
 
     // The whole Unidade listing is expensive and the API cannot filter by name, so it is cached per
@@ -72,11 +72,11 @@ public class PessoaCorporativaService {
     private final Map<String, CachedListing> cache = new ConcurrentHashMap<>();
 
     public PessoaCorporativaService(CorporateApiClient corporateApiClient, UsuarioRepository usuarioRepository,
-            UnidadeRepository unidadeRepository, LaboratorioRepository laboratorioRepository, Clock clock) {
+            UnidadeRepository unidadeRepository, LaboratoriosDaPessoa laboratoriosDaPessoa, Clock clock) {
         this.corporateApiClient = corporateApiClient;
         this.usuarioRepository = usuarioRepository;
         this.unidadeRepository = unidadeRepository;
-        this.laboratorioRepository = laboratorioRepository;
+        this.laboratoriosDaPessoa = laboratoriosDaPessoa;
         this.clock = clock;
     }
 
@@ -125,10 +125,8 @@ public class PessoaCorporativaService {
         }
         Unidade unidade = unidadeEmOperacao();
         int codigo = codigoCorporativo(unidade);
-        Laboratorio laboratorio = laboratorioRepository
-                .findByPublicIdAndUnidadePublicId(request.getLaboratorioBaseId(), unidade.getPublicId())
-                .orElseThrow(() -> new BusinessRuleException("O laboratório-base deve pertencer à Unidade em operação."));
-        laboratorio.validateActive();
+        Set<Laboratorio> laboratorios = laboratoriosDaPessoa.resolver(
+                request.getLaboratorioIds(), unidade, request.getPerfil(), Set.of());
 
         // Fetched again by the opaque reference: the browser never held (or sends) the CPF.
         Person person = fetch(request.getTipo(), request.getReferencia(), codigo, unidade);
@@ -144,9 +142,8 @@ public class PessoaCorporativaService {
         usuario.setCargo(person.cargo());
         usuario.setSublotacao(person.sublotacao());
         usuario.setUnidade(unidade);
-        // Set directly, bypassing definirLaboratorioBase's ESTAGIARIO guard on purpose: the import sets the
-        // base lab for every profile (spec 2.1); the estagio flow overrides it for interns later.
-        usuario.setLaboratorio(laboratorio);
+        // Applied for every profile (spec 2.1); the estagio flow overrides it for interns later.
+        usuario.substituirLaboratorios(laboratorios);
         usuario.setPerfil(request.getPerfil());
         usuario.setSituacao(SituacaoUsuario.ATIVO);
         usuario.setOrigem(OrigemUsuario.CORPORATIVO);
@@ -161,11 +158,11 @@ public class PessoaCorporativaService {
             // Lost a race against another import or a first login of the same person.
             throw ImportacaoRejectedException.jaCadastrado();
         }
-        AUDIT.info("acao=USUARIO_IMPORTADO ator={} alvo={} perfil={} unidade={} cpf={}",
-                actor.publicId(), saved.getPublicId(), saved.getPerfil(), unidade.getPublicId(),
+        AUDIT.info("acao=USUARIO_IMPORTADO ator={} alvo={} perfil={} unidade={} laboratorios={} cpf={}",
+                actor.publicId(), saved.getPublicId(), saved.getPerfil(), unidade.getPublicId(), laboratorios.size(),
                 CpfMasker.mask(person.cpf()));
 
-        return usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(saved.getPublicId())
+        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(saved.getPublicId())
                 .map(UsuarioSessaoResponseDTO::new)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", saved.getPublicId()));
     }

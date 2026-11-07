@@ -1,8 +1,8 @@
 package com.sgl.dto.response;
 
+import java.util.List;
 import java.util.UUID;
 
-import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.Perfil;
@@ -36,14 +36,12 @@ public class UsuarioSessaoResponseDTO {
     private String unidadeNome;
     @Schema(description = "Sigla da Unidade do usuário.")
     private String unidadeSigla;
-    @Schema(description = "UUID do laboratório-base, quando houver.")
-    private UUID laboratorioId;
-    @Schema(description = "Nome do laboratório-base, quando houver.")
-    private String laboratorioNome;
+    @Schema(description = "Laboratórios em que a pessoa atua, ordenados por nome.")
+    private List<LaboratorioResumoDTO> laboratorios;
     @Schema(description = "Indica se o usuário está ativo.")
     private Boolean ativo;
 
-    /** Expects unidade and laboratorio already loaded (they are lazy). */
+    /** Expects unidade and laboratorios already loaded (they are lazy). */
     public UsuarioSessaoResponseDTO(Usuario usuario) {
         this.id = usuario.getPublicId();
         this.nome = usuario.getNome();
@@ -57,10 +55,6 @@ public class UsuarioSessaoResponseDTO {
             this.unidadeNome = unidade.getNome();
             this.unidadeSigla = unidade.getSigla();
         }
-        Laboratorio laboratorio = usuario.getLaboratorio();
-        if (laboratorio != null) {
-            this.laboratorioId = laboratorio.getPublicId();
-            this.laboratorioNome = laboratorio.getNome();
-        }
+        this.laboratorios = LaboratorioResumoDTO.de(usuario);
     }
 }

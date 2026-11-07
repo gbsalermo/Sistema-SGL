@@ -90,7 +90,7 @@ class HistoricoLaboratorioRepositoryTest {
         usuario.setSenha("senha-123");
         usuario.setPerfil(Perfil.TECNICO);
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(laboratorio);
+        usuario.substituirLaboratorios(List.of(laboratorio));
         usuario.setAtivo(true);
         return entityManager.persistAndFlush(usuario);
     }

@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.UsuarioPerfilRequestDTO;
 import com.sgl.dto.request.UsuarioRequestDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.enums.Perfil;
@@ -87,8 +88,7 @@ class UsuarioControllerTest {
                 UNIDADE_PUBLIC_ID,
                 "Instituto de Química",
                 "IQ",
-                LABORATORIO_PUBLIC_ID,
-                "Laboratório de Química Orgânica",
+                List.of(new LaboratorioResumoDTO(LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true)),
                 true,
                 SituacaoUsuario.ATIVO);
     }
@@ -130,14 +130,14 @@ class UsuarioControllerTest {
                         .param("laboratorioId", LABORATORIO_PUBLIC_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].laboratorioId").value(LABORATORIO_PUBLIC_ID.toString()));
+                .andExpect(jsonPath("$[0].laboratorios[0].id").value(LABORATORIO_PUBLIC_ID.toString()));
     }
 
     @Test
     void deveCriarUsuarioERetornar201() throws Exception {
         UsuarioRequestDTO dto = new UsuarioRequestDTO(
                 "Maria Oliveira", "maria.oliveira@ufrb.edu.br", "SenhaForte123!",
-                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, LABORATORIO_PUBLIC_ID, true);
+                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
         when(usuarioService.criar(any(UsuarioRequestDTO.class))).thenReturn(montarResponseDTO());
 
         // UsuarioController.criar usa ResponseEntity.status(HttpStatus.CREATED) explicitamente
@@ -163,12 +163,12 @@ class UsuarioControllerTest {
     void deveAtualizarUsuarioERetornar200() throws Exception {
         UsuarioRequestDTO dto = new UsuarioRequestDTO(
                 "Maria Oliveira Atualizada", "maria.oliveira@ufrb.edu.br", null,
-                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, LABORATORIO_PUBLIC_ID, true);
+                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
         when(usuarioService.atualizar(eq(USUARIO_PUBLIC_ID), any(UsuarioRequestDTO.class)))
                 .thenReturn(new UsuarioResponseDTO(
                         USUARIO_PUBLIC_ID, "Maria Oliveira Atualizada", "maria.oliveira@ufrb.edu.br",
                         Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
-                        LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true, SituacaoUsuario.ATIVO));
+                        List.of(new LaboratorioResumoDTO(LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true)), true, SituacaoUsuario.ATIVO));
 
         mockMvc.perform(put(BASE_URL + "/{id}", USUARIO_PUBLIC_ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -184,7 +184,7 @@ class UsuarioControllerTest {
                 .thenReturn(new UsuarioResponseDTO(
                         USUARIO_PUBLIC_ID, "Maria Oliveira", "maria.oliveira@ufrb.edu.br",
                         Perfil.GESTOR, UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
-                        LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true, SituacaoUsuario.ATIVO));
+                        List.of(new LaboratorioResumoDTO(LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true)), true, SituacaoUsuario.ATIVO));
 
         mockMvc.perform(put(BASE_URL + "/{id}/perfil", USUARIO_PUBLIC_ID)
                         .contentType(MediaType.APPLICATION_JSON)

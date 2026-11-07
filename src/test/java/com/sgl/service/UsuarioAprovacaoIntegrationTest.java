@@ -122,12 +122,12 @@ class UsuarioAprovacaoIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.situacao").value("ATIVO"))
                 .andExpect(jsonPath("$.perfil").value("ANALISTA"))
-                .andExpect(jsonPath("$.laboratorioId").value(laboratorio.getPublicId().toString()));
+                .andExpect(jsonPath("$.laboratorios[0].id").value(laboratorio.getPublicId().toString()));
 
-        Usuario salvo = usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(pendente.getPublicId()).orElseThrow();
+        Usuario salvo = usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(pendente.getPublicId()).orElseThrow();
         assertThat(salvo.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         assertThat(salvo.getPerfil()).isEqualTo(Perfil.ANALISTA);
-        assertThat(salvo.getLaboratorio().getPublicId()).isEqualTo(laboratorio.getPublicId());
+        assertThat(salvo.getLaboratorios()).extracting(Laboratorio::getPublicId).containsExactly(laboratorio.getPublicId());
     }
 
     @Test
@@ -385,7 +385,7 @@ class UsuarioAprovacaoIntegrationTest {
     }
 
     @Test
-    void vinculos_tecnicoNaoConcedeVinculoNemTrocaLaboratorioBase_403() throws Exception {
+    void vinculos_tecnicoNaoConcedeVinculoNemTrocaLaboratorios_403() throws Exception {
         Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
 
         mockMvc.perform(post("/api/v1/vinculos-operacionais").header(HttpHeaders.AUTHORIZATION, bearer(tecnico))
@@ -393,13 +393,13 @@ class UsuarioAprovacaoIntegrationTest {
                         .content("{\"usuarioId\":\"%s\",\"laboratorioId\":\"%s\",\"dataInicio\":\"2026-10-01\"}"
                                 .formatted(tecnico.getPublicId(), laboratorio.getPublicId())))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(put("/api/v1/vinculos-operacionais/usuarios/" + tecnico.getPublicId() + "/laboratorio-base")
+        mockMvc.perform(put("/api/v1/vinculos-operacionais/usuarios/" + tecnico.getPublicId() + "/laboratorios")
                         .header(HttpHeaders.AUTHORIZATION, bearer(tecnico))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"laboratorioId\":\"%s\"}".formatted(laboratorio.getPublicId())))
+                        .content("{\"laboratorioIds\":[\"%s\"]}".formatted(laboratorio.getPublicId())))
                 .andExpect(status().isForbidden());
-        assertThat(usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(tecnico.getPublicId()).orElseThrow().getLaboratorio())
-                .isNull();
+        assertThat(usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(tecnico.getPublicId()).orElseThrow().getLaboratorios())
+                .isEmpty();
     }
 
     @Test
@@ -417,12 +417,12 @@ class UsuarioAprovacaoIntegrationTest {
         return post(USUARIOS + "/" + alvo.getPublicId() + "/aprovar")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ator))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"perfil\":\"%s\",\"laboratorioBaseId\":\"%s\"}".formatted(perfil, lab.getPublicId()));
+                .content("{\"perfil\":\"%s\",\"laboratorioIds\":[\"%s\"]}".formatted(perfil, lab.getPublicId()));
     }
 
     private org.springframework.test.web.servlet.RequestBuilder atualizar(Usuario alvo, Usuario ator, String perfil,
             boolean ativo, Laboratorio lab) {
-        String labJson = lab == null ? "" : ",\"laboratorioId\":\"" + lab.getPublicId() + "\"";
+        String labJson = lab == null ? "" : ",\"laboratorioIds\":[\"" + lab.getPublicId() + "\"]";
         return put(USUARIOS + "/" + alvo.getPublicId())
                 .header(HttpHeaders.AUTHORIZATION, bearer(ator))
                 .contentType(MediaType.APPLICATION_JSON)

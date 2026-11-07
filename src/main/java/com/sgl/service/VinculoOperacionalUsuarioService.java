@@ -28,12 +28,14 @@ import com.sgl.tenant.TenantContext;
 /** Contrato de domínio homologado em DEV; autorização de gestor depende do futuro SSO. */
 @Service @RequiredArgsConstructor
 public class VinculoOperacionalUsuarioService {
+    private static final String VINCULO_GENERICO = "Use a lista de laboratórios da pessoa para acesso sem prazo; o vínculo adicional é para acesso temporário ou restrito a projeto, SCI ou atividade.";
     private final VinculoOperacionalUsuarioRepository vinculos;
     private final UsuarioRepository usuarios;
     private final LaboratorioRepository laboratorios;
     private final ProjetoRepository projetos;
     private final SciRepository scis;
     private final AtividadeRepository atividades;
+    private final LaboratoriosDaPessoa laboratoriosDaPessoa;
 
     private UUID unidade() {
         return TenantContext.unidadeAtual().orElseThrow(
@@ -109,12 +111,10 @@ public class VinculoOperacionalUsuarioService {
             || dto.getSciId() != null && (sci == null || !dto.getSciId().equals(sci.getPublicId()))) {
             throw new BusinessRuleException("Contexto hierárquico divergente.");
         }
-        // O laboratório-base já é um vínculo operacional completo com esse laboratório.
-        // Permitir somente associações mais específicas (Projeto, SCI ou Atividade).
-        if (projeto == null && sci == null && atividade == null
-                && usuario.getLaboratorio() != null
-                && usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
-            throw new BusinessRuleException("Este já é o laboratório-base do usuário. Para esse laboratório, associe apenas Projeto, SCI ou Atividade.");
+        // Access without a deadline belongs in the person's laboratory list; this link is only for
+        // temporary access or access restricted to a projeto, SCI or atividade.
+        if (projeto == null && sci == null && atividade == null && dto.getDataFim() == null) {
+            throw new BusinessRuleException(VINCULO_GENERICO);
         }
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(dto.getDataInicio())) {
             throw new BusinessRuleException("Data final anterior ao início.");
@@ -151,6 +151,11 @@ public class VinculoOperacionalUsuarioService {
         if (dto.getDataFim() != null && dto.getDataFim().isBefore(LocalDate.now())) {
             throw new BusinessRuleException("Para encerrar vínculo imediatamente, utilize Encerrar vínculo.");
         }
+        // Clearing the deadline of a laboratory-wide link would recreate the generic link that
+        // belongs in the person's laboratory list (same rule as criar).
+        if (v.getProjeto() == null && v.getSci() == null && v.getAtividade() == null && dto.getDataFim() == null) {
+            throw new BusinessRuleException(VINCULO_GENERICO);
+        }
         v.setDataFim(dto.getDataFim());
         v.setObservacao(dto.getObservacao());
         return new VinculoOperacionalUsuarioResponseDTO(v);
@@ -171,43 +176,25 @@ public class VinculoOperacionalUsuarioService {
     }
 
     @Transactional
-    public void definirLaboratorioBase(UUID usuarioId, UUID laboratorioId) {
+    public void definirLaboratorios(UUID usuarioId, List<UUID> laboratorioIds) {
         exigirGestao();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
         exigirAutoridadeSobre(usuario);
-        // Quem está pendente recebe o laboratório-base na aprovação (aba Pendentes), não aqui:
-        // salvar a base sem aprovar deixaria a pessoa bloqueada e a gestão achando que liberou.
+        // Quem está pendente recebe os laboratórios na aprovação (aba Pendentes), não aqui:
+        // salvar a lista sem aprovar deixaria a pessoa bloqueada e a gestão achando que liberou.
         if (usuario.getSituacao() == SituacaoUsuario.PENDENTE_VINCULACAO) {
             throw UsuarioRejectedException.pendenteExigeAprovacao();
         }
-        if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
-            throw new BusinessRuleException("Laboratório do estagiário é gerenciado pelo fluxo de estágio.");
-        }
-        Laboratorio lab = laboratorioId == null ? null :
-            laboratorios.findByPublicIdAndUnidadePublicId(laboratorioId, tenant)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
-        if (lab != null) {
-            lab.validateActive();
-            // Evita introduzir duplicidade ao promover um laboratório adicional a base.
-            boolean possuiVinculoGenerico = vinculos
-                .findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), tenant)
-                .stream().anyMatch(v -> v.vigente(LocalDate.now())
-                    && v.getLaboratorio().getId().equals(lab.getId())
-                    && v.getProjeto() == null && v.getSci() == null && v.getAtividade() == null);
-            if (possuiVinculoGenerico && (usuario.getLaboratorio() == null
-                    || !usuario.getLaboratorio().getId().equals(lab.getId()))) {
-                throw new BusinessRuleException("Este laboratório já possui vínculo adicional vigente. Encerre o vínculo genérico antes de defini-lo como laboratório-base.");
-            }
-        }
-        usuario.setLaboratorio(lab);
+        usuario.substituirLaboratorios(laboratoriosDaPessoa.resolver(
+            laboratorioIds, usuario.getUnidade(), usuario.getPerfil(), usuario.getLaboratorios()));
     }
 
     @Transactional(readOnly = true)
     public boolean vinculadoLaboratorio(Usuario usuario, Laboratorio laboratorio, LocalDate hoje) {
-        if (usuario.getLaboratorio() != null && usuario.getLaboratorio().getId().equals(laboratorio.getId())) {
-            return true; // laboratório-base, atribuído pela Gestão em ambiente controlado
+        if (usuario.atuaNoLaboratorio(laboratorio)) {
+            return true; // one of the person's laboratories, assigned by Gestão
         }
         return vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuario.getPublicId(), unidade())
             .stream().anyMatch(v -> v.vigente(hoje) && v.getLaboratorio().getId().equals(laboratorio.getId()));
@@ -222,12 +209,12 @@ public class VinculoOperacionalUsuarioService {
     // Granting labs and contexts is what authorizes operations, so only gestão may change it.
     private static void exigirGestao() {
         if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
-            throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratório-base.");
+            throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratórios.");
         }
     }
 
     /**
-     * Vínculos e laboratório-base definem onde a pessoa pode operar, então mexer neles é
+     * Vínculos e laboratórios definem onde a pessoa pode operar, então mexer neles é
      * mexer no acesso dela. Por isso valem as mesmas regras da troca de perfil em
      * UsuarioService: ninguém altera o próprio acesso, e só se altera quem tem um perfil
      * que você poderia conceder (ex.: um GESTOR não mexe nos vínculos de um ADMINISTRADOR
@@ -236,7 +223,7 @@ public class VinculoOperacionalUsuarioService {
     private static void exigirAutoridadeSobre(Usuario alvo) {
         AuthenticatedUser ator = CurrentUser.get();
         if (ator.publicId().equals(alvo.getPublicId())) {
-            throw new AccessDeniedException("Ninguém pode alterar os próprios vínculos ou laboratório-base.");
+            throw new AccessDeniedException("Ninguém pode alterar os próprios vínculos ou laboratórios.");
         }
         if (!PerfilPolicy.podeConceder(ator.perfil(), alvo.getPerfil())) {
             throw new AccessDeniedException("Seu perfil não pode alterar os vínculos de um usuário " + alvo.getPerfil() + ".");

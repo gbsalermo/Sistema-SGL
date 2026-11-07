@@ -118,7 +118,7 @@ class PedidoConcorrenciaIntegrationTest {
         usuario.setSenha("senha-teste");
         usuario.setPerfil(Perfil.GESTOR);
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(laboratorio);
+        usuario.substituirLaboratorios(List.of(laboratorio));
         usuario.setAtivo(true);
         usuario = usuarioRepository.saveAndFlush(usuario);
 

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.sgl.corporate.CorporateGatewayStubs;
@@ -59,6 +61,7 @@ class VerificacaoAtivoCorporativoIntegrationTest {
     @Autowired private UnidadeRepository unidadeRepository;
     @Autowired private LaboratorioRepository laboratorioRepository;
     @Autowired private EstagiarioRepository estagiarioRepository;
+    @Autowired private JdbcTemplate jdbc;
 
     private Unidade unidade;
     private Laboratorio laboratorio;
@@ -201,10 +204,38 @@ class VerificacaoAtivoCorporativoIntegrationTest {
         assertThat(estagiarioRepository.existsById(estagiario.getId())).isFalse();
     }
 
+    // The refusal rolls the whole criar back: neither the new list nor the vínculo may survive it.
+    @Test
+    void inativoNaBaseNaoGravaListaNemVinculo() {
+        Laboratorio anterior = laboratorioRepository.saveAndFlush(Laboratorio.builder()
+                .unidade(unidade).nome("Laboratório anterior").ativo(true).build());
+        jdbc.update("INSERT INTO usuario_laboratorios (usuario_id, laboratorio_id) VALUES (?, ?)",
+                estagiario.getId(), anterior.getId());
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+        TenantContext.definir(unidade.getPublicId());
+        gateway.colaboradorPorCpf(CPF_ESTAGIARIO, "Amanda Estagiária", CNPMF, false);
+
+        try {
+            assertThatThrownBy(() -> estagiarioService.criar(requisicao()))
+                    .isInstanceOf(BusinessRuleException.class);
+
+            List<Long> ids = jdbc.queryForList(
+                    "SELECT laboratorio_id FROM usuario_laboratorios WHERE usuario_id = ?", Long.class,
+                    estagiario.getId());
+            assertThat(ids).containsExactly(anterior.getId());
+            assertThat(estagiarioRepository.existsById(estagiario.getId())).isFalse();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM vinculos_estagio WHERE estagiario_id = ?",
+                    Integer.class, estagiario.getId())).isZero();
+        } finally {
+            jdbc.update("DELETE FROM usuario_laboratorios WHERE usuario_id = ?", estagiario.getId());
+            laboratorioRepository.delete(anterior);
+        }
+    }
+
     private EstagiarioRequestDTO requisicao() {
         EstagiarioRequestDTO dto = new EstagiarioRequestDTO();
         dto.setUsuarioId(estagiario.getPublicId());
-        dto.setLaboratorioId(laboratorio.getPublicId());
+        dto.setLaboratorioIds(List.of(laboratorio.getPublicId()));
         dto.setOrientadorId(orientador.getPublicId());
         dto.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
         dto.setDataFimEstagio(LocalDate.of(2027, 1, 31));

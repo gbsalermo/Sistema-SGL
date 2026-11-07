@@ -131,7 +131,7 @@ class PedidoContextoOperacionalServiceTest {
         estagiario.setPublicId(USUARIO);
         estagiario.setNome("Estagiario A");
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(laboratorioBase); // diferente da atividade
+        estagiario.substituirLaboratorios(List.of(laboratorioBase, laboratorio));
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setAtivo(true);
 
@@ -412,10 +412,53 @@ class PedidoContextoOperacionalServiceTest {
         assertEquals(LAB, resultado.getLaboratorioId());
     }
 
+    @Test
+    void estagiarioPedeNoLaboratorioDaLista() {
+        estagiario.substituirLaboratorios(List.of(laboratorio));
+        prepararSolicitante(estagiario);
+        prepararParticipacao(PARTICIPACAO, participacao);
+        prepararProdutoESalvamento();
+
+        PedidoResponseDTO resultado = service.criar(pedido(PARTICIPACAO));
+
+        assertEquals(LAB, resultado.getLaboratorioId());
+    }
+
+    @Test
+    void estagiarioForaDaListaDa400() {
+        // Works in another laboratory only: the project's is a valid choice but not one of his own.
+        estagiario.substituirLaboratorios(List.of(laboratorioBase));
+        prepararSolicitante(estagiario);
+        prepararParticipacao(PARTICIPACAO, participacao);
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> service.criar(pedido(PARTICIPACAO)));
+
+        assertEquals("O laboratório Laboratorio da atividade não está entre os laboratórios do estagiário.",
+                erro.getMessage());
+        confirmarSemGravacao();
+    }
+
+    @Test
+    void gestaoNaoTemRestricaoDeLista() {
+        Usuario gestor = usuarioDePerfil(Perfil.GESTOR, null);
+        assertTrue(gestor.getLaboratorios().isEmpty());
+        prepararSolicitante(gestor);
+        when(laboratorioRepository.findByPublicId(LAB)).thenReturn(Optional.of(laboratorio));
+        prepararProdutoESalvamento();
+        PedidoRequestDTO dto = pedido(null);
+        dto.setLaboratorioId(LAB);
+
+        PedidoResponseDTO resultado = service.criar(dto);
+
+        assertEquals(LAB, resultado.getLaboratorioId());
+    }
+
     private Laboratorio adicionarSegundoLaboratorioAoProjeto() {
         Laboratorio segundo = Laboratorio.builder().id(21L).publicId(LAB_SEGUNDO)
                 .unidade(unidade).nome("Segundo laboratorio do projeto").ativo(true).build();
         projeto.getLaboratorios().add(segundo);
+        estagiario.substituirLaboratorios(List.of(laboratorioBase, laboratorio, segundo));
         return segundo;
     }
 
@@ -573,7 +616,9 @@ class PedidoContextoOperacionalServiceTest {
         usuario.setPublicId(USUARIO);
         usuario.setNome("Usuario nao estagiario");
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(labBase);
+        if (labBase != null) {
+            usuario.substituirLaboratorios(List.of(labBase));
+        }
         usuario.setPerfil(perfil);
         usuario.setAtivo(true);
         return usuario;

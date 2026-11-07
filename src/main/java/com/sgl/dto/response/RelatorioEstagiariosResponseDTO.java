@@ -28,8 +28,7 @@ public class RelatorioEstagiariosResponseDTO {
         private final UUID id;
         private final String nome;
         private final String email;
-        private final UUID laboratorioId;
-        private final String laboratorioNome;
+        private final List<LaboratorioResumoDTO> laboratorios;
         private final String unidadeNome;
         private final LocalDate dataInicioEstagio;
         private final LocalDate dataFimEstagio;
@@ -41,12 +40,7 @@ public class RelatorioEstagiariosResponseDTO {
             this.id = entity.getPublicId();
             this.nome = entity.getNome();
             this.email = entity.getEmail();
-            this.laboratorioId = entity.getLaboratorio() != null
-                    ? entity.getLaboratorio().getPublicId()
-                    : null;
-            this.laboratorioNome = entity.getLaboratorio() != null
-                    ? entity.getLaboratorio().getNome()
-                    : null;
+            this.laboratorios = LaboratorioResumoDTO.de(entity);
             this.unidadeNome = entity.getUnidade() != null
                     ? entity.getUnidade().getNome()
                     : null;

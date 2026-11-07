@@ -23,7 +23,7 @@ public interface EstagiarioRepository extends JpaRepository<Estagiario, Long> {
             """)
     List<Estagiario> findAll();
 
-    List<Estagiario> findByLaboratorioId(Long laboratorioId);
+    List<Estagiario> findByLaboratoriosId(Long laboratorioId);
     List<Estagiario> findByUnidadePublicId(UUID unidadePublicId);
     List<Estagiario> findByUnidadePublicIdAndAtivoTrue(UUID unidadePublicId);
 

@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sgl.config.SecurityConfig;
 import com.sgl.dto.request.EstagiarioRequestDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.dto.response.EstagiarioSemVinculoResponseDTO;
 import com.sgl.dto.response.OrientadorElegivelResponseDTO;
@@ -92,7 +93,7 @@ class EstagiarioControllerTest {
     private EstagiarioRequestDTO montarRequestDTO() {
         EstagiarioRequestDTO dto = new EstagiarioRequestDTO();
         dto.setUsuarioId(ESTAGIARIO_PUBLIC_ID);
-        dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
         dto.setDataInicioEstagio(LocalDate.of(2026, 8, 1));
         dto.setDataFimEstagio(LocalDate.of(2027, 1, 31));
         dto.setTipoBolsa(TipoBolsa.CONTRATUAL);
@@ -120,7 +121,7 @@ class EstagiarioControllerTest {
         estagiario.setPublicId(ESTAGIARIO_PUBLIC_ID);
         estagiario.setNome("Maria Oliveira");
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(laboratorio);
+        estagiario.substituirLaboratorios(List.of(laboratorio));
         estagiario.setAtivo(true);
 
         VinculoEstagio vinculo = new VinculoEstagio();
@@ -186,7 +187,7 @@ class EstagiarioControllerTest {
                                 LABORATORIO_PUBLIC_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].laboratorioId")
+                .andExpect(jsonPath("$[0].laboratorios[0].id")
                         .value(LABORATORIO_PUBLIC_ID.toString()));
     }
 
@@ -277,14 +278,15 @@ class EstagiarioControllerTest {
     void deveListarEstagiariosSemVinculo() throws Exception {
         when(estagiarioService.listarSemVinculo()).thenReturn(List.of(
                 new EstagiarioSemVinculoResponseDTO(
-                        ESTAGIARIO_PUBLIC_ID, "Amanda", LABORATORIO_PUBLIC_ID, "Lab Solos")));
+                        ESTAGIARIO_PUBLIC_ID, "Amanda", List.of(new LaboratorioResumoDTO(LABORATORIO_PUBLIC_ID, "Lab Solos", true)))));
 
         mockMvc.perform(get(BASE_URL + "/sem-vinculo"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].usuarioId").value(ESTAGIARIO_PUBLIC_ID.toString()))
                 .andExpect(jsonPath("$[0].nome").value("Amanda"))
-                .andExpect(jsonPath("$[0].laboratorioId").value(LABORATORIO_PUBLIC_ID.toString()))
-                .andExpect(jsonPath("$[0].laboratorioNome").value("Lab Solos"));
+                .andExpect(jsonPath("$[0].laboratorios[0].id").value(LABORATORIO_PUBLIC_ID.toString()))
+                .andExpect(jsonPath("$[0].laboratorios[0].nome").value("Lab Solos"))
+                .andExpect(jsonPath("$[0].laboratorios[0].ativo").value(true));
     }
 
     @Test

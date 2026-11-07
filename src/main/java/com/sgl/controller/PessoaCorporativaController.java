@@ -39,7 +39,7 @@ public class PessoaCorporativaController {
     }
 
     @Operation(summary = "Importar pessoa corporativa",
-            description = "Cria o usuário já ATIVO, com perfil e laboratório-base.")
+            description = "Cria o usuário já ATIVO, com perfil e laboratórios.")
     @PostMapping("/importar")
     public ResponseEntity<UsuarioSessaoResponseDTO> importar(@Valid @RequestBody ImportarPessoaRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.importar(request));

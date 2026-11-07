@@ -49,7 +49,7 @@ public class MudancaLotacaoService {
             return;
         }
 
-        usuario.setLaboratorio(null);
+        usuario.limparLaboratorios();
         usuario.setPerfil(perfilProvisorio);
         usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
 

@@ -97,7 +97,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.listarPendentes());
     }
 
-    @Operation(summary = "Aprovar pendente", description = "Ativa um usuário pendente da Unidade em operação, definindo perfil e laboratório-base.")
+    @Operation(summary = "Aprovar pendente", description = "Ativa um usuário pendente da Unidade em operação, definindo perfil e laboratórios.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário aprovado", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "400", description = "Laboratório inválido", content = @Content(schema = @Schema(implementation = ApiError.class))),

@@ -130,7 +130,10 @@ public class DataInitializer implements CommandLineRunner {
 
         Usuario admin = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Admin Sistema", "admin@sgl.com", passwordEncoder.encode("123456"), Perfil.ADMINISTRADOR, u3, lab5, true)));
         Usuario carlos = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Dr. Carlos Silva", "carlos@ib.com", passwordEncoder.encode("654321"), Perfil.GESTOR, u1, lab1, true)));
-        Usuario ana = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Dra. Ana Santos", "ana@ib.com", passwordEncoder.encode("987654"), Perfil.TECNICO, u1, lab2, true)));
+        // Works in two laboratories of the same Unidade, so the multi-laboratory person shows up in DEV.
+        Usuario anaSantos = new Usuario(null, null, "Dra. Ana Santos", "ana@ib.com", passwordEncoder.encode("987654"), Perfil.TECNICO, u1, null, true);
+        anaSantos.substituirLaboratorios(List.of(lab1, lab2));
+        Usuario ana = usuarioRepository.save(DevUsers.withDevLogin(anaSantos));
         Usuario joao = usuarioRepository.save(DevUsers.withDevLogin(new Usuario(null, null, "Joao Pereira", "joao@if.com", passwordEncoder.encode("456789"), Perfil.PESQUISADOR, u2, lab3, true)));
 
         Estagiario maria = new Estagiario();
@@ -139,7 +142,7 @@ public class DataInitializer implements CommandLineRunner {
         maria.setSenha(passwordEncoder.encode("246813"));
         maria.setPerfil(Perfil.ESTAGIARIO);
         maria.setUnidade(u3);
-        maria.setLaboratorio(lab4);
+        maria.substituirLaboratorios(List.of(lab4));
         maria.setAtivo(true);
         maria.setDataInicioEstagio(LocalDate.now().minusMonths(2));
         maria.setDataFimEstagio(LocalDate.now().plusMonths(10));
@@ -897,7 +900,8 @@ public class DataInitializer implements CommandLineRunner {
                 "João Silva",
                 "joao.silva.estagio@iq.sgl.local",
                 unidade,
-                laboratorioOrganica,
+                // Participates in projects of both laboratories, so his list holds the two.
+                List.of(laboratorioOrganica, laboratorioEspectroscopia),
                 orientadoraHelena,
                 hoje.minusYears(1).minusMonths(6),
                 TipoBolsa.BOLSA_CNPQ,
@@ -966,7 +970,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Ana Costa",
                 "ana.costa.estagio@iq.sgl.local",
                 unidade,
-                laboratorioOrganica,
+                List.of(laboratorioOrganica),
                 orientadoraHelena,
                 hoje.minusMonths(9),
                 TipoBolsa.BOLSA_CAPES,
@@ -1008,7 +1012,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Lucas Ferreira",
                 "lucas.ferreira.estagio@iq.sgl.local",
                 unidade,
-                laboratorioEspectroscopia,
+                List.of(laboratorioEspectroscopia),
                 orientadorMarcos,
                 hoje.minusDays(18),
                 TipoBolsa.BOLSA_INSTITUCIONAL,
@@ -1034,7 +1038,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Camila Rocha",
                 "camila.rocha.estagio@iq.sgl.local",
                 unidade,
-                laboratorioOrganica,
+                List.of(laboratorioOrganica),
                 orientadoraHelena,
                 hoje.minusMonths(14),
                 TipoBolsa.BOLSA_INSTITUCIONAL,
@@ -1069,7 +1073,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Pedro Lima",
                 "pedro.lima.estagio@iq.sgl.local",
                 unidade,
-                laboratorioOrganica,
+                List.of(laboratorioOrganica),
                 orientadoraHelena,
                 hoje.minusMonths(18),
                 TipoBolsa.BOLSA_CNPQ,
@@ -1219,7 +1223,7 @@ public class DataInitializer implements CommandLineRunner {
             String nome,
             String email,
             Unidade unidade,
-            Laboratorio laboratorio,
+            List<Laboratorio> laboratorios,
             Usuario orientador,
             LocalDate dataInicio,
             TipoBolsa tipoBolsa,
@@ -1235,7 +1239,7 @@ public class DataInitializer implements CommandLineRunner {
                     estagiario.setSenha(passwordEncoder.encode("123456"));
                     estagiario.setPerfil(Perfil.ESTAGIARIO);
                     estagiario.setUnidade(unidade);
-                    estagiario.setLaboratorio(laboratorio);
+                    estagiario.substituirLaboratorios(laboratorios);
                     estagiario.setAtivo(true);
                     estagiario.setDataInicioEstagio(dataInicio);
                     estagiario.setDataFimEstagio(null);

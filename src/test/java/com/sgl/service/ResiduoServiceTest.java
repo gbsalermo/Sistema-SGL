@@ -194,7 +194,7 @@ class ResiduoServiceTest {
         gerador.setSenha("senha");
         gerador.setPerfil(Perfil.PESQUISADOR);
         gerador.setUnidade(unidade);
-        gerador.setLaboratorio(laboratorio);
+        gerador.substituirLaboratorios(List.of(laboratorio));
         gerador.setAtivo(true);
 
         gestor = new Usuario();
@@ -349,6 +349,21 @@ class ResiduoServiceTest {
     }
 
     @Test
+    void estagiarioForaDaListaDa400() {
+        UUID participacaoId = prepararParticipacaoEmProjetoComDoisLaboratorios(List.of(laboratorio));
+        CriarResiduoRequestDTO dto = dtoValidoCriar();
+        dto.setParticipacaoId(participacaoId);
+        dto.setLaboratorioId(LABORATORIO_OUTRO_PUBLIC_ID);
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> residuoService.criar(dto));
+
+        assertEquals("O laboratório " + laboratorioOutro.getNome()
+                + " não está entre os laboratórios do estagiário.", erro.getMessage());
+        verify(residuoRepository, never()).save(any(Residuo.class));
+    }
+
+    @Test
     void estagiarioEscolheQualquerLaboratorioDoProjeto() {
         UUID participacaoId = prepararParticipacaoEmProjetoComDoisLaboratorios();
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_OUTRO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
@@ -372,6 +387,10 @@ class ResiduoServiceTest {
      * fixture, so the estagiário has to pick one of them when informing the resíduo.
      */
     private UUID prepararParticipacaoEmProjetoComDoisLaboratorios() {
+        return prepararParticipacaoEmProjetoComDoisLaboratorios(List.of(laboratorio, laboratorioOutro));
+    }
+
+    private UUID prepararParticipacaoEmProjetoComDoisLaboratorios(List<Laboratorio> listaDoEstagiario) {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         LocalDate hoje = LocalDate.now();
         projeto.getLaboratorios().add(laboratorioOutro);
@@ -394,6 +413,7 @@ class ResiduoServiceTest {
         estagiario.setNome("Estagiário");
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setUnidade(unidade);
+        estagiario.substituirLaboratorios(listaDoEstagiario);
         estagiario.setAtivo(true);
 
         VinculoEstagio vinculo = new VinculoEstagio();
@@ -552,15 +572,26 @@ class ResiduoServiceTest {
     }
 
     @Test
-    void deveRejeitarCriacaoQuandoGeradorNaoPertenceAoLaboratorio() {
-        gerador.setLaboratorio(laboratorioOutro);
+    void empregadoInformaResiduoForaDaListaEMarca() {
+        gerador.substituirLaboratorios(List.of(laboratorioOutro));
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         stubGeradorELaboratorioAtivos();
+        stubClasseValida();
+        stubSalvarComIdGerado();
 
-        BusinessRuleException ex = assertThrows(BusinessRuleException.class,
-                () -> residuoService.criar(dtoValidoCriar()));
+        ResiduoResponseDTO resposta = residuoService.criar(dtoValidoCriar());
 
-        assertEquals("O usuário gerador não pertence ao laboratório informado.", ex.getMessage());
+        assertTrue(resposta.isLaboratorioForaDoSolicitante());
+    }
+
+    @Test
+    void empregadoNaListaNaoMarca() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        stubGeradorELaboratorioAtivos();
+        stubClasseValida();
+        stubSalvarComIdGerado();
+
+        assertFalse(residuoService.criar(dtoValidoCriar()).isLaboratorioForaDoSolicitante());
     }
 
     @Test

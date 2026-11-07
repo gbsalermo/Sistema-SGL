@@ -97,7 +97,7 @@ class PedidoRepositoryTest {
         u.setSenha("senha-123");
         u.setPerfil(Perfil.TECNICO);
         u.setUnidade(unidade);
-        u.setLaboratorio(laboratorio);
+        u.substituirLaboratorios(List.of(laboratorio));
         u.setAtivo(true);
         return entityManager.persistAndFlush(u);
     }

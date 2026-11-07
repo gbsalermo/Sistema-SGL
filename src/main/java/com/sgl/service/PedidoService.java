@@ -134,6 +134,8 @@ public class PedidoService {
 
         Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
                 .projetoSemVinculoDireto(projetoSemVinculoDireto)
+                .laboratorioForaDoSolicitante(laboratorioForaDoSolicitante(usuario, laboratorio,
+                        dataSolicitacao.toLocalDate()))
 				.participacaoEstagioAtividade(contexto.participacao()).atividadeOrigem(contexto.atividade())
 				.sciOrigem(contexto.sci())
 				.atividadeOrigemNome(contexto.atividade() == null ? null : contexto.atividade().getNome())
@@ -552,19 +554,19 @@ public class PedidoService {
 		}
 	}
 
+	/**
+	 * Employees may order from any active laboratory of their Unidade (decision 6); the
+	 * request is flagged for management when they neither list the laboratory nor hold a
+	 * current vínculo there. Gestão and estagiário (bound by their own list) are never flagged.
+	 */
+	private boolean laboratorioForaDoSolicitante(Usuario usuario, Laboratorio laboratorio, LocalDate data) {
+		return usuario.getPerfil() != Perfil.ESTAGIARIO
+				&& !PerfilPolicy.isGestao(usuario.getPerfil())
+				&& !usuario.atuaNoLaboratorio(laboratorio)
+				&& !vinculoOperacionalService.vinculadoLaboratorio(usuario, laboratorio, data);
+	}
+
 	private void validarConsistenciaPedido(Usuario usuario, Laboratorio laboratorio, Projeto projeto) {
-
-		boolean gestor = PerfilPolicy.isGestao(usuario.getPerfil());
-
-		boolean estagiario = usuario.getPerfil() == Perfil.ESTAGIARIO;
-
-		// O Estagiário tem o Laboratório derivado de sua participação,
-		// não necessariamente o mesmo Laboratório-base do cadastro.
-		if (!gestor && !estagiario
-                && (usuario.getLaboratorio() == null || !usuario.getLaboratorio().getId().equals(laboratorio.getId()))
-                && !vinculoOperacionalService.vinculadoLaboratorio(usuario, laboratorio, LocalDate.now())) {
-			throw new BusinessRuleException("O usuário não pertence ao laboratório informado.");
-		}
 
 		if (usuario.getUnidade() == null || laboratorio.getUnidade() == null) {
 			throw new BusinessRuleException("Usuário e laboratório devem possuir uma unidade vinculada.");
@@ -658,6 +660,12 @@ public class PedidoService {
 			// laboratories (no restriction to the supervisor's); the resolver validates it.
 			Laboratorio laboratorio = projeto.resolverLaboratorioOperacional(dto.getLaboratorioId());
 
+			// Choosing among the project's laboratories is not enough: the estagiário must also work there.
+			if (!usuario.atuaNoLaboratorio(laboratorio)) {
+				throw new BusinessRuleException("O laboratório " + laboratorio.getNome()
+						+ " não está entre os laboratórios do estagiário.");
+			}
+
 			validarConsistenciaPedido(usuario, laboratorio, projeto);
 
 			return new ContextoPedido(laboratorio, projeto, participacao, atividade, sci);
@@ -699,8 +707,10 @@ public class PedidoService {
 		} else if (laboratorio == null) {
 			boolean gestor = PerfilPolicy.isGestao(usuario.getPerfil());
 
-			if (!gestor) {
-				laboratorio = usuario.getLaboratorio();
+			// Only an unambiguous list can stand in for the missing laboratory; with
+			// several, the request must say which one (falls through to the error below).
+			if (!gestor && usuario.getLaboratorios().size() == 1) {
+				laboratorio = usuario.getLaboratorios().iterator().next();
 			}
 		}
 

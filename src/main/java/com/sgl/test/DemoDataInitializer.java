@@ -875,7 +875,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         estagiario.setSenha(passwordEncoder.encode(SENHA_DEMO));
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(laboratorio);
+        estagiario.substituirLaboratorios(List.of(laboratorio));
         estagiario.setAtivo(ativo);
         estagiario.setDataInicioEstagio(inicio);
         estagiario.setDataFimEstagio(fim);
