@@ -196,7 +196,7 @@ class PessoaCorporativaIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.perfil").value("TECNICO"))
                 .andExpect(jsonPath("$.situacao").value("ATIVO"))
-                .andExpect(jsonPath("$.laboratorioId").value(laboratorio.getPublicId().toString()));
+                .andExpect(jsonPath("$.laboratorios[0].id").value(laboratorio.getPublicId().toString()));
 
         Usuario criado = comRelacionamentos(usuarioRepository.findByMatricula("344136").orElseThrow());
         assertThat(criado.getCpf()).isEqualTo(CPF_JOAO);
@@ -207,6 +207,36 @@ class PessoaCorporativaIntegrationTest {
         assertThat(criado.getSublotacao()).isEqualTo("Sublotação 344136");
         assertThat(criado.getUnidade().getPublicId()).isEqualTo(unidade.getPublicId());
         assertThat(criado.getSenha()).isNull();
+    }
+
+    @Test
+    void importaComDoisLaboratorios() throws Exception {
+        Laboratorio segundo = laboratorioRepository.saveAndFlush(Laboratorio.builder()
+                .unidade(unidade).nome("Segundo Laboratório").ativo(true).build());
+        gateway.empregadoPorMatricula("344136", "Joao Silva", CPF_JOAO, "Analista A", CODIGO, true);
+
+        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"tipo":"EMPREGADO","referencia":"344136","perfil":"TECNICO","laboratorioIds":["%s","%s"]}
+                            """.formatted(laboratorio.getPublicId(), segundo.getPublicId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.laboratorios.length()").value(2));
+
+        Usuario criado = comRelacionamentos(usuarioRepository.findByMatricula("344136").orElseThrow());
+        assertThat(criado.getLaboratorios()).extracting(Laboratorio::getPublicId)
+                .containsExactlyInAnyOrder(laboratorio.getPublicId(), segundo.getPublicId());
+    }
+
+    @Test
+    void importar_semLaboratorioParaPerfilOperacional_retorna400() throws Exception {
+        gateway.empregadoPorMatricula("344136", "Joao Silva", CPF_JOAO, "Analista A", CODIGO, true);
+
+        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tipo\":\"EMPREGADO\",\"referencia\":\"344136\",\"perfil\":\"TECNICO\"}"))
+                .andExpect(status().isBadRequest());
+        assertThat(usuarioRepository.findByMatricula("344136")).isEmpty();
     }
 
     @Test
@@ -242,7 +272,7 @@ class PessoaCorporativaIntegrationTest {
     }
 
     @Test
-    void importar_laboratorioDeOutraUnidade_retorna400() throws Exception {
+    void importar_laboratorioDeOutraUnidade_retorna404() throws Exception {
         Unidade outra = unidadeRepository.saveAndFlush(Unidade.builder().nome("Outra")
                 .sigla("OT-" + java.util.UUID.randomUUID().toString().substring(0, 6)).codigoCorporativo(98).build());
         Laboratorio labAlheio = laboratorioRepository.saveAndFlush(
@@ -253,7 +283,7 @@ class PessoaCorporativaIntegrationTest {
             mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(corpo("EMPREGADO", "344136", "TECNICO", labAlheio)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isNotFound());
             assertThat(usuarioRepository.findByMatricula("344136")).isEmpty();
         } finally {
             laboratorioRepository.delete(labAlheio);
@@ -275,7 +305,7 @@ class PessoaCorporativaIntegrationTest {
         Usuario criado = comRelacionamentos(usuarioRepository.findByCpf(CPF_ESTAGIARIA).orElseThrow());
         assertThat(criado.getMatricula()).isNull();
         assertThat(criado.getEmail()).isNull();
-        assertThat(criado.getLaboratorio().getPublicId()).isEqualTo(laboratorio.getPublicId());
+        assertThat(criado.getLaboratorios()).extracting(Laboratorio::getPublicId).containsExactly(laboratorio.getPublicId());
     }
 
     @Test
@@ -348,7 +378,7 @@ class PessoaCorporativaIntegrationTest {
     void cache_expiraAposCincoMinutos() {
         MutableClock clock = new MutableClock();
         PessoaCorporativaService service = new PessoaCorporativaService(corporateApiClient, usuarioRepository,
-                unidadeRepository, laboratorioRepository, clock);
+                unidadeRepository, new LaboratoriosDaPessoa(laboratorioRepository), clock);
         SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
                 AuthenticatedUser.from(gestor), null, List.of()));
         TenantContext.definir(unidade.getPublicId());
@@ -385,12 +415,12 @@ class PessoaCorporativaIntegrationTest {
     }
 
     private Usuario comRelacionamentos(Usuario usuario) {
-        return usuarioRepository.findWithUnidadeAndLaboratorioByPublicId(usuario.getPublicId()).orElseThrow();
+        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(usuario.getPublicId()).orElseThrow();
     }
 
     private String corpo(String tipo, String referencia, String perfil, Laboratorio lab) {
         return """
-            {"tipo":"%s","referencia":"%s","perfil":"%s","laboratorioBaseId":"%s"}
+            {"tipo":"%s","referencia":"%s","perfil":"%s","laboratorioIds":["%s"]}
             """.formatted(tipo, referencia, perfil, lab.getPublicId());
     }
 

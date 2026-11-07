@@ -98,14 +98,18 @@ public class ResiduoService {
 			projetoId = projetoOrigem.getPublicId();
 			// The estagiário may pick any active laboratory of the participation's project;
 			// the resolver rejects one outside the project or inactive.
-			laboratorioId = projetoOrigem.resolverLaboratorioOperacional(dto.getLaboratorioId()).getPublicId();
+			Laboratorio escolhido = projetoOrigem.resolverLaboratorioOperacional(dto.getLaboratorioId());
+			if (!gerador.atuaNoLaboratorio(escolhido)) {
+				throw new BusinessRuleException("O laboratório " + escolhido.getNome()
+						+ " não está entre os laboratórios do estagiário.");
+			}
+			laboratorioId = escolhido.getPublicId();
 			if (dto.getProjetoId() != null && !dto.getProjetoId().equals(projetoId)) {
 				throw new BusinessRuleException("Projeto informado diverge da participação selecionada.");
 			}
 		}
 		Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
 		laboratorio.validateActive();
-		if (participacao == null) validarGeradorNoLaboratorio(gerador, laboratorio);
 		Projeto projeto = buscarProjeto(projetoId, laboratorio);
 		boolean projetoSemVinculoDireto = projeto != null && participacao == null
 				&& !PerfilPolicy.isGestao(gerador.getPerfil())
@@ -113,6 +117,7 @@ public class ResiduoService {
 
 		Residuo residuo = Residuo.builder().laboratorio(laboratorio).gerador(gerador).projeto(projeto)
 				.projetoSemVinculoDireto(projetoSemVinculoDireto)
+				.laboratorioForaDoSolicitante(participacao == null && laboratorioForaDoGerador(gerador, laboratorio))
 				.participacaoEstagioAtividade(participacao)
 				.atividadeOrigemNome(participacao == null ? null : participacao.getAtividade().getNome())
 				.sciOrigemNome(participacao == null ? null : participacao.getAtividade().getSci().getNome())
@@ -478,13 +483,15 @@ public class ResiduoService {
 		return projeto;
 	}
 
-	private void validarGeradorNoLaboratorio(Usuario gerador, Laboratorio laboratorio) {
-		boolean gestor = PerfilPolicy.isGestao(gerador.getPerfil());
-		if (!gestor
-                && (gerador.getLaboratorio() == null || !gerador.getLaboratorio().getId().equals(laboratorio.getId()))
-                && !vinculoOperacionalService.vinculadoLaboratorio(gerador, laboratorio, LocalDate.now())) {
-			throw new BusinessRuleException("O usuário gerador não pertence ao laboratório informado.");
-		}
+	/**
+	 * Employees may report waste from any active laboratory of their Unidade (decision 6); the
+	 * record is flagged for management when they neither list the laboratory nor hold a current
+	 * vínculo there. Gestão is never flagged; estagiários always go through a participation.
+	 */
+	private boolean laboratorioForaDoGerador(Usuario gerador, Laboratorio laboratorio) {
+		return !PerfilPolicy.isGestao(gerador.getPerfil())
+				&& !gerador.atuaNoLaboratorio(laboratorio)
+				&& !vinculoOperacionalService.vinculadoLaboratorio(gerador, laboratorio, LocalDate.now());
 	}
 
 	private List<ClasseResiduo> buscarClassesAtivasDaUnidade(Set<UUID> ids, UUID unidadeId) {

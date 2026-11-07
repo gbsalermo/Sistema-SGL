@@ -73,7 +73,7 @@ class VinculoEstagioAtividadeRepositoryTest {
         estagiario.setSenha("senha");
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(laboratorio);
+        estagiario.substituirLaboratorios(List.of(laboratorio));
         estagiario.setAtivo(true);
         estagiario.setDataInicioEstagio(LocalDate.of(2026, 1, 1));
         estagiario.setTipoBolsa(TipoBolsa.BOLSA_CNPQ);

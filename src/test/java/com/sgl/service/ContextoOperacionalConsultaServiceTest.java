@@ -96,7 +96,7 @@ class ContextoOperacionalConsultaServiceTest {
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setAtivo(true);
         estagiario.setUnidade(unidade);
-        estagiario.setLaboratorio(null);
+        estagiario.limparLaboratorios();
 
         VinculoEstagio vinculo = new VinculoEstagio();
         vinculo.setPublicId(UUID.randomUUID());

@@ -32,7 +32,7 @@ public class UsuarioRejectedException extends RuntimeException {
      */
     public static UsuarioRejectedException pendenteExigeAprovacao() {
         return new UsuarioRejectedException(HttpStatus.CONFLICT, USUARIO_PENDENTE,
-                "Este usuário aguarda aprovação. Use Aprovar, na aba Pendentes, para definir perfil e laboratório-base.");
+                "Este usuário aguarda aprovação. Use Aprovar, na aba Pendentes, para definir perfil e laboratórios.");
     }
 
     public static UsuarioRejectedException ultimoAdministradorGeral() {

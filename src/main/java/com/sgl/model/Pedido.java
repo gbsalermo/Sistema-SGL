@@ -145,6 +145,10 @@ public class Pedido implements Serializable {
     @Column(name = "projeto_sem_vinculo_direto", nullable = false)
     private Boolean projetoSemVinculoDireto = false;
 
+    @Builder.Default
+    @Column(name = "laboratorio_fora_do_solicitante", nullable = false)
+    private Boolean laboratorioForaDoSolicitante = false;
+
 	@PrePersist
 	private void generatePublicId() {
 		if (publicId == null) {

@@ -1,6 +1,7 @@
 package com.sgl.dto.request;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 
 import com.sgl.model.enums.Perfil;
@@ -41,8 +42,8 @@ public class UsuarioRequestDTO implements Serializable {
     @NotNull(message = "Id da unidade é obrigatório")
     private UUID unidadeId;
 
-    @Schema(description = "Identificador público UUID do laboratório vinculado ao usuário, quando aplicável.", example = "550e8400-e29b-41d4-a716-446655440003")
-    private UUID laboratorioId;
+    @Schema(description = "Identificadores públicos UUID dos laboratórios da pessoa. Obrigatório para perfis operacionais; a gestão pode ficar sem laboratório.")
+    private List<@NotNull(message = "Laboratório inválido na lista") UUID> laboratorioIds;
 
     @Schema(description = "Indica se o usuário está ativo.", example = "true")
     private Boolean ativo;

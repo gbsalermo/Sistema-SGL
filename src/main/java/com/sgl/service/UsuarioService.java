@@ -1,7 +1,9 @@
 package com.sgl.service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +46,7 @@ public class UsuarioService {
     private final UnidadeRepository unidadeRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final EstagiarioRepository estagiarioRepository;
+    private final LaboratoriosDaPessoa laboratoriosDaPessoa;
 
     @Transactional
     public UsuarioResponseDTO criar(UsuarioRequestDTO dto) {
@@ -61,7 +64,8 @@ public class UsuarioService {
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
-        Laboratorio laboratorio = buscarLaboratorioCompativel(dto.getLaboratorioId(), unidade);
+        Set<Laboratorio> laboratorios = laboratoriosDaPessoa.resolver(
+                dto.getLaboratorioIds(), unidade, dto.getPerfil(), Set.of());
 
         Usuario usuario = new Usuario();
         usuario.setNome(dto.getNome());
@@ -69,7 +73,7 @@ public class UsuarioService {
         usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         usuario.setPerfil(dto.getPerfil());
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(laboratorio);
+        usuario.substituirLaboratorios(laboratorios);
         usuario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 
         return new UsuarioResponseDTO(usuarioRepository.save(usuario));
@@ -105,7 +109,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
         validarTenantUnidade(laboratorio.getUnidade() != null ? laboratorio.getUnidade().getPublicId() : null);
 
-        return usuarioRepository.findByLaboratorioId(laboratorio.getId()).stream()
+        return usuarioRepository.findByLaboratoriosId(laboratorio.getId()).stream()
                 .map(UsuarioResponseDTO::new)
                 .toList();
     }
@@ -130,13 +134,17 @@ public class UsuarioService {
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
-        Laboratorio laboratorio = buscarLaboratorioCompativel(dto.getLaboratorioId(), unidade);
+        // A pending or inactive person is not operating, so an empty list is only refused for active ones.
+        boolean ficaraAtivo = Boolean.TRUE.equals(dto.getAtivo() != null ? dto.getAtivo() : usuario.getAtivo());
+        boolean exigirLista = ficaraAtivo && usuario.getSituacao() != SituacaoUsuario.PENDENTE_VINCULACAO;
+        Set<Laboratorio> laboratorios = laboratoriosDaPessoa.resolver(
+                dto.getLaboratorioIds(), unidade, dto.getPerfil(), usuario.getLaboratorios(), exigirLista);
 
         usuario.setNome(dto.getNome());
         usuario.setEmail(dto.getEmail());
         usuario.setPerfil(dto.getPerfil());
         usuario.setUnidade(unidade);
-        usuario.setLaboratorio(laboratorio);
+        usuario.substituirLaboratorios(laboratorios);
 
         if (dto.getAtivo() != null) {
             usuario.setAtivo(dto.getAtivo());
@@ -185,14 +193,12 @@ public class UsuarioService {
         Usuario usuario = buscarPendenteDaUnidadeEmOperacao(id);
         exigirPodeConceder(ator, dto.getPerfil());
 
-        Laboratorio laboratorio = laboratorioRepository
-                .findByPublicIdAndUnidadePublicId(dto.getLaboratorioBaseId(), CurrentUser.unidadeEmOperacao())
-                .orElseThrow(() -> new BusinessRuleException("O laboratório-base deve pertencer à Unidade em operação."));
-        laboratorio.validateActive();
+        Set<Laboratorio> laboratorios = laboratoriosDaPessoa.resolver(
+                dto.getLaboratorioIds(), usuario.getUnidade(), dto.getPerfil(), usuario.getLaboratorios());
 
         usuario.setPerfil(dto.getPerfil());
-        // Set directly, as in the import: the base lab applies to every profile (spec 2.1).
-        usuario.setLaboratorio(laboratorio);
+        // The laboratory list applies to every profile (spec 2.1).
+        usuario.substituirLaboratorios(laboratorios);
         usuario.setSituacao(SituacaoUsuario.ATIVO);
         Usuario salvo = usuarioRepository.save(usuario);
         AUDIT.info("acao=USUARIO_APROVADO ator={} alvo={} perfil={}", ator.publicId(), salvo.getPublicId(), dto.getPerfil());
@@ -239,22 +245,26 @@ public class UsuarioService {
     }
 
     /**
-     * The general update carries profile, active flag, Unidade and base lab, so it must not bypass the
+     * The general update carries profile, active flag, Unidade and laboratory list, so it must not bypass the
      * rules of the dedicated routes. Plain data (name, e-mail) still needs authority over the target.
      */
     private void validarEdicao(Usuario usuario, UsuarioRequestDTO dto) {
         AuthenticatedUser ator = CurrentUser.get();
         exigirGestao(ator);
         boolean mudaAtivo = dto.getAtivo() != null && !dto.getAtivo().equals(usuario.getAtivo());
-        UUID laboratorioAtual = usuario.getLaboratorio() != null ? usuario.getLaboratorio().getPublicId() : null;
+        Set<UUID> laboratoriosAtuais = usuario.getLaboratorios().stream()
+                .map(Laboratorio::getPublicId)
+                .collect(Collectors.toSet());
+        Set<UUID> laboratoriosPedidos = dto.getLaboratorioIds() == null
+                ? Set.of() : new java.util.HashSet<>(dto.getLaboratorioIds());
+        boolean mudaLaboratorios = !laboratoriosAtuais.equals(laboratoriosPedidos);
         UUID unidadeAtual = usuario.getUnidade() != null ? usuario.getUnidade().getPublicId() : null;
         boolean mudaAcesso = usuario.getPerfil() != dto.getPerfil() || mudaAtivo
-                || !java.util.Objects.equals(laboratorioAtual, dto.getLaboratorioId())
+                || mudaLaboratorios
                 || !java.util.Objects.equals(unidadeAtual, dto.getUnidadeId());
 
         // Pendente só muda de perfil/laboratório pela aprovação; inativar continua permitido.
-        boolean mudaPerfilOuLaboratorio = usuario.getPerfil() != dto.getPerfil()
-                || !java.util.Objects.equals(laboratorioAtual, dto.getLaboratorioId());
+        boolean mudaPerfilOuLaboratorio = usuario.getPerfil() != dto.getPerfil() || mudaLaboratorios;
         if (mudaPerfilOuLaboratorio) {
             exigirNaoPendente(usuario);
         }
@@ -334,24 +344,5 @@ public class UsuarioService {
                     "Finalize o estágio antes de alterar o perfil do usuário."
             );
         }
-    }
-
-    private Laboratorio buscarLaboratorioCompativel(UUID laboratorioId, Unidade unidade) {
-        if (laboratorioId == null) {
-            return null;
-        }
-
-        Laboratorio laboratorio = laboratorioRepository.findByPublicId(laboratorioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Laboratório", laboratorioId));
-
-        if (laboratorio.getUnidade() == null
-                || !laboratorio.getUnidade().getId().equals(unidade.getId())) {
-            throw new BusinessRuleException(
-                    "O laboratório informado não pertence à unidade do usuário."
-            );
-        }
-
-        validarTenantUnidade(laboratorio.getUnidade().getPublicId());
-        return laboratorio;
     }
 }

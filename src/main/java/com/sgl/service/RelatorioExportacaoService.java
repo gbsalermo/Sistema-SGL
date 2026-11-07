@@ -82,9 +82,13 @@ public class RelatorioExportacaoService {
                 "Inativos", relatorio.getInativos()
         );
         Tabela tabela = new Tabela("Estagiários",
-                List.of("Estagiário", "E-mail", "Laboratório", "Unidade", "Bolsa", "Início", "Fim", "Situação"),
+                List.of("Estagiário", "E-mail", "Laboratórios", "Unidade", "Bolsa", "Início", "Fim", "Situação"),
                 relatorio.getItens().stream().map(item -> List.of(
-                        texto(item.getNome()), texto(item.getEmail()), texto(item.getLaboratorioNome()), texto(item.getUnidadeNome()),
+                        texto(item.getNome()), texto(item.getEmail()),
+                        // Joined with "; " so an intern in several laboratories stays in a single cell.
+                        texto(item.getLaboratorios().stream().map(LaboratorioResumoDTO::nome)
+                                .collect(Collectors.joining("; "))),
+                        texto(item.getUnidadeNome()),
                         rotulo(item.getTipoBolsa()), data(item.getDataInicioEstagio()), data(item.getDataFimEstagio()),
                         Boolean.TRUE.equals(item.getAtivo()) ? "Ativo" : "Inativo"
                 )).toList());

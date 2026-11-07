@@ -58,7 +58,7 @@ class PedidoEstoqueFisicoIntegrationTest {
         gestor.setSenha("senha-teste");
         gestor.setPerfil(Perfil.GESTOR);
         gestor.setUnidade(u);
-        gestor.setLaboratorio(lab);
+        gestor.substituirLaboratorios(List.of(lab));
         gestor.setAtivo(true);
         gestor = usuarios.saveAndFlush(gestor);
         Produto produto = produtos.saveAndFlush(Produto.builder()

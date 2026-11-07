@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,14 +17,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import com.sgl.dto.request.AprovarUsuarioRequestDTO;
 import com.sgl.dto.request.UsuarioRequestDTO;
+import com.sgl.dto.response.UsuarioSessaoResponseDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
@@ -70,7 +73,6 @@ class UsuarioServiceTest {
     @Mock
     private EstagiarioRepository estagiarioRepository;
 
-    @InjectMocks
     private UsuarioService usuarioService;
 
     private Unidade unidade;
@@ -78,6 +80,10 @@ class UsuarioServiceTest {
 
     @BeforeEach
     void setUp() {
+        // The real validator over the mocked repository: the laboratory rules are exercised end to end.
+        usuarioService = new UsuarioService(usuarioRepository, laboratorioRepository, unidadeRepository,
+                passwordEncoder, estagiarioRepository, new LaboratoriosDaPessoa(laboratorioRepository));
+
         unidade = new Unidade();
         unidade.setId(1L);
         unidade.setPublicId(UNIDADE_PUBLIC_ID);
@@ -115,8 +121,10 @@ class UsuarioServiceTest {
         dto.setEmail("maria.oliveira@embrapa.br");
         dto.setSenha("SenhaForte123!");
         dto.setPerfil(Perfil.TECNICO);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        laboratorioDaUnidade(LABORATORIO_PUBLIC_ID, "Lab A", true);
         when(usuarioRepository.existsByEmail("maria.oliveira@embrapa.br")).thenReturn(false);
         when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
         when(passwordEncoder.encode("SenhaForte123!")).thenReturn("hash-bcrypt");
@@ -190,7 +198,7 @@ class UsuarioServiceTest {
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(laboratorioRepository.findByPublicId(LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(laboratorio));
-        when(usuarioRepository.findByLaboratorioId(20L)).thenReturn(List.of(usuario));
+        when(usuarioRepository.findByLaboratoriosId(20L)).thenReturn(List.of(usuario));
 
         List<UsuarioResponseDTO> resultado = usuarioService.listarPorLaboratorio(LABORATORIO_PUBLIC_ID);
 
@@ -228,8 +236,10 @@ class UsuarioServiceTest {
         dto.setNome("Maria Oliveira Silva");
         dto.setEmail("maria.oliveira@embrapa.br");
         dto.setPerfil(Perfil.TECNICO);
+        dto.setLaboratorioIds(List.of(LABORATORIO_PUBLIC_ID));
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        laboratorioDaUnidade(LABORATORIO_PUBLIC_ID, "Lab A", true);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(usuario));
         when(usuarioRepository.existsByEmailAndIdNot("maria.oliveira@embrapa.br", usuario.getId())).thenReturn(false);
@@ -333,5 +343,155 @@ class UsuarioServiceTest {
                 () -> usuarioService.atualizar(USUARIO_PUBLIC_ID, dto));
 
         assertEquals("A operação não pode acessar dados de outra unidade.", ex.getMessage());
+    }
+
+    private Laboratorio laboratorioDaUnidade(UUID publicId, String nome, boolean ativo) {
+        Laboratorio lab = new Laboratorio();
+        lab.setId((long) Math.abs(publicId.hashCode()));
+        lab.setPublicId(publicId);
+        lab.setNome(nome);
+        lab.setAtivo(ativo);
+        lab.setUnidade(unidade);
+        // Lenient: some tests register laboratories only as the starting state of the person.
+        lenient().when(laboratorioRepository.findByPublicIdAndUnidadePublicId(publicId, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(lab));
+        return lab;
+    }
+
+    private UsuarioRequestDTO dtoDeEdicao(Perfil perfil, List<UUID> laboratorioIds) {
+        UsuarioRequestDTO dto = new UsuarioRequestDTO();
+        dto.setUnidadeId(UNIDADE_PUBLIC_ID);
+        dto.setNome("Maria Oliveira");
+        dto.setEmail("maria.oliveira@embrapa.br");
+        dto.setPerfil(perfil);
+        dto.setLaboratorioIds(laboratorioIds);
+        return dto;
+    }
+
+    private void prepararEdicao() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(usuario));
+        when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+    }
+
+    @Test
+    void atualizaTrocandoALista() {
+        UUID idA = UUID.randomUUID();
+        UUID idB = UUID.randomUUID();
+        UUID idC = UUID.randomUUID();
+        Laboratorio a = laboratorioDaUnidade(idA, "A", true);
+        laboratorioDaUnidade(idB, "B", true);
+        laboratorioDaUnidade(idC, "C", true);
+        usuario.substituirLaboratorios(List.of(a));
+        prepararEdicao();
+
+        usuarioService.atualizar(USUARIO_PUBLIC_ID, dtoDeEdicao(Perfil.TECNICO, List.of(idB, idC)));
+
+        assertEquals(List.of("B", "C"), usuario.laboratoriosOrdenados().stream().map(Laboratorio::getNome).toList());
+    }
+
+    @Test
+    void atualizarNaoPerdeLaboratorios() {
+        UUID idA = UUID.randomUUID();
+        UUID idB = UUID.randomUUID();
+        Laboratorio a = laboratorioDaUnidade(idA, "A", true);
+        Laboratorio b = laboratorioDaUnidade(idB, "B", true);
+        usuario.substituirLaboratorios(List.of(a, b));
+        prepararEdicao();
+
+        usuarioService.atualizar(USUARIO_PUBLIC_ID, dtoDeEdicao(Perfil.TECNICO, List.of(idA, idB)));
+
+        assertEquals(2, usuario.getLaboratorios().size());
+        assertTrue(usuario.atuaNoLaboratorio(a));
+        assertTrue(usuario.atuaNoLaboratorio(b));
+    }
+
+    @Test
+    void atualizaGestorSemLaboratorio() {
+        usuario.setPerfil(Perfil.GESTOR);
+        usuario.substituirLaboratorios(List.of(laboratorioDaUnidade(UUID.randomUUID(), "A", true)));
+        prepararEdicao();
+
+        usuarioService.atualizar(USUARIO_PUBLIC_ID, dtoDeEdicao(Perfil.GESTOR, List.of()));
+
+        assertTrue(usuario.getLaboratorios().isEmpty());
+    }
+
+    @Test
+    void pessoaPendenteOuInativaPodeSerSalvaComListaVazia() {
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        prepararEdicao();
+
+        usuarioService.atualizar(USUARIO_PUBLIC_ID, dtoDeEdicao(Perfil.TECNICO, List.of()));
+
+        assertTrue(usuario.getLaboratorios().isEmpty());
+    }
+
+    @Test
+    void pessoaAtivaOperacionalNaoPodeFicarSemLaboratorio() {
+        usuario.substituirLaboratorios(List.of(laboratorioDaUnidade(UUID.randomUUID(), "A", true)));
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(usuario));
+        when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
+
+        BusinessRuleException e = assertThrows(BusinessRuleException.class,
+                () -> usuarioService.atualizar(USUARIO_PUBLIC_ID, dtoDeEdicao(Perfil.TECNICO, List.of())));
+        assertEquals("Informe ao menos um laboratório.", e.getMessage());
+    }
+
+    @Test
+    void aprovaComDoisLaboratorios() {
+        UUID idA = UUID.randomUUID();
+        UUID idB = UUID.randomUUID();
+        laboratorioDaUnidade(idA, "A", true);
+        laboratorioDaUnidade(idB, "B", true);
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicId(USUARIO_PUBLIC_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        AprovarUsuarioRequestDTO dto = new AprovarUsuarioRequestDTO();
+        dto.setPerfil(Perfil.TECNICO);
+        dto.setLaboratorioIds(List.of(idA, idB));
+
+        UsuarioSessaoResponseDTO resposta = usuarioService.aprovar(USUARIO_PUBLIC_ID, dto);
+
+        assertEquals(SituacaoUsuario.ATIVO, usuario.getSituacao());
+        assertEquals(2, usuario.getLaboratorios().size());
+        assertEquals(2, resposta.getLaboratorios().size());
+    }
+
+    @Test
+    void aprovaPerfilDeGestaoSemLaboratorio() {
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicId(USUARIO_PUBLIC_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        AprovarUsuarioRequestDTO dto = new AprovarUsuarioRequestDTO();
+        dto.setPerfil(Perfil.GESTOR);
+        dto.setLaboratorioIds(List.of());
+
+        UsuarioSessaoResponseDTO resposta = usuarioService.aprovar(USUARIO_PUBLIC_ID, dto);
+
+        assertEquals(SituacaoUsuario.ATIVO, usuario.getSituacao());
+        assertTrue(usuario.getLaboratorios().isEmpty());
+        assertTrue(resposta.getLaboratorios().isEmpty());
+    }
+
+    @Test
+    void aprovaPerfilOperacionalSemLaboratorioDa400() {
+        usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        when(usuarioRepository.findByPublicId(USUARIO_PUBLIC_ID)).thenReturn(Optional.of(usuario));
+        AprovarUsuarioRequestDTO dto = new AprovarUsuarioRequestDTO();
+        dto.setPerfil(Perfil.TECNICO);
+        dto.setLaboratorioIds(List.of());
+
+        BusinessRuleException erro = assertThrows(BusinessRuleException.class,
+                () -> usuarioService.aprovar(USUARIO_PUBLIC_ID, dto));
+
+        assertEquals("Informe ao menos um laboratório.", erro.getMessage());
     }
 }

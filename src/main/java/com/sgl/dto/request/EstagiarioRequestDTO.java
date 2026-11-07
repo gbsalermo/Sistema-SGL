@@ -3,6 +3,7 @@ package com.sgl.dto.request;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.TipoBolsa;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,9 +29,9 @@ public class EstagiarioRequestDTO implements Serializable {
 	@NotNull(message = "Id do usuário é obrigatório")
 	private UUID usuarioId;
 
-	@Schema(description = "Identificador público UUID do laboratório do estágio.", example = "550e8400-e29b-41d4-a716-446655440002", requiredMode = Schema.RequiredMode.REQUIRED)
-	@NotNull(message = "Id do laboratório é obrigatório")
-	private UUID laboratorioId;
+	@Schema(description = "Identificadores públicos UUID dos laboratórios em que o estagiário atua.", requiredMode = Schema.RequiredMode.REQUIRED)
+	@NotEmpty(message = "Informe ao menos um laboratório.")
+	private List<@NotNull(message = "Id do laboratório é obrigatório") UUID> laboratorioIds;
 
 	@Schema(description = "Data de início do estágio.", example = "2026-08-01", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "Data de início do estágio é obrigatória")

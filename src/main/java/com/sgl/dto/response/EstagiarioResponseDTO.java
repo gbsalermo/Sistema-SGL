@@ -33,10 +33,8 @@ public class EstagiarioResponseDTO implements Serializable {
 	private UUID unidadeId;
 	@Schema(description = "Nome da unidade institucional do estagiário.", example = "Instituto de Química")
 	private String unidadeNome;
-	@Schema(description = "Identificador público UUID do laboratório.", example = "550e8400-e29b-41d4-a716-446655440003")
-	private UUID laboratorioId;
-	@Schema(description = "Nome do laboratório do estágio.", example = "Laboratório de Química Orgânica")
-	private String laboratorioNome;
+	@Schema(description = "Laboratórios do estagiário, ordenados por nome.")
+	private List<LaboratorioResumoDTO> laboratorios;
 	@Schema(description = "Data de início do estágio.", example = "2026-08-01")
 	private LocalDate dataInicioEstagio;
 	@Schema(description = "Data de encerramento do estágio, quando definida.", example = "2027-01-31")
@@ -61,9 +59,7 @@ public class EstagiarioResponseDTO implements Serializable {
 
 		this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
 
-		this.laboratorioId = entity.getLaboratorio() != null ? entity.getLaboratorio().getPublicId() : null;
-
-		this.laboratorioNome = entity.getLaboratorio() != null ? entity.getLaboratorio().getNome() : null;
+		this.laboratorios = LaboratorioResumoDTO.de(entity);
 
 		this.usuarioAtivo = entity.getAtivo();
 

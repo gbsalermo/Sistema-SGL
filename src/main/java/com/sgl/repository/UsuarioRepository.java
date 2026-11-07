@@ -25,8 +25,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     Optional<Usuario> findWithUnidadeByPublicId(UUID publicId);
 
     // Session DTOs are built outside a transaction (login is deliberately not transactional).
-    @EntityGraph(attributePaths = {"unidade", "laboratorio"})
-    Optional<Usuario> findWithUnidadeAndLaboratorioByPublicId(UUID publicId);
+    @EntityGraph(attributePaths = {"unidade", "laboratorios"})
+    Optional<Usuario> findWithUnidadeAndLaboratoriosByPublicId(UUID publicId);
 
     Optional<Usuario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
 
@@ -34,6 +34,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     Optional<Usuario> findByMatricula(String matricula);
     Optional<Usuario> findByCpf(String cpf);
     Optional<Usuario> findByLogin(String login);
+
+    // Login is not transactional and a change of Unidade clears the list, so it must come loaded.
+    @EntityGraph(attributePaths = "laboratorios")
+    Optional<Usuario> findWithLaboratoriosByMatricula(String matricula);
+    @EntityGraph(attributePaths = "laboratorios")
+    Optional<Usuario> findWithLaboratoriosByCpf(String cpf);
 
     boolean existsByPerfilAndAtivoTrue(Perfil perfil);
     boolean existsByPerfil(Perfil perfil);
@@ -49,7 +55,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     @Query("""
             SELECT u
             FROM Usuario u
-            LEFT JOIN FETCH u.laboratorio
+            LEFT JOIN FETCH u.laboratorios
             WHERE u.unidade.publicId = :unidadePublicId
               AND u.perfil = com.sgl.model.enums.Perfil.ESTAGIARIO
               AND u.situacao = com.sgl.model.enums.SituacaoUsuario.ATIVO
@@ -68,7 +74,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
             """)
     List<Usuario> findAll();
 
-    List<Usuario> findByLaboratorioId(Long laboratorioId);
+    List<Usuario> findByLaboratoriosId(Long laboratorioId);
     List<Usuario> findByUnidadePublicId(UUID unidadePublicId);
 
     boolean existsByEmail(String email);

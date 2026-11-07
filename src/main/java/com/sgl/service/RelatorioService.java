@@ -47,8 +47,8 @@ public class RelatorioService {
         List<Estagiario> filtrados = estagiarioRepository.findAll().stream()
                 .filter(estagiario -> ativo == null || Boolean.TRUE.equals(estagiario.getAtivo()) == ativo)
                 .filter(estagiario -> filtroLaboratorioId == null
-                        || (estagiario.getLaboratorio() != null
-                        && filtroLaboratorioId.equals(estagiario.getLaboratorio().getId())))
+                        || estagiario.getLaboratorios().stream()
+                                .anyMatch(lab -> filtroLaboratorioId.equals(lab.getId())))
                 .filter(estagiario -> dentroDoPeriodo(estagiario, dataInicio, dataFim))
                 .sorted(Comparator.comparing(Estagiario::getNome, String.CASE_INSENSITIVE_ORDER))
                 .toList();

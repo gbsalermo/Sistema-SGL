@@ -76,7 +76,7 @@ class ElegibilidadeContextoOperacionalTest {
         estagiario.setPerfil(Perfil.ESTAGIARIO);
         estagiario.setAtivo(true);
         // O laboratorio legado do usuario nao integra a politica de elegibilidade.
-        estagiario.setLaboratorio(null);
+        estagiario.limparLaboratorios();
 
         vinculo = new VinculoEstagio();
         vinculo.setEstagiario(estagiario);
