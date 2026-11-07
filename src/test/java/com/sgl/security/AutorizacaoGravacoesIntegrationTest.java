@@ -117,6 +117,7 @@ class AutorizacaoGravacoesIntegrationTest {
                 Arguments.of(HttpMethod.PUT, "/api/v1/estagiarios/" + id() + "/encerrar"),
                 Arguments.of(HttpMethod.PUT, "/api/v1/vinculos-operacionais/" + id() + "/encerrar"),
                 Arguments.of(HttpMethod.DELETE, "/api/v1/usuarios/" + id()),
+                Arguments.of(HttpMethod.PUT, "/api/v1/usuarios/" + id() + "/perfil"),
                 Arguments.of(HttpMethod.POST, "/api/v1/pessoas-corporativas/importar"),
                 Arguments.of(HttpMethod.PATCH, "/api/v1/estoque-central/" + id()));
     }
@@ -156,7 +157,7 @@ class AutorizacaoGravacoesIntegrationTest {
     @ParameterizedTest(name = "{0} {1}")
     @MethodSource("gravacoesDeGestao")
     void gravacaoDeGestao_gestor_naoEhBarradoPelaSeguranca(HttpMethod metodo, String caminho) throws Exception {
-        assertStatus(metodo, caminho, Perfil.GESTOR).isNotEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(metodo, caminho, Perfil.GESTOR).isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
     }
 
     @ParameterizedTest(name = "{0} {1}")
@@ -172,15 +173,15 @@ class AutorizacaoGravacoesIntegrationTest {
     @MethodSource("gravacoesDeAdministrador")
     void gravacaoDeAdministrador_administrador_naoEhBarradoPelaSeguranca(HttpMethod metodo, String caminho)
             throws Exception {
-        assertStatus(metodo, caminho, Perfil.ADMINISTRADOR).isNotEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(metodo, caminho, Perfil.ADMINISTRADOR).isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
     }
 
     @ParameterizedTest(name = "{0} {1}")
     @MethodSource("gravacoesDeSolicitante")
     void gravacaoDeSolicitante_estagiarioETecnico_naoSaoBarradosPelaSeguranca(HttpMethod metodo, String caminho)
             throws Exception {
-        assertStatus(metodo, caminho, Perfil.ESTAGIARIO).isNotEqualTo(HttpStatus.FORBIDDEN.value());
-        assertStatus(metodo, caminho, Perfil.TECNICO).isNotEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(metodo, caminho, Perfil.ESTAGIARIO).isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
+        assertStatus(metodo, caminho, Perfil.TECNICO).isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
     }
 
     @Test
@@ -191,7 +192,26 @@ class AutorizacaoGravacoesIntegrationTest {
         assertStatus(HttpMethod.DELETE, "/api/v1/unidades/" + id(), Perfil.GESTOR)
                 .isEqualTo(HttpStatus.FORBIDDEN.value());
         assertStatus(HttpMethod.POST, "/api/v1/unidades", Perfil.ADMINISTRADOR_GERAL)
-                .isNotEqualTo(HttpStatus.FORBIDDEN.value());
+                .isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    void habilitarUnidade_somenteAdministradorGeral() throws Exception {
+        assertStatus(HttpMethod.POST, "/api/v1/unidades/habilitar", Perfil.ADMINISTRADOR)
+                .isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(HttpMethod.POST, "/api/v1/unidades/habilitar", Perfil.GESTOR)
+                .isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(HttpMethod.POST, "/api/v1/unidades/habilitar", Perfil.ADMINISTRADOR_GERAL)
+                .isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    void projeto_cadastroEhDeAdministradorMasProrrogacaoEhDeGestao() throws Exception {
+        // Pins the boundary between /projetos/* (admin) and /projetos/*/prorrogacoes (gestão).
+        assertStatus(HttpMethod.PUT, "/api/v1/projetos/" + id(), Perfil.GESTOR)
+                .isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(HttpMethod.POST, "/api/v1/projetos/" + id() + "/prorrogacoes", Perfil.GESTOR)
+                .isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
     }
 
     @Test
