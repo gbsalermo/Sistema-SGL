@@ -25,7 +25,7 @@ public class ProjetoRequestDTO {
 
     @Schema(description = "Identificadores públicos UUID dos laboratórios (da unidade atual) em que o projeto atua. Ao menos um.", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotEmpty(message = "Informe ao menos um laboratório")
-    private List<UUID> laboratorioIds;
+    private List<@NotNull(message = "Laboratório inválido na lista") UUID> laboratorioIds;
 
     @Schema(description = "Nome do projeto.", example = "Síntese de Novos Compostos", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Nome é obrigatório")
