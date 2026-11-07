@@ -245,6 +245,34 @@ class PedidoSolucaoServiceTest {
     }
 
     @Test
+    void solucaoForaDaListaMarca() {
+        Laboratorio outro = Laboratorio.builder().id(20L).publicId(LAB_SEGUNDO).unidade(unidade)
+            .nome("Outro").ativo(true).build();
+        usuario.setPerfil(com.sgl.model.enums.Perfil.TECNICO);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE))
+            .thenReturn(Optional.of(usuario));
+        when(laboratorioRepository.findByPublicId(LAB_SEGUNDO)).thenReturn(Optional.of(outro));
+        when(produtoRepository.findByPublicId(PRODUTO)).thenReturn(Optional.of(produto));
+        when(produtoRepository.pertenceAUnidade(PRODUTO, UNIDADE)).thenReturn(true);
+        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 4L))
+            .thenReturn(Optional.of(estoque));
+        stubSalvar();
+
+        PedidoRequestDTO dto = new PedidoRequestDTO();
+        dto.setTipo(TipoPedido.SOLUCAO);
+        dto.setUsuarioId(USUARIO);
+        dto.setLaboratorioId(LAB_SEGUNDO);
+        dto.setNomeSolucao("Solução fora da lista");
+        ItemPedidoRequestDTO componente = new ItemPedidoRequestDTO();
+        componente.setProdutoId(PRODUTO);
+        componente.setQuantidadeSolicitada(new BigDecimal("10"));
+        componente.setUnidadeMedidaSolicitada(UnidadeMedida.ML);
+        dto.setItens(List.of(componente));
+
+        assertTrue(service.criar(dto).getLaboratorioForaDoSolicitante());
+    }
+
+    @Test
     void aprovaSolucaoComBaixaUnicaSemExigirEmbalagem() {
         SessaoDeTeste.entrar(USUARIO, Perfil.GESTOR);
         stubPedido();

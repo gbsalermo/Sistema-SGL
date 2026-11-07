@@ -572,15 +572,26 @@ class ResiduoServiceTest {
     }
 
     @Test
-    void deveRejeitarCriacaoQuandoGeradorNaoPertenceAoLaboratorio() {
+    void empregadoInformaResiduoForaDaListaEMarca() {
         gerador.substituirLaboratorios(List.of(laboratorioOutro));
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         stubGeradorELaboratorioAtivos();
+        stubClasseValida();
+        stubSalvarComIdGerado();
 
-        BusinessRuleException ex = assertThrows(BusinessRuleException.class,
-                () -> residuoService.criar(dtoValidoCriar()));
+        ResiduoResponseDTO resposta = residuoService.criar(dtoValidoCriar());
 
-        assertEquals("O usuário gerador não pertence ao laboratório informado.", ex.getMessage());
+        assertTrue(resposta.isLaboratorioForaDoSolicitante());
+    }
+
+    @Test
+    void empregadoNaListaNaoMarca() {
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        stubGeradorELaboratorioAtivos();
+        stubClasseValida();
+        stubSalvarComIdGerado();
+
+        assertFalse(residuoService.criar(dtoValidoCriar()).isLaboratorioForaDoSolicitante());
     }
 
     @Test

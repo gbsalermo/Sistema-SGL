@@ -39,6 +39,7 @@ public class PedidoResponseDTO {
 	private String projetoOrigemNome;
 	private String laboratorioOrigemNome;
 	private Boolean projetoSemVinculoDireto;
+	private Boolean laboratorioForaDoSolicitante;
 	private LocalDateTime dataSolicitacao;
 	private LocalDateTime dataEntrega;
 	private StatusPedido status;
@@ -74,6 +75,7 @@ public class PedidoResponseDTO {
 		this.projetoOrigemNome = entity.getProjetoOrigemNome();
 		this.laboratorioOrigemNome = entity.getLaboratorioOrigemNome();
 		this.projetoSemVinculoDireto = Boolean.TRUE.equals(entity.getProjetoSemVinculoDireto());
+		this.laboratorioForaDoSolicitante = Boolean.TRUE.equals(entity.getLaboratorioForaDoSolicitante());
 		this.dataSolicitacao = entity.getDataSolicitacao();
 		this.dataEntrega = entity.getDataEntrega();
 		this.status = entity.getStatus();

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rehearses V47 (usuario_laboratorios) on a disposable PostgreSQL 16: migrates to V46,
+# Rehearses V47 (and then every later migration, asserting V48's columns) (usuario_laboratorios) on a disposable PostgreSQL 16: migrates to V46,
 # inserts synthetic rows for each case, applies V47 and asserts the result with SQL.
 # The project has no Testcontainers; this replaces V47MigrationTest. Never touches a real database.
 # Usage: bash scripts/verificar-v47.sh   (requires docker; exits non-zero on any failed case)
@@ -101,7 +101,7 @@ INSERT INTO vinculos_operacionais_usuario
 SQL
 
 echo "== Flyway V47"
-flyway migrate | tail -1
+flyway -target=47 migrate | tail -1
 
 echo "== Casos"
 psql_exec <<'SQL'
@@ -153,6 +153,20 @@ DO $$ BEGIN
                        WHERE table_name = 'usuarios' AND constraint_name = 'fk_usuario_laboratorio'), 'FK must be gone';
     ASSERT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_usuario_laboratorios_laboratorio_id'), 'index on laboratorio_id';
     RAISE NOTICE 'PASS v47RemoveColunaLaboratorioId';
+END $$;
+SQL
+
+echo "== Flyway até a última migração (V48 em diante)"
+flyway migrate | tail -1
+
+echo "== V48: colunas laboratorio_fora_do_solicitante com default false"
+psql_exec <<'SQL'
+DO $$ BEGIN
+    ASSERT (SELECT count(*) FROM information_schema.columns
+            WHERE column_name = 'laboratorio_fora_do_solicitante' AND table_name IN ('pedidos', 'residuos')
+              AND is_nullable = 'NO' AND column_default = 'false') = 2,
+        'pedidos and residuos must have a NOT NULL laboratorio_fora_do_solicitante defaulting to false';
+    RAISE NOTICE 'PASS v48ColunasForaDoSolicitanteComDefaultFalse';
 END $$;
 SQL
 

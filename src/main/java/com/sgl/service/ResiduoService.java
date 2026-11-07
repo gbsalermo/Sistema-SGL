@@ -110,7 +110,6 @@ public class ResiduoService {
 		}
 		Laboratorio laboratorio = buscarLaboratorio(laboratorioId);
 		laboratorio.validateActive();
-		if (participacao == null) validarGeradorNoLaboratorio(gerador, laboratorio);
 		Projeto projeto = buscarProjeto(projetoId, laboratorio);
 		boolean projetoSemVinculoDireto = projeto != null && participacao == null
 				&& !PerfilPolicy.isGestao(gerador.getPerfil())
@@ -118,6 +117,7 @@ public class ResiduoService {
 
 		Residuo residuo = Residuo.builder().laboratorio(laboratorio).gerador(gerador).projeto(projeto)
 				.projetoSemVinculoDireto(projetoSemVinculoDireto)
+				.laboratorioForaDoSolicitante(participacao == null && laboratorioForaDoGerador(gerador, laboratorio))
 				.participacaoEstagioAtividade(participacao)
 				.atividadeOrigemNome(participacao == null ? null : participacao.getAtividade().getNome())
 				.sciOrigemNome(participacao == null ? null : participacao.getAtividade().getSci().getNome())
@@ -471,13 +471,15 @@ public class ResiduoService {
 		return projeto;
 	}
 
-	private void validarGeradorNoLaboratorio(Usuario gerador, Laboratorio laboratorio) {
-		boolean gestor = PerfilPolicy.isGestao(gerador.getPerfil());
-		if (!gestor
-                && !gerador.atuaNoLaboratorio(laboratorio)
-                && !vinculoOperacionalService.vinculadoLaboratorio(gerador, laboratorio, LocalDate.now())) {
-			throw new BusinessRuleException("O usuário gerador não pertence ao laboratório informado.");
-		}
+	/**
+	 * Employees may report waste from any active laboratory of their Unidade (decision 6); the
+	 * record is flagged for management when they neither list the laboratory nor hold a current
+	 * vínculo there. Gestão is never flagged; estagiários always go through a participation.
+	 */
+	private boolean laboratorioForaDoGerador(Usuario gerador, Laboratorio laboratorio) {
+		return !PerfilPolicy.isGestao(gerador.getPerfil())
+				&& !gerador.atuaNoLaboratorio(laboratorio)
+				&& !vinculoOperacionalService.vinculadoLaboratorio(gerador, laboratorio, LocalDate.now());
 	}
 
 	private List<ClasseResiduo> buscarClassesAtivasDaUnidade(Set<UUID> ids, UUID unidadeId) {
