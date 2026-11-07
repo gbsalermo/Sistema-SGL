@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Rehearses V47 (and then every later migration, asserting V48's columns) (usuario_laboratorios) on a disposable PostgreSQL 16: migrates to V46,
-# inserts synthetic rows for each case, applies V47 and asserts the result with SQL.
+# Rehearses V47 on a disposable PostgreSQL 16 container (migrates to V46, inserts synthetic rows, applies V47, asserts with SQL), then applies the later migrations and asserts V48's columns.
 # The project has no Testcontainers; this replaces V47MigrationTest. Never touches a real database.
 # Usage: bash scripts/verificar-v47.sh   (requires docker; exits non-zero on any failed case)
 set -euo pipefail
