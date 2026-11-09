@@ -25,7 +25,7 @@ No repositório `Sistema-SGL`:
 ```bash
 git checkout main
 git pull origin main
-cd backend/sgl-backend
+# Executar a partir da raiz do repositório (onde está o pom.xml)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
@@ -68,6 +68,12 @@ Laboratórios/áreas usados na simulação:
 - Laboratório de Virologia
 - Laboratório de Ecofisiologia Vegetal e Meteorologia
 - Central de Soluções
+
+## Ampliação para a Etapa 10 — rótulos (28/10/2026)
+
+Na branch `collab/etapa-10-rotulos-impressao`, a carga do profile `demo` também demonstra **Pedidos de Soluções** (pendente, em preparação, entregue) e rótulos de Resíduos com **estado físico, medidas informadas/confirmadas e observações**. Foi adicionado um resíduo sólido, sem pictograma, para exercitar versões menores da etiqueta.
+
+O passo a passo, nomes dos registros e checklist de impressão estão em `docs/ETAPA_10_CENARIO_GESTAO_ROTULOS_2026-10-28.md`. Os dados continuam isolados no H2 e só ficam disponíveis ao executar o backend com profile `demo`; no profile `dev`, a carga não ocorre.
 
 ## O que a massa de demonstração cobre
 
