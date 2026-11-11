@@ -67,6 +67,24 @@ class DevAuthControllerIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/v1/auth/dev/usuarios", "/api/v1/auth/dev/resumo", "/api/v1/auth/dev/entrar"})
+    void rotas_origemVazia_403(String rota) throws Exception {
+        MockHttpServletRequestBuilder requisicao = rota.endsWith("entrar")
+                ? entrar("teste.gestor.1")
+                : get(rota);
+        mockMvc.perform(requisicao.with(remoteAddr("")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void entrar_xForwardedForLoopback_ignorado_403() throws Exception {
+        mockMvc.perform(entrar("teste.gestor.1")
+                        .with(remoteAddr("10.0.0.5"))
+                        .header("X-Forwarded-For", "127.0.0.1"))
+                .andExpect(status().isForbidden());
+    }
+
     @Test
     void entrar_inexistente_401() throws Exception {
         mockMvc.perform(entrar("ninguem.existe"))

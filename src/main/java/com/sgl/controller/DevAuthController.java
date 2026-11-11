@@ -84,7 +84,14 @@ public class DevAuthController {
         }
     }
 
+    // Relies on the socket peer address on purpose: X-Forwarded-For must stay ignored. Enabling
+    // server.forward-headers-strategy (or a cloud platform auto-enabling RemoteIpValve) would let
+    // proxies, and therefore clients, forge a loopback address.
     private static boolean isLoopback(String remoteAddr) {
+        // getByName(null) and getByName("") resolve to loopback, so fail closed first.
+        if (remoteAddr == null || remoteAddr.isBlank()) {
+            return false;
+        }
         try {
             // Literal IPs only in practice (remoteAddr is never a hostname), so no DNS lookup happens.
             return InetAddress.getByName(remoteAddr).isLoopbackAddress();

@@ -52,7 +52,7 @@ public class RestExceptionHandler {
         );
     }
 
-    // Unknown routes (e.g. /auth/dev-login outside dev/demo, where its controller does not exist)
+    // Unknown routes (e.g. /auth/dev/** outside dev/demo, where its controller does not exist)
     // would otherwise fall into the generic handler and surface as a 500.
     @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
     public ResponseEntity<ApiError> handleNoRoute(
