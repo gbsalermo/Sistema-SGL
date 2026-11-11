@@ -20,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.sgl.corporate.CorporateGatewayStubs;
 import com.sgl.corporate.CorporateGatewayTestConfig;
 import com.sgl.model.Unidade;
+import com.sgl.service.DevLoginService;
+import com.sgl.test.PerfisDeTesteInitializer;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -49,6 +52,7 @@ class AuthControllerIntegrationTest {
     private static final String LOGIN = "/api/v1/auth/login";
 
     @Autowired private MockMvc mockMvc;
+    @Autowired private ApplicationContext applicationContext;
     @Autowired private CorporateGatewayStubs gateway;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private UnidadeRepository unidadeRepository;
@@ -230,11 +234,21 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    void devLogin_inexistenteForaDeDevEDemo() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/dev-login")
+    void rotasDeTeste_inexistentesForaDeDevEDemo() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/dev/entrar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"login\":\"gestor.cnpmf\"}"))
+                        .content("{\"login\":\"teste.gestor.1\"}"))
                 .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/auth/dev/usuarios"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void beansDeTeste_ausentesForaDeDevEDemo() throws Exception {
+        assertThat(applicationContext.getBeanNamesForType(PerfisDeTesteInitializer.class)).isEmpty();
+        assertThat(applicationContext.getBeanNamesForType(DevLoginService.class)).isEmpty();
+        assertThat(applicationContext.getBeanNamesForType(Class.forName("com.sgl.config.DevLoginProfileGuard")))
+                .isEmpty();
     }
 
     private static MockHttpServletRequestBuilder login(String login, String senha) {

@@ -392,40 +392,6 @@ class AuthServiceIntegrationTest {
         assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.TECNICO);
     }
 
-    @Test
-    void devLogin_usuarioDev_emiteToken() {
-        Usuario dev = usuario("Gestor DEV", null, null, Perfil.GESTOR, SituacaoUsuario.ATIVO);
-        dev.setOrigem(OrigemUsuario.DEV);
-        dev.setLogin("gestor.teste");
-        salvar(dev);
-
-        LoginResponseDTO resposta = authService.devLogin("gestor.teste");
-
-        assertThat(jwtService.parse(resposta.getToken())).contains(dev.getPublicId());
-        assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.GESTOR);
-    }
-
-    @Test
-    void devLogin_usuarioCorporativo_401() {
-        Usuario corporativo = usuario("Corporativo", "344136", CPF, Perfil.GESTOR, SituacaoUsuario.ATIVO);
-        corporativo.setLogin("m344136");
-        salvar(corporativo);
-
-        // The password-less DEV path must never open a corporate account.
-        assertThatThrownBy(() -> authService.devLogin("m344136"))
-                .isInstanceOfSatisfying(LoginRejectedException.class, e -> {
-                    assertThat(e.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
-                    assertThat(e.getCodigo()).isEqualTo("CREDENCIAIS_INVALIDAS");
-                });
-    }
-
-    @Test
-    void devLogin_inexistente_401() {
-        assertThatThrownBy(() -> authService.devLogin("ninguem"))
-                .isInstanceOfSatisfying(LoginRejectedException.class,
-                        e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED));
-    }
-
     private Usuario usuario(String nome, String matricula, String cpf, Perfil perfil, SituacaoUsuario situacao) {
         Usuario usuario = new Usuario();
         usuario.setNome(nome);

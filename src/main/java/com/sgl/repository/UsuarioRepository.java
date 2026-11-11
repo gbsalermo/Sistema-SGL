@@ -80,7 +80,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
               AND (:busca IS NULL
                    OR LOWER(u.nome) LIKE :busca ESCAPE '\\'
                    OR LOWER(u.login) LIKE :busca ESCAPE '\\')
-            ORDER BY u.nome
+            ORDER BY u.nome, u.id
             """)
     List<Long> buscarIdsParaLoginDeTeste(@Param("perfil") Perfil perfil,
                                          @Param("unidadeId") UUID unidadeId,
