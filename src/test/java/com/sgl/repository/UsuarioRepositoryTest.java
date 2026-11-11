@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
@@ -232,5 +235,79 @@ class UsuarioRepositoryTest {
 
         assertEquals(1, resultado.size());
         assertEquals("leo@exemplo.com", resultado.get(0).getEmail());
+    }
+
+    private Usuario criarUsuarioDeTeste(String nome, String login, Perfil perfil, Unidade unidade, boolean ativo) {
+        Usuario usuario = new Usuario();
+        usuario.setNome(nome);
+        usuario.setEmail(nome.replaceAll("\\W", "").toLowerCase() + "@sgl.local");
+        usuario.setSenha("senha-123");
+        usuario.setPerfil(perfil);
+        usuario.setUnidade(unidade);
+        usuario.setLogin(login);
+        usuario.setAtivo(ativo);
+        return entityManager.persistAndFlush(usuario);
+    }
+
+    private Unidade u1;
+    private Unidade u2;
+    private Usuario ana;
+    private Usuario bruno;
+    private Usuario carla;
+
+    private void montarCenarioLoginDeTeste() {
+        u1 = criarUnidade("LT1");
+        u2 = criarUnidade("LT2");
+        ana = criarUsuarioDeTeste("Ana", "ana.login", Perfil.GESTOR, u1, true);
+        bruno = criarUsuarioDeTeste("Bruno", "bruno.login", Perfil.GESTOR, u2, true);
+        carla = criarUsuarioDeTeste("Carla", "carla.login", Perfil.TECNICO, u1, true);
+        criarUsuarioDeTeste("Davi", "davi.login", Perfil.GESTOR, u1, false);
+        criarUsuarioDeTeste("Elisa", null, Perfil.GESTOR, u1, true);
+    }
+
+    @Test
+    void buscarIdsParaLoginDeTeste_filtraPerfilUnidadeEBusca() {
+        montarCenarioLoginDeTeste();
+        PageRequest pagina = PageRequest.of(0, 60);
+
+        assertEquals(List.of(ana.getId()),
+                usuarioRepository.buscarIdsParaLoginDeTeste(Perfil.GESTOR, u1.getPublicId(), null, pagina));
+        assertEquals(List.of(carla.getId()),
+                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, "%ar%", pagina));
+        assertEquals(List.of(ana.getId(), bruno.getId(), carla.getId()),
+                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, pagina));
+    }
+
+    @Test
+    void buscarIdsParaLoginDeTeste_curingaLiteral() {
+        Usuario cem = criarUsuarioDeTeste("100% Teste", "cem.login", Perfil.GESTOR, null, true);
+        PageRequest pagina = PageRequest.of(0, 60);
+
+        assertEquals(List.of(cem.getId()),
+                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, "%\\%%", pagina));
+        assertTrue(usuarioRepository.buscarIdsParaLoginDeTeste(null, null, "%\\_%", pagina).isEmpty());
+    }
+
+    @Test
+    void buscarIdsParaLoginDeTeste_respeitaLimite() {
+        criarUsuarioDeTeste("Um", "um.login", Perfil.GESTOR, null, true);
+        criarUsuarioDeTeste("Dois", "dois.login", Perfil.GESTOR, null, true);
+        criarUsuarioDeTeste("Tres", "tres.login", Perfil.GESTOR, null, true);
+
+        assertEquals(2, usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, PageRequest.of(0, 2)).size());
+    }
+
+    @Test
+    void contarAtivosComLoginPorPerfil_respeitaUnidade() {
+        montarCenarioLoginDeTeste();
+
+        assertEquals(Map.of(Perfil.GESTOR, 1L, Perfil.TECNICO, 1L), contagem(u1));
+        assertEquals(Map.of(Perfil.GESTOR, 2L, Perfil.TECNICO, 1L), contagem(null));
+    }
+
+    private Map<Perfil, Long> contagem(Unidade unidade) {
+        UUID id = unidade == null ? null : unidade.getPublicId();
+        return usuarioRepository.contarAtivosComLoginPorPerfil(id).stream()
+                .collect(Collectors.toMap(linha -> (Perfil) linha[0], linha -> (Long) linha[1]));
     }
 }

@@ -73,8 +73,11 @@ public class ApiSecurityConfig {
                 }
             })
             .authorizeHttpRequests(auth -> {
-                auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/dev-login").permitAll()
+                auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/auth/config").permitAll()
+                    // Open here so outside dev/demo the missing controller answers 404, not 401; the
+                    // controller itself enforces loopback-only access.
+                    .requestMatchers("/api/v1/auth/dev/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/error").permitAll();
                 if (devProfile) {
                     auth.requestMatchers("/h2-console/**").permitAll();

@@ -267,7 +267,7 @@ Spec e plano: `docs/superpowers/specs/2026-10-27-autenticacao-corporativa-design
 
 - `POST /api/v1/auth/login` valida login de rede (ou CPF, para colaboradores) e senha na `autenticacaoapi`, resolve a pessoa na Empregadoapi/Colaboradorapi, sincroniza o `Usuario` e devolve o JWT. Pessoa nova entra como `PENDENTE_VINCULACAO` e só acessa `/api/v1/auth/me` até um gestor da Unidade aprová-la; pessoa importada pela gestão entra direto.
 - `GET /api/v1/auth/me` devolve o usuário da sessão; `GET /api/v1/auth/config` informa se o login DEV está ativo.
-- `POST /api/v1/auth/dev-login` existe **só** nos perfis `dev` e `demo` e aceita apenas usuários de origem `DEV` (massa de exemplo).
+- `GET /api/v1/auth/dev/usuarios`, `GET /api/v1/auth/dev/resumo` e `POST /api/v1/auth/dev/entrar` (login de teste, sem senha) existem **só** nos perfis `dev` e `demo` e só respondem a chamadas da própria máquina (loopback); fora disso, 403. A tela "Entrar como usuário de teste" usa essas rotas e a massa `teste.<perfil>.<n>` (3 usuários por perfil). A rota antiga `POST /api/v1/auth/dev-login` foi removida.
 - O CPF nunca sai em resposta HTTP do SGL; nos logs aparece sempre mascarado. Senha nunca é gravada nem logada.
 - "Sair" é feito no cliente (o JWT é descartado); um token roubado vale até expirar (5 h), mas deixa de funcionar na hora se o usuário for desativado.
 

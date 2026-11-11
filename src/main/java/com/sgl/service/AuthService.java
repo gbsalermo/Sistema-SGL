@@ -134,15 +134,6 @@ public class AuthService {
         return issueSession(usuario);
     }
 
-    public LoginResponseDTO devLogin(String login) {
-        // Only seeded DEV accounts: this password-less path must never open a corporate account.
-        Usuario usuario = usuarioRepository.findByLogin(login == null ? null : login.trim())
-                .filter(u -> u.getOrigem() == OrigemUsuario.DEV)
-                .filter(u -> Boolean.TRUE.equals(u.getAtivo()))
-                .orElseThrow(LoginRejectedException::credenciaisInvalidas);
-        return issueSession(usuario);
-    }
-
     /** Built from the user's own record: the tenant filter does not run on /auth routes. */
     public UsuarioSessaoResponseDTO me() {
         return sessionUser(CurrentUser.get().publicId());
@@ -152,7 +143,8 @@ public class AuthService {
         return new AuthConfigResponseDTO(environment.acceptsProfiles(Profiles.of("dev", "demo")));
     }
 
-    private LoginResponseDTO issueSession(Usuario usuario) {
+    // Package-private: DevLoginService issues the very same session as the corporate login.
+    LoginResponseDTO issueSession(Usuario usuario) {
         String token = jwtService.generate(usuario.getPublicId());
         return new LoginResponseDTO(token, jwtService.expiresAt(token), sessionUser(usuario.getPublicId()));
     }

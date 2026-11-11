@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -79,6 +80,7 @@ import lombok.RequiredArgsConstructor;
  * e-mails, lotes, pedidos e ocorrências são fictícios.</p>
  */
 @Profile("demo")
+@Order(2000)
 @Component
 @RequiredArgsConstructor
 public class DemoDataInitializer implements CommandLineRunner {
