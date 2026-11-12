@@ -13,12 +13,14 @@
 | Pessoas e vínculos operacionais | `PessoaCorporativaController.java`, `VinculoOperacionalUsuarioController.java` | `PessoaCorporativaService.java`, `VinculoOperacionalUsuarioService.java` | regras de lotação, habilitação e escopo |
 | Pedidos | `PedidoController.java`, `ContextoOperacionalController.java` | `PedidoService.java`, `ContextoOperacionalConsultaService.java` | `repository/ItemPedidoRepository.java`, elegibilidade e estoque |
 | Estoque e lotes | `EstoqueCentralController.java`, `LoteController.java`, `MovimentacaoEstoqueController.java` | `EstoqueCentralService.java`, `LoteService.java`, `MovimentacaoEstoqueService.java` | FEFO/FIFO, recipiente, fracionamento, migrations |
-| Soluções | `SolucoesController.java`, `ModeloSolucaoController.java` | `ModeloSolucaoService.java` e implementação chamada pelos controllers | conferir serviço concreto e transições no código |
+| Soluções | `SolucoesController.java`, `ModeloSolucaoController.java` | `PedidoService.java` (pedidos de solução), `ModeloSolucaoService.java` (catálogo) | `SolucoesController` usa `PedidoService` para criar/listar/aprovar/entregar/cancelar/rejeitar; conferir DTOs e regras no serviço |
 | Resíduos | `ResiduoController.java`, `ModeloResiduoController.java` | `ResiduoService.java`, `ModeloResiduoService.java` | `repository/HistoricoResiduoRepository.java` e componentes |
 | Produtos | `ProdutoController.java` | `ProdutoService.java` | catálogo, unidade e conversão |
 | Relatórios | `RelatorioController.java` e controllers `Relatorio*Controller.java` | serviços `Relatorio*Service.java` | filtros, escopo e exportações |
 
 **Prefixo dos caminhos Java:** `src/main/java/com/sgl/`. A arquitetura real contém diretórios `controller/`, `service/`, `repository/`, `model/`, `dto/request/` e outras classes de suporte. Ver `docs/GUIA_ESTRUTURAL.md` para convenções e `docs/AUDITORIA_DOCUMENTAL_BACKEND_2026-11-12.md` para triagem documental.
+
+**Contrato confirmado por leitura de controllers:** `SolucoesController` expõe `/api/v1/solucoes/pedidos` e usa `PedidoService`; `PedidoController` expõe `/api/v1/pedidos` e também usa `PedidoService`; `VinculoEstagioController` usa `VinculoEstagioService` e `SincronizacaoVinculoEstagioService`. A existência dessas rotas não comprova permissões nem validação de cada fluxo: verificar `ApiSecurityConfig` e as regras nos serviços.
 
 **Fluxo seguro:** branch `collab/*` criada da `gitlab/release`; alterações backend pelo mantenedor; testes unitários, integração, migrations e arquitetura; MR manual contra `release`; espelho GitHub automático por fast-forward. **Não** tratar `main` como a versão de produção.
 
