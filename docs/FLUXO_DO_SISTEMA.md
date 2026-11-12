@@ -1,5 +1,7 @@
 # Fluxo do Sistema SGL
 
+> **Vigência (12/11/2026):** este documento preserva fluxos e decisões registrados até outubro. Os checkpoints de Etapa 8/DEV e a indicação de `main` como branch operacional são históricos. Para alterações, consultar controllers, services, DTOs e migrations da `release`; conferir também `DOSSIE_PROJETO_SGL.md` e `MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`. Não assumir que toda regra de acesso foi homologada em produção.
+
 > **Checkpoint vigente — 23/10/2026 (Etapa 8, MVP em DEV):** blocos funcionais Vínculos, Pedidos, Soluções e Resíduos homologados manualmente; Pedido/Solução/Resíduo permitem Projeto opcional para os perfis elegíveis; vínculo específico por Projeto/SCI/Atividade deriva contexto operacional sem criar vínculos formais automaticamente. Backend PostgreSQL/Flyway validou 44 migrations; o frontend compilou e o ArchUnit passou 5/5 regras. Auditorias completas de carga/E2E e eventual identidade institucional permanecem fora deste aceite. **Auditoria de campos e entradas:** `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` — há dependência de provisionamento externo/seed para Unidade, Usuário e cadastro inicial de Estagiário, embora os cadastros operacionais restantes tenham telas. **Sem merge; não presumir sincronização GitLab confirmada.** Trechos históricos datados abaixo descrevem o estado *àquela época*, não substituem este checkpoint.
 
 
