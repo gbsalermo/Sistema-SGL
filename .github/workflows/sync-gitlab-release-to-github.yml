@@ -1,0 +1,72 @@
+name: Sync GitLab release to GitHub release
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-gitlab-release-to-github
+  cancel-in-progress: false
+
+jobs:
+  sync-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub main (workflow host)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure GitLab remote
+        shell: bash
+        env:
+          GITLAB_PUSH_TOKEN: ${{ secrets.GITLAB_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${GITLAB_PUSH_TOKEN}" || { echo "Missing GITLAB_PUSH_TOKEN"; exit 1; }
+          git remote remove gitlab 2>/dev/null || true
+          git remote add gitlab "https://oauth2:${GITLAB_PUSH_TOKEN}@git-cnpmf.nuvem.ti.embrapa.br/nti/sgl-api.git"
+
+      - name: Fetch GitLab release and check GitHub release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags gitlab +refs/heads/release:refs/remotes/gitlab/release
+          if git ls-remote --exit-code --heads origin refs/heads/release >/dev/null; then
+            git fetch --no-tags origin +refs/heads/release:refs/remotes/origin/release
+          else
+            status=$?
+            if [ "${status}" -ne 2 ]; then
+              echo "Unable to check GitHub release (status ${status})"
+              exit "${status}"
+            fi
+            echo "GitHub release does not exist yet."
+          fi
+
+      - name: Validate fast-forward or initial creation
+        shell: bash
+        run: |
+          set -euo pipefail
+          GITLAB_SHA="$(git rev-parse refs/remotes/gitlab/release)"
+          if git show-ref --verify --quiet refs/remotes/origin/release; then
+            GITHUB_SHA="$(git rev-parse refs/remotes/origin/release)"
+            echo "GitHub release: ${GITHUB_SHA}"
+            echo "GitLab release: ${GITLAB_SHA}"
+            if ! git merge-base --is-ancestor "${GITHUB_SHA}" "${GITLAB_SHA}"; then
+              echo "Divergent release histories; refusing non-fast-forward update."
+              exit 1
+            fi
+          else
+            echo "GitHub release does not exist; will create from GitLab release."
+          fi
+
+      - name: Sync GitHub release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin refs/remotes/gitlab/release:refs/heads/release
