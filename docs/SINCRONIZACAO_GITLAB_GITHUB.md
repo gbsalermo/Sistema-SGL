@@ -1,3 +1,16 @@
+> **ATUALIZAÇÃO CANÔNICA — 12/11/2026.** As seções históricas abaixo descrevem a configuração anterior baseada apenas em `main`. Para operações atuais, prevalecem estas regras.
+>
+> - **GitLab `release` é a fonte oficial de produção**; GitHub `release` é espelho somente de leitura operacional (sem commits funcionais diretos). `main` permanece sincronizada separadamente e **não** é automaticamente igual à `release`.
+> - **GitHub `collab/*` → GitLab `collab/*`**: sincronização em push, sem force; o responsável aprova MR manual para GitLab `release`.
+> - **GitLab `release` → GitHub `release`**: `.github/workflows/sync-gitlab-release-to-github.yml`, agendamento a cada 15 minutos e disparo manual; só cria branch ou avança por fast-forward, recusa divergência.
+> - **GitLab `main` → GitHub `main`**: `.github/workflows/sync-gitlab-main-to-github.yml`, agendamento a cada 15 minutos; fluxo legado preservado.
+> - O agendamento do GitHub Actions depende da presença do workflow na **branch padrão do GitHub (`main` neste checkpoint)**; o arquivo foi integrado à `main` por MR institucional, sem integrar código funcional de `release` na `main`.
+> - Branch nova: `git fetch gitlab --prune && git fetch github --prune && git switch -c collab/<tema> gitlab/release`. Publicar em `github`; aguardar sincronização `collab`; MR no GitLab contra `release`.
+> - Validar com `git rev-list --left-right --count gitlab/release...github/release` e, separadamente, `gitlab/main...github/main`; esperado `0 0` em cada par. Nunca comparar pares cruzados para exigir igualdade nem usar `--force`.
+> - Token GitLab permanece exclusivamente em secrets do GitHub Actions; nunca expor em logs ou documentação. Alterações funcionais de backend continuam manuais pelo mantenedor, salvo autorização explícita.
+>
+---
+
 # Sincronização GitLab ↔ GitHub — SGL
 
 **Atualizado em:** 22/09/2026  
