@@ -2,6 +2,13 @@
 
 # Documentação — SGL Backend
 
+## Auditoria de documentação — 12/11/2026
+
+**Inventário:** [AUDITORIA_DOCUMENTAL_BACKEND_2026-11-12.md](AUDITORIA_DOCUMENTAL_BACKEND_2026-11-12.md) relaciona 51 arquivos Markdown encontrados na `release`, com triagem preliminar e revisão individual ainda pendente. **Dossiê:** [DOSSIE_PROJETO_SGL.md](DOSSIE_PROJETO_SGL.md) contém mapa por domínio e camada, confrontado com os arquivos da `release`. `CONTINUIDADE.md` é checkpoint; `SINCRONIZACAO_GITLAB_GITHUB.md` é referência para Git; registros datados de etapas são históricos. Não tratar plano de testes como evidência de execução.
+
+---
+
+
 ## Checkpoint histórico — 26/10/2026: Etapa 8 integrada; Etapa 9 iniciada documentalmente
 
 **Estado verificado:** os merges da Etapa 8 constam na `main` backend (`818d580`, GitLab MR `nti/sgl-api!10`) e frontend (`12a195a`, MR `nti/sgl-web!11`); os sincronizadores GitLab → GitHub reportaram sucesso. Etapa 8 concluída funcionalmente; V44/Flyway, build frontend e ArchUnit 5/5 foram validados nos checkpoints informados. Testes globais de carga/E2E continuam na Etapa 12.
