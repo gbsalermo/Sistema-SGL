@@ -76,3 +76,9 @@
 5. Manter documentação de API, exemplos JSON e Postman coerentes com controllers e DTOs reais; não deduzir payloads somente por nomes.
 
 **Critério de conclusão:** cada documento lido, comparado com código e referências, links validados, conflitos resolvidos e aceites registrados. Não excluir documentos nem afirmar conclusão sem evidência.
+
+## Fechamento da organização e das redundâncias de autoridade — 12/11/2026
+
+**Concluído no âmbito editorial:** foi criado [`GOVERNANCA_DOCUMENTAL.md`](GOVERNANCA_DOCUMENTAL.md), que define fonte proprietária para cada assunto, separa referências canônicas, complementares e históricas e registra a política para documentos duplicados. Não houve exclusão, deslocamento ou fusão destrutiva de arquivos. Documentos históricos continuam disponíveis para rastreabilidade. Os READMEs finais permanecem reservados para o fechamento da auditoria de conteúdo.
+
+**Ainda não concluído:** revisão individual de todo o inventário, checagem de links, confronto de contratos e permissões com código e testes, e resolução das ambiguidades de negócio. As linhas `Pendente` da tabela significam **revisão de conteúdo**, não falta de classificação editorial. Organização não equivale a homologação.
