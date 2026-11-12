@@ -1,5 +1,7 @@
 # Dossiê do Projeto SGL — Handoff
 
+> **Governança e redundâncias (12/11/2026):** consultar [`GOVERNANCA_DOCUMENTAL.md`](GOVERNANCA_DOCUMENTAL.md) para a autoridade de cada documento, escopo das referências especializadas e conflitos ainda pendentes. O dossiê é proprietário do **mapa de manutenção**, não de roadmaps, instruções Git ou tokens visuais.
+
 ## Mapa de manutenção do backend — 12/11/2026 (conferido na árvore da release)
 
 **Uso:** começar pelo endpoint no controller, seguir DTO de entrada/saída, serviço, validações de acesso, repository, model e migration. A tabela abaixo registra **arquivos presentes na release**; não substitui leitura de métodos, testes ou contratos. Mudanças funcionais de backend continuam sendo aplicadas manualmente pelo mantenedor, salvo autorização explícita.
