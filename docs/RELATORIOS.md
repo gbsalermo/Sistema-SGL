@@ -1,5 +1,7 @@
 # Relatórios — SGL
 
+> **Vigência (12/11/2026):** a seção abaixo, intitulada “Estado vigente — Etapa 9 (27/10/2026, pré-merge)”, é **registro histórico de pré-merge**, não o estado atual da `release`. Para endpoints, DTOs e exportação, conferir `Relatorio*Controller.java` e `Relatorio*Service.java` na `release`; validar os filtros no frontend antes de declarar cobertura.
+
 ## Estado vigente — Etapa 9 (27/10/2026, pré-merge)
 
 **Implementada e validada funcionalmente na branch** `collab/etapa-9-relatorios-consolidados`, segundo os testes e verificações locais confirmados pelo mantenedor. **Ainda não integrada à main; não equivale a homologação de produção.**
