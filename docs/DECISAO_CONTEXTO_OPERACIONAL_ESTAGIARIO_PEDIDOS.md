@@ -1,5 +1,7 @@
 # Decisão estrutural — Contexto operacional de Estagiários em Pedidos
 
+> **Vigência (12/11/2026):** decisão arquitetural histórica de 01/10/2026. As seções que descrevem Pedidos como “futuros” não são plano atual. Para regras vigentes, confrontar `PedidoService.java`, `VinculoEstagioService.java`, `ElegibilidadeContextoOperacional.java`, migrations V47/V48 e o frontend `release`. Não extrapolar o vínculo genérico para permissões de estagiários.
+
 **Data:** 01/10/2026  
 **Status:** decisão arquitetural aprovada; base de Estagiários 6.1–6.3 validada; integração de Pedidos futura nas Etapas 8–9  
 **Branch de registro:** `collab/etapa-6-estagiarios-vinculos`
