@@ -1,3 +1,5 @@
+> **ÍNDICE ATUALIZADO — 12/11/2026:** a fonte operacional atual é `GitLab/release`, espelhada em `GitHub/release`; `main` continua com sincronização independente. A leitura deve começar por `../CONTINUIDADE.md` e `SINCRONIZACAO_GITLAB_GITHUB.md`. Etapas antigas marcadas como pendentes abaixo são registros históricos, não o estado vigente. A Etapa 10 (rótulos) e a gestão multilaboratório de estagiários exigem conferência final na release; testes amplos de arquitetura, carga e E2E continuam como auditoria pendente.
+
 # Documentação — SGL Backend
 
 ## Checkpoint vigente — 26/10/2026: Etapa 8 integrada; Etapa 9 iniciada documentalmente
