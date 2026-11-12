@@ -1,5 +1,7 @@
 # Endpoints Internos — SGL
 
+> **Vigência (12/11/2026):** catálogo de acompanhamento, não especificação completa da API. Rotas, métodos, payloads e autorizações precisam ser confirmados nos controllers, DTOs e segurança da `release` (e OpenAPI, quando disponível). Não publicar este documento como contrato definitivo sem verificação endpoint a endpoint.
+
 > Documento de acompanhamento técnico do backend.
 >
 > **Visibilidade:** este arquivo acompanha a visibilidade do repositório. Como o repositório atual é público, este documento também é público.
