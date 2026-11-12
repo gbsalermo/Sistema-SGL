@@ -1,5 +1,32 @@
 # Dossiê do Projeto SGL — Handoff
 
+## Mapa de manutenção do backend — 12/11/2026 (conferido na árvore da release)
+
+**Uso:** começar pelo endpoint no controller, seguir DTO de entrada/saída, serviço, validações de acesso, repository, model e migration. A tabela abaixo registra **arquivos presentes na release**; não substitui leitura de métodos, testes ou contratos. Mudanças funcionais de backend continuam sendo aplicadas manualmente pelo mantenedor, salvo autorização explícita.
+
+| Domínio | Controller | Service | Onde conferir |
+|---|---|---|---|
+| Autenticação | `AuthController.java` | `AuthService.java` | `config/ApiSecurityConfig.java`, `security/JwtService.java`, `config/SecurityConfig.java` |
+| Laboratórios e unidade | `LaboratorioController.java`, `UnidadeController.java` | `LaboratorioService.java`, `UnidadeService.java` | `repository/LaboratorioRepository.java`, `model/Laboratorio.java` |
+| Projetos / SCI / Atividades | `ProjetoController.java`, `SciController.java`, `AtividadeController.java` | `ProjetoService.java`, `SciService.java`, `AtividadeService.java` | DTOs de request, validação de SEG e contexto |
+| Estagiários e vínculos | `EstagiarioController.java`, `VinculoEstagioController.java`, `VinculoEstagioAtividadeController.java` | `EstagiarioService.java`, `VinculoEstagioService.java`, `VinculoEstagioAtividadeService.java` | `SincronizacaoVinculoEstagioService.java`, `ElegibilidadeContextoOperacional.java`, migrations V47/V48 |
+| Pessoas e vínculos operacionais | `PessoaCorporativaController.java`, `VinculoOperacionalUsuarioController.java` | `PessoaCorporativaService.java`, `VinculoOperacionalUsuarioService.java` | regras de lotação, habilitação e escopo |
+| Pedidos | `PedidoController.java`, `ContextoOperacionalController.java` | `PedidoService.java`, `ContextoOperacionalConsultaService.java` | `repository/ItemPedidoRepository.java`, elegibilidade e estoque |
+| Estoque e lotes | `EstoqueCentralController.java`, `LoteController.java`, `MovimentacaoEstoqueController.java` | `EstoqueCentralService.java`, `LoteService.java`, `MovimentacaoEstoqueService.java` | FEFO/FIFO, recipiente, fracionamento, migrations |
+| Soluções | `SolucoesController.java`, `ModeloSolucaoController.java` | `ModeloSolucaoService.java` e implementação chamada pelos controllers | conferir serviço concreto e transições no código |
+| Resíduos | `ResiduoController.java`, `ModeloResiduoController.java` | `ResiduoService.java`, `ModeloResiduoService.java` | `repository/HistoricoResiduoRepository.java` e componentes |
+| Produtos | `ProdutoController.java` | `ProdutoService.java` | catálogo, unidade e conversão |
+| Relatórios | `RelatorioController.java` e controllers `Relatorio*Controller.java` | serviços `Relatorio*Service.java` | filtros, escopo e exportações |
+
+**Prefixo dos caminhos Java:** `src/main/java/com/sgl/`. A arquitetura real contém diretórios `controller/`, `service/`, `repository/`, `model/`, `dto/request/` e outras classes de suporte. Ver `docs/GUIA_ESTRUTURAL.md` para convenções e `docs/AUDITORIA_DOCUMENTAL_BACKEND_2026-11-12.md` para triagem documental.
+
+**Fluxo seguro:** branch `collab/*` criada da `gitlab/release`; alterações backend pelo mantenedor; testes unitários, integração, migrations e arquitetura; MR manual contra `release`; espelho GitHub automático por fast-forward. **Não** tratar `main` como a versão de produção.
+
+**Limites:** migrations V47/V48 existem na release, mas sua presença não confirma por si só que todos os cenários multilaboratório estão validados. O mesmo vale para endpoints de relatório e rótulos. Confirmar regras e payloads nos métodos antes de editar.
+
+---
+
+
 > **Atualização de referência (26/10/2026):** a Etapa 8 está concluída e integrada às duas `main` por MR institucional; a Etapa 9 vigente é **Relatórios consolidados** (Projetos; Movimentações em Resumo/Detalhamento), preparada em `collab/etapa-9-relatorios-consolidados`. **Sem implementação funcional da Etapa 9 ainda.** Contrato e checklist atuais: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`. Informações datadas posteriores a este aviso dentro do documento são registros históricos, não o status mais recente.
 
 
