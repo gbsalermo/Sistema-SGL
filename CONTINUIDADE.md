@@ -1,3 +1,15 @@
+> **CHECKPOINT VIGENTE — 12/11/2026 (substitui cabeçalhos antigos abaixo)**
+>
+> **Fonte operacional:** GitLab institucional `release`; GitHub `release` é seu espelho automático. GitLab/GitHub `main` continuam sincronizados entre si, mas **não são equivalentes à release**. Criar novas branches `collab/*` a partir da `release` atualizada. Integração funcional somente por Merge Request manual no GitLab para `release`.
+>
+> **Infraestrutura:** espelhamento GitLab/main → GitHub/main e GitLab/release → GitHub/release agendados a cada 15 minutos; GitHub/collab/* → GitLab/collab/* por push. Primeiro disparo do espelho release validado pelo responsável em 12/11; comparação `gitlab/release...github/release` = `0 0` relatada para frontend e backend. Não usar force push. Detalhes em `docs/SINCRONIZACAO_GITLAB_GITHUB.md`.
+>
+> **Situação funcional (informações de aceites anteriores, não auditoria integral de produção):** etapas 1–9 com implementação e validações relatadas; Etapa 10 de rótulos com Produto/Resíduo validados e impressão Zebra em refinamento; Soluções e documento de entrada exigem conferência do ponto de impressão. A Etapa 11 multilaboratório de estagiários foi trabalhada pelo supervisor; não presumir que a branch colaborativa descontinuada seja fonte vigente. Há uso real em produção relatado, mas não equivaler isso a homologação completa de segurança, carga e E2E. Confirmar contratos reais e código da `release` antes de qualquer mudança.
+>
+> **Pendências prioritárias:** fechar validação do fluxo completo de rótulos, revisar Estagiários/vínculos multilaboratório no código da release, realizar auditoria de testes de arquitetura, fluxos e carga, conferir autenticação/autorização institucional e atualizar o manual operacional. Documentos históricos abaixo mantidos para rastreabilidade; suas referências a `main` como branch estável e a etapas "a iniciar" estão superadas por este checkpoint.
+
+---
+
 # Continuidade do Projeto SGL — Backend
 
 ## Checkpoint vigente — 27/10/2026: Etapa 9 validada funcionalmente, aguardando merge
