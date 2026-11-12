@@ -15,57 +15,57 @@
 
 | Arquivo | Classe preliminar | Revisão individual |
 |---|---|---|
-| \`CONTINUIDADE.md\` | Referência estrutural candidata | Pendente |
-| \`README.md\` | Referência estrutural candidata | Pendente |
-| \`docs/API_AUDITORIA_PRE_SWAGGER.md\` | Contrato / guia especializado | Pendente |
-| \`docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/CODIGOS_REFERENCIA_TESTES.md\` | Contrato / guia especializado | Pendente |
-| \`docs/CONTINUIDADE_ETAPA_2_2026-09-10.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/CONTINUIDADE_ETAPA_3_2026-09-11.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/CONTINUIDADE_ETAPA_5_2026-09-24.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/CONTINUIDADE_ETAPA_7_2026-10-06.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/CONTINUIDADE_PRE_PRODUCAO_2026-09-09.md\` | Contrato / guia especializado | Pendente |
-| \`docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md\` | Contrato / guia especializado | Pendente |
-| \`docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md\` | Contrato / guia especializado | Pendente |
-| \`docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md\` | Contrato / guia especializado | Pendente |
-| \`docs/DEMO_APRESENTACAO_EMBRAPA.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/DOSSIE_PROJETO_SGL.md\` | Referência estrutural candidata | Pendente |
-| \`docs/ENDPOINTS_INTERNOS.md\` | Referência estrutural candidata | Pendente |
-| \`docs/ETAPA_10_CENARIO_GESTAO_ROTULOS_2026-10-28.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_10_PREPARACAO_ROTULOS_IMPRESSAO_2026-10-27.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_7_7_AUDITORIA_INTEGRACAO_BACKEND_FRONTEND.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_7_MODELO_ESTOQUE.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_8_2_INATIVACAO_SEGURA.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_8_AJUSTES_VALIDACAO_2026-10-21.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_8_AJUSTE_VISUAL_GESTAO_VINCULOS_2026-10-21.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_8_AUDITORIA_TECNICA_CHECKPOINT_2026-10-23.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_8_CONTRATO_VINCULOS_ACESSO.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_8_IMPLEMENTACAO_VINCULOS_DEV_2026-10-21.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_8_INICIO_E_REGRAS.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_9_1_AUDITORIA_CONTRATOS_RELATORIOS_2026-10-26.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/EXPORTACAO_RELATORIOS.md\` | Contrato / guia especializado | Pendente |
-| \`docs/FLUXO_DO_SISTEMA.md\` | Referência estrutural candidata | Pendente |
-| \`docs/GUIA_ESTRUTURAL.md\` | Referência estrutural candidata | Pendente |
-| \`docs/JSON_EXEMPLOS.md\` | Contrato / guia especializado | Pendente |
-| \`docs/MODULO_RESIDUOS.md\` | Contrato / guia especializado | Pendente |
-| \`docs/PENDENCIAS_POS_PROTOTIPO.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/PLANO_PRE_PRODUCAO.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/README.md\` | Referência estrutural candidata | Pendente |
-| \`docs/RELATORIOS.md\` | Contrato / guia especializado | Pendente |
-| \`docs/REQUISICOES_POSTMAN_LOTES.md\` | Contrato / guia especializado | Pendente |
-| \`docs/SINCRONIZACAO_GITLAB_GITHUB.md\` | Referência estrutural candidata | Pendente |
-| \`docs/VALIDACAO_ETAPA_4.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/VALIDACAO_ETAPA_5.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/VALIDACAO_ETAPA_6_2.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/VALIDACAO_ETAPA_6_3.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/VALIDACAO_ETAPA_6_4.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/VALIDACAO_ETAPA_6_6.md\` | Histórico / plano / evidência | Pendente |
-| \`docs/testes.md\` | Contrato / guia especializado | Pendente |
+| `CONTINUIDADE.md` | Referência estrutural candidata | Pendente |
+| `README.md` | Referência estrutural candidata | Pendente |
+| `docs/API_AUDITORIA_PRE_SWAGGER.md` | Contrato / guia especializado | Pendente |
+| `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` | Histórico / plano / evidência | Pendente |
+| `docs/CODIGOS_REFERENCIA_TESTES.md` | Contrato / guia especializado | Pendente |
+| `docs/CONTINUIDADE_ETAPA_2_2026-09-10.md` | Histórico / plano / evidência | Pendente |
+| `docs/CONTINUIDADE_ETAPA_3_2026-09-11.md` | Histórico / plano / evidência | Pendente |
+| `docs/CONTINUIDADE_ETAPA_4_2026-09-17.md` | Histórico / plano / evidência | Pendente |
+| `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` | Histórico / plano / evidência | Pendente |
+| `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md` | Histórico / plano / evidência | Pendente |
+| `docs/CONTINUIDADE_PRE_PRODUCAO_2026-09-09.md` | Contrato / guia especializado | Pendente |
+| `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md` | Contrato / guia especializado | Pendente |
+| `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` | Contrato / guia especializado | Pendente |
+| `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md` | Contrato / guia especializado | Pendente |
+| `docs/DEMO_APRESENTACAO_EMBRAPA.md` | Histórico / plano / evidência | Pendente |
+| `docs/DOSSIE_PROJETO_SGL.md` | Referência estrutural candidata | Pendente |
+| `docs/ENDPOINTS_INTERNOS.md` | Referência estrutural candidata | Pendente |
+| `docs/ETAPA_10_CENARIO_GESTAO_ROTULOS_2026-10-28.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_10_PREPARACAO_ROTULOS_IMPRESSAO_2026-10-27.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_7_7_AUDITORIA_INTEGRACAO_BACKEND_FRONTEND.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_7_MODELO_ESTOQUE.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_2_INATIVACAO_SEGURA.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_AJUSTES_VALIDACAO_2026-10-21.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_AJUSTE_VISUAL_GESTAO_VINCULOS_2026-10-21.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_AUDITORIA_TECNICA_CHECKPOINT_2026-10-23.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_CONTRATO_VINCULOS_ACESSO.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_IMPLEMENTACAO_VINCULOS_DEV_2026-10-21.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_INICIO_E_REGRAS.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_9_1_AUDITORIA_CONTRATOS_RELATORIOS_2026-10-26.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md` | Histórico / plano / evidência | Pendente |
+| `docs/EXPORTACAO_RELATORIOS.md` | Contrato / guia especializado | Pendente |
+| `docs/FLUXO_DO_SISTEMA.md` | Referência estrutural candidata | Pendente |
+| `docs/GUIA_ESTRUTURAL.md` | Referência estrutural candidata | Pendente |
+| `docs/JSON_EXEMPLOS.md` | Contrato / guia especializado | Pendente |
+| `docs/MODULO_RESIDUOS.md` | Contrato / guia especializado | Pendente |
+| `docs/PENDENCIAS_POS_PROTOTIPO.md` | Histórico / plano / evidência | Pendente |
+| `docs/PLANO_PRE_PRODUCAO.md` | Histórico / plano / evidência | Pendente |
+| `docs/README.md` | Referência estrutural candidata | Pendente |
+| `docs/RELATORIOS.md` | Contrato / guia especializado | Pendente |
+| `docs/REQUISICOES_POSTMAN_LOTES.md` | Contrato / guia especializado | Pendente |
+| `docs/SINCRONIZACAO_GITLAB_GITHUB.md` | Referência estrutural candidata | Pendente |
+| `docs/VALIDACAO_ETAPA_4.md` | Histórico / plano / evidência | Pendente |
+| `docs/VALIDACAO_ETAPA_5.md` | Histórico / plano / evidência | Pendente |
+| `docs/VALIDACAO_ETAPA_6_2.md` | Histórico / plano / evidência | Pendente |
+| `docs/VALIDACAO_ETAPA_6_3.md` | Histórico / plano / evidência | Pendente |
+| `docs/VALIDACAO_ETAPA_6_4.md` | Histórico / plano / evidência | Pendente |
+| `docs/VALIDACAO_ETAPA_6_6.md` | Histórico / plano / evidência | Pendente |
+| `docs/testes.md` | Contrato / guia especializado | Pendente |
 
 ## Auditoria de conteúdo — itens de atenção
 
