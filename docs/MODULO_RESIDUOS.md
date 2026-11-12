@@ -1,5 +1,7 @@
 # Módulo de Resíduos Laboratoriais — SGL
 
+> **Vigência (12/11/2026):** o histórico de Etapas 3/4 e migrations V11–V18 abaixo é preservado como registro da implementação inicial. Para o fluxo atual, conferir `ResiduoController.java`, `ResiduoService.java`, DTOs e migrations posteriores da `release`, inclusive rótulos e contextos operacionais. Não interpretar “migrations atuais” de setembro como inventário completo de novembro.
+
 **Estado em 24/09/2026:** ✅ Etapas 3 e 4 concluídas e validadas na base reconciliada.  
 **Migrations principais atuais:** `V11__create_residuo_module.sql`, `V12__backfill_codigo_sgl_residuos.sql`, `V13__expand_basic_residuo_data.sql`, `V14__create_residue_classes.sql`, `V15__add_residue_safety_information.sql` e `V16__add_residuo_unidade_snapshot.sql`.  
 **Evolução atual:** Etapa 4 concluída. Locais usam V17, modelos usam V18 e a V16 canônica do supervisor permanece imutável.
