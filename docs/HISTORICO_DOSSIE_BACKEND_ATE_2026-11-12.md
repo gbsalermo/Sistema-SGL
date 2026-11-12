@@ -1,0 +1,789 @@
+# Histórico do dossiê técnico do backend — preservado em 12/11/2026
+
+Este arquivo contém integralmente a versão anterior de `docs/DOSSIE_PROJETO_SGL.md`, inclusive checkpoints e procedimentos históricos. **Não é a referência vigente.** Consulte `DOSSIE_PROJETO_SGL.md` e `GOVERNANCA_DOCUMENTAL.md` para manutenção atual.
+
+---
+
+# Dossiê do Projeto SGL — Handoff
+
+> **Governança e redundâncias (12/11/2026):** consultar [`GOVERNANCA_DOCUMENTAL.md`](GOVERNANCA_DOCUMENTAL.md) para a autoridade de cada documento, escopo das referências especializadas e conflitos ainda pendentes. O dossiê é proprietário do **mapa de manutenção**, não de roadmaps, instruções Git ou tokens visuais.
+
+## Mapa de manutenção do backend — 12/11/2026 (conferido na árvore da release)
+
+**Uso:** começar pelo endpoint no controller, seguir DTO de entrada/saída, serviço, validações de acesso, repository, model e migration. A tabela abaixo registra **arquivos presentes na release**; não substitui leitura de métodos, testes ou contratos. Mudanças funcionais de backend continuam sendo aplicadas manualmente pelo mantenedor, salvo autorização explícita.
+
+| Domínio | Controller | Service | Onde conferir |
+|---|---|---|---|
+| Autenticação | `AuthController.java` | `AuthService.java` | `config/ApiSecurityConfig.java`, `security/JwtService.java`, `config/SecurityConfig.java` |
+| Laboratórios e unidade | `LaboratorioController.java`, `UnidadeController.java` | `LaboratorioService.java`, `UnidadeService.java` | `repository/LaboratorioRepository.java`, `model/Laboratorio.java` |
+| Projetos / SCI / Atividades | `ProjetoController.java`, `SciController.java`, `AtividadeController.java` | `ProjetoService.java`, `SciService.java`, `AtividadeService.java` | DTOs de request, validação de SEG e contexto |
+| Estagiários e vínculos | `EstagiarioController.java`, `VinculoEstagioController.java`, `VinculoEstagioAtividadeController.java` | `EstagiarioService.java`, `VinculoEstagioService.java`, `VinculoEstagioAtividadeService.java` | `SincronizacaoVinculoEstagioService.java`, `ElegibilidadeContextoOperacional.java`, migrations V47/V48 |
+| Pessoas e vínculos operacionais | `PessoaCorporativaController.java`, `VinculoOperacionalUsuarioController.java` | `PessoaCorporativaService.java`, `VinculoOperacionalUsuarioService.java` | regras de lotação, habilitação e escopo |
+| Pedidos | `PedidoController.java`, `ContextoOperacionalController.java` | `PedidoService.java`, `ContextoOperacionalConsultaService.java` | `repository/ItemPedidoRepository.java`, elegibilidade e estoque |
+| Estoque e lotes | `EstoqueCentralController.java`, `LoteController.java`, `MovimentacaoEstoqueController.java` | `EstoqueCentralService.java`, `LoteService.java`, `MovimentacaoEstoqueService.java` | FEFO/FIFO, recipiente, fracionamento, migrations |
+| Soluções | `SolucoesController.java`, `ModeloSolucaoController.java` | `PedidoService.java` (pedidos de solução), `ModeloSolucaoService.java` (catálogo) | `SolucoesController` usa `PedidoService` para criar/listar/aprovar/entregar/cancelar/rejeitar; conferir DTOs e regras no serviço |
+| Resíduos | `ResiduoController.java`, `ModeloResiduoController.java` | `ResiduoService.java`, `ModeloResiduoService.java` | `repository/HistoricoResiduoRepository.java` e componentes |
+| Produtos | `ProdutoController.java` | `ProdutoService.java` | catálogo, unidade e conversão |
+| Relatórios | `RelatorioController.java` e controllers `Relatorio*Controller.java` | serviços `Relatorio*Service.java` | filtros, escopo e exportações |
+
+**Prefixo dos caminhos Java:** `src/main/java/com/sgl/`. A arquitetura real contém diretórios `controller/`, `service/`, `repository/`, `model/`, `dto/request/` e outras classes de suporte. Ver `docs/GUIA_ESTRUTURAL.md` para convenções e `docs/AUDITORIA_DOCUMENTAL_BACKEND_2026-11-12.md` para triagem documental.
+
+**Contrato confirmado por leitura de controllers:** `SolucoesController` expõe `/api/v1/solucoes/pedidos` e usa `PedidoService`; `PedidoController` expõe `/api/v1/pedidos` e também usa `PedidoService`; `VinculoEstagioController` usa `VinculoEstagioService` e `SincronizacaoVinculoEstagioService`. A existência dessas rotas não comprova permissões nem validação de cada fluxo: verificar `ApiSecurityConfig` e as regras nos serviços.
+
+**Fluxo seguro:** branch `collab/*` criada da `gitlab/release`; alterações backend pelo mantenedor; testes unitários, integração, migrations e arquitetura; MR manual contra `release`; espelho GitHub automático por fast-forward. **Não** tratar `main` como a versão de produção.
+
+**Limites:** migrations V47/V48 existem na release, mas sua presença não confirma por si só que todos os cenários multilaboratório estão validados. O mesmo vale para endpoints de relatório e rótulos. Confirmar regras e payloads nos métodos antes de editar.
+
+---
+
+
+> **Registro histórico (26/10/2026):** a Etapa 8 está concluída e integrada às duas `main` por MR institucional; a Etapa 9 vigente é **Relatórios consolidados** (Projetos; Movimentações em Resumo/Detalhamento), preparada em `collab/etapa-9-relatorios-consolidados`. **Sem implementação funcional da Etapa 9 ainda.** Contrato e checklist atuais: `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`. Informações datadas posteriores a este aviso dentro do documento são registros históricos, não o status mais recente.
+
+
+> **Checkpoint histórico — 23/10/2026 (Etapa 8, MVP em DEV):** blocos funcionais Vínculos, Pedidos, Soluções e Resíduos homologados manualmente; Pedido/Solução/Resíduo permitem Projeto opcional para os perfis elegíveis; vínculo específico por Projeto/SCI/Atividade deriva contexto operacional sem criar vínculos formais automaticamente. Backend PostgreSQL/Flyway validou 44 migrations; o frontend compilou e o ArchUnit passou 5/5 regras. Auditorias completas de carga/E2E e eventual identidade institucional permanecem fora deste aceite. **Auditoria de campos e entradas:** `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` — há dependência de provisionamento externo/seed para Unidade, Usuário e cadastro inicial de Estagiário, embora os cadastros operacionais restantes tenham telas. **Sem merge; não presumir sincronização GitLab confirmada.** Trechos históricos datados abaixo descrevem o estado *àquela época*, não substituem este checkpoint.
+
+
+**Projeto:** SGL — Sistema de Gestão de Laboratórios  
+**Backend:** `gbsalermo/Sistema-SGL`  
+**Frontend:** `gbsalermo/SGL-FRONTEND`  
+**Atualizado em:** 01/10/2026  
+**Estado:** primeiro protótipo funcional aprovado; Etapas 1–5 concluídas e validadas; Etapa 6 em andamento, com 6.1–6.4 concluídos e validados; 6.5 frontend integrado implementado e aguardando validação visual/local.
+
+Para validar o 6.5, foi adicionada massa DEV IQ idempotente com múltiplos cenários de Estagiários, vínculos e participações. Essa massa não substitui o bloco 6.6 de fechamento final.  
+**Objetivo:** permitir que outra pessoa ou IA retome o projeto pelo estado real atual sem reconstruir o histórico.
+
+## Checkpoint atual
+
+```text
+Etapa 1 — padrão visual global              ✅ concluída
+Etapa 2 — Dark Mode definitivo              ✅ concluída
+Etapa 3 — refinamentos de Resíduos          ✅ concluída e validada
+Etapa 4 — expansão operacional de Resíduos  ✅ concluída e validada
+Etapa 5 — Projetos e Atividades             ✅ concluída e validada
+Etapa 6 — Estagiários e vínculos             🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
+```
+
+Handoff imediato:
+
+`docs/VALIDACAO_ETAPA_6_3.md`
+
+Decisão atual do ciclo institucional:
+
+`docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`
+
+Plano canônico:
+
+`docs/PLANO_PRE_PRODUCAO.md`
+
+---
+
+# 0. Infraestrutura Git e sincronização — obrigatório
+
+A arquitetura de colaboração foi reorganizada em 22/09/2026 para impedir que o GitHub sobrescreva trabalho do supervisor no GitLab.
+
+Documento detalhado:
+
+`docs/SINCRONIZACAO_GITLAB_GITHUB.md`
+
+Resumo:
+
+```text
+GitLab/main = fonte canônica
+
+GitLab/main
+    ↓ GitHub Actions a cada 15 min / manual
+GitHub/main
+
+GitHub/collab/*
+    ↓ GitHub Actions em cada push
+GitLab/collab/*
+    ↓ Merge Request
+GitLab/main
+```
+
+Regras obrigatórias:
+
+- o supervisor pode avançar a `main` diretamente pelo fluxo institucional no GitLab;
+- `GitHub/main` é espelho, não origem de trabalho;
+- usuário e IA colaboram em `GitHub/collab/*`;
+- a mesma `collab/*` é replicada automaticamente para o GitLab;
+- integração final acontece por MR no GitLab;
+- nenhum workflow usa `--force`;
+- divergência faz o workflow falhar em vez de sobrescrever histórico;
+- não editar a mesma branch independentemente nos dois remotes;
+- os remotes locais esperados se chamam `github` e `gitlab`; a antiga configuração de `origin` com múltiplos push URLs foi removida.
+
+Credencial dos workflows:
+
+```text
+GitHub Actions Secret: GITLAB_PUSH_TOKEN
+```
+
+O valor nunca deve ser documentado. A solução usa Git-over-HTTPS; SSH foi descartado após timeout da porta 22.
+
+Workflows backend:
+
+```text
+.github/workflows/check-gitlab-connectivity.yml
+→ nome exibido: Sync collab branches to GitLab
+→ GitHub/collab/* → GitLab/collab/*
+
+.github/workflows/sync-gitlab-main-to-github.yml
+→ GitLab/main → GitHub/main
+```
+
+O primeiro arquivo manteve nome legado; não confundir o nome do arquivo com sua função atual.
+
+O fluxo foi validado nos dois sentidos e os `main` chegaram a `0 0` pelo comando:
+
+```bash
+git rev-list --left-right --count gitlab/main...github/main
+```
+
+---
+
+# 1. Ordem de precedência
+
+Quando houver conflito:
+
+```text
+1. código da main
+2. Swagger/OpenAPI
+3. CONTINUIDADE.md do repositório em trabalho
+4. docs/SINCRONIZACAO_GITLAB_GITHUB.md para Git/remotes
+5. docs/PLANO_PRE_PRODUCAO.md
+6. handoff da etapa atual
+7. este DOSSIE_PROJETO_SGL.md
+8. documento específico do módulo
+9. documentos históricos
+```
+
+As Etapas 4 e 5 foram integradas à `main`. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`; branches anteriores permanecem apenas como referência histórica.
+
+---
+
+# 2. Regra de trabalho
+
+O responsável do projeto usa o SGL também como processo de aprendizado.
+
+Portanto:
+
+```text
+backend funcional
+→ IA analisa/modela/explica
+→ fornece passos e código de referência
+→ usuário implementa manualmente
+→ IA revisa
+```
+
+Não aplicar backend funcional diretamente sem autorização explícita.
+
+Frontend/documentação podem ser alterados diretamente quando autorizado.
+
+Trabalhar sempre em branch própria e em etapas pequenas.
+
+As Etapas 1–5 estão fechadas. A branch operacional atual é `collab/etapa-6-estagiarios-vinculos`, criada sobre a `main` pós-Etapa 5.
+
+---
+
+# 3. Objetivo do SGL
+
+O SGL cobre:
+
+- pedidos de materiais;
+- estoque central por Unidade;
+- lotes e validade;
+- FIFO/FEFO;
+- movimentações;
+- fiscalização;
+- resíduos laboratoriais;
+- estagiários e vínculos;
+- administração de dados-base;
+- relatórios e exportações;
+- dashboards, alertas e busca;
+- futura autenticação/autorização/auditoria corporativa.
+
+Repos:
+
+```text
+gbsalermo/Sistema-SGL
+→ Spring API, domínio, persistência, Flyway, Swagger, relatórios/exportações
+
+gbsalermo/SGL-FRONTEND
+→ Vue SPA, UX de Solicitante, Gestão e Administração
+```
+
+---
+
+# 4. Stack
+
+## Backend
+
+```text
+Java 17
+Spring Boot 4.1.0
+Spring Data JPA / Hibernate
+PostgreSQL
+Flyway
+Spring Validation
+Spring Security / OAuth2 Client como base
+SpringDoc OpenAPI / Swagger
+JUnit / H2
+OpenPDF
+Apache POI
+Maven
+```
+
+## Frontend
+
+```text
+Vue 3.5
+Vite 8
+TypeScript 5.9
+Vue Router
+Pinia
+Axios
+Vuetify 3
+Node >= 20.19
+```
+
+---
+
+# 5. Estado executivo
+
+## Backend
+
+```text
+Fundação Spring/PostgreSQL/Flyway                 ✅
+UUID público + Long interno                       ✅
+Pedidos / urgência                                ✅
+Estoque / lotes                                   ✅
+FIFO / FEFO                                       ✅
+Embalagem / multiplicador / fracionamento         ✅
+Movimentações / rastreabilidade                   ✅
+Swagger/OpenAPI                                   ✅
+Fiscalização                                      ✅
+Relatórios + PDF/XLSX                             ✅
+Resíduos — Etapa 3 refinada                       ✅
+Estagiários — base atual                          ✅
+Pessoas por laboratório                           ✅
+Administração/Cadastros                           ✅
+Isolamento operacional por Unidade                ✅
+Autenticação/autorização definitiva               ⏳
+Integração corporativa                            ⏳
+```
+
+## Frontend
+
+```text
+Sessão DEV + expiração                            ✅
+Pedidos Solicitante/Gestão                        ✅
+Estoque / lotes                                   ✅
+Movimentações                                     ✅
+Relatórios                                        ✅
+Resíduos Solicitante/Gestão                       ✅ Etapa 3 concluída
+Classes de Resíduo                                ✅
+Segurança/EPI                                     ✅
+Prévia de rótulo                                  ✅
+Impressão condicionada à liberação                ✅
+Estagiários                                       ✅ base atual
+Pessoas por laboratório                           ✅
+Administração/Cadastros                           ✅
+Dashboard Gestão                                  ✅
+Dashboard Solicitante                             ✅
+Alertas                                           ✅
+Busca                                             ✅
+Dark Mode                                         ✅
+404                                               ✅
+Contexto de Unidade enviado à API                 ✅
+Autenticação/autorização definitiva               ⏳
+```
+
+---
+
+# 6. Arquitetura backend
+
+```text
+Controller
+→ contrato HTTP
+
+Service
+→ regras, transações e orquestração
+
+Repository
+→ persistência/consultas
+
+Model
+→ estado de domínio
+
+RequestDTO / ResponseDTO
+→ contratos públicos
+```
+
+Identificadores:
+
+```text
+Long id
+→ interno
+
+UUID publicId
+→ público
+```
+
+---
+
+# 7. PostgreSQL e Flyway
+
+```text
+PostgreSQL
+Hibernate ddl-auto=validate
+Flyway habilitado
+```
+
+Migrations aplicadas são imutáveis.
+
+Migrations relevantes:
+
+```text
+V11 módulo base de Resíduos
+V12 backfill Código SGL
+V13 estado físico/tratamento/responsabilidade
+V14 Classes de Resíduo
+V15 segurança/EPI
+V16 snapshot de Unidade do Resíduo
+V17 locais de armazenamento de Resíduos
+V18 modelos reutilizáveis de Resíduos
+V19 expansão do domínio de Projeto
+V20 criação do domínio de SCI
+V21 criação do domínio de Atividade
+V22 históricos de prorrogação
+V23 unicidade global do Código SEG
+V24 histórico de correções SEG
+V25 fundação de situação/orientador do estágio
+V26 vínculos institucionais de estágio
+V27 participação VinculoEstagio ↔ Atividade
+V28 dados acadêmicos do vínculo + catálogo de Cursos
+V29 catálogo de Culturas + associação com participação em Atividade
+V30 referência institucional + histórico de sincronização do vínculo
+V31 remoção da unicidade global não confirmada da referência institucional
+```
+
+A V29 e o 6.3 foram concluídos e validados em 01/10/2026. A V30 abriu o 6.4.1 com referência institucional do vínculo e histórico de sincronização. A V31 remove a unicidade global não confirmada da referência institucional sem reescrever a migration já publicada. `referenciaInstitucional` permanece indexada; idempotência de eventos usa origem + referência do evento quando disponível. V32 passou a ser usada por observações/auditoria do treinamento no 6.5; próxima migration livre: **V33+**.
+
+Prorrogações serão eventos próprios com justificativa, autor, data final anterior/nova e histórico transacional. Não haverá propagação automática de prazo do pai para os filhos.
+
+---
+
+# 8. Multitenancy por Unidade
+
+Backend:
+
+```text
+X-SGL-Unidade-Id
+→ TenantRequestFilter
+→ TenantContext
+→ services/repositories
+```
+
+Frontend:
+
+```text
+sessão DEV com unidadeId
+→ interceptor Axios
+→ header X-SGL-Unidade-Id
+```
+
+Isso representa isolamento funcional em desenvolvimento, não autorização definitiva de produção.
+
+---
+
+# 9. Estoque e Pedidos
+
+Domínio:
+
+```text
+Produto
+→ catálogo
+
+EstoqueCentral
+→ saldo agregado por Unidade
+
+Lote
+→ saldo físico, validade, apresentação
+
+MovimentacaoEstoque
+→ rastreabilidade
+```
+
+FIFO/FEFO:
+
+```text
+perecível     → FEFO
+não perecível → FIFO
+```
+
+Pedidos:
+
+```text
+PENDENTE
+├── APROVADO
+│   ├── ENTREGUE
+│   └── CANCELADO
+└── REJEITADO
+```
+
+Criação não baixa estoque; aprovação baixa; entrega não baixa novamente; cancelamento aprovado restaura lotes utilizados.
+
+---
+
+# 10. Resíduos — estado atual
+
+Decisão:
+
+```text
+Produto != Resíduo
+```
+
+Produto é catálogo/estoque. Resíduo é ocorrência real.
+
+Componente pode referenciar Produto para rastreabilidade e sugestão de segurança sem movimentar estoque.
+
+Fluxo:
+
+```text
+INFORMADO
+→ EM_ANALISE
+→ LIBERADO_PARA_ARMAZENAMENTO
+→ ARMAZENADO_TEMPORARIAMENTE
+→ DESPACHADO
+```
+
+Código:
+
+```text
+SGL-RES-AAAA-NNNNNN
+```
+
+## Dados consolidados na Etapa 3
+
+- procedência/uso em `processoOrigem`;
+- estado físico;
+- tratamento realizado;
+- usuário gerador;
+- Gestor recebedor inicial;
+- risco informado/confirmado;
+- classes informadas/confirmadas;
+- snapshots de classes;
+- segurança informada/confirmada;
+- recomendações de segurança no Produto;
+- snapshots de segurança;
+- composição;
+- armazenamento/destino;
+- histórico por ator.
+
+Classes são catálogo editável por Unidade, não enum rígido.
+
+Segurança estruturada:
+
+```text
+LUVAS
+OCULOS_PROTECAO
+PROTECAO_RESPIRATORIA
+JALECO_AVENTAL
+OUTRO
+```
+
+## Snapshot
+
+Regra arquitetural importante:
+
+```text
+cadastro atual/editável
+≠
+dado histórico da ocorrência
+```
+
+Alterar Produto, Classe ou futuramente ModeloResiduo não modifica Resíduos antigos.
+
+## Rótulo
+
+```text
+INFORMADO / EM_ANALISE
+→ prévia ✅
+→ impressão ❌
+
+LIBERADO_PARA_ARMAZENAMENTO ou posterior
+→ impressão ✅
+```
+
+Código e QR técnico existem desde a criação.
+
+Template definitivo/Zebra ficam na Etapa 10.
+
+## Gestão
+
+A tela compara:
+
+```text
+Informado pelo laboratório
+vs
+Aprovado pela Gestão
+```
+
+O Gestor que liberou é identificado no histórico por `RISCO_CONFERIDO_E_RESIDUO_LIBERADO`.
+
+Armazenamento e despacho podem ser feitos por outro Gestor, preservando rastreabilidade.
+
+Detalhes: `docs/MODULO_RESIDUOS.md`.
+
+---
+
+# 11. Etapa 3 — fechada
+
+Validada em 17/09/2026.
+
+```text
+3.1 redundância visual                       ✅
+3.2 dados/classes/segurança/responsabilidade ✅
+3.3 prévia x impressão                       ✅
+```
+
+A validação incluiu fluxo ponta a ponta, Gestores diferentes, histórico, classes, EPI, comparação informado/aprovado, prévia, bloqueio/liberação da impressão e escala visual da tela.
+
+---
+
+# 12. Etapa 4 — concluída
+
+Handoff:
+
+`docs/CONTINUIDADE_ETAPA_4_2026-09-17.md`
+
+Ordem:
+
+```text
+4.1 locais de armazenamento
+→ 4.2 modelos de Resíduo
+→ 4.3 uso modelo x manual
+→ 4.4 correções administrativas do ciclo
+```
+
+## 4.1
+
+Catálogo reutilizável por Unidade + complemento livre + opção manual.
+
+Fechar antes de implementar como preservar histórico se o local mudar.
+
+## 4.2
+
+```text
+ModeloResiduo = padrão reutilizável
+Residuo = ocorrência real
+```
+
+Modelo não movimenta estoque e não deve ser referência viva para histórico.
+
+## 4.3
+
+Solicitante escolhe modelo ou preenchimento manual.
+
+## 4.4
+
+Avaliar:
+
+```text
+ADMINISTRADOR
+→ cancelar com motivo
+→ retornar para análise/liberação com motivo
+→ preservar histórico
+```
+
+Definir status permitidos e efeitos sobre rótulo/impressão antes de codar.
+
+Não confundir com delete lógico, que continua na Etapa 11.
+
+---
+
+# 13. Projetos/SCI/Atividades atuais; Estagiários e Relatórios seguintes
+
+Etapa 5 estabiliza a hierarquia:
+
+```text
+Laboratório responsável/contextual
+└── Projeto
+    └── SCI
+        └── Atividade
+```
+
+**Projeto é o eixo operacional principal**. Laboratório continua útil como contexto institucional, filtro e vínculo responsável, sem obrigar navegação por Laboratório para acessar Projeto.
+
+Código SEG:
+
+```text
+Projeto   XX.XX.XX.XXX.XX.00
+SCI       XX.XX.XX.XXX.XX.SS
+Atividade XX.XX.XX.XXX.XX.SS.AAA
+```
+
+A numeração é institucional e cadastrada; o SGL valida formato, hierarquia e unicidade. A interface sugere o próximo sufixo provável para SCI/Atividade, mas permite edição antes do primeiro salvamento.
+
+
+Etapa 5 estabiliza Projetos/Atividades e Código SEG.
+
+Etapa 6 evolui Estagiários com:
+
+- Orientador obrigatório;
+- `Usuario → Estagiario → VinculoEstagio 1..N`;
+- múltiplas participações históricas em Atividades;
+- Projeto/SCI/Laboratório derivados da Atividade;
+- vínculo sincronizado do ambiente pode existir antes da primeira Atividade; atividade aberta continua obrigatória para estado operacional ativo;
+- estado operacional ativo dependente de Usuario ativo + vínculo não finalizado + participação aberta;
+- Bolsa separada de Curso/Formação;
+- Formação controlada por enum + opção `OUTRO`;
+- Curso como catálogo administrável por Unidade;
+- Cultura/área temática por participação;
+- treinamento de segurança iniciado em `false` e concluído por ação específica;
+- histórico de sincronizações/prorrogações institucionais;
+- abandono da noção operacional de um único "Laboratório do Estagiário".
+
+Estado atual da Etapa 6:
+
+```text
+6.1 contrato e fundação do vínculo                  ✅ 30/09/2026
+6.2 vínculos Estagiário ↔ Atividade + histórico    ✅ 01/10/2026
+6.3 dados acadêmicos/Curso/Cultura/segurança         ✅ concluído e validado
+6.3.1 Formação + Curso + treinamento                ✅ concluído e validado
+6.3.2 Cultura por participação                      ✅ concluído e validado
+6.4 ciclo institucional/sincronização                ✅ concluído e validado em 02/10/2026
+6.4.1 contrato + histórico institucional             ✅
+6.4.2 sincronização do vínculo existente             ✅
+  6.4.2A DTOs/contrato                               ✅
+  6.4.2B regra transacional                          ✅
+  6.4.2C endpoint + testes                           ✅ suíte local verde
+6.4.3 nova bolsa / novo vínculo                      ✅ suíte local verde
+6.4.4 testes/validação/documentação                  ✅ concluído
+6.5 frontend integrado                              ⏳
+6.6 dados DEV/testes/validação/documentação         ⏳
+```
+
+O 6.2 teve suíte backend completa e compilação confirmadas sem erros/falhas em 01/10/2026. O 6.3 também foi validado em 01/10/2026 com compilação concluída e suíte completa verde. Checkpoint atual: `docs/VALIDACAO_ETAPA_6_3.md`.
+
+Etapa 7 consome Etapas 5/6 em relatórios consolidados e inclui organização estrutural do módulo de Relatórios.
+
+---
+
+# 14. Unidades, Soluções e Pedidos
+
+Etapa 8:
+
+- separar unidade de medida de apresentação física;
+- `1 L = 1000 mL`;
+- `1 kg = 1000 g`;
+- não converter massa/volume sem densidade;
+- estabilizar domínio de Soluções;
+- fechar o contrato de contexto operacional do solicitante;
+- tratar `Usuario.laboratorio` e o laboratório da sessão DEV como compatibilidade, não como fonte de verdade para Estagiários;
+- preparar Pedido para consumir a participação aberta do Estagiário.
+
+Etapa 9 integra Soluções aos Pedidos com aprovação atômica dos componentes e aplica a evolução:
+
+```text
+Pedido
+→ VinculoEstagioAtividade
+→ Atividade
+→ SCI
+→ Projeto
+→ Laboratorio
+→ Unidade
+```
+
+Para Estagiários, a participação será escolhida entre as participações abertas e Projeto/Laboratório serão derivados pelo backend.
+
+Para solicitantes não Estagiários:
+
+- com Projeto: o Projeto é escolhido e o Laboratório é derivado pelo backend;
+- sem Projeto: `Usuario.laboratorio` permanece como contexto institucional/base;
+- a participação de estágio não é obrigatória.
+
+A interface de Estagiários, já no 6.5, deve abandonar a legenda de um único laboratório e exibir os contextos por participação.
+
+Decisão detalhada: `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md`.
+
+---
+
+# 15. Rótulos, Manual, testes e refactor
+
+Etapa 10:
+
+- padrão-base de rótulos;
+- Produto/Resíduo/Solução;
+- documento interno de lote;
+- Zebra/ZPL/testes físicos.
+
+Etapa 11:
+
+- Manual do Usuário;
+- avaliação geral de delete lógico.
+
+Etapa 12:
+
+```text
+Vitest + Vue Test Utils
+Cypress
+```
+
+Etapa 13:
+
+- revisão estrutural/legibilidade;
+- atenção especial a `Residuo` e Services grandes;
+- sem alterar comportamento;
+- reexecutar testes depois do refactor.
+
+---
+
+# 16. Situação da pré-produção
+
+```text
+Etapa 1 ✅
+Etapa 2 ✅
+Etapa 3 ✅
+Etapa 4 ✅ concluída
+Etapa 5 ✅ concluída e validada
+Etapa 6 🔧 6.1–6.4 concluídos; 6.5 frontend implementado, validação pendente
+Etapa 7 ⏳
+Etapa 8 ⏳ unidades/Soluções/contexto operacional
+Etapa 9 ⏳ Pedidos/Soluções/participação
+Etapa 10 ⏳
+Etapa 11 ⏳
+Etapa 12 ⏳
+Etapa 13 ⏳
+```
+
+---
+
+# 17. Regra final de retomada
+
+**As Etapas 1–5 estão encerradas e validadas. Na Etapa 6, os blocos 6.1–6.4 estão concluídos e validados; o 6.5 — frontend integrado foi implementado e aguarda validação visual/local. A identidade Usuario/Estagiario é estável; prorrogação mantém o mesmo vínculo e nova bolsa cria novo VinculoEstagio. Ler também `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e `docs/VALIDACAO_ETAPA_6_4.md`.**
+
+
+**Refinamento 6.5 — período/prorrogação:** o contrato de leitura de `VinculoEstagio` passou a expor `dataFimPrevistaOriginal` quando derivável do histórico institucional de prorrogação. A massa DEV IQ também cobre vínculo não finalizado sem participação ativa, diferenciando `Não iniciado` de `Sem atividade ativa`.
+
+
+## Revisão do vínculo — 02/10/2026
+
+O modelo deixou de tratar o ambiente institucional como autoridade absoluta sobre todos os campos do vínculo. A precedência agora é por campo: identidade/estado institucional continuam prioritariamente externos; Formação, Curso, Bolsa/modalidade, Orientador e período podem ser mantidos localmente e são sobrescritos quando a integração enviar explicitamente esses mesmos campos.
+
+Novo endpoint local: `PUT /api/v1/vinculos-estagio/{vinculoId}`.
+
+Todo novo vínculo exige início e fim previsto. Não criar bolsa/estágio sem término predeterminado.
+
+
+## Projetos ↔ Estagiários — refinamento posterior
+
+Após o fechamento da Etapa 6, a tela de Projetos deverá ser revisada para mostrar, em cada Atividade, os Estagiários associados via `VinculoEstagioAtividade`, preservando o responsável da Atividade já exibido. A relação não será duplicada diretamente no Projeto; será derivada da participação existente.
+
+
+## Drawer de Estagiários — refinamento 6.5
+
+A experiência final do drawer prioriza Ações operacionais, seguida de `BOLSA / VÍNCULO`, Formação, Orientador, Participações e Observações. V32 adiciona observações auditáveis do vínculo e eventos de treinamento. O treinamento pode ser concluído ou revertido pelo novo fluxo auditável, com observação opcional e identificação do operador. O cadastro de Cultura também pode ser iniciado diretamente pelo modal de gestão de Culturas da participação.
+
+Status: implementado, aguardando testes manuais e automáticos do 6.6.
