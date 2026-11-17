@@ -1,5 +1,7 @@
 # Dossiê técnico do SGL — Backend
 
+> **Rótulos e documento de entrada (checagem frontend 17/11):** os pontos de acesso/impressão para Produto, Resíduo, Solução e entrada de lote foram localizados no código da `release`. Solução imprime a partir de `EM_PREPARACAO`; documento de entrada tem gatilho após criação e no detalhe do lote. Ainda faltam ensaios de impressão real. Evidências em [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seção C8.
+
 > **Revisão cruzada — 17/11/2026:** a correspondência de rotas-chave com o frontend foi conferida estaticamente. **Alerta de prioridade alta:** `ApiSecurityConfig` aplica permissão ampla em leituras para usuário ativo; alguns `GET` de Pedidos, Contextos, Vínculos e Resíduos foram encontrados sem validação de titularidade/perfil nos services. Definir matriz de visibilidade e testar IDs de terceiros **da mesma Unidade** antes da homologação. Detalhes e evidências em [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C2/C6. Não foi executado teste de exploração.
 
 **Revisão:** 12/11/2026  
