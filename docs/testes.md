@@ -1,5 +1,7 @@
 # Testes — SGL
 
+> **Auditoria de cobertura — 17/11/2026:** `application-test.properties` da `release` usa H2 em memória, Hibernate `create-drop` e `spring.flyway.enabled=false`. Portanto, mesmo com `mvnw test` verde, **não há comprovação de aplicação das migrations Flyway nem de compatibilidade dos locks com PostgreSQL**. Existem testes de concorrência e autorização, mas a revisão ainda carece de resultados executados e de testes negativos de leitura de terceiros na mesma Unidade. Ver [matriz C13–C14](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) e pendências [SGL-REV-009/010/017/024](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 > **AVISO DE VIGÊNCIA — 17/11/2026:** este roteiro foi escrito para a fase anterior ao PostgreSQL e à autenticação JWT atual. O projeto Maven tem `pom.xml` e `mvnw` **na raiz** do repositório; os endpoints protegidos exigem autenticação e os contratos atuais usam UUIDs públicos. **Não executar exemplos antigos em produção ou com dados reais.** A atualização dos cenários está registrada em [`SGL-REV-008/009/010`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md); enquanto isso, conferir DTOs, controllers e Swagger da `release` antes de testar.
 
 Este arquivo reúne os testes automatizados e o roteiro manual no Postman para validar a arquitetura atual antes da migração para PostgreSQL.
