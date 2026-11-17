@@ -24,6 +24,18 @@ Ajuda: texto, poster, PDF e MP4        JWT                 Flyway V1–V48+
 
 **Ambiente sugerido:** *staging efêmero isolado*. Hospedagem específica deve ser decidida conforme orçamento, rede institucional, compatibilidade do build e regras de dados. **Não criar conta ou deploy sem aprovação**. Evitar perfis `dev/demo` expostos publicamente e credenciais reais; para testes, usar identidade simulada restrita à rede/VPN/IP autorizado, ou autenticação corporativa de homologação **se oficialmente disponível**.
 
+### Topologia real da release a reproduzir (conferência de implantação — 17/11)
+
+O código da `release` traz configuração de deployment institucional e permite tornar o staging mais fiel à produção **sem copiar seus recursos ou segredos**:
+
+- **Frontend:** `gbsalermo/SGL-FRONTEND/Dockerfile` gera `dist/` com Node 22, publica no Nginx e define `VITE_API_BASE_URL=/api` por padrão; `nginx.conf.template` faz `location /api` apontar para `API_UPSTREAM`. Assim, a operação normal usa **mesma origem HTTPS** para SPA e API, evitando CORS no navegador quando o proxy está correto. Um cenário de origem cruzada pode ser testado adicionalmente, mas não deve substituir a topologia real.
+- **Backend:** `gbsalermo/Sistema-SGL/docker-compose.yml` usa PostgreSQL 16 no serviço `db`, container Spring Boot com `SPRING_PROFILES_ACTIVE=prod`, `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, network `shared` com alias `sgl-api`, e DB/backup em **volumes externos persistentes**. As configurações de produção incluem credenciais corporativas via variáveis e `SGL_CORPORATE_AMBIENTE` com default `p`.
+- **Vídeos da Ajuda:** `gbsalermo/SGL-FRONTEND/docker-compose.yml` monta volume externo `sgl_web_ajuda_videos` em `/usr/share/nginx/ajuda-videos:ro`; `nginx.conf.template` atende `/ajuda/videos/` via `alias`. A falta de MP4 no Git **não significa erro de implantação**. Staging deve testar ausência, headers HTTP e reprodução com **asset de teste autorizado**, sem copiar vídeos institucionais nem alterar volume de produção.
+
+**Proteção obrigatória de staging:** `docker-compose.yml` de produção **não deve ser executado inalterado** no staging. Substituir explicitamente nomes de redes e volumes por nomes isolados, confirmar `API_UPSTREAM`, rotas e banco descartável, desabilitar ligação ao gateway corporativo de produção (inclusive valor padrão `SGL_CORPORATE_AMBIENTE=p`), manter credenciais falsas/de homologação sob controle e evitar exposição de `dev/demo` público. Revisar obrigatoriedade de segredos e inicialização do perfil escolhido antes do teste. O plano não autoriza uso dos containers, serviços ou credenciais da instalação institucional.
+
+**Verificação específica:** ensaiar `GET /api/v1/auth/me`, navegação `/ajuda`, PDF e poster sob o mesmo host; verificar reverse proxy, headers, cache, HTTP 401/403, Range/MIME de vídeo, WebSocket/keepalive se aplicável e tráfego dentro de rede isolada. O relatório deve registrar se a topologia foi fiel à `release` ou deliberadamente simplificada.
+
 ### Condições para abrir o ambiente
 
 1. Confirmar commit exato da **`release` no GitLab** e sincronização espelho GitHub; trabalhar em branch/tag de execução imutável e registrar hashes frontend/backend.
