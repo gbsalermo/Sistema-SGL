@@ -1,5 +1,7 @@
 # Etapa 12 — Plano transversal de qualidade: arquitetura, carga, fluxos e frontend
 
+> **Evidências de escopo dos testes — 17/11/2026:** a matriz C11 documenta os testes existentes de login, importação de pessoas e eventos de estágio, ainda sem execução nesta revisão. A matriz C12 confirma que `npm run test` do frontend **não inclui** `zpl.test.mjs` e `browserPrintLocal.test.mjs`, que usam `node:test`. Acompanhamento em [SGL-REV-022/023](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). Não inferir CI/testes executados da presença de scripts ou de workflows GitHub de sincronização.
+
 > **Acompanhamento de achados — 17/11/2026:** este arquivo continua sendo um **plano de qualidade ainda sem resultados de execução registrados**. Riscos encontrados na revisão documental, inclusive autorização horizontal, carga, estoque e sincronização, ficam no [registro único de pendências](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md), especialmente `SGL-REV-009`, `010`, `013` e `017`. Não converter tarefas planejadas em testes executados.
 
 **Instituído em:** 20/10/2026  
