@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C18. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C19. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -259,7 +259,7 @@
 1. **Definir e testar a política de visibilidade por perfil/titularidade/Unidade**: `001–004`, `018–020`, `026` e `009`; testar acessos a terceiros da mesma Unidade e principal ativo sem Unidade antes de alterar services.
 2. **Decidir divergências funcionais e editoriais**: `005–008`, `014`, `021`, `022` e `027`. Priorizar o contrato de quantidades heterogêneas e preservar Central de Ajuda/vídeos publicados.
 3. **Executar homologação banco e qualidade**: `010–012`, `015–017`, `023` e `024` (PostgreSQL/Flyway, concorrência, Zebra física, E2E, integração corporativa e evidência CI).
-4. **Medir desempenho antes de corrigir**: `013` e `025`, com dados de queries, volume, latência e equivalência de resultados.
+4. **Medir desempenho e falhas parciais antes de corrigir**: `013`, `025` e `028`, com contagem de queries/requests, volume, latência, carga e cenário de erro de lotes no Dashboard; preservar os dados válidos no carregamento parcial.
 5. Registrar commits, MRs, evidências e aceites para encerrar IDs. **Uma fonte documental proprietária**: esta fila acompanha correções, a matriz guarda evidências e os dossiês apenas apontam para ambas.
 
 **Integração documental ainda pendente:** manter branches `collab/docs-release-estado-2026-11` isoladas até revisão final, conferir novamente diferenças contra GitLab `release`, sem force-push e sem alterações de código/media. READMEs finais ficam para o encerramento da auditoria.
