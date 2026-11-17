@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C16. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C17. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -48,6 +48,8 @@
 
 | SGL-REV-025 | P2 | RISCO | Relatórios consultam todo histórico da Unidade e filtram no Java | ABERTO | C16 |
 | SGL-REV-026 | P1 | RISCO | Relatórios sem tenant podem consultar movimentos de múltiplas Unidades | ABERTO | C16 |
+
+| SGL-REV-027 | P2 | DIVERGÊNCIA | Resumo Operacional soma kg e L em totais físicos globais sem unidade | ABERTO | C17 |
 
 ## Fichas de evidência e critérios de correção
 
@@ -223,6 +225,15 @@
 **Relação:** reforça `SGL-REV-020` (fallback sem tenant no catálogo de Usuários), `SGL-REV-009` (testes de autorização), `SGL-REV-015` (relatórios) e `SGL-REV-024` (ambiente PostgreSQL).
 
 **Aceite:** verificar constraints e registros legados que permitam `ATIVO` sem Unidade; autenticar principal de teste com essa condição e invocar os GET, com duas Unidades sintéticas; garantir **falha fechada** quando o tenant é obrigatório; documentar política para leitura de relatórios por papel e retestar prévia/exportação. Não permitir resultado multiunidade inadvertido nem mudar API sem validação do mantenedor.
+
+
+### SGL-REV-027 — Soma de quantidades físicas com unidades incompatíveis (P2 · DIVERGÊNCIA)
+
+**Problema semântico demonstrado:** `RelatorioResumoOperacionalService.gerar` soma valores de `MovimentacaoEstoque.quantidadeMovimentada` de produtos diferentes nas propriedades globais `quantidadeEntradas`, `quantidadeSaidas` e `quantidadeDescartes` do `RelatorioResumoOperacionalResponseDTO`, sem agrupamento por unidade. O teste `RelatorioResumoOperacionalServiceTest.deveGerarResumoOperacionalComSucesso` usa **10 KG de Ágar + 6 L de Etanol** e espera `getQuantidadeEntradas() = 16`; trata-se de resultado numérico sem significado físico comum. **O modo Resumo da tela `RelatoriosGestaoView.vue` observada apresenta contagens, não esses totais**, de modo que não foi comprovado defeito na UI atual. O DTO/API, no entanto, expõe valores fisicamente heterogêneos.
+
+**Decisão a obter:** manter somente contagens globais; agrupar quantidades por unidade/produto; ou marcar campos numéricos globais como obsoletos com estratégia de compatibilidade. Não alterar contrato sem avaliar consumidores e exportações.
+
+**Aceite:** testes explícitos com KG e L que rejeitem total físico sem unidade comum; agregar apenas medidas homogêneas, preservar rankings e contagens, comparar prévia/PDF/XLSX e registrar API versionada se necessária. Não mudar backend funcional nesta rodada.
 
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
