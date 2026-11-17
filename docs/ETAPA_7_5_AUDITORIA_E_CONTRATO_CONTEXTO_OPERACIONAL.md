@@ -1,5 +1,7 @@
 # Etapa 7.5 — Auditoria e contrato do contexto operacional
 
+> **Vigência — revisão de 17/11/2026:** as seções iniciais “contrato proposto”, “consultas não implementadas” e “falta consulta de contexto” são um retrato de 14/10, anterior às implementações registradas no próprio documento. Na `release`, `ContextoOperacionalController` e `ContextoOperacionalConsultaService` expõem consultas de participações, e `PedidoService.resolverContextoPedido` valida `participacaoId` e laboratório do Projeto e da pessoa para Estagiários. Empregados podem solicitar a laboratório ativo da Unidade, com sinalização quando fora do vínculo. **Não interpretar a lista inicial de lacunas como pendências atuais**; os riscos reais de visibilidade das consultas GET foram registrados em [SGL-REV-002/020](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) e na [matriz C2/C3/C9](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md).
+
 **Data:** 14/10/2026  
 **Branch:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Estado:** 7.5 iniciada — auditoria técnica executada; contrato proposto a consolidar antes de implementação. A Etapa 7.4 foi encerrada por aceite funcional, sem merge.
