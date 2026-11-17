@@ -125,3 +125,11 @@ A [matriz de coerência](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seç�
 O frontend possui Vitest para `src/**/__tests__/*.spec.ts`, mas os testes `zpl.test.mjs` e `browserPrintLocal.test.mjs` usam `node:test` fora do glob; **não fazem parte de `npm run test`**. Essa divergência de orquestração, sem alegar falha dos casos, foi registrada em `SGL-REV-023`. `helpAssets.spec.ts` e `helpTasks.spec.ts` são incluídos pelo Vitest, mas MP4 em deploy exigem conferência separada, preservando vídeos e demais arquivos.
 
 **Encaminhamento editorial:** dossiês, plano da Etapa 12 e decisão de estágio receberam referências aos achados; não foi criada segunda lista. Registro único [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) contém **23 itens**. Conferência de links/caminhos e homologação da suíte permanecem abertas.
+
+## Etapa 4 — auditoria de testes e arquitetura (17/11/2026)
+
+**Cotejo estático efetuado e registrado na matriz C13–C14:** a árvore de `release` contém **128 arquivos `*Test.java`** (quantidade de arquivos, não testes executados). `SglArchitectureTest` fixa **cinco proibições de dependência**; `SecurityIntegrationTest` cobre sessão e tenant; `AutorizacaoGravacoesIntegrationTest` trata gravações por perfil; `PedidoAutorizacaoAcoesTest` bloqueia ações privilegiadas em Pedidos; `ContextoOperacionalConsultaServiceTest` cobre diferentes Unidades, não a matriz completa de titularidade na mesma Unidade. **Não foi comprovada** a negativa HTTP de leitura de terceiros com mesmo tenant.
+
+**Invariante de ambiente encontrada:** `src/main/resources/application-test.properties` configura **H2, `create-drop` e Flyway desligado**. `PedidoConcorrenciaIntegrationTest` exercita duas aprovações simultâneas e verifica saldo consistente nesse perfil; a validade de bloqueios/índices/transações em PostgreSQL permanece sem homologação. Por isso, foi aberto `SGL-REV-024` para execução/aplicação real de migrations em PostgreSQL isolado. Ver também `SGL-REV-009`, `010` e `017`.
+
+**Estado:** inventário e confronto da configuração/suites; **nenhum Maven, teste de carga ou aplicação de Flyway foi executado nesta auditoria**. Os documentos `testes.md` e `ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md` receberam avisos de evidência e escopo. READMEs permanecem reservados para o fim.
