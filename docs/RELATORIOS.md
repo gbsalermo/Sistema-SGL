@@ -1,5 +1,7 @@
 # Relatórios — SGL
 
+> **Cotejo de contratos e testes — 17/11/2026:** os testes da `release` cobrem exportações PDF/XLSX e vários filtros, mas não comprovam equivalência completa de prévia/exportação em todos os cenários. `RelatorioMovimentacoesService` e `RelatorioResumoOperacionalService` ainda carregam `findAll()` do histórico da Unidade e filtram em memória — desempenho **não medido** ([SGL-REV-025](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md)); ausência de tenant no `findAll` é risco condicional ([SGL-REV-026](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md)). O Resumo Operacional ainda soma fisicamente valores de unidades incompatíveis, como 10 kg + 6 L = 16 no teste, **sem unidade comum** no DTO; a tela examinada mostra contagens, não esses campos ([SGL-REV-027](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md)). Evidências na [matriz C15–C17](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md).
+
 > **Vigência (12/11/2026):** a seção abaixo, intitulada “Estado vigente — Etapa 9 (27/10/2026, pré-merge)”, é **registro histórico de pré-merge**, não o estado atual da `release`. Para endpoints, DTOs e exportação, conferir `Relatorio*Controller.java` e `Relatorio*Service.java` na `release`; validar os filtros no frontend antes de declarar cobertura.
 
 ## Estado vigente — Etapa 9 (27/10/2026, pré-merge)
