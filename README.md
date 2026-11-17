@@ -94,22 +94,18 @@ Os contratos públicos da API utilizam UUID como identificador das entidades; os
 
 ## Multitenancy por Unidade
 
-O SGL organiza os registros operacionais por Unidade, com delimitação aplicada nas consultas e nos serviços.
-
-Fluxo atual:
+A Unidade do SGL é delimitada pela **identidade autenticada e pelo JWT**, com políticas de `TenantRequestFilter`, `TenantContext` e services/repositories no backend.
 
 ```text
-frontend lê unidadeId da sessão DEV
-→ envia X-SGL-Unidade-Id
-→ TenantRequestFilter valida o UUID
-→ TenantContext mantém a Unidade durante a requisição
-→ services/repositories restringem os dados da Unidade
+Login corporativo / JWT
+→ usuário ativo e Unidade corporativa habilitada
+→ TenantRequestFilter obtém a Unidade da sessão
+→ TenantContext restringe consultas e operações por Unidade
 ```
 
-No ambiente de desenvolvimento, o contexto da Unidade é informado pelo cabeçalho `X-SGL-Unidade-Id`, associado à sessão DEV. Esse fluxo viabiliza a validação funcional por Unidade; a identidade e a autorização corporativas não fazem parte dessa sessão.
+O header `X-SGL-Unidade-Id` **não identifica livremente o tenant**: ele só é admitido para `ADMINISTRADOR_GERAL` selecionar outra Unidade autorizada. Fluxos `dev/demo` são exclusivos desses profiles e não constituem autenticação de produção.
 
-**Na integração institucional**, a Unidade (tenant) será resolvida a partir da identidade autenticada na sessão/token institucional e aplicada pelo backend.
-
+**Auditoria de autorização ainda aberta:** filtragem por Unidade não substitui autorização por objeto para dados de outro usuário da mesma Unidade. Consultas de Pedidos, Estagiários, Resíduos, Usuários e Relatórios precisam de testes de acesso por titular/perfil, conforme [registro único de pendências](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 ---
 
 ## Domínio principal
@@ -265,7 +261,7 @@ Spec e plano: `docs/superpowers/specs/2026-10-27-autenticacao-corporativa-design
 
 ### Autenticação corporativa
 
-- `POST /api/v1/auth/login` valida login de rede (ou CPF, para colaboradores) e senha na `autenticacaoapi`, resolve a pessoa na Empregadoapi/Colaboradorapi, sincroniza o `Usuario` e devolve o JWT. Pessoa nova entra como `PENDENTE_VINCULACAO` e só acessa `/api/v1/auth/me` até um gestor da Unidade aprová-la; pessoa importada pela gestão entra direto.
+- `POST /api/v1/auth/login` valida login de rede (ou CPF, para colaboradores) e senha na `autenticacaoapi`, resolve a pessoa na Empregadoapi/Colaboradorapi, sincroniza o `Usuario` e devolve o JWT. **Empregado novo** pode ser registrado como `ATIVO` com perfil sugerido; **colaborador/estagiário novo** recebe `PENDENTE_VINCULACAO` até a regularização pela Gestão. Pessoa importada pela Gestão pode ser criada ativa, respeitando concessão de perfis e vínculos.
 - `GET /api/v1/auth/me` devolve o usuário da sessão; `GET /api/v1/auth/config` informa se o login DEV está ativo.
 - `POST /api/v1/auth/dev-login` existe **só** nos perfis `dev` e `demo` e aceita apenas usuários de origem `DEV` (massa de exemplo).
 - O CPF nunca sai em resposta HTTP do SGL; nos logs aparece sempre mascarado. Senha nunca é gravada nem logada.
@@ -310,74 +306,66 @@ Flyway habilitado
 
 O Flyway versiona e aplica as alterações de esquema do banco. Cada evolução é registrada em uma nova migration, preservando o histórico das versões já aplicadas.
 
-Migrations existentes nesta revisão: **V1 a V45**, em `src/main/resources/db/migration/` (V45 = identidade corporativa; preenche CNPMF com `codigo_corporativo = 7`). A aplicação utiliza validação do esquema via Hibernate, enquanto o Flyway mantém o histórico de alterações.
+A `release` consultada contém **48 migrations SQL, V1 a V48**, em `src/main/resources/db/migration/`; V47/V48 cobrem vínculos multilaboratório e sinalização de laboratório fora dos vínculos do solicitante. A aplicação em produção usa validação de esquema e Flyway. A **presença de migration no Git não prova que foi aplicada numa instância**. O perfil `test` usa H2, `create-drop` e Flyway desabilitado; a homologação das migrations sobre PostgreSQL permanece aberta.
 
 ---
 
 ## Execução local
 
-```bash
-cd backend/sgl-backend
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-Variáveis usuais:
-
-```text
-DB_URL=jdbc:postgresql://localhost:5432/sgl
-DB_USER=postgres
-DB_PASSWD=<senha>
-```
-
-Acessos locais:
-
-```text
-API        http://localhost:8080
-Swagger    http://localhost:8080/swagger-ui/index.html
-OpenAPI    http://localhost:8080/v3/api-docs
-```
-
-Testes:
+**A partir da raiz do repositório** (com Java 17 e variáveis de banco/credenciais apropriadas):
 
 ```bash
-mvn test
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
+No Windows, usar `mvnw.cmd` ou terminal que execute `./mvnw`. O perfil `dev` é **somente local**; configurar PostgreSQL isolado e nunca usar dados institucionais para testes destrutivos.
+
+```text
+API local:  http://localhost:8080/api/v1
+Swagger:    http://localhost:8080/swagger-ui/index.html
+OpenAPI:    http://localhost:8080/v3/api-docs
+```
+
+Testes existentes (não executados nesta revisão):
+
+```bash
+./mvnw test
+./mvnw verify
+```
+
+Esses comandos não substituem a verificação PostgreSQL/Flyway, segurança horizontal, carga, frontend E2E e impressão em hardware real, descritas no [plano de homologação](docs/PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md).
 ---
 
-## Evolução do projeto
+## Evolução do projeto — referência de 17/11/2026
 
-O desenvolvimento de pré-produção evolui de forma incremental, preservando os fluxos homologados. A Etapa 9 está validada funcionalmente na branch colaborativa, mas ainda não integrada à `main`:
+**A branch `release` já incorpora os fluxos que antigas anotações de outubro descreviam como pendentes.** A comparação técnica está nos dossiês; o quadro não substitui testes executados.
 
-| Etapa | Escopo | Situação |
-|---|---|---|
-| 1–4 | Padrão visual, experiência inicial, Resíduos e expansão operacional | Concluídas |
-| 5 | Projetos, SCI e Atividades | Concluída |
-| 6 | Estagiários, vínculos, participações e formação | Concluída |
-| 7 | Estoque físico, apresentações, fracionamento, FEFO/FIFO e Soluções | Concluída |
-| 8 | Contextos operacionais, Pedidos, Soluções, Resíduos e vínculos adicionais | Concluída e integrada |
-| 9 | Relatórios consolidados: Projetos, Movimentações (Resumo/Detalhamento), Estoque/Lotes e Fiscalização | Implementada e validada funcionalmente; aguardando merge |
-| 10 | Rótulos e impressão operacional | Planejada |
-| 11 | Manual do usuário e revisão de inativação/delete lógico | Planejada |
-| 12 | Testes transversais de arquitetura, carga, E2E e regressão | Planejada |
-| 13 | Revisão estrutural e auditoria final integral | Planejada |
+| Ciclo | Estado verificado por leitura do código |
+|---|---|
+| Etapas 1–6 | Bases operacionais, Projetos/SCI/Atividades, Estagiários/vínculos e fluxos históricos incorporados |
+| Etapa 7 | Estoque físico, lote/recipiente, FEFO/FIFO, fracionamento e Soluções incorporados |
+| Etapa 8 | Contextos elegíveis e Pedidos com regras distintas para empregados e estagiários incorporados |
+| Etapa 9 | Relatórios consolidados, filtros e exportação PDF/XLSX presentes na `release` |
+| Etapa 10 | Rótulos de Produto/Resíduo/Solução e documento de entrada presentes; impressão física Zebra **não homologada** nesta auditoria |
+| Estagiários multilaboratório | V47/V48 e contratos de múltiplos laboratórios presentes; regressão E2E pendente |
+| Etapas 12–13 de qualidade | Auditoria documental avançada, **execução de arquitetura/carga/E2E e homologação cloud/mobile pendentes** |
 
-**Preparação para produção:** após a estabilização funcional, o plano contempla matriz de permissões, congelamento, homologação integrada, correções, identidade e autorização definitivas, integração institucional e liberação controlada.
-
-O detalhamento das decisões, entregas e critérios de validação fica em [`CONTINUIDADE.md`](CONTINUIDADE.md) e no [plano de pré-produção](docs/PLANO_PRE_PRODUCAO.md). Este README apresenta a arquitetura e as capacidades do sistema; não substitui os checkpoints técnicos.
-
+**Portões em aberto:** matriz de autorização por registro, migrações reais em PostgreSQL, testes completos, carga, integração corporativa e navegação Android/iOS por estagiários. [31 itens rastreados](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) não equivalem a 31 defeitos confirmados: incluem riscos, decisões, divergências e testes futuros.
 ---
 
 ## Documentação
 
-| Documento | Uso |
+| Documento | Papel |
 |---|---|
-| [`CONTINUIDADE.md`](CONTINUIDADE.md) | checkpoint atual e regra de retomada |
-| [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md) | visão consolidada do sistema |
-| [`docs/README.md`](docs/README.md) | índice e classificação documental |
-| [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md) | domínio de resíduos |
-| [`docs/RELATORIOS.md`](docs/RELATORIOS.md) | relatórios atuais |
-| [`docs/EXPORTACAO_RELATORIOS.md`](docs/EXPORTACAO_RELATORIOS.md) | exportações PDF/XLSX |
-| [`docs/PENDENCIAS_POS_PROTOTIPO.md`](docs/PENDENCIAS_POS_PROTOTIPO.md) | pendências/refactors posteriores |
+| [`CONTINUIDADE.md`](CONTINUIDADE.md) | Estado e regra de retomada |
+| [`docs/README.md`](docs/README.md) | Índice atual e documentos especializados |
+| [`docs/DOSSIE_PROJETO_SGL.md`](docs/DOSSIE_PROJETO_SGL.md) | Mapa técnico consolidado |
+| [`docs/GOVERNANCA_DOCUMENTAL.md`](docs/GOVERNANCA_DOCUMENTAL.md) | Precedência de documentos e histórico |
+| [`docs/MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](docs/MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) | Evidências estáticas frontend/backend |
+| [`docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) | **Fila única** de riscos, decisões e correções posteriores |
+| [`docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md`](docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md) | Testes transversais planejados |
+| [`docs/PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md`](docs/PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md) | Ensaios CL-01–11 e MB-01–12, **não executados** |
+| [`docs/AUDITORIA_REFERENCIAS_E_SINCRONIZACAO_2026-11-17.md`](docs/AUDITORIA_REFERENCIAS_E_SINCRONIZACAO_2026-11-17.md) | Links, workflows e checklist de MR |
+| [`docs/SINCRONIZACAO_GITLAB_GITHUB.md`](docs/SINCRONIZACAO_GITLAB_GITHUB.md) | GitLab `release`, GitHub espelho, sincronizações e MRs |
 
-> Exemplos e documentos históricos são auxiliares. Em caso de conflito, prevalecem `main`, Swagger/OpenAPI e os documentos atuais indicados acima.
+Os documentos de etapa e exemplos antigos são **registros históricos**. Quando houver conflito, prevalecem o **código `release` verificado**, contratos OpenAPI e governança atuais. Nenhuma mudança funcional foi feita nesta revisão documental.
