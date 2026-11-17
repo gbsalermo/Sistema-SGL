@@ -1,5 +1,7 @@
 # Etapa 7.6.0 — Auditoria antes de integrar Pedidos convencionais ao estoque físico
 
+> **Vigência — revisão de 17/11/2026:** esta auditoria de 15/10 antecede a integração de baixa física do Pedido, concluída posteriormente. Na `release`, `PedidoService` utiliza `MovimentacaoEstoqueService` para baixa/estorno e os testes cobrem FEFO/FIFO, fracionamento, recipientes, retorno e aprovação concorrente em H2. **A correção estrutural não deve ser refeita com base nas lacunas antigas**. Continuam pendentes teste executado em PostgreSQL/Flyway, locks reais e desempenho sob carga, reunidos em [SGL-REV-009/010/024](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md), [matriz C7/C14/C15](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md).
+
 **Data:** 15/10/2026  
 **Branch:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Natureza:** inventário técnico, matriz de lacunas e contrato de evolução. **Não é execução de testes nem implementação funcional.**
