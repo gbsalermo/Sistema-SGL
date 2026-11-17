@@ -1,5 +1,7 @@
 # Testes — SGL
 
+> **AVISO DE VIGÊNCIA — 17/11/2026:** este roteiro foi escrito para a fase anterior ao PostgreSQL e à autenticação JWT atual. O projeto Maven tem `pom.xml` e `mvnw` **na raiz** do repositório; os endpoints protegidos exigem autenticação e os contratos atuais usam UUIDs públicos. **Não executar exemplos antigos em produção ou com dados reais.** A atualização dos cenários está registrada em [`SGL-REV-008/009/010`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md); enquanto isso, conferir DTOs, controllers e Swagger da `release` antes de testar.
+
 Este arquivo reúne os testes automatizados e o roteiro manual no Postman para validar a arquitetura atual antes da migração para PostgreSQL.
 
 ## 1. Executar testes automatizados
