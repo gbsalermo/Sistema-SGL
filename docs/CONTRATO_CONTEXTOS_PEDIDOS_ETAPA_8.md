@@ -1,5 +1,7 @@
 # Handoff da 7.5 para a Etapa 8 — Contexto operacional de Pedidos e Soluções
 
+> **Vigência de 17/11/2026:** o título/handoff de 15/10 descreve preparação da Etapa 8; o aviso inicial de “não implementado” é **histórico**, pois a `release` já aplica `participacaoId` e `PedidoService.resolverContextoPedido`. A participação fixa Projeto/SCI/Atividade; o laboratório é escolhido entre os laboratórios do Projeto autorizados ao estagiário. Não interpretar o texto preliminar como proibição absoluta de `laboratorioId` no payload atual. Ver [`SGL-REV-021`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 **Atualizado em:** 15/10/2026  
 **Branch:** `collab/etapa-7-unidades-solucoes-contexto`  
 **Estado:** contrato preparado; **NÃO implementado no fluxo de criação de Pedidos**.
