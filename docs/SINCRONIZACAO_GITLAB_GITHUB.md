@@ -1,4 +1,6 @@
 > **ATUALIZAÇÃO CANÔNICA — 12/11/2026.** As seções históricas abaixo descrevem a configuração anterior baseada apenas em `main`. Para operações atuais, prevalecem estas regras.
+
+> **Conferência de integração — 17/11/2026:** o workflow de `collab/* → GitLab` terminou **com sucesso** no commit \`c8999ba99b135b0e0ef018660781f94e479c6903\` ([run do GitHub Actions](https://github.com/gbsalermo/Sistema-SGL/actions/runs/44155410150)), que correspondia ao HEAD da branch documental naquela hora. **Depois desse run, novos commits de revisão e README foram feitos; confirmar novamente o SHA do HEAD e o sucesso do workflow antes de abrir o MR.** Os espelhos `GitLab/release → GitHub/release` também tiveram runs bem-sucedidos no dia; o arquivo do agendamento fica na **`main` padrão** do GitHub, portanto sua ausência em `release` não é defeito. A comparação direta dos refs GitLab/GitHub continua obrigatória, sem `--force`.
 >
 > - **GitLab `release` é a fonte oficial de produção**; GitHub `release` é espelho somente de leitura operacional (sem commits funcionais diretos). `main` permanece sincronizada separadamente e **não** é automaticamente igual à `release`.
 > - **GitHub `collab/*` → GitLab `collab/*`**: sincronização em push, sem force; o responsável aprova MR manual para GitLab `release`.
