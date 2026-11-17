@@ -1,5 +1,7 @@
 # Etapa 7.7 — Auditoria inicial de integração backend/frontend
 
+> **Rechecagem na `release` — 17/11/2026:** a seção “Pendências reais identificadas” retrata o estado inicial de 16/10. **Já corrigidos no código atual:** `EstoqueCentralService.listarTodos` e `listarPorUnidade` usam `comResumosFisicos` com consulta de recipientes por Unidade; `buscarPorId` e `buscarPorUnidadeEProduto` usam `comResumoFisico` e preenchem `apresentacoesFisicas`. **Não reabrir** as observações antigas de DTO incompleto e N+1 das listagens principais. **Risco remanescente distinto:** `listarEstoqueBaixoPorUnidade` ainda consulta recipientes por estoque, e o Dashboard frontend faz uma requisição de lotes para cada estoque ativo, omitindo falhas parciais dos lotes no aviso. Ver [matriz C18](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) e [SGL-REV-028](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). Preserve-se o restante como registro histórico do aceite.
+
 Data: 16/10/2026. Branch: `collab/etapa-7-unidades-solucoes-contexto`.
 Escopo: Estoque, Pedidos e Soluções; conferência de contratos, documentos e pendências. **Leitura estática** dos repositórios, sem execução de build/JUnit nesta rodada e sem merge.
 
