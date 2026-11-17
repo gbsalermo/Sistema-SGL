@@ -1,5 +1,7 @@
 # Etapa 7 — Blueprint de migrations do estoque
 
+> **Vigência — revisão de 17/11/2026:** documento histórico de **blueprint da Etapa 7**, originalmente preparado com migration máxima V32 e base DEV/DEMO descartável. As migrations V33–V48 e a lógica de recipientes/fracionamento já constam na `release`. Portanto, instruções no futuro e enums/exemplos antigos (como unidade REACAO para kits) **não são contrato operacional vigente**. Para FEFO/FIFO, abertura mínima, devoluções e restrições usar `MovimentacaoEstoqueService`, `LoteService`, DTOs/migrations e testes atuais; ver [matriz C7/C15](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md). Homologação PostgreSQL/Flyway pendente em [SGL-REV-010/024](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 **Branch:** \`collab/etapa-7-unidades-solucoes-contexto\`  
 **Banco principal:** PostgreSQL  
 **Maior migration consolidada anterior:** V32  
