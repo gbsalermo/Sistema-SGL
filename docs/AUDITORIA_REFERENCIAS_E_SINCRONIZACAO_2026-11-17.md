@@ -6,7 +6,7 @@
 
 ## 1. Integridade dos links Markdown locais
 
-**Verificação:** leitura de cada Markdown incluído no lote e extração de caminhos em referências `[texto](destino)` e `![imagem](destino)`; normalização de caminhos relativos (`.`, `..`, `#fragmento`, query) e confronto do **arquivo-alvo** com o Git tree da branch colaborativa.
+**Verificação:** leitura de cada Markdown incluído no lote e extração de caminhos em **links e imagens Markdown** (ignorando exemplos que não representam referências reais); normalização de caminhos relativos (`.`, `..`, `#fragmento`, query) e confronto do **arquivo-alvo** com o Git tree da branch colaborativa.
 
 | Repositório | Markdown presentes no lote | Links Markdown relativos resolvidos | Arquivos-alvo ausentes |
 |---|---:|---:|---:|
