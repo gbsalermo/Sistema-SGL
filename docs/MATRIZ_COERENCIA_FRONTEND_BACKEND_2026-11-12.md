@@ -167,3 +167,35 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 - A árvore `.github/workflows/` dos espelhos GitHub consultados mostra workflows de sincronização, não evidência de etapa de teste/build. Isso **não autoriza concluir ausência de CI no GitLab institucional ou de testes locais do mantenedor**.
 
 **Conclusão:** há uma **lacuna verificável de orquestração** para executar testes Zebra em conjunto com a suíte padrão do frontend. Registrar `SGL-REV-023`, vinculando aos aceites `SGL-REV-009` (evidência de execução), `011` (impressão física) e `012` (vídeos no deploy). Uma eventual inclusão no pipeline deve ser feita depois da revisão, sem mudar a implementação dos rótulos nem a Central de Ajuda.
+
+
+### C13 — Auditoria da cobertura estrutural e das permissões (17/11/2026)
+
+**Inventário verificável da árvore `release` (contagem de ARQUIVOS, não de casos de teste, nem de sucessos):**
+- Backend: **128 arquivos Java com nome `*Test.java`** em `src/test/java/`; entre eles `SglArchitectureTest`, `SecurityIntegrationTest`, `AutorizacaoGravacoesIntegrationTest`, `PedidoAutorizacaoAcoesTest` e `PedidoConcorrenciaIntegrationTest`.
+- Frontend: **31 arquivos `*.spec.ts`** no padrão `src/**/__tests__/*.spec.ts` da configuração Vitest, além dos dois `.test.mjs` de Zebra com `node:test` (C12).
+
+**Arquitetura (backend):** `SglArchitectureTest.java` usa ArchUnit com **cinco regras negativas**: `model`, `repository` e `dto` não dependem de `controller`; `dto` não depende de `repository`; `service` não depende de `controller`. O próprio Javadoc as classifica como barreiras mínimas do MVP. **Não abrangem**, pela existência das regras, ciclos gerais, complexidade, qualidade das consultas, limites de transação, autorização por objeto, contratos de endpoints ou desempenho. Esses itens exigem revisão e testes específicos (`SGL-REV-017`).
+
+**Segurança (backend):**
+- `SecurityIntegrationTest` verifica JWT ausente/inválido/inativo, usuário pendente, endpoint de login, isolamento via header de Unidade e seleção de Unidade pelo administrador geral.
+- `AutorizacaoGravacoesIntegrationTest` testa matriz de **gravações** por perfis e comprova pelo menos uma leitura autorizada para estagiário (`GET /api/v1/produtos`).
+- `PedidoAutorizacaoAcoesTest` recusa aprovar, rejeitar, entregar e cancelar por perfis solicitantes, além de impedir aprovação em nome de terceiro por gestor.
+- `ContextoOperacionalConsultaServiceTest` contempla tenant ausente, perfil não estagiário, Projeto/Atividade/Usuário de **outra Unidade** e mudança de tenant; o método do service não valida titularidade entre **dois estagiários ativos da mesma Unidade**.
+
+**Lacuna de aceitação (não afirmar ausência de qualquer teste na suíte inteira):** nos arquivos examinados não foi localizada uma matriz de testes HTTP autenticados com acesso **negado a registros de outra pessoa da mesma Unidade** nos domínios Pedidos, Contextos, Vínculos, Resíduos, Usuários e Estagiários. Permanecem `SGL-REV-001–004`, `018–020` e `009`. O teste deve confirmar simultaneamente que o papel de Gestão e o orientador autorizado ainda conseguem consultar dados necessários.
+
+**Segurança (frontend):** `src/router/__tests__/guards.spec.ts` confere navegação por perfil e pendência; `src/services/__tests__/http.spec.ts` usa `fakeAdapter` para Authorization, header de administrador e respostas 401/403; `src/stores/__tests__/session.spec.ts` usa adapter falso e armazenamento simulado; os testes de `NovoPedidoView` e `NovaSolucaoView` usam mocks para validação de laboratórios por estagiário/empregado. São regressões de UI e contratos de chamadas, **não testes de permissões reais do backend**.
+
+### C14 — Banco de testes, Flyway, concorrência e E2E (17/11/2026)
+
+**Perfil `test` backend confrontado com a implementação:**
+- `src/main/resources/application-test.properties` define `spring.datasource.url=jdbc:h2:mem:sgldb-${random.uuid}`, `spring.jpa.hibernate.ddl-auto=create-drop` e **`spring.flyway.enabled=false`**.
+- `PedidoConcorrenciaIntegrationTest` usa `@SpringBootTest` e `@ActiveProfiles("test")`; seu teste `deveImpedirDoisPedidosConcorrentesDeConsumiremOMesmoSaldo` executa dois fluxos simultâneos com `CountDownLatch`, verifica um pedido aprovado e outro pendente, e o saldo físico final.
+- `PedidoEstoqueFisicoIntegrationTest` também usa perfil `test`, cobrindo fluxo de baixa e recipientes. Essas verificações são relevantes, **mas executadas sob H2 quando esse perfil é usado**, não uma confirmação dos locks transacionais, SQL, índices e constraints em PostgreSQL.
+- **Ponto específico ainda descoberto:** o perfil de teste padrão desativa Flyway e recria estrutura via Hibernate. Consequentemente, **passar `mvnw test` com esse perfil não comprova que V1–V48 e futuras migrations sejam aplicadas corretamente em PostgreSQL**, nem que a modelagem real concorde com a gerada pelo Hibernate.
+- Testes com `CorporateGatewayTestConfig` usam gateway corporativo simulado. Isso preserva autonomia da suíte, mas não substitui homologação com sistema institucional autorizado.
+
+**Frontend:** `vitest.config.ts` opera em `jsdom`; os testes inspecionados de pedidos, soluções, sessão, router e serviço HTTP usam mocks/fakeAdapter. `package.json` não define script de E2E, e na árvore da `release` consultada não foi identificado projeto local de Cypress/Playwright. **Não concluir que não exista pipeline de E2E externo ou CI institucional no GitLab**. A etapa 12 continua plano, não resultado.
+
+**Encaminhamento:** usar `SGL-REV-010` para concorrência/FEFO em PostgreSQL, `SGL-REV-017` para E2E/carga/arquitetura, `SGL-REV-009` para execução e evidências e abrir `SGL-REV-024` especificamente para **teste de aplicação de migrations Flyway em banco compatível com produção**, evitando esconder esta lacuna sob “build verde”. A equipe deve executar as verificações em ambiente isolado com dados sintéticos e registrar hash da release, profile e logs, sem alterar produção.
