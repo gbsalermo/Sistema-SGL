@@ -107,3 +107,31 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 - **Produto:** `RotuloProdutoView.vue` oferece impressão A4 e painel Zebra quando há dados carregados.
 
 **Distinção de aceite:** botão, rota, flag de habilitação e exportador no frontend foram verificados por leitura; **não foi validada impressão real, layout na Zebra, logos, QR ou integridade de cortes**. A Central de Ajuda e seus vídeos permaneceram sem alteração.
+
+### C9 — Usuários e estagiários: leitura por perfil e minimização de dados (17/11)
+
+**Código real examinado na `release`:**
+
+| Rota | Serviço/DTO | Verificação estática | Uso frontend |
+|---|---|---|---|
+| `GET /api/v1/usuarios` | `UsuarioController.listarTodos` → `UsuarioService.listarTodos` → `UsuarioResponseDTO` | Em geral `ApiSecurityConfig` permite leituras a usuário ativo. O service filtra Unidade quando há tenant, mas **não faz checagem de perfil** nesse método. DTO contém e-mail, nome, perfil, situação e laboratórios de pessoas da Unidade. | `estagiarioService.listarUsuarios` e `cadastrosAdminService.listarUsuarios`; usos observados em telas de Gestão/Admin |
+| `GET /api/v1/usuarios/{id}`, `/por-laboratorio` | `UsuarioService.buscarPorId`, `listarPorLaboratorio` | Tenant validado, porém sem checagem de titularidade nem finalidade da consulta nos métodos examinados. | Contrato comum de usuários |
+| `GET /api/v1/estagiarios`, `/{id}`, `/ativos`, `/por-laboratorio` | `EstagiarioService` → `EstagiarioResponseDTO`, que inclui histórico `VinculoEstagioResponseDTO` | Tenant presente, mas **sem `exigirGestao` nas leituras citadas**; contrastar `listarSemVinculo` e `listarOrientadoresElegiveis`, que **exigem Gestão**. DTO de vínculo inclui orientador, formação/curso, tipo de bolsa, referências e observações. | `EstagiariosGestaoView.vue` consulta `estagiarioService.listarTodos`; UI de Gestão não é controle server-side |
+
+**Risco:** um usuário ativo da mesma Unidade pode, em princípio, alcançar rotas cujos payloads expõem dados pessoais e de estágio além do necessário para sua função. **Ainda não foi executado teste autenticado com perfis distintos**, e a política desejada para diretórios/consulta de pessoas precisa ser formalizada antes de restringir. Não classificar como incidente comprovado. A segurança JWT e a filtragem de Unidade não implementam automaticamente autorização por registro.
+
+**Caso especial de ausência de tenant:** `UsuarioService.listarTodos` ainda conserva `.orElseGet(usuarioRepository::findAll)` quando `TenantContext.unidadeAtual()` está vazio, herdado de uma era anterior ao login JWT. Hoje `JwtAuthenticationFilter` pode dar authority de ativo a um usuário sem unidade se tal estado existir no banco, e `TenantRequestFilter` nesse caso não define tenant. **Caminho potencial e condicional de leitura entre Unidades**, que exige verificar invariantes de dados, perfis e teste de usuário ATIVO sem Unidade. Usuários provisionados via `AuthService` recebem Unidade habilitada, o que reduz a expectativa de ocorrência normal, **mas não prova impossibilidade de registros legados**. `UsuarioResponseDTO` não expõe senha, mas expõe identificação e e-mail.
+
+**Testes inspecionados:** `UsuarioControllerTest` e `EstagiarioControllerTest` usam mocks de services nos métodos de leitura; `SecurityIntegrationTest` enfatiza JWT/tenant entre Unidades; `AutorizacaoGravacoesIntegrationTest` cobre principalmente escritas; `EstagiarioServiceTest` cobre listagem e regras de estágio, mas **não foi demonstrada na amostra** negativa de leitura de outro usuário na mesma Unidade. É necessário um teste HTTP autenticado em ambiente isolado, sem dados reais.
+
+**Próximos IDs na fila de correção:** `SGL-REV-018` (Usuários), `019` (Estagiários) e `020` (sem tenant). O frontend precisa de DTOs mínimos adequados para seletores, se a API passar a restringir listagens completas.
+
+### C10 — Contratos históricos de Estágio e Etapa 8 não equivalem à implementação (17/11)
+
+`docs/ETAPA_8_CONTRATO_VINCULOS_ACESSO.md` afirma “Solução continua exigindo projeto” e que técnicos só podem operar em laboratório autorizado. A `release` posterior aplica **Projeto opcional a empregado**, mantém `participacaoId` obrigatório para Estagiário e permite solicitação a laboratório ativo da Unidade com a flag `laboratorioForaDoSolicitante`. `PedidoSolucaoServiceTest` inclui o caso `permiteSolucaoSemProjetoQuandoLaboratorioEstaAutorizado`, enquanto o service aplica a política atual de Unidade/laboratório. **Contrato de outubro é histórico**, não motivo para regredir a API atual.
+
+`docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md` abre com “NÃO implementado no fluxo de criação”, mas possui adendo de fechamento da etapa; esse cabeçalho é histórico. O código `PedidoService.resolverContextoPedido` implementa a participação e permite ao estagiário escolher o laboratório entre os vinculados ao Projeto **e** à pessoa. Conferir versão vigente no código e preservar especificações históricas como registro de decisão.
+
+`docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` registra precedência campo a campo da integração; **não é prova** de sincronização externa atual em produção. Validar com `AuthService` e `SincronizacaoVinculoEstagioService` na etapa integrada.
+
+**Encaminhamento:** sinalizar vigência nos três documentos especializados e registrar `SGL-REV-021` para correção editorial definitiva após a decisão de contrato. Nenhuma alteração funcional nesta auditoria.
