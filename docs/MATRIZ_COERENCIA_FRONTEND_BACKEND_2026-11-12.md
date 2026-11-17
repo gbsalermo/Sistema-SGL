@@ -1,6 +1,6 @@
 # Matriz de coerência entre frontend e backend — 12/11/2026
 
-> **Fila de correções (17/11/2026):** os achados e verificações C1–C17 são rastreados por IDs em [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). **Esta matriz é a evidência, não o backlog.**
+> **Fila de correções (17/11/2026):** os achados e verificações C1–C19 são rastreados por IDs em [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). **Esta matriz é a evidência, não o backlog.**
 
 **Referências:** `gbsalermo/SGL-FRONTEND` e `gbsalermo/Sistema-SGL`, ambos na `release` espelhada do GitLab. Esta matriz é um **roteiro de verificação**, não um certificado de testes E2E. Priorizar o código executável sobre instruções históricas.
 
@@ -257,3 +257,26 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 **Natureza e acompanhamento:** chamada por estoque e exclusão de falhas de lotes no contador são **fatos estruturais**; efeitos em tempo real/usuário e severidade dependem de medição e reproduções. Acompanhamento único `SGL-REV-028` (prioridade P2; desempenho + observabilidade do Dashboard). Não propor reduzir queries juntando dados indiscriminadamente sem preservar tenant, FEFO/FIFO, indicadores e estados vazios.
 
 **Aceite futuro:** testar 0/1/N estoques ativos e baixos, N lotes por estoque, falha seletiva de uma requisição de lote, erro visível sem apagar indicadores válidos, carga com massa representativa, número de requests, tempo total e consultas no backend, mais alternativa de lote/resumo em lote autorizada. Ver também `SGL-REV-017` (E2E/carga) e `SGL-REV-025` (desempenho de Relatórios, que é outro fluxo).
+
+
+### C19 — Revisão operacional especializada e amostragem de links (17/11/2026)
+
+**Conciliação histórica concluída nesta rodada (somente notas de vigência, mantendo conteúdo original):**
+
+| Documento | Situação confirmada contra a `release` | Tratamento editorial |
+|---|---|---|
+| Backend `ETAPA_7_5_AUDITORIA_E_CONTRATO_CONTEXTO_OPERACIONAL.md` | Endpoints de contexto e `participacaoId` efetivos, ao contrário das lacunas listadas antes da implementação | Aviso de que o plano inicial é histórico; autorização GET segue pendente em C2/C9 |
+| Backend `ETAPA_7_6_0_AUDITORIA_CONTRATO_PEDIDOS_ESTOQUE_FISICO.md` | Pedido com saída física, regras de fracionamento/estorno e testes de service já implementados | Não reabrir a implementação; verificar PostgreSQL/Flyway e execução dos testes |
+| Backend `ETAPA_7_7_AUDITORIA_INTEGRACAO_BACKEND_FRONTEND.md` | DTO de estoque e N+1 da listagem geral corrigidos; risco residual de consulta por estoque baixo e requisições de lotes no Dashboard | Marcar correções antigas como resolvidas; pendência atual única `SGL-REV-028` |
+| Backend `PLANO_PRE_PRODUCAO.md` | “Marco vigente” de outubro não é a base operacional de novembro | Preservar como histórico; direção atual em `release`, dossiê e `CONTINUIDADE.md` |
+| Backend `ETAPA_10_PREPARACAO_ROTULOS_IMPRESSAO_2026-10-27.md`, `ETAPA_10_CENARIO_GESTAO_ROTULOS_2026-10-28.md` | Rótulos e Browser Print existem; roteiro demo usa checkout de branch antiga e massa fictícia | Registrar estado real sem executar demonstração antiga em produção |
+| Frontend `ETAPA_7_4_TESTE_FLUXO_SOLUCOES.md`, `ETAPA_7_5_MAPA_IMPLEMENTACAO_FRONTEND.md`, `ETAPA_8_INICIO_E_REGRAS.md` | Contratos evoluíram para JWT, header de Unidade exclusivo do admin geral e contexto obrigatório do estagiário | Marcar sessões/branches antigas como históricas, preservar aceite original |
+| Frontend `ETAPA_9_INTEGRACAO_FRONTEND_2026-10-26.md` | Relatórios já estão na `release` | O “sem merge” refere-se ao checkpoint de outubro |
+| Frontend `ETAPA_10_ZEBRA_PILOTO_ZPL_2026-10-29.md` e `ETAPA_10_PREPARACAO_ROTULOS_IMPRESSAO_2026-10-27.md` | Impressão direta Zebra já implementada, apesar de notas iniciais de piloto sem Browser Print | Não confundir piloto antigo com suporte atual; impressão física ainda não homologada |
+| Frontend `PLANO_TESTES_PRIMEIRO_PROTOTIPO.md` | Plano antecede `ADMINISTRADOR_GERAL`, JWT e multilaboratório | Inserida nota para ampliar matriz de perfis e não tratar plano como execução |
+
+**Referências locais:** a amostra anterior da auditoria conferiu **25 links Markdown relativos** em documentos centrais dos dois repositórios. Nesta rodada, foram verificados **15 links em oito guias especializados do backend** e **2 links em oito guias do frontend**, todos resolvidos para caminhos existentes na árvore Git das branches documentais: **42 referências verificadas ao todo, nenhuma inexistente na amostra**. Essa conferência verifica existência do **arquivo-alvo**, não âncoras internas, URLs externas nem todos os documentos. Permanecem verificações pendentes da auditoria de links completa, posteriormente à organização dos arquivos e antes dos READMEs finais.
+
+**Central de Ajuda:** somente referência documental cruzada; `src/modules/ajuda`, `public/ajuda`, vídeos e posters não foram editados. Não foi executado teste de aplicação, download MP4 nem impressão real.
+
+**Princípio de manutenção:** a presença de um item na seção histórica “Pendências” de uma Etapa não cria automaticamente um novo defeito. Verificar antes o código da `release`, adendos de fechamento e IDs do backlog.
