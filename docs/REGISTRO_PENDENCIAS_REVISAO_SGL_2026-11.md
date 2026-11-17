@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C17. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C18. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -50,6 +50,8 @@
 | SGL-REV-026 | P1 | RISCO | Relatórios sem tenant podem consultar movimentos de múltiplas Unidades | ABERTO | C16 |
 
 | SGL-REV-027 | P2 | DIVERGÊNCIA | Resumo Operacional soma kg e L em totais físicos globais sem unidade | ABERTO | C17 |
+
+| SGL-REV-028 | P2 | RISCO | Dashboard Gestão faz consultas N+1 de lotes, com falhas parciais silenciosas | ABERTO | C18 |
 
 ## Fichas de evidência e critérios de correção
 
@@ -234,6 +236,15 @@
 **Decisão a obter:** manter somente contagens globais; agrupar quantidades por unidade/produto; ou marcar campos numéricos globais como obsoletos com estratégia de compatibilidade. Não alterar contrato sem avaliar consumidores e exportações.
 
 **Aceite:** testes explícitos com KG e L que rejeitem total físico sem unidade comum; agregar apenas medidas homogêneas, preservar rankings e contagens, comparar prévia/PDF/XLSX e registrar API versionada se necessária. Não mudar backend funcional nesta rodada.
+
+
+### SGL-REV-028 — Carga e falhas parciais no Dashboard Gestão (P2 · RISCO)
+
+**Evidência da `release`:** `DashboardGestaoView.vue` solicita oito fontes em paralelo, depois usa `estoques.map(estoque => estoqueService.listarLotesPorEstoque(estoque.id))` com uma request por estoque ativo. O contador `falhas` considera apenas as primeiras oito fontes, enquanto `resultadosLotes` rejeitados são filtrados e seus lotes desaparecem da lista. Isso pode mascarar falha parcial na contagem/alertas de lotes. No backend, `EstoqueCentralService.listarEstoqueBaixoPorUnidade` ainda aplica `map(this::comResumoFisico)` com busca de recipientes por estoque, embora `listarTodos` e `listarPorUnidade` **já usem agregação em lote**. O documento `ETAPA_7_7_AUDITORIA_INTEGRACAO_BACKEND_FRONTEND.md` contém riscos antigos parcialmente corrigidos; **não reabrir o N+1 de listagem principal nem a divergência de DTO resolvida**.
+
+**Classificação:** o fan-out HTTP e a omissão de falhas de lotes do contador são demonstráveis pela leitura; **não foram medidos** latência, quantidade SQL ou impacto em produção, e não foi executada falha simulada. Não modificar backend ou frontend nesta revisão.
+
+**Critérios de aceite:** medir volume e tempo para 0/1/N estoques com lotes; criar regressão de Dashboard com uma consulta de lote rejeitada verificando aviso/indicador parcial; avaliar endpoint agregado/paginado e uso de `comResumosFisicos` na consulta de mínimos; preservar escopo de Unidade, estado vazio, filtros, lote vencido/baixo, tratamento de falhas e dados válidos. Vinculado ao aceite transversal `SGL-REV-017`.
 
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
