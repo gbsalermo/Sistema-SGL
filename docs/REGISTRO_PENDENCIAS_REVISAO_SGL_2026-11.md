@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C14. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C16. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -45,6 +45,9 @@
 | SGL-REV-023 | P2 | VALIDAÇÃO | Testes Zebra em Node fora da suíte padrão `npm run test` | ABERTO | C12 |
 
 | SGL-REV-024 | P2 | VALIDAÇÃO | Perfil test usa H2 e não executa Flyway; falta homologação das migrations reais | ABERTO | C14 |
+
+| SGL-REV-025 | P2 | RISCO | Relatórios consultam todo histórico da Unidade e filtram no Java | ABERTO | C16 |
+| SGL-REV-026 | P1 | RISCO | Relatórios sem tenant podem consultar movimentos de múltiplas Unidades | ABERTO | C16 |
 
 ## Fichas de evidência e critérios de correção
 
@@ -203,6 +206,23 @@
 **Critério de aceite:** criar/executar um perfil isolado de integração com **PostgreSQL da versão suportada** (por exemplo, instância descartável/Testcontainers, se aprovado), aplicar Flyway **desde um banco vazio**, comparar schema/restrições/índices com JPA e executar cenários de concorrência, baixa física, autorização e migração de registros legados; adicionalmente verificar a evolução sobre cópia sanitizada representativa, sem dados institucionais reais. Registrar migrações aplicadas, tempos, exceções, logs, versão do banco e commit. Cobertura de concorrência sob PostgreSQL permanece vinculada a `SGL-REV-010` e critérios gerais de implantação a `SGL-REV-017`.
 
 **Estado:** lacuna **confirmada na configuração do perfil test**, não falha ou corrupção de banco comprovada. Não alterar infraestrutura ou migrations durante esta auditoria documental.
+
+
+### SGL-REV-025 — Desempenho dos Relatórios de Movimentações e Resumo (P2 · RISCO)
+
+**Confirmado no código da `release`:** `RelatorioMovimentacoesService.gerar` e `RelatorioResumoOperacionalService.gerar` usam `movimentacaoRepository.findAll().stream()` e aplicam filtros de período, produto e demais critérios em memória. A consulta no repository aplica o filtro de Unidade se tenant presente, mas não o período nem os outros parâmetros dos relatórios. A auditoria `ETAPA_9_1_AUDITORIA_CONTRATOS_RELATORIOS_2026-10-26.md` já registrava esse padrão, e ele **ainda existe**.
+
+**Natureza:** risco de consumo de memória, transferência desnecessária e latência crescente; **não foram medidos volume de dados, tempo de resposta ou consultas N+1**. Não classificar como gargalo real reproduzido.
+
+**Aceite após fechamento documental:** benchmark isolado com massas e filtros representativos, contagem de SQL/DTO, análise `EXPLAIN` no PostgreSQL, definição de limites/paginação conforme necessidade, e comparação de resultados prévia versus PDF/XLSX antes e depois da otimização. Preservar filtro de Unidade e rastreabilidade por recipiente.
+
+### SGL-REV-026 — Relatórios acessados sem Unidade no contexto (P1 · RISCO CONDICIONAL)
+
+**Evidência:** `MovimentacaoEstoqueRepository.findAll` tem `(:#{@tenantProvider.unidadeId} IS NULL OR ...)`, permitindo busca sem restrição de Unidade quando tenant é nulo. Os métodos `RelatorioMovimentacoesService.gerar` e `RelatorioResumoOperacionalService.gerar` não exigem tenant incondicionalmente, e os controllers expõem leitura GET. `TenantRequestFilter` deriva Unidade de usuário ativo; quando este não possui Unidade, o contexto não é preenchido. No fluxo normal, `AuthService` exige Unidade corporativa habilitada, de modo que **não há prova de usuário ativo sem Unidade nem de exploração HTTP real**.
+
+**Relação:** reforça `SGL-REV-020` (fallback sem tenant no catálogo de Usuários), `SGL-REV-009` (testes de autorização), `SGL-REV-015` (relatórios) e `SGL-REV-024` (ambiente PostgreSQL).
+
+**Aceite:** verificar constraints e registros legados que permitam `ATIVO` sem Unidade; autenticar principal de teste com essa condição e invocar os GET, com duas Unidades sintéticas; garantir **falha fechada** quando o tenant é obrigatório; documentar política para leitura de relatórios por papel e retestar prévia/exportação. Não permitir resultado multiunidade inadvertido nem mudar API sem validação do mantenedor.
 
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
