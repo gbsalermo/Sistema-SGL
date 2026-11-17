@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C10. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C11. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -39,6 +39,8 @@
 | SGL-REV-019 | P1 | RISCO | GET de Estagiários retorna detalhes de vínculos sem Gestão explícita | ABERTO | C9 |
 | SGL-REV-020 | P1 | RISCO | Fallback `findAll` de Usuários quando não há tenant | ABERTO | C9 |
 | SGL-REV-021 | P2 | DIVERGÊNCIA | Contratos históricos de vínculos e Soluções incompatíveis com release | ABERTO | C10 |
+
+| SGL-REV-022 | P2 | VALIDAÇÃO | Origem e execução real dos eventos de sincronização institucional do estágio | ABERTO | C11 |
 
 ## Fichas de evidência e critérios de correção
 
@@ -173,6 +175,14 @@
 **Evidência:** `docs/ETAPA_8_CONTRATO_VINCULOS_ACESSO.md` contém “Solução continua exigindo projeto” e restringe funcionários a laboratórios autorizados; a release e migrations V47/V48 evoluíram: empregado pode solicitar para laboratório ativo da Unidade com sinalização quando fora da lista, Projeto é opcional, Estagiário exige participação e autorização de laboratório do Projeto e da pessoa. `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md` ainda inicia com estado “não implementado”, apesar de adendo e código atual. `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` é regra registrada de outubro e não certifica integração externa atual.
 
 **Critério de aceite:** corrigir autoridade editorial sem perder decisões históricas, revisar referências cruzadas, confirmar regras de perfis em testes e código, e verificar tutoriais publicados separadamente **sem tocar em vídeos**. Marcar documento antigo como histórico e remeter ao dossiê e à matriz.
+
+### SGL-REV-022 — Sincronização institucional efetiva dos vínculos (P2 · VALIDAÇÃO)
+
+**Código verificado:** `VinculoEstagioController.java` expõe `POST /api/v1/vinculos-estagio/{vinculoId}/sincronizacoes-institucionais`; `SincronizacaoVinculoEstagioService.sincronizar` recebe evento, valida tenant/referências, trata idempotência e encerra participações quando o estágio é finalizado. Testes de service existem para prorrogação, finalização, replay, referência e tenant. **Isso demonstra mecanismo receptor e comportamento testável, não uma integração externa automática funcionando em produção.**
+
+**Distinguir:** `AuthService.login` sincroniza identidade, Unidade/cargo e situação de acesso; `PessoaCorporativaService.importar` cria pessoa institucional por ação de Gestão; o evento de `VinculoEstagio` é um fluxo separado. Confundir esses três produz instruções operacionais enganosas.
+
+**Verificação requerida:** identificar quem invoca o endpoint de sincronizações, se há job/webhook/integração ativa, origem/autorização do evento, tratamento de repetição, observabilidade e conformidade com políticas institucionais. Executar apenas em ambiente controlado com dados autorizados. Preservar fluxo local de prorrogação/nova bolsa. Atualizar `DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e manual somente após evidência de ambiente e aceite do mantenedor.
 
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
