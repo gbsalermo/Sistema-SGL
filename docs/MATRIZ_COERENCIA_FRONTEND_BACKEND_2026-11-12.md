@@ -1,6 +1,6 @@
 # Matriz de coerência entre frontend e backend — 12/11/2026
 
-> **Fila de correções (17/11/2026):** os achados e verificações C1–C19 são rastreados por IDs em [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). **Esta matriz é a evidência, não o backlog.**
+> **Fila de correções (17/11/2026):** os achados e verificações C1–C21 são rastreados por IDs em [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). **Esta matriz é a evidência, não o backlog.**
 
 **Referências:** `gbsalermo/SGL-FRONTEND` e `gbsalermo/Sistema-SGL`, ambos na `release` espelhada do GitLab. Esta matriz é um **roteiro de verificação**, não um certificado de testes E2E. Priorizar o código executável sobre instruções históricas.
 
@@ -280,3 +280,33 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 **Central de Ajuda:** somente referência documental cruzada; `src/modules/ajuda`, `public/ajuda`, vídeos e posters não foram editados. Não foi executado teste de aplicação, download MP4 nem impressão real.
 
 **Princípio de manutenção:** a presença de um item na seção histórica “Pendências” de uma Etapa não cria automaticamente um novo defeito. Verificar antes o código da `release`, adendos de fechamento e IDs do backlog.
+
+### C20 — Auditoria somente-leitura da Central de Ajuda: 20 tutoriais, FAQ e mobile (17/11/2026)
+
+**Fonte analisada no frontend `release`:** `src/modules/ajuda/tasks.json` (20 tarefas), 20 arquivos Markdown correspondentes em `src/modules/ajuda/textos/`, `perguntas-frequentes.md`, `helpTasks.ts`, `HelpTaskContent.vue`, `HelpCenterView.vue`, `helpTexts.spec.ts` e `HelpCenterView.spec.ts`. **Nenhum arquivo da Ajuda foi alterado**.
+
+**Achados editoriais concretos:**
+1. `pedido-em-qualquer-laboratorio.md` apresenta **Empregados e estagiários** como aptos a solicitar em qualquer laboratório ativo. `perguntas-frequentes.md` repete que “você pode pedir a qualquer laboratório ativo”. Mas `pedido-do-estagiario.md` e `PedidoService.resolverContextoPedido` exigem participação elegível e laboratório associado ao **Projeto e à pessoa** para Estagiário; a liberdade para outro laboratório ativo da Unidade corresponde ao **empregado**. `fazer-um-pedido-e-acompanhar.md` e `solicitar-uma-solucao.md` também chamam Projeto de opcional sem ressalva por perfil. **Ampliar `SGL-REV-006`** para incluir o FAQ e tutoriais genéricos, sem editar vídeos ou conteúdo agora.
+2. `perguntas-frequentes.md` afirma que a mensagem “Aguardando aprovação” acompanha “seu primeiro acesso” genericamente. `AuthService.saveNewcomer` ativa **empregados novos** com perfil sugerido pelo cargo, mas cadastra **colaboradores/estagiários novos** como `PENDENTE_VINCULACAO`. A frase do FAQ carece de diferenciação por vínculo/identidade. **Registrar `SGL-REV-031`**, com decisão editorial posterior e conferência dos vídeos.
+3. `central-de-solucoes.md` descreve impressão do rótulo na preparação, correspondente à liberação condicional verificada em `RotuloSolucaoView.vue`. `estoque-e-lotes.md` menciona impressão do documento de entrada, acesso localizado no frontend. `informar-um-residuo.md` explica corretamente composição **catálogo ou componente livre**. Esses exemplos **não devem ser reabertos como erros**.
+
+**Mobile e testes da Ajuda:**
+- `HelpCenterView.vue` usa layout adaptativo com `@media(max-width:959px)`: menu móvel em drawer, overlay e botão de alternância. `HelpTaskContent.vue` limita largura do vídeo a 100%, usa `preload=metadata` e mantém texto acessível quando o vídeo falha.
+- `HelpCenterView.spec.ts` testa abrir/fechar o menu, Escape, links e fallback textual; `helpTexts.spec.ts` verifica existência/estrutura de textos e órfãos. **Não verifica** Safari/Android real, teclado virtual, velocidades de rede nem conteúdo das orientações contra permissões da API.
+- Vídeos MP4 não estão no Git examinado; disponibilidade do deploy permanece `SGL-REV-012`, sem inferir ausência no ambiente publicado.
+
+**Encaminhamento:** preservar os 20 IDs, menu, posters, FAQ, PDFs e links. Registrar diferenças **fora** da Ajuda; futura revisão textual exige aceite específico e alinhamento com a fala do vídeo, sem alterar material audiovisual automaticamente.
+
+### C21 — Homologação cloud/staging e uso mobile por estagiários (17/11/2026)
+
+**Decisão de planejamento:** acrescentar ensaio efetivo de endpoints e navegação **com navegador/API reais** num staging efêmero isolado, PostgreSQL + Flyway, JWT/gateway corporativo de teste autorizado e dados sintéticos; sem expor `dev-login`, sem tocar produção. Documento de execução e evidências único: [`PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md`](PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md).
+
+**Inspeção de responsividade atual:**
+- `NovoPedidoView.vue`: itens em grade com media queries a 900/720 px; `NovaSolucaoView.vue`: adaptação a 900/720 px; `InformarResiduoView.vue`: adaptação de campos a 900/620 px. **Existem estilos mobile**, mas isso não comprova usabilidade em tela real.
+- `EstagiariosGestaoView.vue` é tela de **Gestão**, não solicitante; sua tabela possui `min-width:1160px` dentro de wrapper `overflow-x:auto`. Verificar rolagem horizontal **local** e drawers quando gestor acessar por telefone, sem confundir com fluxo de Estagiário solicitante.
+- `HelpCenterView.vue` tem menu móvel a 959 px; os testes Vitest usam ambiente simulado, não touchscreen/teclado virtual.
+- Sem evidência nesta auditoria de testes reais Android Chrome e iOS Safari, nem simulação de rede móvel com envio único/retry e jornada E2E estagiário multilaboratório.
+
+**Portões recomendados:** CL-01–11 (auth, tenant, estágios, Pedidos, Soluções, Resíduos, Estoque, Relatórios, Ajuda/MP4) e MB-01–12 (telefone e jornadas do Estagiário). Larguras 320/360/390/430/768/1024 px e **dispositivos físicos** Android/iOS, teclado virtual, zoom, toque, conexão intermitente, mensagens de erro e prevenção de envios repetidos. Registrar perfis/fixtures, código, HTTP status, resultados, screenshots sintéticos e tempos medidos. Não inventar latência nem sucesso.
+
+**Status:** **NÃO EXECUTADO**. Ambiente de nuvem não foi provisionado, nenhum endpoint real chamado e nenhuma visualização móvel real testada. Rastrear execução de mobile em `SGL-REV-029` e staging cloud em `SGL-REV-030`; manter `SGL-REV-009`, `017` e `024` como requisitos transversais. Não substituir autorização do servidor por um layout responsivo.
