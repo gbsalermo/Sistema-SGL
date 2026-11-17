@@ -78,3 +78,21 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 **Exceção arquitetural a registrar:** `GET /api/v1/residuos/{id}/rotulo` chama `ResiduoService.gerarDadosRotulo`, que executa um `save` condicional para completar identificação de registros legados. Portanto, a leitura de rótulo **pode produzir alteração persistida** em resíduos antigos. Trata-se de compatibilidade histórica intencional no comentário do serviço, mas precisa de teste e decisão explícita sobre segurança, auditoria e idempotência. Não remover a compatibilidade automaticamente.
 
 **Conclusão:** as regras de **escrita** foram implementadas com maior especificidade na security chain; a **matriz de leitura** entre perfis, titulares e mesma Unidade é um critério de aceite ainda aberto.
+
+### C7 — Estoque físico: código e testes existentes identificados
+
+**Implementação inspecionada em `MovimentacaoEstoqueService.java`:**
+
+- `buscarLotesParaSaida` escolhe `loteRepository.buscarDisponiveisPorFefoComBloqueio` para produtos perecíveis; para não perecíveis usa `buscarDisponiveisPorEntradaComBloqueio` (FIFO). Os nomes da query e o lock estão presentes; confirmar a ordenação SQL/JPA real e concorrência nos testes.
+- `calcularQuantidadeFisicamenteConsumivel` limita consumo ao saldo dos recipientes; lote não fracionável restringe a apresentações inteiras e recipientes fechados completos.
+- `consumirRecipientes` separa apresentações inteiras (prioriza fechados) e parcelas fracionárias (prioriza recipientes já abertos por data de abertura, saldo e sequencial), abrindo recipiente fechado apenas se ainda faltar quantidade. Isto **corresponde estruturalmente à regra de evitar abertura indiscriminada**.
+- `devolverSaidasDoPedido` registra reversões associadas a recipientes originais e possui verificações contra alterações posteriores. `LoteService` impede desligar fracionamento quando incompatível com estado atual.
+
+**Evidência da existência de testes específicos, sem afirmar execução nesta auditoria:**
+
+- `MovimentacaoEstoqueServiceTest.java`: FEFO, FIFO, retiradas decimais, fechado versus aberto, mistura para 700, ajustes, conflitos, vencimento, cancelamento e preservação de lacres.
+- `PedidoEstoqueFisicoIntegrationTest.java`: teste anotado com `@SpringBootTest`, perfil `test`; cenários de retiradas 200/500/700, pedido grande, FEFO, não fracionável e entrega sem segunda baixa.
+- `PedidoContextoOperacionalServiceTest.java`: estagiário com/sem participação, diferentes laboratórios do Projeto, lista pessoal, exclusões, snapshots e funcionário sem Projeto.
+- `PedidoSolucaoServiceTest.java`: conversão, receita imutável na aprovação, baixa única, cancelamento preparado/não preparado e entrega sem segunda baixa.
+
+**Interpretação:** há implementação e cobertura prevista por testes automatizados para as regras principais. **Ainda falta executar e registrar os resultados atuais** de `mvnw verify`, conferir locks efetivos em PostgreSQL e realizar teste de concorrência/carga; não declarar “tudo validado” apenas com base no código ou nomes dos testes.
