@@ -1,5 +1,7 @@
 # Códigos de Referência — Testes Automatizados do SGL
 
+> **Vigência — revisão de 17/11/2026:** este texto é um **material didático da primeira fase** de JUnit/Mockito, com classes, DTOs e diretórios exemplificativos de versões anteriores. **Não usar os trechos Java para sobrescrever classes de teste atuais.** A `release` possui 128 arquivos Java `*Test.java`, além de testes de Spring MVC, integração H2, ArchUnit e segurança. O guia atual para evidências deve confrontar `src/test/java/`, `pom.xml`, `application-test.properties` e a [matriz de cobertura C13–C16](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md). Pendências executáveis no [registro único](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md), sobretudo `SGL-REV-009`, `017` e `024`.
+
 Este documento acompanha a primeira etapa de testes automatizados do backend. A proposta é implementar os testes manualmente, entender cada parte e só depois ampliar a cobertura.
 
 ## Objetivo da primeira etapa
