@@ -1,5 +1,7 @@
 # Dossiê técnico do SGL — Backend
 
+> **Escopo real da suíte — verificação 17/11/2026:** 128 arquivos Java `*Test.java` presentes na `release` e cinco regras ArchUnit; testes de segurança e concorrência existem, mas **não foram executados nesta revisão**. O perfil `test` usa H2/`create-drop` e `spring.flyway.enabled=false`; PostgreSQL/Flyway e autorização horizontal exigem homologação. Evidências em [matriz C13–C14](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), decisão e aceite no [backlog SGL-REV-024](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 > **Integração corporativa verificada em 17/11:** `AuthService.login` resolve identidade/Unidade e primeiro acesso; `PessoaCorporativaService` oferece busca/importação exclusiva de Gestão; `SincronizacaoVinculoEstagioService` recebe **eventos de vínculo** em endpoint próprio, sem evidência nesta auditoria de acionamento externo automático em produção. Testes de integração e stubs foram localizados, não executados. Ver [matriz C11](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) e [SGL-REV-022](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 
 > **Backlog pós-revisão (17/11/2026):** decisões, riscos e validações encontrados nas auditorias estão centralizados em [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). Este dossiê permanece o mapa técnico de manutenção; não iniciar correções funcionais até o fechamento da revisão e autorização.
