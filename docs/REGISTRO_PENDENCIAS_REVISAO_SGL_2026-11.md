@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C12. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C14. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -43,6 +43,8 @@
 | SGL-REV-022 | P2 | VALIDAÇÃO | Origem e execução real dos eventos de sincronização institucional do estágio | ABERTO | C11 |
 
 | SGL-REV-023 | P2 | VALIDAÇÃO | Testes Zebra em Node fora da suíte padrão `npm run test` | ABERTO | C12 |
+
+| SGL-REV-024 | P2 | VALIDAÇÃO | Perfil test usa H2 e não executa Flyway; falta homologação das migrations reais | ABERTO | C14 |
 
 ## Fichas de evidência e critérios de correção
 
@@ -193,6 +195,14 @@
 **Procedimento de reprodução e aceite (após revisão):** executar os comandos indicados nos cabeçalhos dos arquivos, como `node --experimental-strip-types --test src/modules/rotulos/zebra/zpl.test.mjs` e o equivalente para `browserPrintLocal.test.mjs`, na versão Node compatível; registrar ambiente e resultado; adicionar esses comandos de modo explícito na rotina de testes/CI aprovada. **Isso não substitui teste com impressora real** (`SGL-REV-011`). O `npm run test` continua selecionando `helpTasks.spec.ts` e `helpAssets.spec.ts`, mas eles não verificam entrega dos vídeos no deploy (`SGL-REV-012`).
 
 **Estado:** constatação de exclusão do padrão de testes, **não de falha dos casos Node**. Nenhum teste foi executado nesta auditoria e nenhum código/teste foi alterado.
+
+### SGL-REV-024 — Migrations Flyway não verificadas pelo perfil test padrão (P2 · VALIDAÇÃO)
+
+**Evidência técnica direta:** `src/main/resources/application-test.properties` configura H2 em memória e `spring.jpa.hibernate.ddl-auto=create-drop`, com `spring.flyway.enabled=false`. Os testes `PedidoConcorrenciaIntegrationTest` e `PedidoEstoqueFisicoIntegrationTest` usam `@ActiveProfiles("test")`. Há validações importantes de negócio e concorrência, mas **passar esses testes no H2 não demonstra a execução das migrations SQL ou equivalência com PostgreSQL de produção**. Não foi identificado nesta rodada resultado executado de testes sobre o schema real de PostgreSQL.
+
+**Critério de aceite:** criar/executar um perfil isolado de integração com **PostgreSQL da versão suportada** (por exemplo, instância descartável/Testcontainers, se aprovado), aplicar Flyway **desde um banco vazio**, comparar schema/restrições/índices com JPA e executar cenários de concorrência, baixa física, autorização e migração de registros legados; adicionalmente verificar a evolução sobre cópia sanitizada representativa, sem dados institucionais reais. Registrar migrações aplicadas, tempos, exceções, logs, versão do banco e commit. Cobertura de concorrência sob PostgreSQL permanece vinculada a `SGL-REV-010` e critérios gerais de implantação a `SGL-REV-017`.
+
+**Estado:** lacuna **confirmada na configuração do perfil test**, não falha ou corrupção de banco comprovada. Não alterar infraestrutura ou migrations durante esta auditoria documental.
 
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
