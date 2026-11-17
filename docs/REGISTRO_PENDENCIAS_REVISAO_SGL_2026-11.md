@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C8. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C10. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -34,6 +34,11 @@
 | SGL-REV-015 | P2 | VALIDAÇÃO | Filtros e consistência da prévia versus PDF/XLSX | ABERTO | C1, Relatórios |
 | SGL-REV-016 | P2 | VALIDAÇÃO | Login corporativo, perfis, Unidade e isolamento no ambiente publicado | ABERTO | Segurança |
 | SGL-REV-017 | P2 | VALIDAÇÃO | E2E, desempenho, carga, falhas de dependência e implantação | ABERTO | Etapa 12 |
+
+| SGL-REV-018 | P1 | RISCO | GET de Usuários expõe diretório completo da Unidade para usuário ativo | ABERTO | C9 |
+| SGL-REV-019 | P1 | RISCO | GET de Estagiários retorna detalhes de vínculos sem Gestão explícita | ABERTO | C9 |
+| SGL-REV-020 | P1 | RISCO | Fallback `findAll` de Usuários quando não há tenant | ABERTO | C9 |
+| SGL-REV-021 | P2 | DIVERGÊNCIA | Contratos históricos de vínculos e Soluções incompatíveis com release | ABERTO | C10 |
 
 ## Fichas de evidência e critérios de correção
 
@@ -144,6 +149,30 @@
 **Fonte:** `ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md` explicitamente `PLANEJADO`.
 
 **Aceite:** auditoria de consultas e índices, testes de carga/concorrência em ambiente isolado, E2E de fluxos, erros 4xx/5xx, recuperação, consistência de migração, observabilidade e validação do artefato publicado, com métricas e evidências. Evitar repetir problemas de outras aplicações sem medição própria no SGL.
+
+### SGL-REV-018 — Direcionamento e minimização da consulta de Usuários (P1 · RISCO)
+
+**Evidência:** `UsuarioController.java` tem `GET /api/v1/usuarios`, `/{id}` e `/por-laboratorio`; `UsuarioService.listarTodos`, `buscarPorId` e `listarPorLaboratorio` filtram por Unidade ou ID, mas **não exigem perfil de Gestão nem titularidade** nos trechos conferidos. `ApiSecurityConfig` permite leituras gerais para qualquer usuário com authority de ativo. `UsuarioResponseDTO` inclui e-mail, perfil, situação e laboratórios de terceiros. O frontend `estagiarioService.listarUsuarios` e `cadastrosAdminService.listarUsuarios` dependem da listagem para fluxos de Gestão/Admin.
+
+**Critério de aceite:** decidir explicitamente quais campos podem constar de um diretório operacional e quem pode ver dados administrativos; testar GET autenticado de dois usuários ativos da mesma Unidade (perfis Estagiário, Técnico, Gestor, Admin) e de Unidades diferentes; garantir seletores/gestão após eventual API de resumo mínimo. **Não confundir tela restrita com rota protegida.**
+
+### SGL-REV-019 — Listagem de Estagiários e seus vínculos (P1 · RISCO)
+
+**Evidência:** `EstagiarioService.listarTodos`, `buscarPorId`, `listarAtivos` e `listarPorLaboratorio` verificam Unidade, mas não exigem Gestão. O DTO `EstagiarioResponseDTO` inclui `VinculoEstagioResponseDTO`: orientador, formação/curso, modalidade de bolsa, referência institucional e observações. Em contraste, `listarSemVinculo` e `listarOrientadoresElegiveis` **já exigem Gestão**. `EstagiariosGestaoView.vue` usa a listagem ampla, mas a UI não limita o endpoint.
+
+**Critério de aceite:** acordar política de acesso ao histórico e campos de estágio, com visão própria, orientador e Gestão; testar pedidos diretos GET de usuários ativos distintos; avaliar DTO enxuto para seletores e DTO detalhado só para perfis autorizados; preservar funcionalidade atual de gestão.
+
+### SGL-REV-020 — Fallback entre Unidades de Usuários sem tenant (P1 · RISCO CONDICIONAL)
+
+**Evidência:** `UsuarioService.listarTodos` faz `TenantContext.unidadeAtual().map(usuarioRepository::findByUnidadePublicId).orElseGet(usuarioRepository::findAll)`. O comentário ainda atribui essa exceção a um antigo login DEV sem autenticação, mas o sistema atual usa JWT; a rota só requer usuário ativo. `TenantRequestFilter` usa a Unidade do JWT e não define tenant se o principal não tiver Unidade; `AuthenticatedUser.from` aceita nulo. O fluxo normal de login corporativo atribui Unidade habilitada, **porém a revisão não comprovou ausência de registros legados ATIVO sem Unidade**.
+
+**Critério de aceite:** verificar invariantes e constraints do banco, autenticação de principal ATIVO sem Unidade, testes de negativa para `GET /api/v1/usuarios` nesse cenário; preferir comportamento fail-closed ou contrato explicitamente autorizado, com análise de compatibilidade do administrador geral. **Não afirmar vazamento reproduzido.**
+
+### SGL-REV-021 — Contratos da Etapa 8 e estágio desatualizados (P2 · DIVERGÊNCIA)
+
+**Evidência:** `docs/ETAPA_8_CONTRATO_VINCULOS_ACESSO.md` contém “Solução continua exigindo projeto” e restringe funcionários a laboratórios autorizados; a release e migrations V47/V48 evoluíram: empregado pode solicitar para laboratório ativo da Unidade com sinalização quando fora da lista, Projeto é opcional, Estagiário exige participação e autorização de laboratório do Projeto e da pessoa. `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md` ainda inicia com estado “não implementado”, apesar de adendo e código atual. `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` é regra registrada de outubro e não certifica integração externa atual.
+
+**Critério de aceite:** corrigir autoridade editorial sem perder decisões históricas, revisar referências cruzadas, confirmar regras de perfis em testes e código, e verificar tutoriais publicados separadamente **sem tocar em vídeos**. Marcar documento antigo como histórico e remeter ao dossiê e à matriz.
 
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
