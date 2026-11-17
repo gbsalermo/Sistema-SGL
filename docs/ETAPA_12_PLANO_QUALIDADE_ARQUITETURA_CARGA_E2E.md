@@ -1,5 +1,7 @@
 # Etapa 12 — Plano transversal de qualidade: arquitetura, carga, fluxos e frontend
 
+> **Acompanhamento de achados — 17/11/2026:** este arquivo continua sendo um **plano de qualidade ainda sem resultados de execução registrados**. Riscos encontrados na revisão documental, inclusive autorização horizontal, carga, estoque e sincronização, ficam no [registro único de pendências](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md), especialmente `SGL-REV-009`, `010`, `013` e `017`. Não converter tarefas planejadas em testes executados.
+
 **Instituído em:** 20/10/2026  
 **Status:** PLANEJADO — não foram executados testes nem medidos indicadores deste plano.  
 **Fonte do cronograma:** `docs/PLANO_PRE_PRODUCAO.md`, Etapas 12 e 13.  
