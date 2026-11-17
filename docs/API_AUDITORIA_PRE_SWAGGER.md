@@ -1,5 +1,7 @@
 # Auditoria da API antes do Swagger
 
+> **Vigência — 17/11/2026:** registro da auditoria alpha de **13/08/2026**, não documento atual de segurança, CORS, Swagger ou autenticação. `ApiSecurityConfig` já implementa JWT e autorização por perfil para escritas; `OpenApiConfig` e controllers já expõem OpenAPI. O texto sobre `SecurityConfig` “liberado” e a “próxima sequência” descrevem o passado. Preservar como evidência histórica. Ver [`SGL-REV-014`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) e [`SGL-REV-016`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 **Data:** 13/08/2026
 
 ## Resultado
