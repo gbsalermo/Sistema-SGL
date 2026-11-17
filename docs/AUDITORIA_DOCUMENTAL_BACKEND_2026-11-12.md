@@ -133,3 +133,13 @@ O frontend possui Vitest para `src/**/__tests__/*.spec.ts`, mas os testes `zpl.t
 **Invariante de ambiente encontrada:** `src/main/resources/application-test.properties` configura **H2, `create-drop` e Flyway desligado**. `PedidoConcorrenciaIntegrationTest` exercita duas aprovações simultâneas e verifica saldo consistente nesse perfil; a validade de bloqueios/índices/transações em PostgreSQL permanece sem homologação. Por isso, foi aberto `SGL-REV-024` para execução/aplicação real de migrations em PostgreSQL isolado. Ver também `SGL-REV-009`, `010` e `017`.
 
 **Estado:** inventário e confronto da configuração/suites; **nenhum Maven, teste de carga ou aplicação de Flyway foi executado nesta auditoria**. Os documentos `testes.md` e `ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md` receberam avisos de evidência e escopo. READMEs permanecem reservados para o fim.
+
+## Continuação por domínio e referências centrais — 17/11/2026
+
+Foram lidas suites de Pedido/Solução, Estoque/Lote, Resíduo/Administração e exportações de Relatórios. A matriz [C15](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) registra **cenários existentes**, não a execução/resultado. Novo cotejo direto dos services de Relatórios e sua query confirmou filtragem `findAll().stream()` em memória; a observação da auditoria datada de 26/10 ainda vale, acompanhada em [SGL-REV-025](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). Foi identificado um possível caminho condicional de leitura multiunidade sem tenant, **sem reprodução de usuário ativo sem Unidade**, registrado como [SGL-REV-026](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
+A matriz [C17](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) comprova divergência semântica no Resumo Operacional: o teste usa KG e L em produtos distintos e valida um `BigDecimal` global que soma as quantidades sem unidade comum. Isso é dado da API, **não defeito visual demonstrado** na view principal; [SGL-REV-027](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
+Revisões editoriais aplicadas com preservação histórica: `CODIGOS_REFERENCIA_TESTES.md` (exemplos antigos de testes), `ETAPA_7_MODELO_ESTOQUE.md` (blueprint V32), `ETAPA_9_1_AUDITORIA_CONTRATOS_RELATORIOS_2026-10-26.md` (alerta de desempenho que persiste) e `RELATORIOS.md`/`EXPORTACAO_RELATORIOS.md`.
+
+**Verificação de links relativa e limitada aos arquivos centrais:** 20 links locais nos dossiê/governança/matriz/backlog/inventário backend foram resolvidos na árvore documental da branch colaborativa; não foi feita varredura completa de todos os 51 documentos. Sem alteração de Java, migrations ou testes.
