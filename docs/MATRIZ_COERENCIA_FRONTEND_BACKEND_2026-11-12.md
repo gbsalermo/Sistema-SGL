@@ -240,3 +240,20 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 **Natureza:** inconsistência **semântica de dados da API**, demonstrada no algoritmo e teste; não necessariamente bug visual de produção. Antes de alterar a API, decidir se esses campos serão descontinuados, serão retornados `null` quando múltiplas unidades, ou serão substituídos por totais agrupados por unidade/produto; preservar compatibilidade de clientes e de exportações.
 
 **Aceite futuro:** testes com kg e L que não aceitem agregação física sem unidade, quantidades por grupo homogêneo, ausência de regressão nas contagens e no relatório detalhado, testes prévia versus PDF/XLSX. Registrar como `SGL-REV-027`, sem correção de código na auditoria.
+
+
+### C18 — Estoque: correções históricas confirmadas e carga do Dashboard Gestão (17/11/2026)
+
+**Pendências da Etapa 7.7 que NÃO devem ser reabertas:**
+- `docs/ETAPA_7_7_AUDITORIA_INTEGRACAO_BACKEND_FRONTEND.md` descreve, no checkpoint inicial, que somente `listarPorUnidade` enriquecia `EstoqueCentralResponseDTO` com `apresentacoesFisicas`. Na `release` atual, `EstoqueCentralService.listarTodos` usa `comResumosFisicos` e `buscarPorId`/`buscarPorUnidadeEProduto` usam `comResumoFisico`. **A diferença inicial de DTO foi corrigida.**
+- O N+1 inicial no resumo da **listagem geral** também foi tratado: `comResumosFisicos(List<EstoqueCentral>, UUID)` executa `recipienteEstoqueRepository.buscarPorUnidadeParaResumo(unidadeId)` uma vez e distribui recipientes por estoque em memória. **Não generalizar** que toda a agregação atual usa consulta individual; as listagens principais foram otimizadas.
+
+**Risco residual em código atual:**
+- `EstoqueCentralService.listarEstoqueBaixoPorUnidade` faz `.map(this::comResumoFisico)`, e cada `comResumoFisico` chama `findByLoteEstoqueCentralIdOrderByLoteIdAscSequencialAsc(estoque.getId())`. Assim, uma listagem de N estoques baixos **pode executar N consultas de recipientes**; ainda não medimos N SQL reais/latência.
+- O frontend `DashboardGestaoView.vue` (`carregarDados`) inicia **8 fontes em `Promise.allSettled`**, incluindo `estoqueService.listarPorUnidade` e `listarEstoqueBaixo`. Depois executa `estoques.map(estoque => estoqueService.listarLotesPorEstoque(estoque.id))`, disparando **uma requisição HTTP por estoque ativo**, sem paginação nesse trecho.
+- A lista `resultadosLotes` usa apenas os `fulfilled` para montar `lotes.value`; os rejeitados **não são incluídos** no cálculo `falhas`, que contabiliza apenas as oito fontes iniciais. Portanto, falha parcial na obtenção de lotes pode deixar indicadores incompletos **sem aviso específico** de que houve falha de lotes.
+- A árvore `release` conferida contém testes para `EstoqueCentralService`/Lotes e telas do módulo Estoque, mas **não foi localizado** arquivo dedicado `DashboardGestaoView.spec.ts` entre os 31 specs selecionados por Vitest. Isso não significa inexistência de testes externos ou outros testes indiretos.
+
+**Natureza e acompanhamento:** chamada por estoque e exclusão de falhas de lotes no contador são **fatos estruturais**; efeitos em tempo real/usuário e severidade dependem de medição e reproduções. Acompanhamento único `SGL-REV-028` (prioridade P2; desempenho + observabilidade do Dashboard). Não propor reduzir queries juntando dados indiscriminadamente sem preservar tenant, FEFO/FIFO, indicadores e estados vazios.
+
+**Aceite futuro:** testar 0/1/N estoques ativos e baixos, N lotes por estoque, falha seletiva de uma requisição de lote, erro visível sem apagar indicadores válidos, carga com massa representativa, número de requests, tempo total e consultas no backend, mais alternativa de lote/resumo em lote autorizada. Ver também `SGL-REV-017` (E2E/carga) e `SGL-REV-025` (desempenho de Relatórios, que é outro fluxo).
