@@ -1,5 +1,7 @@
 # Plano de Pré-Produção do SGL
 
+> **Vigência documental — 17/11/2026:** títulos e trechos “Marco vigente”, branches `collab/etapa-9-*`, `main` e checkpoints de outubro descrevem **o estado histórico de cada etapa**, não o estado operacional de novembro. O código GitLab `release` é canônico; GitHub `release` é espelho. A trilha de arquitetura/carga/E2E permanece **planejada, não homologada**. Para estado atual, consultar `CONTINUIDADE.md`, [dossiê técnico](DOSSIE_PROJETO_SGL.md), [governança](GOVERNANCA_DOCUMENTAL.md) e [backlog único de pendências](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md); este plano preserva decisões e escopo de fases, sem autorizar regressões nos contratos existentes. A revisão final dos READMEs continua adiada até o fechamento da auditoria.
+
 ## Marco vigente — fechamento funcional da Etapa 9 (27/10/2026; pré-merge)
 
 **Etapa 8 foi integrada à main:** backend `818d580` (MR `nti/sgl-api!10`), frontend `12a195a` (MR `nti/sgl-web!11`). Sincronização GitLab → GitHub confirmada em 26/10/2026. Vínculos, Pedidos, Soluções e Resíduos homologados funcionalmente em DEV. Não confundir trechos de planejamento antigos abaixo com o estado integrado.
