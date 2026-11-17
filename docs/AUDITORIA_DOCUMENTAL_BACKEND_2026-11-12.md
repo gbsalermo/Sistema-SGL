@@ -17,7 +17,7 @@
 |---|---|---|
 | `CONTINUIDADE.md` | Referência estrutural candidata | Pendente |
 | `README.md` | Referência estrutural candidata | Pendente |
-| `docs/API_AUDITORIA_PRE_SWAGGER.md` | Contrato / guia especializado | Pendente |
+| `docs/API_AUDITORIA_PRE_SWAGGER.md` | Contrato / guia especializado | Lido; autoridade/vigência sinalizada; conferência integral de DTOs/testes pendente |
 | `docs/AUDITORIA_COBERTURA_DADOS_MVP_ETAPA_8_2026-10-23.md` | Histórico / plano / evidência | Pendente |
 | `docs/CODIGOS_REFERENCIA_TESTES.md` | Contrato / guia especializado | Pendente |
 | `docs/CONTINUIDADE_ETAPA_2_2026-09-10.md` | Histórico / plano / evidência | Pendente |
@@ -26,12 +26,12 @@
 | `docs/CONTINUIDADE_ETAPA_5_2026-09-24.md` | Histórico / plano / evidência | Pendente |
 | `docs/CONTINUIDADE_ETAPA_7_2026-10-06.md` | Histórico / plano / evidência | Pendente |
 | `docs/CONTINUIDADE_PRE_PRODUCAO_2026-09-09.md` | Contrato / guia especializado | Pendente |
-| `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md` | Contrato / guia especializado | Pendente |
-| `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` | Contrato / guia especializado | Pendente |
+| `docs/CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md` | Contrato / guia especializado | Lido; autoridade/vigência sinalizada; conferência integral de DTOs/testes pendente |
+| `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` | Contrato / guia especializado | Lido; autoridade/vigência sinalizada; conferência integral de DTOs/testes pendente |
 | `docs/DECISAO_CONTEXTO_OPERACIONAL_ESTAGIARIO_PEDIDOS.md` | Contrato / guia especializado | Pendente |
 | `docs/DEMO_APRESENTACAO_EMBRAPA.md` | Histórico / plano / evidência | Pendente |
 | `docs/DOSSIE_PROJETO_SGL.md` | Referência estrutural candidata | Pendente |
-| `docs/ENDPOINTS_INTERNOS.md` | Referência estrutural candidata | Pendente |
+| `docs/ENDPOINTS_INTERNOS.md` | Referência estrutural candidata | Lido; autoridade/vigência sinalizada; conferência integral de DTOs/testes pendente |
 | `docs/ETAPA_10_CENARIO_GESTAO_ROTULOS_2026-10-28.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_10_PREPARACAO_ROTULOS_IMPRESSAO_2026-10-27.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md` | Histórico / plano / evidência | Pendente |
@@ -43,7 +43,7 @@
 | `docs/ETAPA_8_AJUSTES_VALIDACAO_2026-10-21.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_8_AJUSTE_VISUAL_GESTAO_VINCULOS_2026-10-21.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_8_AUDITORIA_TECNICA_CHECKPOINT_2026-10-23.md` | Histórico / plano / evidência | Pendente |
-| `docs/ETAPA_8_CONTRATO_VINCULOS_ACESSO.md` | Histórico / plano / evidência | Pendente |
+| `docs/ETAPA_8_CONTRATO_VINCULOS_ACESSO.md` | Histórico / plano / evidência | Lido; autoridade/vigência sinalizada; conferência integral de DTOs/testes pendente |
 | `docs/ETAPA_8_IMPLEMENTACAO_VINCULOS_DEV_2026-10-21.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_8_INICIO_E_REGRAS.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_9_1_AUDITORIA_CONTRATOS_RELATORIOS_2026-10-26.md` | Histórico / plano / evidência | Pendente |
@@ -51,7 +51,7 @@
 | `docs/EXPORTACAO_RELATORIOS.md` | Contrato / guia especializado | Lido; aviso de vigência inserido; homologação de contratos pendente |
 | `docs/FLUXO_DO_SISTEMA.md` | Referência estrutural candidata | Pendente |
 | `docs/GUIA_ESTRUTURAL.md` | Referência estrutural candidata | Pendente |
-| `docs/JSON_EXEMPLOS.md` | Contrato / guia especializado | Pendente |
+| `docs/JSON_EXEMPLOS.md` | Contrato / guia especializado | Lido; autoridade/vigência sinalizada; conferência integral de DTOs/testes pendente |
 | `docs/MODULO_RESIDUOS.md` | Contrato / guia especializado | Pendente |
 | `docs/PENDENCIAS_POS_PROTOTIPO.md` | Histórico / plano / evidência | Pendente |
 | `docs/PLANO_PRE_PRODUCAO.md` | Histórico / plano / evidência | Pendente |
@@ -105,3 +105,15 @@ Leitura adicional com aviso de vigência aplicado:
 - `docs/EXPORTACAO_RELATORIOS.md`: texto de Etapa 9 pré-merge em outubro, apesar de rotas de exportação hoje presentes na release.
 
 **Não foram corrigidas as requisições exemplificadas** porque a reconciliação completa de DTOs, perfis e segurança ainda está aberta em `SGL-REV-008`. Alertas impedem interpretar os exemplos antigos como instruções prontas de produção. Não houve alteração de código.
+
+## Revisão adicional — 17/11/2026: leitura de pessoas e contratos legados
+
+**Novos achados rastreados apenas no backlog central** [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md):
+- `SGL-REV-018`: consultas GET de Usuários por usuários ativos e dados de diretório.
+- `SGL-REV-019`: GET de Estagiários expõe atributos de `VinculoEstagioResponseDTO` sem exigir Gestão nos métodos inspecionados.
+- `SGL-REV-020`: fallback de `UsuarioService.listarTodos` para `findAll` quando não houver tenant — cenário **condicional**; exige provar se pode existir principal ATIVO sem Unidade.
+- `SGL-REV-021`: contratos históricos de Soluções, vínculos e participação descrevem regras superadas pela `release`.
+
+**Revisão de conteúdo aplicada com notas de vigência, preservando histórico:** `CONTRATO_CONTEXTOS_PEDIDOS_ETAPA_8.md`, `ETAPA_8_CONTRATO_VINCULOS_ACESSO.md`, `DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md`, `JSON_EXEMPLOS.md` e `API_AUDITORIA_PRE_SWAGGER.md`. O catálogo `ENDPOINTS_INTERNOS.md` já estava advertido como apoio não canônico. Os exemplos JSON antigos incluem IDs numéricos, senha local e perfis desatualizados; **não executar literalmente** contra o backend atual. Leitura/contraste estático não significa contratos individualmente homologados.
+
+**Teste a realizar:** reproduzir apenas em ambiente isolado os GET para usuários distintos da mesma Unidade, conferindo quais campos retornam; avaliar desenho de resposta mínima para seletores e dados detalhados restritos. Testes de controller com services mockados não substituem autenticação/autorizações reais; ainda falta executar a suíte e verificar o resultado.
