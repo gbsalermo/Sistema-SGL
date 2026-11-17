@@ -1,5 +1,7 @@
 # Decisão estrutural — Ciclo institucional do Estagiário
 
+> **Vigência de 17/11/2026:** documento de decisão do ciclo de bolsa/estágio de outubro, preservado como registro do domínio. A política de precedência institucional/local é referência de requisito, **não confirmação de sincronização corporativa no ambiente implantado**. Código atual a confrontar: `AuthService`, `VinculoEstagioService`, `SincronizacaoVinculoEstagioService` e migrações da `release`. Divergências e homologação pendentes em [`SGL-REV-021`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) e [`SGL-REV-016`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 **Data:** 02/10/2026  
 **Status:** decisão arquitetural implementada e validada no bloco 6.4 em 02/10/2026  
 **Branch:** `collab/etapa-6-estagiarios-vinculos`
