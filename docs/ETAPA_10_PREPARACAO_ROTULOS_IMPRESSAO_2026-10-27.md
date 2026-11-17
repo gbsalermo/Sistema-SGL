@@ -1,5 +1,7 @@
 # Etapa 10 — Rótulos e impressão | preparação e auditoria inicial
 
+> **Vigência — 17/11/2026:** o cabeçalho “preparação documental; nenhuma mudança aplicada” é **o início histórico da Etapa 10**. A `release` já possui rótulos de Produto/Resíduo/Solução, documento de entrada, exportação ZPL e impressão direta via Browser Print local. A Solução pode imprimir em `EM_PREPARACAO`/`ENTREGUE`; o documento de entrada tem acesso após criação e no detalhe do lote; a impressão de Resíduo respeita `impressaoPermitida`. A existência desses fluxos **não homologa** equipamento Zebra, corte ou logos. Conferir [matriz C8](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) e [SGL-REV-011/023](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 **Aberta em:** 27/10/2026
 **Branches:** `collab/etapa-10-rotulos-impressao` no backend `gbsalermo/Sistema-SGL` e frontend `gbsalermo/SGL-FRONTEND`, derivadas das respectivas `main` após integração da Etapa 9.
 **Estado:** preparação documental; nenhuma mudança de layout ou contrato aplicada; referência visual do cliente ainda será fornecida pelo mantenedor.
