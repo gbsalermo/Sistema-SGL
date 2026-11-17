@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C19. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C21. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -53,6 +53,10 @@
 
 | SGL-REV-028 | P2 | RISCO | Dashboard Gestão faz consultas N+1 de lotes, com falhas parciais silenciosas | ABERTO | C18 |
 
+| SGL-REV-029 | P2 | VALIDAÇÃO | E2E e usabilidade mobile de estagiários em Android e iOS | ABERTO | C21 |
+| SGL-REV-030 | P2 | VALIDAÇÃO | Staging efêmero em nuvem para endpoints, JWT, PostgreSQL/Flyway e carga controlada | ABERTO | C21 |
+| SGL-REV-031 | P2 | DIVERGÊNCIA | FAQ generaliza primeiro acesso pendente a empregados e estagiários | ABERTO | C20 |
+
 ## Fichas de evidência e critérios de correção
 
 ### SGL-REV-001 — Visibilidade de Pedidos (P1 · RISCO)
@@ -90,6 +94,9 @@
 **Aceite:** testes de compatibilidade, idempotência (duas consultas), concorrência, permissão e auditoria sem regeneração indevida.
 
 ### SGL-REV-006 — Ajuda de laboratórios e Projeto para estagiários (P2 · DIVERGÊNCIA)
+
+**Complemento da auditoria dos 20 tutoriais — 17/11:** `perguntas-frequentes.md` também generaliza “você pode pedir a qualquer laboratório ativo”; tratar a mensagem por perfil junto com `pedido-em-qualquer-laboratorio.md` e as explicações genéricas de Projeto opcional. O FAQ de **primeiro acesso pendente** é um problema editorial independente: `SGL-REV-031`. Não alterar textos publicados sem cotejo dos vídeos e aprovação específica.
+
 
 **Evidência:** frontend `src/modules/ajuda/textos/pedido-em-qualquer-laboratorio.md` declara empregados **e estagiários** aptos a pedir a qualquer laboratório ativo da Unidade. `pedido-do-estagiario.md` e `PedidoService.resolverContextoPedido` exigem participação elegível, Projeto derivado e laboratório simultaneamente associado ao Projeto e à pessoa. `fazer-um-pedido-e-acompanhar.md` e `solicitar-uma-solucao.md` apresentam Projeto opcional sem ressalva de estagiário.
 
@@ -246,6 +253,26 @@
 
 **Critérios de aceite:** medir volume e tempo para 0/1/N estoques com lotes; criar regressão de Dashboard com uma consulta de lote rejeitada verificando aviso/indicador parcial; avaliar endpoint agregado/paginado e uso de `comResumosFisicos` na consulta de mínimos; preservar escopo de Unidade, estado vazio, filtros, lote vencido/baixo, tratamento de falhas e dados válidos. Vinculado ao aceite transversal `SGL-REV-017`.
 
+
+### SGL-REV-029 — Uso mobile real pelos estagiários (P2 · VALIDAÇÃO)
+
+**Evidência observada:** `NovoPedidoView.vue`, `NovaSolucaoView.vue`, `InformarResiduoView.vue` e `HelpCenterView.vue` contêm media queries; há teste de menu móvel na Ajuda, **mas não foi executada jornada real em Android/iOS**. Estagiários podem utilizar telefone para consultar participações, pedir materiais, solicitar soluções, informar resíduos e acompanhar o andamento. **Não supor que responsividade CSS garanta formulários utilizáveis com teclado virtual, toque, rede instável e diferentes navegadores**.
+
+**Aceite:** executar MB-01–12 no [plano cloud/mobile](PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md) com pelo menos Android/Chrome e iOS/Safari, emulação 320–1024 px, orientação portrait/landscape, teclado virtual, zoom, 0/1/N participações e múltiplos laboratórios, validação de seletores e erros, vídeos da Ajuda, scroll local, nenhum campo/submit inacessível e ausência de envio duplicado. Registrar prints com dados fictícios, dispositivo, versão, rede, status e regressões. **Ainda não executado**.
+
+### SGL-REV-030 — Ensaiar sistema completo em nuvem isolada (P2 · VALIDAÇÃO)
+
+**Pedido de cobertura:** staging real com frontend compilado, backend Spring Boot, PostgreSQL/Flyway, HTTPS, gateway corporativo de teste autorizado, perfis e dados sintéticos; executar CL-01–11, incluindo retornos 401/403, autorização por usuário da mesma Unidade, multiunidade, estoque, Soluções, Resíduos, relatórios, carga do Dashboard, conteúdo da Ajuda, PDFs/XLSX e mídia MP4. Isso **não foi feito nesta revisão** e não comprova comportamento publicado.
+
+**Aceite:** após aprovação de hospedagem, custos, autenticação, rede e massa sintética, implantar artefatos de commits exatos da `release` numa nuvem efêmera; registrar baseline, status HTTP, waterfall, número de chamadas, p50/p95/p99, erro, memória/CPU/SQL e carga gradual autorizada. Não usar conta, banco, credenciais nem tráfego destrutivo de produção. Registrar relatório por CL-xx e ligação aos IDs de correção pertinentes. Fonte de execução: [plano cloud/mobile](PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md).
+
+### SGL-REV-031 — FAQ de primeiro acesso conflita com política por identidade (P2 · DIVERGÊNCIA)
+
+**Confirmação por leitura:** `src/modules/ajuda/textos/perguntas-frequentes.md` explica que “Aguardando aprovação” é a consequência de “seu primeiro acesso” genericamente. `AuthService.saveNewcomer` ativa empregados novos com perfil sugerido, enquanto colaboradores/estagiários novos ficam `PENDENTE_VINCULACAO`; a disponibilidade de acesso depende também da integração/identidade válida. Não afirmar que todo primeiro acesso exige liberação. `SGL-REV-006` já cobre outra divergência do FAQ, sobre laboratório indiscriminado para Estagiário.
+
+**Aceite:** após homologar login e regras institucionais (`SGL-REV-016/022`), propor texto separado para empregados e colaboradores/estagiários; validar com Gestão e conferir se a versão em vídeo precisa de ressalva. **Não modificar texto/FAQ/vídeo durante a revisão documental**; obter autorização específica para qualquer publicação.
+
+
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
 - **Rotas base de Pedidos, Soluções, Estagiários, Estoque, Resíduos e Relatórios** foram encontradas no frontend e nos controllers backend selecionados; correlação estática não prova autorização.
@@ -258,7 +285,7 @@
 
 1. **Definir e testar a política de visibilidade por perfil/titularidade/Unidade**: `001–004`, `018–020`, `026` e `009`; testar acessos a terceiros da mesma Unidade e principal ativo sem Unidade antes de alterar services.
 2. **Decidir divergências funcionais e editoriais**: `005–008`, `014`, `021`, `022` e `027`. Priorizar o contrato de quantidades heterogêneas e preservar Central de Ajuda/vídeos publicados.
-3. **Executar homologação banco e qualidade**: `010–012`, `015–017`, `023` e `024` (PostgreSQL/Flyway, concorrência, Zebra física, E2E, integração corporativa e evidência CI).
+3. **Executar homologação banco, nuvem/mobile e qualidade**: `010–012`, `015–017`, `023` e `024` (PostgreSQL/Flyway, concorrência, Zebra física, E2E, integração corporativa e evidência CI).
 4. **Medir desempenho e falhas parciais antes de corrigir**: `013`, `025` e `028`, com contagem de queries/requests, volume, latência, carga e cenário de erro de lotes no Dashboard; preservar os dados válidos no carregamento parcial.
 5. Registrar commits, MRs, evidências e aceites para encerrar IDs. **Uma fonte documental proprietária**: esta fila acompanha correções, a matriz guarda evidências e os dossiês apenas apontam para ambas.
 
