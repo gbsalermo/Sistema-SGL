@@ -1,5 +1,7 @@
 # Exportação de Relatórios — SGL
 
+> **VIGÊNCIA — 17/11/2026:** o aviso de “Etapa 9 pré-merge” datado de outubro é **histórico**; existem controllers e serviços de exportação na `release` atual. A presença dos endpoints não comprova concordância de filtros, conteúdo da prévia e PDF/XLSX no ambiente publicado. Essas verificações são acompanhadas em [`SGL-REV-015`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 > **Estado vigente (27/10/2026; pré-merge):** Etapa 9 implementada em `collab/etapa-9-relatorios-consolidados` e validada funcionalmente pelo mantenedor, ainda sem integração à `main`. A exportação de Projetos foi adicionada; Movimentações reúne Resumo/Detalhamento no frontend, mantendo endpoints de exportação separados. Quantidades físicas do Detalhamento são opcionais via `mostrarQuantidades`. Estoque/Lotes e Fiscalização incluem recipientes/apresentações e rastreabilidade. Não presumir homologação para produção.
 
 **Atualizado em:** 27/10/2026  
