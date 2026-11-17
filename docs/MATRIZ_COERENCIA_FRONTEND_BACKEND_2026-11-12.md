@@ -1,5 +1,7 @@
 # Matriz de coerência entre frontend e backend — 12/11/2026
 
+> **Fila de correções (17/11/2026):** os achados e verificações C1–C8 são rastreados por IDs em [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). **Esta matriz é a evidência, não o backlog.**
+
 **Referências:** `gbsalermo/SGL-FRONTEND` e `gbsalermo/Sistema-SGL`, ambos na `release` espelhada do GitLab. Esta matriz é um **roteiro de verificação**, não um certificado de testes E2E. Priorizar o código executável sobre instruções históricas.
 
 | Domínio | Frontend (arquivos reais) | Backend (arquivos reais) | Risco de divergência documental |
