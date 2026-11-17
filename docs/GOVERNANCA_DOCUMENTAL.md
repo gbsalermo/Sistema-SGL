@@ -1,5 +1,7 @@
 # Governança documental — SGL Backend
 
+> **Pendências e correções pós-revisão (17/11/2026):** [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) é a **única fila de correções** para backend e frontend. A matriz de coerência registra evidências técnicas; dossiês e inventários não devem copiar o backlog.
+
 **Estado:** organização e resolução de redundância de autoridade em 12/11/2026. **Não** equivale a revisão de todos os métodos, endpoints ou testes. Base: `release` espelhada; trabalho em `collab/docs-release-estado-2026-11`.
 
 ## Precedência e responsabilidades
