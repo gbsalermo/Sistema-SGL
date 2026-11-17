@@ -2,7 +2,7 @@
 
 **Aberto:** 17/11/2026 · **Situação:** backlog de investigação, correção e homologação **a executar depois do fechamento documental e da sincronização Git**.
 
-**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C11. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
+**Cobertura:** `gbsalermo/Sistema-SGL` (backend) e `gbsalermo/SGL-FRONTEND` (frontend), ambos comparados à branch `release` espelhada no GitHub. Este é o **documento proprietário das pendências**; não duplicar a lista em dossiês, inventários ou READMEs. A fonte detalhada de evidências é [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C12. Inventários e dossiês continuam sendo, respectivamente, **auditoria de documentos** e **mapas de manutenção**.
 
 > **IMPORTANTE:** “risco observado em análise estática” não é falha explorada nem incidente de produção. “Validação pendente” não é defeito confirmado. Nenhum teste de segurança, carga ou impressão foi executado por esta revisão documental. Não aplicar correções funcionais nesta etapa; o mantenedor aplica o backend manualmente, salvo autorização explícita. **Não modificar a Central de Ajuda, vídeos, posters, associações, scripts ou arquivos publicados** sem aprovação específica.
 
@@ -41,6 +41,8 @@
 | SGL-REV-021 | P2 | DIVERGÊNCIA | Contratos históricos de vínculos e Soluções incompatíveis com release | ABERTO | C10 |
 
 | SGL-REV-022 | P2 | VALIDAÇÃO | Origem e execução real dos eventos de sincronização institucional do estágio | ABERTO | C11 |
+
+| SGL-REV-023 | P2 | VALIDAÇÃO | Testes Zebra em Node fora da suíte padrão `npm run test` | ABERTO | C12 |
 
 ## Fichas de evidência e critérios de correção
 
@@ -183,6 +185,14 @@
 **Distinguir:** `AuthService.login` sincroniza identidade, Unidade/cargo e situação de acesso; `PessoaCorporativaService.importar` cria pessoa institucional por ação de Gestão; o evento de `VinculoEstagio` é um fluxo separado. Confundir esses três produz instruções operacionais enganosas.
 
 **Verificação requerida:** identificar quem invoca o endpoint de sincronizações, se há job/webhook/integração ativa, origem/autorização do evento, tratamento de repetição, observabilidade e conformidade com políticas institucionais. Executar apenas em ambiente controlado com dados autorizados. Preservar fluxo local de prorrogação/nova bolsa. Atualizar `DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` e manual somente após evidência de ambiente e aceite do mantenedor.
+
+### SGL-REV-023 — Testes ZPL/BrowserPrint fora do npm run test (P2 · VALIDAÇÃO)
+
+**Lacuna confirmada por configuração:** `gbsalermo/SGL-FRONTEND/package.json` executa `vitest run`, e `vitest.config.ts` inclui somente `src/**/__tests__/*.spec.ts`. Os arquivos `src/modules/rotulos/zebra/zpl.test.mjs` e `browserPrintLocal.test.mjs` usam `node:test` e estão fora desse padrão. Portanto, **`npm run test` não executa esses dois arquivos**, embora haja testes relevantes de conteúdo/segurança ZPL e transporte local.
+
+**Procedimento de reprodução e aceite (após revisão):** executar os comandos indicados nos cabeçalhos dos arquivos, como `node --experimental-strip-types --test src/modules/rotulos/zebra/zpl.test.mjs` e o equivalente para `browserPrintLocal.test.mjs`, na versão Node compatível; registrar ambiente e resultado; adicionar esses comandos de modo explícito na rotina de testes/CI aprovada. **Isso não substitui teste com impressora real** (`SGL-REV-011`). O `npm run test` continua selecionando `helpTasks.spec.ts` e `helpAssets.spec.ts`, mas eles não verificam entrega dos vídeos no deploy (`SGL-REV-012`).
+
+**Estado:** constatação de exclusão do padrão de testes, **não de falha dos casos Node**. Nenhum teste foi executado nesta auditoria e nenhum código/teste foi alterado.
 
 ## Resultados já confirmados — não reabrir como defeitos sem nova evidência
 
