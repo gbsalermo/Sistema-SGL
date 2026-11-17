@@ -1,5 +1,7 @@
 # Exemplos JSON — API SGL
 
+> **Vigência — 17/11/2026:** os exemplos são da fase inicial e **não representam payloads prontos para a release atual**. O documento usa IDs numéricos para Usuário, Laboratório e Estágio, menciona senha enviada no cadastro, lista incompleta de perfis e trata `usuarioId` como substituto temporário de autenticação. A API atual recebe UUIDs públicos, utiliza JWT, políticas de perfil, vínculos múltiplos e DTOs atualizados. **Não executar estes exemplos literalmente ou em produção**; conferir controllers e DTOs, usar token de ambiente de teste e massa sintética. Revisão dos exemplos em [`SGL-REV-008`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 Documento de apoio para testes manuais no Postman e desenvolvimento do frontend.
 
 Base local:
