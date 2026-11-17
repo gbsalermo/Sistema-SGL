@@ -48,7 +48,7 @@
 | `docs/ETAPA_8_INICIO_E_REGRAS.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_9_1_AUDITORIA_CONTRATOS_RELATORIOS_2026-10-26.md` | Histórico / plano / evidência | Pendente |
 | `docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md` | Histórico / plano / evidência | Pendente |
-| `docs/EXPORTACAO_RELATORIOS.md` | Contrato / guia especializado | Pendente |
+| `docs/EXPORTACAO_RELATORIOS.md` | Contrato / guia especializado | Lido; aviso de vigência inserido; homologação de contratos pendente |
 | `docs/FLUXO_DO_SISTEMA.md` | Referência estrutural candidata | Pendente |
 | `docs/GUIA_ESTRUTURAL.md` | Referência estrutural candidata | Pendente |
 | `docs/JSON_EXEMPLOS.md` | Contrato / guia especializado | Pendente |
@@ -57,7 +57,7 @@
 | `docs/PLANO_PRE_PRODUCAO.md` | Histórico / plano / evidência | Pendente |
 | `docs/README.md` | Referência estrutural candidata | Pendente |
 | `docs/RELATORIOS.md` | Contrato / guia especializado | Pendente |
-| `docs/REQUISICOES_POSTMAN_LOTES.md` | Contrato / guia especializado | Pendente |
+| `docs/REQUISICOES_POSTMAN_LOTES.md` | Contrato / guia especializado | Lido; aviso de vigência inserido; homologação de contratos pendente |
 | `docs/SINCRONIZACAO_GITLAB_GITHUB.md` | Referência estrutural candidata | Pendente |
 | `docs/VALIDACAO_ETAPA_4.md` | Histórico / plano / evidência | Pendente |
 | `docs/VALIDACAO_ETAPA_5.md` | Histórico / plano / evidência | Pendente |
@@ -65,7 +65,7 @@
 | `docs/VALIDACAO_ETAPA_6_3.md` | Histórico / plano / evidência | Pendente |
 | `docs/VALIDACAO_ETAPA_6_4.md` | Histórico / plano / evidência | Pendente |
 | `docs/VALIDACAO_ETAPA_6_6.md` | Histórico / plano / evidência | Pendente |
-| `docs/testes.md` | Contrato / guia especializado | Pendente |
+| `docs/testes.md` | Contrato / guia especializado | Lido; aviso de vigência inserido; homologação de contratos pendente |
 
 ## Auditoria de conteúdo — itens de atenção
 
@@ -94,3 +94,14 @@
 **Regras conciliadas:** empregado pode solicitar para laboratório ativo da Unidade com indicador de exceção; estagiário exige participação e laboratório autorizado. O catálogo de exemplos, comentários antigos DEV e PDFs são documentação histórica/auxiliar, não fonte de autorização atual.
 
 **Pendências:** auditoria endpoint a endpoint, visibilidade por objeto, testes Maven/integração, FEFO/FIFO e concorrência, transições de Soluções, exportações e impressão física. A tarefa **não alterou código Java, testes nem migrations**.
+
+## Continuidade da revisão — 17/11/2026: fila central de correções
+
+Foi criado o documento canônico [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md), que preserva **17 pendências identificadas até esta data** com prioridade, natureza, evidência, testes e condições de fechamento; contempla também o frontend. **Não duplicar** a fila neste inventário: a [matriz técnica](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) retém as evidências e este inventário registra avanço documental.
+
+Leitura adicional com aviso de vigência aplicado:
+- `docs/testes.md`: orientação anterior à implantação do PostgreSQL/JWT, caminho Maven antigo e cenários HTTP sem autenticação da release.
+- `docs/REQUISICOES_POSTMAN_LOTES.md`: IDs numéricos e payloads de pedido incompatíveis com UUID públicos/validação atuais; exemplos de validade histórica.
+- `docs/EXPORTACAO_RELATORIOS.md`: texto de Etapa 9 pré-merge em outubro, apesar de rotas de exportação hoje presentes na release.
+
+**Não foram corrigidas as requisições exemplificadas** porque a reconciliação completa de DTOs, perfis e segurança ainda está aberta em `SGL-REV-008`. Alertas impedem interpretar os exemplos antigos como instruções prontas de produção. Não houve alteração de código.
