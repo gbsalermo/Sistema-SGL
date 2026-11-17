@@ -82,3 +82,15 @@
 **Concluído no âmbito editorial:** foi criado [`GOVERNANCA_DOCUMENTAL.md`](GOVERNANCA_DOCUMENTAL.md), que define fonte proprietária para cada assunto, separa referências canônicas, complementares e históricas e registra a política para documentos duplicados. Não houve exclusão, deslocamento ou fusão destrutiva de arquivos. Documentos históricos continuam disponíveis para rastreabilidade. Os READMEs finais permanecem reservados para o fechamento da auditoria de conteúdo.
 
 **Ainda não concluído:** revisão individual de todo o inventário, checagem de links, confronto de contratos e permissões com código e testes, e resolução das ambiguidades de negócio. As linhas `Pendente` da tabela significam **revisão de conteúdo**, não falta de classificação editorial. Organização não equivale a homologação.
+
+## Revisão cruzada com o frontend — 17/11/2026
+
+**Documento de evidência único:** [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seções C1–C6. Foram confrontados os serviços HTTP de Pedidos, Soluções, Estagiários, Estoque, Resíduos e Relatórios com controllers e DTOs da `release`; as principais rotas e verbos inspecionados correspondem.
+
+**Risco prioritário a validar:** endpoints `GET` de Pedidos, Contextos Operacionais, Vínculos e Resíduos podem permitir acesso a registros de terceiros **dentro da mesma Unidade**, porque a autorização geral exige usuário ativo mas as leituras inspecionadas não validam necessariamente titularidade ou perfil. **Não há teste de exploração executado**; especificar visibilidade de Gestão, solicitante, estagiário, orientador e administrador e testar acessos positivos/negativos antes de alterar funcionalidade.
+
+**Ponto arquitetural secundário:** `GET /api/v1/residuos/{id}/rotulo` pode completar identificação e persistir dados de resíduos antigos — efeito colateral legado que exige decisão e teste, sem remoção automática.
+
+**Regras conciliadas:** empregado pode solicitar para laboratório ativo da Unidade com indicador de exceção; estagiário exige participação e laboratório autorizado. O catálogo de exemplos, comentários antigos DEV e PDFs são documentação histórica/auxiliar, não fonte de autorização atual.
+
+**Pendências:** auditoria endpoint a endpoint, visibilidade por objeto, testes Maven/integração, FEFO/FIFO e concorrência, transições de Soluções, exportações e impressão física. A tarefa **não alterou código Java, testes nem migrations**.
