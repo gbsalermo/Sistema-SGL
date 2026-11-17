@@ -70,3 +70,11 @@ O cliente HTTP `src/services/http.ts` usa `VITE_API_BASE_URL`; a correspondênci
 **Prioridade:** (1) definir e testar autorização horizontal em GET, (2) contrato de visibilidade de estagiários/orientandos, (3) FEFO/FIFO/conversão/concorrência, (4) ciclo de Solução e impressão no preparo, (5) filtros, PDF/XLSX e carga. Rodar testes em ambiente controlado e registrar resultado real, não inferir aceite de nomes de arquivos.
 
 **Estado da revisão 17/11:** correspondência de rotas-chave verificada estaticamente; **risco de acesso a dados na mesma Unidade sinalizado** para decisão e testes; funcionalidade e segurança de produção ainda não homologadas.
+
+### C6 — Ampliação do alerta: Resíduos e semântica de GET
+
+Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratorio`, `listarPorGerador`, `buscarPorId`, `buscarHistorico`, `buscarHistoricoPorGerador` e `buscarHistoricoDaUnidade` foram inspecionados. Há **isolamento por Unidade**, mas não foi observada nos métodos de consulta uma exigência de titularidade, perfil Gestor ou vínculo ao registro — ampliar os testes de autorização horizontal da seção C2 também para resíduos e históricos. A intenção funcional de acesso a informações comuns da Unidade precisa ser definida pelo mantenedor antes de restringir consultas.
+
+**Exceção arquitetural a registrar:** `GET /api/v1/residuos/{id}/rotulo` chama `ResiduoService.gerarDadosRotulo`, que executa um `save` condicional para completar identificação de registros legados. Portanto, a leitura de rótulo **pode produzir alteração persistida** em resíduos antigos. Trata-se de compatibilidade histórica intencional no comentário do serviço, mas precisa de teste e decisão explícita sobre segurança, auditoria e idempotência. Não remover a compatibilidade automaticamente.
+
+**Conclusão:** as regras de **escrita** foram implementadas com maior especificidade na security chain; a **matriz de leitura** entre perfis, titulares e mesma Unidade é um critério de aceite ainda aberto.
