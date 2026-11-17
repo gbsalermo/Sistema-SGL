@@ -1,5 +1,7 @@
 # Decisão estrutural — Ciclo institucional do Estagiário
 
+> **Verificação de implementação — 17/11/2026:** a `release` diferencia `AuthService.login` (identidade, cargo, Unidade e estado de acesso), `PessoaCorporativaService.importar` (cadastro pela Gestão) e `SincronizacaoVinculoEstagioService.sincronizar` (evento de ocorrência de estágio pelo endpoint `POST /api/v1/vinculos-estagio/{vinculoId}/sincronizacoes-institucionais`). Há testes com stubs para esses fluxos. **Não foi comprovado que a API institucional já envia eventos automaticamente**; acompanhar [SGL-REV-022](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md), sem alterar a regra histórica de precedência até validar o ambiente.
+
 > **Vigência de 17/11/2026:** documento de decisão do ciclo de bolsa/estágio de outubro, preservado como registro do domínio. A política de precedência institucional/local é referência de requisito, **não confirmação de sincronização corporativa no ambiente implantado**. Código atual a confrontar: `AuthService`, `VinculoEstagioService`, `SincronizacaoVinculoEstagioService` e migrações da `release`. Divergências e homologação pendentes em [`SGL-REV-021`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) e [`SGL-REV-016`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 
 **Data:** 02/10/2026  
