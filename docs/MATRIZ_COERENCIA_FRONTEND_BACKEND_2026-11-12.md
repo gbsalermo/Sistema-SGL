@@ -96,3 +96,12 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 - `PedidoSolucaoServiceTest.java`: conversão, receita imutável na aprovação, baixa única, cancelamento preparado/não preparado e entrega sem segunda baixa.
 
 **Interpretação:** há implementação e cobertura prevista por testes automatizados para as regras principais. **Ainda falta executar e registrar os resultados atuais** de `mvnw verify`, conferir locks efetivos em PostgreSQL e realizar teste de concorrência/carga; não declarar “tudo validado” apenas com base no código ou nomes dos testes.
+
+### C8 — Pontos de impressão: implementação frontend conferida
+
+- **Solução:** `SolucoesGestaoView.vue` oferece acesso a `/solucoes/{id}/rotulo` nos estados `PENDENTE`, `EM_PREPARACAO` ou `ENTREGUE`. Em `RotuloSolucaoView.vue`, `PENDENTE` é **somente prévia**, enquanto `window.print()` e `ZebraExportPanel` ficam habilitados apenas em `EM_PREPARACAO` ou `ENTREGUE`. Portanto, o gatilho de impressão **está implementado** a partir da aprovação/preparação; resta teste operacional da impressora e conteúdo.
+- **Documento de entrada:** `EstoqueDetalheView.vue` contém acesso ao documento **logo após registrar o lote** (botão “Imprimir documento de entrada” condicionado ao último lote criado) e **no detalhe de um lote existente**. `DocumentoEntradaLoteView.vue` implementa `window.print()` e `ZebraExportPanel`. A pendência histórica sobre “em qual tela imprimir” está **resolvida no código atual**, mas fluxo real e corte físico ainda precisam de validação.
+- **Resíduo:** `RotuloResiduoAjustadoView.vue` usa `dados.impressaoPermitida` para bloquear tanto impressão A4 quanto Zebra antes da liberação técnica. A gestão oferece prévia em estados anteriores.
+- **Produto:** `RotuloProdutoView.vue` oferece impressão A4 e painel Zebra quando há dados carregados.
+
+**Distinção de aceite:** botão, rota, flag de habilitação e exportador no frontend foram verificados por leitura; **não foi validada impressão real, layout na Zebra, logos, QR ou integridade de cortes**. A Central de Ajuda e seus vídeos permaneceram sem alteração.
