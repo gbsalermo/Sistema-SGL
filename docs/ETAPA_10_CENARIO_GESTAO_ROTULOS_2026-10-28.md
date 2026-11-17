@@ -1,5 +1,7 @@
 # Etapa 10 — Cenário integrado para validação de rótulos
 
+> **Roteiro DEMO histórico — 17/11/2026:** os comandos abaixo mudam para a branch antiga `collab/etapa-10-rotulos-impressao` e iniciam massa fictícia no perfil `demo`. **Não são instruções para validar a `release` nem para uso no ambiente real**. A existência de `DemoDataInitializer` com `@Profile("demo")` foi confirmada no código da `release`; ensaios finais de impressão, compatibilidade e assets ainda estão no [SGL-REV-011](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). Os dados sintéticos de roteiro devem permanecer isolados; não usar credenciais DEMO em produção.
+
 **Estado:** cenário de teste publicado na branch `collab/etapa-10-rotulos-impressao`; inicialização, build e validação funcional local ainda dependem da execução pelo mantenedor.
 
 ## Objetivo
