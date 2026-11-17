@@ -245,10 +245,10 @@
 
 ## Ordem proposta quando o mantenedor autorizar correções
 
-1. **Definir política de visibilidade por perfil/titularidade** e tratar `001–004` com testes de autorização antes/depois; rodar `009`.
-2. Resolver decisões funcionais/documentais `005–008`, com proteção dos vídeos e rotas publicadas.
-3. Executar a validação integrada de estoque, impressão, relatórios, autenticação, carga e deployment `010–012`, `015–017`.
-4. Medir o possível custo de `013` e corrigir somente se reproduzido; consolidar comentários e guias em `014`.
-5. Registrar commits, MRs, aceites e dar baixa nos IDs. Em cada alteração, **uma fonte documental proprietária**; índices e dossiês somente apontam para este registro.
+1. **Definir e testar a política de visibilidade por perfil/titularidade/Unidade**: `001–004`, `018–020`, `026` e `009`; testar acessos a terceiros da mesma Unidade e principal ativo sem Unidade antes de alterar services.
+2. **Decidir divergências funcionais e editoriais**: `005–008`, `014`, `021`, `022` e `027`. Priorizar o contrato de quantidades heterogêneas e preservar Central de Ajuda/vídeos publicados.
+3. **Executar homologação banco e qualidade**: `010–012`, `015–017`, `023` e `024` (PostgreSQL/Flyway, concorrência, Zebra física, E2E, integração corporativa e evidência CI).
+4. **Medir desempenho antes de corrigir**: `013` e `025`, com dados de queries, volume, latência e equivalência de resultados.
+5. Registrar commits, MRs, evidências e aceites para encerrar IDs. **Uma fonte documental proprietária**: esta fila acompanha correções, a matriz guarda evidências e os dossiês apenas apontam para ambas.
 
 **Integração documental ainda pendente:** manter branches `collab/docs-release-estado-2026-11` isoladas até revisão final, conferir novamente diferenças contra GitLab `release`, sem force-push e sem alterações de código/media. READMEs finais ficam para o encerramento da auditoria.
