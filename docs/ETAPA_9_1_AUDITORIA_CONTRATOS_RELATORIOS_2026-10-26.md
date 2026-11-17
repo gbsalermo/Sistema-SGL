@@ -1,5 +1,7 @@
 # Etapa 9.1 — Auditoria inicial dos contratos de Relatórios
 
+> **Rechecagem estática na `release` — 17/11/2026:** a observação de 26/10 sobre `movimentacaoRepository.findAll().stream()` **ainda se aplica** a `RelatorioMovimentacoesService.gerar` e `RelatorioResumoOperacionalService.gerar`, que filtram histórico em memória. Há possível custo crescente, **sem benchmark medido**. A query `findAll` também não restringe Unidade quando o tenant é nulo, condição ainda sem exploração HTTP confirmada. Acompanhamento central: [SGL-REV-025/026](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md), evidência na [matriz C16](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md). O restante deste arquivo é uma auditoria datada, não uma instrução de implementação corrente.
+
 **Data:** 26/10/2026  
 **Estado:** auditoria estática inicial; nenhuma funcionalidade nova implementada; testes desta etapa ainda não executados.  
 **Branches:** `collab/etapa-9-relatorios-consolidados` (backend e frontend).
