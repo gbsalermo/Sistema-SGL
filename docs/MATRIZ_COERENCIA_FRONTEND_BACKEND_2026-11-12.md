@@ -227,3 +227,16 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 **Risco a confirmar:** um usuário `ATIVO` com JWT válido **e sem Unidade** pode, dependendo das invariantes do banco, receber dados agregados de mais de uma Unidade. O login corporativo normal mapeia Unidade habilitada, portanto a auditoria **não demonstra que esse perfil residual exista nem que a via HTTP seja explorável**. Registrar `SGL-REV-026`, relacionado ao fallback sem tenant em Usuários (`SGL-REV-020`). Além disso, decidir se relatórios completos devem ser visíveis a qualquer usuário ativo ou somente Gestão (`SGL-REV-001–004`, `018–019`).
 
 **Aceite proposto:** testes HTTP autenticados com principal ativo sem Unidade, dois usuários e dois tenants; teste de falha fechada sem contexto; medir consultas, custo e filtros em massa representativa, sem refatorar ou modificar o repository durante a revisão. Conferir `EXPLAIN` e índices em PostgreSQL isolado, e validar igualdade prévia/exportação após qualquer otimização. Nunca rodar benchmark com carga real em produção sem planejamento.
+
+
+### C17 — Contrato de quantidades do Resumo Operacional soma unidades incompatíveis (17/11/2026)
+
+**Divergência demonstrada por leitura de código e pelo próprio teste:**
+- `RelatorioResumoOperacionalService.gerar` acumula `quantidadeEntradas`, `quantidadeSaidas` e `quantidadeDescartes` com `BigDecimal.add` **entre movimentações de produtos distintos**, sem agrupar por unidade de medida.
+- `RelatorioResumoOperacionalResponseDTO` expõe esses totais globais `BigDecimal` sem campo correspondente de unidade.
+- Em `RelatorioResumoOperacionalServiceTest.deveGerarResumoOperacionalComSucesso`, `produtoA` usa `UnidadeMedida.KG` e `produtoB` usa `UnidadeMedida.L`. O teste configura entradas de **10 kg** e **6 L** e afirma `resultado.getQuantidadeEntradas() == 16`. Esse total físico **não tem unidade homogênea**. Ranking por produto e lote preserva unidade em DTO especializado; contagens de movimentos são semanticamente válidas.
+- Na `RelatoriosGestaoView.vue` analisada, o **modo Resumo** mostra `totalMovimentacoes`, `totalEntradas`, `totalSaidas`, `totalDevolucoes`, `totalAjustes`, `totalDescartes` — contagens, não os três campos de quantidades incompatíveis. Logo **não há evidência de exibição desses totais físicos globais nessa tela atualmente**, mas o contrato API os retorna e pode ser consumido em outras integrações.
+
+**Natureza:** inconsistência **semântica de dados da API**, demonstrada no algoritmo e teste; não necessariamente bug visual de produção. Antes de alterar a API, decidir se esses campos serão descontinuados, serão retornados `null` quando múltiplas unidades, ou serão substituídos por totais agrupados por unidade/produto; preservar compatibilidade de clientes e de exportações.
+
+**Aceite futuro:** testes com kg e L que não aceitem agregação física sem unidade, quantidades por grupo homogêneo, ausência de regressão nas contagens e no relatório detalhado, testes prévia versus PDF/XLSX. Registrar como `SGL-REV-027`, sem correção de código na auditoria.
