@@ -1,5 +1,7 @@
 # Governança documental — SGL Backend
 
+> **Fechamento de organização — 17/11/2026:** READMEs de raiz e `docs/README.md` de ambos os repos foram consolidados para a `release`; as versões anteriores dos índices foram preservadas em `docs/HISTORICO_INDICE_DOCUMENTACAO_ATE_2026-11-17.md`. A auditoria de [referências e sincronização](AUDITORIA_REFERENCIAS_E_SINCRONIZACAO_2026-11-17.md) encontrou zero destinos ausentes entre **126 links Markdown relativos** (snapshot de 146 arquivos, sem contar os dois dossiês íntegros arquivados). **Âncoras, links externos e QA funcional não estão homologados.** Backlog único permanece com 31 itens; a integração só ocorre por MR após sincronização dos SHAs.
+
 > **Fonte de execução da qualidade (17/11):** o novo [plano de homologação nuvem/mobile](PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md) é proprietário dos cenários CL-01–11/MB-01–12, a [Etapa 12](ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md) contém critérios transversais, a [matriz](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) guarda evidências estáticas e o [registro único](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) continua a única fila de problemas. Não duplicar listas em frontend e backend.
 
 > **Pendências e correções pós-revisão (17/11/2026):** [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) é a **única fila de correções** para backend e frontend. A matriz de coerência registra evidências técnicas; dossiês e inventários não devem copiar o backlog.
