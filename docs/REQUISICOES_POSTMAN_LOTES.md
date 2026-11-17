@@ -1,5 +1,7 @@
 # Requisições Postman — validação de Lotes e Movimentações
 
+> **AVISO DE VIGÊNCIA — 17/11/2026:** exemplos abaixo são **históricos e não devem ser executados literalmente**. Alguns bodies usam IDs numéricos, payloads antigos, data de validade já passada e autenticação não documentada. A API atual usa identificadores públicos UUID, JWT e regras de apresentação/unidade nas solicitações. Para construir uma coleção atual com massa sintética e ambiente isolado, acompanhar [`SGL-REV-008`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). O histórico é preservado aqui como referência.
+
 Base URL:
 
 ```text
