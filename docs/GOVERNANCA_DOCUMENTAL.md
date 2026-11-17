@@ -1,5 +1,7 @@
 # Governança documental — SGL Backend
 
+> **Fonte de execução da qualidade (17/11):** o novo [plano de homologação nuvem/mobile](PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md) é proprietário dos cenários CL-01–11/MB-01–12, a [Etapa 12](ETAPA_12_PLANO_QUALIDADE_ARQUITETURA_CARGA_E2E.md) contém critérios transversais, a [matriz](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) guarda evidências estáticas e o [registro único](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) continua a única fila de problemas. Não duplicar listas em frontend e backend.
+
 > **Pendências e correções pós-revisão (17/11/2026):** [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) é a **única fila de correções** para backend e frontend. A matriz de coerência registra evidências técnicas; dossiês e inventários não devem copiar o backlog.
 
 **Estado:** organização e resolução de redundância de autoridade em 12/11/2026. **Não** equivale a revisão de todos os métodos, endpoints ou testes. Base: `release` espelhada; trabalho em `collab/docs-release-estado-2026-11`.
