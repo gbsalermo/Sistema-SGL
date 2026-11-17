@@ -1,5 +1,7 @@
 # Etapa 8 — Contrato enxuto de vínculos operacionais e primeiro acesso
 
+> **Vigência de 17/11/2026:** documento histórico de decisão, não contrato executável atual. A `release` utiliza JWT, Unidade derivada da sessão e laboratórios múltiplos (V47/V48). Para empregados, Projeto é opcional e pedido a qualquer laboratório ativo da Unidade pode ser sinalizado à Gestão; para estagiários, participação elegível e laboratório vinculado a Projeto **e** à pessoa são obrigatórios. A frase abaixo “Solução continua exigindo projeto” e a restrição geral de laboratório para funcionário foram superadas. Conferir `PedidoService.resolverContextoPedido` e `PedidoSolucaoServiceTest`. Divergência acompanhada em [`SGL-REV-021`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). Preservar o registro histórico.
+
 **Status:** decisão de produto registrada, implementação de vínculos administrativos condicionada à autenticação/autorização real. Não substituir a sessão DEV por auto-cadastro não autenticado.
 
 ## Identidade e autorização
