@@ -155,3 +155,15 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 **Decisão documental:** três fluxos *não equivalentes* (login, importação, sincronização de ocorrência) devem permanecer separados nos guias e dossiês. O requisito de precedência por campo documentado em `DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` não confirma automação em produção; a análise estática não encontrou evidência suficiente de agendamento/origem de eventos. Registrar como `SGL-REV-022` (integração de sincronização a homologar) e manter `SGL-REV-016` como homologação geral do login/implantação.
 
 **Próximos testes de aceite:** confirmar no ambiente institucional autorizado: origem do evento, autenticação do emissor, cadence/acionamento, reenvio de mesmo evento, fim de estágio, mudança de lotação, perfil administrativo, consistência das participações e trilha de auditoria. Nunca publicar credenciais/identificadores institucionais em documentação.
+
+
+### C12 — Escopo real da suíte de testes do frontend e Zebra (17/11/2026)
+
+**Inspeção direta na `release` do frontend:**
+- `package.json` define `npm run test` como `vitest run`, `npm run type-check` como `vue-tsc --noEmit` e `npm run build` como `vue-tsc --noEmit && vite build`.
+- `vitest.config.ts` usa `test.include: ['src/**/__tests__/*.spec.ts']`. Por isso, `src/modules/rotulos/zebra/zpl.test.mjs` e `browserPrintLocal.test.mjs`, que estão fora de `__tests__` e terminam em `.test.mjs`, **não são selecionados por `npm run test`**.
+- Esses dois arquivos importam `test` de `node:test` e contêm orientação explícita para execução com `node --experimental-strip-types --test src/modules/rotulos/zebra/<arquivo>.test.mjs`. Sua existência e expectativa de comando são verificadas; **nenhum teste foi executado nesta revisão**.
+- `src/modules/ajuda/__tests__/helpTasks.spec.ts` e `helpAssets.spec.ts` **estão cobertos pelo padrão Vitest**. Verificam IDs/ordem de tutoriais, URLs, existência e tamanho dos posters e PDF; **não verificam disponibilidade real dos MP4**. Isso confirma a separação entre teste de assets versionados e verificação do deploy, sem alterar vídeo ou player.
+- A árvore `.github/workflows/` dos espelhos GitHub consultados mostra workflows de sincronização, não evidência de etapa de teste/build. Isso **não autoriza concluir ausência de CI no GitLab institucional ou de testes locais do mantenedor**.
+
+**Conclusão:** há uma **lacuna verificável de orquestração** para executar testes Zebra em conjunto com a suíte padrão do frontend. Registrar `SGL-REV-023`, vinculando aos aceites `SGL-REV-009` (evidência de execução), `011` (impressão física) e `012` (vídeos no deploy). Uma eventual inclusão no pipeline deve ser feita depois da revisão, sem mudar a implementação dos rótulos nem a Central de Ajuda.
