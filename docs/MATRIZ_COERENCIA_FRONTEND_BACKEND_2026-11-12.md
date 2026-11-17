@@ -135,3 +135,23 @@ Em `ResiduoService.java`, `listarTodos`, `listarPorStatus`, `listarPorLaboratori
 `docs/DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` registra precedência campo a campo da integração; **não é prova** de sincronização externa atual em produção. Validar com `AuthService` e `SincronizacaoVinculoEstagioService` na etapa integrada.
 
 **Encaminhamento:** sinalizar vigência nos três documentos especializados e registrar `SGL-REV-021` para correção editorial definitiva após a decisão de contrato. Nenhuma alteração funcional nesta auditoria.
+
+
+### C11 — Integração corporativa, primeiro acesso e sincronização institucional (17/11/2026)
+
+**Base inspecionada:** `AuthService.java`, `PessoaCorporativaService.java`, `SincronizacaoVinculoEstagioService.java`, `VinculoEstagioController.java`, `PessoaCorporativaController.java`, `TenantRequestFilter.java`, serviços do frontend e as suites `AuthServiceIntegrationTest`, `PessoaCorporativaIntegrationTest` e `SincronizacaoVinculoEstagioServiceTest` da `release`.
+
+| Fluxo distinto | Contrato verificado no código | Implicação documental |
+|---|---|---|
+| **Login institucional** | `AuthService.login` chama `CorporateApiClient.login`, valida situação da identidade, resolve Unidade corporativa habilitada e cria/atualiza `Usuario`. Ao sincronizar, preserva perfil e laboratórios locais; mudança de lotação passa por `MudancaLotacaoService`. | Não chamar esse processo de “importação manual” nem afirmar que vínculo de estágio é criado automaticamente pelo login. |
+| **Empregado novo** | `AuthService.saveNewcomer` atribui perfil inicial sugerido e `SituacaoUsuario.ATIVO`; empregado antes pendente pode ser liberado no login posterior. | Não descrever todo primeiro acesso como obrigatoriamente pendente de Gestão. |
+| **Colaborador/estagiário novo** | `saveNewcomer` registra `PENDENTE_VINCULACAO`; a security chain impede uso operacional até aprovação. | Distinguir cadastro da identidade de criação/regularização de estágio e seus vínculos. |
+| **Importação pela Gestão** | `GET /api/v1/pessoas-corporativas` e `POST /api/v1/pessoas-corporativas/importar` usam `PessoaCorporativaService`; `requireGestao`, controle de perfil concedido, Unidade ativa e `LaboratoriosDaPessoa`. Importação cria pessoa já ativa com perfil e laboratórios. | Não confundir esta ação administrativa com login ou sincronização de bolsa. Frontend: `pessoasCorporativasService.ts` e `ImportarPessoasView.vue`. |
+| **Sincronização de ocorrência de vínculo** | `POST /api/v1/vinculos-estagio/{vinculoId}/sincronizacoes-institucionais` chama `SincronizacaoVinculoEstagioService.sincronizar`: valida vínculo e tenant, trata evento repetido/idempotência, aplica alterações e encerra participações abertas no fim do estágio. | O **endpoint receptor existe**, mas esta análise **não demonstrou quem, quando ou se envia automaticamente eventos em produção**. Distinguir mecanismo implementado de integração operacional. |
+| **Atualização local do vínculo/bolsa** | `VinculoEstagioController` também oferece atualização, referência, prorrogação e nova bolsa como fluxos locais. | Não tratar fallback local como retorno garantido da API institucional. |
+
+**Evidências de testes presentes (sem execução nesta auditoria):** `AuthServiceIntegrationTest` contempla empregado ativo, colaborador pendente, preservação de pessoa importada, mudança de Unidade, desativação, conta DEV e bootstrap do primeiro administrador; `PessoaCorporativaIntegrationTest` cobre importação multilaboratório, restrições de perfil, Unidade e cache; `SincronizacaoVinculoEstagioServiceTest` contempla prorrogação, encerramento com participações, duplicação de evento, replay divergente, referência institucional e tenant. O nome `IntegrationTest` não certifica conexão à infraestrutura institucional real: há stubs/gateway de teste no repositório.
+
+**Decisão documental:** três fluxos *não equivalentes* (login, importação, sincronização de ocorrência) devem permanecer separados nos guias e dossiês. O requisito de precedência por campo documentado em `DECISAO_CICLO_INSTITUCIONAL_ESTAGIO.md` não confirma automação em produção; a análise estática não encontrou evidência suficiente de agendamento/origem de eventos. Registrar como `SGL-REV-022` (integração de sincronização a homologar) e manter `SGL-REV-016` como homologação geral do login/implantação.
+
+**Próximos testes de aceite:** confirmar no ambiente institucional autorizado: origem do evento, autenticação do emissor, cadence/acionamento, reenvio de mesmo evento, fim de estágio, mudança de lotação, perfil administrativo, consistência das participações e trilha de auditoria. Nunca publicar credenciais/identificadores institucionais em documentação.
