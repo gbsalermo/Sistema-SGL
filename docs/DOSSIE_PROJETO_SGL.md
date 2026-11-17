@@ -1,5 +1,7 @@
 # Dossiê técnico do SGL — Backend
 
+> **Integração corporativa verificada em 17/11:** `AuthService.login` resolve identidade/Unidade e primeiro acesso; `PessoaCorporativaService` oferece busca/importação exclusiva de Gestão; `SincronizacaoVinculoEstagioService` recebe **eventos de vínculo** em endpoint próprio, sem evidência nesta auditoria de acionamento externo automático em produção. Testes de integração e stubs foram localizados, não executados. Ver [matriz C11](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) e [SGL-REV-022](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 > **Backlog pós-revisão (17/11/2026):** decisões, riscos e validações encontrados nas auditorias estão centralizados em [`REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md). Este dossiê permanece o mapa técnico de manutenção; não iniciar correções funcionais até o fechamento da revisão e autorização.
 
 > **Rótulos e documento de entrada (checagem frontend 17/11):** os pontos de acesso/impressão para Produto, Resíduo, Solução e entrada de lote foram localizados no código da `release`. Solução imprime a partir de `EM_PREPARACAO`; documento de entrada tem gatilho após criação e no detalhe do lote. Ainda faltam ensaios de impressão real. Evidências em [`MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md`](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md), seção C8.
