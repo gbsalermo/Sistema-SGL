@@ -1,5 +1,7 @@
 # Exportação de Relatórios — SGL
 
+> **Complemento técnico — 17/11/2026:** a existência de testes PDF/XLSX não demonstra equivalência com todos os filtros da prévia. Há alerta semântico específico no `RelatorioResumoOperacionalResponseDTO`: quantidade global mistura unidades de produtos distintos, embora o frontend consolidado inspecionado exiba contagens. Conferir [matriz C15/C17](MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md) e [SGL-REV-015/027](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md); validar contratos e exportações antes de alterar código.
+
 > **VIGÊNCIA — 17/11/2026:** o aviso de “Etapa 9 pré-merge” datado de outubro é **histórico**; existem controllers e serviços de exportação na `release` atual. A presença dos endpoints não comprova concordância de filtros, conteúdo da prévia e PDF/XLSX no ambiente publicado. Essas verificações são acompanhadas em [`SGL-REV-015`](REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 
 > **Estado vigente (27/10/2026; pré-merge):** Etapa 9 implementada em `collab/etapa-9-relatorios-consolidados` e validada funcionalmente pelo mantenedor, ainda sem integração à `main`. A exportação de Projetos foi adicionada; Movimentações reúne Resumo/Detalhamento no frontend, mantendo endpoints de exportação separados. Quantidades físicas do Detalhamento são opcionais via `mostrarQuantidades`. Estoque/Lotes e Fiscalização incluem recipientes/apresentações e rastreabilidade. Não presumir homologação para produção.
