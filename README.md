@@ -416,6 +416,25 @@ Esses comandos não substituem a verificação PostgreSQL/Flyway, segurança hor
 **Portões em aberto:** matriz de autorização por registro, migrações reais em PostgreSQL, testes completos, carga, integração corporativa e navegação Android/iOS por estagiários. [31 itens rastreados](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) não equivalem a 31 defeitos confirmados: incluem riscos, decisões, divergências e testes futuros.
 ---
 
+### Como o projeto evoluiu
+
+A evolução não foi apenas visual: cada ciclo incorporou uma restrição nova do domínio e obrigou as camadas a permanecerem coerentes.
+
+```text
+Protótipo e identidade de interface
+  → cadastros e gestão de resíduos
+  → hierarquia Projeto / SCI / Atividade e estágio
+  → estoque físico por lotes e recipientes (FEFO/FIFO)
+  → Pedidos e Soluções com contexto e baixa transacional
+  → Relatórios, rótulos e impressão
+  → identidade institucional com JWT e multilaboratório
+  → auditoria e homologação integrada (fase atual de qualidade)
+```
+
+**Aprendizados documentados:** decisões de modelagem, migrations, conciliação entre frontend/backend, regressões identificadas e revisões de permissões estão preservadas nos [dossiês](docs/DOSSIE_PROJETO_SGL.md) e na [matriz técnica](docs/MATRIZ_COERENCIA_FRONTEND_BACKEND_2026-11-12.md). Não atribuímos métricas de adoção, economia ou performance que ainda não foram medidas ou publicadas.
+
+---
+
 ## Documentação
 
 | Documento | Papel |
