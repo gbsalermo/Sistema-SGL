@@ -5,7 +5,7 @@
 
 # SGL — Sistema de Gestão de Laboratórios
 
-**Backend para gestão de laboratórios, produtos e soluções, estoque e movimentações, pedidos e entregas, estagiários e vínculos, resíduos, rastreabilidade, identificação, fiscalização e relatórios.**
+**A API que integra pessoas, materiais e processos para tornar a gestão de laboratórios mais organizada, eficiente e rastreável.**
 
 `Java 17` · `Spring Boot 4.1` · `PostgreSQL` · `Flyway` · `Swagger/OpenAPI` · `PDF/XLSX`
 
@@ -15,7 +15,9 @@
 
 **O SGL é uma plataforma de gestão de laboratórios que centraliza e automatiza processos, materiais e responsabilidades envolvidos na operação de um ou de vários laboratórios.**
 
-Seu propósito vai além de consultar saldos ou acompanhar solicitações. O sistema integra o **ciclo dos materiais** — cadastro de produtos e soluções, entrada e controle de lotes e recipientes, estoque mínimo, pedidos, liberação, preparo de soluções, retirada, entrega, devolução e movimentações — à **gestão das pessoas** que utilizam esses materiais, incluindo empregados, estagiários, orientadores, vínculos, participações e permissões. Registros de resíduos, rótulos, histórico e relatórios também apoiam a identificação física e a fiscalização de materiais que exigem cuidados específicos, como substâncias tóxicas, radioativas ou especialmente sensíveis.
+Seu propósito vai além de consultar saldos ou acompanhar solicitações. O SGL conecta o **ciclo dos materiais** — desde o cadastro e a entrada no estoque até a liberação e as movimentações — às pessoas responsáveis por essas operações. Assim, a Gestão consegue saber o que está disponível, quem pode utilizar cada material e como seu uso é registrado.
+
+Esse acompanhamento também alcança os resíduos e a identificação física dos materiais, oferecendo suporte à auditoria e à fiscalização, especialmente quando são necessários cuidados específicos de armazenamento e manuseio.
 
 ### A necessidade que deu origem ao projeto
 
@@ -23,7 +25,7 @@ O SGL nasceu de um problema concreto apresentado pela equipe responsável pela *
 
 Em uma Unidade com vários laboratórios, esse trabalho não se limita a registrar produtos: envolve saber **quais materiais estão disponíveis, onde estão armazenados, quem pode solicitá-los, quem os liberou, como foram utilizados e o que precisa ser reposto, identificado ou fiscalizado**. Manter essas informações em ferramentas separadas exigia conciliação manual e dificultava uma visão integrada da operação.
 
-O projeto foi construído a partir dessas necessidades para reunir, em um único ambiente, o **catálogo de materiais, o controle físico de estoque, os pedidos de produtos, os fluxos específicos de soluções e resíduos, a organização das pessoas e seus vínculos e os registros necessários à rastreabilidade**. Na pesquisa, as autorizações também podem depender da estrutura de **Projeto → SCI → Atividade**: um Projeto organiza o contexto de pesquisa, ao qual se vinculam SCIs e suas Atividades; a participação da pessoa e a relação com os laboratórios determinam quais operações lhe são permitidas. Essa hierarquia é detalhada no [modelo de domínio](#modelo-de-domínio--relações-fundamentais).
+Essa integração também precisa considerar **quem está autorizado a solicitar materiais e a qual laboratório eles se destinam**. Quando uma solicitação está associada a um projeto institucional, o SGL utiliza a hierarquia **Projeto → SCI → Atividade**: um Projeto reúne SCIs, cada SCI possui suas Atividades, e as participações e os vínculos das pessoas ajudam a determinar os laboratórios elegíveis. Essa estrutura serve para **contextualizar e rastrear o uso dos materiais**, não para gerenciar o conteúdo ou os resultados das pesquisas. As relações são apresentadas em mais detalhes no [modelo de domínio](#modelo-de-domínio--relações-fundamentais).
 
 Na prática, a gestão passa a acompanhar o caminho de um material **desde o cadastro e a entrada física até sua autorização, movimentação, eventual devolução e registro para auditoria**. A integração com serviços corporativos da Embrapa permite aproveitar a identidade institucional dos usuários, enquanto o backend mantém as regras de autorização e a consistência das operações.
 
@@ -36,7 +38,7 @@ Na prática, a gestão passa a acompanhar o caminho de um material **desde o cad
 | Catálogos, saldos, entradas, saídas e alertas de estoque acompanhados em controles separados | Cadastro de produtos, estoque central por Unidade, indicadores de estoque baixo, vencimentos e histórico de movimentações |
 | Lotes e recipientes com validade, diferentes apresentações e uso parcial | Controle físico por lote e recipiente, seleção FEFO/FIFO, fracionamento e rastreabilidade de baixas e devoluções |
 | Pedidos de produtos em ferramenta externa e preparo de soluções tratado separadamente | Solicitação, análise, aprovação e entrega de materiais integradas ao estoque; solicitação e preparo de soluções em fluxo próprio |
-| Pessoas e laboratórios ligados a múltiplos projetos e atividades de pesquisa | Gestão de estagiários, orientadores, vínculos, participações e autorizações conforme a estrutura de pesquisa |
+| Pessoas e laboratórios vinculados a diferentes projetos, SCIs e atividades | Gestão de estagiários, orientadores, vínculos e participações para definir quem pode solicitar materiais em cada laboratório |
 | Resíduos, identificação de materiais e fiscalização sem visão operacional integrada | Registros de resíduos e composição, rótulos, histórico e informações de apoio à identificação física e à fiscalização |
 | Unidades e perfis com responsabilidades diferentes | Autenticação corporativa, controle de acesso por perfil e segregação de dados por Unidade |
 | Conferência manual de informações e emissão de documentos | Painéis operacionais, relatórios PDF/XLSX, rótulos e documentos de entrada |
