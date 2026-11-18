@@ -66,6 +66,22 @@ Este exemplo resume **regras existentes**, sem representar uma transação execu
 
 Um **empregado** segue regras de autorização diferentes das de um estagiário: pode solicitar a laboratórios ativos da Unidade, com sinalização quando o destino não pertence aos seus vínculos. **O SGL não pressupõe que todos os perfis possuam a mesma liberdade operacional.**
 
+### O fluxo, em uma visão
+
+O diagrama abaixo ilustra **um pedido de material** do estagiário, a partir das regras de domínio identificadas na `release`. É um mapa explicativo, **não um registro de teste executado**. Soluções possuem fluxo de preparação próprio.
+
+```mermaid
+flowchart TD
+    A["Identidade institucional e Unidade"] --> B["Participação e laboratório elegíveis"]
+    B --> C["Pedido de material pendente"]
+    C --> D{"Decisão da Gestão"}
+    D -->|Rejeitar| R["Rejeitado: nenhuma baixa"]
+    D -->|Aprovar| E["Seleção FEFO/FIFO"]
+    E --> F["Baixa rastreável em lote e recipiente"]
+    F --> G["Entrega sem segunda baixa"]
+    F -.->|"Cancelamento permitido"| H["Restituição ligada às saídas originais"]
+```
+
 ---
 
 ## Decisões de engenharia que caracterizam o projeto
