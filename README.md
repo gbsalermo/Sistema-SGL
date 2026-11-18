@@ -13,23 +13,23 @@
 
 ## O que é o SGL?
 
-O **SGL (Sistema de Gestão de Laboratórios)** é uma plataforma de apoio à organização, execução e acompanhamento das atividades laboratoriais. Seu propósito é reunir em um mesmo ambiente a estrutura dos laboratórios, os projetos e suas atividades, o controle de materiais, as solicitações, os resíduos e as informações necessárias à gestão.
+**Um sistema para acompanhar a operação laboratorial desde o vínculo da pessoa e o contexto de pesquisa até a movimentação física de materiais e a destinação de resíduos.**
 
-O sistema foi concebido para dar **rastreabilidade às operações**, reduzir controles dispersos e oferecer uma visão consistente dos recursos utilizados por diferentes laboratórios de uma instituição. Cada Unidade possui seu contexto operacional, enquanto Projetos, SCI, Atividades e vínculos permitem relacionar pessoas e operações às suas origens.
+Em uma instituição com vários laboratórios, uma solicitação não envolve apenas um produto e uma quantidade: é necessário saber **quem solicitou, para qual laboratório, em qual Projeto/SCI/Atividade, com qual autorização e de qual lote/recipiente o material saiu**. Planilhas e processos isolados não oferecem essa rastreabilidade de forma integrada.
 
-No backend, isso se traduz em serviços e regras de negócio para:
+O SGL reúne esses contextos em um único domínio operacional, com trilhas de movimentação, dados corporativos, controle de acesso e relatórios. A interface web está no repositório [SGL-FRONTEND](https://github.com/gbsalermo/SGL-FRONTEND); este repositório contém a **API, regras de domínio, persistência e migrations**.
 
-- **Materiais e estoque:** catálogo de produtos, entrada de lotes, recipientes, apresentações, fracionamento, critérios FEFO/FIFO e movimentações auditáveis.
-- **Solicitações e soluções:** pedidos de materiais e de soluções, validação dos contextos operacionais, aprovação, preparo, entrega e tratamento das quantidades utilizadas.
-- **Projetos e pessoas:** organização de Projetos, SCI e Atividades, vínculos de usuários, participações de Estagiários e histórico operacional.
-- **Resíduos e segurança:** registro, classificação, acompanhamento, tratamento e destinação de resíduos, além de informações de riscos e fiscalização.
-- **Gestão e relatórios:** consultas, indicadores, rastreabilidade e exportação de dados em PDF/XLSX.
+**Quem utiliza:** solicitantes (empregados e estagiários), orientadores e equipes de Gestão/Administração. O acesso e as ações disponíveis dependem do perfil, da Unidade e dos vínculos.
 
-A API concentra validações, transações e regras de consistência; a interface web utiliza esses contratos para permitir a operação cotidiana. O SGL está em **evolução de pré-produção**: a integração de identidade institucional e a autorização definitiva são previstas para fases próprias, não devendo ser confundidas com a sessão de desenvolvimento.
+| Problema real | Resposta do SGL |
+|---|---|
+| Pessoas e laboratórios ligados a múltiplos Projetos/Atividades | Contexto operacional e autorizações derivados de participações e vínculos |
+| Material armazenado em lotes e recipientes, nem sempre totalmente fechados | Estoque físico com FEFO/FIFO, fracionamento controlado, origem de cada baixa e estornos |
+| Pedido, preparo, resíduo e fiscalização desconectados | Fluxos transacionais com histórico e rastreabilidade |
+| Unidades e perfis com responsabilidades diferentes | Identidade corporativa, JWT, isolamento por Unidade e controle de ações |
+| Conferência manual de dados e emissão de documentos | Painéis, relatórios PDF/XLSX, rótulos e documento de entrada |
 
-> **Acompanhamento da evolução:** o histórico de entregas, o estado de cada etapa e os próximos passos estão em [`CONTINUIDADE.md`](CONTINUIDADE.md) e [`docs/PLANO_PRE_PRODUCAO.md`](docs/PLANO_PRE_PRODUCAO.md). O histórico da Etapa 9 está documentado em [`docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md`](docs/ETAPA_9_INICIO_RELATORIOS_CONSOLIDADOS_2026-10-26.md).
-
----
+**Estado verificável — novembro de 2026:** os fluxos principais, JWT corporativo, relatórios, rótulos e vínculos multilaboratório estão no código `release`. A auditoria documental foi consolidada; **testes integrados em PostgreSQL, autorização detalhada de consultas, carga, impressão física e uso Android/iOS ainda precisam de homologação**. Não há alegação aqui de certificação de segurança ou desempenho. Veja [estado e riscos](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) e o [plano cloud/mobile](docs/PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md).
 
 ## Objetivo
 
@@ -51,6 +51,33 @@ estrutura institucional
 ```
 
 As regras de estoque (FEFO/FIFO), as transições operacionais e os cálculos oficiais são executados pelo backend. O frontend apresenta e conduz as operações usando os contratos da API.
+
+---
+
+## Um fluxo completo: da pesquisa ao consumo físico
+
+Este exemplo resume **regras existentes**, sem representar uma transação executada nesta auditoria:
+
+1. Um **estagiário** acessa o sistema e seleciona uma **participação elegível** em uma Atividade (associada a SCI e Projeto). O laboratório precisa estar autorizado **tanto no contexto do Projeto quanto nos vínculos da pessoa**.
+2. Ele solicita um material ou uma Solução. A Gestão analisa o pedido; **criação não reduz saldo**.
+3. Quando um pedido de material é aprovado, o backend identifica **lote(s) e recipiente(s)** elegíveis, aplica FEFO aos perecíveis e FIFO aos demais e realiza a baixa física. Recipientes abertos e fechados têm tratamento específico para evitar abertura desnecessária.
+4. A entrega conclui o atendimento **sem descontar de novo**. No cancelamento permitido, a devolução é vinculada às saídas originais.
+5. Resíduos gerados são **registros próprios**: podem referenciar produtos da composição, mas não são automaticamente uma nova baixa de estoque. Relatórios e rótulos apoiam fiscalização e rastreabilidade.
+
+Um **empregado** segue regras de autorização diferentes das de um estagiário: pode solicitar a laboratórios ativos da Unidade, com sinalização quando o destino não pertence aos seus vínculos. **O SGL não pressupõe que todos os perfis possuam a mesma liberdade operacional.**
+
+---
+
+## Decisões de engenharia que caracterizam o projeto
+
+- **Contexto antes da operação:** a hierarquia Projeto → SCI → Atividade e os vínculos pessoais determinam a elegibilidade da solicitação. Não basta selecionar um laboratório no frontend.
+- **Estoque físico, não apenas um saldo numérico:** lotes, recipientes, apresentação, medida, fracionamento, validade e movimentações compõem a regra de retirada e devolução.
+- **Consistência por transação:** aprovação realiza a baixa; entrega não a repete; cancelamento permitido reverte as quantidades e a origem física rastreadas.
+- **Domínios separados:** Produto, Solução e Resíduo possuem semânticas distintas; registrar a composição de um Resíduo não gera automaticamente movimento de estoque.
+- **Identidade e integração institucional:** empregados e colaboradores têm políticas diferentes de primeiro acesso; JWT, Unidade e permissões são resolvidos no servidor, não por filtros de interface.
+- **Operação e manutenção:** Flyway versiona a evolução relacional; separação Controller/Service/Repository/DTO torna as regras testáveis; relatórios e impressão permitem uso fora da tela.
+
+**Esses são diferenciais da modelagem adotada no SGL**, não uma afirmação de exclusividade absoluta no mercado. Algumas verificações de segurança, desempenho e integração ainda estão no [backlog](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 
 ---
 
@@ -92,6 +119,31 @@ Os contratos públicos da API utilizam UUID como identificador das entidades; os
 
 ---
 
+### Como backend e frontend se conectam
+
+```text
+Solicitante / Orientador / Gestão / Administração
+                    │ navegador
+                    ▼
+        Vue 3 + TypeScript (SGL-FRONTEND)
+                    │ HTTPS, mesmo host
+             Nginx: /api → sgl-api
+                    │
+                    ▼
+      Spring Boot REST + JWT + TenantContext
+          │                   │
+  regras de negócio     gateway corporativo
+          │             (integração institucional)
+          ▼
+    JPA + PostgreSQL 16
+      │
+    Flyway (V1–V48)
+```
+
+A infraestrutura de implantação versionada utiliza **containers separados para web e API**, Nginx servindo a SPA e encaminhando `/api` ao backend, além do PostgreSQL. A interface, a API e os vídeos da Ajuda têm ciclos de implantação distintos. O desenho de staging deve usar redes, volumes, banco e credenciais **isolados**, sem reutilizar a instalação institucional.
+
+---
+
 ## Multitenancy por Unidade
 
 A Unidade do SGL é delimitada pela **identidade autenticada e pelo JWT**, com políticas de `TenantRequestFilter`, `TenantContext` e services/repositories no backend.
@@ -108,32 +160,43 @@ O header `X-SGL-Unidade-Id` **não identifica livremente o tenant**: ele só é 
 **Auditoria de autorização ainda aberta:** filtragem por Unidade não substitui autorização por objeto para dados de outro usuário da mesma Unidade. Consultas de Pedidos, Estagiários, Resíduos, Usuários e Relatórios precisam de testes de acesso por titular/perfil, conforme [registro único de pendências](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 ---
 
-## Domínio principal
+## Modelo de domínio — relações fundamentais
+
+O domínio possui **relações hierárquicas e associações multilaboratório**; por isso, não é fiel reduzi-lo a uma árvore onde todo Projeto pertence necessariamente a um único Laboratório.
 
 ```text
 Unidade
-├── Laboratórios
-│   ├── Usuários
-│   ├── Estagiários
-│   ├── Projetos
-│   ├── Pedidos
-│   └── Resíduos
-└── Estoque Central
-    └── Produto
-        └── Lotes
-            └── Movimentações
+  ├─ Laboratórios                 ← mais de um por Projeto/pessoa, conforme vínculo
+  ├─ Pessoas / perfis / vínculos  ← autorização e histórico
+  └─ Estoque Central
+       └─ Produto → Lote → Recipiente → Movimentação
+
+Projeto ↔ Laboratório(s)
+   └─ SCI
+       └─ Atividade ← Participação do estagiário
+
+Pedido de material / Pedido de solução
+   ├─ solicitante + Laboratório de destino
+   ├─ contexto Projeto/SCI/Atividade quando aplicável
+   └─ itens e transições (aprovação, preparo/entrega/cancelamento)
+
+Resíduo
+   ├─ gerador + Laboratório + contexto quando aplicável
+   ├─ composição de catálogo e/ou livre
+   └─ análise, armazenamento e destinação
 ```
 
-Conceitos centrais:
+| Entidade/conceito | Significado |
+|---|---|
+| **Unidade e Laboratório** | Tenant institucional e locais operacionais, com laboratórios múltiplos autorizados |
+| **Projeto / SCI / Atividade** | Contexto de pesquisa hierárquico; pode relacionar diferentes laboratórios |
+| **Vínculo / Participação** | Período institucional e elegibilidade operacional da pessoa, especialmente do estagiário |
+| **EstoqueCentral / Produto** | Saldo por Unidade e item de catálogo com unidade de controle |
+| **Lote / Recipiente** | Validade, embalagem, estado físico de abertura e fração consumível |
+| **Movimentação** | Histórico auditável de entradas, saídas, devoluções e descartes por origem física |
+| **Pedido / Solução / Resíduo** | Processos com regras e ciclos de vida próprios; não são entidades intercambiáveis |
 
-- **Produto:** catálogo e unidade-base de controle;
-- **EstoqueCentral:** saldo consolidado por produto/Unidade;
-- **Lote:** quantidade física, validade, embalagem, multiplicador e rastreabilidade;
-- **MovimentacaoEstoque:** trilha das operações físicas;
-- **Pedido:** solicitação e ciclo de aprovação/entrega;
-- **Resíduo:** material gerado no laboratório e encaminhado à Gestão;
-- **Estagiário:** identidade institucional ligada a vínculos históricos; contexto operacional vem das participações em Atividades, que derivam Projeto/Laboratório dentro da Unidade;
-- **Fiscalização:** classificação explícita de produtos controlados.
+Na implementação, os identificadores `Long` sustentam JPA/FKs internamente e `UUID publicId` atravessa DTOs e endpoints. Este é um **mapa conceitual**: os relacionamentos e cardinalidades definitivos estão nas entidades, migrations e [dossiê técnico](docs/DOSSIE_PROJETO_SGL.md).
 
 ---
 
@@ -220,7 +283,7 @@ Detalhes: [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md).
 
 ## Relatórios
 
-Relatórios implementados e validados funcionalmente na branch da Etapa 9:
+Relatórios implementados e presentes na `release` (com homologação integrada e equivalência de filtros ainda pendentes):
 
 ```text
 Estagiários
@@ -237,7 +300,7 @@ A Central apresenta **Movimentações** com modos Resumo (contagens de ocorrênc
 
 A classificação histórica de consumo como apresentação completa ou por medida é derivada das parcelas registradas, sem afirmar a intenção original da solicitação. Os endpoints anteriores de Movimentações e Resumo Operacional permanecem disponíveis.
 
-Os relatórios utilizam consultas e filtros consistentes entre a prévia e as exportações PDF/XLSX.
+A interface encaminha filtros para consultas e exportações PDF/XLSX. A equivalência de resultados para todas as combinações ainda deve ser validada; há riscos de desempenho e uma divergência semântica de unidades físicas em um DTO de Resumo Operacional registrados na auditoria.
 
 Pedidos entregues continuam sendo um recorte de Movimentações, não um relatório separado.
 
@@ -257,7 +320,7 @@ log de auditoria (logger sgl.auditoria)                          ✅
 matriz completa de permissões por módulo                         ⏳ roadmap item 1
 ```
 
-Spec e plano: `docs/superpowers/specs/2026-10-27-autenticacao-corporativa-design.md` e `docs/superpowers/plans/2026-10-27-autenticacao-corporativa.md` (no repositório `sistema_sgl`).
+O fluxo atual de autenticação e seus testes estão mapeados no [dossiê técnico](docs/DOSSIE_PROJETO_SGL.md). Planos de autenticação datados permanecem como contexto histórico, não substituem o código da `release`.
 
 ### Autenticação corporativa
 
