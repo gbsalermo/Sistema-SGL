@@ -5,7 +5,7 @@
 
 # SGL — Sistema de Gestão de Laboratórios
 
-**A API que integra pessoas, materiais e processos para tornar a gestão de laboratórios mais organizada, eficiente e rastreável.**
+**Backend que centraliza o controle de estoque e automatiza processos para tornar a gestão de laboratórios mais organizada, eficiente e rastreável.**
 
 `Java 17` · `Spring Boot 4.1` · `PostgreSQL` · `Flyway` · `Swagger/OpenAPI` · `PDF/XLSX`
 
