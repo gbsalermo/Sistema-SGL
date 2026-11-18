@@ -21,7 +21,7 @@ Esse acompanhamento também alcança os resíduos e a identificação física do
 
 ### A necessidade que deu origem ao projeto
 
-O SGL nasceu de um problema concreto apresentado pela equipe responsável pela **organização dos estoques e materiais dos laboratórios de uma Unidade da Embrapa**. A rotina dependia de **diversas planilhas e controles dispersos** para cadastros, saldos, entradas, saídas e acompanhamento de materiais. Além disso, a equipe precisava administrar pedidos e entregas, utilizando **um sistema genérico de terceiros** para parte das solicitações.
+O SGL nasceu de um problema concreto apresentado pela equipe responsável da **organização dos estoques e materiais dos laboratórios de uma Unidade da Embrapa**. A rotina dependia de **diversas planilhas e controles dispersos** para cadastros, saldos, entradas, saídas e acompanhamento de materiais. Além disso, a equipe precisava administrar pedidos e entregas, utilizando **um sistema genérico de terceiros** para parte das solicitações.
 
 Em uma Unidade com vários laboratórios, esse trabalho não se limita a registrar produtos: envolve saber **quais materiais estão disponíveis, onde estão armazenados, quem pode solicitá-los, quem os liberou, como foram utilizados e o que precisa ser reposto, identificado ou fiscalizado**. Manter essas informações em ferramentas separadas exigia conciliação manual e dificultava uma visão integrada da operação.
 
