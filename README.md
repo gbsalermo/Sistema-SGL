@@ -47,24 +47,22 @@ Na prática, a gestão passa a acompanhar o caminho de um material **desde o cad
 
 ## Objetivo
 
-O SGL representa o ciclo operacional dos laboratórios de forma rastreável:
+O objetivo do SGL é **centralizar e automatizar a gestão de materiais e estoques laboratoriais**, oferecendo à administração uma visão integrada dos recursos disponíveis, de sua utilização e das pessoas envolvidas nas operações.
 
-```text
-estrutura institucional
-→ catálogo de produtos
-→ estoque central por Unidade
-→ entrada de lotes
-→ solicitação de material
-→ aprovação
-→ baixa física FIFO/FEFO
-→ entrega
-→ movimentações auditáveis
-→ geração e destinação de resíduos
-→ relatórios/fiscalização
-→ administração de dados-base
-```
+Ao substituir controles dispersos por processos conectados, o sistema busca simplificar a rotina dos gestores, reduzir a dependência de registros manuais e garantir maior consistência nas informações. Cada operação passa a compor um histórico rastreável, permitindo acompanhar o uso dos materiais, identificar necessidades de reposição e apoiar decisões administrativas.
 
-As regras de estoque (FEFO/FIFO), as transições operacionais e os cálculos oficiais são executados pelo backend. O frontend apresenta e conduz as operações usando os contratos da API.
+Mais do que organizar o estoque, o SGL procura estabelecer uma **gestão laboratorial estruturada, segura e auditável**, na qual a movimentação dos materiais esteja associada às autorizações, responsabilidades e procedimentos da instituição.
+
+### Principais funcionalidades
+
+- **Gestão de estoque:** catálogo de produtos, entradas e saídas, lotes e recipientes, fracionamento, vencimentos, estoque mínimo e seleção FEFO/FIFO.
+- **Pedidos de materiais:** solicitação, análise, aprovação, entrega e devolução, com movimentações vinculadas ao estoque físico.
+- **Soluções laboratoriais:** cadastro e modelos, solicitações, preparação e entrega em fluxo próprio.
+- **Gestão de estagiários e vínculos:** acompanhamento de orientadores, participações e laboratórios autorizados, incluindo contextos de Projeto, SCI e Atividade.
+- **Resíduos laboratoriais:** informação de resíduos, composição, avaliação, armazenamento e destinação.
+- **Identificação e fiscalização:** rótulos de produtos, soluções e resíduos, documentos de entrada e rastreabilidade dos materiais.
+- **Relatórios e indicadores:** consultas operacionais, histórico de movimentações, alertas e exportações PDF/XLSX.
+- **Administração institucional:** organização de Unidades e laboratórios, perfis de acesso e integração com a identidade corporativa.
 
 ---
 
