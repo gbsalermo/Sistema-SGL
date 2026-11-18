@@ -5,7 +5,7 @@
 
 # SGL — Sistema de Gestão de Laboratórios
 
-**Backend corporativo para pedidos, estoque por lotes, rastreabilidade, resíduos, fiscalização, vínculos institucionais, cadastros e relatórios laboratoriais.**
+**Backend para gestão de laboratórios, produtos e soluções, estoque e movimentações, pedidos e entregas, estagiários e vínculos, resíduos, rastreabilidade, identificação, fiscalização e relatórios.**
 
 `Java 17` · `Spring Boot 4.1` · `PostgreSQL` · `Flyway` · `Swagger/OpenAPI` · `PDF/XLSX`
 
@@ -13,23 +13,35 @@
 
 ## O que é o SGL?
 
-**Um sistema para acompanhar a operação laboratorial desde o vínculo da pessoa e o contexto de pesquisa até a movimentação física de materiais e a destinação de resíduos.**
+**O SGL é uma plataforma de gestão de laboratórios que centraliza e automatiza processos, materiais e responsabilidades envolvidos na operação de um ou de vários laboratórios.**
 
-Em uma instituição com vários laboratórios, uma solicitação não envolve apenas um produto e uma quantidade: é necessário saber **quem solicitou, para qual laboratório, em qual Projeto/SCI/Atividade, com qual autorização e de qual lote/recipiente o material saiu**. Planilhas e processos isolados não oferecem essa rastreabilidade de forma integrada.
+Seu propósito vai além de consultar saldos ou acompanhar solicitações. O sistema integra o **ciclo dos materiais** — cadastro de produtos e soluções, entrada e controle de lotes e recipientes, estoque mínimo, pedidos, liberação, preparo de soluções, retirada, entrega, devolução e movimentações — à **gestão das pessoas** que utilizam esses materiais, incluindo empregados, estagiários, orientadores, vínculos, participações e permissões. Registros de resíduos, rótulos, histórico e relatórios também apoiam a identificação física e a fiscalização de materiais que exigem cuidados específicos, como substâncias tóxicas, radioativas ou especialmente sensíveis.
 
-O SGL reúne esses contextos em um único domínio operacional, com trilhas de movimentação, dados corporativos, controle de acesso e relatórios. A interface web está no repositório [SGL-FRONTEND](https://github.com/gbsalermo/SGL-FRONTEND); este repositório contém a **API, regras de domínio, persistência e migrations**.
+### A necessidade que deu origem ao projeto
+
+O SGL nasceu de um problema concreto apresentado pela equipe responsável pela **organização dos estoques e materiais dos laboratórios de uma Unidade da Embrapa**. A rotina dependia de **diversas planilhas e controles dispersos** para cadastros, saldos, entradas, saídas e acompanhamento de materiais. Além disso, a equipe precisava administrar pedidos e entregas, utilizando **um sistema genérico de terceiros** para parte das solicitações.
+
+Em uma Unidade com vários laboratórios, esse trabalho não se limita a registrar produtos: envolve saber **quais materiais estão disponíveis, onde estão armazenados, quem pode solicitá-los, quem os liberou, como foram utilizados e o que precisa ser reposto, identificado ou fiscalizado**. Manter essas informações em ferramentas separadas exigia conciliação manual e dificultava uma visão integrada da operação.
+
+O projeto foi construído a partir dessas necessidades para reunir, em um único ambiente, o **catálogo de materiais, o controle físico de estoque, os pedidos de produtos, os fluxos específicos de soluções e resíduos, a organização das pessoas e seus vínculos e os registros necessários à rastreabilidade**. Na pesquisa, as autorizações também podem depender da estrutura de **Projeto → SCI → Atividade**: um Projeto organiza o contexto de pesquisa, ao qual se vinculam SCIs e suas Atividades; a participação da pessoa e a relação com os laboratórios determinam quais operações lhe são permitidas. Essa hierarquia é detalhada no [modelo de domínio](#modelo-de-domínio--relações-fundamentais).
+
+Na prática, a gestão passa a acompanhar o caminho de um material **desde o cadastro e a entrada física até sua autorização, movimentação, eventual devolução e registro para auditoria**. A integração com serviços corporativos da Embrapa permite aproveitar a identidade institucional dos usuários, enquanto o backend mantém as regras de autorização e a consistência das operações.
+
+**Este repositório** contém a API do SGL: regras de negócio, autorização, transações de estoque, persistência e evolução do banco de dados. A interface utilizada por solicitantes e gestores está no [SGL-FRONTEND](https://github.com/gbsalermo/SGL-FRONTEND).
 
 **Quem utiliza:** solicitantes (empregados e estagiários), orientadores e equipes de Gestão/Administração. O acesso e as ações disponíveis dependem do perfil, da Unidade e dos vínculos.
 
 | Problema real | Resposta do SGL |
 |---|---|
-| Pessoas e laboratórios ligados a múltiplos Projetos/Atividades | Contexto operacional e autorizações derivados de participações e vínculos |
-| Material armazenado em lotes e recipientes, nem sempre totalmente fechados | Estoque físico com FEFO/FIFO, fracionamento controlado, origem de cada baixa e estornos |
-| Pedido, preparo, resíduo e fiscalização desconectados | Fluxos transacionais com histórico e rastreabilidade |
-| Unidades e perfis com responsabilidades diferentes | Identidade corporativa, JWT, isolamento por Unidade e controle de ações |
-| Conferência manual de dados e emissão de documentos | Painéis, relatórios PDF/XLSX, rótulos e documento de entrada |
+| Catálogos, saldos, entradas, saídas e alertas de estoque acompanhados em controles separados | Cadastro de produtos, estoque central por Unidade, indicadores de estoque baixo, vencimentos e histórico de movimentações |
+| Lotes e recipientes com validade, diferentes apresentações e uso parcial | Controle físico por lote e recipiente, seleção FEFO/FIFO, fracionamento e rastreabilidade de baixas e devoluções |
+| Pedidos de produtos em ferramenta externa e preparo de soluções tratado separadamente | Solicitação, análise, aprovação e entrega de materiais integradas ao estoque; solicitação e preparo de soluções em fluxo próprio |
+| Pessoas e laboratórios ligados a múltiplos projetos e atividades de pesquisa | Gestão de estagiários, orientadores, vínculos, participações e autorizações conforme a estrutura de pesquisa |
+| Resíduos, identificação de materiais e fiscalização sem visão operacional integrada | Registros de resíduos e composição, rótulos, histórico e informações de apoio à identificação física e à fiscalização |
+| Unidades e perfis com responsabilidades diferentes | Autenticação corporativa, controle de acesso por perfil e segregação de dados por Unidade |
+| Conferência manual de informações e emissão de documentos | Painéis operacionais, relatórios PDF/XLSX, rótulos e documentos de entrada |
 
-**Estado verificável — novembro de 2026:** os fluxos principais, JWT corporativo, relatórios, rótulos e vínculos multilaboratório estão no código `release`. A auditoria documental foi consolidada; **testes integrados em PostgreSQL, autorização detalhada de consultas, carga, impressão física e uso Android/iOS ainda precisam de homologação**. Não há alegação aqui de certificação de segurança ou desempenho. Veja [estado e riscos](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md) e o [plano cloud/mobile](docs/PLANO_HOMOLOGACAO_NUVEM_MOBILE_2026-11-17.md).
+**Estado atual:** o SGL está **em produção** e segue em evolução contínua. **Versão do backend:** [**1.26.11-3**](https://git-cnpmf.nuvem.ti.embrapa.br/nti/sgl-api/tags/1.26.11-3). Informações detalhadas sobre arquitetura, decisões de implementação e melhorias em andamento estão disponíveis na [documentação técnica](docs/README.md).
 
 ## Objetivo
 
