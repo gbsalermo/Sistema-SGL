@@ -109,16 +109,23 @@ Os exemplos demonstram como o SGL relaciona as operações aos usuários respons
 
 ---
 
-## Decisões de engenharia que caracterizam o projeto
+## Diferenciais e decisões que definem o SGL
 
-- **Contexto antes da operação:** a hierarquia Projeto → SCI → Atividade e os vínculos pessoais determinam a elegibilidade da solicitação. Não basta selecionar um laboratório no frontend.
-- **Estoque físico, não apenas um saldo numérico:** lotes, recipientes, apresentação, medida, fracionamento, validade e movimentações compõem a regra de retirada e devolução.
-- **Consistência por transação:** aprovação realiza a baixa; entrega não a repete; cancelamento permitido reverte as quantidades e a origem física rastreadas.
-- **Domínios separados:** Produto, Solução e Resíduo possuem semânticas distintas; registrar a composição de um Resíduo não gera automaticamente movimento de estoque.
-- **Identidade e integração institucional:** empregados e colaboradores têm políticas diferentes de primeiro acesso; JWT, Unidade e permissões são resolvidos no servidor, não por filtros de interface.
-- **Operação e manutenção:** Flyway versiona a evolução relacional; separação Controller/Service/Repository/DTO torna as regras testáveis; relatórios e impressão permitem uso fora da tela.
+O SGL foi construído para representar a realidade da gestão laboratorial, na qual controlar um material significa mais do que saber sua quantidade disponível. Algumas decisões de modelagem são fundamentais para essa proposta:
 
-**Esses são diferenciais da modelagem adotada no SGL**, não uma afirmação de exclusividade absoluta no mercado. Algumas verificações de segurança, desempenho e integração ainda estão no [backlog](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+- **O estoque representa materiais físicos, não apenas números.** O controle considera lotes, recipientes, validade, apresentações e consumo parcial. As regras FEFO/FIFO e de fracionamento permitem registrar de onde o material saiu e evitar a abertura desnecessária de recipientes.
+
+- **A solicitação respeita o contexto de quem utiliza o laboratório.** O SGL relaciona pessoas, laboratórios e vínculos institucionais para determinar as condições de uma operação. Empregados e estagiários não seguem exatamente as mesmas regras: a participação de um estagiário em Projeto, SCI ou Atividade pode definir os laboratórios elegíveis para seus pedidos. Essa estrutura contextualiza o uso dos materiais, sem gerenciar a pesquisa em si.
+
+- **Aprovar, movimentar e entregar não são a mesma coisa.** Em um pedido de material, a aprovação é o momento da baixa física, enquanto a entrega conclui o atendimento sem descontar novamente. Quando um cancelamento com restituição é permitido, o sistema utiliza o histórico das saídas para preservar a origem das quantidades devolvidas.
+
+- **Produtos, soluções e resíduos têm naturezas diferentes.** Embora estejam relacionados na rotina do laboratório, cada um possui um ciclo próprio. Uma solução envolve preparação e entrega; um resíduo possui composição, análise e destinação; e informar os componentes de um resíduo não significa consumi-los novamente do estoque.
+
+- **A rastreabilidade acompanha a operação.** Movimentações, responsáveis, lotes, recipientes, identificação física e documentos permitem reconstruir o histórico dos materiais e apoiar a conferência e a fiscalização, em vez de depender apenas de registros manuais posteriores.
+
+- **O sistema se adapta à estrutura institucional.** A integração com a identidade corporativa, a separação por Unidade e o tratamento de perfis e vínculos permitem operar em um ambiente com vários laboratórios. O backend concentra as regras de negócio e as validações das operações; a interface organiza a experiência de cada usuário.
+
+Essas decisões são o que conecta **estoque, pessoas e processos em uma gestão laboratorial integrada**. A descrição técnica dos mecanismos e as verificações de segurança ainda em andamento estão no [dossiê do projeto](docs/DOSSIE_PROJETO_SGL.md) e no [registro de revisão](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 
 ---
 
