@@ -66,33 +66,46 @@ Mais do que organizar o estoque, o SGL procura estabelecer uma **gestão laborat
 
 ---
 
-## Um fluxo completo: da pesquisa ao consumo físico
+## Fluxos operacionais do SGL
 
-Este exemplo resume **regras existentes**, sem representar uma transação executada nesta auditoria:
+O SGL integra diferentes processos da rotina laboratorial, desde a solicitação de materiais até o registro e acompanhamento de resíduos. Cada operação possui regras próprias de autorização, movimentação e rastreabilidade.
 
-1. Um **estagiário** acessa o sistema e seleciona uma **participação elegível** em uma Atividade (associada a SCI e Projeto). O laboratório precisa estar autorizado **tanto no contexto do Projeto quanto nos vínculos da pessoa**.
-2. Ele solicita um material ou uma Solução. A Gestão analisa o pedido; **criação não reduz saldo**.
-3. Quando um pedido de material é aprovado, o backend identifica **lote(s) e recipiente(s)** elegíveis, aplica FEFO aos perecíveis e FIFO aos demais e realiza a baixa física. Recipientes abertos e fechados têm tratamento específico para evitar abertura desnecessária.
-4. A entrega conclui o atendimento **sem descontar de novo**. No cancelamento permitido, a devolução é vinculada às saídas originais.
-5. Resíduos gerados são **registros próprios**: podem referenciar produtos da composição, mas não são automaticamente uma nova baixa de estoque. Relatórios e rótulos apoiam fiscalização e rastreabilidade.
+Os fluxogramas abaixo representam **dois exemplos de utilização do sistema**, não a totalidade dos processos, funcionalidades ou caminhos possíveis.
 
-Um **empregado** segue regras de autorização diferentes das de um estagiário: pode solicitar a laboratórios ativos da Unidade, com sinalização quando o destino não pertence aos seus vínculos. **O SGL não pressupõe que todos os perfis possuam a mesma liberdade operacional.**
-
-### O fluxo, em uma visão
-
-O diagrama abaixo ilustra **um pedido de material** do estagiário, a partir das regras de domínio identificadas na `release`. É um mapa explicativo, **não um registro de teste executado**. Soluções possuem fluxo de preparação próprio.
+### Exemplo 1 — Solicitação de material
 
 ```mermaid
 flowchart TD
-    A["Identidade institucional e Unidade"] --> B["Participação e laboratório elegíveis"]
-    B --> C["Pedido de material pendente"]
-    C --> D{"Decisão da Gestão"}
-    D -->|Rejeitar| R["Rejeitado: nenhuma baixa"]
-    D -->|Aprovar| E["Seleção FEFO/FIFO"]
-    E --> F["Baixa rastreável em lote e recipiente"]
-    F --> G["Entrega sem segunda baixa"]
-    F -.->|"Cancelamento permitido"| H["Restituição ligada às saídas originais"]
+    A["Solicitante autenticado"] --> B["Seleção do laboratório e contexto autorizado"]
+    B --> C["Solicitação de material"]
+    C --> D["Pedido pendente"]
+    D --> E{"Análise da Gestão"}
+    E -->|Rejeitado| F["Pedido encerrado sem baixa"]
+    E -->|Aprovado| G["Baixa do estoque por FEFO/FIFO"]
+    G --> H["Registro de lote e recipiente"]
+    H --> I["Entrega do material"]
+    I --> J["Histórico e rastreabilidade"]
 ```
+
+*Exemplo do pedido de material. A criação não altera o estoque; a baixa ocorre na aprovação.*
+
+### Exemplo 2 — Informação de resíduo laboratorial
+
+```mermaid
+flowchart TD
+    A["Usuário autenticado"] --> B["Informação do resíduo"]
+    B --> C["Composição e identificação"]
+    C --> D["Registro com Código SGL"]
+    D --> E["Análise da Gestão"]
+    E --> F["Liberação para armazenamento"]
+    F --> G["Armazenamento temporário"]
+    G --> H["Despacho do resíduo"]
+    H --> I["Histórico e rastreabilidade"]
+```
+
+*Exemplo do ciclo de um resíduo. Informar sua composição não gera automaticamente uma baixa no estoque de produtos.*
+
+Os exemplos demonstram como o SGL relaciona as operações aos usuários responsáveis, preservando informações que auxiliam a Gestão no controle e na fiscalização dos materiais.
 
 ---
 
