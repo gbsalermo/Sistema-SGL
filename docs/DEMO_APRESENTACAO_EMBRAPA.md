@@ -2,56 +2,79 @@
 
 > Cenário criado exclusivamente para demonstração do SGL. Os nomes de pessoas, e-mails, pedidos, lotes, movimentações e ocorrências são fictícios. Os nomes/áreas dos laboratórios foram inspirados na infraestrutura pública da Embrapa Mandioca e Fruticultura.
 
-## Integração
+## Integração e vigência
 
-A carga foi desenvolvida originalmente na branch `demo/apresentacao-embrapa-30-dias` e integrada à `main` pelo PR #15.
+A massa de demonstração foi criada originalmente na branch `demo/apresentacao-embrapa-30-dias` e integrada à `main` pelo PR #15. Esse é o histórico de origem, **não uma instrução para usar `main` como referência atual**: o estado funcional vigente do SGL é a `release`, com GitLab institucional como fonte canônica.
 
-O conteúdo de demonstração está na `main`, mas permanece isolado pelo profile `demo`: ele não é executado no profile normal de desenvolvimento.
+**Atualização de autenticação (24/11/2026):** as instruções antigas de login com e-mail e senha `123456` foram substituídas pelo fluxo de **Entrar como desenvolvedor**, com login curto **sem senha**, disponível somente em `dev` e `demo`.
 
 ## Como funciona
 
-O profile `demo` usa um banco H2 em memória separado do PostgreSQL de desenvolvimento. Ao iniciar o backend, `DemoDataInitializer` cria automaticamente um cenário equivalente a aproximadamente 30 dias de uso.
-
-As datas são relativas ao dia atual. Isso significa que alertas como "vence em 4 dias", movimentações de hoje, pedidos recentes e resíduos aguardando análise continuam coerentes mesmo se a demonstração for executada em outro dia.
-
-Ao encerrar o backend, o banco H2 da demonstração é descartado. Ao iniciar novamente, o cenário é reconstruído do zero.
+O perfil `demo` usa **H2 em memória** e não acessa o PostgreSQL de desenvolvimento ou a base institucional. Ao iniciar, `DemoDataInitializer` cria um cenário fictício de aproximadamente 30 dias de operação, com datas relativas à execução. Ao encerrar a API, os dados da demonstração são descartados e reconstruídos no próximo início.
 
 ## Executar a demonstração
 
-No repositório `Sistema-SGL`:
+Na **raiz do repositório backend**, que contém `pom.xml` e `mvnw` (use uma cópia local da versão desejada; não é necessário mudar de branch para ativar o perfil):
 
 ### Git Bash / Linux / macOS
 
 ```bash
-git checkout main
-git pull origin main
-# Executar a partir da raiz do repositório (onde está o pom.xml)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
 ### Windows PowerShell / CMD
 
 ```powershell
-git checkout main
-git pull origin main
-cd backend\sgl-backend
 .\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
-O backend continua na porta padrão `8080`.
+Alternativamente, configure `SPRING_PROFILES_ACTIVE=demo` na execução local da IDE. Confirme nos logs que o perfil ativo é `demo`. A API usa a porta `8080`.
 
-## Logins principais
+### Verificar a configuração de login
 
-Todos usam a senha `123456`.
+```powershell
+Invoke-RestMethod http://localhost:8080/api/v1/auth/config
+```
 
-| Papel | Usuário fictício | Login |
+Resultado esperado:
+
+```json
+{"devLoginAtivo":true}
+```
+
+No **frontend local**, configure `VITE_API_BASE_URL=http://localhost:8080/api` (por exemplo, no arquivo `.env.local`), reinicie o Vite e abra a tela de acesso. O botão **Entrar como desenvolvedor** aparece quando a API consultada informa `devLoginAtivo: true`.
+
+## Contas de demonstração — autenticação atual
+
+Selecione **Entrar como desenvolvedor**, preencha o **login curto sem o domínio de e-mail** e **não informe senha**. O login normal **Entrar** chama a autenticação corporativa e não é o caminho apropriado para contas fictícias.
+
+| Papel | Pessoa fictícia | Login curto |
 |---|---|---|
-| Administradora | Mariana Souza | `mariana.souza@demo.sgl.local` |
-| Gestor | Ricardo Almeida | `ricardo.almeida@demo.sgl.local` |
-| Pesquisador / solicitante | Paulo Nascimento | `paulo.nascimento@demo.sgl.local` |
-| Estagiária | Ana Clara Barbosa | `ana.barbosa@demo.sgl.local` |
+| Administradora | Mariana Souza | `mariana.souza` |
+| Gestor | Ricardo Almeida | `ricardo.almeida` |
+| Pesquisador / solicitante | Paulo Nascimento | `paulo.nascimento` |
+| Estagiária | Ana Clara Barbosa | `ana.barbosa` |
 
-Também existem outros técnicos, pesquisadores, analistas e estagiários vinculados aos laboratórios.
+O endpoint local é `POST /api/v1/auth/dev-login`, exclusivo dos perfis `dev` e `demo`, e só autentica usuários ativos com origem `DEV`. A antiga senha `123456` ainda aparece na origem histórica da massa, mas **não é usada no login atual da interface**.
+
+Teste opcional do endpoint, sem imprimir o JWT:
+
+```powershell
+$sessao = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/auth/dev-login" -Method POST -ContentType "application/json" -Body '{"login":"ricardo.almeida"}'
+$sessao.usuario.perfil
+```
+
+A resposta esperada para esse exemplo é `GESTOR`. A sessão recebe um JWT como no restante da aplicação.
+
+### Problemas comuns
+
+- **O botão não aparece:** consulte `/api/v1/auth/config` e confira perfil ativo e `VITE_API_BASE_URL`. Reinicie o Vite após alterar o ambiente.
+- **`dev-login` retorna 404:** a API provavelmente não está com `dev` ou `demo` ativo, ou o frontend está consultando outra instância.
+- **`dev-login` retorna 401:** confira o login curto exato, o estado ativo da conta fictícia e os logs da carga `DemoDataInitializer`.
+- **O botão `Entrar` retorna erro corporativo/503:** esse botão usa `POST /api/v1/auth/login`. Sem credenciais do gateway institucional no ambiente local, o login corporativo pode ficar indisponível; use o caminho DEV para a demonstração.
+- **Sessão expirada ou 401 após trocar ambiente:** saia da sessão anterior e autentique novamente na API DEMO, sem reaproveitar JWT de outra instância.
+
+O DEMO é **exclusivamente local e fictício**. Não habilite login sem senha, H2 ou os inicializadores de dados em produção.
 
 ## Unidade e laboratórios
 
