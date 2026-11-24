@@ -48,6 +48,8 @@ Os documentos por etapa, `CONTINUIDADE_ETAPA_*`, exemplos JSON, Postman e roteir
 
 ## Execução e homologação
 
+**DEMO local e autenticação (atualizado em 24/11/2026):** o [guia de demonstração](DEMO_APRESENTACAO_EMBRAPA.md) é a referência atual para iniciar com perfil `demo`, H2 e massa fictícia. A interface usa **Entrar como desenvolvedor** com login curto, sem senha; `GET /api/v1/auth/config` informa `devLoginAtivo: true`. O login normal é corporativo. Instruções antigas de e-mail e senha `123456` são históricas e não servem ao fluxo atual.
+
 A execução local usa `./mvnw` **na raiz do repositório**, Java 17, configuração de ambiente adequada e banco de teste. Para entrada em produção e deploy, conferir `Dockerfile`, `docker-compose.yml`, profiles e permissões institucionais; **não usar secrets nem rede/volume de produção** para simular o sistema.
 
 - **Testes existentes:** JUnit/Spring Boot, segurança, arquitetura ArchUnit, serviços e integração; **não foram executados nesta auditoria documental**.
