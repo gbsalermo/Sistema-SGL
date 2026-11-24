@@ -161,20 +161,6 @@ Model       → estado do domínio
 DTO         → contrato público da API
 ```
 
-### Identificadores
-
-```text
-Long id
-→ interno: banco, JPA, FKs e locks
-
-UUID publicId
-→ público: DTOs, endpoints e frontend
-```
-
-Os contratos públicos da API utilizam UUID como identificador das entidades; os IDs numéricos internos permanecem na persistência.
-
----
-
 ### Como backend e frontend se conectam
 
 ```text
@@ -202,18 +188,13 @@ A infraestrutura de implantação versionada utiliza **containers separados para
 
 ## Multitenancy por Unidade
 
-A Unidade do SGL é delimitada pela **identidade autenticada e pelo JWT**, com políticas de `TenantRequestFilter`, `TenantContext` e services/repositories no backend.
+O SGL foi estruturado para atender **diferentes Unidades da instituição** em um mesmo sistema. Cada Unidade reúne seus laboratórios, usuários e informações operacionais, mantendo um contexto próprio para a gestão.
 
-```text
-Login corporativo / JWT
-→ usuário ativo e Unidade corporativa habilitada
-→ TenantRequestFilter obtém a Unidade da sessão
-→ TenantContext restringe consultas e operações por Unidade
-```
+Quando alguém acessa o SGL, o backend utiliza a **Unidade associada à sessão autenticada** como referência para as consultas e operações. Isso permite que vários laboratórios de uma mesma Unidade compartilhem processos e um estoque central, sem tratar todas as Unidades como um único ambiente de trabalho.
 
-O header `X-SGL-Unidade-Id` **não identifica livremente o tenant**: ele só é admitido para `ADMINISTRADOR_GERAL` selecionar outra Unidade autorizada. Fluxos `dev/demo` são exclusivos desses profiles e não constituem autenticação de produção.
+O **Administrador Geral** pode selecionar outra Unidade habilitada por meio de um mecanismo específico, sujeito às regras de autorização do sistema. Para os demais perfis, a Unidade de atuação é definida pela própria sessão.
 
-**Auditoria de autorização ainda aberta:** filtragem por Unidade não substitui autorização por objeto para dados de outro usuário da mesma Unidade. Consultas de Pedidos, Estagiários, Resíduos, Usuários e Relatórios precisam de testes de acesso por titular/perfil, conforme [registro único de pendências](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+A separação entre Unidades é uma das camadas de controle de acesso; as permissões sobre **quem pode consultar ou alterar cada registro** também precisam ser consideradas. A revisão aprofundada dessas regras e dos testes por titular e perfil está registrada no [acompanhamento técnico de pendências](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 ---
 
 ## Modelo de domínio — relações fundamentais
@@ -252,7 +233,7 @@ Resíduo
 | **Movimentação** | Histórico auditável de entradas, saídas, devoluções e descartes por origem física |
 | **Pedido / Solução / Resíduo** | Processos com regras e ciclos de vida próprios; não são entidades intercambiáveis |
 
-Na implementação, os identificadores `Long` sustentam JPA/FKs internamente e `UUID publicId` atravessa DTOs e endpoints. Este é um **mapa conceitual**: os relacionamentos e cardinalidades definitivos estão nas entidades, migrations e [dossiê técnico](docs/DOSSIE_PROJETO_SGL.md).
+Este é um **mapa conceitual**: os relacionamentos e cardinalidades definitivos estão nas entidades, migrations e no [dossiê técnico](docs/DOSSIE_PROJETO_SGL.md).
 
 ---
 
