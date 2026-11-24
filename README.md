@@ -115,15 +115,23 @@ O SGL foi construído para representar a realidade da gestão laboratorial, na q
 
 - **O estoque representa materiais físicos, não apenas números.** O controle considera lotes, recipientes, validade, apresentações e consumo parcial. As regras FEFO/FIFO e de fracionamento permitem registrar de onde o material saiu e evitar a abertura desnecessária de recipientes.
 
-- **A solicitação respeita o contexto de quem utiliza o laboratório.** O SGL relaciona pessoas, laboratórios e vínculos institucionais para determinar as condições de uma operação. Empregados e estagiários não seguem exatamente as mesmas regras: a participação de um estagiário em Projeto, SCI ou Atividade pode definir os laboratórios elegíveis para seus pedidos. Essa estrutura contextualiza o uso dos materiais, sem gerenciar a pesquisa em si.
+- **A solicitação respeita o contexto de quem utiliza o laboratório.** Cada solicitação leva em consideração as informações do solicitante, os materiais envolvidos e o contexto em que serão utilizados. Empregados e estagiários não seguem exatamente as mesmas regras: a participação de um estagiário em Projeto, SCI ou Atividade pode definir os laboratórios elegíveis para seus pedidos. Essa estrutura contextualiza o uso dos materiais, sem gerenciar a pesquisa em si.
 
 - **Aprovar, movimentar e entregar não são a mesma coisa.** Em um pedido de material, a aprovação é o momento da baixa física, enquanto a entrega conclui o atendimento sem descontar novamente. Quando um cancelamento com restituição é permitido, o sistema utiliza o histórico das saídas para preservar a origem das quantidades devolvidas.
 
-- **Produtos, soluções e resíduos têm naturezas diferentes.** Embora estejam relacionados na rotina do laboratório, cada um possui um ciclo próprio. Uma solução envolve preparação e entrega; um resíduo possui composição, análise e destinação; e informar os componentes de um resíduo não significa consumi-los novamente do estoque.
+- **Produtos, soluções e resíduos têm naturezas diferentes.** Os produtos constituem a base do catálogo e dos pedidos de materiais, cuja aprovação pode gerar saídas do estoque físico. As soluções possuem um fluxo próprio de solicitação, preparação e entrega; os resíduos, por sua vez, são informados, analisados e acompanhados até o armazenamento e a destinação. Cada domínio preserva suas regras sem ser tratado como uma variação de um mesmo cadastro.
+
+- **A gestão de estagiários vai além do cadastro de pessoas.** O sistema acompanha orientadores, períodos de vínculo, treinamento de segurança e participações em atividades, incluindo a possibilidade de associação a mais de um laboratório. Assim, a Gestão acompanha a situação do estagiário e as condições de sua atuação nos laboratórios.
 
 - **A rastreabilidade acompanha a operação.** Movimentações, responsáveis, lotes, recipientes, identificação física e documentos permitem reconstruir o histórico dos materiais e apoiar a conferência e a fiscalização, em vez de depender apenas de registros manuais posteriores.
 
-- **O sistema se adapta à estrutura institucional.** A integração com a identidade corporativa, a separação por Unidade e o tratamento de perfis e vínculos permitem operar em um ambiente com vários laboratórios. O backend concentra as regras de negócio e as validações das operações; a interface organiza a experiência de cada usuário.
+- **O sistema se adapta à estrutura institucional.** A integração com a identidade corporativa, a separação por Unidade e o tratamento de perfis e vínculos permitem operar em um ambiente com vários laboratórios. O backend concentra as regras de negócio e as validações das operações; a interface organiza a experiência de cada usuário. A **arquitetura multi-tenant por Unidade** utiliza o contexto da sessão autenticada para delimitar as operações e consultas institucionais.
+
+- **As interfaces acompanham o papel de cada usuário.** Quem solicita um material encontra uma jornada voltada ao pedido e ao acompanhamento; quem o analisa e gerencia o estoque dispõe de ações e informações próprias da Gestão. Orientadores e administradores também acessam experiências adequadas às suas atribuições, sem transformar a mesma tela em um painel genérico para todos.
+
+- **Os dashboards priorizam o que precisa de atenção.** Os painéis reúnem indicadores úteis à rotina, como pedidos pendentes, estoque baixo, vencimentos, movimentações e resíduos aguardando ações, oferecendo à Gestão uma visão rápida das necessidades operacionais.
+
+- **Os relatórios refletem diferentes conjuntos de informações.** Em vez de uma consulta única e genérica, o SGL organiza relatórios específicos para estoque e lotes, movimentações, produtos, projetos, estagiários, resíduos e fiscalização, com filtros e exportações que apoiam conferências e decisões administrativas.
 
 Essas decisões são o que conecta **estoque, pessoas e processos em uma gestão laboratorial integrada**. A descrição técnica dos mecanismos e as verificações de segurança ainda em andamento estão no [dossiê do projeto](docs/DOSSIE_PROJETO_SGL.md) e no [registro de revisão](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
 
