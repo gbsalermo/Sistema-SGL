@@ -382,7 +382,7 @@ O fluxo atual de autenticação e seus testes estão mapeados no [dossiê técni
 
 - `POST /api/v1/auth/login` valida login de rede (ou CPF, para colaboradores) e senha na `autenticacaoapi`, resolve a pessoa na Empregadoapi/Colaboradorapi, sincroniza o `Usuario` e devolve o JWT. **Empregado novo** pode ser registrado como `ATIVO` com perfil sugerido; **colaborador/estagiário novo** recebe `PENDENTE_VINCULACAO` até a regularização pela Gestão. Pessoa importada pela Gestão pode ser criada ativa, respeitando concessão de perfis e vínculos.
 - `GET /api/v1/auth/me` devolve o usuário da sessão; `GET /api/v1/auth/config` informa se o login DEV está ativo.
-- `POST /api/v1/auth/dev-login` existe **só** nos perfis `dev` e `demo` e aceita apenas usuários de origem `DEV` (massa de exemplo).
+- `POST /api/v1/auth/dev-login` existe **só** nos perfis `dev` e `demo` e aceita apenas usuários de origem `DEV` (massa de exemplo). No frontend local, o botão **Entrar como desenvolvedor** utiliza o **login curto, sem senha**; sua exibição depende de `GET /api/v1/auth/config` retornar `devLoginAtivo: true`. O botão normal **Entrar** continua usando a autenticação corporativa.
 - O CPF nunca sai em resposta HTTP do SGL; nos logs aparece sempre mascarado. Senha nunca é gravada nem logada.
 - "Sair" é feito no cliente (o JWT é descartado); um token roubado vale até expirar (5 h), mas deixa de funcionar na hora se o usuário for desativado.
 
@@ -438,6 +438,8 @@ A `release` consultada contém **48 migrations SQL, V1 a V48**, em `src/main/res
 ```
 
 No Windows, usar `mvnw.cmd` ou terminal que execute `./mvnw`. O perfil `dev` é **somente local**; configurar PostgreSQL isolado e nunca usar dados institucionais para testes destrutivos.
+
+**Demonstração isolada:** executar com `./mvnw spring-boot:run -Dspring-boot.run.profiles=demo` (ou `mvnw.cmd` no Windows) ativa H2 em memória e contas fictícias. Para entrar no frontend, utilizar **Entrar como desenvolvedor** com o login curto `ricardo.almeida`, **sem senha**. O formulário tradicional direciona à autenticação corporativa. Procedimento, demais contas e diagnóstico: [guia DEMO](docs/DEMO_APRESENTACAO_EMBRAPA.md).
 
 ```text
 API local:  http://localhost:8080/api/v1
