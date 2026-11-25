@@ -161,6 +161,28 @@ class ProdutoControllerTest {
     }
 
     @Test
+    void deveListarCatalogoAdministrativoSemExigirEstoque() throws Exception {
+        when(produtoService.listarCatalogoAdministrativo())
+                .thenReturn(List.of(montarResponseDTO()));
+
+        mockMvc.perform(get(BASE_URL + "/catalogo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].codigoReferencia").value("ETL-ABS-001"));
+    }
+
+    @Test
+    void deveAceitarDescricaoTecnicaComMaisDe255Caracteres() throws Exception {
+        ProdutoRequestDTO dto = montarRequestDTO();
+        dto.setDescricao("BDA Batata Dextrose Agar. " + "Composição e aplicações. ".repeat(15));
+        when(produtoService.criar(any(ProdutoRequestDTO.class))).thenReturn(montarResponseDTO());
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     void deveBuscarProdutoPorIdERetornar200() throws Exception {
         when(produtoService.buscarPorId(PRODUTO_PUBLIC_ID)).thenReturn(montarResponseDTO());
 
