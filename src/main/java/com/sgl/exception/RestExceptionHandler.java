@@ -208,7 +208,10 @@ public class RestExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Erro de validação",
-                "Um ou mais campos estão inválidos.",
+                fieldErrors.isEmpty()
+                        ? "Um ou mais campos estão inválidos."
+                        : String.join("; ", fieldErrors.stream()
+                                .limit(3).map(FieldValidationError::message).toList()),
                 request.getRequestURI(),
                 fieldErrors
         );
