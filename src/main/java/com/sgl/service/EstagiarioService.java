@@ -60,7 +60,7 @@ public class EstagiarioService {
 	private final VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 	private final CursoRepository cursoRepository;
-	private final ModalidadeBolsaService modalidadeBolsaService;
+	private final BolsaService bolsaService;
 	private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
 	private final VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
 	private final LaboratoriosDaPessoa laboratoriosDaPessoa;
@@ -86,6 +86,8 @@ public class EstagiarioService {
 		usuario.validateActive();
 
 		validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
+		// Nova bolsa é uma entidade própria, sem classificação obrigatória no enum.
+		var bolsa = bolsaService.validarEscolha(dto.getTipoBolsa(), dto.getBolsaId());
 
 		validarMesmaUnidade(usuario, orientador);
 
@@ -121,7 +123,8 @@ public class EstagiarioService {
 				    :orientadorId
 				)
 				""").setParameter("id", usuario.getId()).setParameter("dataInicio", dto.getDataInicioEstagio())
-				.setParameter("dataFim", dto.getDataFimEstagio()).setParameter("tipoBolsa", dto.getTipoBolsa().name())
+				.setParameter("dataFim", dto.getDataFimEstagio()).setParameter("tipoBolsa",
+						dto.getTipoBolsa() == null ? null : dto.getTipoBolsa().name())
 				.setParameter("observacao", dto.getObservacao())
 				.setParameter("situacao", SituacaoEstagio.EM_ANDAMENTO.name())
 				.setParameter("orientadorId", orientador.getId()).executeUpdate();
@@ -151,12 +154,8 @@ public class EstagiarioService {
 		vinculo.setDataFimEfetiva(null);
 
 		vinculo.setTipoBolsa(dto.getTipoBolsa());
-		if (dto.getModalidadeBolsaId() != null) {
-			var modalidade = modalidadeBolsaService.validarParaVinculo(
-					dto.getModalidadeBolsaId(), dto.getTipoBolsa());
-			vinculo.setModalidadeBolsa(modalidade);
-			vinculo.setModalidadeBolsaNome(modalidade.getNome());
-		}
+		vinculo.setBolsa(bolsa);
+		vinculo.setBolsaNome(bolsa == null ? null : bolsa.getNome());
 
 		vinculo.setFormacao(dto.getFormacao());
 
