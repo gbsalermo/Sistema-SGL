@@ -344,10 +344,11 @@ public class SincronizacaoVinculoEstagioService {
 		vinculo.setDataFimPrevista(dto.getDataFimPrevista());
 
 		if (dto.getTipoBolsa() != null) {
-			// A fonte institucional prevalece caso redefina a classificação base.
-			if (dto.getTipoBolsa() != vinculo.getTipoBolsa()) {
-				vinculo.setModalidadeBolsa(null);
-				vinculo.setModalidadeBolsaNome(null);
+			// A instituição forneceu explicitamente uma opção legada. A bolsa
+			// cadastrada da Unidade é alternativa, não especialização do enum.
+			if (vinculo.getBolsa() != null) {
+				vinculo.setBolsa(null);
+				vinculo.setBolsaNome(null);
 			}
 			vinculo.setTipoBolsa(dto.getTipoBolsa());
 		}
