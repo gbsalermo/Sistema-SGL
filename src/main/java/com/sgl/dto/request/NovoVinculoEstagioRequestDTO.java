@@ -29,6 +29,9 @@ public class NovoVinculoEstagioRequestDTO {
 	@NotNull(message = "Tipo de vínculo é obrigatório")
 	private TipoBolsa tipoBolsa;
 
+	/** Opcional. Quando presente, precisa ser ativa e compatível com o tipo base. */
+	private UUID modalidadeBolsaId;
+
 	private String observacao;
 
 	private String observacaoParticipacao;
