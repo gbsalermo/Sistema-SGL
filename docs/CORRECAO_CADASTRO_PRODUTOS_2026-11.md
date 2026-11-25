@@ -259,31 +259,13 @@ public ResponseEntity<ApiError> handleDataIntegrity(
 
 private String identificarSqlState(Throwable erro) {
     // Mensagem técnica e SQL completo não são retornados nem registrados.
-    for (Throwable causa = erro, limite = erro; causa != null;
-            causa = causa.getCause()) {
+    for (Throwable causa = erro; causa != null; causa = causa.getCause()) {
         if (causa instanceof SQLException sql) {
             for (SQLException atual = sql; atual != null;
                     atual = atual.getNextException()) {
                 if (atual.getSQLState() != null) {
                     return atual.getSQLState();
                 }
-            }
-        }
-        if (causa == causa.getCause()) break;
-    }
-    return null;
-}
-```
-
-**Pequena limpeza ao aplicar:** simplificar a linha `for (Throwable causa = erro, limite = erro; ...)` para `for (Throwable causa = erro; ...)`; a variável `limite` não é necessária. O exemplo acima fica assim:
-
-```java
-private String identificarSqlState(Throwable erro) {
-    for (Throwable causa = erro; causa != null; causa = causa.getCause()) {
-        if (causa instanceof SQLException sql) {
-            for (SQLException atual = sql; atual != null;
-                    atual = atual.getNextException()) {
-                if (atual.getSQLState() != null) return atual.getSQLState();
             }
         }
         if (causa == causa.getCause()) break;
