@@ -151,6 +151,19 @@ class ProdutoControllerTest {
     }
 
     @Test
+    void informaOcampoQueExcedeuOLimiteDeCaracteres() throws Exception {
+        ProdutoRequestDTO dto = montarRequestDTO();
+        dto.setCodigoReferencia("X".repeat(256));
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("O código de referência aceita no máximo 255 caracteres."));
+    }
+
+    @Test
     void deveListarTodosOsProdutosERetornar200() throws Exception {
         when(produtoService.listarTodos()).thenReturn(List.of(montarResponseDTO()));
 
