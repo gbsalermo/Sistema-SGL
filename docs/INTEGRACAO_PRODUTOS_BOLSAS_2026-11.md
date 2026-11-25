@@ -27,6 +27,7 @@ Revisada a modelagem anterior que vinculava bolsas personalizadas obrigatoriamen
 - A prorrogação mantém o vínculo, a nova bolsa cria outra ocorrência; o sincronizador institucional mantém precedência se receber explicitamente um novo tipo legado.
 - **DEMO restaurada:** `DemoDataInitializer` semeia 6 estagiários ativos, cada um com vínculo e participação aberta, e 2 encerrados. Exclusivo de `@Profile("demo")`, sem dados fictícios em produção.
 - Testes adicionados: `BolsaServiceTest`, `VinculoEstagioBolsaResponseTest`, `BolsaPicker.spec.ts`, cobertura de nova bolsa sem enum em serviços de vínculo/cadastro e `DemoDataInitializerIntegrationTest`.
+- Relatório de estagiários consulta vínculos recentes em lote para exibir a bolsa escolhida (nome do catálogo ou enum legado), inclusive no filtro da tela e na exportação. Teste de relatório adicionado.
 - Não integra a futura proposta de currículo acadêmico nem altera o hotfix validado de produtos.
 
 ## Versionamento Flyway
@@ -50,7 +51,7 @@ A `release` atual termina em V48. Nesta integração existem exatamente:
 9. Testar prorrogação, edição do vínculo e sincronização institucional; nenhum fluxo deve exigir enum quando vínculo usa bolsa independente.
 10. Reiniciar a DEMO/H2 e confirmar seis estagiários ativos com vínculo/participação e dois encerrados. Conferir também responsividade das telas do estagiário, inclusive no mobile.
 11. Em DEV PostgreSQL com backup, confirmar aplicação de V49 + V50 em sequência e `spring.jpa.hibernate.ddl-auto=validate`.
-12. Conferir que dados existentes não foram apagados e que catálogo, vínculos anteriores, pedidos e relatórios continuam íntegros.
+12. Conferir que dados existentes não foram apagados e que catálogo, vínculos anteriores e pedidos permanecem íntegros. Gerar relatório de estagiários com bolsa personalizada e conferir nome, filtro e exportação.
 
 **Limite da validação disponível nesta preparação:** os arquivos foram revisados e sincronizados no GitHub; **não foi executado Maven/Vitest nem aplicado Flyway em PostgreSQL** por este assistente. O aceite funcional de produtos foi comunicado pelo responsável. Não afirmar homologação de bolsas até receber os testes.
 
