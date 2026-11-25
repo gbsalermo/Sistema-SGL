@@ -23,7 +23,8 @@ Integradas **somente** mudanças funcionais da branch `collab/modalidades-bolsa-
 - Compatibilidade preservada com `TipoBolsa` existente. As opções originais CNPq/CAPES/Institucional/Voluntário/Contratual continuam funcionando.
 - No frontend, seletor de modalidades por tipo-base, cadastro de novas modalidades durante o preenchimento e diálogo para renomear/inativar/reativar.
 - Mudanças no fluxo institucional são pontuais: se a fonte oficial alterar o tipo base do vínculo, a referência de modalidade local deixa de ser aplicada. O histórico da ocorrência anterior permanece registrado.
-- **Não incluído:** modificações de `DemoDataInitializer` que existiam na branch de origem, nem a proposta futura de histórico acadêmico.
+- **Massa DEMO restaurada após regressão:** `DemoDataInitializer` contém seis estagiários ativos com vínculos institucionais e participações abertas, além de dois estagiários encerrados para testar filtros. O inicializador é exclusivo de `@Profile("demo")`, não é executado em produção, e os dados permanecem fictícios. A restauração não inclui a proposta futura de histórico acadêmico.
+- **Teste de prevenção:** `DemoDataInitializerIntegrationTest` confere 8 estagiários, 6 vínculos ativos, 6 participações e a consulta operacional de ativos.
 
 ## Versionamento Flyway
 
@@ -44,7 +45,7 @@ A `release` atual termina em V48. Nesta integração existem exatamente:
 7. Registrar nova ocorrência de bolsa escolhendo modalidade; conferir datas, encerramento da anterior, novo vínculo, atividades, orientador, curso e treinamento. O **nome histórico deve continuar o original após renomear/inativar a modalidade**.
 8. Confirmar que tipo-base incompatível ou modalidade inativa/de outra Unidade é rejeitado pela API; fluxo sem modalidade segue funcionando.
 9. Validar prorrogação da bolsa atual, que **não deve** registrar nova ocorrência nem perder a modalidade existente.
-10. Conferir responsividade das telas do estagiário, inclusive no mobile.
+10. Reiniciar a DEMO/H2 e confirmar seis estagiários ativos com vínculo/participação e dois encerrados. Conferir também responsividade das telas do estagiário, inclusive no mobile.
 11. Em DEV PostgreSQL com backup, confirmar aplicação de V49 + V50 em sequência e `spring.jpa.hibernate.ddl-auto=validate`.
 12. Conferir que dados existentes não foram apagados e que catálogo, vínculos anteriores, pedidos e relatórios continuam íntegros.
 
