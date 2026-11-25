@@ -12,6 +12,7 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Bolsa;
 import com.sgl.model.Unidade;
+import com.sgl.model.enums.TipoBolsa;
 import com.sgl.repository.BolsaRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.tenant.TenantContext;
@@ -71,6 +72,19 @@ public class BolsaService {
         bolsa.setAtivo(false);
     }
 
+    /**
+     * Um vínculo usa OU o contrato legado TipoBolsa OU uma bolsa do catálogo.
+     * Nenhuma classificação artificial ou herança de enum é exigida.
+     */
+    @Transactional(readOnly = true)
+    public Bolsa validarEscolha(TipoBolsa tipoLegado, UUID bolsaId) {
+        if ((tipoLegado == null) == (bolsaId == null)) {
+            throw new BusinessRuleException(
+                    "Selecione um tipo de vínculo existente ou uma bolsa cadastrada, não ambos.");
+        }
+        return bolsaId == null ? null : validarParaVinculo(bolsaId);
+    }
+
     /** Apenas bolsas ativas da mesma Unidade podem iniciar um novo vínculo. */
     @Transactional(readOnly = true)
     public Bolsa validarParaVinculo(UUID bolsaId) {
@@ -85,7 +99,7 @@ public class BolsaService {
     private Bolsa buscarNoTenant(UUID id) {
         UUID unidadeId = exigirUnidade();
         return repository.findByPublicIdAndUnidadePublicId(id, unidadeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Bolsa de bolsa", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Bolsa", id));
     }
 
     private UUID exigirUnidade() {
