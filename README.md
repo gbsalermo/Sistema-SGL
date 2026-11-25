@@ -119,6 +119,8 @@ O SGL foi construído para representar a realidade da gestão laboratorial, na q
 
 - **Aprovar, movimentar e entregar não são a mesma coisa.** Em um pedido de material, a aprovação é o momento da baixa física, enquanto a entrega conclui o atendimento sem descontar novamente. Quando um cancelamento com restituição é permitido, o sistema utiliza o histórico das saídas para preservar a origem das quantidades devolvidas.
 
+- **A concorrência não pode comprometer o estoque compartilhado.** Pedidos simultâneos podem disputar o mesmo produto em diferentes laboratórios. O SGL protege a aprovação com transações, bloqueios e revalidação do saldo físico, impedindo que duas operações confirmem retiradas incompatíveis com a quantidade disponível.
+
 - **Produtos, soluções e resíduos têm naturezas diferentes.** Os produtos constituem a base do catálogo e dos pedidos de materiais, cuja aprovação pode gerar saídas do estoque físico. As soluções possuem um fluxo próprio de solicitação, preparação e entrega; os resíduos, por sua vez, são informados, analisados e acompanhados até o armazenamento e a destinação. Cada domínio preserva suas regras sem ser tratado como uma variação de um mesmo cadastro.
 
 - **A gestão de estagiários vai além do cadastro de pessoas.** O sistema acompanha orientadores, períodos de vínculo, treinamento de segurança e participações em atividades, incluindo a possibilidade de associação a mais de um laboratório. Assim, a Gestão acompanha a situação do estagiário e as condições de sua atuação nos laboratórios.
@@ -255,47 +257,46 @@ Cada movimentação mantém a relação com sua origem física, permitindo ident
 
 ---
 
-## Pedidos
+## Gestão de produtos, soluções e resíduos
 
-```text
-PENDENTE
-├── APROVADO
-│   ├── ENTREGUE
-│   └── CANCELADO
-└── REJEITADO
-```
+O SGL organiza três processos centrais da rotina laboratorial: **solicitar produtos disponíveis em estoque, solicitar o preparo de soluções e informar resíduos gerados nos laboratórios**. Eles compartilham o contexto institucional e a rastreabilidade, mas não seguem as mesmas regras nem representam a mesma operação.
 
-A aprovação realiza a baixa física. A entrega apenas conclui o fluxo. O cancelamento de pedido aprovado restaura as quantidades dos lotes utilizados. Urgência não altera FIFO/FEFO.
+### Como os processos se diferenciam
 
----
+| Aspecto | Produtos | Soluções | Resíduos |
+|---|---|---|---|
+| **Finalidade** | Solicitar materiais do catálogo e do estoque | Solicitar a preparação e a entrega de uma solução | Informar e acompanhar materiais residuais gerados |
+| **Cadastro e origem** | Catálogo de produtos e entrada física por lote e recipiente | Modelo reutilizável ou composição informada na solicitação | Modelo reutilizável ou registro manual da ocorrência |
+| **Etapas principais** | Pedido pendente → aprovação → entrega | Pedido pendente → aprovação → preparação → entrega | Informação → análise → liberação → armazenamento → despacho |
+| **Relação com o estoque** | A aprovação retira quantidades dos lotes e recipientes | A aprovação movimenta os componentes; o preparo segue um ciclo próprio | A composição informada não movimenta automaticamente o estoque |
+| **Responsabilidades** | Solicitante e Gestão | Solicitante e Gestão responsável pelo preparo e entrega | Gerador, recebedor e Gestão nas etapas posteriores |
+| **Rastreabilidade** | Pedido, movimentações, lotes e recipientes | Pedido, componentes e histórico do preparo | Composição, classificação, responsáveis e destinação |
 
-## Resíduos
+### Cadastros e contexto institucional
 
-Decisão de domínio:
+O **catálogo de produtos** fundamenta as solicitações e o controle físico do estoque. Já as **soluções** e os **resíduos** admitem modelos reutilizáveis, sem impedir a definição de uma composição específica ou o registro manual de uma ocorrência.
 
-```text
-Produto != Resíduo
-```
+Quando aplicável, pedidos e resíduos podem ser associados à estrutura **Projeto → SCI → Atividade** para contextualizar a origem ou a utilização dos materiais. Essa estrutura é cadastrada e mantida independentemente dos pedidos: Projeto, SCI e Atividade possuem **Código SEG** obrigatório, com validação de formato, hierarquia e coerência entre os níveis. O SEG identifica o contexto institucional; **não é o código de identificação de um resíduo**.
 
-Uma composição de Resíduo pode referenciar Produto para rastreabilidade, sem movimentar estoque automaticamente.
+### Regras próprias de cada processo
 
-Fluxo:
+**Pedidos de produtos.** A criação do pedido não reserva nem reduz o estoque. A Gestão analisa a solicitação e, na aprovação, ocorre a baixa física dos lotes e recipientes selecionados conforme as regras de estoque. A entrega não desconta novamente. Rejeições e cancelamentos seguem transições específicas; quando há restituição autorizada, ela preserva a origem das saídas anteriores.
 
-```text
-INFORMADO
-→ EM_ANALISE
-→ LIBERADO_PARA_ARMAZENAMENTO
-→ ARMAZENADO_TEMPORARIAMENTE
-→ DESPACHADO
-```
+**Pedidos de soluções.** Compartilham a estrutura de pedidos, mas possuem uma etapa de preparação: após a aprovação, passam para `EM_PREPARACAO`. Os componentes são movimentados na aprovação, enquanto a entrega conclui o atendimento. Se houver cancelamento durante o preparo, o sistema exige informar se a solução já foi fisicamente preparada, distinguindo situações em que os componentes podem ou não retornar ao estoque.
 
-Código SGL:
+**Resíduos laboratoriais.** Representam uma ocorrência gerada no laboratório, e não um pedido de retirada. O solicitante informa composição, procedência e demais dados; a Gestão recebe, confere riscos e classificação, libera para armazenamento e registra a destinação. O histórico preserva tanto as informações declaradas quanto as decisões tomadas. A composição pode utilizar produtos do catálogo ou componentes livres, sem gerar automaticamente uma nova baixa de estoque.
 
-```text
-SGL-RES-AAAA-NNNNNN
-```
+### Concorrência e consistência do estoque
 
-Detalhes: [`docs/MODULO_RESIDUOS.md`](docs/MODULO_RESIDUOS.md).
+**Pedidos simultâneos não significam estoque reservado.** Se duas solicitações disputarem o mesmo saldo, a disponibilidade é reavaliada durante a aprovação. O backend utiliza **transações e bloqueios no banco de dados**, protegendo o estoque físico enquanto a retirada é processada; uma aprovação que excederia a quantidade utilizável é recusada, sem confirmar uma baixa incompatível com os lotes e recipientes.
+
+Há um teste de integração específico, `PedidoConcorrenciaIntegrationTest`, que simula duas aprovações concorrentes de **sete unidades cada para um estoque com dez unidades**. O resultado esperado é apenas uma aprovação. Esse cenário está implementado no perfil de testes com H2; a verificação equivalente em PostgreSQL permanece parte da homologação integrada.
+
+### Identificação e histórico
+
+Os resíduos recebem desde o registro um **Código SGL**, no formato `SGL-RES-AAAA-NNNNNN`. O código e a prévia de identificação não significam liberação imediata para impressão: o rótulo é autorizado somente após a etapa apropriada da análise pela Gestão.
+
+Produtos e soluções também preservam seus registros operacionais e identificação física, vinculados aos respectivos processos. Para detalhes dos campos, estados, correções e critérios de liberação, consulte a [documentação do módulo de resíduos](docs/MODULO_RESIDUOS.md) e o [dossiê técnico](docs/DOSSIE_PROJETO_SGL.md).
 
 ---
 
