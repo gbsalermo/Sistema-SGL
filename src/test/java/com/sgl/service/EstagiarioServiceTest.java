@@ -220,7 +220,7 @@ class EstagiarioServiceTest {
         ReflectionTestUtils.setField(estagiarioService, "laboratoriosDaPessoa", laboratoriosDaPessoa);
 
         lenient().when(entityManager.createNativeQuery(anyString())).thenReturn(nativeQuery);
-        lenient().when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
+        lenient().when(nativeQuery.setParameter(anyString(), org.mockito.ArgumentMatchers.nullable(Object.class))).thenReturn(nativeQuery);
         lenient().when(nativeQuery.executeUpdate()).thenReturn(1);
         lenient().when(vinculoEstagioAtividadeRepository
                 .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
