@@ -187,3 +187,174 @@ ORDER BY p.nome;
 - [ ] Confirmar isolamento: outra Unidade sem vínculo de estoque não vê/edita o produto.
 - [ ] Confirmar código duplicado mantém rejeição, sem novo registro.
 - [ ] Testar DEMO H2 e uma base com múltiplas Unidades sem vazamento de catálogo.
+
+
+## 6. Mensagens de erro úteis para o usuário (backend manual)
+
+### 6.1 RestExceptionHandler.java
+
+Adicionar ao início dos imports:
+
+```java
+import java.sql.SQLException;
+```
+
+Substituir **apenas** o método `handleDataIntegrity` pelo trecho abaixo. O `ApiError` mantém o mesmo contrato JSON (`message`, `codigo`, `status`, `path`). **Nunca devolver texto bruto de SQL/Hibernate** (pode expor consultas, nomes internos, valores de parâmetros ou outros dados sensíveis).
+
+```java
+@ExceptionHandler(DataIntegrityViolationException.class)
+public ResponseEntity<ApiError> handleDataIntegrity(
+        DataIntegrityViolationException ex,
+        HttpServletRequest request) {
+
+    String estado = identificarSqlState(ex);
+
+    // SQLState padronizado (PostgreSQL e H2); não interpretar SQL pela mensagem.
+    HttpStatus status;
+    String mensagem;
+    String codigo;
+
+    if ("22001".equals(estado)) {
+        status = HttpStatus.BAD_REQUEST;
+        mensagem = "Um dos campos de texto ultrapassou o limite permitido. "
+                + "Revise a descrição, localização e observações.";
+        codigo = "CAMPO_TEXTO_EXTENSO";
+    } else if ("23505".equals(estado)) {
+        status = HttpStatus.CONFLICT;
+        mensagem = "Já existe um cadastro com um valor que precisa ser único. "
+                + "Verifique o código de referência ou outro identificador.";
+        codigo = "VALOR_DUPLICADO";
+    } else if ("23502".equals(estado)) {
+        status = HttpStatus.BAD_REQUEST;
+        mensagem = "Um campo obrigatório está sem valor. "
+                + "Revise os dados preenchidos.";
+        codigo = "CAMPO_OBRIGATORIO";
+    } else if ("23503".equals(estado)) {
+        status = HttpStatus.CONFLICT;
+        mensagem = "Um registro relacionado não existe ou está sendo utilizado "
+                + "por outros cadastros.";
+        codigo = "REFERENCIA_INVALIDA";
+    } else if ("23514".equals(estado)) {
+        status = HttpStatus.BAD_REQUEST;
+        mensagem = "Um dos valores informados não atende às regras de cadastro.";
+        codigo = "VALOR_INVALIDO";
+    } else {
+        status = HttpStatus.CONFLICT;
+        mensagem = "Não foi possível salvar devido a uma incompatibilidade nos dados. "
+                + "Revise o cadastro e, se persistir, comunique ao administrador.";
+        codigo = "INTEGRIDADE_DADOS";
+    }
+
+    log.warn("Integridade de dados recusada: sqlState={}, codigo={}, rota={}",
+            estado == null ? "desconhecido" : estado,
+            codigo,
+            request.getRequestURI());
+
+    return buildResponse(status,
+            "Dados inválidos ou conflitantes",
+            mensagem,
+            request.getRequestURI(),
+            codigo);
+}
+
+private String identificarSqlState(Throwable erro) {
+    // Mensagem técnica e SQL completo não são retornados nem registrados.
+    for (Throwable causa = erro, limite = erro; causa != null;
+            causa = causa.getCause()) {
+        if (causa instanceof SQLException sql) {
+            for (SQLException atual = sql; atual != null;
+                    atual = atual.getNextException()) {
+                if (atual.getSQLState() != null) {
+                    return atual.getSQLState();
+                }
+            }
+        }
+        if (causa == causa.getCause()) break;
+    }
+    return null;
+}
+```
+
+**Pequena limpeza ao aplicar:** simplificar a linha `for (Throwable causa = erro, limite = erro; ...)` para `for (Throwable causa = erro; ...)`; a variável `limite` não é necessária. O exemplo acima fica assim:
+
+```java
+private String identificarSqlState(Throwable erro) {
+    for (Throwable causa = erro; causa != null; causa = causa.getCause()) {
+        if (causa instanceof SQLException sql) {
+            for (SQLException atual = sql; atual != null;
+                    atual = atual.getNextException()) {
+                if (atual.getSQLState() != null) return atual.getSQLState();
+            }
+        }
+        if (causa == causa.getCause()) break;
+    }
+    return null;
+}
+```
+
+### 6.2 RestExceptionHandlerTest.java
+
+Adicionar imports `java.sql.SQLException` e `org.springframework.dao.DataIntegrityViolationException`. Na classe existente, incluir testes cobrindo o estado e a resposta:
+
+```java
+@Test
+void textoLongoInformaProblemaAoUsuario() {
+    MockHttpServletRequest req =
+        new MockHttpServletRequest("POST", "/api/v1/produtos");
+    var ex = new DataIntegrityViolationException(
+        "falha de integridade",
+        new SQLException("value too long", "22001")
+    );
+
+    var resposta = handler.handleDataIntegrity(ex, req);
+
+    assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(resposta.getBody().codigo()).isEqualTo("CAMPO_TEXTO_EXTENSO");
+    assertThat(resposta.getBody().message()).contains("campos de texto");
+    assertThat(resposta.getBody().message()).doesNotContain("value too long");
+}
+
+@Test
+void codigoDuplicadoInformaConflito() {
+    MockHttpServletRequest req =
+        new MockHttpServletRequest("POST", "/api/v1/produtos");
+    var ex = new DataIntegrityViolationException(
+        "falha de integridade",
+        new SQLException("duplicate key", "23505")
+    );
+
+    var resposta = handler.handleDataIntegrity(ex, req);
+
+    assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(resposta.getBody().codigo()).isEqualTo("VALOR_DUPLICADO");
+    assertThat(resposta.getBody().message()).contains("único");
+}
+
+@Test
+void integridadeNaoClassificadaNaoExibeSqlInterno() {
+    MockHttpServletRequest req =
+        new MockHttpServletRequest("POST", "/api/v1/produtos");
+    var ex = new DataIntegrityViolationException(
+        "SQL SELECT senha FROM ...",
+        new SQLException("detalhes tecnicos", "99999")
+    );
+
+    var resposta = handler.handleDataIntegrity(ex, req);
+
+    assertThat(resposta.getBody().codigo()).isEqualTo("INTEGRIDADE_DADOS");
+    assertThat(resposta.getBody().message()).doesNotContain("senha", "SELECT");
+}
+```
+
+### 6.3 Interação com a tela
+
+A função `mensagemErro()` em `CadastrosAdminView.vue` **já exibe** `error.response?.data?.message`. Não alterar para apresentar mensagens fixas que escondam a explicação fornecida pelo backend.
+
+O cadastro do BDA terá dois resultados esperados após aplicar a V50: uma descrição de 360 caracteres deverá ser aceita (sem violação de comprimento) e um campo **diferente** que ultrapasse seu limite deverá produzir o erro `CAMPO_TEXTO_EXTENSO` com mensagem compreensível.
+
+Para identificar o campo **exato**, usar validação por DTO com `@Size` em cada campo limitado, quando fizer sentido; o SQLState `22001` sozinho **não indica qual coluna** ultrapassou o limite. Não fazer análise de texto de exceção do SGBD no frontend.
+
+- [ ] Aplicar V50 e `@Column(columnDefinition = "text")` antes de repetir o cadastro longo.
+- [ ] Aplicar novo tratamento de erro e testes unitários.
+- [ ] Testar violação SQLState 22001, 23505, 23502 e erro não classificado.
+- [ ] Garantir que detalhes de SQL, parâmetros e segredos não são expostos nas respostas.
