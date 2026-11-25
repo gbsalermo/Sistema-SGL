@@ -37,7 +37,7 @@ public class Estagiario extends Usuario implements Serializable {
 	private LocalDate dataFimEstagio;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column
 	private TipoBolsa tipoBolsa;
 
 	private String observacao;
