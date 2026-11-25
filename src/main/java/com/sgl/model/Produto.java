@@ -25,6 +25,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -54,7 +55,14 @@ public class Produto implements Serializable {
     @Column(nullable = false)
     private String nome;
 
+    // Descrições técnicas de reagentes e meios de cultura excedem 255 caracteres.
+    @Column(columnDefinition = "text")
     private String descricao;
+
+    // Vínculo administrativo de origem; produtos legados podem não possuir origem definida.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unidade_cadastro_id")
+    private Unidade unidadeCadastro;
 
     @Column(unique = true)
     private String codigoReferencia;
