@@ -39,6 +39,7 @@ import com.sgl.model.Cultura;
 import com.sgl.model.Estagiario;
 import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.ModalidadeBolsa;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
@@ -104,6 +105,9 @@ class VinculoEstagioServiceTest {
 
     @Mock
     private HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoRepository;
+
+    @Mock
+    private ModalidadeBolsaService modalidadeBolsaService;
 
     @InjectMocks
     private VinculoEstagioService service;
@@ -872,6 +876,13 @@ class VinculoEstagioServiceTest {
                 new NovaBolsaVinculoEstagioRequestDTO();
         dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
         dto.setEspecificacaoBolsa("  Bolsa Growth  ");
+        UUID modalidadeId = UUID.fromString("20000000-0000-0000-0000-000000000051");
+        ModalidadeBolsa modalidade = ModalidadeBolsa.builder()
+                .publicId(modalidadeId).nome("Bolsa específica CAPES")
+                .tipoBase(TipoBolsa.BOLSA_CAPES).unidade(unidade).ativo(true).build();
+        dto.setModalidadeBolsaId(modalidadeId);
+        when(modalidadeBolsaService.validarParaVinculo(modalidadeId, TipoBolsa.BOLSA_CAPES))
+                .thenReturn(modalidade);
         dto.setDataInicio(hoje);
         dto.setDataFimPrevista(hoje.plusMonths(8));
 
@@ -881,6 +892,8 @@ class VinculoEstagioServiceTest {
         assertEquals(novoVinculoId, resultado.getId());
         assertEquals(TipoBolsa.BOLSA_CAPES, resultado.getTipoBolsa());
         assertEquals("Bolsa Growth", resultado.getReferenciaInstitucional());
+        assertEquals(modalidadeId, resultado.getModalidadeBolsaId());
+        assertEquals("Bolsa específica CAPES", resultado.getModalidadeBolsaNome());
         assertEquals(SituacaoEstagio.FINALIZADO, atual.getSituacao());
         assertEquals(hoje.minusDays(1), atual.getDataFimEfetiva());
         assertEquals(novoVinculoId,
