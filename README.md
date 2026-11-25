@@ -195,6 +195,7 @@ Quando alguém acessa o SGL, o backend utiliza a **Unidade associada à sessão 
 O **Administrador Geral** pode selecionar outra Unidade habilitada por meio de um mecanismo específico, sujeito às regras de autorização do sistema. Para os demais perfis, a Unidade de atuação é definida pela própria sessão.
 
 A separação entre Unidades é uma das camadas de controle de acesso; as permissões sobre **quem pode consultar ou alterar cada registro** também precisam ser consideradas. A revisão aprofundada dessas regras e dos testes por titular e perfil está registrada no [acompanhamento técnico de pendências](docs/REGISTRO_PENDENCIAS_REVISAO_SGL_2026-11.md).
+
 ---
 
 ## Modelo de domínio — relações fundamentais
