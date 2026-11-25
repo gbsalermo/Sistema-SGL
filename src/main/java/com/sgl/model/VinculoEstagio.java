@@ -66,6 +66,15 @@ public class VinculoEstagio implements Serializable {
 	@Column(name = "tipo_bolsa", nullable = false)
 	private TipoBolsa tipoBolsa;
 
+	/** Catálogo opcional. O enum legado continua representando a classificação base. */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "modalidade_bolsa_id")
+	private ModalidadeBolsa modalidadeBolsa;
+
+	/** Snapshot: renomear ou inativar catálogo não reescreve histórico. */
+	@Column(name = "modalidade_bolsa_nome", length = 150)
+	private String modalidadeBolsaNome;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "formacao", length = 40)
 	private FormacaoEstagiario formacao;
