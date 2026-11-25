@@ -45,6 +45,9 @@ public class EstagiarioRequestDTO implements Serializable {
 	@NotNull(message = "Tipo de vínculo é obrigatório")
 	private TipoBolsa tipoBolsa;
 
+	@Schema(description = "Modalidade customizada da Unidade, opcional e compatível com tipoBolsa.")
+	private UUID modalidadeBolsaId;
+
 	@Schema(description = "Observação opcional sobre o estágio.", example = "Estágio vinculado ao projeto de síntese.")
 	private String observacao;
 
