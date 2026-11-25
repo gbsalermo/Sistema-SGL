@@ -61,6 +61,7 @@ public class VinculoEstagioService {
 	private final AtividadeRepository atividadeRepository;
 
 	private final CursoRepository cursoRepository;
+	private final ModalidadeBolsaService modalidadeBolsaService;
 
 	@Transactional
 	public VinculoEstagioResponseDTO criar(UUID estagiarioId, NovoVinculoEstagioRequestDTO dto) {
@@ -109,6 +110,7 @@ public class VinculoEstagioService {
 		vinculo.setDataFimEfetiva(null);
 
 		vinculo.setTipoBolsa(dto.getTipoBolsa());
+		aplicarModalidade(vinculo, dto.getModalidadeBolsaId(), dto.getTipoBolsa());
 
 		vinculo.setFormacao(dto.getFormacao());
 
@@ -142,6 +144,19 @@ public class VinculoEstagioService {
 						vinculo.getPublicId(), TenantContext.unidadeAtual().orElseThrow());
 
 		return montarResponse(vinculo, participacoes);
+	}
+
+	private void aplicarModalidade(VinculoEstagio vinculo, UUID modalidadeId,
+			com.sgl.model.enums.TipoBolsa tipoBase) {
+		if (modalidadeId == null) {
+			vinculo.setModalidadeBolsa(null);
+			vinculo.setModalidadeBolsaNome(null);
+			return;
+		}
+		com.sgl.model.ModalidadeBolsa modalidade = modalidadeBolsaService
+				.validarParaVinculo(modalidadeId, tipoBase);
+		vinculo.setModalidadeBolsa(modalidade);
+		vinculo.setModalidadeBolsaNome(modalidade.getNome());
 	}
 
 	private Estagiario buscarEstagiarioNoTenant(UUID estagiarioId) {
@@ -526,6 +541,7 @@ public class VinculoEstagioService {
 		novo.setDataFimPrevista(dto.getDataFimPrevista());
 		novo.setDataFimEfetiva(null);
 		novo.setTipoBolsa(dto.getTipoBolsa());
+		aplicarModalidade(novo, dto.getModalidadeBolsaId(), dto.getTipoBolsa());
 		novo.setFormacao(atual.getFormacao());
 		novo.setFormacaoOutro(atual.getFormacaoOutro());
 		novo.setCurso(atual.getCurso());
