@@ -12,6 +12,7 @@ import com.sgl.model.enums.UnidadeMedida;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,7 @@ public class ProdutoRequestDTO {
 
     @Schema(description = "Nome do produto.", example = "Extrato de DNA Plant Wizard", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "nome é obrigatório")
+    @Size(max = 255, message = "O nome do produto aceita no máximo 255 caracteres.")
     private String nome;
 
     @Schema(description = "Descrição do produto.", example = "Kit para extração de DNA vegetal.")
@@ -33,6 +35,7 @@ public class ProdutoRequestDTO {
 
     @Schema(description = "Código de referência do produto.", example = "DNA-PW-50", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Codigo de referência é obrigatório")
+    @Size(max = 255, message = "O código de referência aceita no máximo 255 caracteres.")
     private String codigoReferencia;
 
     @Schema(description = "Unidade de medida adotada para o produto.", example = "UNIDADE", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -40,6 +43,7 @@ public class ProdutoRequestDTO {
     private UnidadeMedida unidadeMedida;
 
     @Schema(description = "Localização física do produto no armazenamento.", example = "Armário A - Prateleira 2")
+    @Size(max = 255, message = "A localização física aceita no máximo 255 caracteres.")
     private String localizacaoFisica;
 
     @Schema(description = "Nível de risco associado ao produto.", example = "BAIXO", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -50,6 +54,7 @@ public class ProdutoRequestDTO {
     private TipoRisco tipoRisco;
 
     @Schema(description = "Descrição complementar dos riscos do produto.", example = "Evitar contato direto com pele e olhos.")
+    @Size(max = 255, message = "A descrição de risco aceita no máximo 255 caracteres.")
     private String descricaoRisco;
 
     @Schema(description = "Indica se o produto é perecível.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -60,9 +65,11 @@ public class ProdutoRequestDTO {
     private TipoPerecivel tipoPerecivel;
 
     @Schema(description = "Condições recomendadas de armazenamento.", example = "Manter entre 2°C e 8°C.")
+    @Size(max = 255, message = "As condições de armazenamento aceitam no máximo 255 caracteres.")
     private String condicoesArmazenamento;
 
     @Schema(description = "Forma de armazenamento apresentada ao usuário.", example = "kit com 50 reações")
+    @Size(max = 255, message = "A apresentação do produto aceita no máximo 255 caracteres.")
     private String unidadeArmazenamento;
 
     @Schema(description = "Indica se o produto está sujeito a controle/fiscalização externa.", example = "true")
@@ -72,6 +79,7 @@ public class ProdutoRequestDTO {
     private Set<OrgaoFiscalizador> orgaosFiscalizadores;
 
     @Schema(description = "Observação complementar sobre controle ou fiscalização.", example = "Controle de entrada e saída exigido pelo órgão fiscalizador.")
+    @Size(max = 500, message = "A observação de fiscalização aceita no máximo 500 caracteres.")
     private String observacaoFiscalizacao;
 
     @Schema(description = "Indica se o produto está ativo no catálogo.", example = "true")
@@ -81,5 +89,6 @@ public class ProdutoRequestDTO {
     private Set<MedidaSeguranca> medidasSegurancaRecomendadas;
 
     @Schema(description = "Orientação complementar de segurança.")
+    @Size(max = 1000, message = "A orientação de segurança aceita no máximo 1.000 caracteres.")
     private String observacaoSeguranca;
 }
