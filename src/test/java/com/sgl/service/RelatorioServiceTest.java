@@ -20,10 +20,12 @@ import com.sgl.dto.response.RelatorioEstagiariosResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Estagiario;
+import com.sgl.model.VinculoEstagio;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.VinculoEstagioRepository;
 
 /**
  * Testes unitários de {@link RelatorioService}.
@@ -43,6 +45,9 @@ class RelatorioServiceTest {
 
     @Mock
     private LaboratorioRepository laboratorioRepository;
+
+    @Mock
+    private VinculoEstagioRepository vinculoEstagioRepository;
 
     @InjectMocks
     private RelatorioService relatorioService;
@@ -101,6 +106,21 @@ class RelatorioServiceTest {
         // Reordenado alfabeticamente: "Ana Costa" antes de "Bruno Silva".
         assertEquals("Ana Costa", resultado.getItens().get(0).getNome());
         assertEquals("Bruno Silva", resultado.getItens().get(1).getNome());
+    }
+
+    @Test
+    void relatorioExibeBolsaIndependenteDoVinculoMaisRecente() {
+        when(estagiarioRepository.findAll()).thenReturn(List.of(ativoRecente));
+        VinculoEstagio atual = new VinculoEstagio();
+        atual.setEstagiario(ativoRecente);
+        atual.setDataInicio(LocalDate.of(2026, 8, 1));
+        atual.setBolsaNome("Bolsa FAPESB");
+        when(vinculoEstagioRepository.findParaRelatorioEstagiarios(List.of(1L)))
+                .thenReturn(List.of(atual));
+
+        var resultado = relatorioService.gerarRelatorioEstagiarios(null, null, null, null);
+        assertEquals("Bolsa FAPESB", resultado.getItens().get(0).getBolsaNome());
+        assertEquals(null, resultado.getItens().get(0).getTipoBolsa());
     }
 
     @Test
