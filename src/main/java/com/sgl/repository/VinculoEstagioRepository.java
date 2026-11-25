@@ -25,6 +25,15 @@ public interface VinculoEstagioRepository extends JpaRepository<VinculoEstagio, 
 			UUID estagiarioPublicId, UUID unidadePublicId);
 
 	boolean existsByEstagiarioIdAndSituacaoNot(Long estagiarioId, SituacaoEstagio situacao);
+	/** Consulta em lote para exibir bolsa atual nos relatórios, sem N+1. */
+	@Query("""
+			SELECT v FROM VinculoEstagio v
+			WHERE v.estagiario.id IN :estagiariosIds
+			ORDER BY v.estagiario.id ASC, v.dataInicio DESC
+			""")
+	List<VinculoEstagio> findParaRelatorioEstagiarios(
+			@Param("estagiariosIds") List<Long> estagiariosIds);
+
 
 	//Bloqueia que duas sincronizações do mesmo vinculo altere datas/situação ao mesmo tempo
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
