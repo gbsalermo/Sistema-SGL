@@ -119,7 +119,7 @@ O SGL foi construído para representar a realidade da gestão laboratorial, na q
 
 - **Aprovar, movimentar e entregar não são a mesma coisa.** Em um pedido de material, a aprovação é o momento da baixa física, enquanto a entrega conclui o atendimento sem descontar novamente. Quando um cancelamento com restituição é permitido, o sistema utiliza o histórico das saídas para preservar a origem das quantidades devolvidas.
 
-- **A concorrência não pode comprometer o estoque compartilhado.** Pedidos simultâneos podem disputar o mesmo produto em diferentes laboratórios. O SGL protege a aprovação com transações, bloqueios e revalidação do saldo físico, impedindo que duas operações confirmem retiradas incompatíveis com a quantidade disponível.
+- **O estoque compartilhado possui controle de concorrência.** O SGL permite que diferentes laboratórios realizem solicitações simultâneas com segurança operacional. Durante a aprovação, transações e bloqueios no banco de dados coordenam as retiradas e revalidam o saldo físico, garantindo que as quantidades aprovadas respeitem a disponibilidade real de lotes e recipientes.
 
 - **Produtos, soluções e resíduos têm naturezas diferentes.** Os produtos constituem a base do catálogo e dos pedidos de materiais, cuja aprovação pode gerar saídas do estoque físico. As soluções possuem um fluxo próprio de solicitação, preparação e entrega; os resíduos, por sua vez, são informados, analisados e acompanhados até o armazenamento e a destinação. Cada domínio preserva suas regras sem ser tratado como uma variação de um mesmo cadastro.
 
