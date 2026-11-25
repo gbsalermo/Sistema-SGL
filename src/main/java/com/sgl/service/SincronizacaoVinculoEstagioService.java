@@ -344,6 +344,11 @@ public class SincronizacaoVinculoEstagioService {
 		vinculo.setDataFimPrevista(dto.getDataFimPrevista());
 
 		if (dto.getTipoBolsa() != null) {
+			// A fonte institucional prevalece caso redefina a classificação base.
+			if (dto.getTipoBolsa() != vinculo.getTipoBolsa()) {
+				vinculo.setModalidadeBolsa(null);
+				vinculo.setModalidadeBolsaNome(null);
+			}
 			vinculo.setTipoBolsa(dto.getTipoBolsa());
 		}
 
