@@ -79,28 +79,7 @@ List<Produto> findCatalogoAdministrativoDaUnidade(
     @Param("unidadeId") UUID unidadeId);
 ```
 
-Modificar **somente** a consulta `pertenceAUnidade` para aceitar o vínculo de cadastro como alternativa ao estoque, mantendo seu nome, assinatura e parâmetros:
-
-```java
-@Query("""
-  SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
-  FROM Produto p
-  LEFT JOIN p.unidadeCadastro uc
-  WHERE p.publicId = :produtoPublicId
-    AND (
-      uc.publicId = :unidadePublicId
-      OR EXISTS (
-        SELECT ec.id FROM EstoqueCentral ec
-        WHERE ec.produto = p AND ec.unidade.publicId = :unidadePublicId
-      )
-    )
-  """)
-boolean pertenceAUnidade(
-    @Param("produtoPublicId") UUID produtoPublicId,
-    @Param("unidadePublicId") UUID unidadePublicId);
-```
-
-**Atenção:** a nova semântica de `pertenceAUnidade` significa **vínculo ao catálogo OU ao estoque**, não exclusivamente estoque. Procurar chamadas que exijam apenas vínculo físico antes de concluir a homologação.
+**Não alterar `pertenceAUnidade`.** O método possui semântica operacional de associação física ao estoque e é chamado por `PedidoService`, `ModeloSolucaoService`, `ModeloResiduoService` e `ResiduoService`. Tratar a mera criação de produto como vínculo físico poderia permitir seleções fora da regra atual, afetando pedidos e composições. A distinção entre catálogo e estoque deve permanecer.
 
 ### 3.4 `ProdutoService.java`
 
@@ -132,7 +111,22 @@ public List<ProdutoResponseDTO> listarCatalogoAdministrativo() {
 }
 ```
 
-O método existente `buscarProdutoNoTenant` passará a encontrar produtos recém-cadastrados nessa Unidade graças à nova regra de `pertenceAUnidade`. Manter a validação de Unidade no método.
+**Alterar apenas a validação local de `buscarProdutoNoTenant`**, mantendo a consulta `pertenceAUnidade` intacta. Após buscar o produto por UUID, substituir o predicado de autorização interno por:
+
+```java
+if (TenantContext.unidadeAtual().map(unidadeId -> {
+    boolean estaNoEstoqueDaUnidade =
+        produtoRepository.pertenceAUnidade(id, unidadeId);
+    boolean foiCadastradoNaUnidade =
+        produto.getUnidadeCadastro() != null
+        && unidadeId.equals(produto.getUnidadeCadastro().getPublicId());
+    return !estaNoEstoqueDaUnidade && !foiCadastradoNaUnidade;
+}).orElse(false)) {
+    throw new ResourceNotFoundException("Produto", id);
+}
+```
+
+Assim, a **edição e consulta administrativa por ID** funcionam para produtos recém-cadastrados, mas **pedidos, soluções e resíduos** continuam usando o vínculo físico de estoque conforme as regras atuais. Não alterar `ProdutoService.listarTodos()`.
 
 ### 3.5 `ProdutoController.java` e `ApiSecurityConfig.java`
 
@@ -182,7 +176,7 @@ ORDER BY p.nome;
 
 ## 5. Homologação obrigatória
 
-- [ ] Revisar impacto de `pertenceAUnidade` em todas as chamadas, principalmente leitura por ID e edição.
+- [ ] Confirmar que `pertenceAUnidade` permanece inalterado para pedidos, soluções e resíduos e que apenas `ProdutoService.buscarProdutoNoTenant` aceita a Unidade de cadastro.
 - [ ] Ajustar `ProdutoServiceTest` para o novo `UnidadeRepository` e tenant na criação; criar teste de listagem administrativa e separação por Unidade.
 - [ ] Garantir que `ProdutoRepositoryTest` cobre produtos com Unidade própria e sem estoque, e produtos legados vinculados apenas por estoque.
 - [ ] `./mvnw clean verify`; `npm run build` e `npm run test`.
