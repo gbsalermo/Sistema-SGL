@@ -290,8 +290,6 @@ Quando aplicável, pedidos e resíduos podem ser associados à estrutura **Proje
 
 **Pedidos simultâneos não significam estoque reservado.** Se duas solicitações disputarem o mesmo saldo, a disponibilidade é reavaliada durante a aprovação. O backend utiliza **transações e bloqueios no banco de dados**, protegendo o estoque físico enquanto a retirada é processada; uma aprovação que excederia a quantidade utilizável é recusada, sem confirmar uma baixa incompatível com os lotes e recipientes.
 
-Há um teste de integração específico, `PedidoConcorrenciaIntegrationTest`, que simula duas aprovações concorrentes de **sete unidades cada para um estoque com dez unidades**. O resultado esperado é apenas uma aprovação. Esse cenário está implementado no perfil de testes com H2; a verificação equivalente em PostgreSQL permanece parte da homologação integrada.
-
 ### Identificação e histórico
 
 Os resíduos recebem desde o registro um **Código SGL**, no formato `SGL-RES-AAAA-NNNNNN`. O código e a prévia de identificação não significam liberação imediata para impressão: o rótulo é autorizado somente após a etapa apropriada da análise pela Gestão.
