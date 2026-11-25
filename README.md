@@ -240,38 +240,18 @@ Este é um **mapa conceitual**: os relacionamentos e cardinalidades definitivos 
 
 ## Estoque, FIFO e FEFO
 
-```text
-produto perecível     → FEFO
-produto não perecível → FIFO
-```
+O controle de estoque é um dos principais componentes do SGL. Diferentemente de um sistema que registra apenas quantidades disponíveis, ele considera a organização física dos materiais, permitindo acompanhar produtos por **lote, recipiente, validade e quantidade restante**.
 
-Invariantes:
+A seleção dos materiais segue duas estratégias:
 
-```text
-EstoqueCentral.quantidadeAtual acompanha os lotes
-aprovação baixa estoque
-entrega não baixa novamente
-cancelamento aprovado restaura os lotes exatos
-lote vencido não é elegível para aprovação
-movimentação identifica o lote efetivamente afetado
-```
+- **FEFO (First Expired, First Out):** prioriza os lotes com vencimento mais próximo, quando aplicável.
+- **FIFO (First In, First Out):** prioriza a ordem de entrada para materiais não perecíveis.
 
-Formas de retirada atuais:
+O sistema também contempla o **fracionamento de embalagens**, permitindo consumir apenas parte de um recipiente sem perder a referência ao seu conteúdo original. As regras de retirada procuram aproveitar recipientes já abertos antes de abrir novos, evitando desperdícios e a abertura desnecessária de embalagens.
 
-```text
-UNITARIO
-KIT
-CAIXA
-GARRAFA
-GALAO
-```
+As apresentações e modalidades de retirada incluem itens **unitários, kits, caixas, garrafas e galões**, respeitando a unidade e as condições de consumo de cada produto.
 
-Fracionamento:
-
-```text
-false → true  permitido
-true  → false não permitido
-```
+Cada movimentação mantém a relação com sua origem física, permitindo identificar o material utilizado e preservar a consistência entre os lotes, recipientes e o estoque central.
 
 ---
 
