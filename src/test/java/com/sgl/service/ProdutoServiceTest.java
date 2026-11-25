@@ -2,9 +2,12 @@ package com.sgl.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.argThat;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,10 +26,12 @@ import com.sgl.dto.response.ProdutoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Produto;
+import com.sgl.model.Unidade;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.model.enums.TipoRisco;
 import com.sgl.model.enums.UnidadeMedida;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.UnidadeRepository;
 import com.sgl.tenant.TenantContext;
 
 /**
@@ -51,17 +56,24 @@ import com.sgl.tenant.TenantContext;
 class ProdutoServiceTest {
 
     private static final UUID PRODUTO_PUBLIC_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID UNIDADE_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
     @Mock
     private ProdutoRepository produtoRepository;
+
+    @Mock
+    private UnidadeRepository unidadeRepository;
 
     @InjectMocks
     private ProdutoService produtoService;
 
     private Produto produto;
+    private Unidade unidade;
 
     @BeforeEach
     void setUp() {
+        unidade = Unidade.builder().id(12L).publicId(UNIDADE_ID)
+                .sigla("UT").nome("Unidade Teste").build();
         produto = new Produto();
         produto.setId(1L);
         produto.setPublicId(PRODUTO_PUBLIC_ID);
@@ -86,6 +98,9 @@ class ProdutoServiceTest {
 
     @Test
     void deveCriarProdutoComDadosValidos() {
+        TenantContext.definir(UNIDADE_ID);
+        when(unidadeRepository.findByPublicId(UNIDADE_ID))
+                .thenReturn(Optional.of(unidade));
         ProdutoRequestDTO dto = new ProdutoRequestDTO();
         dto.setNome("Álcool Etílico 70%");
         dto.setDescricao("Álcool para assepsia.");
@@ -110,10 +125,15 @@ class ProdutoServiceTest {
         assertEquals("Álcool Etílico 70%", resultado.getNome());
         assertEquals(NivelRisco.NENHUM, resultado.getRisco());
         assertFalse(resultado.getPerecivel());
+        verify(produtoRepository).save(argThat(p ->
+                p.getUnidadeCadastro() == unidade));
     }
 
     @Test
     void deveRejeitarCriacaoQuandoCodigoReferenciaJaExiste() {
+        TenantContext.definir(UNIDADE_ID);
+        when(unidadeRepository.findByPublicId(UNIDADE_ID))
+                .thenReturn(Optional.of(unidade));
         // Única BusinessRuleException lançada diretamente pelo Service (as
         // demais regras de risco/perecibilidade/fiscalização vivem na
         // entidade Produto). Cobrindo aqui a duplicidade de código de
@@ -131,6 +151,45 @@ class ProdutoServiceTest {
                 () -> produtoService.criar(dto));
 
         assertEquals("Já existe um produto com este código de referência.", ex.getMessage());
+    }
+
+    @Test
+    void naoPermiteCriarSemUnidadeDaSessao() {
+        ProdutoRequestDTO dto = new ProdutoRequestDTO();
+        assertThrows(BusinessRuleException.class, () -> produtoService.criar(dto));
+    }
+
+    @Test
+    void listaCatalogoDaUnidadeMesmoSemRegistroDeEstoque() {
+        TenantContext.definir(UNIDADE_ID);
+        when(produtoRepository.findCatalogoAdministrativoDaUnidade(UNIDADE_ID))
+                .thenReturn(List.of(produto));
+        List<ProdutoResponseDTO> resultado = produtoService.listarCatalogoAdministrativo();
+        assertEquals(1, resultado.size());
+        assertEquals(PRODUTO_PUBLIC_ID, resultado.get(0).getId());
+    }
+
+    @Test
+    void permiteEditarProdutoCadastradoNaUnidadeSemEstoque() {
+        TenantContext.definir(UNIDADE_ID);
+        produto.setUnidadeCadastro(unidade);
+        when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID))
+                .thenReturn(Optional.of(produto));
+        when(produtoRepository.pertenceAUnidade(PRODUTO_PUBLIC_ID, UNIDADE_ID))
+                .thenReturn(false);
+
+        ProdutoResponseDTO resultado = produtoService.buscarPorId(PRODUTO_PUBLIC_ID);
+        assertEquals(PRODUTO_PUBLIC_ID, resultado.getId());
+    }
+
+    @Test
+    void impedeAcessoDeOutraUnidadeSemEstoqueVinculado() {
+        TenantContext.definir(UUID.randomUUID());
+        produto.setUnidadeCadastro(unidade);
+        when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID))
+                .thenReturn(Optional.of(produto));
+        assertThrows(ResourceNotFoundException.class,
+                () -> produtoService.buscarPorId(PRODUTO_PUBLIC_ID));
     }
 
     @Test
