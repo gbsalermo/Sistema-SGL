@@ -60,6 +60,7 @@ public class EstagiarioService {
 	private final VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 	private final CursoRepository cursoRepository;
+	private final ModalidadeBolsaService modalidadeBolsaService;
 	private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
 	private final VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
 	private final LaboratoriosDaPessoa laboratoriosDaPessoa;
@@ -150,6 +151,12 @@ public class EstagiarioService {
 		vinculo.setDataFimEfetiva(null);
 
 		vinculo.setTipoBolsa(dto.getTipoBolsa());
+		if (dto.getModalidadeBolsaId() != null) {
+			var modalidade = modalidadeBolsaService.validarParaVinculo(
+					dto.getModalidadeBolsaId(), dto.getTipoBolsa());
+			vinculo.setModalidadeBolsa(modalidade);
+			vinculo.setModalidadeBolsaNome(modalidade.getNome());
+		}
 
 		vinculo.setFormacao(dto.getFormacao());
 
