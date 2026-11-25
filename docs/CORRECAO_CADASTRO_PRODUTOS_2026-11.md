@@ -70,6 +70,7 @@ e verificar a listagem com uma sessão da Unidade correta.
 - `ProdutoRepositoryTest`: descrição acima de 255 caracteres, catálogo multi-Unidade
   e produto legado com vínculo de estoque.
 - `RestExceptionHandlerTest`: mensagens SQLState sem vazamento de SQL ou detalhes técnicos.
+- `ProdutoControllerTest`: rota administrativa, aceitação de descrição longa e mensagens de tamanho por campo.
 - Frontend `cadastroProdutosListagem.spec.ts`: consulta da rota nova,
   fallback para API antiga e propagação de erro real.
 
