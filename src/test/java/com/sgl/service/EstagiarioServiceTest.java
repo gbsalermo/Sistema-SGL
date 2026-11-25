@@ -119,6 +119,9 @@ class EstagiarioServiceTest {
     @Mock
     private Query nativeQuery;
 
+    @Mock
+    private BolsaService bolsaService;
+
     @InjectMocks
     private EstagiarioService estagiarioService;
 
