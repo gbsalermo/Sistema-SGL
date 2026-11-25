@@ -14,10 +14,10 @@ import lombok.Setter;
 @Setter
 public class NovaBolsaVinculoEstagioRequestDTO {
 
-    @NotNull(message = "Tipo de bolsa é obrigatório")
     private TipoBolsa tipoBolsa;
 
-    private UUID modalidadeBolsaId;
+    /** Bolsa independente cadastrada na Unidade; alternativa ao tipo legado. */
+    private UUID bolsaId;
 
     @Size(max = 120, message = "Especificação da bolsa deve possuir no máximo 120 caracteres")
     private String especificacaoBolsa;
