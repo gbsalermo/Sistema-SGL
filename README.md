@@ -298,28 +298,43 @@ Produtos e soluções também preservam seus registros operacionais e identifica
 
 ---
 
-## Relatórios
+## Relatórios e acompanhamento operacional
 
-Relatórios implementados e presentes na `release` (com homologação integrada e equivalência de filtros ainda pendentes):
+O SGL reúne informações dos diferentes módulos em uma **Central de Relatórios**, permitindo acompanhar a utilização de materiais, a movimentação do estoque e as atividades administrativas dos laboratórios.
 
-```text
-Estagiários
-Produtos
-Projetos — consolidação de SCI, Atividades e participações
-Movimentações — Resumo / Detalhamento
-Estoque e lotes
-Fiscalização
-Resíduos
-Pessoas por laboratório
-```
+Os relatórios utilizam os dados registrados durante as operações do sistema, preservando vínculos com laboratórios, responsáveis, produtos e, quando aplicável, Projetos, SCIs e Atividades. Dessa forma, a Gestão pode consultar informações consolidadas sem perder a possibilidade de investigar registros específicos.
 
-A Central apresenta **Movimentações** com modos Resumo (contagens de ocorrências, sem rankings) e Detalhamento (filtros por tipo, origem, contexto Projeto/SCI/Atividade, produto, apresentação/unidade e período). As quantidades físicas têm unidades identificadas e exibição opcional no Detalhamento e na exportação PDF/XLSX. **Estoque e lotes** informam apresentação, conteúdo e recipientes fechados, abertos ou esgotados. **Fiscalização** apresenta a trilha de movimentações com recipientes vinculados.
+### Relatórios disponíveis
 
-A classificação histórica de consumo como apresentação completa ou por medida é derivada das parcelas registradas, sem afirmar a intenção original da solicitação. Os endpoints anteriores de Movimentações e Resumo Operacional permanecem disponíveis.
+| Área | Informações apresentadas |
+|---|---|
+| **Estoque e lotes** | Quantidades disponíveis, apresentações físicas, validade e situação dos recipientes |
+| **Movimentações** | Entradas, saídas, devoluções, ajustes e descartes, com identificação de suas origens |
+| **Produtos** | Informações do catálogo e dos materiais utilizados |
+| **Projetos** | Contexto dos Projetos, incluindo SCIs, Atividades e participações |
+| **Estagiários** | Informações institucionais e acompanhamento dos vínculos |
+| **Resíduos** | Ocorrências registradas, classificação, situação e destinação |
+| **Fiscalização** | Histórico rastreável das movimentações e dos recipientes envolvidos |
+| **Pessoas por laboratório** | Distribuição e associação de pessoas aos laboratórios |
 
-A interface encaminha filtros para consultas e exportações PDF/XLSX. A equivalência de resultados para todas as combinações ainda deve ser validada; há riscos de desempenho e uma divergência semântica de unidades físicas em um DTO de Resumo Operacional registrados na auditoria.
+### Consultas, filtros e exportações
 
-Pedidos entregues continuam sendo um recorte de Movimentações, não um relatório separado.
+A Central permite consultar dados diretamente na interface e gerar documentos em **PDF e Excel (XLSX)**, utilizando filtros específicos para cada área.
+
+O relatório de **Movimentações**, por exemplo, oferece duas formas de consulta:
+
+- **Resumo:** apresenta indicadores sobre a quantidade de ocorrências por tipo de operação.
+- **Detalhamento:** permite investigar movimentações específicas, considerando período, origem, produto, laboratório, contexto institucional e características físicas dos materiais.
+
+Os relatórios de Estoque e Fiscalização também utilizam as informações de lotes e recipientes, permitindo acompanhar não apenas quantidades consolidadas, mas sua relação com os registros físicos de armazenamento e consumo.
+
+### Rastreabilidade como base dos relatórios
+
+Um dos diferenciais dessa estrutura é a integração com o histórico operacional do SGL.
+
+Uma saída de estoque pode ser analisada considerando o produto movimentado, o lote utilizado, o recipiente afetado e a operação que originou a retirada.
+
+Isso permite que os relatórios apoiem tanto o **acompanhamento cotidiano dos laboratórios** quanto atividades de conferência, auditoria e fiscalização, sem depender de controles paralelos para reconstruir as operações.
 
 ---
 
