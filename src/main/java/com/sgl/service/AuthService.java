@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,9 +21,10 @@ import com.sgl.corporate.CorporateIdentityResolver;
 import com.sgl.corporate.CpfMasker;
 import com.sgl.corporate.InvalidCorporateCredentialsException;
 import com.sgl.corporate.LoginNormalizer;
-import com.sgl.corporate.ProfileSuggestion;
+import com.sgl.corporate.CategoriaCargoResolver;
 import com.sgl.corporate.TipoPessoaCorporativa;
 import com.sgl.dto.response.AuthConfigResponseDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.LoginResponseDTO;
 import com.sgl.dto.response.UsuarioSessaoResponseDTO;
 import com.sgl.exception.LoginRejectedException;
@@ -30,8 +32,10 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.enums.OrigemUsuario;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.security.CurrentUser;
@@ -57,6 +61,7 @@ public class AuthService {
 
     private final CorporateApiClient corporateApiClient;
     private final UsuarioRepository usuarioRepository;
+    private final LaboratorioRepository laboratorioRepository;
     private final UnidadeRepository unidadeRepository;
     private final JwtService jwtService;
     private final LoginRateLimiter rateLimiter;
@@ -68,8 +73,9 @@ public class AuthService {
     public AuthService(CorporateApiClient corporateApiClient, UsuarioRepository usuarioRepository,
             UnidadeRepository unidadeRepository, JwtService jwtService, LoginRateLimiter rateLimiter,
             AuthProperties authProperties, Clock clock, Environment environment,
-            MudancaLotacaoService mudancaLotacaoService) {
+            MudancaLotacaoService mudancaLotacaoService, LaboratorioRepository laboratorioRepository) {
         this.corporateApiClient = corporateApiClient;
+        this.laboratorioRepository = laboratorioRepository;
         this.usuarioRepository = usuarioRepository;
         this.unidadeRepository = unidadeRepository;
         this.jwtService = jwtService;
@@ -150,9 +156,12 @@ public class AuthService {
     }
 
     private UsuarioSessaoResponseDTO sessionUser(UUID publicId) {
-        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(publicId)
-                .map(UsuarioSessaoResponseDTO::new)
+        Usuario usuario = usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário da sessão não encontrado."));
+        UsuarioSessaoResponseDTO sessao = new UsuarioSessaoResponseDTO(usuario);
+        sessao.setResponsavelPor(laboratorioRepository.findByResponsavelIdAndAtivoTrueOrderByNome(usuario.getId())
+                .stream().map(LaboratorioResumoDTO::de).toList());
+        return sessao;
     }
 
     // Profile, laboratório and vínculos belong to the SGL and are never overwritten by synchronization.
@@ -166,7 +175,11 @@ public class AuthService {
         }
         usuario.setCargo(identity.cargo());
         usuario.setSublotacao(identity.sublotacao());
-        mudancaLotacaoService.aplicar(usuario, unidade, provisionalProfile(identity));
+        mudancaLotacaoService.aplicar(usuario, unidade, provisionalCategory(identity));
+        // Fill only: a category confirmed by management (e.g. ESTAGIARIO for a bolsista) is never overwritten.
+        if (usuario.getCategoriaCargo() == null) {
+            usuario.setCategoriaCargo(provisionalCategory(identity));
+        }
         // Quem ficou pendente (primeiro login antigo ou mudança de lotação) e é empregado é liberado agora.
         if (usuario.getSituacao() == SituacaoUsuario.PENDENTE_VINCULACAO && isEmpregado(identity)) {
             liberarEmpregado(usuario, maskedLogin(normalizedLogin));
@@ -208,10 +221,11 @@ public class AuthService {
         }
         synchronized (FIRST_ADMIN_LOCK) {
             // Any ADMINISTRADOR_GERAL, even a deactivated one, means the bootstrap was already used.
-            if (usuarioRepository.existsByPerfil(Perfil.ADMINISTRADOR_GERAL)) {
+            if (usuarioRepository.existeComPapel(PapelSistema.ADMINISTRADOR_GERAL)) {
                 return saveNewcomer(usuario, identity);
             }
-            usuario.setPerfil(Perfil.ADMINISTRADOR_GERAL);
+            usuario.substituirPapeis(List.of(PapelSistema.ADMINISTRADOR_GERAL));
+            usuario.setCategoriaCargo(provisionalCategory(identity));
             usuario.setSituacao(SituacaoUsuario.ATIVO);
             Usuario saved = usuarioRepository.saveAndFlush(usuario);
             AUDIT.info("acao=PRIMEIRO_LOGIN_ADMINISTRADOR_GERAL ator={} alvo={} login={}",
@@ -220,11 +234,11 @@ public class AuthService {
         }
     }
 
-    // Empregado entra direto (ATIVO) com o perfil sugerido pelo cargo; o gestor pode ajustá-lo depois.
+    // Empregado entra direto (ATIVO) com a categoria sugerida pelo cargo; a gestão pode ajustá-la depois.
     // Colaborador (estagiário, bolsista) fica PENDENTE_VINCULACAO: o filtro de segurança o mantém fora
-    // de toda rota operacional até um gestor aprová-lo e confirmar o perfil.
+    // de toda rota operacional até um gestor aprová-lo e confirmar a categoria.
     private Usuario saveNewcomer(Usuario usuario, CorporateIdentity identity) {
-        usuario.setPerfil(provisionalProfile(identity));
+        usuario.setCategoriaCargo(provisionalCategory(identity));
         usuario.setSituacao(isEmpregado(identity) ? SituacaoUsuario.ATIVO : SituacaoUsuario.PENDENTE_VINCULACAO);
         Usuario saved = usuarioRepository.save(usuario);
         if (isEmpregado(identity)) {
@@ -244,12 +258,13 @@ public class AuthService {
     }
 
     private static void auditarLiberacao(Usuario usuario, String login) {
-        AUDIT.info("acao=EMPREGADO_LIBERADO_NO_LOGIN ator={} alvo={} perfil={} login={}",
-                SYSTEM_ACTOR, usuario.getPublicId(), usuario.getPerfil(), login == null ? "cpf" : login);
+        AUDIT.info("acao=EMPREGADO_LIBERADO_NO_LOGIN ator={} alvo={} papeis={} categoria={} login={}",
+                SYSTEM_ACTOR, usuario.getPublicId(), usuario.getPapeis(), usuario.getCategoriaCargo(),
+                login == null ? "cpf" : login);
     }
 
-    private static Perfil provisionalProfile(CorporateIdentity identity) {
-        return ProfileSuggestion.fromCargo(identity.cargo(), identity.tipo()).orElse(Perfil.TECNICO);
+    private static CategoriaCargo provisionalCategory(CorporateIdentity identity) {
+        return CategoriaCargoResolver.fromCargo(identity.cargo(), identity.tipo()).orElse(CategoriaCargo.TECNICO);
     }
 
     private void deactivate(Usuario usuario, String normalizedLogin) {

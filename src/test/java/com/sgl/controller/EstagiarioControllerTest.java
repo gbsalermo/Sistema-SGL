@@ -42,6 +42,7 @@ import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.FormacaoEstagiario;
+import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.TipoBolsa;
@@ -293,13 +294,13 @@ class EstagiarioControllerTest {
     void deveListarOrientadoresElegiveis() throws Exception {
         when(estagiarioService.listarOrientadoresElegiveis()).thenReturn(List.of(
                 new OrientadorElegivelResponseDTO(
-                        ORIENTADOR_PUBLIC_ID, "Ana", Perfil.PESQUISADOR, "PESQUISADOR A")));
+                        ORIENTADOR_PUBLIC_ID, "Ana", CategoriaCargo.PESQUISADOR, "PESQUISADOR A")));
 
         mockMvc.perform(get(BASE_URL + "/orientadores-elegiveis"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].usuarioId").value(ORIENTADOR_PUBLIC_ID.toString()))
                 .andExpect(jsonPath("$[0].nome").value("Ana"))
-                .andExpect(jsonPath("$[0].perfil").value("PESQUISADOR"))
+                .andExpect(jsonPath("$[0].categoriaCargo").value("PESQUISADOR"))
                 .andExpect(jsonPath("$[0].cargo").value("PESQUISADOR A"));
     }
 }

@@ -2,10 +2,12 @@ package com.sgl.dto.response;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.Usuario;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,8 +29,12 @@ public class UsuarioResponseDTO implements Serializable {
     private String nome;
     @Schema(description = "E-mail do usuário.", example = "maria.oliveira@ufrb.edu.br")
     private String email;
-    @Schema(description = "Perfil de acesso do usuário.", example = "RESPONSAVEL")
-    private Perfil perfil;
+    @Schema(description = "Papéis do sistema, acumuláveis.", example = "[\"GESTOR\"]")
+    private Set<PapelSistema> papeis;
+    @Schema(description = "Categoria do cargo.", example = "PESQUISADOR")
+    private CategoriaCargo categoriaCargo;
+    @Schema(description = "Cargo informado pela base corporativa, quando houver.")
+    private String cargo;
     @Schema(description = "Identificador público UUID da unidade vinculada.", example = "550e8400-e29b-41d4-a716-446655440002")
     private UUID unidadeId;
     @Schema(description = "Nome da unidade vinculada.", example = "Instituto de Química")
@@ -46,7 +52,9 @@ public class UsuarioResponseDTO implements Serializable {
         this.id = entity.getPublicId();
         this.nome = entity.getNome();
         this.email = entity.getEmail();
-        this.perfil = entity.getPerfil();
+        this.papeis = entity.getPapeis();
+        this.categoriaCargo = entity.getCategoriaCargo();
+        this.cargo = entity.getCargo();
         this.unidadeId = entity.getUnidade() != null ? entity.getUnidade().getPublicId() : null;
         this.unidadeNome = entity.getUnidade() != null ? entity.getUnidade().getNome() : null;
         this.unidadeSigla = entity.getUnidade() != null ? entity.getUnidade().getSigla() : null;

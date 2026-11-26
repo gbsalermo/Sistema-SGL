@@ -28,6 +28,8 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoOperacionalUsuario;
 import com.sgl.model.enums.OrigemUsuario;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.LaboratorioRepository;
@@ -109,7 +111,7 @@ class AuthServiceIntegrationTest {
         assertThat(usuario.getSublotacao()).isEqualTo("Sublotação 344136");
         assertThat(usuario.getCpf()).isEqualTo(CPF);
         assertThat(usuario.getLogin()).isEqualTo("m344136");
-        assertThat(usuario.getPerfil()).isEqualTo(Perfil.ANALISTA);
+        assertThat(usuario.getCategoriaCargo()).isEqualTo(CategoriaCargo.ANALISTA);
         assertThat(usuario.getUltimoLoginEm()).isNotNull();
         assertThat(usuario.getSincronizadoEm()).isNotNull();
         assertThat(jwtService.parse(resposta.getToken())).contains(usuario.getPublicId());
@@ -128,7 +130,7 @@ class AuthServiceIntegrationTest {
         LoginResponseDTO resposta = authService.login(CPF, "senha", IP);
 
         assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
-        assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.ESTAGIARIO);
+        assertThat(resposta.getUsuario().getCategoriaCargo()).isEqualTo(CategoriaCargo.ESTAGIARIO);
     }
 
     // Quem ficou pendente pela regra antiga e é empregado é liberado no próximo login, sem perder o perfil.
@@ -142,7 +144,7 @@ class AuthServiceIntegrationTest {
 
         Usuario atualizado = usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow();
         assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
-        assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ANALISTA);
+        assertThat(atualizado.getCategoriaCargo()).isEqualTo(CategoriaCargo.ANALISTA);
     }
 
     @Test
@@ -170,7 +172,7 @@ class AuthServiceIntegrationTest {
         assertThat(atualizado.getNome()).isEqualTo("Nome Novo");
         assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         // Synchronization never touches the profile granted inside the SGL.
-        assertThat(atualizado.getPerfil()).isEqualTo(Perfil.PESQUISADOR);
+        assertThat(atualizado.getCategoriaCargo()).isEqualTo(CategoriaCargo.PESQUISADOR);
         assertThat(atualizado.getCargo()).isEqualTo("Analista A");
         assertThat(atualizado.getLogin()).isEqualTo("m344136");
         assertThat(resposta.getUsuario().getId()).isEqualTo(importado.getPublicId());
@@ -202,7 +204,8 @@ class AuthServiceIntegrationTest {
         assertThat(atualizado.getUnidade().getPublicId()).isEqualTo(cnpmf.getPublicId());
         assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         assertThat(atualizado.getLaboratorios()).isEmpty();
-        assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ANALISTA); // provisional suggestion, as for a new user
+        assertThat(atualizado.getCategoriaCargo()).isEqualTo(CategoriaCargo.ANALISTA); // provisional suggestion, as for a new user
+        assertThat(atualizado.getPapeis()).isEmpty(); // management roles belonged to the old Unidade
         VinculoOperacionalUsuario encerrado = vinculoRepository.findById(vinculo.getId()).orElseThrow();
         assertThat(encerrado.getEncerrado()).isTrue();
         assertThat(encerrado.getDataFim()).isNotNull();
@@ -221,7 +224,7 @@ class AuthServiceIntegrationTest {
         Usuario atualizado = usuarioRepository.findWithUnidadeByPublicId(admin.getPublicId()).orElseThrow();
         assertThat(atualizado.getUnidade().getPublicId()).isEqualTo(cnpmf.getPublicId());
         assertThat(atualizado.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
-        assertThat(atualizado.getPerfil()).isEqualTo(Perfil.ADMINISTRADOR_GERAL);
+        assertThat(atualizado.getPapeis()).containsExactly(PapelSistema.ADMINISTRADOR_GERAL);
     }
 
     @Test
@@ -303,7 +306,7 @@ class AuthServiceIntegrationTest {
         Usuario desativado = usuarioRepository.findByPublicId(importado.getPublicId()).orElseThrow();
         assertThat(desativado.getAtivo()).isFalse();
         // Deactivation keeps the SGL data so an admin can restore the person later.
-        assertThat(desativado.getPerfil()).isEqualTo(Perfil.TECNICO);
+        assertThat(desativado.getCategoriaCargo()).isEqualTo(CategoriaCargo.TECNICO);
     }
 
     @Test
@@ -336,14 +339,14 @@ class AuthServiceIntegrationTest {
 
     @Test
     void login_primeiroComFlagLigada_viraAdministradorGeral() {
-        assertThat(usuarioRepository.existsByPerfil(Perfil.ADMINISTRADOR_GERAL)).isFalse();
+        assertThat(usuarioRepository.existeComPapel(PapelSistema.ADMINISTRADOR_GERAL)).isFalse();
         authProperties.setPrimeiroLoginAdmin(true);
         gateway.loginOk("m344136", "344136", 512);
         gateway.empregadoPorMatricula("344136", "Primeiro", CPF, "Analista A", CNPMF, true);
 
         LoginResponseDTO resposta = authService.login("m344136", "senha", IP);
 
-        assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.ADMINISTRADOR_GERAL);
+        assertThat(resposta.getUsuario().getPapeis()).containsExactly(PapelSistema.ADMINISTRADOR_GERAL);
         assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
     }
 
@@ -359,7 +362,7 @@ class AuthServiceIntegrationTest {
         LoginResponseDTO segundo = authService.login("m500", "senha", IP);
 
         assertThat(segundo.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
-        assertThat(segundo.getUsuario().getPerfil()).isEqualTo(Perfil.PESQUISADOR);
+        assertThat(segundo.getUsuario().getCategoriaCargo()).isEqualTo(CategoriaCargo.PESQUISADOR);
     }
 
     @Test
@@ -376,12 +379,12 @@ class AuthServiceIntegrationTest {
         LoginResponseDTO resposta = authService.login("m344136", "senha", IP);
 
         assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
-        assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.ANALISTA);
+        assertThat(resposta.getUsuario().getCategoriaCargo()).isEqualTo(CategoriaCargo.ANALISTA);
     }
 
     @Test
     void login_flagDesligada_empregadoComCargoDesconhecidoEntraComoTecnico() {
-        assertThat(usuarioRepository.existsByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL)).isFalse();
+        assertThat(usuarioRepository.existeComPapel(PapelSistema.ADMINISTRADOR_GERAL)).isFalse();
         gateway.loginOk("m344136", "344136", 512);
         gateway.empregadoPorMatricula("344136", "Primeiro", CPF, "Cargo Desconhecido", CNPMF, true);
 
@@ -389,7 +392,23 @@ class AuthServiceIntegrationTest {
 
         assertThat(resposta.getUsuario().getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
         // An unrecognized cargo falls back to the least privileged operational profile.
-        assertThat(resposta.getUsuario().getPerfil()).isEqualTo(Perfil.TECNICO);
+        assertThat(resposta.getUsuario().getCategoriaCargo()).isEqualTo(CategoriaCargo.TECNICO);
+    }
+
+    // Users created before V51 with a management profile have no category until their next login.
+    @Test
+    void login_usuarioSemCategoria_recebeCategoriaPeloCargoSemPerderPapeis() {
+        Usuario gestor = usuario("Gestor Antigo", "344136", CPF, Perfil.GESTOR, SituacaoUsuario.ATIVO);
+        assertThat(gestor.getCategoriaCargo()).isNull();
+        gestor = salvar(gestor);
+        gateway.loginOk("m344136", "344136", 512);
+        gateway.empregadoPorMatricula("344136", "Gestor Antigo", CPF, "Pesquisador A", CNPMF, true);
+
+        authService.login("m344136", "senha", IP);
+
+        Usuario atualizado = usuarioRepository.findWithUnidadeByPublicId(gestor.getPublicId()).orElseThrow();
+        assertThat(atualizado.getCategoriaCargo()).isEqualTo(CategoriaCargo.PESQUISADOR);
+        assertThat(atualizado.getPapeis()).containsExactly(PapelSistema.GESTOR);
     }
 
     private Usuario usuario(String nome, String matricula, String cpf, Perfil perfil, SituacaoUsuario situacao) {

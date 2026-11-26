@@ -46,7 +46,7 @@ class DevAuthControllerIntegrationTest {
         mockMvc.perform(entrar("teste.gestor.1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
-                .andExpect(jsonPath("$.usuario.perfil").value("GESTOR"));
+                .andExpect(jsonPath("$.usuario.papeis[0]").value("GESTOR"));
     }
 
     @Test
@@ -54,7 +54,7 @@ class DevAuthControllerIntegrationTest {
         mockMvc.perform(entrar("teste.gestor.1").with(remoteAddr("::1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
-                .andExpect(jsonPath("$.usuario.perfil").value("GESTOR"));
+                .andExpect(jsonPath("$.usuario.papeis[0]").value("GESTOR"));
     }
 
     @ParameterizedTest
@@ -111,7 +111,7 @@ class DevAuthControllerIntegrationTest {
     void usuarios_filtraPorPerfil() throws Exception {
         mockMvc.perform(get("/api/v1/auth/dev/usuarios").param("perfil", "ESTAGIARIO"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].perfil", everyItem(is("ESTAGIARIO"))))
+                .andExpect(jsonPath("$[*].categoriaCargo", everyItem(is("ESTAGIARIO"))))
                 .andExpect(jsonPath("$[*].login",
                         hasItems("teste.estagiario.1", "teste.estagiario.2", "teste.estagiario.3")));
     }

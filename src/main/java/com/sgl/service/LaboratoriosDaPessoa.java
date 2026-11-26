@@ -11,9 +11,9 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.repository.LaboratorioRepository;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,20 +32,20 @@ public class LaboratoriosDaPessoa {
      *               but an inactive one cannot be added
      * @return the resolved laboratories, in the order received
      */
-    public Set<Laboratorio> resolver(List<UUID> laboratorioIds, Unidade unidade, Perfil perfil,
+    public Set<Laboratorio> resolver(List<UUID> laboratorioIds, Unidade unidade, Set<PapelSistema> papeis,
             Set<Laboratorio> atuais) {
-        return resolver(laboratorioIds, unidade, perfil, atuais, true);
+        return resolver(laboratorioIds, unidade, papeis, atuais, true);
     }
 
     /**
      * @param exigirLista false for a pending or inactive person, who is not operating yet (or anymore)
      *                    and may be saved with an empty list until Gestão approves or reactivates them
      */
-    public Set<Laboratorio> resolver(List<UUID> laboratorioIds, Unidade unidade, Perfil perfil,
+    public Set<Laboratorio> resolver(List<UUID> laboratorioIds, Unidade unidade, Set<PapelSistema> papeis,
             Set<Laboratorio> atuais, boolean exigirLista) {
         List<UUID> ids = laboratorioIds == null ? List.of() : laboratorioIds;
         // Gestão oversees the Unidade and may have no laboratory; operational profiles need one.
-        if (exigirLista && ids.isEmpty() && !PerfilPolicy.isGestao(perfil)) {
+        if (exigirLista && ids.isEmpty() && !PapelPolicy.isGestao(papeis)) {
             throw new BusinessRuleException("Informe ao menos um laboratório.");
         }
         Set<UUID> vistos = new LinkedHashSet<>();

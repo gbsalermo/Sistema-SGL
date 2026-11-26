@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,7 +26,7 @@ import com.sgl.corporate.CorporateDtos.Colaborador;
 import com.sgl.corporate.CorporateDtos.Empregado;
 import com.sgl.corporate.CpfMasker;
 import com.sgl.corporate.LoginNormalizer;
-import com.sgl.corporate.ProfileSuggestion;
+import com.sgl.corporate.CategoriaCargoResolver;
 import com.sgl.corporate.TipoPessoaCorporativa;
 import com.sgl.dto.request.ImportarPessoaRequestDTO;
 import com.sgl.dto.response.PessoaCorporativaResponseDTO;
@@ -36,7 +37,9 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.model.enums.OrigemUsuario;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.LaboratorioRepository;
@@ -44,7 +47,7 @@ import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.security.AuthenticatedUser;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 
 /**
  * Search and import of people from the corporate bases, always scoped to the Unidade in operation.
@@ -120,13 +123,16 @@ public class PessoaCorporativaService {
     public UsuarioSessaoResponseDTO importar(ImportarPessoaRequestDTO request) {
         AuthenticatedUser actor = CurrentUser.get();
         requireGestao(actor);
-        if (!PerfilPolicy.podeConceder(actor.perfil(), request.getPerfil())) {
-            throw new AccessDeniedException("Seu perfil não pode conceder o perfil " + request.getPerfil() + ".");
+        Set<PapelSistema> papeis = request.getPapeis() == null ? Set.of() : new LinkedHashSet<>(request.getPapeis());
+        for (PapelSistema papel : papeis) {
+            if (!PapelPolicy.podeConceder(actor.papeis(), papel)) {
+                throw new AccessDeniedException("Seus papéis não permitem conceder o papel " + papel + ".");
+            }
         }
         Unidade unidade = unidadeEmOperacao();
         int codigo = codigoCorporativo(unidade);
         Set<Laboratorio> laboratorios = laboratoriosDaPessoa.resolver(
-                request.getLaboratorioIds(), unidade, request.getPerfil(), Set.of());
+                request.getLaboratorioIds(), unidade, papeis, Set.of());
 
         // Fetched again by the opaque reference: the browser never held (or sends) the CPF.
         Person person = fetch(request.getTipo(), request.getReferencia(), codigo, unidade);
@@ -144,7 +150,10 @@ public class PessoaCorporativaService {
         usuario.setUnidade(unidade);
         // Applied for every profile (spec 2.1); the estagio flow overrides it for interns later.
         usuario.substituirLaboratorios(laboratorios);
-        usuario.setPerfil(request.getPerfil());
+        usuario.substituirPapeis(papeis);
+        // A category chosen on import wins; otherwise it comes from the corporate cargo, as on a first login.
+        usuario.setCategoriaCargo(request.getCategoriaCargo() != null ? request.getCategoriaCargo()
+                : CategoriaCargoResolver.fromCargo(person.cargo(), request.getTipo()).orElse(CategoriaCargo.TECNICO));
         usuario.setSituacao(SituacaoUsuario.ATIVO);
         usuario.setOrigem(OrigemUsuario.CORPORATIVO);
         usuario.setAtivo(true);
@@ -158,8 +167,9 @@ public class PessoaCorporativaService {
             // Lost a race against another import or a first login of the same person.
             throw ImportacaoRejectedException.jaCadastrado();
         }
-        AUDIT.info("acao=USUARIO_IMPORTADO ator={} alvo={} perfil={} unidade={} laboratorios={} cpf={}",
-                actor.publicId(), saved.getPublicId(), saved.getPerfil(), unidade.getPublicId(), laboratorios.size(),
+        AUDIT.info("acao=USUARIO_IMPORTADO ator={} alvo={} papeis={} categoria={} unidade={} laboratorios={} cpf={}",
+                actor.publicId(), saved.getPublicId(), saved.getPapeis(), saved.getCategoriaCargo(),
+                unidade.getPublicId(), laboratorios.size(),
                 CpfMasker.mask(person.cpf()));
 
         return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(saved.getPublicId())
@@ -276,7 +286,7 @@ public class PessoaCorporativaService {
             return new PessoaCorporativaResponseDTO(p.referencia(), p.tipo(), p.nome(), p.matricula(), p.cargo(),
                     p.sublotacao(), p.unidadeNome(), p.email(), existing != null,
                     existing == null ? null : existing.getSituacao(),
-                    ProfileSuggestion.fromCargo(p.cargo(), p.tipo()).orElse(null));
+                    CategoriaCargoResolver.fromCargo(p.cargo(), p.tipo()).orElse(null));
         }).toList();
     }
 
@@ -294,7 +304,7 @@ public class PessoaCorporativaService {
     }
 
     private static void requireGestao(AuthenticatedUser user) {
-        if (!PerfilPolicy.isGestao(user.perfil())) {
+        if (!PapelPolicy.isGestao(user.papeis())) {
             throw new AccessDeniedException("Apenas gestão pode buscar e importar pessoas corporativas.");
         }
     }

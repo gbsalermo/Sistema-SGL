@@ -43,7 +43,7 @@ public class ContextoOperacionalConsultaService {
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, unidadeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", usuarioId));
 
-        if (usuario.getPerfil() != Perfil.ESTAGIARIO) {
+        if (!usuario.isEstagiario()) {
             throw new BusinessRuleException(
                     "A consulta de participacoes e exclusiva de usuarios com perfil ESTAGIARIO.");
         }

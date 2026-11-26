@@ -10,6 +10,7 @@ public class UsuarioRejectedException extends RuntimeException {
 
     public static final String USUARIO_NAO_PENDENTE = "USUARIO_NAO_PENDENTE";
     public static final String ULTIMO_ADMINISTRADOR_GERAL = "ULTIMO_ADMINISTRADOR_GERAL";
+    public static final String ULTIMO_ADMINISTRADOR_LOCAL = "ULTIMO_ADMINISTRADOR_LOCAL";
     public static final String USUARIO_PENDENTE = "USUARIO_PENDENTE";
 
     private final HttpStatus status;
@@ -33,6 +34,11 @@ public class UsuarioRejectedException extends RuntimeException {
     public static UsuarioRejectedException pendenteExigeAprovacao() {
         return new UsuarioRejectedException(HttpStatus.CONFLICT, USUARIO_PENDENTE,
                 "Este usuário aguarda aprovação. Use Aprovar, na aba Pendentes, para definir perfil e laboratórios.");
+    }
+
+    public static UsuarioRejectedException ultimoAdministradorLocal() {
+        return new UsuarioRejectedException(HttpStatus.CONFLICT, ULTIMO_ADMINISTRADOR_LOCAL,
+                "A Unidade precisa de pelo menos um administrador local ativo.");
     }
 
     public static UsuarioRejectedException ultimoAdministradorGeral() {

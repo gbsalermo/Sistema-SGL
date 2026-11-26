@@ -19,7 +19,7 @@ import com.sgl.model.Sci;
 import com.sgl.model.Usuario;
 import com.sgl.model.codigoseg.HistoricoCorrecaoCodigoSeg;
 import com.sgl.model.enums.Perfil;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 import com.sgl.model.enums.TipoAlvoCodigoSeg;
 import com.sgl.repository.AtividadeRepository;
 import com.sgl.repository.ProjetoRepository;
@@ -457,7 +457,7 @@ public class CorrecaoCodigoSegService {
 
 		usuario.validateActive();
 
-		if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
+		if (!PapelPolicy.isGestao(usuario.getPapeis())) {
 
 			throw new BusinessRuleException(
 					"A correção de Código SEG exige perfil GESTOR ou ADMINISTRADOR."

@@ -1,9 +1,11 @@
 package com.sgl.dto.response;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.TipoBolsa;
 
 import lombok.AllArgsConstructor;
@@ -18,7 +20,8 @@ public class RelatorioPessoaLaboratorioItemDTO {
     private UUID usuarioId;
     private String nome;
     private String email;
-    private Perfil perfil;
+    private Set<PapelSistema> papeis;
+    private CategoriaCargo categoriaCargo;
     private Boolean ativo;
     private Boolean responsavelLaboratorio;
     private TipoBolsa tipoVinculoEstagio;

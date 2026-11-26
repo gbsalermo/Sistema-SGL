@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.Perfil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,15 +37,29 @@ public class UsuarioRequestDTO implements Serializable {
     @Schema(description = "Senha usada apenas na autenticação local enquanto esse mecanismo estiver ativo.", example = "SenhaForte123!", accessMode = Schema.AccessMode.WRITE_ONLY)
     private String senha;
 
-    @Schema(description = "Perfil de acesso do usuário.", example = "RESPONSAVEL", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "perfil é obrigatório")
-    private Perfil perfil;
+    @Schema(description = "Papéis do sistema (acumuláveis). Lista vazia: nenhum papel.", example = "[\"GESTOR\"]")
+    private List<@NotNull(message = "Papel inválido na lista") PapelSistema> papeis;
+
+    @Schema(description = "Categoria do cargo. Nula mantém a atual (ou a sugerida pelo cargo corporativo).", example = "PESQUISADOR")
+    private CategoriaCargo categoriaCargo;
+
+    /**
+     * Fills roles and category from a former single profile, for tests written before roles.
+     *
+     * @deprecated set {@code papeis} and {@code categoriaCargo}.
+     */
+    @Deprecated
+    @JsonIgnore
+    public void setPerfil(Perfil perfil) {
+        this.papeis = perfil.papel() == null ? List.of() : List.of(perfil.papel());
+        this.categoriaCargo = perfil.categoria();
+    }
 
     @Schema(description = "Identificador público UUID da unidade vinculada ao usuário.", example = "550e8400-e29b-41d4-a716-446655440002", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Id da unidade é obrigatório")
     private UUID unidadeId;
 
-    @Schema(description = "Identificadores públicos UUID dos laboratórios da pessoa. Obrigatório para perfis operacionais; a gestão pode ficar sem laboratório.")
+    @Schema(description = "Identificadores públicos UUID dos laboratórios da pessoa. Obrigatório para quem não tem papel de gestão.")
     private List<@NotNull(message = "Laboratório inválido na lista") UUID> laboratorioIds;
 
     @Schema(description = "Indica se o usuário está ativo.", example = "true")

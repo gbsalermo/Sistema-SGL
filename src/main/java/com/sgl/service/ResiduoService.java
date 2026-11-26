@@ -36,7 +36,7 @@ import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.AcaoAdministrativaResiduo;
 import com.sgl.model.enums.Perfil;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 import com.sgl.model.enums.StatusResiduo;
 import com.sgl.repository.ClasseResiduoRepository;
 import com.sgl.repository.HistoricoResiduoRepository;
@@ -74,7 +74,7 @@ public class ResiduoService {
 		gerador.validateActive();
 
 		VinculoEstagioAtividade participacao = null;
-		if (gerador.getPerfil() == Perfil.ESTAGIARIO) {
+		if (gerador.isEstagiario()) {
 			if (dto.getParticipacaoId() == null) {
 				throw new BusinessRuleException("Selecione uma participação ativa para informar o resíduo.");
 			}
@@ -112,7 +112,7 @@ public class ResiduoService {
 		laboratorio.validateActive();
 		Projeto projeto = buscarProjeto(projetoId, laboratorio);
 		boolean projetoSemVinculoDireto = projeto != null && participacao == null
-				&& !PerfilPolicy.isGestao(gerador.getPerfil())
+				&& !PapelPolicy.isGestao(gerador.getPapeis())
 				&& !vinculoOperacionalService.vinculadoProjeto(gerador, projeto, LocalDate.now());
 
 		Residuo residuo = Residuo.builder().laboratorio(laboratorio).gerador(gerador).projeto(projeto)
@@ -445,7 +445,7 @@ public class ResiduoService {
 		Usuario usuario = buscarUsuario(id);
 		usuario.validateActive();
 
-		if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
+		if (!PapelPolicy.isGestao(usuario.getPapeis())) {
 			throw new BusinessRuleException("A operação de gestão de resíduos exige perfil GESTOR ou ADMINISTRADOR.");
 		}
 
@@ -456,7 +456,7 @@ public class ResiduoService {
 		Usuario usuario = buscarUsuario(id);
 		usuario.validateActive();
 
-		if (!PerfilPolicy.isAdministrador(usuario.getPerfil())) {
+		if (!PapelPolicy.isAdministrador(usuario.getPapeis())) {
 			throw new BusinessRuleException(
 					"A correção administrativa do ciclo de resíduos exige perfil ADMINISTRADOR.");
 		}
@@ -489,7 +489,7 @@ public class ResiduoService {
 	 * vínculo there. Gestão is never flagged; estagiários always go through a participation.
 	 */
 	private boolean laboratorioForaDoGerador(Usuario gerador, Laboratorio laboratorio) {
-		return !PerfilPolicy.isGestao(gerador.getPerfil())
+		return !PapelPolicy.isGestao(gerador.getPapeis())
 				&& !gerador.atuaNoLaboratorio(laboratorio)
 				&& !vinculoOperacionalService.vinculadoLaboratorio(gerador, laboratorio, LocalDate.now());
 	}

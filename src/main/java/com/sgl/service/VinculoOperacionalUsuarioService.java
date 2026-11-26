@@ -22,7 +22,7 @@ import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.*;
 import com.sgl.security.CurrentUser;
 import com.sgl.security.AuthenticatedUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 import com.sgl.tenant.TenantContext;
 
 /** Contrato de domínio homologado em DEV; autorização de gestor depende do futuro SSO. */
@@ -75,7 +75,7 @@ public class VinculoOperacionalUsuarioService {
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
         exigirAutoridadeSobre(usuario);
-        if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
+        if (usuario.isEstagiario()) {
             throw new BusinessRuleException("Estagiários usam vínculos de estágio e participações existentes.");
         }
         usuario.validateActive();
@@ -188,7 +188,7 @@ public class VinculoOperacionalUsuarioService {
             throw UsuarioRejectedException.pendenteExigeAprovacao();
         }
         usuario.substituirLaboratorios(laboratoriosDaPessoa.resolver(
-            laboratorioIds, usuario.getUnidade(), usuario.getPerfil(), usuario.getLaboratorios()));
+            laboratorioIds, usuario.getUnidade(), usuario.getPapeis(), usuario.getLaboratorios()));
     }
 
     @Transactional(readOnly = true)
@@ -208,7 +208,7 @@ public class VinculoOperacionalUsuarioService {
 
     // Granting labs and contexts is what authorizes operations, so only gestão may change it.
     private static void exigirGestao() {
-        if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
+        if (!PapelPolicy.isGestao(CurrentUser.get().papeis())) {
             throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratórios.");
         }
     }
@@ -225,8 +225,8 @@ public class VinculoOperacionalUsuarioService {
         if (ator.publicId().equals(alvo.getPublicId())) {
             throw new AccessDeniedException("Ninguém pode alterar os próprios vínculos ou laboratórios.");
         }
-        if (!PerfilPolicy.podeConceder(ator.perfil(), alvo.getPerfil())) {
-            throw new AccessDeniedException("Seu perfil não pode alterar os vínculos de um usuário " + alvo.getPerfil() + ".");
+        if (!PapelPolicy.podeAlterar(ator.papeis(), alvo.getPapeis())) {
+            throw new AccessDeniedException("Seus papéis não permitem alterar os vínculos de um usuário com papéis " + alvo.getPapeis() + ".");
         }
     }
 }

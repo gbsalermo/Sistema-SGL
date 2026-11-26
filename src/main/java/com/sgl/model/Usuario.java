@@ -2,6 +2,7 @@ package com.sgl.model;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -10,11 +11,15 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.exception.BusinessRuleException;
+import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.model.enums.OrigemUsuario;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -62,9 +67,18 @@ public class Usuario {
     @Column
     private String senha;
 
+    // Accumulable system roles; "responsável" is not here because it is derived from Laboratorio.responsavel.
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "usuario_papeis", joinColumns = @JoinColumn(name = "usuario_id"))
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Perfil perfil;
+    @Column(name = "papel", length = 40, nullable = false)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private Set<PapelSistema> papeis = new LinkedHashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "categoria_cargo", length = 20)
+    private CategoriaCargo categoriaCargo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unidade_id")
@@ -126,7 +140,7 @@ public class Usuario {
         this.nome = nome;
         this.email = email;
         this.senha = senha;
-        this.perfil = perfil;
+        setPerfil(perfil);
         this.unidade = unidade;
         if (laboratorio != null) {
             this.laboratorios.add(laboratorio);
@@ -162,8 +176,40 @@ public class Usuario {
         laboratorios.clear();
     }
 
+    public Set<PapelSistema> getPapeis() {
+        return Collections.unmodifiableSet(papeis);
+    }
+
+    // Mutates the managed collection in place so Hibernate tracks the change as row diffs.
+    public void substituirPapeis(Collection<PapelSistema> novos) {
+        papeis.clear();
+        papeis.addAll(novos);
+    }
+
+    public boolean temPapel(PapelSistema papel) {
+        return papeis.contains(papel);
+    }
+
+    public boolean isEstagiario() {
+        return categoriaCargo == CategoriaCargo.ESTAGIARIO;
+    }
+
+    /**
+     * Describes the person in the former single-profile vocabulary (seeders and fixtures):
+     * a management profile becomes the only role, a job profile becomes the category with no role.
+     */
+    @Deprecated
+    public void setPerfil(Perfil perfil) {
+        if (perfil == null) {
+            return;
+        }
+        // A single profile was the whole description, so it replaces both roles and category.
+        substituirPapeis(perfil.papel() == null ? List.of() : List.of(perfil.papel()));
+        this.categoriaCargo = perfil.categoria();
+    }
+
     public void validateInternProfile() {
-        if (perfil != Perfil.ESTAGIARIO) {
+        if (!isEstagiario()) {
             throw new BusinessRuleException(
                     "Usuário deve ter perfil ESTAGIARIO para cadastro de estagiário."
             );

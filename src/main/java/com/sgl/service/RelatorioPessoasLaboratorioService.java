@@ -67,18 +67,18 @@ public class RelatorioPessoasLaboratorioService {
                 .collect(Collectors.toMap(Estagiario::getId, Function.identity(), (a, b) -> a));
 
         List<RelatorioPessoaLaboratorioItemDTO> pessoas = vinculados.stream()
-                .filter(usuario -> perfil == null || usuario.getPerfil() == perfil)
+                .filter(usuario -> perfil == null || perfil.descreve(usuario.getPapeis(), usuario.getCategoriaCargo()))
                 .filter(usuario -> ativo == null || Boolean.TRUE.equals(usuario.getAtivo()) == ativo)
                 .map(usuario -> mapear(usuario, responsavel, estagiariosPorUsuario.get(usuario.getId())))
                 .sorted(Comparator
                         .comparing(RelatorioPessoaLaboratorioItemDTO::getResponsavelLaboratorio).reversed()
-                        .thenComparing(item -> item.getPerfil().name())
+                        .thenComparing(item -> Perfil.legadoDe(item.getPapeis(), item.getCategoriaCargo()).name())
                         .thenComparing(RelatorioPessoaLaboratorioItemDTO::getNome, String.CASE_INSENSITIVE_ORDER))
                 .toList();
 
         Map<Perfil, Long> porPerfil = pessoas.stream()
                 .collect(Collectors.groupingBy(
-                        RelatorioPessoaLaboratorioItemDTO::getPerfil,
+                        item -> Perfil.legadoDe(item.getPapeis(), item.getCategoriaCargo()),
                         LinkedHashMap::new,
                         Collectors.counting()));
 
@@ -110,7 +110,8 @@ public class RelatorioPessoasLaboratorioService {
                 usuario.getPublicId(),
                 usuario.getNome(),
                 usuario.getEmail(),
-                usuario.getPerfil(),
+                usuario.getPapeis(),
+                usuario.getCategoriaCargo(),
                 usuario.getAtivo(),
                 responsavel != null && responsavel.getId().equals(usuario.getId()),
                 estagiario != null ? estagiario.getTipoBolsa() : null,

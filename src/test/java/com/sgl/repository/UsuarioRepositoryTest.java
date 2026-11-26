@@ -22,6 +22,8 @@ import org.springframework.test.context.ActiveProfiles;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.Perfil;
 import com.sgl.tenant.TenantContext;
 import com.sgl.tenant.TenantProvider;
@@ -271,11 +273,11 @@ class UsuarioRepositoryTest {
         PageRequest pagina = PageRequest.of(0, 60);
 
         assertEquals(List.of(ana.getId()),
-                usuarioRepository.buscarIdsParaLoginDeTeste(Perfil.GESTOR, u1.getPublicId(), null, pagina));
+                usuarioRepository.buscarIdsParaLoginDeTeste(PapelSistema.GESTOR, null, u1.getPublicId(), null, pagina));
         assertEquals(List.of(carla.getId()),
-                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, "%ar%", pagina));
+                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, "%ar%", pagina));
         assertEquals(List.of(ana.getId(), bruno.getId(), carla.getId()),
-                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, pagina));
+                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, null, pagina));
     }
 
     @Test
@@ -284,8 +286,8 @@ class UsuarioRepositoryTest {
         PageRequest pagina = PageRequest.of(0, 60);
 
         assertEquals(List.of(cem.getId()),
-                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, "%\\%%", pagina));
-        assertTrue(usuarioRepository.buscarIdsParaLoginDeTeste(null, null, "%\\_%", pagina).isEmpty());
+                usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, "%\\%%", pagina));
+        assertTrue(usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, "%\\_%", pagina).isEmpty());
     }
 
     @Test
@@ -294,7 +296,7 @@ class UsuarioRepositoryTest {
         criarUsuarioDeTeste("Dois", "dois.login", Perfil.GESTOR, null, true);
         criarUsuarioDeTeste("Tres", "tres.login", Perfil.GESTOR, null, true);
 
-        assertEquals(2, usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, PageRequest.of(0, 2)).size());
+        assertEquals(2, usuarioRepository.buscarIdsParaLoginDeTeste(null, null, null, null, PageRequest.of(0, 2)).size());
     }
 
     @Test
@@ -305,9 +307,14 @@ class UsuarioRepositoryTest {
         assertEquals(Map.of(Perfil.GESTOR, 2L, Perfil.TECNICO, 1L), contagem(null));
     }
 
+    // Same buckets as the former per-profile count: roles, then job categories of people with no role.
     private Map<Perfil, Long> contagem(Unidade unidade) {
         UUID id = unidade == null ? null : unidade.getPublicId();
-        return usuarioRepository.contarAtivosComLoginPorPerfil(id).stream()
-                .collect(Collectors.toMap(linha -> (Perfil) linha[0], linha -> (Long) linha[1]));
+        Map<Perfil, Long> porPerfil = new java.util.HashMap<>();
+        usuarioRepository.contarAtivosComLoginPorPapel(id).forEach(linha ->
+                porPerfil.put(Perfil.legadoDe(java.util.Set.of((PapelSistema) linha[0]), null), (Long) linha[1]));
+        usuarioRepository.contarAtivosComLoginSemPapelPorCategoria(id).forEach(linha ->
+                porPerfil.put(Perfil.valueOf(((CategoriaCargo) linha[0]).name()), (Long) linha[1]));
+        return porPerfil;
     }
 }
