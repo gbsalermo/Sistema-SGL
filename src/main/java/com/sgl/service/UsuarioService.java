@@ -148,6 +148,10 @@ public class UsuarioService {
 
         usuario.setNome(dto.getNome());
         usuario.setEmail(dto.getEmail());
+        if (!usuario.getPapeis().equals(papeis)) {
+            AUDIT.info("acao=PAPEIS_ALTERADOS ator={} alvo={} antes={} depois={}",
+                    CurrentUser.get().publicId(), usuario.getPublicId(), Set.copyOf(usuario.getPapeis()), papeis);
+        }
         usuario.substituirPapeis(papeis);
         usuario.setCategoriaCargo(categoria);
         usuario.setUnidade(unidade);
@@ -303,6 +307,9 @@ public class UsuarioService {
 
         if (mudaAcesso) {
             boolean desativando = mudaAtivo && Boolean.FALSE.equals(dto.getAtivo());
+            // Roles added in the same request are checked even when deactivating: "null keeps roles" on a
+            // later reactivation would otherwise hand them over without anyone having granted them.
+            papeis.stream().filter(papel -> !usuario.temPapel(papel)).forEach(papel -> exigirPodeConceder(ator, papel));
             validarMudancaDeAcesso(usuario, desativando ? null : papeis);
         } else if (!ator.publicId().equals(usuario.getPublicId())
                 && !PapelPolicy.podeAlterar(ator.papeis(), usuario.getPapeis())) {

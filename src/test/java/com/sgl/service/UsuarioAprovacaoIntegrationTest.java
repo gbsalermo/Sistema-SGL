@@ -17,6 +17,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -54,6 +57,7 @@ import com.sgl.tenant.TenantContext;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(CorporateGatewayTestConfig.class)
+@ExtendWith(OutputCaptureExtension.class)
 class UsuarioAprovacaoIntegrationTest {
 
     private static final int CODIGO = 7;
@@ -506,6 +510,41 @@ class UsuarioAprovacaoIntegrationTest {
 
         mockMvc.perform(trocarCategoria(admin, gestor, "PESQUISADOR"))
                 .andExpect(status().isForbidden());
+    }
+
+    // Deactivating must not let someone slip in a role they could never grant: it would come back on reactivation.
+    @Test
+    void atualizar_gestorDesativandoEPromovendo_403() throws Exception {
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(put(USUARIOS + "/" + tecnico.getPublicId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(gestor))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"nome":"Tecnico","email":"tec-%s@embrapa.br","papeis":["ADMINISTRADOR_GERAL"],"unidadeId":"%s","ativo":false}
+                            """.formatted(UUID.randomUUID(), unidade.getPublicId())))
+                .andExpect(status().isForbidden());
+
+        Usuario salvo = usuarioRepository.findByPublicId(tecnico.getPublicId()).orElseThrow();
+        assertThat(salvo.getPapeis()).isEmpty();
+        assertThat(salvo.getAtivo()).isTrue();
+    }
+
+    @Test
+    void atualizar_concedendoPapel_registraAuditoria(CapturedOutput output) throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(put(USUARIOS + "/" + tecnico.getPublicId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"nome":"Tecnico","email":"tec-%s@embrapa.br","papeis":["GESTOR"],"unidadeId":"%s","laboratorioIds":["%s"]}
+                            """.formatted(UUID.randomUUID(), unidade.getPublicId(), laboratorio.getPublicId())))
+                .andExpect(status().isOk());
+
+        assertThat(output.getOut()).contains("acao=PAPEIS_ALTERADOS")
+                .contains("alvo=" + tecnico.getPublicId());
     }
 
     private org.springframework.test.web.servlet.RequestBuilder aprovar(Usuario alvo, Usuario ator, String perfil, Laboratorio lab) {
