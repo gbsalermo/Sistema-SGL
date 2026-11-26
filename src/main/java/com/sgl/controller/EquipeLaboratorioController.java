@@ -8,13 +8,17 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.corporate.TipoPessoaCorporativa;
+import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.request.ImportarLoteRequestDTO;
+import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
+import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
 import com.sgl.dto.response.MembroEquipeResponseDTO;
 import com.sgl.dto.response.PessoaCorporativaResponseDTO;
 import com.sgl.dto.response.ResultadoImportacaoDTO;
@@ -52,6 +56,33 @@ public class EquipeLaboratorioController {
     public List<ResultadoImportacaoDTO> importar(@PathVariable UUID laboratorioId,
             @Valid @RequestBody ImportarLoteRequestDTO lote) {
         return service.importar(laboratorioId, lote);
+    }
+
+    @Operation(summary = "Listar acessos temporários ao laboratório", description = "Vigentes primeiro.")
+    @GetMapping("/vinculos")
+    public List<VinculoOperacionalUsuarioResponseDTO> listarVinculos(@PathVariable UUID laboratorioId) {
+        return service.listarVinculos(laboratorioId);
+    }
+
+    @Operation(summary = "Dar acesso temporário ao laboratório")
+    @PostMapping("/vinculos")
+    public VinculoOperacionalUsuarioResponseDTO criarVinculo(@PathVariable UUID laboratorioId,
+            @Valid @RequestBody VinculoOperacionalUsuarioRequestDTO dto) {
+        return service.criarVinculo(laboratorioId, dto);
+    }
+
+    @Operation(summary = "Editar acesso temporário ao laboratório")
+    @PutMapping("/vinculos/{vinculoId}")
+    public VinculoOperacionalUsuarioResponseDTO editarVinculo(@PathVariable UUID laboratorioId,
+            @PathVariable UUID vinculoId, @Valid @RequestBody EditarVinculoOperacionalRequestDTO dto) {
+        return service.editarVinculo(laboratorioId, vinculoId, dto);
+    }
+
+    @Operation(summary = "Encerrar acesso temporário ao laboratório")
+    @PutMapping("/vinculos/{vinculoId}/encerrar")
+    public VinculoOperacionalUsuarioResponseDTO encerrarVinculo(@PathVariable UUID laboratorioId,
+            @PathVariable UUID vinculoId) {
+        return service.encerrarVinculo(laboratorioId, vinculoId);
     }
 
     @Operation(summary = "Incluir pessoa já cadastrada na equipe", description = "Idempotente: incluir quem já é da equipe não muda nada.")

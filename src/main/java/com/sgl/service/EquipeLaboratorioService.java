@@ -17,7 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgl.corporate.TipoPessoaCorporativa;
+import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.request.ImportarLoteRequestDTO;
+import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
+import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
 import com.sgl.dto.response.MembroEquipeResponseDTO;
 import com.sgl.dto.response.PessoaCorporativaResponseDTO;
 import com.sgl.dto.response.ResultadoImportacaoDTO;
@@ -54,6 +57,7 @@ public class EquipeLaboratorioService {
     private final UsuarioRepository usuarioRepository;
     private final VinculoOperacionalUsuarioRepository vinculoRepository;
     private final PessoaCorporativaService pessoaCorporativaService;
+    private final VinculoOperacionalUsuarioService vinculoOperacionalService;
     private final Clock clock;
 
     /**
@@ -185,6 +189,23 @@ public class EquipeLaboratorioService {
             LOG.warn("Importação em lote: falha em uma pessoa: {}", e.getClass().getSimpleName());
             return new ResultadoImportacaoDTO(item.referencia(), null, Resultado.ERRO, e.getMessage());
         }
+    }
+
+    public List<VinculoOperacionalUsuarioResponseDTO> listarVinculos(UUID laboratorioId) {
+        return vinculoOperacionalService.listarDaEquipe(exigirGestaoDaEquipe(laboratorioId));
+    }
+
+    public VinculoOperacionalUsuarioResponseDTO criarVinculo(UUID laboratorioId, VinculoOperacionalUsuarioRequestDTO dto) {
+        return vinculoOperacionalService.criarNaEquipe(exigirGestaoDaEquipe(laboratorioId), dto);
+    }
+
+    public VinculoOperacionalUsuarioResponseDTO editarVinculo(UUID laboratorioId, UUID vinculoId,
+            EditarVinculoOperacionalRequestDTO dto) {
+        return vinculoOperacionalService.editarNaEquipe(exigirGestaoDaEquipe(laboratorioId), vinculoId, dto);
+    }
+
+    public VinculoOperacionalUsuarioResponseDTO encerrarVinculo(UUID laboratorioId, UUID vinculoId) {
+        return vinculoOperacionalService.encerrarNaEquipe(exigirGestaoDaEquipe(laboratorioId), vinculoId);
     }
 
     private Usuario alvoDaUnidade(UUID usuarioId) {

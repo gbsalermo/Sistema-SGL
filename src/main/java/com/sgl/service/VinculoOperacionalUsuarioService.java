@@ -75,6 +75,64 @@ public class VinculoOperacionalUsuarioService {
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
         exigirAutoridadeSobre(usuario);
+        return criarVinculo(dto, usuario);
+    }
+
+    /**
+     * Creates a link to the laboratory whose team is being managed; the caller has already checked who
+     * manages that team, so only "nobody grants access to themselves" is checked here.
+     */
+    @Transactional
+    public VinculoOperacionalUsuarioResponseDTO criarNaEquipe(Laboratorio laboratorio, VinculoOperacionalUsuarioRequestDTO dto) {
+        if (!laboratorio.getPublicId().equals(dto.getLaboratorioId())) {
+            throw new BusinessRuleException("O acesso temporário precisa ser para o laboratório desta equipe.");
+        }
+        Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), unidade())
+            .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
+        exigirOutraPessoa(usuario);
+        return criarVinculo(dto, usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VinculoOperacionalUsuarioResponseDTO> listarDaEquipe(Laboratorio laboratorio) {
+        LocalDate hoje = LocalDate.now();
+        return vinculos.findByUsuarioUnidadePublicId(unidade()).stream()
+            .filter(v -> v.getLaboratorio().getId().equals(laboratorio.getId()))
+            .sorted(java.util.Comparator.comparing((VinculoOperacionalUsuario v) -> !v.vigente(hoje))
+                .thenComparing(VinculoOperacionalUsuario::getDataInicio, java.util.Comparator.reverseOrder()))
+            .map(VinculoOperacionalUsuarioResponseDTO::new)
+            .toList();
+    }
+
+    @Transactional
+    public VinculoOperacionalUsuarioResponseDTO editarNaEquipe(Laboratorio laboratorio, UUID id, EditarVinculoOperacionalRequestDTO dto) {
+        VinculoOperacionalUsuario v = vinculoDaEquipe(laboratorio, id);
+        exigirOutraPessoa(v.getUsuario());
+        return editarVinculo(v, dto);
+    }
+
+    @Transactional
+    public VinculoOperacionalUsuarioResponseDTO encerrarNaEquipe(Laboratorio laboratorio, UUID id) {
+        VinculoOperacionalUsuario v = vinculoDaEquipe(laboratorio, id);
+        exigirOutraPessoa(v.getUsuario());
+        return encerrarVinculo(v);
+    }
+
+    // A link of another laboratory is "not found" through this team, as if it did not exist.
+    private VinculoOperacionalUsuario vinculoDaEquipe(Laboratorio laboratorio, UUID id) {
+        return vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
+            .filter(v -> v.getLaboratorio().getId().equals(laboratorio.getId()))
+            .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
+    }
+
+    private static void exigirOutraPessoa(Usuario alvo) {
+        if (CurrentUser.get().publicId().equals(alvo.getPublicId())) {
+            throw new AccessDeniedException("Ninguém concede acesso a si mesmo.");
+        }
+    }
+
+    private VinculoOperacionalUsuarioResponseDTO criarVinculo(VinculoOperacionalUsuarioRequestDTO dto, Usuario usuario) {
+        UUID tenant = unidade();
         if (usuario.isEstagiario()) {
             throw new BusinessRuleException("Estagiários usam vínculos de estágio e participações existentes.");
         }
@@ -142,6 +200,10 @@ public class VinculoOperacionalUsuarioService {
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         exigirAutoridadeSobre(v.getUsuario());
+        return editarVinculo(v, dto);
+    }
+
+    private VinculoOperacionalUsuarioResponseDTO editarVinculo(VinculoOperacionalUsuario v, EditarVinculoOperacionalRequestDTO dto) {
         if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo encerrado não pode ser editado.");
         }
@@ -167,6 +229,10 @@ public class VinculoOperacionalUsuarioService {
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         exigirAutoridadeSobre(v.getUsuario());
+        return encerrarVinculo(v);
+    }
+
+    private static VinculoOperacionalUsuarioResponseDTO encerrarVinculo(VinculoOperacionalUsuario v) {
         if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo já encerrado.");
         }
