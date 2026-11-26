@@ -93,7 +93,7 @@ public class ApiSecurityConfig {
                                 AuthorityAuthorizationManager.hasAuthority(
                                         JwtAuthenticationFilter.ACTIVE_AUTHORITY),
                                 AuthorityAuthorizationManager.hasAnyRole(
-                                        Perfil.ADMINISTRADOR.name(), Perfil.ADMINISTRADOR_GERAL.name())));
+                                        PapelSistema.ADMINISTRADOR_LOCAL.name(), PapelSistema.ADMINISTRADOR_GERAL.name())));
                 autorizarGravacoes(auth);
                 auth.anyRequest().hasAuthority(JwtAuthenticationFilter.ACTIVE_AUTHORITY);
             })
