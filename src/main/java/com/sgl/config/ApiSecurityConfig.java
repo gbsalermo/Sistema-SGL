@@ -86,6 +86,14 @@ public class ApiSecurityConfig {
                 }
                 // A PENDENTE_VINCULACAO user may only ask "who am I" until an admin approves them.
                 auth.requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated();
+                // A listagem completa do catálogo pode conter produtos ainda sem estoque.
+                // Restringir a consulta administrativa às mesmas funções que cadastram produtos.
+                auth.requestMatchers(HttpMethod.GET, "/api/v1/produtos/catalogo").access(
+                        AuthorizationManagers.allOf(
+                                AuthorityAuthorizationManager.hasAuthority(
+                                        JwtAuthenticationFilter.ACTIVE_AUTHORITY),
+                                AuthorityAuthorizationManager.hasAnyRole(
+                                        Perfil.ADMINISTRADOR.name(), Perfil.ADMINISTRADOR_GERAL.name())));
                 autorizarGravacoes(auth);
                 auth.anyRequest().hasAuthority(JwtAuthenticationFilter.ACTIVE_AUTHORITY);
             })

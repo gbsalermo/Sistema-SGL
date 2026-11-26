@@ -39,6 +39,7 @@ import com.sgl.model.Cultura;
 import com.sgl.model.Estagiario;
 import com.sgl.model.HistoricoSincronizacaoVinculoEstagio;
 import com.sgl.model.Laboratorio;
+import com.sgl.model.Bolsa;
 import com.sgl.model.Projeto;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
@@ -104,6 +105,9 @@ class VinculoEstagioServiceTest {
 
     @Mock
     private HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoRepository;
+
+    @Mock
+    private BolsaService bolsaService;
 
     @InjectMocks
     private VinculoEstagioService service;
@@ -870,8 +874,13 @@ class VinculoEstagioServiceTest {
 
         NovaBolsaVinculoEstagioRequestDTO dto =
                 new NovaBolsaVinculoEstagioRequestDTO();
-        dto.setTipoBolsa(TipoBolsa.BOLSA_CAPES);
+        // Bolsa de catálogo não depende do enum legado.
         dto.setEspecificacaoBolsa("  Bolsa Growth  ");
+        UUID bolsaId = UUID.fromString("20000000-0000-0000-0000-000000000051");
+        Bolsa bolsa = Bolsa.builder().publicId(bolsaId).nome("Bolsa específica FAPESB")
+                .unidade(unidade).ativo(true).build();
+        dto.setBolsaId(bolsaId);
+        when(bolsaService.validarEscolha(null, bolsaId)).thenReturn(bolsa);
         dto.setDataInicio(hoje);
         dto.setDataFimPrevista(hoje.plusMonths(8));
 
@@ -879,8 +888,10 @@ class VinculoEstagioServiceTest {
                 service.registrarNovaBolsaLocal(VINCULO_ID, dto);
 
         assertEquals(novoVinculoId, resultado.getId());
-        assertEquals(TipoBolsa.BOLSA_CAPES, resultado.getTipoBolsa());
+        assertEquals(null, resultado.getTipoBolsa());
         assertEquals("Bolsa Growth", resultado.getReferenciaInstitucional());
+        assertEquals(bolsaId, resultado.getBolsaId());
+        assertEquals("Bolsa específica FAPESB", resultado.getBolsaNome());
         assertEquals(SituacaoEstagio.FINALIZADO, atual.getSituacao());
         assertEquals(hoje.minusDays(1), atual.getDataFimEfetiva());
         assertEquals(novoVinculoId,

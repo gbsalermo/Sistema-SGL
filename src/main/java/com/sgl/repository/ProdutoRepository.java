@@ -62,6 +62,24 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
             @Param("unidadePublicId") UUID unidadePublicId
     );
 
+    /**
+     * Catálogo administrativo da Unidade: inclui produtos ainda sem estoque,
+     * mas não expõe produtos cadastrados exclusivamente em outra Unidade.
+     */
+    @Query("""
+            SELECT DISTINCT p FROM Produto p
+            LEFT JOIN p.unidadeCadastro uc
+            WHERE uc.publicId = :unidadeId
+               OR EXISTS (
+                   SELECT ec.id FROM EstoqueCentral ec
+                   WHERE ec.produto = p
+                     AND ec.unidade.publicId = :unidadeId
+               )
+            ORDER BY p.nome
+            """)
+    List<Produto> findCatalogoAdministrativoDaUnidade(
+            @Param("unidadeId") UUID unidadeId);
+
     boolean existsByCodigoReferencia(String codigoReferencia);
 
     boolean existsByCodigoReferenciaAndIdNot(

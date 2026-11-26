@@ -11,8 +11,10 @@ import com.sgl.dto.response.ProdutoResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Produto;
+import com.sgl.model.Unidade;
 import com.sgl.model.enums.NivelRisco;
 import com.sgl.repository.ProdutoRepository;
+import com.sgl.repository.UnidadeRepository;
 import com.sgl.tenant.TenantContext;
 
 import lombok.RequiredArgsConstructor;
@@ -22,11 +24,18 @@ import lombok.RequiredArgsConstructor;
 public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
+    private final UnidadeRepository unidadeRepository;
 
     @Transactional
     public ProdutoResponseDTO criar(ProdutoRequestDTO dto) {
+        UUID unidadeId = TenantContext.unidadeAtual()
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Unidade em operação é obrigatória para cadastrar produtos."));
+        Unidade unidade = unidadeRepository.findByPublicId(unidadeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Unidade", unidadeId));
         Produto produto = new Produto();
         preencherProduto(produto, dto);
+        produto.setUnidadeCadastro(unidade);
         return new ProdutoResponseDTO(produtoRepository.save(produto));
     }
 
@@ -35,6 +44,19 @@ public class ProdutoService {
         return produtosVisiveis().stream()
                 .map(ProdutoResponseDTO::new)
                 .toList();
+    }
+
+    /**
+     * Cadastro administrativo não depende de disponibilidade física de estoque.
+     * A consulta operacional /produtos continua inalterada.
+     */
+    @Transactional(readOnly = true)
+    public List<ProdutoResponseDTO> listarCatalogoAdministrativo() {
+        UUID unidadeId = TenantContext.unidadeAtual()
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Unidade em operação é obrigatória para consultar o catálogo."));
+        return produtoRepository.findCatalogoAdministrativoDaUnidade(unidadeId).stream()
+                .map(ProdutoResponseDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
@@ -92,9 +114,12 @@ public class ProdutoService {
         Produto produto = produtoRepository.findByPublicId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto", id));
 
-        if (TenantContext.unidadeAtual()
-                .map(unidadeId -> !produtoRepository.pertenceAUnidade(id, unidadeId))
-                .orElse(false)) {
+        if (TenantContext.unidadeAtual().map(unidadeId -> {
+            boolean possuiEstoqueNaUnidade = produtoRepository.pertenceAUnidade(id, unidadeId);
+            boolean cadastradoNaUnidade = produto.getUnidadeCadastro() != null
+                    && unidadeId.equals(produto.getUnidadeCadastro().getPublicId());
+            return !possuiEstoqueNaUnidade && !cadastradoNaUnidade;
+        }).orElse(false)) {
             throw new ResourceNotFoundException("Produto", id);
         }
 
