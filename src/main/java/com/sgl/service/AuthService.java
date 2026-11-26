@@ -24,6 +24,7 @@ import com.sgl.corporate.LoginNormalizer;
 import com.sgl.corporate.CategoriaCargoResolver;
 import com.sgl.corporate.TipoPessoaCorporativa;
 import com.sgl.dto.response.AuthConfigResponseDTO;
+import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.LoginResponseDTO;
 import com.sgl.dto.response.UsuarioSessaoResponseDTO;
 import com.sgl.exception.LoginRejectedException;
@@ -34,6 +35,7 @@ import com.sgl.model.enums.OrigemUsuario;
 import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.security.CurrentUser;
@@ -59,6 +61,7 @@ public class AuthService {
 
     private final CorporateApiClient corporateApiClient;
     private final UsuarioRepository usuarioRepository;
+    private final LaboratorioRepository laboratorioRepository;
     private final UnidadeRepository unidadeRepository;
     private final JwtService jwtService;
     private final LoginRateLimiter rateLimiter;
@@ -70,8 +73,9 @@ public class AuthService {
     public AuthService(CorporateApiClient corporateApiClient, UsuarioRepository usuarioRepository,
             UnidadeRepository unidadeRepository, JwtService jwtService, LoginRateLimiter rateLimiter,
             AuthProperties authProperties, Clock clock, Environment environment,
-            MudancaLotacaoService mudancaLotacaoService) {
+            MudancaLotacaoService mudancaLotacaoService, LaboratorioRepository laboratorioRepository) {
         this.corporateApiClient = corporateApiClient;
+        this.laboratorioRepository = laboratorioRepository;
         this.usuarioRepository = usuarioRepository;
         this.unidadeRepository = unidadeRepository;
         this.jwtService = jwtService;
@@ -152,9 +156,12 @@ public class AuthService {
     }
 
     private UsuarioSessaoResponseDTO sessionUser(UUID publicId) {
-        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(publicId)
-                .map(UsuarioSessaoResponseDTO::new)
+        Usuario usuario = usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário da sessão não encontrado."));
+        UsuarioSessaoResponseDTO sessao = new UsuarioSessaoResponseDTO(usuario);
+        sessao.setResponsavelPor(laboratorioRepository.findByResponsavelIdAndAtivoTrueOrderByNome(usuario.getId())
+                .stream().map(LaboratorioResumoDTO::de).toList());
+        return sessao;
     }
 
     // Profile, laboratório and vínculos belong to the SGL and are never overwritten by synchronization.

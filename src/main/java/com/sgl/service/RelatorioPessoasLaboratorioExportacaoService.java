@@ -90,7 +90,7 @@ public class RelatorioPessoasLaboratorioExportacaoService {
                 tabela.addCell(celulaPdf(Boolean.TRUE.equals(item.getResponsavelLaboratorio()) ? "Responsável" : "Vinculado"));
                 tabela.addCell(celulaPdf(texto(item.getNome())));
                 tabela.addCell(celulaPdf(texto(item.getEmail())));
-                tabela.addCell(celulaPdf(rotulo(item.getPerfil())));
+                tabela.addCell(celulaPdf(rotulo(Perfil.legadoDe(item.getPapeis(), item.getCategoriaCargo()))));
                 tabela.addCell(celulaPdf(Boolean.TRUE.equals(item.getAtivo()) ? "Ativo" : "Inativo"));
                 tabela.addCell(celulaPdf(item.getTipoVinculoEstagio() == null ? "—" : rotulo(item.getTipoVinculoEstagio())));
                 tabela.addCell(celulaPdf(data(item.getDataInicioEstagio())));
@@ -161,7 +161,7 @@ public class RelatorioPessoasLaboratorioExportacaoService {
                 row.createCell(0).setCellValue(Boolean.TRUE.equals(item.getResponsavelLaboratorio()) ? "Responsável" : "Vinculado");
                 row.createCell(1).setCellValue(texto(item.getNome()));
                 row.createCell(2).setCellValue(texto(item.getEmail()));
-                row.createCell(3).setCellValue(rotulo(item.getPerfil()));
+                row.createCell(3).setCellValue(rotulo(Perfil.legadoDe(item.getPapeis(), item.getCategoriaCargo())));
                 row.createCell(4).setCellValue(Boolean.TRUE.equals(item.getAtivo()) ? "Ativo" : "Inativo");
                 row.createCell(5).setCellValue(item.getTipoVinculoEstagio() == null ? "—" : rotulo(item.getTipoVinculoEstagio()));
                 row.createCell(6).setCellValue(data(item.getDataInicioEstagio()));

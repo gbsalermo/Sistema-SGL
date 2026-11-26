@@ -18,7 +18,7 @@ import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,7 +44,7 @@ public class CargoSubstituicaoService {
 
     @Transactional(readOnly = true)
     public List<CargoSubstituicaoDTO> listar() {
-        if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
+        if (!PapelPolicy.isGestao(CurrentUser.get().papeis())) {
             throw new AccessDeniedException("Apenas gestão pode ver os cargos a substituir.");
         }
         // Sem Unidade em operação não há "unidade do gestor": falha fechado em vez de listar tudo.

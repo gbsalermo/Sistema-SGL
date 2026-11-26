@@ -203,12 +203,9 @@ public class Usuario {
         if (perfil == null) {
             return;
         }
-        if (perfil.papel() != null) {
-            substituirPapeis(List.of(perfil.papel()));
-        } else {
-            substituirPapeis(List.of());
-            this.categoriaCargo = perfil.categoria();
-        }
+        // A single profile was the whole description, so it replaces both roles and category.
+        substituirPapeis(perfil.papel() == null ? List.of() : List.of(perfil.papel()));
+        this.categoriaCargo = perfil.categoria();
     }
 
     public void validateInternProfile() {

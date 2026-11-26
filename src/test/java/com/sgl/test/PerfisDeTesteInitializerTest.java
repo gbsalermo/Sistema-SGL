@@ -90,15 +90,30 @@ class PerfisDeTesteInitializerTest {
         cadastrarUnidades();
         initializer().criarUsuariosDeTeste();
 
-        List<Usuario> usuarios = usuariosDeTeste();
+        List<Usuario> usuarios = usuariosDeTeste().stream()
+                .filter(u -> !u.getLogin().startsWith("teste.gestor-responsavel"))
+                .toList();
         assertEquals(21, usuarios.size());
         Map<Perfil, Long> porPerfil = usuarios.stream()
-                .collect(Collectors.groupingBy(Usuario::getPerfil, Collectors.counting()));
+                .collect(Collectors.groupingBy(u -> Perfil.legadoDe(u.getPapeis(), u.getCategoriaCargo()), Collectors.counting()));
         for (Perfil perfil : Perfil.values()) {
             assertEquals(3L, porPerfil.get(perfil), perfil.name());
         }
         assertTrue(usuarios.stream().allMatch(u -> u.getOrigem() == OrigemUsuario.DEV
                 && Boolean.TRUE.equals(u.getAtivo()) && u.getSituacao() == SituacaoUsuario.ATIVO));
+    }
+
+    // Roles accumulate: one test user is GESTOR and also the responsável of a laboratory.
+    @Test
+    void criaGestorQueTambemEhResponsavelDeLaboratorio() {
+        cadastrarUnidades();
+        initializer().criarUsuariosDeTeste();
+
+        Usuario usuario = porLogin("teste.gestor-responsavel.1");
+        assertEquals(java.util.Set.of(com.sgl.model.enums.PapelSistema.GESTOR), usuario.getPapeis());
+        assertEquals(com.sgl.model.enums.CategoriaCargo.PESQUISADOR, usuario.getCategoriaCargo());
+        Laboratorio laboratorio = laboratorioRepository.findById(u1Lab1.getId()).orElseThrow();
+        assertEquals(usuario.getId(), laboratorio.getResponsavel().getId());
     }
 
     @Test
@@ -138,7 +153,8 @@ class PerfisDeTesteInitializerTest {
         initializer.criarUsuariosDeTeste();
         initializer.criarUsuariosDeTeste();
 
-        assertEquals(21, usuariosDeTeste().size());
+        // 3 per former profile plus the single "gestor e responsável".
+        assertEquals(22, usuariosDeTeste().size());
     }
 
     @Test

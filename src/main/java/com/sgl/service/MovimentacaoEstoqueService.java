@@ -32,7 +32,7 @@ import com.sgl.model.enums.DestinoAjusteEntrada;
 import com.sgl.model.enums.EstadoRecipienteEstoque;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.Perfil;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 import com.sgl.model.enums.TipoAjusteEstoque;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoMovimentacao;
@@ -969,7 +969,7 @@ public class MovimentacaoEstoqueService {
 
 	private void validarPermissaoAjuste(Usuario usuario) {
 
-		if (!PerfilPolicy.isGestao(usuario.getPerfil())) {
+		if (!PapelPolicy.isGestao(usuario.getPapeis())) {
 
 			throw new BusinessRuleException("Somente Gestor ou Administrador " + "pode realizar ajuste de estoque.");
 		}

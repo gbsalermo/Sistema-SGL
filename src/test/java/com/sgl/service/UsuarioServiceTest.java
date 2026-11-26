@@ -32,6 +32,7 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.EstagiarioRepository;
@@ -270,30 +271,30 @@ class UsuarioServiceTest {
     }
 
     @Test
-    void deveAlterarPerfilComSucesso() {
+    void deveAlterarCategoriaComSucesso() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(usuario));
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
 
-        // Usuário criado com perfil TECNICO (não ESTAGIARIO), então
-        // validarAlteracaoPerfil não precisa consultar EstagiarioRepository.
-        UsuarioResponseDTO resultado = usuarioService.alterarPerfil(USUARIO_PUBLIC_ID, Perfil.ANALISTA);
+        // Usuário criado como TECNICO (não ESTAGIARIO), então a saída de estágio
+        // não precisa consultar EstagiarioRepository.
+        UsuarioResponseDTO resultado = usuarioService.alterarCategoriaCargo(USUARIO_PUBLIC_ID, CategoriaCargo.ANALISTA);
 
-        assertEquals(Perfil.ANALISTA, usuario.getPerfil());
+        assertEquals(CategoriaCargo.ANALISTA, usuario.getCategoriaCargo());
         assertEquals(USUARIO_PUBLIC_ID, resultado.getId());
     }
 
     @Test
-    void deveRejeitarAlteracaoDePerfilNulo() {
+    void deveRejeitarCategoriaNula() {
         TenantContext.definir(UNIDADE_PUBLIC_ID);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(USUARIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(usuario));
 
         BusinessRuleException ex = assertThrows(BusinessRuleException.class,
-                () -> usuarioService.alterarPerfil(USUARIO_PUBLIC_ID, null));
+                () -> usuarioService.alterarCategoriaCargo(USUARIO_PUBLIC_ID, null));
 
-        assertEquals("Perfil é obrigatório.", ex.getMessage());
+        assertEquals("Categoria de cargo é obrigatória.", ex.getMessage());
     }
 
     @Test

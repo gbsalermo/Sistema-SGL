@@ -20,6 +20,8 @@ public interface LaboratorioRepository extends JpaRepository<Laboratorio, Long> 
     @Query("SELECT l.publicId FROM Laboratorio l WHERE l.responsavel.id = :usuarioId AND l.ativo = true")
     Set<UUID> findPublicIdsAtivosPorResponsavel(@Param("usuarioId") Long usuarioId);
 
+    List<Laboratorio> findByResponsavelIdAndAtivoTrueOrderByNome(Long responsavelId);
+
     Optional<Laboratorio> findByPublicId(UUID publicId);
     Optional<Laboratorio> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
 

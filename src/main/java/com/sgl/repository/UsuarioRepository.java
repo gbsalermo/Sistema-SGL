@@ -18,16 +18,18 @@ import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
 
 @Repository
+// Every entity graph lists "papeis": a fetch graph turns unlisted attributes lazy, even EAGER ones,
+// and the session principal reads the roles outside any transaction.
 public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
 
     Optional<Usuario> findByPublicId(UUID publicId);
 
     // The security filter runs outside any persistence context, so the Unidade must come loaded.
-    @EntityGraph(attributePaths = "unidade")
+    @EntityGraph(attributePaths = {"unidade", "papeis"})
     Optional<Usuario> findWithUnidadeByPublicId(UUID publicId);
 
     // Session DTOs are built outside a transaction (login is deliberately not transactional).
-    @EntityGraph(attributePaths = {"unidade", "laboratorios"})
+    @EntityGraph(attributePaths = {"unidade", "laboratorios", "papeis"})
     Optional<Usuario> findWithUnidadeAndLaboratoriosByPublicId(UUID publicId);
 
     Optional<Usuario> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);
@@ -38,9 +40,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     Optional<Usuario> findByLogin(String login);
 
     // Login is not transactional and a change of Unidade clears the list, so it must come loaded.
-    @EntityGraph(attributePaths = "laboratorios")
+    @EntityGraph(attributePaths = {"laboratorios", "papeis"})
     Optional<Usuario> findWithLaboratoriosByMatricula(String matricula);
-    @EntityGraph(attributePaths = "laboratorios")
+    @EntityGraph(attributePaths = {"laboratorios", "papeis"})
     Optional<Usuario> findWithLaboratoriosByCpf(String cpf);
 
     // Counts inactive users too: the first-login bootstrap must never run twice.
@@ -102,7 +104,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
                                          Pageable pageable);
 
     // Second step of the paged lookup: collections are fetched here, never together with pagination.
-    @EntityGraph(attributePaths = {"unidade", "laboratorios"})
+    @EntityGraph(attributePaths = {"unidade", "laboratorios", "papeis"})
     List<Usuario> findWithUnidadeAndLaboratoriosByIdIn(Collection<Long> ids);
 
     @Query("""

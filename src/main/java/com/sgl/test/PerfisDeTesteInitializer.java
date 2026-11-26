@@ -20,6 +20,7 @@ import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagio;
 import com.sgl.model.enums.OrigemUsuario;
+import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoEstagio;
 import com.sgl.model.enums.SituacaoUsuario;
@@ -87,6 +88,28 @@ public class PerfisDeTesteInitializer implements CommandLineRunner {
             for (int n = 1; n <= USUARIOS_POR_PERFIL; n++) {
                 criarUsuario(perfil, n, unidades);
             }
+        }
+        criarGestorResponsavel(unidades.get(0));
+    }
+
+    /**
+     * Roles accumulate: this user is GESTOR, a researcher by job, and the responsável of the first
+     * laboratory of the first Unidade, the case the single-profile model could not express.
+     */
+    private void criarGestorResponsavel(Unidade unidade) {
+        String login = "teste.gestor-responsavel.1";
+        if (usuarioRepository.findByLogin(login).isPresent()) {
+            return;
+        }
+        List<Laboratorio> laboratorios = laboratorioRepository.findByUnidadePublicId(unidade.getPublicId());
+        Laboratorio laboratorio = laboratorios.isEmpty() ? null : laboratorios.get(0);
+        Usuario usuario = new Usuario(null, null, "Gestor e responsável de Teste 1", login + "@sgl.local",
+                passwordEncoder.encode(SENHA_TESTE), Perfil.GESTOR, unidade, laboratorio, true);
+        usuario.setCategoriaCargo(CategoriaCargo.PESQUISADOR);
+        usuario = usuarioRepository.save(prepararUsuarioDeTeste(usuario, login));
+        if (laboratorio != null) {
+            laboratorio.setResponsavel(usuario);
+            laboratorioRepository.save(laboratorio);
         }
     }
 

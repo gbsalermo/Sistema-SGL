@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -28,12 +29,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgl.config.SecurityConfig;
-import com.sgl.dto.request.UsuarioPerfilRequestDTO;
+import com.sgl.dto.request.UsuarioPapeisRequestDTO;
 import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.LaboratorioResumoDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.exception.ResourceNotFoundException;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.service.UsuarioService;
 
@@ -84,7 +86,9 @@ class UsuarioControllerTest {
                 USUARIO_PUBLIC_ID,
                 "Maria Oliveira",
                 "maria.oliveira@ufrb.edu.br",
-                Perfil.PESQUISADOR,
+                Set.of(),
+                CategoriaCargo.PESQUISADOR,
+                "Pesquisador A",
                 UNIDADE_PUBLIC_ID,
                 "Instituto de Química",
                 "IQ",
@@ -137,7 +141,7 @@ class UsuarioControllerTest {
     void deveCriarUsuarioERetornar201() throws Exception {
         UsuarioRequestDTO dto = new UsuarioRequestDTO(
                 "Maria Oliveira", "maria.oliveira@ufrb.edu.br", "SenhaForte123!",
-                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
+                List.of(), CategoriaCargo.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
         when(usuarioService.criar(any(UsuarioRequestDTO.class))).thenReturn(montarResponseDTO());
 
         // UsuarioController.criar usa ResponseEntity.status(HttpStatus.CREATED) explicitamente
@@ -151,7 +155,7 @@ class UsuarioControllerTest {
 
     @Test
     void deveRetornar400AoCriarComCorpoInvalido() throws Exception {
-        // UsuarioRequestDTO exige nome, email e perfil (@NotBlank/@NotNull) e unidadeId
+        // UsuarioRequestDTO exige nome e email (@NotBlank) e unidadeId
         // (@NotNull) - corpo vazio viola todos.
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -163,11 +167,11 @@ class UsuarioControllerTest {
     void deveAtualizarUsuarioERetornar200() throws Exception {
         UsuarioRequestDTO dto = new UsuarioRequestDTO(
                 "Maria Oliveira Atualizada", "maria.oliveira@ufrb.edu.br", null,
-                Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
+                List.of(), CategoriaCargo.PESQUISADOR, UNIDADE_PUBLIC_ID, List.of(LABORATORIO_PUBLIC_ID), true);
         when(usuarioService.atualizar(eq(USUARIO_PUBLIC_ID), any(UsuarioRequestDTO.class)))
                 .thenReturn(new UsuarioResponseDTO(
                         USUARIO_PUBLIC_ID, "Maria Oliveira Atualizada", "maria.oliveira@ufrb.edu.br",
-                        Perfil.PESQUISADOR, UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
+                        Set.of(), CategoriaCargo.PESQUISADOR, "Pesquisador A", UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
                         List.of(new LaboratorioResumoDTO(LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true)), true, SituacaoUsuario.ATIVO));
 
         mockMvc.perform(put(BASE_URL + "/{id}", USUARIO_PUBLIC_ID)
@@ -178,19 +182,20 @@ class UsuarioControllerTest {
     }
 
     @Test
-    void deveAlterarPerfilERetornar200() throws Exception {
-        UsuarioPerfilRequestDTO dto = new UsuarioPerfilRequestDTO(Perfil.GESTOR);
-        when(usuarioService.alterarPerfil(USUARIO_PUBLIC_ID, Perfil.GESTOR))
+    void deveAlterarPapeisERetornar200() throws Exception {
+        UsuarioPapeisRequestDTO dto = new UsuarioPapeisRequestDTO(List.of(PapelSistema.GESTOR));
+        when(usuarioService.alterarPapeis(USUARIO_PUBLIC_ID, List.of(PapelSistema.GESTOR)))
                 .thenReturn(new UsuarioResponseDTO(
                         USUARIO_PUBLIC_ID, "Maria Oliveira", "maria.oliveira@ufrb.edu.br",
-                        Perfil.GESTOR, UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
+                        Set.of(PapelSistema.GESTOR), CategoriaCargo.PESQUISADOR, null,
+                        UNIDADE_PUBLIC_ID, "Instituto de Química", "IQ",
                         List.of(new LaboratorioResumoDTO(LABORATORIO_PUBLIC_ID, "Laboratório de Química Orgânica", true)), true, SituacaoUsuario.ATIVO));
 
-        mockMvc.perform(put(BASE_URL + "/{id}/perfil", USUARIO_PUBLIC_ID)
+        mockMvc.perform(put(BASE_URL + "/{id}/papeis", USUARIO_PUBLIC_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.perfil").value("GESTOR"));
+                .andExpect(jsonPath("$.papeis[0]").value("GESTOR"));
     }
 
     @Test

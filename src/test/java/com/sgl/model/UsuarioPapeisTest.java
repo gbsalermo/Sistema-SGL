@@ -3,6 +3,7 @@ package com.sgl.model;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,7 +72,7 @@ class UsuarioPapeisTest {
         usuario.setPerfil(Perfil.ADMINISTRADOR);
 
         assertEquals(Set.of(PapelSistema.ADMINISTRADOR_LOCAL), usuario.getPapeis());
-        assertEquals(CategoriaCargo.PESQUISADOR, usuario.getCategoriaCargo());
+        assertNull(usuario.getCategoriaCargo());
     }
 
     @Test

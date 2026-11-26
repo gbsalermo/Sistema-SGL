@@ -1,11 +1,13 @@
 package com.sgl.dto.response;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,8 +28,14 @@ public class UsuarioSessaoResponseDTO {
     private String nome;
     @Schema(description = "E-mail do usuário, quando houver.")
     private String email;
-    @Schema(description = "Perfil do usuário. Para PENDENTE_VINCULACAO é apenas provisório.")
-    private Perfil perfil;
+    @Schema(description = "Papéis do sistema, acumuláveis. Vazio para quem não tem papel de gestão.")
+    private Set<PapelSistema> papeis;
+    @Schema(description = "Categoria do cargo. Para PENDENTE_VINCULACAO é apenas provisória.")
+    private CategoriaCargo categoriaCargo;
+    @Schema(description = "Cargo informado pela base corporativa, quando houver.")
+    private String cargo;
+    @Schema(description = "Laboratórios ativos de que a pessoa é responsável. Preenchido na sessão (login e /me).")
+    private List<LaboratorioResumoDTO> responsavelPor = List.of();
     @Schema(description = "Situação do cadastro.")
     private SituacaoUsuario situacao;
     @Schema(description = "UUID da Unidade do usuário.")
@@ -46,7 +54,9 @@ public class UsuarioSessaoResponseDTO {
         this.id = usuario.getPublicId();
         this.nome = usuario.getNome();
         this.email = usuario.getEmail();
-        this.perfil = usuario.getPerfil();
+        this.papeis = usuario.getPapeis();
+        this.categoriaCargo = usuario.getCategoriaCargo();
+        this.cargo = usuario.getCargo();
         this.situacao = usuario.getSituacao();
         this.ativo = usuario.getAtivo();
         Unidade unidade = usuario.getUnidade();

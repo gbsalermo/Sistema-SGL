@@ -35,7 +35,7 @@ import com.sgl.model.Usuario;
 import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.OrigemMovimentacao;
 import com.sgl.model.enums.Perfil;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 import com.sgl.model.enums.StatusPedido;
 import com.sgl.model.enums.TipoEmbalagem;
 import com.sgl.model.enums.TipoPedido;
@@ -128,8 +128,8 @@ public class PedidoService {
 			motivoUrgencia = null;
 
 		boolean projetoSemVinculoDireto = projeto != null
-                && usuario.getPerfil() != Perfil.ESTAGIARIO
-                && !PerfilPolicy.isGestao(usuario.getPerfil())
+                && !usuario.isEstagiario()
+                && !PapelPolicy.isGestao(usuario.getPapeis())
                 && !vinculoOperacionalService.vinculadoProjeto(usuario, projeto, dataSolicitacao.toLocalDate());
 
         Pedido pedido = Pedido.builder().usuario(usuario).laboratorio(laboratorio).projeto(projeto)
@@ -494,7 +494,7 @@ public class PedidoService {
 	 * buttons and any active user can call the endpoints directly.
 	 */
 	private static void exigirGestao() {
-		if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
+		if (!PapelPolicy.isGestao(CurrentUser.get().papeis())) {
 			throw new AccessDeniedException("Apenas a Gestão pode aprovar, rejeitar, entregar ou cancelar pedidos.");
 		}
 	}
@@ -560,8 +560,8 @@ public class PedidoService {
 	 * current vínculo there. Gestão and estagiário (bound by their own list) are never flagged.
 	 */
 	private boolean laboratorioForaDoSolicitante(Usuario usuario, Laboratorio laboratorio, LocalDate data) {
-		return usuario.getPerfil() != Perfil.ESTAGIARIO
-				&& !PerfilPolicy.isGestao(usuario.getPerfil())
+		return !usuario.isEstagiario()
+				&& !PapelPolicy.isGestao(usuario.getPapeis())
 				&& !usuario.atuaNoLaboratorio(laboratorio)
 				&& !vinculoOperacionalService.vinculadoLaboratorio(usuario, laboratorio, data);
 	}
@@ -627,7 +627,7 @@ public class PedidoService {
 		UUID unidadeId = TenantContext.unidadeAtual()
 				.orElseThrow(() -> new BusinessRuleException("Unidade operacional não informada."));
 
-		if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
+		if (usuario.isEstagiario()) {
 
 			if (dto.getParticipacaoId() == null) {
 				throw new BusinessRuleException("Selecione uma participação elegível para criar o pedido.");
@@ -705,7 +705,7 @@ public class PedidoService {
 			laboratorio = projeto.resolverLaboratorioOperacional(dto.getLaboratorioId());
 
 		} else if (laboratorio == null) {
-			boolean gestor = PerfilPolicy.isGestao(usuario.getPerfil());
+			boolean gestor = PapelPolicy.isGestao(usuario.getPapeis());
 
 			// Only an unambiguous list can stand in for the missing laboratory; with
 			// several, the request must say which one (falls through to the error below).

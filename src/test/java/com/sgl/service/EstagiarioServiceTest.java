@@ -790,7 +790,8 @@ class EstagiarioServiceTest {
 
         assertEquals(List.of("Carla Admin", "Zilda Analista"),
                 resposta.stream().map(r -> r.nome()).toList());
-        assertEquals(Perfil.ADMINISTRADOR, resposta.get(0).perfil());
+        // An administrator holds a role, not a job category; eligibility came from the cargo.
+        assertEquals(null, resposta.get(0).categoriaCargo());
         assertEquals("ANALISTA A", resposta.get(0).cargo());
     }
 

@@ -34,6 +34,8 @@ import com.sgl.exception.UsuarioRejectedException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.LaboratorioRepository;
@@ -121,12 +123,14 @@ class UsuarioAprovacaoIntegrationTest {
         mockMvc.perform(aprovar(pendente, gestor, "ANALISTA", laboratorio))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.situacao").value("ATIVO"))
-                .andExpect(jsonPath("$.perfil").value("ANALISTA"))
+                .andExpect(jsonPath("$.categoriaCargo").value("ANALISTA"))
+                .andExpect(jsonPath("$.papeis", hasSize(0)))
                 .andExpect(jsonPath("$.laboratorios[0].id").value(laboratorio.getPublicId().toString()));
 
         Usuario salvo = usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(pendente.getPublicId()).orElseThrow();
         assertThat(salvo.getSituacao()).isEqualTo(SituacaoUsuario.ATIVO);
-        assertThat(salvo.getPerfil()).isEqualTo(Perfil.ANALISTA);
+        assertThat(salvo.getCategoriaCargo()).isEqualTo(CategoriaCargo.ANALISTA);
+        assertThat(salvo.getPapeis()).isEmpty();
         assertThat(salvo.getLaboratorios()).extracting(Laboratorio::getPublicId).containsExactly(laboratorio.getPublicId());
     }
 
@@ -227,11 +231,11 @@ class UsuarioAprovacaoIntegrationTest {
     void trocarPerfil_usuarioPendente_409() throws Exception {
         Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        mockMvc.perform(trocarPerfil(pendente, gestor, "ESTAGIARIO"))
+        mockMvc.perform(trocarCategoria(pendente, gestor, "ESTAGIARIO"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("USUARIO_PENDENTE"));
         Usuario salvo = usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow();
-        assertThat(salvo.getPerfil()).isEqualTo(Perfil.TECNICO);
+        assertThat(salvo.getCategoriaCargo()).isEqualTo(CategoriaCargo.TECNICO);
         assertThat(salvo.getSituacao()).isEqualTo(SituacaoUsuario.PENDENTE_VINCULACAO);
     }
 
@@ -242,8 +246,8 @@ class UsuarioAprovacaoIntegrationTest {
         mockMvc.perform(atualizar(pendente, gestor, "ESTAGIARIO", true, null))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("USUARIO_PENDENTE"));
-        assertThat(usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow().getPerfil())
-                .isEqualTo(Perfil.TECNICO);
+        assertThat(usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow().getCategoriaCargo())
+                .isEqualTo(CategoriaCargo.TECNICO);
     }
 
     @Test
@@ -259,7 +263,7 @@ class UsuarioAprovacaoIntegrationTest {
     void trocarPerfil_proprioPerfil_403() throws Exception {
         Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
 
-        mockMvc.perform(trocarPerfil(admin, admin, "TECNICO"))
+        mockMvc.perform(trocarPapeis(admin, admin))
                 .andExpect(status().isForbidden());
     }
 
@@ -268,7 +272,7 @@ class UsuarioAprovacaoIntegrationTest {
         Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
 
         // GESTOR may grant TECNICO, but may not touch someone whose current profile is above theirs.
-        mockMvc.perform(trocarPerfil(admin, gestor, "TECNICO"))
+        mockMvc.perform(trocarPapeis(admin, gestor))
                 .andExpect(status().isForbidden());
     }
 
@@ -277,18 +281,19 @@ class UsuarioAprovacaoIntegrationTest {
         // Unreachable over HTTP today (the actor is itself an active general administrator and cannot
         // change its own profile), so the guard is exercised directly with a synthetic session.
         Usuario ultimo = novoAdministradorGeral(true);
-        assertThat(usuarioRepository.countByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL)).isEqualTo(1);
+        assertThat(usuarioRepository.contarAtivosComPapel(PapelSistema.ADMINISTRADOR_GERAL)).isEqualTo(1);
         AuthenticatedUser ator = new AuthenticatedUser(UUID.randomUUID(), Perfil.ADMINISTRADOR_GERAL,
                 SituacaoUsuario.ATIVO, unidade.getPublicId());
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(ator, null, List.of()));
         TenantContext.definir(unidade.getPublicId());
 
-        assertThatThrownBy(() -> usuarioService.alterarPerfil(ultimo.getPublicId(), Perfil.ADMINISTRADOR))
+        assertThatThrownBy(() -> usuarioService.alterarPapeis(ultimo.getPublicId(),
+                        List.of(PapelSistema.ADMINISTRADOR_LOCAL)))
                 .isInstanceOfSatisfying(UsuarioRejectedException.class,
                         e -> assertThat(e.getCodigo()).isEqualTo("ULTIMO_ADMINISTRADOR_GERAL"));
-        assertThat(usuarioRepository.findByPublicId(ultimo.getPublicId()).orElseThrow().getPerfil())
-                .isEqualTo(Perfil.ADMINISTRADOR_GERAL);
+        assertThat(usuarioRepository.findByPublicId(ultimo.getPublicId()).orElseThrow().getPapeis())
+                .containsExactly(PapelSistema.ADMINISTRADOR_GERAL);
     }
 
     @Test
@@ -296,9 +301,9 @@ class UsuarioAprovacaoIntegrationTest {
         Usuario ator = novoAdministradorGeral(true);
         Usuario alvo = novoAdministradorGeral(true);
 
-        mockMvc.perform(trocarPerfil(alvo, ator, "ADMINISTRADOR"))
+        mockMvc.perform(trocarPapeis(alvo, ator, "ADMINISTRADOR_LOCAL"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.perfil").value("ADMINISTRADOR"));
+                .andExpect(jsonPath("$.papeis[0]").value("ADMINISTRADOR_LOCAL"));
     }
 
     @Test
@@ -306,7 +311,7 @@ class UsuarioAprovacaoIntegrationTest {
         Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
 
-        mockMvc.perform(trocarPerfil(tecnico, admin, "ADMINISTRADOR_GERAL"))
+        mockMvc.perform(trocarPapeis(tecnico, admin, "ADMINISTRADOR_GERAL"))
                 .andExpect(status().isForbidden());
     }
 
@@ -319,7 +324,7 @@ class UsuarioAprovacaoIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {"nome":"Tecnico","email":"tec-%s@embrapa.br","perfil":"ADMINISTRADOR","unidadeId":"%s"}
+                            {"nome":"Tecnico","email":"tec-%s@embrapa.br","papeis":["ADMINISTRADOR_LOCAL"],"unidadeId":"%s"}
                             """.formatted(UUID.randomUUID(), unidade.getPublicId())))
                 .andExpect(status().isForbidden());
     }
@@ -370,12 +375,12 @@ class UsuarioAprovacaoIntegrationTest {
     @Test
     void atualizar_desativandoUltimoAdministradorGeral_409() {
         Usuario ultimo = novoAdministradorGeral(true);
-        assertThat(usuarioRepository.countByPerfilAndAtivoTrue(Perfil.ADMINISTRADOR_GERAL)).isEqualTo(1);
+        assertThat(usuarioRepository.contarAtivosComPapel(PapelSistema.ADMINISTRADOR_GERAL)).isEqualTo(1);
         sessaoSintetica(Perfil.ADMINISTRADOR_GERAL);
         com.sgl.dto.request.UsuarioRequestDTO dto = new com.sgl.dto.request.UsuarioRequestDTO();
         dto.setNome(ultimo.getNome());
         dto.setEmail("ag-" + UUID.randomUUID() + "@embrapa.br");
-        dto.setPerfil(Perfil.ADMINISTRADOR_GERAL);
+        dto.setPapeis(List.of(PapelSistema.ADMINISTRADOR_GERAL));
         dto.setUnidadeId(unidade.getPublicId());
         dto.setAtivo(false);
 
@@ -408,8 +413,98 @@ class UsuarioAprovacaoIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {"nome":"Novo","email":"novo-%s@embrapa.br","senha":"SenhaForte123!","perfil":"ADMINISTRADOR","unidadeId":"%s"}
+                            {"nome":"Novo","email":"novo-%s@embrapa.br","senha":"SenhaForte123!","papeis":["ADMINISTRADOR_LOCAL"],"categoriaCargo":"TECNICO","unidadeId":"%s"}
                             """.formatted(UUID.randomUUID(), unidade.getPublicId())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void papeis_administradorLocalIndicaOutroAdministradorLocalDaUnidade_200() throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarPapeis(tecnico, admin, "ADMINISTRADOR_LOCAL", "GESTOR"))
+                .andExpect(status().isOk());
+
+        assertThat(usuarioRepository.findByPublicId(tecnico.getPublicId()).orElseThrow().getPapeis())
+                .containsExactlyInAnyOrder(PapelSistema.ADMINISTRADOR_LOCAL, PapelSistema.GESTOR);
+    }
+
+    @Test
+    void papeis_listaComRepeticaoEhNormalizada_200() throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarPapeis(tecnico, admin, "GESTOR", "GESTOR"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.papeis", hasSize(1)));
+    }
+
+    @Test
+    void papeis_listaVaziaRemoveTodos_200() throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarPapeis(gestor, admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.papeis", hasSize(0)));
+    }
+
+    @Test
+    void papeis_usuarioDeOutraUnidade_naoEncontrado() throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+        Usuario deOutra = novoUsuario(novaUnidade(98), Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarPapeis(deOutra, admin, "ADMINISTRADOR_LOCAL"))
+                .andExpect(status().isNotFound());
+        assertThat(usuarioRepository.findByPublicId(deOutra.getPublicId()).orElseThrow().getPapeis()).isEmpty();
+    }
+
+    @Test
+    void papeis_removendoUltimoAdministradorLocalDaUnidade_409() throws Exception {
+        Usuario ultimo = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+        Usuario geral = novoAdministradorGeral(true);
+        // Another Unidade's administrator does not keep this one administered.
+        novoUsuario(novaUnidade(98), Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarPapeis(ultimo, geral, "GESTOR"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("ULTIMO_ADMINISTRADOR_LOCAL"));
+    }
+
+    @Test
+    void inativar_ultimoAdministradorLocalDaUnidade_409() throws Exception {
+        Usuario ultimo = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+        Usuario geral = novoAdministradorGeral(true);
+
+        mockMvc.perform(delete(USUARIOS + "/" + ultimo.getPublicId()).header(HttpHeaders.AUTHORIZATION, bearer(geral)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("ULTIMO_ADMINISTRADOR_LOCAL"));
+        assertThat(usuarioRepository.findByPublicId(ultimo.getPublicId()).orElseThrow().getAtivo()).isTrue();
+    }
+
+    @Test
+    void papeis_comOutroAdministradorLocalAtivo_removeSemBloqueio_200() throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+        Usuario outroAdmin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarPapeis(outroAdmin, admin, "GESTOR"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void categoria_gestorAjustaCategoriaDeQuemNaoTemPapel_200() throws Exception {
+        Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarCategoria(tecnico, gestor, "PESQUISADOR"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categoriaCargo").value("PESQUISADOR"));
+    }
+
+    @Test
+    void categoria_gestorNaoAjustaCategoriaDeAdministrador_403() throws Exception {
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
+
+        mockMvc.perform(trocarCategoria(admin, gestor, "PESQUISADOR"))
                 .andExpect(status().isForbidden());
     }
 
@@ -417,7 +512,7 @@ class UsuarioAprovacaoIntegrationTest {
         return post(USUARIOS + "/" + alvo.getPublicId() + "/aprovar")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ator))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"perfil\":\"%s\",\"laboratorioIds\":[\"%s\"]}".formatted(perfil, lab.getPublicId()));
+                .content("{%s,\"laboratorioIds\":[\"%s\"]}".formatted(acesso(perfil), lab.getPublicId()));
     }
 
     private org.springframework.test.web.servlet.RequestBuilder atualizar(Usuario alvo, Usuario ator, String perfil,
@@ -427,8 +522,8 @@ class UsuarioAprovacaoIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, bearer(ator))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"nome":"Nome","email":"e-%s@embrapa.br","perfil":"%s","unidadeId":"%s","ativo":%s%s}
-                    """.formatted(UUID.randomUUID(), perfil, unidade.getPublicId(), ativo, labJson));
+                    {"nome":"Nome","email":"e-%s@embrapa.br",%s,"unidadeId":"%s","ativo":%s%s}
+                    """.formatted(UUID.randomUUID(), acesso(perfil), unidade.getPublicId(), ativo, labJson));
     }
 
     private void sessaoSintetica(Perfil perfil) {
@@ -437,11 +532,28 @@ class UsuarioAprovacaoIntegrationTest {
         TenantContext.definir(unidade.getPublicId());
     }
 
-    private org.springframework.test.web.servlet.RequestBuilder trocarPerfil(Usuario alvo, Usuario ator, String perfil) {
-        return put(USUARIOS + "/" + alvo.getPublicId() + "/perfil")
+    /** The JSON fields that express a former single profile: its role, or its category and no role. */
+    private static String acesso(String perfil) {
+        Perfil legado = Perfil.valueOf(perfil);
+        if (legado.papel() != null) {
+            return "\"papeis\":[\"%s\"]".formatted(legado.papel());
+        }
+        return "\"papeis\":[],\"categoriaCargo\":\"%s\"".formatted(legado.categoria());
+    }
+
+    private org.springframework.test.web.servlet.RequestBuilder trocarPapeis(Usuario alvo, Usuario ator, String... papeis) {
+        String lista = java.util.Arrays.stream(papeis).map(p -> "\"" + p + "\"").collect(java.util.stream.Collectors.joining(","));
+        return put(USUARIOS + "/" + alvo.getPublicId() + "/papeis")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ator))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"perfil\":\"%s\"}".formatted(perfil));
+                .content("{\"papeis\":[%s]}".formatted(lista));
+    }
+
+    private org.springframework.test.web.servlet.RequestBuilder trocarCategoria(Usuario alvo, Usuario ator, String categoria) {
+        return put(USUARIOS + "/" + alvo.getPublicId() + "/categoria-cargo")
+                .header(HttpHeaders.AUTHORIZATION, bearer(ator))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"categoriaCargo\":\"%s\"}".formatted(categoria));
     }
 
     private static org.springframework.test.web.servlet.RequestBuilder login(String login) {

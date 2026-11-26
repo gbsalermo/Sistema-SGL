@@ -74,7 +74,7 @@ public final class ElegibilidadeContextoOperacional {
                 || atividade.getDataInicio() == null) {
             return Resultado.bloqueado(Motivo.CONTEXTO_INCOMPLETO);
         }
-        if (estagiario.getPerfil() != Perfil.ESTAGIARIO) {
+        if (!estagiario.isEstagiario()) {
             return Resultado.bloqueado(Motivo.PERFIL_INCOMPATIVEL);
         }
         if (!Boolean.TRUE.equals(estagiario.getAtivo())) {
