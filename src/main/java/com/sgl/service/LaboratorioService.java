@@ -13,6 +13,7 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
@@ -38,16 +39,16 @@ public class LaboratorioService {
         Laboratorio laboratorio = new Laboratorio();
         laboratorio.setDescricao(dto.getDescricao());
 
-        if (dto.getResponsavelId() != null) {
-            Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavelId(), unidade);
-            laboratorio.setResponsavel(responsavel);
-        }
+        Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavelId(), unidade);
+        laboratorio.setResponsavel(responsavel);
 
         laboratorio.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
         laboratorio.setNome(dto.getNome());
         laboratorio.setUnidade(unidade);
 
-        return new LaboratorioResponseDTO(laboratorioRepository.save(laboratorio));
+        Laboratorio salvo = laboratorioRepository.save(laboratorio);
+        incluirNaEquipe(responsavel, salvo);
+        return new LaboratorioResponseDTO(salvo);
     }
 
     @Transactional(readOnly = true)
@@ -86,11 +87,10 @@ public class LaboratorioService {
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
-        if (dto.getResponsavelId() != null) {
-            laboratorio.setResponsavel(buscarResponsavelCompativel(dto.getResponsavelId(), unidade));
-        } else {
-            laboratorio.setResponsavel(null);
-        }
+        // The previous responsável stays in the team; removing them is an explicit team action.
+        Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavelId(), unidade);
+        laboratorio.setResponsavel(responsavel);
+        incluirNaEquipe(responsavel, laboratorio);
 
         laboratorio.setDescricao(dto.getDescricao());
         laboratorio.setNome(dto.getNome());
@@ -152,7 +152,23 @@ public class LaboratorioService {
                     "O responsável deve pertencer à mesma unidade do laboratório."
             );
         }
+        // The responsável organizes the team, so it must be someone who can actually use the SGL.
+        if (!Boolean.TRUE.equals(responsavel.getAtivo())
+                || responsavel.getSituacao() == SituacaoUsuario.PENDENTE_VINCULACAO) {
+            throw new BusinessRuleException("O responsável precisa ser um usuário ativo e já aprovado.");
+        }
 
         return responsavel;
+    }
+
+    // The responsável is always part of the laboratory's team.
+    private void incluirNaEquipe(Usuario responsavel, Laboratorio laboratorio) {
+        if (responsavel.atuaNoLaboratorio(laboratorio)) {
+            return;
+        }
+        List<Laboratorio> laboratorios = new java.util.ArrayList<>(responsavel.getLaboratorios());
+        laboratorios.add(laboratorio);
+        responsavel.substituirLaboratorios(laboratorios);
+        usuarioRepository.save(responsavel);
     }
 }

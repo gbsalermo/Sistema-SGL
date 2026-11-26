@@ -60,6 +60,12 @@ public class CargoSubstituicaoService {
                         "Orientador de " + v.getEstagiario().getNome(),
                         v.getOrientador().getPublicId(), v.getOrientador().getNome())));
 
+        // Every laboratory must have a responsável: those that never had one need it too.
+        laboratorioRepository.findAtivosSemResponsavel(unidadeId)
+                .forEach(l -> cargos.add(new CargoSubstituicaoDTO(
+                        TipoCargo.RESPONSAVEL_LABORATORIO, l.getPublicId(),
+                        "Laboratório " + l.getNome() + " sem responsável", null, null)));
+
         laboratorioRepository.findComResponsavelSemCondicoes(unidadeId, liberado)
                 .forEach(l -> cargos.add(new CargoSubstituicaoDTO(
                         TipoCargo.RESPONSAVEL_LABORATORIO, l.getPublicId(),
