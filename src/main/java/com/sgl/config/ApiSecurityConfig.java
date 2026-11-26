@@ -133,6 +133,10 @@ public class ApiSecurityConfig {
                 ativo, AuthorityAuthorizationManager.hasAnyRole(
                         PapelSistema.GESTOR.name(), PapelSistema.ADMINISTRADOR_LOCAL.name(), PapelSistema.ADMINISTRADOR_GERAL.name()));
 
+        // A laboratory's team is managed by its responsável, who usually has no system role, so these
+        // writes only need an active session here; EquipeLaboratorioService decides per laboratory.
+        auth.requestMatchers("/api/v1/laboratorios/*/equipe", "/api/v1/laboratorios/*/equipe/**").access(ativo);
+
         for (HttpMethod metodo : GRAVACOES) {
             auth.requestMatchers(metodo, "/api/v1/unidades", "/api/v1/unidades/**").access(administradorGeral)
                 // Cadastros the web only offers on PERFIS_ADMIN routes (CadastrosAdminView and the
