@@ -89,20 +89,25 @@ public class PerfisDeTesteInitializer implements CommandLineRunner {
                 criarUsuario(perfil, n, unidades);
             }
         }
-        criarGestorResponsavel(unidades.get(0));
+        criarGestorResponsavel(unidades);
     }
 
     /**
      * Roles accumulate: this user is GESTOR, a researcher by job, and the responsável of the first
      * laboratory of the first Unidade, the case the single-profile model could not express.
      */
-    private void criarGestorResponsavel(Unidade unidade) {
+    private void criarGestorResponsavel(List<Unidade> unidades) {
         String login = "teste.gestor-responsavel.1";
         if (usuarioRepository.findByLogin(login).isPresent()) {
             return;
         }
-        List<Laboratorio> laboratorios = laboratorioRepository.findByUnidadePublicId(unidade.getPublicId());
-        Laboratorio laboratorio = laboratorios.isEmpty() ? null : laboratorios.get(0);
+        // The first Unidade that has an active laboratory; without one, the user is created without it.
+        Laboratorio laboratorio = unidades.stream()
+                .flatMap(item -> laboratorioRepository.findByUnidadePublicId(item.getPublicId()).stream())
+                .filter(item -> Boolean.TRUE.equals(item.getAtivo()))
+                .findFirst()
+                .orElse(null);
+        Unidade unidade = laboratorio != null ? laboratorio.getUnidade() : unidades.get(0);
         Usuario usuario = new Usuario(null, null, "Gestor e responsável de Teste 1", login + "@sgl.local",
                 passwordEncoder.encode(SENHA_TESTE), Perfil.GESTOR, unidade, laboratorio, true);
         usuario.setCategoriaCargo(CategoriaCargo.PESQUISADOR);

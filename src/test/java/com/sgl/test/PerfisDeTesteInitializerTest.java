@@ -116,6 +116,20 @@ class PerfisDeTesteInitializerTest {
         assertEquals(usuario.getId(), laboratorio.getResponsavel().getId());
     }
 
+    // Real dev databases may have a first Unidade with no laboratory; the responsável goes where one exists.
+    @Test
+    void gestorResponsavelVaiParaAPrimeiraUnidadeComLaboratorio() {
+        u1 = unidadeRepository.save(new Unidade(null, null, "Unidade 1", "U1", null));
+        u2 = unidadeRepository.save(new Unidade(null, null, "Unidade 2", "U2", null));
+        Laboratorio labC = laboratorioRepository.save(new Laboratorio(null, null, u2, "Lab C", "C", null, true));
+
+        initializer().criarUsuariosDeTeste();
+
+        Usuario usuario = porLogin("teste.gestor-responsavel.1");
+        assertEquals(u2.getId(), usuario.getUnidade().getId());
+        assertEquals(usuario.getId(), laboratorioRepository.findById(labC.getId()).orElseThrow().getResponsavel().getId());
+    }
+
     @Test
     void distribuiEntreUnidadesELaboratorios() {
         cadastrarUnidades();
