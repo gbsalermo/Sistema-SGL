@@ -93,7 +93,8 @@ class PessoaCorporativaIntegrationTest {
                 .build());
         laboratorio = laboratorioRepository.saveAndFlush(Laboratorio.builder()
                 .unidade(unidade).nome("Lab Base").ativo(true).build());
-        gestor = novoUsuario(Perfil.GESTOR, null, null);
+        // Central import is for administrators; laboratory teams import through their own team.
+        gestor = novoUsuario(Perfil.ADMINISTRADOR, null, null);
     }
 
     @AfterEach
@@ -255,7 +256,7 @@ class PessoaCorporativaIntegrationTest {
     void importar_perfilAcimaDoPermitido_retorna403() throws Exception {
         mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpo("EMPREGADO", "344136", "ADMINISTRADOR", laboratorio)))
+                        .content(corpo("EMPREGADO", "344136", "ADMINISTRADOR_GERAL", laboratorio)))
                 .andExpect(status().isForbidden());
         assertThat(usuarioRepository.findByMatricula("344136")).isEmpty();
     }
@@ -339,8 +340,9 @@ class PessoaCorporativaIntegrationTest {
     }
 
     @Test
-    void importar_gestorConcedendoGestor_retorna403() throws Exception {
-        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
+    void importar_gestor_retorna403() throws Exception {
+        Usuario gestorDeVerdade = novoUsuario(Perfil.GESTOR, null, null);
+        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestorDeVerdade))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpo("EMPREGADO", "344136", "GESTOR", laboratorio)))
                 .andExpect(status().isForbidden());

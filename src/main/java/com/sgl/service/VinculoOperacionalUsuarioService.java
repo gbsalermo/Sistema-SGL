@@ -48,6 +48,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional(readOnly = true)
     public List<ResumoUsuario> resumo() {
+        exigirAdministrador();
         Map<UUID, List<VinculoOperacionalUsuario>> agrupados = new HashMap<>();
         for (VinculoOperacionalUsuario v : vinculos.findByUsuarioUnidadePublicId(unidade())) {
             agrupados.computeIfAbsent(v.getUsuario().getPublicId(), k -> new ArrayList<>()).add(v);
@@ -64,13 +65,17 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional(readOnly = true)
     public List<VinculoOperacionalUsuarioResponseDTO> listar(UUID usuarioId) {
+        // Everyone reads their own links (the pedido, solução and resíduo screens need them).
+        if (!CurrentUser.get().publicId().equals(usuarioId)) {
+            exigirAdministrador();
+        }
         return vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuarioId, unidade())
             .stream().map(VinculoOperacionalUsuarioResponseDTO::new).toList();
     }
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO criar(VinculoOperacionalUsuarioRequestDTO dto) {
-        exigirGestao();
+        exigirAdministrador();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
@@ -196,7 +201,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO editar(UUID id, EditarVinculoOperacionalRequestDTO dto) {
-        exigirGestao();
+        exigirAdministrador();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         exigirAutoridadeSobre(v.getUsuario());
@@ -225,7 +230,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO encerrar(UUID id) {
-        exigirGestao();
+        exigirAdministrador();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         exigirAutoridadeSobre(v.getUsuario());
@@ -243,7 +248,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public void definirLaboratorios(UUID usuarioId, List<UUID> laboratorioIds) {
-        exigirGestao();
+        exigirAdministrador();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
@@ -273,9 +278,11 @@ public class VinculoOperacionalUsuarioService {
     }
 
     // Granting labs and contexts is what authorizes operations, so only gestão may change it.
-    private static void exigirGestao() {
-        if (!PapelPolicy.isGestao(CurrentUser.get().papeis())) {
-            throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratórios.");
+    // Team management left central gestão: each laboratory's responsável does it through its team;
+    // centrally, only administrators keep these routes.
+    private static void exigirAdministrador() {
+        if (!PapelPolicy.isAdministrador(CurrentUser.get().papeis())) {
+            throw new AccessDeniedException("Apenas administradores alteram vínculos e laboratórios fora da equipe do laboratório.");
         }
     }
 

@@ -55,6 +55,10 @@ public class UsuarioService {
         validarTenantUnidade(dto.getUnidadeId());
         Set<PapelSistema> papeis = papeisPedidos(dto.getPapeis(), Set.of());
         papeis.forEach(papel -> exigirPodeConceder(CurrentUser.get(), papel));
+        if (dto.getLaboratorioIds() != null && !dto.getLaboratorioIds().isEmpty()
+                && !PapelPolicy.isAdministrador(CurrentUser.get().papeis())) {
+            throw new AccessDeniedException("A lista de laboratórios é organizada pela equipe de cada laboratório.");
+        }
 
         if (usuarioRepository.existsByEmail(dto.getEmail())) {
             throw new BusinessRuleException("Email já cadastrado: " + dto.getEmail());
@@ -142,7 +146,10 @@ public class UsuarioService {
 
         // A pending or inactive person is not operating, so an empty list is only refused for active ones.
         boolean ficaraAtivo = Boolean.TRUE.equals(dto.getAtivo() != null ? dto.getAtivo() : usuario.getAtivo());
-        boolean exigirLista = ficaraAtivo && usuario.getSituacao() != SituacaoUsuario.PENDENTE_VINCULACAO;
+        // Only a change to the list must leave at least one laboratory: someone the responsável removed
+        // from their last team can still have their name corrected.
+        boolean exigirLista = ficaraAtivo && usuario.getSituacao() != SituacaoUsuario.PENDENTE_VINCULACAO
+                && mudaLaboratorios(usuario, dto.getLaboratorioIds());
         Set<Laboratorio> laboratorios = laboratoriosDaPessoa.resolver(
                 dto.getLaboratorioIds(), unidade, papeis, usuario.getLaboratorios(), exigirLista);
 
@@ -207,7 +214,7 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioSessaoResponseDTO> listarPendentes() {
-        exigirGestao(CurrentUser.get());
+        exigirAdministrador(CurrentUser.get());
         return usuarioRepository
                 .findBySituacaoAndUnidadePublicId(SituacaoUsuario.PENDENTE_VINCULACAO, CurrentUser.unidadeEmOperacao())
                 .stream()
@@ -218,7 +225,7 @@ public class UsuarioService {
     @Transactional
     public UsuarioSessaoResponseDTO aprovar(UUID id, AprovarUsuarioRequestDTO dto) {
         AuthenticatedUser ator = CurrentUser.get();
-        exigirGestao(ator);
+        exigirAdministrador(ator);
         Usuario usuario = buscarPendenteDaUnidadeEmOperacao(id);
         Set<PapelSistema> papeis = papeisPedidos(dto.getPapeis(), Set.of());
         papeis.forEach(papel -> exigirPodeConceder(ator, papel));
@@ -242,7 +249,7 @@ public class UsuarioService {
     @Transactional
     public void recusar(UUID id) {
         AuthenticatedUser ator = CurrentUser.get();
-        exigirGestao(ator);
+        exigirAdministrador(ator);
         Usuario usuario = buscarPendenteDaUnidadeEmOperacao(id);
         // Removed rather than flagged: a new login simply recreates the pending record (spec 2.2).
         usuarioRepository.delete(usuario);
@@ -282,6 +289,11 @@ public class UsuarioService {
      * The general update carries profile, active flag, Unidade and laboratory list, so it must not bypass the
      * rules of the dedicated routes. Plain data (name, e-mail) still needs authority over the target.
      */
+    private static boolean mudaLaboratorios(Usuario usuario, List<UUID> pedidos) {
+        Set<UUID> atuais = usuario.getLaboratorios().stream().map(Laboratorio::getPublicId).collect(Collectors.toSet());
+        return !atuais.equals(pedidos == null ? Set.of() : new java.util.HashSet<>(pedidos));
+    }
+
     private void validarEdicao(Usuario usuario, UsuarioRequestDTO dto, Set<PapelSistema> papeis,
             CategoriaCargo categoria) {
         AuthenticatedUser ator = CurrentUser.get();
@@ -299,6 +311,11 @@ public class UsuarioService {
         boolean mudaAcesso = mudaPapeisOuCategoria || mudaAtivo
                 || mudaLaboratorios
                 || !java.util.Objects.equals(unidadeAtual, dto.getUnidadeId());
+
+        // Laboratories are organized by each laboratory's team; centrally, only administrators change the list.
+        if (mudaLaboratorios && !PapelPolicy.isAdministrador(ator.papeis())) {
+            throw new AccessDeniedException("A lista de laboratórios é organizada pela equipe de cada laboratório.");
+        }
 
         // Pendente só muda de papel, categoria ou laboratório pela aprovação; inativar continua permitido.
         if (mudaPapeisOuCategoria || mudaLaboratorios) {
@@ -374,6 +391,13 @@ public class UsuarioService {
             throw UsuarioRejectedException.naoPendente();
         }
         return usuario;
+    }
+
+    // Approving and refusing newcomers moved to each laboratory's team; centrally, administrators only.
+    private static void exigirAdministrador(AuthenticatedUser ator) {
+        if (!PapelPolicy.isAdministrador(ator.papeis())) {
+            throw new AccessDeniedException("Apenas administradores fazem isso fora da equipe do laboratório.");
+        }
     }
 
     private static void exigirGestao(AuthenticatedUser ator) {

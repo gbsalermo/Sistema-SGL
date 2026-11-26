@@ -54,7 +54,7 @@ class CargoSubstituicaoServiceTest {
 
     @BeforeEach
     void entrarComoGestor() {
-        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.ADMINISTRADOR);
     }
 
     @AfterEach

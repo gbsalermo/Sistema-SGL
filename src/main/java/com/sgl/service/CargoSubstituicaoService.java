@@ -44,8 +44,8 @@ public class CargoSubstituicaoService {
 
     @Transactional(readOnly = true)
     public List<CargoSubstituicaoDTO> listar() {
-        if (!PapelPolicy.isGestao(CurrentUser.get().papeis())) {
-            throw new AccessDeniedException("Apenas gestão pode ver os cargos a substituir.");
+        if (!PapelPolicy.isAdministrador(CurrentUser.get().papeis())) {
+            throw new AccessDeniedException("Apenas administradores veem os cargos a substituir.");
         }
         // Sem Unidade em operação não há "unidade do gestor": falha fechado em vez de listar tudo.
         UUID unidadeId = CurrentUser.unidadeEmOperacao();

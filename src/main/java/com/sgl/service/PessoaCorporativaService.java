@@ -335,9 +335,10 @@ public class PessoaCorporativaService {
         return unidade.getCodigoCorporativo();
     }
 
+    // Laboratory teams register people through their own team; centrally, administrators only.
     private static void requireGestao(AuthenticatedUser user) {
-        if (!PapelPolicy.isGestao(user.papeis())) {
-            throw new AccessDeniedException("Apenas gestão pode buscar e importar pessoas corporativas.");
+        if (!PapelPolicy.isAdministrador(user.papeis())) {
+            throw new AccessDeniedException("Apenas administradores buscam e importam pessoas fora da equipe do laboratório.");
         }
     }
 

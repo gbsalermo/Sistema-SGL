@@ -101,11 +101,13 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void pendentes_listaSoDaUnidadeEmOperacao() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
         novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
         novoUsuario(novaUnidade(98), Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        mockMvc.perform(get(USUARIOS + "/pendentes").header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+        mockMvc.perform(get(USUARIOS + "/pendentes").header(HttpHeaders.AUTHORIZATION, bearer(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value(pendente.getPublicId().toString()))
@@ -122,9 +124,11 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void aprovar_ativaComPerfilELaboratorio() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        mockMvc.perform(aprovar(pendente, gestor, "ANALISTA", laboratorio))
+        mockMvc.perform(aprovar(pendente, admin, "ANALISTA", laboratorio))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.situacao").value("ATIVO"))
                 .andExpect(jsonPath("$.categoriaCargo").value("ANALISTA"))
@@ -140,10 +144,12 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void aprovar_pessoaDeOutraUnidade_403() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Unidade outra = novaUnidade(98);
         Usuario pendente = novoUsuario(outra, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        mockMvc.perform(aprovar(pendente, gestor, "ANALISTA", laboratorio))
+        mockMvc.perform(aprovar(pendente, admin, "ANALISTA", laboratorio))
                 .andExpect(status().isForbidden());
 
         assertThat(usuarioRepository.findByPublicId(pendente.getPublicId()).orElseThrow().getSituacao())
@@ -152,23 +158,29 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void aprovar_perfilAcimaDoPermitido_403() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        mockMvc.perform(aprovar(pendente, gestor, "ADMINISTRADOR", laboratorio))
+        mockMvc.perform(aprovar(pendente, admin, "ADMINISTRADOR_GERAL", laboratorio))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void aprovar_usuarioJaAtivo_409() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario ativo = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
 
-        mockMvc.perform(aprovar(ativo, gestor, "ANALISTA", laboratorio))
+        mockMvc.perform(aprovar(ativo, admin, "ANALISTA", laboratorio))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("USUARIO_NAO_PENDENTE"));
     }
 
     @Test
     void recusar_removePendente_eNovoLoginRecriaPendente() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         // Só colaborador fica pendente: empregado entra direto.
         gateway.loginOk("12345678909", "12345678909", 512);
         gateway.empregadoPorCpfNaoEncontrado("12345678909");
@@ -179,7 +191,7 @@ class UsuarioAprovacaoIntegrationTest {
         Usuario pendente = usuarioRepository.findByCpf("12345678909").orElseThrow();
 
         mockMvc.perform(delete(USUARIOS + "/" + pendente.getPublicId() + "/pendente")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(admin)))
                 .andExpect(status().isNoContent());
         assertThat(usuarioRepository.findByPublicId(pendente.getPublicId())).isEmpty();
 
@@ -196,10 +208,12 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void recusar_usuarioAtivo_409() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario ativo = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
 
         mockMvc.perform(delete(USUARIOS + "/" + ativo.getPublicId() + "/pendente")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(admin)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("USUARIO_NAO_PENDENTE"));
         assertThat(usuarioRepository.findByPublicId(ativo.getPublicId())).isPresent();
@@ -207,15 +221,17 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void recusar_pessoaDeOutraUnidade_403() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario pendente = novoUsuario(novaUnidade(98), Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
         mockMvc.perform(delete(USUARIOS + "/" + pendente.getPublicId() + "/pendente")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(admin)))
                 .andExpect(status().isForbidden());
         assertThat(usuarioRepository.findByPublicId(pendente.getPublicId())).isPresent();
     }
 
-    // Caso real (homologação, 05/11/2026): o gestor trocou o perfil de um estagiário pendente achando que
+    // Caso real (homologação, 05/11/2026): o admin trocou o perfil de um estagiário pendente achando que
     // isso liberava o acesso, e ele seguiu bloqueado. Só "Aprovar" tira alguém de PENDENTE_VINCULACAO,
     // então trocar perfil ou laboratório de um pendente é recusado com um código que a tela entende.
     // A tela de Cadastros precisa saber quem está pendente para não oferecer a troca de perfil.
@@ -256,9 +272,11 @@ class UsuarioAprovacaoIntegrationTest {
 
     @Test
     void atualizar_usuarioPendenteRecebendoLaboratorio_409() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario pendente = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.PENDENTE_VINCULACAO);
 
-        mockMvc.perform(atualizar(pendente, gestor, "TECNICO", true, laboratorio))
+        mockMvc.perform(atualizar(pendente, admin, "TECNICO", true, laboratorio))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("USUARIO_PENDENTE"));
     }
@@ -367,10 +385,12 @@ class UsuarioAprovacaoIntegrationTest {
     }
 
     @Test
-    void atualizar_gestorEditandoTecnico_200() throws Exception {
+    void atualizar_adminEditandoTecnico_200() throws Exception {
+        // Central approval, refusal and laboratory lists are for administrators (fase 2).
+        Usuario admin = novoUsuario(unidade, Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO);
         Usuario tecnico = novoUsuario(unidade, Perfil.TECNICO, SituacaoUsuario.ATIVO);
 
-        mockMvc.perform(atualizar(tecnico, gestor, "TECNICO", false, laboratorio))
+        mockMvc.perform(atualizar(tecnico, admin, "TECNICO", false, laboratorio))
                 .andExpect(status().isOk());
         Usuario salvo = usuarioRepository.findByPublicId(tecnico.getPublicId()).orElseThrow();
         assertThat(salvo.getAtivo()).isFalse();

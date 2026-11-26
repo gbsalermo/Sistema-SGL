@@ -116,7 +116,7 @@ class AutorizacaoGravacoesIntegrationTest {
                 Arguments.of(HttpMethod.PUT, "/api/v1/solucoes/pedidos/" + id() + "/entregar"),
                 Arguments.of(HttpMethod.PUT, "/api/v1/residuos/" + id() + "/receber"),
                 Arguments.of(HttpMethod.PUT, "/api/v1/estagiarios/" + id() + "/encerrar"),
-                Arguments.of(HttpMethod.PUT, "/api/v1/vinculos-operacionais/" + id() + "/encerrar"),
+                // Central operational links moved to administrators (fase 2): see GestorSemGestaoDeEquipeIntegrationTest.
                 Arguments.of(HttpMethod.DELETE, "/api/v1/usuarios/" + id()),
                 Arguments.of(HttpMethod.PUT, "/api/v1/usuarios/" + id() + "/perfil"),
                 Arguments.of(HttpMethod.POST, "/api/v1/pessoas-corporativas/importar"),
