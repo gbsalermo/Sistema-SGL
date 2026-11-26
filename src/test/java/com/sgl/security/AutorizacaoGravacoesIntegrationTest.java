@@ -234,6 +234,17 @@ class AutorizacaoGravacoesIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    // The administrative product catalogue is read-only but restricted to administrators.
+    @Test
+    void catalogoDeProdutos_soAdministradores() throws Exception {
+        assertStatus(HttpMethod.GET, "/api/v1/produtos/catalogo", Perfil.GESTOR).isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(HttpMethod.GET, "/api/v1/produtos/catalogo", Perfil.TECNICO).isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertStatus(HttpMethod.GET, "/api/v1/produtos/catalogo", Perfil.ADMINISTRADOR)
+                .isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
+        assertStatus(HttpMethod.GET, "/api/v1/produtos/catalogo", Perfil.ADMINISTRADOR_GERAL)
+                .isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
+    }
+
     // Roles accumulate: a GESTOR who is also ADMINISTRADOR_LOCAL gets both sets of permissions.
     @ParameterizedTest(name = "{0} {1}")
     @MethodSource("gravacoesDeAdministrador")

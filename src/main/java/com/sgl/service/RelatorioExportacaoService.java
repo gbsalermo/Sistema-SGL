@@ -89,7 +89,8 @@ public class RelatorioExportacaoService {
                         texto(item.getLaboratorios().stream().map(LaboratorioResumoDTO::nome)
                                 .collect(Collectors.joining("; "))),
                         texto(item.getUnidadeNome()),
-                        rotulo(item.getTipoBolsa()), data(item.getDataInicioEstagio()), data(item.getDataFimEstagio()),
+                        item.getBolsaNome() == null ? rotulo(item.getTipoBolsa()) : texto(item.getBolsaNome()),
+                        data(item.getDataInicioEstagio()), data(item.getDataFimEstagio()),
                         Boolean.TRUE.equals(item.getAtivo()) ? "Ativo" : "Inativo"
                 )).toList());
         return gerar("Relatório de Estagiários", "estagiarios", formato, filtros, resumo, List.of(tabela), true);

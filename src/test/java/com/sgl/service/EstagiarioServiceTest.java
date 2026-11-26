@@ -32,6 +32,7 @@ import com.sgl.dto.request.VinculoEstagioAtividadeRequestDTO;
 import com.sgl.dto.response.EstagiarioResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
+import com.sgl.model.Bolsa;
 import com.sgl.model.Estagiario;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
@@ -118,6 +119,9 @@ class EstagiarioServiceTest {
 
     @Mock
     private Query nativeQuery;
+
+    @Mock
+    private BolsaService bolsaService;
 
     @InjectMocks
     private EstagiarioService estagiarioService;
@@ -216,7 +220,7 @@ class EstagiarioServiceTest {
         ReflectionTestUtils.setField(estagiarioService, "laboratoriosDaPessoa", laboratoriosDaPessoa);
 
         lenient().when(entityManager.createNativeQuery(anyString())).thenReturn(nativeQuery);
-        lenient().when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
+        lenient().when(nativeQuery.setParameter(anyString(), org.mockito.ArgumentMatchers.nullable(Object.class))).thenReturn(nativeQuery);
         lenient().when(nativeQuery.executeUpdate()).thenReturn(1);
         lenient().when(vinculoEstagioAtividadeRepository
                 .findByVinculoEstagioPublicIdAndVinculoEstagioEstagiarioUnidadePublicIdOrderByDataInicioParticipacaoDesc(
@@ -277,6 +281,32 @@ class EstagiarioServiceTest {
                 participacaoCaptor.getValue().getDataInicioParticipacao());
     }
 
+
+    @Test
+    void criarPrimeiroVinculoComBolsaDoCatalogoSemTipoLegado() {
+        UUID bolsaId = UUID.fromString("00000000-0000-0000-0000-000000000061");
+        Bolsa bolsa = Bolsa.builder().publicId(bolsaId).nome("Bolsa FAPESB").ativo(true).build();
+        EstagiarioRequestDTO dto = montarDtoValido();
+        dto.setTipoBolsa(null);
+        dto.setBolsaId(bolsaId);
+
+        TenantContext.definir(UNIDADE_PUBLIC_ID);
+        mockarBuscaBaseCriacao();
+        when(bolsaService.validarEscolha(null, bolsaId)).thenReturn(bolsa);
+        when(estagiarioRepository.existsById(usuario.getId())).thenReturn(false);
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        when(estagiarioRepository.findById(usuario.getId())).thenReturn(Optional.of(estagiario));
+        when(vinculoEstagioRepository.save(any(VinculoEstagio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        estagiarioService.criar(dto);
+
+        ArgumentCaptor<VinculoEstagio> captor = ArgumentCaptor.forClass(VinculoEstagio.class);
+        verify(vinculoEstagioRepository).save(captor.capture());
+        assertEquals(null, captor.getValue().getTipoBolsa());
+        assertEquals(bolsa, captor.getValue().getBolsa());
+        assertEquals("Bolsa FAPESB", captor.getValue().getBolsaNome());
+    }
 
     @Test
     void criarGravaListaDeLaboratoriosDaPessoa() {

@@ -309,4 +309,47 @@ class ProdutoRepositoryTest {
 
         assertFalse(existe);
     }
+    @Test
+    void descricaoTecnicaComMaisDe255CaracteresEhPersistidaIntegralmente() {
+        Produto produto = criarProduto("BDA", "BDA-500-TESTE", NivelRisco.NENHUM, false);
+        String descricao = "BDA Batata Dextrose Agar. Composição: ágar 15 g/L, "
+                + "Dextrose 20 g/L, extrato de batata 4 g/L. "
+                + "Meio não seletivo para fungos e leveduras. ".repeat(9);
+        produto.setDescricao(descricao);
+        entityManager.flush();
+        entityManager.clear();
+
+        Produto encontrado = produtoRepository.findByPublicId(produto.getPublicId()).orElseThrow();
+        assertTrue(descricao.length() > 255);
+        assertEquals(descricao, encontrado.getDescricao());
+    }
+
+    @Test
+    void catalogoAdministrativoMostraItemSemEstoqueApenasNaUnidadeDeCadastro() {
+        Unidade unidadeA = criarUnidade("CAT1");
+        Unidade unidadeB = criarUnidade("CAT2");
+        Produto produto = criarProduto("Produto recém cadastrado", "CAT-SEM-EST", NivelRisco.NENHUM, false);
+        produto.setUnidadeCadastro(unidadeA);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Produto> catalogoA = produtoRepository.findCatalogoAdministrativoDaUnidade(unidadeA.getPublicId());
+        List<Produto> catalogoB = produtoRepository.findCatalogoAdministrativoDaUnidade(unidadeB.getPublicId());
+
+        assertTrue(catalogoA.stream().anyMatch(p -> p.getPublicId().equals(produto.getPublicId())));
+        assertFalse(catalogoB.stream().anyMatch(p -> p.getPublicId().equals(produto.getPublicId())));
+        assertFalse(produtoRepository.pertenceAUnidade(produto.getPublicId(), unidadeA.getPublicId()));
+        assertTrue(produtoRepository.findDisponiveisNaUnidade(unidadeA.getPublicId()).isEmpty());
+    }
+
+    @Test
+    void catalogoAdministrativoMantemProdutoLegadoComEstoqueNaUnidade() {
+        Unidade unidadeA = criarUnidade("CAT3");
+        Produto legado = criarProduto("Produto antigo", "CAT-LEGADO", NivelRisco.NENHUM, false);
+        criarEstoque(unidadeA, legado);
+
+        List<Produto> catalogo = produtoRepository.findCatalogoAdministrativoDaUnidade(unidadeA.getPublicId());
+        assertTrue(catalogo.stream().anyMatch(p -> p.getId().equals(legado.getId())));
+    }
+
 }
