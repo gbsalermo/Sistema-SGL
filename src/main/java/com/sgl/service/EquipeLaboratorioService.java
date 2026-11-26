@@ -16,7 +16,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgl.corporate.TipoPessoaCorporativa;
+import com.sgl.dto.request.ImportarLoteRequestDTO;
 import com.sgl.dto.response.MembroEquipeResponseDTO;
+import com.sgl.dto.response.PessoaCorporativaResponseDTO;
+import com.sgl.dto.response.ResultadoImportacaoDTO;
+import com.sgl.dto.response.ResultadoImportacaoDTO.Resultado;
+import com.sgl.exception.ImportacaoRejectedException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.exception.UsuarioRejectedException;
 import com.sgl.model.Laboratorio;
@@ -42,10 +48,12 @@ import lombok.RequiredArgsConstructor;
 public class EquipeLaboratorioService {
 
     private static final Logger AUDIT = LoggerFactory.getLogger("sgl.auditoria");
+    private static final Logger LOG = LoggerFactory.getLogger(EquipeLaboratorioService.class);
 
     private final LaboratorioRepository laboratorioRepository;
     private final UsuarioRepository usuarioRepository;
     private final VinculoOperacionalUsuarioRepository vinculoRepository;
+    private final PessoaCorporativaService pessoaCorporativaService;
     private final Clock clock;
 
     /**
@@ -141,6 +149,42 @@ public class EquipeLaboratorioService {
         });
         vinculoRepository.saveAll(vinculos);
         auditar("EQUIPE_RETIRADA", alvo, laboratorio);
+    }
+
+    public List<PessoaCorporativaResponseDTO> candidatos(UUID laboratorioId, TipoPessoaCorporativa tipo, String termo) {
+        exigirGestaoDaEquipe(laboratorioId);
+        return pessoaCorporativaService.candidatos(tipo, termo);
+    }
+
+    /**
+     * Registers each person on their own, so one failure never undoes the others, and reports the
+     * outcome person by person. Not transactional on purpose.
+     */
+    public List<ResultadoImportacaoDTO> importar(UUID laboratorioId, ImportarLoteRequestDTO lote) {
+        Laboratorio laboratorio = exigirGestaoDaEquipe(laboratorioId);
+        List<ResultadoImportacaoDTO> resultados = new ArrayList<>();
+        for (ImportarLoteRequestDTO.ItemImportacao item : lote.itens()) {
+            resultados.add(importarUm(item, laboratorio));
+        }
+        return resultados;
+    }
+
+    private ResultadoImportacaoDTO importarUm(ImportarLoteRequestDTO.ItemImportacao item, Laboratorio laboratorio) {
+        try {
+            Usuario usuario = pessoaCorporativaService.importarParaLaboratorio(
+                    item.tipo(), item.referencia(), item.categoriaCargo(), laboratorio);
+            return new ResultadoImportacaoDTO(item.referencia(), usuario.getNome(), Resultado.CADASTRADA, null);
+        } catch (ImportacaoRejectedException e) {
+            Resultado resultado = ImportacaoRejectedException.JA_CADASTRADO.equals(e.getCodigo())
+                    ? Resultado.JA_CADASTRADA : Resultado.ERRO;
+            return new ResultadoImportacaoDTO(item.referencia(), null, resultado, e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return new ResultadoImportacaoDTO(item.referencia(), null, Resultado.NAO_ENCONTRADA, e.getMessage());
+        } catch (RuntimeException e) {
+            // Gateway outages and business refusals are reported for this person only; the batch goes on.
+            LOG.warn("Importação em lote: falha em uma pessoa: {}", e.getClass().getSimpleName());
+            return new ResultadoImportacaoDTO(item.referencia(), null, Resultado.ERRO, e.getMessage());
+        }
     }
 
     private Usuario alvoDaUnidade(UUID usuarioId) {
