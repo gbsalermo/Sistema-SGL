@@ -13,7 +13,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sgl.model.Usuario;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
 
 @Repository
@@ -42,9 +43,20 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     @EntityGraph(attributePaths = "laboratorios")
     Optional<Usuario> findWithLaboratoriosByCpf(String cpf);
 
-    boolean existsByPerfilAndAtivoTrue(Perfil perfil);
-    boolean existsByPerfil(Perfil perfil);
-    long countByPerfilAndAtivoTrue(Perfil perfil);
+    // Counts inactive users too: the first-login bootstrap must never run twice.
+    @Query("SELECT COUNT(u) > 0 FROM Usuario u JOIN u.papeis p WHERE p = :papel")
+    boolean existeComPapel(@Param("papel") PapelSistema papel);
+
+    @Query("SELECT COUNT(u) FROM Usuario u JOIN u.papeis p WHERE p = :papel AND u.ativo = true")
+    long contarAtivosComPapel(@Param("papel") PapelSistema papel);
+
+    @Query("""
+            SELECT COUNT(u)
+            FROM Usuario u JOIN u.papeis p
+            WHERE p = :papel AND u.ativo = true AND u.unidade.publicId = :unidadePublicId
+            """)
+    long contarAtivosComPapelNaUnidade(@Param("papel") PapelSistema papel,
+                                       @Param("unidadePublicId") UUID unidadePublicId);
 
     List<Usuario> findByMatriculaIn(Collection<String> matriculas);
     List<Usuario> findByCpfIn(Collection<String> cpfs);
@@ -58,7 +70,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
             FROM Usuario u
             LEFT JOIN FETCH u.laboratorios
             WHERE u.unidade.publicId = :unidadePublicId
-              AND u.perfil = com.sgl.model.enums.Perfil.ESTAGIARIO
+              AND u.categoriaCargo = com.sgl.model.enums.CategoriaCargo.ESTAGIARIO
               AND u.situacao = com.sgl.model.enums.SituacaoUsuario.ATIVO
               AND u.ativo = true
               AND NOT EXISTS (SELECT e FROM Estagiario e WHERE e.id = u.id)
@@ -75,14 +87,16 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
             LEFT JOIN u.unidade un
             WHERE u.ativo = true
               AND u.login IS NOT NULL
-              AND (:perfil IS NULL OR u.perfil = :perfil)
+              AND (:papel IS NULL OR :papel MEMBER OF u.papeis)
+              AND (:categoria IS NULL OR (u.categoriaCargo = :categoria AND u.papeis IS EMPTY))
               AND (:unidadeId IS NULL OR un.publicId = :unidadeId)
               AND (:busca IS NULL
                    OR LOWER(u.nome) LIKE :busca ESCAPE '\\'
                    OR LOWER(u.login) LIKE :busca ESCAPE '\\')
             ORDER BY u.nome, u.id
             """)
-    List<Long> buscarIdsParaLoginDeTeste(@Param("perfil") Perfil perfil,
+    List<Long> buscarIdsParaLoginDeTeste(@Param("papel") PapelSistema papel,
+                                         @Param("categoria") CategoriaCargo categoria,
                                          @Param("unidadeId") UUID unidadeId,
                                          @Param("busca") String busca,
                                          Pageable pageable);
@@ -92,15 +106,29 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     List<Usuario> findWithUnidadeAndLaboratoriosByIdIn(Collection<Long> ids);
 
     @Query("""
-            SELECT u.perfil, COUNT(u)
+            SELECT p, COUNT(u)
             FROM Usuario u
+            JOIN u.papeis p
             LEFT JOIN u.unidade un
             WHERE u.ativo = true
               AND u.login IS NOT NULL
               AND (:unidadeId IS NULL OR un.publicId = :unidadeId)
-            GROUP BY u.perfil
+            GROUP BY p
             """)
-    List<Object[]> contarAtivosComLoginPorPerfil(@Param("unidadeId") UUID unidadeId);
+    List<Object[]> contarAtivosComLoginPorPapel(@Param("unidadeId") UUID unidadeId);
+
+    // Users with no role, grouped by job category: the former "solicitante" profiles.
+    @Query("""
+            SELECT u.categoriaCargo, COUNT(u)
+            FROM Usuario u
+            LEFT JOIN u.unidade un
+            WHERE u.ativo = true
+              AND u.login IS NOT NULL
+              AND u.papeis IS EMPTY
+              AND (:unidadeId IS NULL OR un.publicId = :unidadeId)
+            GROUP BY u.categoriaCargo
+            """)
+    List<Object[]> contarAtivosComLoginSemPapelPorCategoria(@Param("unidadeId") UUID unidadeId);
 
     @Override
     @Query("""
