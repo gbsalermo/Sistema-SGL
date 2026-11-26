@@ -20,6 +20,10 @@ public final class SessaoDeTeste {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null, List.of()));
     }
 
+    public static void entrar(AuthenticatedUser user) {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null, List.of()));
+    }
+
     public static void sair() {
         SecurityContextHolder.clearContext();
     }

@@ -21,8 +21,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.repository.UnidadeRepository;
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.security.AuthenticatedUser;
 import com.sgl.security.CurrentUser;
@@ -55,6 +56,7 @@ public class ApiSecurityConfig {
             HttpSecurity http,
             JwtService jwtService,
             UsuarioRepository usuarioRepository,
+            LaboratorioRepository laboratorioRepository,
             UnidadeRepository unidadeRepository,
             CorsConfigurationSource corsConfigurationSource) throws Exception {
 
@@ -93,7 +95,7 @@ public class ApiSecurityConfig {
                                 SecurityErrorWriter.NAO_AUTENTICADO))
                 .accessDeniedHandler((request, response, ex) ->
                         SecurityErrorWriter.write(response, HttpServletResponse.SC_FORBIDDEN, accessDeniedCode())))
-            .addFilterBefore(new JwtAuthenticationFilter(jwtService, usuarioRepository),
+            .addFilterBefore(new JwtAuthenticationFilter(jwtService, usuarioRepository, laboratorioRepository),
                     UsernamePasswordAuthenticationFilter.class)
             // After authorization: the tenant is resolved only for requests that are already allowed.
             .addFilterAfter(new TenantRequestFilter(unidadeRepository), AuthorizationFilter.class)
@@ -115,13 +117,13 @@ public class ApiSecurityConfig {
         AuthorizationManager<RequestAuthorizationContext> ativo =
                 AuthorityAuthorizationManager.hasAuthority(JwtAuthenticationFilter.ACTIVE_AUTHORITY);
         AuthorizationManager<RequestAuthorizationContext> administradorGeral = AuthorizationManagers.allOf(
-                ativo, AuthorityAuthorizationManager.hasRole(Perfil.ADMINISTRADOR_GERAL.name()));
+                ativo, AuthorityAuthorizationManager.hasRole(PapelSistema.ADMINISTRADOR_GERAL.name()));
         AuthorizationManager<RequestAuthorizationContext> administrador = AuthorizationManagers.allOf(
                 ativo, AuthorityAuthorizationManager.hasAnyRole(
-                        Perfil.ADMINISTRADOR.name(), Perfil.ADMINISTRADOR_GERAL.name()));
+                        PapelSistema.ADMINISTRADOR_LOCAL.name(), PapelSistema.ADMINISTRADOR_GERAL.name()));
         AuthorizationManager<RequestAuthorizationContext> gestao = AuthorizationManagers.allOf(
                 ativo, AuthorityAuthorizationManager.hasAnyRole(
-                        Perfil.GESTOR.name(), Perfil.ADMINISTRADOR.name(), Perfil.ADMINISTRADOR_GERAL.name()));
+                        PapelSistema.GESTOR.name(), PapelSistema.ADMINISTRADOR_LOCAL.name(), PapelSistema.ADMINISTRADOR_GERAL.name()));
 
         for (HttpMethod metodo : GRAVACOES) {
             auth.requestMatchers(metodo, "/api/v1/unidades", "/api/v1/unidades/**").access(administradorGeral)

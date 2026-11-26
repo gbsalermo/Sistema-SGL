@@ -2,6 +2,7 @@ package com.sgl.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,10 @@ import com.sgl.model.enums.SituacaoUsuario;
 
 @Repository
 public interface LaboratorioRepository extends JpaRepository<Laboratorio, Long> {
+
+    // Not tenant-filtered: it runs in the authentication filter, before any tenant is resolved.
+    @Query("SELECT l.publicId FROM Laboratorio l WHERE l.responsavel.id = :usuarioId AND l.ativo = true")
+    Set<UUID> findPublicIdsAtivosPorResponsavel(@Param("usuarioId") Long usuarioId);
 
     Optional<Laboratorio> findByPublicId(UUID publicId);
     Optional<Laboratorio> findByPublicIdAndUnidadePublicId(UUID publicId, UUID unidadePublicId);

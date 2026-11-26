@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.sgl.corporate.CorporateGatewayTestConfig;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.UnidadeRepository;
@@ -231,6 +232,22 @@ class AutorizacaoGravacoesIntegrationTest {
 
         mockMvc.perform(get("/api/v1/produtos").header(HttpHeaders.AUTHORIZATION, bearer(estagiario)))
                 .andExpect(status().isOk());
+    }
+
+    // Roles accumulate: a GESTOR who is also ADMINISTRADOR_LOCAL gets both sets of permissions.
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("gravacoesDeAdministrador")
+    void gravacaoDeAdministrador_gestorQueTambemEhAdministradorLocal_naoEhBarrado(HttpMethod metodo, String caminho)
+            throws Exception {
+        Usuario usuario = novoUsuario(Perfil.GESTOR, SituacaoUsuario.ATIVO);
+        usuario.substituirPapeis(List.of(PapelSistema.GESTOR, PapelSistema.ADMINISTRADOR_LOCAL));
+        usuarioRepository.saveAndFlush(usuario);
+        int status = mockMvc.perform(request(metodo, caminho)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(usuario))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andReturn().getResponse().getStatus();
+        assertThat(status).isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
     }
 
     private org.assertj.core.api.AbstractIntegerAssert<?> assertStatus(HttpMethod metodo, String caminho, Perfil perfil)
