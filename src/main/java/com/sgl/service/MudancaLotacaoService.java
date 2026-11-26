@@ -11,7 +11,8 @@ import org.springframework.stereotype.Service;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
 import com.sgl.model.VinculoOperacionalUsuario;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.VinculoOperacionalUsuarioRepository;
 
@@ -38,19 +39,20 @@ public class MudancaLotacaoService {
     private final Clock clock;
 
     /**
-     * Define a Unidade do usuário e, se ela mudou, aplica a regra. {@code perfilProvisorio} é a
-     * sugestão pelo cargo, a mesma de um primeiro login: o perfil é obrigatório, mas um pendente não
-     * opera nada até a aprovação confirmar o perfil.
+     * Define a Unidade do usuário e, se ela mudou, aplica a regra. {@code categoriaProvisoria} é a
+     * sugestão pelo cargo, a mesma de um primeiro login; um pendente não opera nada até a aprovação.
      */
-    public void aplicar(Usuario usuario, Unidade nova, Perfil perfilProvisorio) {
+    public void aplicar(Usuario usuario, Unidade nova, CategoriaCargo categoriaProvisoria) {
         Unidade atual = usuario.getUnidade();
         usuario.setUnidade(nova);
-        if (atual == null || mesma(atual, nova) || usuario.getPerfil() == Perfil.ADMINISTRADOR_GERAL) {
+        if (atual == null || mesma(atual, nova) || usuario.temPapel(PapelSistema.ADMINISTRADOR_GERAL)) {
             return;
         }
 
         usuario.limparLaboratorios();
-        usuario.setPerfil(perfilProvisorio);
+        // Roles were granted in the old Unidade; the new one decides again, as for a first login.
+        usuario.substituirPapeis(List.of());
+        usuario.setCategoriaCargo(categoriaProvisoria);
         usuario.setSituacao(SituacaoUsuario.PENDENTE_VINCULACAO);
 
         LocalDate hoje = LocalDate.now(clock);

@@ -25,7 +25,7 @@ import com.sgl.corporate.CorporateDtos.Colaborador;
 import com.sgl.corporate.CorporateDtos.Empregado;
 import com.sgl.corporate.CpfMasker;
 import com.sgl.corporate.LoginNormalizer;
-import com.sgl.corporate.ProfileSuggestion;
+import com.sgl.corporate.CategoriaCargoResolver;
 import com.sgl.corporate.TipoPessoaCorporativa;
 import com.sgl.dto.request.ImportarPessoaRequestDTO;
 import com.sgl.dto.response.PessoaCorporativaResponseDTO;
@@ -276,7 +276,7 @@ public class PessoaCorporativaService {
             return new PessoaCorporativaResponseDTO(p.referencia(), p.tipo(), p.nome(), p.matricula(), p.cargo(),
                     p.sublotacao(), p.unidadeNome(), p.email(), existing != null,
                     existing == null ? null : existing.getSituacao(),
-                    ProfileSuggestion.fromCargo(p.cargo(), p.tipo()).orElse(null));
+                    CategoriaCargoResolver.fromCargo(p.cargo(), p.tipo()).orElse(null));
         }).toList();
     }
 

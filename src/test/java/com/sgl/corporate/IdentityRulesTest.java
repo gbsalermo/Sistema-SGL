@@ -16,7 +16,7 @@ import org.springframework.web.client.RestClient;
 import com.sgl.corporate.CorporateDtos.Colaborador;
 import com.sgl.corporate.CorporateDtos.CorporateLoginUser;
 import com.sgl.corporate.CorporateDtos.Empregado;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
 
 class IdentityRulesTest {
 
@@ -211,20 +211,20 @@ class IdentityRulesTest {
     @ParameterizedTest
     @CsvSource(value = {"NULL", "Motorista", "bolsista", "Analista"}, nullValues = "NULL")
     void fromCargo_colaboradorSempreEstagiario(String cargo) {
-        assertEquals(Optional.of(Perfil.ESTAGIARIO),
-            ProfileSuggestion.fromCargo(cargo, TipoPessoaCorporativa.COLABORADOR));
+        assertEquals(Optional.of(CategoriaCargo.ESTAGIARIO),
+            CategoriaCargoResolver.fromCargo(cargo, TipoPessoaCorporativa.COLABORADOR));
     }
 
     @ParameterizedTest
     @CsvSource({"Pesquisador,PESQUISADOR", "analista,ANALISTA", "Técnico,TECNICO", "assistente,TECNICO",
         "estagiário,ESTAGIARIO", "bolsista,ESTAGIARIO"})
-    void fromCargo(String cargo, Perfil esperado) {
-        assertEquals(Optional.of(esperado), ProfileSuggestion.fromCargo(cargo, TipoPessoaCorporativa.EMPREGADO));
+    void fromCargo(String cargo, CategoriaCargo esperado) {
+        assertEquals(Optional.of(esperado), CategoriaCargoResolver.fromCargo(cargo, TipoPessoaCorporativa.EMPREGADO));
     }
 
     @Test
     void fromCargo_desconhecido_vazio() {
-        assertEquals(Optional.empty(), ProfileSuggestion.fromCargo("Motorista", TipoPessoaCorporativa.EMPREGADO));
-        assertEquals(Optional.empty(), ProfileSuggestion.fromCargo(null, TipoPessoaCorporativa.EMPREGADO));
+        assertEquals(Optional.empty(), CategoriaCargoResolver.fromCargo("Motorista", TipoPessoaCorporativa.EMPREGADO));
+        assertEquals(Optional.empty(), CategoriaCargoResolver.fromCargo(null, TipoPessoaCorporativa.EMPREGADO));
     }
 }

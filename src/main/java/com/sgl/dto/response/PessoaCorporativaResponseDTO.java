@@ -1,7 +1,7 @@
 package com.sgl.dto.response;
 
 import com.sgl.corporate.TipoPessoaCorporativa;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.model.enums.SituacaoUsuario;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +24,6 @@ public record PessoaCorporativaResponseDTO(
         boolean jaCadastrado,
         @Schema(description = "Situação do cadastro; nulo se não cadastrada.")
         SituacaoUsuario situacao,
-        @Schema(description = "Perfil sugerido a partir do cargo; nulo se não reconhecido.")
-        Perfil perfilSugerido) {
+        @Schema(description = "Categoria de cargo sugerida a partir do cargo; nula se não reconhecida.")
+        CategoriaCargo categoriaSugerida) {
 }
