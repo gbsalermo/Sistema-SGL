@@ -20,7 +20,9 @@ import com.sgl.corporate.TipoPessoaCorporativa;
 import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
 import com.sgl.dto.request.ImportarLoteRequestDTO;
 import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
+import com.sgl.dto.response.UsuarioSessaoResponseDTO;
 import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
+import com.sgl.model.enums.CategoriaCargo;
 import com.sgl.dto.response.MembroEquipeResponseDTO;
 import com.sgl.dto.response.PessoaCorporativaResponseDTO;
 import com.sgl.dto.response.ResultadoImportacaoDTO;
@@ -58,6 +60,7 @@ public class EquipeLaboratorioService {
     private final VinculoOperacionalUsuarioRepository vinculoRepository;
     private final PessoaCorporativaService pessoaCorporativaService;
     private final VinculoOperacionalUsuarioService vinculoOperacionalService;
+    private final UsuarioService usuarioService;
     private final Clock clock;
 
     /**
@@ -189,6 +192,16 @@ public class EquipeLaboratorioService {
             LOG.warn("Importação em lote: falha em uma pessoa: {}", e.getClass().getSimpleName());
             return new ResultadoImportacaoDTO(item.referencia(), null, Resultado.ERRO, e.getMessage());
         }
+    }
+
+    public List<UsuarioSessaoResponseDTO> listarPendentes(UUID laboratorioId) {
+        exigirGestaoDaEquipe(laboratorioId);
+        return usuarioService.listarPendentesParaEquipe();
+    }
+
+    public UsuarioSessaoResponseDTO aprovarPendente(UUID laboratorioId, UUID usuarioId, CategoriaCargo categoria) {
+        Laboratorio laboratorio = exigirGestaoDaEquipe(laboratorioId);
+        return usuarioService.aprovarNaEquipe(usuarioId, laboratorio, categoria);
     }
 
     public List<VinculoOperacionalUsuarioResponseDTO> listarVinculos(UUID laboratorioId) {

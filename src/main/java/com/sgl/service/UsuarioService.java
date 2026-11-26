@@ -246,6 +246,38 @@ public class UsuarioService {
         return new UsuarioSessaoResponseDTO(salvo);
     }
 
+    /**
+     * Pending newcomers of the Unidade, for any laboratory's team: every responsável sees all of them.
+     * The caller has already checked who manages that team.
+     */
+    @Transactional(readOnly = true)
+    public List<UsuarioSessaoResponseDTO> listarPendentesParaEquipe() {
+        return usuarioRepository
+                .findBySituacaoAndUnidadePublicId(SituacaoUsuario.PENDENTE_VINCULACAO, CurrentUser.unidadeEmOperacao())
+                .stream()
+                .map(UsuarioSessaoResponseDTO::new)
+                .toList();
+    }
+
+    /**
+     * Approves a pending newcomer into the laboratory whose team is being managed: active, that laboratory
+     * as their list, no system roles. A second approval of the same person is refused (USUARIO_NAO_PENDENTE).
+     */
+    @Transactional
+    public UsuarioSessaoResponseDTO aprovarNaEquipe(UUID id, Laboratorio laboratorio, CategoriaCargo categoria) {
+        Usuario usuario = buscarPendenteDaUnidadeEmOperacao(id);
+        usuario.substituirPapeis(List.of());
+        if (categoria != null) {
+            usuario.setCategoriaCargo(categoria);
+        }
+        usuario.substituirLaboratorios(List.of(laboratorio));
+        usuario.setSituacao(SituacaoUsuario.ATIVO);
+        Usuario salvo = usuarioRepository.save(usuario);
+        AUDIT.info("acao=PENDENTE_APROVADO ator={} alvo={} laboratorio={} categoria={}", CurrentUser.get().publicId(),
+                salvo.getPublicId(), laboratorio.getPublicId(), salvo.getCategoriaCargo());
+        return new UsuarioSessaoResponseDTO(salvo);
+    }
+
     @Transactional
     public void recusar(UUID id) {
         AuthenticatedUser ator = CurrentUser.get();

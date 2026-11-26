@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.corporate.TipoPessoaCorporativa;
+import com.sgl.dto.request.AprovarNaEquipeRequestDTO;
 import com.sgl.dto.request.EditarVinculoOperacionalRequestDTO;
+import com.sgl.dto.response.UsuarioSessaoResponseDTO;
 import com.sgl.dto.request.ImportarLoteRequestDTO;
 import com.sgl.dto.request.VinculoOperacionalUsuarioRequestDTO;
 import com.sgl.dto.response.VinculoOperacionalUsuarioResponseDTO;
@@ -56,6 +58,20 @@ public class EquipeLaboratorioController {
     public List<ResultadoImportacaoDTO> importar(@PathVariable UUID laboratorioId,
             @Valid @RequestBody ImportarLoteRequestDTO lote) {
         return service.importar(laboratorioId, lote);
+    }
+
+    @Operation(summary = "Listar quem aguarda aprovação na Unidade", description = "Todos os responsáveis veem todos os pendentes.")
+    @GetMapping("/pendentes")
+    public List<UsuarioSessaoResponseDTO> listarPendentes(@PathVariable UUID laboratorioId) {
+        return service.listarPendentes(laboratorioId);
+    }
+
+    @Operation(summary = "Aprovar pendente para este laboratório",
+            description = "A pessoa fica ativa, sem papéis do sistema, com este laboratório. Recusar é só para administradores.")
+    @PostMapping("/pendentes/{usuarioId}/aprovar")
+    public UsuarioSessaoResponseDTO aprovarPendente(@PathVariable UUID laboratorioId, @PathVariable UUID usuarioId,
+            @RequestBody(required = false) AprovarNaEquipeRequestDTO dto) {
+        return service.aprovarPendente(laboratorioId, usuarioId, dto == null ? null : dto.categoriaCargo());
     }
 
     @Operation(summary = "Listar acessos temporários ao laboratório", description = "Vigentes primeiro.")
