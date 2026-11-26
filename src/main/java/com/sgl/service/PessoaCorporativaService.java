@@ -97,6 +97,18 @@ public class PessoaCorporativaService {
 
     public List<PessoaCorporativaResponseDTO> buscar(TipoPessoaCorporativa tipo, String termo) {
         requireGestao(CurrentUser.get());
+        return pesquisar(tipo, termo);
+    }
+
+    /**
+     * People of the Unidade in operation not yet in the SGL, for a laboratory's batch registration.
+     * The caller has already checked who may manage that laboratory's team.
+     */
+    public List<PessoaCorporativaResponseDTO> candidatos(TipoPessoaCorporativa tipo, String termo) {
+        return pesquisar(tipo, termo).stream().filter(pessoa -> !pessoa.jaCadastrado()).toList();
+    }
+
+    private List<PessoaCorporativaResponseDTO> pesquisar(TipoPessoaCorporativa tipo, String termo) {
         String term = termo == null ? "" : termo.trim();
         if (term.length() < MIN_TERM_LENGTH) {
             throw new BusinessRuleException("Informe ao menos " + MIN_TERM_LENGTH + " caracteres para buscar.");
@@ -136,6 +148,29 @@ public class PessoaCorporativaService {
 
         // Fetched again by the opaque reference: the browser never held (or sends) the CPF.
         Person person = fetch(request.getTipo(), request.getReferencia(), codigo, unidade);
+        Usuario saved = cadastrar(person, request.getTipo(), papeis, request.getCategoriaCargo(), laboratorios,
+                unidade, actor, null);
+        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(saved.getPublicId())
+                .map(UsuarioSessaoResponseDTO::new)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", saved.getPublicId()));
+    }
+
+    /**
+     * Registers one person straight into a laboratory's team, active and without system roles. The
+     * caller has already checked who may manage that team; each call is its own unit of work, so one
+     * failing person in a batch does not undo the others.
+     */
+    public Usuario importarParaLaboratorio(TipoPessoaCorporativa tipo, String referencia, CategoriaCargo categoria,
+            Laboratorio laboratorio) {
+        Unidade unidade = unidadeEmOperacao();
+        Person person = fetch(tipo, referencia, codigoCorporativo(unidade), unidade);
+        return cadastrar(person, tipo, Set.of(), categoria, Set.of(laboratorio), unidade, CurrentUser.get(),
+                laboratorio.getPublicId());
+    }
+
+    private Usuario cadastrar(Person person, TipoPessoaCorporativa tipo, Set<PapelSistema> papeis,
+            CategoriaCargo categoria, Set<Laboratorio> laboratorios, Unidade unidade, AuthenticatedUser actor,
+            java.util.UUID laboratorioDaEquipe) {
         if (alreadyRegistered(person)) {
             throw ImportacaoRejectedException.jaCadastrado();
         }
@@ -152,8 +187,8 @@ public class PessoaCorporativaService {
         usuario.substituirLaboratorios(laboratorios);
         usuario.substituirPapeis(papeis);
         // A category chosen on import wins; otherwise it comes from the corporate cargo, as on a first login.
-        usuario.setCategoriaCargo(request.getCategoriaCargo() != null ? request.getCategoriaCargo()
-                : CategoriaCargoResolver.fromCargo(person.cargo(), request.getTipo()).orElse(CategoriaCargo.TECNICO));
+        usuario.setCategoriaCargo(categoria != null ? categoria
+                : CategoriaCargoResolver.fromCargo(person.cargo(), tipo).orElse(CategoriaCargo.TECNICO));
         usuario.setSituacao(SituacaoUsuario.ATIVO);
         usuario.setOrigem(OrigemUsuario.CORPORATIVO);
         usuario.setAtivo(true);
@@ -167,14 +202,11 @@ public class PessoaCorporativaService {
             // Lost a race against another import or a first login of the same person.
             throw ImportacaoRejectedException.jaCadastrado();
         }
-        AUDIT.info("acao=USUARIO_IMPORTADO ator={} alvo={} papeis={} categoria={} unidade={} laboratorios={} cpf={}",
+        AUDIT.info("acao=USUARIO_IMPORTADO ator={} alvo={} papeis={} categoria={} unidade={} laboratorios={} laboratorio={} cpf={}",
                 actor.publicId(), saved.getPublicId(), saved.getPapeis(), saved.getCategoriaCargo(),
-                unidade.getPublicId(), laboratorios.size(),
+                unidade.getPublicId(), laboratorios.size(), laboratorioDaEquipe,
                 CpfMasker.mask(person.cpf()));
-
-        return usuarioRepository.findWithUnidadeAndLaboratoriosByPublicId(saved.getPublicId())
-                .map(UsuarioSessaoResponseDTO::new)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário", saved.getPublicId()));
+        return saved;
     }
 
     private static String constraintName(DataIntegrityViolationException e) {
@@ -303,9 +335,10 @@ public class PessoaCorporativaService {
         return unidade.getCodigoCorporativo();
     }
 
+    // Laboratory teams register people through their own team; centrally, administrators only.
     private static void requireGestao(AuthenticatedUser user) {
-        if (!PapelPolicy.isGestao(user.papeis())) {
-            throw new AccessDeniedException("Apenas gestão pode buscar e importar pessoas corporativas.");
+        if (!PapelPolicy.isAdministrador(user.papeis())) {
+            throw new AccessDeniedException("Apenas administradores buscam e importam pessoas fora da equipe do laboratório.");
         }
     }
 

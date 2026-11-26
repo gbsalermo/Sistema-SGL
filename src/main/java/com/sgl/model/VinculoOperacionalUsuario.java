@@ -43,4 +43,16 @@ public class VinculoOperacionalUsuario {
             || sci != null && sci.getProjeto().getId().equals(alvo.getId())
             || atividade != null && atividade.getSci().getProjeto().getId().equals(alvo.getId());
     }
+
+    /**
+     * Ends the link on {@code hoje}. A link that has not started yet ends on its own start date,
+     * so the period never ends before it begins.
+     */
+    public void encerrarEm(LocalDate hoje) {
+        LocalDate fim = dataInicio != null && dataInicio.isAfter(hoje) ? dataInicio : hoje;
+        if (dataFim == null || dataFim.isAfter(fim)) {
+            dataFim = fim;
+        }
+        encerrado = true;
+    }
 }

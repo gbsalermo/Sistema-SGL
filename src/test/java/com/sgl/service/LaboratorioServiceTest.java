@@ -94,9 +94,11 @@ class LaboratorioServiceTest {
         dto.setNome("Laboratório de Solos");
         dto.setDescricao("Análises de solo");
         dto.setAtivo(true);
+        dto.setResponsavelId(RESPONSAVEL_PUBLIC_ID);
 
         // O tenant ativo precisa ser a mesma unidade do DTO, senão validarTenantUnidade barra a operação.
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        responsavelAtivoNaUnidade();
         when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
         when(laboratorioRepository.save(any(Laboratorio.class))).thenReturn(laboratorio);
 
@@ -202,8 +204,10 @@ class LaboratorioServiceTest {
         dto.setUnidadeId(UNIDADE_PUBLIC_ID);
         dto.setNome("Laboratório de Solos - Atualizado");
         dto.setDescricao("Nova descrição");
+        dto.setResponsavelId(RESPONSAVEL_PUBLIC_ID);
 
         TenantContext.definir(UNIDADE_PUBLIC_ID);
+        responsavelAtivoNaUnidade();
         when(laboratorioRepository.findByPublicIdAndUnidadePublicId(LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(laboratorio));
         when(unidadeRepository.findByPublicId(UNIDADE_PUBLIC_ID)).thenReturn(Optional.of(unidade));
@@ -242,5 +246,14 @@ class LaboratorioServiceTest {
                 () -> laboratorioService.criar(dto));
 
         assertEquals("A operação não pode acessar dados de outra unidade.", ex.getMessage());
+    }
+
+    private void responsavelAtivoNaUnidade() {
+        Usuario responsavel = new Usuario();
+        responsavel.setPublicId(RESPONSAVEL_PUBLIC_ID);
+        responsavel.setUnidade(unidade);
+        responsavel.setAtivo(true);
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(RESPONSAVEL_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(responsavel));
     }
 }

@@ -12,6 +12,8 @@ import com.sgl.model.VinculoOperacionalUsuario;
 public interface VinculoOperacionalUsuarioRepository extends JpaRepository<VinculoOperacionalUsuario, Long> {
     List<VinculoOperacionalUsuario> findByUsuarioUnidadePublicId(UUID unidadeId);
     List<VinculoOperacionalUsuario> findByUsuarioAndEncerradoFalse(Usuario usuario);
+    List<VinculoOperacionalUsuario> findByLaboratorioAndEncerradoFalse(Laboratorio laboratorio);
+    List<VinculoOperacionalUsuario> findByLaboratorioAndUsuarioAndEncerradoFalse(Laboratorio laboratorio, Usuario usuario);
     List<VinculoOperacionalUsuario> findByUsuarioPublicIdAndUsuarioUnidadePublicId(UUID usuarioId, UUID unidadeId);
     Optional<VinculoOperacionalUsuario> findByPublicIdAndUsuarioUnidadePublicId(UUID id, UUID unidadeId);
     boolean existsByLaboratorioAndProjetoAndEncerradoFalse(Laboratorio laboratorio, Projeto projeto);

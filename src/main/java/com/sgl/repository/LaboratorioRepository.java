@@ -55,4 +55,13 @@ public interface LaboratorioRepository extends JpaRepository<Laboratorio, Long> 
             """)
     List<Laboratorio> findComResponsavelSemCondicoes(@Param("unidadeId") UUID unidadeId,
             @Param("liberado") SituacaoUsuario liberado);
+
+    @Query("""
+            SELECT laboratorio FROM Laboratorio laboratorio
+            WHERE laboratorio.unidade.publicId = :unidadeId
+              AND laboratorio.ativo = true
+              AND laboratorio.responsavel IS NULL
+            ORDER BY laboratorio.nome
+            """)
+    List<Laboratorio> findAtivosSemResponsavel(@Param("unidadeId") UUID unidadeId);
 }

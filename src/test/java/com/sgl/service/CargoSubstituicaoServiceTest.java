@@ -54,7 +54,7 @@ class CargoSubstituicaoServiceTest {
 
     @BeforeEach
     void entrarComoGestor() {
-        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.ADMINISTRADOR);
     }
 
     @AfterEach
@@ -167,7 +167,8 @@ class CargoSubstituicaoServiceTest {
     void cargosIgnoraResiduoJaDespachadoOuCancelado() {
         Unidade u = unidade("UNI");
         Usuario inativo = usuario("Gestor Inativo", u, Perfil.GESTOR, false, SituacaoUsuario.ATIVO);
-        Laboratorio lab = laboratorio(u, "Lab", null);
+        // A responsável is set so that only the resíduos are under test (a lab without one is listed).
+        Laboratorio lab = laboratorio(u, "Lab", usuarioOk("Responsável", u, Perfil.PESQUISADOR));
         residuo(lab, inativo, inativo, StatusResiduo.DESPACHADO);
         residuo(lab, inativo, inativo, StatusResiduo.CANCELADO);
         TenantContext.definir(u.getPublicId());

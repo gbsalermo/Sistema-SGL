@@ -26,6 +26,7 @@ import com.sgl.model.enums.Perfil;
 import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.*;
 import com.sgl.security.AuthenticatedUser;
+import com.sgl.security.SessaoDeTeste;
 import com.sgl.security.CurrentUser;
 import org.springframework.security.access.AccessDeniedException;
 import com.sgl.tenant.TenantContext;
@@ -50,7 +51,8 @@ class VinculoOperacionalUsuarioServiceTest {
         // The real validator over the mocked repository: the rules under test live in it.
         service = new VinculoOperacionalUsuarioService(vinculos, usuarios, laboratorios, projetos, scis, atividades,
             new LaboratoriosDaPessoa(laboratorios));
-        AuthenticatedUser gestor = new AuthenticatedUser(UUID.randomUUID(), Perfil.GESTOR, SituacaoUsuario.ATIVO, UNIDADE);
+        // Centrally, only administrators manage links; teams use EquipeLaboratorioService.
+        AuthenticatedUser gestor = new AuthenticatedUser(UUID.randomUUID(), Perfil.ADMINISTRADOR, SituacaoUsuario.ATIVO, UNIDADE);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(gestor, null, List.of()));
     }
     @AfterEach void limpar() { TenantContext.limpar(); SecurityContextHolder.clearContext(); }
@@ -337,19 +339,31 @@ class VinculoOperacionalUsuarioServiceTest {
     }
 
     // Vínculos definem onde a pessoa opera: mexer neles segue as regras da troca de perfil.
-    @Test void gestorNaoAlteraLaboratoriosDeAdministrador() {
+    @Test void gestorNaoAlteraLaboratorios() {
+        TenantContext.definir(UNIDADE);
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+        assertThrows(AccessDeniedException.class, () -> service.definirLaboratorios(USUARIO, List.of(LAB)));
+    }
+
+    @Test void administradorLocalNaoAlteraLaboratoriosDeAdministradorGeral() {
         TenantContext.definir(UNIDADE);
         Usuario admin = analista();
-        admin.setPerfil(Perfil.ADMINISTRADOR);
+        admin.setPerfil(Perfil.ADMINISTRADOR_GERAL);
         when(usuarios.findByPublicIdAndUnidadePublicId(USUARIO, UNIDADE)).thenReturn(Optional.of(admin));
         assertThrows(AccessDeniedException.class, () -> service.definirLaboratorios(USUARIO, List.of(LAB)));
         assertTrue(admin.getLaboratorios().isEmpty());
     }
 
-    @Test void gestorNaoEncerraVinculoDeOutroGestor() {
+    @Test void gestorNaoEncerraVinculo() {
+        TenantContext.definir(UNIDADE);
+        SessaoDeTeste.entrar(UUID.randomUUID(), Perfil.GESTOR);
+        assertThrows(AccessDeniedException.class, () -> service.encerrar(UUID.randomUUID()));
+    }
+
+    @Test void administradorLocalNaoEncerraVinculoDeAdministradorGeral() {
         TenantContext.definir(UNIDADE);
         Usuario outroGestor = analista();
-        outroGestor.setPerfil(Perfil.GESTOR);
+        outroGestor.setPerfil(Perfil.ADMINISTRADOR_GERAL);
         VinculoOperacionalUsuario v = new VinculoOperacionalUsuario();
         v.setPublicId(UUID.randomUUID());
         v.setUsuario(outroGestor);
