@@ -1,5 +1,6 @@
 package com.sgl.service;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -98,6 +99,45 @@ class EquipeVinculosIntegrationTest {
         mockMvc.perform(put(vinculos(labA) + "/" + id + "/encerrar").header(HttpHeaders.AUTHORIZATION, bearer(responsavelA)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.encerrado").value(true));
+    }
+
+    @Test
+    // A link that has not started yet ends on its own start date, never before it.
+    void encerrarAcessoAgendadoNaoDeixaFimAntesDoInicio() throws Exception {
+        Usuario tecnico = novoUsuario(Perfil.TECNICO);
+        LocalDate inicio = LocalDate.now().plusDays(5);
+
+        String id = JsonPath.read(mockMvc.perform(criarAgendado(tecnico, inicio)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(put(vinculos(labA) + "/" + id + "/encerrar").header(HttpHeaders.AUTHORIZATION, bearer(responsavelA)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.encerrado").value(true))
+                .andExpect(jsonPath("$.dataFim").value(inicio.toString()));
+    }
+
+    @Test
+    void retirarDaEquipeQuemTemAcessoAgendadoNaoDeixaFimAntesDoInicio() throws Exception {
+        Usuario tecnico = novoUsuario(Perfil.TECNICO);
+        tecnico.substituirLaboratorios(List.of(labA));
+        usuarioRepository.saveAndFlush(tecnico);
+        LocalDate inicio = LocalDate.now().plusDays(5);
+        mockMvc.perform(criarAgendado(tecnico, inicio)).andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/v1/laboratorios/" + labA.getPublicId() + "/equipe/" + tecnico.getPublicId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(responsavelA)))
+                .andExpect(status().isNoContent());
+
+        assertThat(vinculoRepository.findByUsuarioUnidadePublicId(unidade.getPublicId()))
+                .allSatisfy(v -> assertThat(v.getDataFim()).isEqualTo(inicio));
+    }
+
+    private RequestBuilder criarAgendado(Usuario alvo, LocalDate inicio) {
+        return post(vinculos(labA)).header(HttpHeaders.AUTHORIZATION, bearer(responsavelA))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"usuarioId":"%s","laboratorioId":"%s","dataInicio":"%s","dataFim":"%s"}
+                    """.formatted(alvo.getPublicId(), labA.getPublicId(), inicio, inicio.plusDays(10)));
     }
 
     @Test

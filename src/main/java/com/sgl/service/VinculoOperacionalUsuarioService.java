@@ -241,8 +241,7 @@ public class VinculoOperacionalUsuarioService {
         if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo já encerrado.");
         }
-        v.setDataFim(LocalDate.now());
-        v.setEncerrado(true);
+        v.encerrarEm(LocalDate.now());
         return new VinculoOperacionalUsuarioResponseDTO(v);
     }
 

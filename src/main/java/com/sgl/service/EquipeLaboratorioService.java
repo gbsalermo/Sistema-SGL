@@ -148,12 +148,7 @@ public class EquipeLaboratorioService {
                     .toList());
             usuarioRepository.save(alvo);
         }
-        vinculos.forEach(vinculo -> {
-            vinculo.setEncerrado(true);
-            if (vinculo.getDataFim() == null || vinculo.getDataFim().isAfter(hoje)) {
-                vinculo.setDataFim(hoje);
-            }
-        });
+        vinculos.forEach(vinculo -> vinculo.encerrarEm(hoje));
         vinculoRepository.saveAll(vinculos);
         auditar("EQUIPE_RETIRADA", alvo, laboratorio);
     }

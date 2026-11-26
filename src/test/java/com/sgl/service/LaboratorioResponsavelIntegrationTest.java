@@ -112,6 +112,42 @@ class LaboratorioResponsavelIntegrationTest {
     }
 
     @Test
+    // Closing a laboratory whose responsável left must not require naming a new one.
+    void inativarLaboratorioComResponsavelInativo_200() throws Exception {
+        Usuario saiu = novoUsuario(Perfil.PESQUISADOR, SituacaoUsuario.ATIVO, true);
+        Laboratorio lab = laboratorioRepository.saveAndFlush(Laboratorio.builder()
+                .unidade(unidade).nome("Lab Fechando").ativo(true).responsavel(saiu).build());
+        saiu.setAtivo(false);
+        usuarioRepository.saveAndFlush(saiu);
+
+        mockMvc.perform(put(LABORATORIOS + "/" + lab.getPublicId()).header(HttpHeaders.AUTHORIZATION, bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content(corpoInativo("Lab Fechando", saiu)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ativo").value(false));
+    }
+
+    @Test
+    void inativarLaboratorioSemResponsavel_200() throws Exception {
+        Laboratorio lab = laboratorioRepository.saveAndFlush(Laboratorio.builder()
+                .unidade(unidade).nome("Lab Antigo").ativo(true).build());
+
+        mockMvc.perform(put(LABORATORIOS + "/" + lab.getPublicId()).header(HttpHeaders.AUTHORIZATION, bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content(corpoInativo("Lab Antigo", null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ativo").value(false));
+    }
+
+    @Test
+    void editarLaboratorioAtivoSemResponsavel_400() throws Exception {
+        Laboratorio lab = laboratorioRepository.saveAndFlush(Laboratorio.builder()
+                .unidade(unidade).nome("Lab Ativo").ativo(true).build());
+
+        mockMvc.perform(put(LABORATORIOS + "/" + lab.getPublicId()).header(HttpHeaders.AUTHORIZATION, bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo("Lab Ativo", null)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void laboratorioSemResponsavelApareceEmCargosASubstituir() throws Exception {
         Laboratorio semResponsavel = laboratorioRepository.saveAndFlush(Laboratorio.builder()
                 .unidade(unidade).nome("Lab Órfão").ativo(true).build());
@@ -132,6 +168,11 @@ class LaboratorioResponsavelIntegrationTest {
     private String corpo(String nome, Usuario responsavel) {
         String resp = responsavel == null ? "" : ",\"responsavelId\":\"" + responsavel.getPublicId() + "\"";
         return "{\"unidadeId\":\"%s\",\"nome\":\"%s\",\"ativo\":true%s}".formatted(unidade.getPublicId(), nome, resp);
+    }
+
+    private String corpoInativo(String nome, Usuario responsavel) {
+        String resp = responsavel == null ? "" : ",\"responsavelId\":\"" + responsavel.getPublicId() + "\"";
+        return "{\"unidadeId\":\"%s\",\"nome\":\"%s\",\"ativo\":false%s}".formatted(unidade.getPublicId(), nome, resp);
     }
 
     private List<UUID> laboratoriosDe(Usuario usuario) {

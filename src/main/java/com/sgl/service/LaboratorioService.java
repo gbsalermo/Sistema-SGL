@@ -39,7 +39,7 @@ public class LaboratorioService {
         Laboratorio laboratorio = new Laboratorio();
         laboratorio.setDescricao(dto.getDescricao());
 
-        Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavelId(), unidade);
+        Usuario responsavel = buscarResponsavelCompativel(exigirResponsavel(dto.getResponsavelId()), unidade);
         laboratorio.setResponsavel(responsavel);
 
         laboratorio.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
@@ -87,10 +87,17 @@ public class LaboratorioService {
         Unidade unidade = unidadeRepository.findByPublicId(dto.getUnidadeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade", dto.getUnidadeId()));
 
-        // The previous responsável stays in the team; removing them is an explicit team action.
-        Usuario responsavel = buscarResponsavelCompativel(dto.getResponsavelId(), unidade);
-        laboratorio.setResponsavel(responsavel);
-        incluirNaEquipe(responsavel, laboratorio);
+        boolean ficaAtivo = dto.getAtivo() != null ? dto.getAtivo() : Boolean.TRUE.equals(laboratorio.getAtivo());
+        boolean mantemResponsavel = dto.getResponsavelId() == null
+                || (laboratorio.getResponsavel() != null
+                        && dto.getResponsavelId().equals(laboratorio.getResponsavel().getPublicId()));
+        // Closing a laboratory must not force naming a new responsável: keep whoever is recorded.
+        if (ficaAtivo || !mantemResponsavel) {
+            // The previous responsável stays in the team; removing them is an explicit team action.
+            Usuario responsavel = buscarResponsavelCompativel(exigirResponsavel(dto.getResponsavelId()), unidade);
+            laboratorio.setResponsavel(responsavel);
+            incluirNaEquipe(responsavel, laboratorio);
+        }
 
         laboratorio.setDescricao(dto.getDescricao());
         laboratorio.setNome(dto.getNome());
@@ -137,6 +144,13 @@ public class LaboratorioService {
             throw new BusinessRuleException(
                     "Cabeçalho X-SGL-Unidade-Id é obrigatório para esta operação.");
         }
+    }
+
+    private static UUID exigirResponsavel(UUID responsavelId) {
+        if (responsavelId == null) {
+            throw new BusinessRuleException("responsável é obrigatório");
+        }
+        return responsavelId;
     }
 
     private Usuario buscarResponsavelCompativel(UUID responsavelId, Unidade unidade) {

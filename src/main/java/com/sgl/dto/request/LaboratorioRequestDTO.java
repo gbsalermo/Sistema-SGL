@@ -29,8 +29,7 @@ public class LaboratorioRequestDTO implements Serializable {
     @Schema(description = "Descrição do laboratório.", example = "Laboratório destinado a atividades de síntese e análise de compostos orgânicos.")
     private String descricao;
 
-    @Schema(description = "Identificador público UUID do usuário responsável pelo laboratório. Obrigatório: o responsável organiza a equipe.", example = "550e8400-e29b-41d4-a716-446655440001", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "responsável é obrigatório")
+    @Schema(description = "Identificador público UUID do usuário responsável pelo laboratório. Obrigatório em laboratório ativo: o responsável organiza a equipe.", example = "550e8400-e29b-41d4-a716-446655440001", requiredMode = Schema.RequiredMode.REQUIRED)
     private UUID responsavelId;
 
     @Schema(description = "Indica se o laboratório está ativo.", example = "true")
