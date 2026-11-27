@@ -10,7 +10,9 @@ public class UsuarioRejectedException extends RuntimeException {
 
     public static final String USUARIO_NAO_PENDENTE = "USUARIO_NAO_PENDENTE";
     public static final String ULTIMO_ADMINISTRADOR_GERAL = "ULTIMO_ADMINISTRADOR_GERAL";
+    public static final String ULTIMO_ADMINISTRADOR_LOCAL = "ULTIMO_ADMINISTRADOR_LOCAL";
     public static final String USUARIO_PENDENTE = "USUARIO_PENDENTE";
+    public static final String RESPONSAVEL_NA_EQUIPE = "RESPONSAVEL_NA_EQUIPE";
 
     private final HttpStatus status;
     private final String codigo;
@@ -19,6 +21,12 @@ public class UsuarioRejectedException extends RuntimeException {
         super(message);
         this.status = status;
         this.codigo = codigo;
+    }
+
+    /** The responsável always belongs to the team; changing who it is happens in the laboratory record. */
+    public static UsuarioRejectedException responsavelNaEquipe() {
+        return new UsuarioRejectedException(HttpStatus.CONFLICT, RESPONSAVEL_NA_EQUIPE,
+                "O responsável não sai da equipe do próprio laboratório. Para trocar o responsável, edite o laboratório.");
     }
 
     public static UsuarioRejectedException naoPendente() {
@@ -33,6 +41,11 @@ public class UsuarioRejectedException extends RuntimeException {
     public static UsuarioRejectedException pendenteExigeAprovacao() {
         return new UsuarioRejectedException(HttpStatus.CONFLICT, USUARIO_PENDENTE,
                 "Este usuário aguarda aprovação. Use Aprovar, na aba Pendentes, para definir perfil e laboratórios.");
+    }
+
+    public static UsuarioRejectedException ultimoAdministradorLocal() {
+        return new UsuarioRejectedException(HttpStatus.CONFLICT, ULTIMO_ADMINISTRADOR_LOCAL,
+                "A Unidade precisa de pelo menos um administrador local ativo.");
     }
 
     public static UsuarioRejectedException ultimoAdministradorGeral() {

@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgl.dto.request.AprovarUsuarioRequestDTO;
-import com.sgl.dto.request.UsuarioPerfilRequestDTO;
+import com.sgl.dto.request.UsuarioCategoriaCargoRequestDTO;
+import com.sgl.dto.request.UsuarioPapeisRequestDTO;
 import com.sgl.dto.request.UsuarioRequestDTO;
 import com.sgl.dto.response.UsuarioResponseDTO;
 import com.sgl.dto.response.UsuarioSessaoResponseDTO;
@@ -69,22 +70,41 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody UsuarioRequestDTO dto) { return ResponseEntity.ok(usuarioService.atualizar(id, dto)); }
 
     @Operation(
-            summary = "Alterar perfil de acesso",
-            description = "Altera somente o perfil de acesso de um usuário existente. Endpoint destinado à administração; não cria nem substitui o cadastro institucional do usuário."
+            summary = "Alterar papéis do sistema",
+            description = "Substitui os papéis acumuláveis (ADMINISTRADOR_GERAL, ADMINISTRADOR_LOCAL, GESTOR) de um usuário da Unidade em operação. Lista vazia remove todos."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Perfil alterado com sucesso", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "200", description = "Papéis alterados", useReturnTypeSchema = true),
             @ApiResponse(responseCode = "400", description = "Regra de negócio violada", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "Perfil sem permissão ou alteração do próprio perfil", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "409", description = "Último Administrador geral ativo (ULTIMO_ADMINISTRADOR_GERAL)", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Papel que o ator não pode conceder ou alteração dos próprios papéis", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado na Unidade em operação", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Usuário pendente, último Administrador geral (ULTIMO_ADMINISTRADOR_GERAL) ou último administrador local da Unidade (ULTIMO_ADMINISTRADOR_LOCAL)", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    @PutMapping("/{id}/perfil")
-    public ResponseEntity<UsuarioResponseDTO> alterarPerfil(
+    @PutMapping("/{id}/papeis")
+    public ResponseEntity<UsuarioResponseDTO> alterarPapeis(
             @PathVariable UUID id,
-            @Valid @RequestBody UsuarioPerfilRequestDTO dto) {
-        return ResponseEntity.ok(usuarioService.alterarPerfil(id, dto.getPerfil()));
+            @Valid @RequestBody UsuarioPapeisRequestDTO dto) {
+        return ResponseEntity.ok(usuarioService.alterarPapeis(id, dto.getPapeis()));
+    }
+
+    @Operation(
+            summary = "Ajustar categoria de cargo",
+            description = "Ajusta a categoria de cargo quando o cargo corporativo não a define, como no caso de bolsistas."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Categoria alterada", useReturnTypeSchema = true),
+            @ApiResponse(responseCode = "400", description = "Estágio ativo impede sair de ESTAGIARIO", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Sem autoridade sobre o usuário", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado na Unidade em operação", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Usuário pendente", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PutMapping("/{id}/categoria-cargo")
+    public ResponseEntity<UsuarioResponseDTO> alterarCategoriaCargo(
+            @PathVariable UUID id,
+            @Valid @RequestBody UsuarioCategoriaCargoRequestDTO dto) {
+        return ResponseEntity.ok(usuarioService.alterarCategoriaCargo(id, dto.getCategoriaCargo()));
     }
 
     @Operation(summary = "Listar pendentes", description = "Usuários da Unidade em operação aguardando aprovação. Exige perfil de gestão.")

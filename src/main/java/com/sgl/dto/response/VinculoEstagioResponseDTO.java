@@ -30,6 +30,8 @@ public class VinculoEstagioResponseDTO {
 	private final LocalDate dataFimEfetiva;
 
 	private final TipoBolsa tipoBolsa;
+	private final UUID bolsaId;
+	private final String bolsaNome;
 	private final SituacaoEstagio situacao;
 	private final List<VinculoEstagioAtividadeResponseDTO> participacoesAtividade;
 	private final FormacaoEstagiario formacao;
@@ -82,6 +84,9 @@ public class VinculoEstagioResponseDTO {
 		this.dataFimEfetiva = entity.getDataFimEfetiva();
 
 		this.tipoBolsa = entity.getTipoBolsa();
+		this.bolsaId = entity.getBolsa() != null
+				? entity.getBolsa().getPublicId() : null;
+		this.bolsaNome = entity.getBolsaNome();
 		this.situacao = entity.getSituacao();
 		this.observacao = entity.getObservacao();
 

@@ -2,6 +2,7 @@ package com.sgl.service;
 
 import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -299,7 +300,7 @@ class PedidoServiceTest {
         aprovador.setPerfil(Perfil.ADMINISTRADOR_GERAL);
         PedidoRequestDTO dto = new PedidoRequestDTO();
         dto.setUsuarioId(APROVADOR_PUBLIC_ID);
-        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, aprovador.getPerfil());
+        SessaoDeTeste.entrar(APROVADOR_PUBLIC_ID, Perfil.legadoDe(aprovador.getPapeis(), aprovador.getCategoriaCargo()));
         dto.setLaboratorioId(LABORATORIO_PUBLIC_ID);
         when(usuarioRepository.findByPublicIdAndUnidadePublicId(APROVADOR_PUBLIC_ID, UNIDADE_PUBLIC_ID))
                 .thenReturn(Optional.of(aprovador));
@@ -575,6 +576,29 @@ class PedidoServiceTest {
 
         assertEquals("Informe o laboratório: o projeto está em mais de um laboratório.", exception.getMessage());
         verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    // A corporate user created before V51 with a management profile has no category until the next
+    // login; once that role is removed, nothing about them says "intern", so the regular path applies.
+    @Test
+    void pedidoDeQuemNaoTemPapelNemCategoriaSegueOFluxoComum() {
+        Laboratorio segundo = segundoLaboratorio(true);
+        Projeto projeto = projetoNosLaboratorios(laboratorio, segundo);
+        assertNull(solicitante.getCategoriaCargo());
+        assertTrue(solicitante.getPapeis().isEmpty());
+        when(usuarioRepository.findByPublicIdAndUnidadePublicId(SOLICITANTE_PUBLIC_ID, UNIDADE_PUBLIC_ID))
+                .thenReturn(Optional.of(solicitante));
+        when(projetoRepository.findByPublicId(PROJETO_PUBLIC_ID)).thenReturn(Optional.of(projeto));
+        when(laboratorioRepository.findByPublicId(SEGUNDO_LABORATORIO_PUBLIC_ID)).thenReturn(Optional.of(segundo));
+        when(vinculoOperacionalService.vinculadoLaboratorio(solicitante, segundo, LocalDate.now())).thenReturn(true);
+        when(produtoRepository.findByPublicId(PRODUTO_PUBLIC_ID)).thenReturn(Optional.of(produto));
+        when(produtoRepository.pertenceAUnidade(PRODUTO_PUBLIC_ID, UNIDADE_PUBLIC_ID)).thenReturn(true);
+        when(estoqueCentralRepository.findByUnidadeIdAndProdutoId(1L, 5L)).thenReturn(Optional.of(estoque));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PedidoResponseDTO resultado = pedidoService.criar(pedidoDoProjeto(SEGUNDO_LABORATORIO_PUBLIC_ID));
+
+        assertEquals(SEGUNDO_LABORATORIO_PUBLIC_ID, resultado.getLaboratorioId());
     }
 
     @Test

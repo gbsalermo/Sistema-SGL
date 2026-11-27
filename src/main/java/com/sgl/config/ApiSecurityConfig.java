@@ -21,8 +21,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.repository.UnidadeRepository;
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
 import com.sgl.security.AuthenticatedUser;
 import com.sgl.security.CurrentUser;
@@ -55,6 +56,7 @@ public class ApiSecurityConfig {
             HttpSecurity http,
             JwtService jwtService,
             UsuarioRepository usuarioRepository,
+            LaboratorioRepository laboratorioRepository,
             UnidadeRepository unidadeRepository,
             CorsConfigurationSource corsConfigurationSource) throws Exception {
 
@@ -73,14 +75,25 @@ public class ApiSecurityConfig {
                 }
             })
             .authorizeHttpRequests(auth -> {
-                auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/dev-login").permitAll()
+                auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/auth/config").permitAll()
+                    // Open here so outside dev/demo the missing controller answers 404, not 401; the
+                    // controller itself enforces loopback-only access.
+                    .requestMatchers("/api/v1/auth/dev/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/error").permitAll();
                 if (devProfile) {
                     auth.requestMatchers("/h2-console/**").permitAll();
                 }
                 // A PENDENTE_VINCULACAO user may only ask "who am I" until an admin approves them.
                 auth.requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated();
+                // A listagem completa do catálogo pode conter produtos ainda sem estoque.
+                // Restringir a consulta administrativa às mesmas funções que cadastram produtos.
+                auth.requestMatchers(HttpMethod.GET, "/api/v1/produtos/catalogo").access(
+                        AuthorizationManagers.allOf(
+                                AuthorityAuthorizationManager.hasAuthority(
+                                        JwtAuthenticationFilter.ACTIVE_AUTHORITY),
+                                AuthorityAuthorizationManager.hasAnyRole(
+                                        PapelSistema.ADMINISTRADOR_LOCAL.name(), PapelSistema.ADMINISTRADOR_GERAL.name())));
                 autorizarGravacoes(auth);
                 auth.anyRequest().hasAuthority(JwtAuthenticationFilter.ACTIVE_AUTHORITY);
             })
@@ -90,7 +103,7 @@ public class ApiSecurityConfig {
                                 SecurityErrorWriter.NAO_AUTENTICADO))
                 .accessDeniedHandler((request, response, ex) ->
                         SecurityErrorWriter.write(response, HttpServletResponse.SC_FORBIDDEN, accessDeniedCode())))
-            .addFilterBefore(new JwtAuthenticationFilter(jwtService, usuarioRepository),
+            .addFilterBefore(new JwtAuthenticationFilter(jwtService, usuarioRepository, laboratorioRepository),
                     UsernamePasswordAuthenticationFilter.class)
             // After authorization: the tenant is resolved only for requests that are already allowed.
             .addFilterAfter(new TenantRequestFilter(unidadeRepository), AuthorizationFilter.class)
@@ -112,13 +125,17 @@ public class ApiSecurityConfig {
         AuthorizationManager<RequestAuthorizationContext> ativo =
                 AuthorityAuthorizationManager.hasAuthority(JwtAuthenticationFilter.ACTIVE_AUTHORITY);
         AuthorizationManager<RequestAuthorizationContext> administradorGeral = AuthorizationManagers.allOf(
-                ativo, AuthorityAuthorizationManager.hasRole(Perfil.ADMINISTRADOR_GERAL.name()));
+                ativo, AuthorityAuthorizationManager.hasRole(PapelSistema.ADMINISTRADOR_GERAL.name()));
         AuthorizationManager<RequestAuthorizationContext> administrador = AuthorizationManagers.allOf(
                 ativo, AuthorityAuthorizationManager.hasAnyRole(
-                        Perfil.ADMINISTRADOR.name(), Perfil.ADMINISTRADOR_GERAL.name()));
+                        PapelSistema.ADMINISTRADOR_LOCAL.name(), PapelSistema.ADMINISTRADOR_GERAL.name()));
         AuthorizationManager<RequestAuthorizationContext> gestao = AuthorizationManagers.allOf(
                 ativo, AuthorityAuthorizationManager.hasAnyRole(
-                        Perfil.GESTOR.name(), Perfil.ADMINISTRADOR.name(), Perfil.ADMINISTRADOR_GERAL.name()));
+                        PapelSistema.GESTOR.name(), PapelSistema.ADMINISTRADOR_LOCAL.name(), PapelSistema.ADMINISTRADOR_GERAL.name()));
+
+        // A laboratory's team is managed by its responsável, who usually has no system role, so these
+        // writes only need an active session here; EquipeLaboratorioService decides per laboratory.
+        auth.requestMatchers("/api/v1/laboratorios/*/equipe", "/api/v1/laboratorios/*/equipe/**").access(ativo);
 
         for (HttpMethod metodo : GRAVACOES) {
             auth.requestMatchers(metodo, "/api/v1/unidades", "/api/v1/unidades/**").access(administradorGeral)

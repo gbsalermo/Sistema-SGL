@@ -1,5 +1,6 @@
 package com.sgl.exception;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -52,7 +53,7 @@ public class RestExceptionHandler {
         );
     }
 
-    // Unknown routes (e.g. /auth/dev-login outside dev/demo, where its controller does not exist)
+    // Unknown routes (e.g. /auth/dev/** outside dev/demo, where its controller does not exist)
     // would otherwise fall into the generic handler and surface as a 500.
     @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
     public ResponseEntity<ApiError> handleNoRoute(
@@ -207,7 +208,10 @@ public class RestExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Erro de validação",
-                "Um ou mais campos estão inválidos.",
+                fieldErrors.isEmpty()
+                        ? "Um ou mais campos estão inválidos."
+                        : String.join("; ", fieldErrors.stream()
+                                .limit(3).map(FieldValidationError::message).toList()),
                 request.getRequestURI(),
                 fieldErrors
         );
@@ -270,12 +274,60 @@ public class RestExceptionHandler {
             DataIntegrityViolationException ex,
             HttpServletRequest request) {
 
-        return buildResponse(
-                HttpStatus.CONFLICT,
-                "Conflito de dados",
-                "A operação viola uma restrição de integridade dos dados.",
-                request.getRequestURI()
-        );
+        String estado = identificarSqlState(ex);
+        HttpStatus status;
+        String mensagem;
+        String codigo;
+
+        if ("22001".equals(estado)) {
+            status = HttpStatus.BAD_REQUEST;
+            mensagem = "Um campo de texto ultrapassou o tamanho permitido. "
+                    + "Revise os campos preenchidos.";
+            codigo = "CAMPO_TEXTO_EXTENSO";
+        } else if ("23505".equals(estado)) {
+            status = HttpStatus.CONFLICT;
+            mensagem = "Já existe um registro com o mesmo valor em um campo único. "
+                    + "Verifique códigos e identificadores.";
+            codigo = "VALOR_DUPLICADO";
+        } else if ("23502".equals(estado)) {
+            status = HttpStatus.BAD_REQUEST;
+            mensagem = "Um campo obrigatório não foi informado.";
+            codigo = "CAMPO_OBRIGATORIO";
+        } else if ("23503".equals(estado)) {
+            status = HttpStatus.CONFLICT;
+            mensagem = "Há uma referência a um cadastro inexistente ou em uso.";
+            codigo = "REFERENCIA_INVALIDA";
+        } else if ("23514".equals(estado)) {
+            status = HttpStatus.BAD_REQUEST;
+            mensagem = "Um dos valores não atende às regras de cadastro.";
+            codigo = "VALOR_INVALIDO";
+        } else {
+            status = HttpStatus.CONFLICT;
+            mensagem = "Não foi possível salvar porque alguns dados são incompatíveis. "
+                    + "Revise o cadastro ou entre em contato com o administrador.";
+            codigo = "INTEGRIDADE_DADOS";
+        }
+
+        // Nunca expor SQL, valores ou mensagens técnicas do banco na resposta ao cliente.
+        log.warn("Erro de integridade: sqlState={}, codigo={}, rota={}",
+                estado == null ? "desconhecido" : estado, codigo, request.getRequestURI());
+        return buildResponse(status, "Dados inválidos ou conflitantes", mensagem,
+                request.getRequestURI(), codigo);
+    }
+
+    private String identificarSqlState(Throwable erro) {
+        for (Throwable causa = erro; causa != null; causa = causa.getCause()) {
+            if (causa instanceof SQLException sql) {
+                for (SQLException atual = sql; atual != null;
+                        atual = atual.getNextException()) {
+                    if (atual.getSQLState() != null) {
+                        return atual.getSQLState();
+                    }
+                }
+            }
+            if (causa == causa.getCause()) break;
+        }
+        return null;
     }
 
     @ExceptionHandler(Exception.class)

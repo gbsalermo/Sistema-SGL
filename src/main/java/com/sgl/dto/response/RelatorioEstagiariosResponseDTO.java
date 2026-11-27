@@ -33,10 +33,15 @@ public class RelatorioEstagiariosResponseDTO {
         private final LocalDate dataInicioEstagio;
         private final LocalDate dataFimEstagio;
         private final TipoBolsa tipoBolsa;
+        private final String bolsaNome;
         private final Boolean ativo;
         private final String observacao;
 
         public Item(Estagiario entity) {
+            this(entity, entity.getTipoBolsa(), null);
+        }
+
+        public Item(Estagiario entity, TipoBolsa tipoBolsa, String bolsaNome) {
             this.id = entity.getPublicId();
             this.nome = entity.getNome();
             this.email = entity.getEmail();
@@ -46,7 +51,8 @@ public class RelatorioEstagiariosResponseDTO {
                     : null;
             this.dataInicioEstagio = entity.getDataInicioEstagio();
             this.dataFimEstagio = entity.getDataFimEstagio();
-            this.tipoBolsa = entity.getTipoBolsa();
+            this.tipoBolsa = tipoBolsa;
+            this.bolsaNome = bolsaNome;
             this.ativo = entity.getAtivo();
             this.observacao = entity.getObservacao();
         }

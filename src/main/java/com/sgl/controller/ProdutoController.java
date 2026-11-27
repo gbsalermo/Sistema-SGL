@@ -51,6 +51,13 @@ public class ProdutoController {
     @GetMapping
     public ResponseEntity<List<ProdutoResponseDTO>> listarTodos() { return ResponseEntity.ok(produtoService.listarTodos()); }
 
+    @Operation(summary = "Catálogo administrativo por Unidade",
+            description = "Inclui produtos cadastrados na Unidade mesmo sem estoque físico.")
+    @GetMapping("/catalogo")
+    public ResponseEntity<List<ProdutoResponseDTO>> listarCatalogoAdministrativo() {
+        return ResponseEntity.ok(produtoService.listarCatalogoAdministrativo());
+    }
+
     @Operation(summary = "Buscar produto por ID", description = "Retorna um produto pelo seu identificador público UUID.")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "Produto encontrado", useReturnTypeSchema = true), @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content(schema = @Schema(implementation = ApiError.class))), @ApiResponse(responseCode = "500", description = "Erro interno do servidor", content = @Content(schema = @Schema(implementation = ApiError.class)))})
     @GetMapping("/{id}")

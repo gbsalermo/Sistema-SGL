@@ -11,7 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.security.AuthenticatedUser;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 import com.sgl.security.SecurityErrorWriter;
 
 import jakarta.servlet.FilterChain;
@@ -92,7 +92,7 @@ public class TenantRequestFilter extends OncePerRequestFilter {
             return Resolution.allow(propria);
         }
         // Only an existing Unidade may be operated, so a typo cannot open an empty phantom tenant.
-        if (PerfilPolicy.isAdministradorGeral(user.perfil()) && unidadeRepository.findByPublicId(solicitada).isPresent()) {
+        if (PapelPolicy.isAdministradorGeral(user.papeis()) && unidadeRepository.findByPublicId(solicitada).isPresent()) {
             return Resolution.allow(solicitada);
         }
         return Resolution.DENY;

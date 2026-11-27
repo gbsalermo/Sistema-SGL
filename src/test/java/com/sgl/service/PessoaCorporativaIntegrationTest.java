@@ -93,7 +93,8 @@ class PessoaCorporativaIntegrationTest {
                 .build());
         laboratorio = laboratorioRepository.saveAndFlush(Laboratorio.builder()
                 .unidade(unidade).nome("Lab Base").ativo(true).build());
-        gestor = novoUsuario(Perfil.GESTOR, null, null);
+        // Central import is for administrators; laboratory teams import through their own team.
+        gestor = novoUsuario(Perfil.ADMINISTRADOR, null, null);
     }
 
     @AfterEach
@@ -128,7 +129,7 @@ class PessoaCorporativaIntegrationTest {
                 .andExpect(jsonPath("$[1].jaCadastrado").value(true))
                 .andExpect(jsonPath("$[2].jaCadastrado").value(false))
                 .andExpect(jsonPath("$[2].situacao").doesNotExist())
-                .andExpect(jsonPath("$[2].perfilSugerido").value("PESQUISADOR"))
+                .andExpect(jsonPath("$[2].categoriaSugerida").value("PESQUISADOR"))
                 .andExpect(jsonPath("$[2].referencia").value("777777"));
     }
 
@@ -170,7 +171,7 @@ class PessoaCorporativaIntegrationTest {
         MvcResult result = mockMvc.perform(get(BUSCA).param("tipo", "COLABORADOR").param("termo", "ana").header(HttpHeaders.AUTHORIZATION, bearer(gestor)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].referencia").value("42"))
-                .andExpect(jsonPath("$[0].perfilSugerido").value("ESTAGIARIO"))
+                .andExpect(jsonPath("$[0].categoriaSugerida").value("ESTAGIARIO"))
                 .andExpect(jsonPath("$[0].email").value(nullValue()))
                 .andReturn();
 
@@ -194,7 +195,8 @@ class PessoaCorporativaIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpo("EMPREGADO", "344136", "TECNICO", laboratorio)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.perfil").value("TECNICO"))
+                .andExpect(jsonPath("$.categoriaCargo").value("TECNICO"))
+                .andExpect(jsonPath("$.papeis", org.hamcrest.Matchers.hasSize(0)))
                 .andExpect(jsonPath("$.situacao").value("ATIVO"))
                 .andExpect(jsonPath("$.laboratorios[0].id").value(laboratorio.getPublicId().toString()));
 
@@ -218,7 +220,7 @@ class PessoaCorporativaIntegrationTest {
         mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {"tipo":"EMPREGADO","referencia":"344136","perfil":"TECNICO","laboratorioIds":["%s","%s"]}
+                            {"tipo":"EMPREGADO","referencia":"344136","papeis":[],"categoriaCargo":"TECNICO","laboratorioIds":["%s","%s"]}
                             """.formatted(laboratorio.getPublicId(), segundo.getPublicId())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.laboratorios.length()").value(2));
@@ -234,7 +236,7 @@ class PessoaCorporativaIntegrationTest {
 
         mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"tipo\":\"EMPREGADO\",\"referencia\":\"344136\",\"perfil\":\"TECNICO\"}"))
+                        .content("{\"tipo\":\"EMPREGADO\",\"referencia\":\"344136\",\"papeis\":[],\"categoriaCargo\":\"TECNICO\"}"))
                 .andExpect(status().isBadRequest());
         assertThat(usuarioRepository.findByMatricula("344136")).isEmpty();
     }
@@ -254,7 +256,7 @@ class PessoaCorporativaIntegrationTest {
     void importar_perfilAcimaDoPermitido_retorna403() throws Exception {
         mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpo("EMPREGADO", "344136", "ADMINISTRADOR", laboratorio)))
+                        .content(corpo("EMPREGADO", "344136", "ADMINISTRADOR_GERAL", laboratorio)))
                 .andExpect(status().isForbidden());
         assertThat(usuarioRepository.findByMatricula("344136")).isEmpty();
     }
@@ -299,7 +301,7 @@ class PessoaCorporativaIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpo("COLABORADOR", "42", "ESTAGIARIO", laboratorio)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.perfil").value("ESTAGIARIO"))
+                .andExpect(jsonPath("$.categoriaCargo").value("ESTAGIARIO"))
                 .andExpect(jsonPath("$.email").doesNotExist());
 
         Usuario criado = comRelacionamentos(usuarioRepository.findByCpf(CPF_ESTAGIARIA).orElseThrow());
@@ -338,8 +340,9 @@ class PessoaCorporativaIntegrationTest {
     }
 
     @Test
-    void importar_gestorConcedendoGestor_retorna403() throws Exception {
-        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestor))
+    void importar_gestor_retorna403() throws Exception {
+        Usuario gestorDeVerdade = novoUsuario(Perfil.GESTOR, null, null);
+        mockMvc.perform(post(IMPORTAR).header(HttpHeaders.AUTHORIZATION, bearer(gestorDeVerdade))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpo("EMPREGADO", "344136", "GESTOR", laboratorio)))
                 .andExpect(status().isForbidden());
@@ -380,7 +383,7 @@ class PessoaCorporativaIntegrationTest {
         PessoaCorporativaService service = new PessoaCorporativaService(corporateApiClient, usuarioRepository,
                 unidadeRepository, new LaboratoriosDaPessoa(laboratorioRepository), clock);
         SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
-                AuthenticatedUser.from(gestor), null, List.of()));
+                AuthenticatedUser.from(gestor, java.util.Set.of()), null, List.of()));
         TenantContext.definir(unidade.getPublicId());
         gateway.empregadosDaUnidade(CODIGO, empregadoItem("1", "Joao Silva", CPF_JOAO, "Analista", CODIGO));
         gateway.empregadosDaUnidade(CODIGO, empregadoItem("1", "Joao Silva", CPF_JOAO, "Analista", CODIGO));
@@ -420,8 +423,17 @@ class PessoaCorporativaIntegrationTest {
 
     private String corpo(String tipo, String referencia, String perfil, Laboratorio lab) {
         return """
-            {"tipo":"%s","referencia":"%s","perfil":"%s","laboratorioIds":["%s"]}
-            """.formatted(tipo, referencia, perfil, lab.getPublicId());
+            {"tipo":"%s","referencia":"%s",%s,"laboratorioIds":["%s"]}
+            """.formatted(tipo, referencia, acesso(perfil), lab.getPublicId());
+    }
+
+    /** The JSON fields that express a former single profile: its role, or its category and no role. */
+    private static String acesso(String perfil) {
+        Perfil legado = Perfil.valueOf(perfil);
+        if (legado.papel() != null) {
+            return "\"papeis\":[\"%s\"]".formatted(legado.papel());
+        }
+        return "\"papeis\":[],\"categoriaCargo\":\"%s\"".formatted(legado.categoria());
     }
 
     private Usuario novoUsuario(Perfil perfil, String matricula, String cpf) {

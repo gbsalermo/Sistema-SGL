@@ -18,7 +18,7 @@ import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,8 +44,8 @@ public class CargoSubstituicaoService {
 
     @Transactional(readOnly = true)
     public List<CargoSubstituicaoDTO> listar() {
-        if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
-            throw new AccessDeniedException("Apenas gestão pode ver os cargos a substituir.");
+        if (!PapelPolicy.isAdministrador(CurrentUser.get().papeis())) {
+            throw new AccessDeniedException("Apenas administradores veem os cargos a substituir.");
         }
         // Sem Unidade em operação não há "unidade do gestor": falha fechado em vez de listar tudo.
         UUID unidadeId = CurrentUser.unidadeEmOperacao();
@@ -59,6 +59,12 @@ public class CargoSubstituicaoService {
                         TipoCargo.ORIENTADOR_ESTAGIO, v.getPublicId(),
                         "Orientador de " + v.getEstagiario().getNome(),
                         v.getOrientador().getPublicId(), v.getOrientador().getNome())));
+
+        // Every laboratory must have a responsável: those that never had one need it too.
+        laboratorioRepository.findAtivosSemResponsavel(unidadeId)
+                .forEach(l -> cargos.add(new CargoSubstituicaoDTO(
+                        TipoCargo.RESPONSAVEL_LABORATORIO, l.getPublicId(),
+                        "Laboratório " + l.getNome() + " sem responsável", null, null)));
 
         laboratorioRepository.findComResponsavelSemCondicoes(unidadeId, liberado)
                 .forEach(l -> cargos.add(new CargoSubstituicaoDTO(

@@ -21,7 +21,7 @@ import com.sgl.model.Unidade;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.security.AuthenticatedUser;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -75,7 +75,7 @@ public class UnidadeHabilitacaoService {
     }
 
     private static void exigirAdministradorGeral(AuthenticatedUser ator) {
-        if (!PerfilPolicy.isAdministradorGeral(ator.perfil())) {
+        if (!PapelPolicy.isAdministradorGeral(ator.papeis())) {
             throw new AccessDeniedException("Apenas o Administrador geral pode habilitar Unidades.");
         }
     }

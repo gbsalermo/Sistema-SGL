@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +34,10 @@ import com.sgl.model.Residuo;
 import com.sgl.model.Sci;
 import com.sgl.model.Unidade;
 import com.sgl.model.Usuario;
+import com.sgl.model.VinculoEstagio;
+import com.sgl.model.VinculoEstagioAtividade;
 import com.sgl.model.enums.EstadoRecipienteEstoque;
+import com.sgl.model.enums.FormacaoEstagiario;
 import com.sgl.model.enums.EstadoFisicoResiduo;
 import com.sgl.model.enums.MedidaSeguranca;
 import com.sgl.model.enums.NivelRisco;
@@ -68,6 +72,8 @@ import com.sgl.repository.ResiduoRepository;
 import com.sgl.repository.SciRepository;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
+import com.sgl.repository.VinculoEstagioAtividadeRepository;
+import com.sgl.repository.VinculoEstagioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -79,6 +85,7 @@ import lombok.RequiredArgsConstructor;
  * e-mails, lotes, pedidos e ocorrências são fictícios.</p>
  */
 @Profile("demo")
+@Order(2000)
 @Component
 @RequiredArgsConstructor
 public class DemoDataInitializer implements CommandLineRunner {
@@ -89,6 +96,8 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final LaboratorioRepository laboratorioRepository;
     private final UsuarioRepository usuarioRepository;
     private final EstagiarioRepository estagiarioRepository;
+    private final VinculoEstagioRepository vinculoEstagioRepository;
+    private final VinculoEstagioAtividadeRepository vinculoEstagioAtividadeRepository;
     private final ProdutoRepository produtoRepository;
     private final EstoqueCentralRepository estoqueCentralRepository;
     private final LoteRepository loteRepository;
@@ -328,7 +337,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
 
-        criarAtividade(
+        Atividade atividadeBiomol = criarAtividade(
                 sciBiomolPainel,
                 "99.99.99.001.01.01.001",
                 "Genotipagem do painel de acessos",
@@ -358,7 +367,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 StatusProjeto.CONCLUIDO,
                 SituacaoExecucaoProjeto.NAO_INFORMADO
         );
-        criarAtividade(
+        Atividade atividadeFito = criarAtividade(
                 sciFito,
                 "99.99.99.002.01.01.001",
                 "Triagem fenotípica dos isolados",
@@ -378,6 +387,51 @@ public class DemoDataInitializer implements CommandLineRunner {
                 StatusProjeto.ATIVO,
                 SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
         );
+
+        // A massa DEMO também exercita o modelo atual de vínculos institucionais.
+        // Estagiários ativos precisam de uma ocorrência de vínculo e participação aberta.
+        Sci sciEnto = criarSci(
+                projEnto, "99.99.99.003.01.01", "Monitoramento de insetos",
+                "Juliana Rocha", hoje.minusMonths(3), null,
+                StatusProjeto.ATIVO, SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+        Sci sciSolos = criarSci(
+                projSolos, "99.99.99.004.01.01", "Análises de solos e nutrientes",
+                "André Lima", hoje.minusMonths(3), null,
+                StatusProjeto.ATIVO, SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+        Atividade atividadeEnto = criarAtividade(
+                sciEnto, "99.99.99.003.01.01.001", "Monitoramento laboratorial de insetos",
+                "Juliana Rocha", hoje.minusMonths(2), null,
+                StatusProjeto.ATIVO, SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+        Atividade atividadeSolos = criarAtividade(
+                sciSolos, "99.99.99.004.01.01.001", "Preparo e análise de amostras",
+                "André Lima", hoje.minusMonths(2), null,
+                StatusProjeto.ATIVO, SituacaoExecucaoProjeto.EM_ANDAMENTO_NO_PRAZO
+        );
+
+        Estagiario bruna = criarEstagiario(
+                unidade, labBiomol, "Bruna Oliveira", "bruna.oliveira@demo.sgl.local",
+                hoje.minusDays(15), null, TipoBolsa.BOLSA_CNPQ, true,
+                "Apoio às análises moleculares."
+        );
+        Estagiario thiago = criarEstagiario(
+                unidade, labFitopatologia, "Thiago Ferreira", "thiago.ferreira@demo.sgl.local",
+                hoje.minusDays(15), null, TipoBolsa.BOLSA_INSTITUCIONAL, true,
+                "Apoio ao diagnóstico fitopatológico."
+        );
+
+        // Orientadores devem ser elegíveis (pesquisador ou analista) e da mesma Unidade.
+        criarVinculoDemo(ana, paulo, atividadeBiomol, hoje.minusMonths(4), hoje);
+        criarVinculoDemo(gabriel, paulo, atividadeFito, hoje.minusMonths(2), hoje);
+        criarVinculoDemo(larissa, juliana, atividadeEnto, hoje.minusMonths(1), hoje);
+        criarVinculoDemo(joao, andre, atividadeSolos, hoje.minusMonths(1), hoje);
+        criarVinculoDemo(bruna, paulo, atividadeBiomol, hoje.minusDays(10), hoje);
+        criarVinculoDemo(thiago, paulo, atividadeFito, hoje.minusDays(10), hoje);
+
+        // Marina e Pedro permanecem encerrados para validar os filtros e históricos.
+        // A data de fim prevista dos vínculos ativos é relativa à execução do DEMO.
 
         Produto etanol = criarProduto(
                 "Etanol 70%", "CNPMF-ETA-70", UnidadeMedida.L,
@@ -949,6 +1003,39 @@ public class DemoDataInitializer implements CommandLineRunner {
         );
         estagiario.setObservacao(observacao);
         return estagiarioRepository.save(DevUsers.withDevLogin(estagiario));
+    }
+
+    /**
+     * Semeia um vínculo institucional e sua primeira participação ativa.
+     * Destinado exclusivamente à massa fictícia do perfil demo.
+     */
+    private void criarVinculoDemo(
+            Estagiario estagiario,
+            Usuario orientador,
+            Atividade atividade,
+            LocalDate inicio,
+            LocalDate hoje) {
+
+        VinculoEstagio vinculo = new VinculoEstagio();
+        vinculo.setEstagiario(estagiario);
+        vinculo.setOrientador(orientador);
+        vinculo.setDataInicio(inicio);
+        vinculo.setDataFimPrevista(hoje.plusMonths(6));
+        vinculo.setDataFimEfetiva(null);
+        vinculo.setTipoBolsa(estagiario.getTipoBolsa());
+        vinculo.setFormacao(FormacaoEstagiario.GRADUACAO);
+        vinculo.setTreinamentoSegurancaConcluido(false);
+        vinculo.setSituacao(SituacaoEstagio.EM_ANDAMENTO);
+        vinculo.setObservacao("Vínculo fictício para validação DEMO.");
+        vinculo = vinculoEstagioRepository.saveAndFlush(vinculo);
+
+        VinculoEstagioAtividade participacao = new VinculoEstagioAtividade();
+        participacao.setVinculoEstagio(vinculo);
+        participacao.setAtividade(atividade);
+        participacao.setDataInicioParticipacao(inicio);
+        participacao.setDataFimParticipacao(null);
+        participacao.setObservacao("Participação fictícia ativa para testes.");
+        vinculoEstagioAtividadeRepository.saveAndFlush(participacao);
     }
 
     private Projeto criarProjeto(

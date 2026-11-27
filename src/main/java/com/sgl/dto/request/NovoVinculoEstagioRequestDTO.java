@@ -26,8 +26,10 @@ public class NovoVinculoEstagioRequestDTO {
 	@NotNull(message = "Data final prevista é obrigatória")
 	private LocalDate dataFimPrevista;
 
-	@NotNull(message = "Tipo de vínculo é obrigatório")
 	private TipoBolsa tipoBolsa;
+
+	/** Bolsa independente da Unidade. Escolher bolsaId OU tipoBolsa. */
+	private UUID bolsaId;
 
 	private String observacao;
 

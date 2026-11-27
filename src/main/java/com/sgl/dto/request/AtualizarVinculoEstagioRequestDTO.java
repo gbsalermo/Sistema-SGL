@@ -23,7 +23,7 @@ public class AtualizarVinculoEstagioRequestDTO {
     @NotNull(message = "Data final prevista é obrigatória")
     private LocalDate dataFimPrevista;
 
-    @NotNull(message = "Tipo de vínculo é obrigatório")
+    /** Identificador legado, nulo quando o vínculo usa uma bolsa do catálogo. */
     private TipoBolsa tipoBolsa;
 
     @NotNull(message = "Formação é obrigatória")

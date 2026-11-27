@@ -41,9 +41,11 @@ public class EstagiarioRequestDTO implements Serializable {
 	@NotNull(message = "Data final prevista do estágio é obrigatória")
 	private LocalDate dataFimEstagio;
 
-	@Schema(description = "Tipo de vínculo do estágio. O nome técnico do campo permanece tipoBolsa por compatibilidade.", example = "CONTRATUAL", requiredMode = Schema.RequiredMode.REQUIRED)
-	@NotNull(message = "Tipo de vínculo é obrigatório")
+	@Schema(description = "Tipo de vínculo do estágio. O nome técnico do campo permanece tipoBolsa por compatibilidade.", example = "CONTRATUAL", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private TipoBolsa tipoBolsa;
+
+	@Schema(description = "UUID de bolsa cadastrada pela Unidade. Escolher ela OU tipoBolsa.")
+	private UUID bolsaId;
 
 	@Schema(description = "Observação opcional sobre o estágio.", example = "Estágio vinculado ao projeto de síntese.")
 	private String observacao;

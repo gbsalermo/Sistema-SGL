@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -13,9 +15,11 @@ import com.sgl.dto.response.RelatorioEstagiariosResponseDTO;
 import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Estagiario;
+import com.sgl.model.VinculoEstagio;
 import com.sgl.model.Laboratorio;
 import com.sgl.repository.EstagiarioRepository;
 import com.sgl.repository.LaboratorioRepository;
+import com.sgl.repository.VinculoEstagioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +29,7 @@ public class RelatorioService {
 
     private final EstagiarioRepository estagiarioRepository;
     private final LaboratorioRepository laboratorioRepository;
+    private final VinculoEstagioRepository vinculoEstagioRepository;
 
     @Transactional(readOnly = true)
     public RelatorioEstagiariosResponseDTO gerarRelatorioEstagiarios(
@@ -58,9 +63,22 @@ public class RelatorioService {
                 .count();
         int inativos = filtrados.size() - ativos;
 
+        // Consulta em lote: tipo/bolsa do vínculo mais recente prevalece sobre
+        // o campo legado em Estagiario, que não possui referência a Bolsa.
+        Map<Long, VinculoEstagio> maisRecentes = new HashMap<>();
+        if (!filtrados.isEmpty()) {
+            vinculoEstagioRepository.findParaRelatorioEstagiarios(
+                    filtrados.stream().map(Estagiario::getId).toList()
+            ).forEach(v -> maisRecentes.putIfAbsent(v.getEstagiario().getId(), v));
+        }
         List<RelatorioEstagiariosResponseDTO.Item> itens = filtrados.stream()
-                .map(RelatorioEstagiariosResponseDTO.Item::new)
-                .toList();
+                .map(e -> {
+                    VinculoEstagio atual = maisRecentes.get(e.getId());
+                    return new RelatorioEstagiariosResponseDTO.Item(
+                            e,
+                            atual == null ? e.getTipoBolsa() : atual.getTipoBolsa(),
+                            atual == null ? null : atual.getBolsaNome());
+                }).toList();
 
         return new RelatorioEstagiariosResponseDTO(
                 LocalDateTime.now(),

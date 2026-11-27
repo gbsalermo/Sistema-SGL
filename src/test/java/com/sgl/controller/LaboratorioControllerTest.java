@@ -134,7 +134,7 @@ class LaboratorioControllerTest {
     @Test
     void deveCriarLaboratorioERetornar201() throws Exception {
         LaboratorioRequestDTO dto = new LaboratorioRequestDTO(
-                UNIDADE_PUBLIC_ID, "Laboratório de Química Orgânica", "Descrição do laboratório", null, true);
+                UNIDADE_PUBLIC_ID, "Laboratório de Química Orgânica", "Descrição do laboratório", UUID.randomUUID(), true);
         when(laboratorioService.criar(any(LaboratorioRequestDTO.class))).thenReturn(montarResponseDTO());
 
         // LaboratorioController.criar usa ResponseEntity.status(HttpStatus.CREATED) explicitamente
@@ -148,7 +148,7 @@ class LaboratorioControllerTest {
 
     @Test
     void deveRetornar400AoCriarComCorpoInvalido() throws Exception {
-        // LaboratorioRequestDTO exige unidadeId (@NotNull) e nome (@NotBlank) - corpo vazio viola ambos.
+        // LaboratorioRequestDTO exige unidadeId e responsavelId (@NotNull) e nome (@NotBlank).
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -158,7 +158,7 @@ class LaboratorioControllerTest {
     @Test
     void deveAtualizarLaboratorioERetornar200() throws Exception {
         LaboratorioRequestDTO dto = new LaboratorioRequestDTO(
-                UNIDADE_PUBLIC_ID, "Laboratório Atualizado", "Nova descrição", null, true);
+                UNIDADE_PUBLIC_ID, "Laboratório Atualizado", "Nova descrição", UUID.randomUUID(), true);
         when(laboratorioService.atualizar(eq(LABORATORIO_PUBLIC_ID), any(LaboratorioRequestDTO.class)))
                 .thenReturn(new LaboratorioResponseDTO(
                         LABORATORIO_PUBLIC_ID, UNIDADE_PUBLIC_ID, "Laboratório Atualizado", "Nova descrição",

@@ -22,7 +22,7 @@ import com.sgl.model.enums.SituacaoUsuario;
 import com.sgl.repository.*;
 import com.sgl.security.CurrentUser;
 import com.sgl.security.AuthenticatedUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 import com.sgl.tenant.TenantContext;
 
 /** Contrato de domínio homologado em DEV; autorização de gestor depende do futuro SSO. */
@@ -48,6 +48,7 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional(readOnly = true)
     public List<ResumoUsuario> resumo() {
+        exigirAdministrador();
         Map<UUID, List<VinculoOperacionalUsuario>> agrupados = new HashMap<>();
         for (VinculoOperacionalUsuario v : vinculos.findByUsuarioUnidadePublicId(unidade())) {
             agrupados.computeIfAbsent(v.getUsuario().getPublicId(), k -> new ArrayList<>()).add(v);
@@ -64,18 +65,80 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional(readOnly = true)
     public List<VinculoOperacionalUsuarioResponseDTO> listar(UUID usuarioId) {
+        // Everyone reads their own links (the pedido, solução and resíduo screens need them).
+        if (!CurrentUser.get().publicId().equals(usuarioId)) {
+            exigirAdministrador();
+        }
         return vinculos.findByUsuarioPublicIdAndUsuarioUnidadePublicId(usuarioId, unidade())
             .stream().map(VinculoOperacionalUsuarioResponseDTO::new).toList();
     }
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO criar(VinculoOperacionalUsuarioRequestDTO dto) {
-        exigirGestao();
+        exigirAdministrador();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
         exigirAutoridadeSobre(usuario);
-        if (usuario.getPerfil() == Perfil.ESTAGIARIO) {
+        return criarVinculo(dto, usuario);
+    }
+
+    /**
+     * Creates a link to the laboratory whose team is being managed; the caller has already checked who
+     * manages that team, so only "nobody grants access to themselves" is checked here.
+     */
+    @Transactional
+    public VinculoOperacionalUsuarioResponseDTO criarNaEquipe(Laboratorio laboratorio, VinculoOperacionalUsuarioRequestDTO dto) {
+        if (!laboratorio.getPublicId().equals(dto.getLaboratorioId())) {
+            throw new BusinessRuleException("O acesso temporário precisa ser para o laboratório desta equipe.");
+        }
+        Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(dto.getUsuarioId(), unidade())
+            .orElseThrow(() -> new ResourceNotFoundException("Usuário", dto.getUsuarioId()));
+        exigirOutraPessoa(usuario);
+        return criarVinculo(dto, usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VinculoOperacionalUsuarioResponseDTO> listarDaEquipe(Laboratorio laboratorio) {
+        LocalDate hoje = LocalDate.now();
+        return vinculos.findByUsuarioUnidadePublicId(unidade()).stream()
+            .filter(v -> v.getLaboratorio().getId().equals(laboratorio.getId()))
+            .sorted(java.util.Comparator.comparing((VinculoOperacionalUsuario v) -> !v.vigente(hoje))
+                .thenComparing(VinculoOperacionalUsuario::getDataInicio, java.util.Comparator.reverseOrder()))
+            .map(VinculoOperacionalUsuarioResponseDTO::new)
+            .toList();
+    }
+
+    @Transactional
+    public VinculoOperacionalUsuarioResponseDTO editarNaEquipe(Laboratorio laboratorio, UUID id, EditarVinculoOperacionalRequestDTO dto) {
+        VinculoOperacionalUsuario v = vinculoDaEquipe(laboratorio, id);
+        exigirOutraPessoa(v.getUsuario());
+        return editarVinculo(v, dto);
+    }
+
+    @Transactional
+    public VinculoOperacionalUsuarioResponseDTO encerrarNaEquipe(Laboratorio laboratorio, UUID id) {
+        VinculoOperacionalUsuario v = vinculoDaEquipe(laboratorio, id);
+        exigirOutraPessoa(v.getUsuario());
+        return encerrarVinculo(v);
+    }
+
+    // A link of another laboratory is "not found" through this team, as if it did not exist.
+    private VinculoOperacionalUsuario vinculoDaEquipe(Laboratorio laboratorio, UUID id) {
+        return vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
+            .filter(v -> v.getLaboratorio().getId().equals(laboratorio.getId()))
+            .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
+    }
+
+    private static void exigirOutraPessoa(Usuario alvo) {
+        if (CurrentUser.get().publicId().equals(alvo.getPublicId())) {
+            throw new AccessDeniedException("Ninguém concede acesso a si mesmo.");
+        }
+    }
+
+    private VinculoOperacionalUsuarioResponseDTO criarVinculo(VinculoOperacionalUsuarioRequestDTO dto, Usuario usuario) {
+        UUID tenant = unidade();
+        if (usuario.isEstagiario()) {
             throw new BusinessRuleException("Estagiários usam vínculos de estágio e participações existentes.");
         }
         usuario.validateActive();
@@ -138,10 +201,14 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO editar(UUID id, EditarVinculoOperacionalRequestDTO dto) {
-        exigirGestao();
+        exigirAdministrador();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         exigirAutoridadeSobre(v.getUsuario());
+        return editarVinculo(v, dto);
+    }
+
+    private VinculoOperacionalUsuarioResponseDTO editarVinculo(VinculoOperacionalUsuario v, EditarVinculoOperacionalRequestDTO dto) {
         if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo encerrado não pode ser editado.");
         }
@@ -163,21 +230,24 @@ public class VinculoOperacionalUsuarioService {
 
     @Transactional
     public VinculoOperacionalUsuarioResponseDTO encerrar(UUID id) {
-        exigirGestao();
+        exigirAdministrador();
         VinculoOperacionalUsuario v = vinculos.findByPublicIdAndUsuarioUnidadePublicId(id, unidade())
             .orElseThrow(() -> new ResourceNotFoundException("Vínculo operacional", id));
         exigirAutoridadeSobre(v.getUsuario());
+        return encerrarVinculo(v);
+    }
+
+    private static VinculoOperacionalUsuarioResponseDTO encerrarVinculo(VinculoOperacionalUsuario v) {
         if (Boolean.TRUE.equals(v.getEncerrado())) {
             throw new BusinessRuleException("Vínculo já encerrado.");
         }
-        v.setDataFim(LocalDate.now());
-        v.setEncerrado(true);
+        v.encerrarEm(LocalDate.now());
         return new VinculoOperacionalUsuarioResponseDTO(v);
     }
 
     @Transactional
     public void definirLaboratorios(UUID usuarioId, List<UUID> laboratorioIds) {
-        exigirGestao();
+        exigirAdministrador();
         UUID tenant = unidade();
         Usuario usuario = usuarios.findByPublicIdAndUnidadePublicId(usuarioId, tenant)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário", usuarioId));
@@ -188,7 +258,7 @@ public class VinculoOperacionalUsuarioService {
             throw UsuarioRejectedException.pendenteExigeAprovacao();
         }
         usuario.substituirLaboratorios(laboratoriosDaPessoa.resolver(
-            laboratorioIds, usuario.getUnidade(), usuario.getPerfil(), usuario.getLaboratorios()));
+            laboratorioIds, usuario.getUnidade(), usuario.getPapeis(), usuario.getLaboratorios()));
     }
 
     @Transactional(readOnly = true)
@@ -207,9 +277,11 @@ public class VinculoOperacionalUsuarioService {
     }
 
     // Granting labs and contexts is what authorizes operations, so only gestão may change it.
-    private static void exigirGestao() {
-        if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
-            throw new AccessDeniedException("Apenas gestão pode alterar vínculos e laboratórios.");
+    // Team management left central gestão: each laboratory's responsável does it through its team;
+    // centrally, only administrators keep these routes.
+    private static void exigirAdministrador() {
+        if (!PapelPolicy.isAdministrador(CurrentUser.get().papeis())) {
+            throw new AccessDeniedException("Apenas administradores alteram vínculos e laboratórios fora da equipe do laboratório.");
         }
     }
 
@@ -225,8 +297,8 @@ public class VinculoOperacionalUsuarioService {
         if (ator.publicId().equals(alvo.getPublicId())) {
             throw new AccessDeniedException("Ninguém pode alterar os próprios vínculos ou laboratórios.");
         }
-        if (!PerfilPolicy.podeConceder(ator.perfil(), alvo.getPerfil())) {
-            throw new AccessDeniedException("Seu perfil não pode alterar os vínculos de um usuário " + alvo.getPerfil() + ".");
+        if (!PapelPolicy.podeAlterar(ator.papeis(), alvo.getPapeis())) {
+            throw new AccessDeniedException("Seus papéis não permitem alterar os vínculos de um usuário com papéis " + alvo.getPapeis() + ".");
         }
     }
 }

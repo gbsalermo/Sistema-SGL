@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.sgl.repository.LaboratorioRepository;
 import com.sgl.repository.UsuarioRepository;
 
 import jakarta.servlet.FilterChain;
@@ -38,9 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UsuarioRepository usuarioRepository) {
+    private final LaboratorioRepository laboratorioRepository;
+
+    public JwtAuthenticationFilter(JwtService jwtService, UsuarioRepository usuarioRepository,
+            LaboratorioRepository laboratorioRepository) {
         this.jwtService = jwtService;
         this.usuarioRepository = usuarioRepository;
+        this.laboratorioRepository = laboratorioRepository;
     }
 
     @Override
@@ -52,7 +57,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwtService.parse(header.substring(BEARER_PREFIX.length()).trim())
                     .flatMap(usuarioRepository::findWithUnidadeByPublicId)
                     .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivo()))
-                    .map(AuthenticatedUser::from)
+                    .map(usuario -> AuthenticatedUser.from(usuario,
+                            laboratorioRepository.findPublicIdsAtivosPorResponsavel(usuario.getId())))
                     .ifPresent(JwtAuthenticationFilter::authenticate);
         }
 
@@ -61,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static void authenticate(AuthenticatedUser user) {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.perfil().name()));
+        user.papeis().forEach(papel -> authorities.add(new SimpleGrantedAuthority("ROLE_" + papel.name())));
         if (!user.isPendente()) {
             authorities.add(new SimpleGrantedAuthority(ACTIVE_AUTHORITY));
         }

@@ -15,7 +15,7 @@ import com.sgl.exception.BusinessRuleException;
 import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
-import com.sgl.model.enums.Perfil;
+import com.sgl.model.enums.PapelSistema;
 import com.sgl.repository.LaboratorioRepository;
 
 class LaboratoriosDaPessoaTest {
@@ -45,17 +45,17 @@ class LaboratoriosDaPessoaTest {
     @Test
     void listaVaziaParaPerfilOperacionalDa400() {
         BusinessRuleException e = assertThrows(BusinessRuleException.class,
-                () -> resolvedor.resolver(List.of(), unidade, Perfil.TECNICO, Set.of()));
+                () -> resolvedor.resolver(List.of(), unidade, Set.of(), Set.of()));
         assertEquals("Informe ao menos um laboratório.", e.getMessage());
         assertThrows(BusinessRuleException.class,
-                () -> resolvedor.resolver(null, unidade, Perfil.ESTAGIARIO, Set.of()));
+                () -> resolvedor.resolver(null, unidade, Set.of(), Set.of()));
     }
 
     @Test
     void gestaoPodeFicarSemLaboratorio() {
-        for (Perfil perfil : List.of(Perfil.GESTOR, Perfil.ADMINISTRADOR, Perfil.ADMINISTRADOR_GERAL)) {
-            assertTrue(resolvedor.resolver(null, unidade, perfil, Set.of()).isEmpty());
-            assertTrue(resolvedor.resolver(List.of(), unidade, perfil, Set.of()).isEmpty());
+        for (PapelSistema papel : PapelSistema.values()) {
+            assertTrue(resolvedor.resolver(null, unidade, Set.of(papel), Set.of()).isEmpty());
+            assertTrue(resolvedor.resolver(List.of(), unidade, Set.of(papel), Set.of()).isEmpty());
         }
     }
 
@@ -64,7 +64,7 @@ class LaboratoriosDaPessoaTest {
         Laboratorio a = laboratorio("A", true);
         BusinessRuleException e = assertThrows(BusinessRuleException.class,
                 () -> resolvedor.resolver(List.of(a.getPublicId(), a.getPublicId()), unidade,
-                        Perfil.TECNICO, Set.of()));
+                        Set.of(), Set.of()));
         assertEquals("Laboratório repetido na lista.", e.getMessage());
     }
 
@@ -74,14 +74,14 @@ class LaboratoriosDaPessoaTest {
         when(repository.findByPublicIdAndUnidadePublicId(desconhecido, unidade.getPublicId()))
                 .thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
-                () -> resolvedor.resolver(List.of(desconhecido), unidade, Perfil.TECNICO, Set.of()));
+                () -> resolvedor.resolver(List.of(desconhecido), unidade, Set.of(), Set.of()));
     }
 
     @Test
     void acrescentarInativoDa400() {
         Laboratorio inativo = laboratorio("Lab Velho", false);
         BusinessRuleException e = assertThrows(BusinessRuleException.class,
-                () -> resolvedor.resolver(List.of(inativo.getPublicId()), unidade, Perfil.TECNICO, Set.of()));
+                () -> resolvedor.resolver(List.of(inativo.getPublicId()), unidade, Set.of(), Set.of()));
         assertEquals("O laboratório Lab Velho está inativo.", e.getMessage());
     }
 
@@ -89,7 +89,7 @@ class LaboratoriosDaPessoaTest {
     void manterInativoJaPresenteEhPermitido() {
         Laboratorio inativo = laboratorio("Lab Velho", false);
         Set<Laboratorio> resolvidos = resolvedor.resolver(List.of(inativo.getPublicId()), unidade,
-                Perfil.TECNICO, Set.of(inativo));
+                Set.of(), Set.of(inativo));
         assertEquals(Set.of(inativo), resolvidos);
     }
 
@@ -99,7 +99,7 @@ class LaboratoriosDaPessoaTest {
         Laboratorio b = laboratorio("B", true);
         Laboratorio c = laboratorio("C", true);
         Set<Laboratorio> resolvidos = resolvedor.resolver(
-                List.of(c.getPublicId(), a.getPublicId(), b.getPublicId()), unidade, Perfil.TECNICO, Set.of());
+                List.of(c.getPublicId(), a.getPublicId(), b.getPublicId()), unidade, Set.of(), Set.of());
         assertInstanceOf(LinkedHashSet.class, resolvidos);
         assertEquals(List.of(c, a, b), List.copyOf(resolvidos));
     }

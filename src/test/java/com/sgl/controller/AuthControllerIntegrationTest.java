@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,7 +34,15 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import com.jayway.jsonpath.JsonPath;
 import com.sgl.corporate.CorporateGatewayStubs;
 import com.sgl.corporate.CorporateGatewayTestConfig;
+import com.sgl.model.Laboratorio;
 import com.sgl.model.Unidade;
+import com.sgl.model.Usuario;
+import com.sgl.model.enums.CategoriaCargo;
+import com.sgl.model.enums.PapelSistema;
+import com.sgl.repository.LaboratorioRepository;
+import com.sgl.security.JwtService;
+import com.sgl.service.DevLoginService;
+import com.sgl.test.PerfisDeTesteInitializer;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.repository.UsuarioRepository;
 
@@ -49,9 +59,12 @@ class AuthControllerIntegrationTest {
     private static final String LOGIN = "/api/v1/auth/login";
 
     @Autowired private MockMvc mockMvc;
+    @Autowired private ApplicationContext applicationContext;
     @Autowired private CorporateGatewayStubs gateway;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private UnidadeRepository unidadeRepository;
+    @Autowired private LaboratorioRepository laboratorioRepository;
+    @Autowired private JwtService jwtService;
 
     private Unidade cnpmf;
 
@@ -90,6 +103,31 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.unidadeId").value(cnpmf.getPublicId().toString()))
                 .andExpect(jsonPath("$.unidadeSigla").value(cnpmf.getSigla()))
                 .andExpect(jsonPath("$.situacao").value("ATIVO"));
+    }
+
+    // Roles accumulate and being responsável comes from the laboratory, so the session shows both.
+    @Test
+    void me_gestorResponsavelPorLaboratorio_mostraPapeisCategoriaEResponsabilidade() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setNome("Gestor e responsável");
+        usuario.setUnidade(cnpmf);
+        usuario.setAtivo(true);
+        usuario.substituirPapeis(List.of(PapelSistema.GESTOR));
+        usuario.setCategoriaCargo(CategoriaCargo.PESQUISADOR);
+        usuario = usuarioRepository.saveAndFlush(usuario);
+        Laboratorio laboratorio = laboratorioRepository.saveAndFlush(Laboratorio.builder()
+                .unidade(cnpmf).nome("Lab do Gestor").ativo(true).responsavel(usuario).build());
+        try {
+            mockMvc.perform(get("/api/v1/auth/me")
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtService.generate(usuario.getPublicId())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.papeis[0]").value("GESTOR"))
+                    .andExpect(jsonPath("$.categoriaCargo").value("PESQUISADOR"))
+                    .andExpect(jsonPath("$.responsavelPor[0].id").value(laboratorio.getPublicId().toString()))
+                    .andExpect(jsonPath("$.perfil").doesNotExist());
+        } finally {
+            laboratorioRepository.delete(laboratorio);
+        }
     }
 
     @Test
@@ -230,11 +268,21 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    void devLogin_inexistenteForaDeDevEDemo() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/dev-login")
+    void rotasDeTeste_inexistentesForaDeDevEDemo() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/dev/entrar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"login\":\"gestor.cnpmf\"}"))
+                        .content("{\"login\":\"teste.gestor.1\"}"))
                 .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/auth/dev/usuarios"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void beansDeTeste_ausentesForaDeDevEDemo() throws Exception {
+        assertThat(applicationContext.getBeanNamesForType(PerfisDeTesteInitializer.class)).isEmpty();
+        assertThat(applicationContext.getBeanNamesForType(DevLoginService.class)).isEmpty();
+        assertThat(applicationContext.getBeanNamesForType(Class.forName("com.sgl.config.DevLoginProfileGuard")))
+                .isEmpty();
     }
 
     private static MockHttpServletRequestBuilder login(String login, String senha) {

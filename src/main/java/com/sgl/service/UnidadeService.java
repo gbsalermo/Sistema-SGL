@@ -14,7 +14,7 @@ import com.sgl.exception.ResourceNotFoundException;
 import com.sgl.model.Unidade;
 import com.sgl.repository.UnidadeRepository;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,7 +41,7 @@ public class UnidadeService {
     public List<UnidadeResponseDTO> listarTodos() {
         // The general administrator's Unidade selector needs them all, not just the one in operation.
         boolean administradorGeral = CurrentUser.find()
-                .map(user -> PerfilPolicy.isAdministradorGeral(user.perfil()))
+                .map(user -> PapelPolicy.isAdministradorGeral(user.papeis()))
                 .orElse(false);
         List<Unidade> unidades = administradorGeral
                 ? unidadeRepository.findAllSemFiltroDeTenant()
@@ -83,7 +83,7 @@ public class UnidadeService {
 
     // Unidades span every tenant, so only the general administrator may create, rename or remove them.
     private static void exigirAdministradorGeral() {
-        if (!PerfilPolicy.isAdministradorGeral(CurrentUser.get().perfil())) {
+        if (!PapelPolicy.isAdministradorGeral(CurrentUser.get().papeis())) {
             throw new AccessDeniedException("Apenas o Administrador geral pode alterar o cadastro de Unidades.");
         }
     }

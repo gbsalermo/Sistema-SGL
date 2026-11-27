@@ -42,7 +42,7 @@ import com.sgl.repository.VinculoEstagioRepository;
 import com.sgl.security.OrientadorPolicy;
 import com.sgl.tenant.TenantContext;
 import com.sgl.security.CurrentUser;
-import com.sgl.security.PerfilPolicy;
+import com.sgl.security.PapelPolicy;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -60,6 +60,7 @@ public class EstagiarioService {
 	private final VinculoEstagioAtividadeCulturaRepository vinculoEstagioAtividadeCulturaRepository;
 	private final VinculoEstagioAtividadeService vinculoEstagioAtividadeService;
 	private final CursoRepository cursoRepository;
+	private final BolsaService bolsaService;
 	private final HistoricoSincronizacaoVinculoEstagioRepository historicoSincronizacaoVinculoEstagioRepository;
 	private final VerificacaoAtivoCorporativoService verificacaoAtivoCorporativo;
 	private final LaboratoriosDaPessoa laboratoriosDaPessoa;
@@ -85,6 +86,8 @@ public class EstagiarioService {
 		usuario.validateActive();
 
 		validarDatas(dto.getDataInicioEstagio(), dto.getDataFimEstagio());
+		// Nova bolsa é uma entidade própria, sem classificação obrigatória no enum.
+		var bolsa = bolsaService.validarEscolha(dto.getTipoBolsa(), dto.getBolsaId());
 
 		validarMesmaUnidade(usuario, orientador);
 
@@ -93,7 +96,7 @@ public class EstagiarioService {
 
 		// The resolver looks laboratories up inside the person's Unidade, so another Unidade's is a 404.
 		usuario.substituirLaboratorios(laboratoriosDaPessoa.resolver(dto.getLaboratorioIds(),
-				usuario.getUnidade(), usuario.getPerfil(), usuario.getLaboratorios()));
+				usuario.getUnidade(), usuario.getPapeis(), usuario.getLaboratorios()));
 		usuarioRepository.save(usuario);
 
 		/*
@@ -120,7 +123,8 @@ public class EstagiarioService {
 				    :orientadorId
 				)
 				""").setParameter("id", usuario.getId()).setParameter("dataInicio", dto.getDataInicioEstagio())
-				.setParameter("dataFim", dto.getDataFimEstagio()).setParameter("tipoBolsa", dto.getTipoBolsa().name())
+				.setParameter("dataFim", dto.getDataFimEstagio()).setParameter("tipoBolsa",
+						dto.getTipoBolsa() == null ? null : dto.getTipoBolsa().name())
 				.setParameter("observacao", dto.getObservacao())
 				.setParameter("situacao", SituacaoEstagio.EM_ANDAMENTO.name())
 				.setParameter("orientadorId", orientador.getId()).executeUpdate();
@@ -150,6 +154,8 @@ public class EstagiarioService {
 		vinculo.setDataFimEfetiva(null);
 
 		vinculo.setTipoBolsa(dto.getTipoBolsa());
+		vinculo.setBolsa(bolsa);
+		vinculo.setBolsaNome(bolsa == null ? null : bolsa.getNome());
 
 		vinculo.setFormacao(dto.getFormacao());
 
@@ -214,7 +220,7 @@ public class EstagiarioService {
 						SituacaoUsuario.ATIVO)
 				.stream().filter(OrientadorPolicy::podeOrientar)
 				.sorted(Comparator.comparing(Usuario::getNome, String.CASE_INSENSITIVE_ORDER))
-				.map(u -> new OrientadorElegivelResponseDTO(u.getPublicId(), u.getNome(), u.getPerfil(), u.getCargo()))
+				.map(u -> new OrientadorElegivelResponseDTO(u.getPublicId(), u.getNome(), u.getCategoriaCargo(), u.getCargo()))
 				.toList();
 	}
 
@@ -448,7 +454,7 @@ public class EstagiarioService {
 
 	// Creating or ending an internship grants or removes a person's access, so only gestão may do it.
 	private static void exigirGestao() {
-		if (!PerfilPolicy.isGestao(CurrentUser.get().perfil())) {
+		if (!PapelPolicy.isGestao(CurrentUser.get().papeis())) {
 			throw new AccessDeniedException("Apenas gestão pode cadastrar, alterar ou encerrar estágios.");
 		}
 	}
